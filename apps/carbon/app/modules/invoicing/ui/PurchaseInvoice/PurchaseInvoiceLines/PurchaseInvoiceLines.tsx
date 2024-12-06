@@ -15,8 +15,7 @@ import {
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
-import { MdMoreHoriz } from "react-icons/md";
+import { LuMoreVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { New } from "~/components";
 import {
   EditableList,
@@ -83,7 +82,7 @@ const PurchaseInvoiceLines = () => {
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     aria-label="Edit purchase order line type"
-                    icon={<MdMoreHoriz />}
+                    icon={<LuMoreVertical />}
                     className="absolute right-[-1px] top-[-6px]"
                     variant="ghost"
                     onClick={(e) => e.stopPropagation()}

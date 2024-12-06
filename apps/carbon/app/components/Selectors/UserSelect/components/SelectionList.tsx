@@ -7,7 +7,7 @@ import {
   TooltipTrigger,
 } from "@carbon/react";
 import { useMemo } from "react";
-import { MdOutlineClear, MdPlaylistAdd } from "react-icons/md";
+import { LuListPlus, LuX } from "react-icons/lu";
 import { Avatar } from "~/components";
 import useUserSelectContext from "../provider";
 import { isGroup } from "../useUserSelect";
@@ -85,7 +85,7 @@ const SelectionList = () => {
                   <TooltipTrigger>
                     <IconButton
                       aria-label={`Expand ${item.label}`}
-                      icon={<MdPlaylistAdd />}
+                      icon={<LuListPlus />}
                       onClick={() => onExplode(item)}
                       variant="secondary"
                     />
@@ -101,7 +101,7 @@ const SelectionList = () => {
                   <TooltipTrigger>
                     <IconButton
                       aria-label={`Remove ${item.label}`}
-                      icon={<MdOutlineClear />}
+                      icon={<LuX />}
                       onClick={() => onDeselect(item)}
                       variant="secondary"
                     />

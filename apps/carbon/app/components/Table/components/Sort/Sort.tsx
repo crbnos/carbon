@@ -18,8 +18,7 @@ import {
 import { Reorder } from "framer-motion";
 import { BsChevronDown, BsSortUp } from "react-icons/bs";
 import { IoMdClose } from "react-icons/io";
-import { LuArrowUpDown } from "react-icons/lu";
-import { MdOutlineDragIndicator } from "react-icons/md";
+import { LuArrowUpDown, LuGripVertical } from "react-icons/lu";
 import { useSort } from "./useSort";
 
 type SortProps = {
@@ -71,7 +70,7 @@ const Sort = ({ columnAccessors }: SortProps) => {
                   <HStack>
                     <IconButton
                       aria-label="Drag handle"
-                      icon={<MdOutlineDragIndicator />}
+                      icon={<LuGripVertical />}
                       variant="ghost"
                     />
                     <span className="text-sm flex-grow">

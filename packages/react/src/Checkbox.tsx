@@ -2,8 +2,7 @@ import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 
-import { LuCheck } from "react-icons/lu";
-import { MdOutlineHorizontalRule } from "react-icons/md";
+import { LuCheck, LuMinus } from "react-icons/lu";
 
 import { cn } from "./utils/cn";
 
@@ -31,7 +30,7 @@ const Checkbox = forwardRef<
       className={cn("flex items-center justify-center text-current mt-[-1px]")}
     >
       {isIndeterminate ? (
-        <MdOutlineHorizontalRule className="w-4 h-4" />
+        <LuMinus className="w-4 h-4" />
       ) : (
         <LuCheck className="w-4 h-4" />
       )}

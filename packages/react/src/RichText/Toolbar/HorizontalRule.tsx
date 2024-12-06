@@ -1,4 +1,4 @@
-import { MdHorizontalRule } from "react-icons/md";
+import { LuMinus } from "react-icons/lu";
 import type { EditorComponent } from "../types";
 import ToolbarButton from "./ToolbarButton";
 
@@ -7,7 +7,7 @@ const HorizontalRule: EditorComponent = ({ editor }) => {
     <ToolbarButton
       label="Horizontal rule"
       onClick={() => editor.chain().focus().setHorizontalRule().run()}
-      icon={<MdHorizontalRule />}
+      icon={<LuMinus />}
       disabled={!editor.isEditable}
     />
   );

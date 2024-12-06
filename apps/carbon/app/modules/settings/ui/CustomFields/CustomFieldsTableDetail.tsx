@@ -22,8 +22,7 @@ import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
 import { BsCalendarDate, BsToggleOn } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
-import { LuPencil, LuTrash } from "react-icons/lu";
-import { MdOutlineDragIndicator } from "react-icons/md";
+import { LuGripVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useUrlParams } from "~/hooks";
@@ -187,7 +186,7 @@ const CustomFieldCategoryDetail = ({
                       <HStack>
                         <IconButton
                           aria-label="Drag handle"
-                          icon={<MdOutlineDragIndicator />}
+                          icon={<LuGripVertical />}
                           variant="ghost"
                         />
                         <p className="flex-grow text-foreground">

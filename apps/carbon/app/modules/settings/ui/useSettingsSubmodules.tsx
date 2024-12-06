@@ -3,10 +3,10 @@ import {
   LuFactory,
   LuFileText,
   LuImage,
+  LuLayoutDashboard,
   LuSheet,
   LuWorkflow,
 } from "react-icons/lu";
-import { MdOutlineDashboardCustomize } from "react-icons/md";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -54,7 +54,7 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         name: "Custom Fields",
         to: path.to.customFields,
         role: "employee",
-        icon: <MdOutlineDashboardCustomize />,
+        icon: <LuLayoutDashboard />,
       },
       {
         name: "Integrations",

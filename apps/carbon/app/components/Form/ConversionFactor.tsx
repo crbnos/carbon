@@ -22,8 +22,12 @@ import {
 import { twoDecimals } from "@carbon/utils";
 import type { ElementRef } from "react";
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
-import { LuChevronDown, LuChevronUp } from "react-icons/lu";
-import { MdSwapHoriz, MdTranslate } from "react-icons/md";
+import {
+  LuArrowRightLeft,
+  LuChevronDown,
+  LuChevronUp,
+  LuLanguages,
+} from "react-icons/lu";
 import { useUnitOfMeasure } from "./UnitOfMeasure";
 
 enum ConversionDirection {
@@ -188,7 +192,7 @@ const ConversionFactor = forwardRef<
         >
           <CommandTrigger
             disabled={isReadOnly}
-            icon={<MdTranslate className="w-4 h-4 opacity-50" />}
+            icon={<LuLanguages className="w-4 h-4 opacity-50" />}
             ref={ref}
             onClick={() => setOpen(true)}
           >
@@ -208,7 +212,7 @@ const ConversionFactor = forwardRef<
                       className="border-dashed"
                     >
                       Switch
-                      <MdSwapHoriz className="w-4 h-4 ml-1" />
+                      <LuArrowRightLeft className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
                 </VStack>

@@ -8,8 +8,7 @@ import {
   PopoverTrigger,
 } from "@carbon/react";
 import { parseDate } from "@internationalized/date";
-import { LuX } from "react-icons/lu";
-import { MdCalendarMonth } from "react-icons/md";
+import { LuCalendarDays, LuX } from "react-icons/lu";
 import { New, Select } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { incomeBalanceTypes } from "~/modules/accounting";
@@ -39,7 +38,7 @@ const ChartOfAccountsTableFilters = () => {
         />
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="secondary" leftIcon={<MdCalendarMonth />}>
+            <Button variant="secondary" leftIcon={<LuCalendarDays />}>
               Date Range
             </Button>
           </PopoverTrigger>

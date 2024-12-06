@@ -10,6 +10,7 @@ import { useFetcher, useFetchers } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
+  LuArrowDownLeft,
   LuBookMarked,
   LuCalendar,
   LuContainer,
@@ -22,7 +23,6 @@ import {
   LuTruck,
   LuUser,
 } from "react-icons/lu";
-import { MdCallReceived } from "react-icons/md";
 import {
   EmployeeAvatar,
   Hyperlink,
@@ -323,7 +323,7 @@ const PurchaseOrdersTable = memo(
               receive(row);
             }}
           >
-            <MenuIcon icon={<MdCallReceived />} />
+            <MenuIcon icon={<LuArrowDownLeft />} />
             Receive
           </MenuItem>
           <MenuItem

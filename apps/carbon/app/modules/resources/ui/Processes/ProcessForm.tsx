@@ -22,8 +22,12 @@ import {
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { LuPencil, LuPlusCircle, LuTrash } from "react-icons/lu";
-import { MdMoreHoriz } from "react-icons/md";
+import {
+  LuMoreVertical,
+  LuPencil,
+  LuPlusCircle,
+  LuTrash,
+} from "react-icons/lu";
 import type { z } from "zod";
 import { SupplierAvatar } from "~/components";
 import {
@@ -176,7 +180,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                   <DropdownMenuTrigger asChild>
                     <IconButton
                       aria-label="Edit supplier process"
-                      icon={<MdMoreHoriz />}
+                      icon={<LuMoreVertical />}
                       size="md"
                       variant="ghost"
                       onClick={(e) => e.stopPropagation()}

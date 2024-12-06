@@ -11,8 +11,14 @@ import {
 } from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { Reorder } from "framer-motion";
-import { LuColumns, LuEye, LuEyeOff, LuPin, LuPinOff } from "react-icons/lu";
-import { MdOutlineDragIndicator } from "react-icons/md";
+import {
+  LuColumns,
+  LuEye,
+  LuEyeOff,
+  LuGripVertical,
+  LuPin,
+  LuPinOff,
+} from "react-icons/lu";
 
 type ColumnsProps<T> = {
   columns: Column<T, unknown>[];
@@ -63,7 +69,7 @@ const Columns = <T extends object>({
                     <HStack className="w-full">
                       <IconButton
                         aria-label="Drag handle"
-                        icon={<MdOutlineDragIndicator />}
+                        icon={<LuGripVertical />}
                         variant="ghost"
                       />
                       <span className="text-sm flex-grow flex items-center gap-2">

@@ -21,8 +21,12 @@ import { json, redirect } from "@vercel/remix";
 import { ParentSize } from "@visx/responsive";
 import { useState } from "react";
 import { IoMdClose } from "react-icons/io";
-import { LuChevronDown, LuChevronUp } from "react-icons/lu";
-import { MdEdit, MdOutlineArrowBackIos } from "react-icons/md";
+import {
+  LuChevronDown,
+  LuChevronLeft,
+  LuChevronUp,
+  LuPenSquare,
+} from "react-icons/lu";
 import { Hidden, Input, Submit } from "~/components/Form";
 import type { AbilityDatum } from "~/modules/resources";
 import {
@@ -191,7 +195,7 @@ export default function AbilitiesRoute() {
                 <IconButton
                   aria-label="Back"
                   variant="ghost"
-                  icon={<MdOutlineArrowBackIos />}
+                  icon={<LuChevronLeft />}
                   onClick={() => navigate(path.to.abilities)}
                 />
                 <Input
@@ -213,14 +217,14 @@ export default function AbilitiesRoute() {
               <IconButton
                 aria-label="Back"
                 variant="ghost"
-                icon={<MdOutlineArrowBackIos />}
+                icon={<LuChevronLeft />}
                 onClick={() => navigate(path.to.abilities)}
               />
               <Heading size="h3">{ability.name}</Heading>
               <IconButton
                 aria-label="Edit"
                 variant="ghost"
-                icon={<MdEdit />}
+                icon={<LuPenSquare />}
                 onClick={editingTitle.onOpen}
               />
             </HStack>

@@ -9,7 +9,7 @@ import {
   InputRightElement,
   Spinner,
 } from "@carbon/react";
-import { MdOutlineClear } from "react-icons/md";
+import { LuX } from "react-icons/lu";
 import useUserSelectContext from "../provider";
 
 const Input = () => {
@@ -61,7 +61,7 @@ const Input = () => {
             {!loading && !disabled && inputValue.length > 0 && (
               <IconButton
                 aria-label="Clear search query"
-                icon={<MdOutlineClear />}
+                icon={<LuX />}
                 onClick={onClearInput}
                 variant="ghost"
               />

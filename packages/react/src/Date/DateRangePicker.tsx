@@ -2,7 +2,7 @@ import { useDateRangePicker } from "@react-aria/datepicker";
 import { useDateRangePickerState } from "@react-stately/datepicker";
 import type { DateRangePickerProps, DateValue } from "@react-types/datepicker";
 import { useRef } from "react";
-import { MdOutlineDoNotDisturb } from "react-icons/md";
+import { LuBan } from "react-icons/lu";
 import { HStack } from "../HStack";
 import { InputGroup } from "../Input";
 import TimeField from "./TimePicker";
@@ -41,7 +41,7 @@ const DateRangePicker = (props: DateRangePickerProps<DateValue>) => {
             </span>
             <DateField {...endFieldProps} />
             {state.isInvalid && (
-              <MdOutlineDoNotDisturb className="text-destructive-foreground absolute right-[12px]" />
+              <LuBan className="text-destructive-foreground absolute right-[12px]" />
             )}
           </div>
         </InputGroup>

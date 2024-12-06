@@ -16,8 +16,7 @@ import {
 import { Outlet, useNavigate, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
-import { MdMoreHoriz } from "react-icons/md";
+import { LuMoreVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { New } from "~/components";
 import { EditableNumber } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -75,7 +74,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     aria-label="Edit supplier process"
-                    icon={<MdMoreHoriz />}
+                    icon={<LuMoreVertical />}
                     size="md"
                     className="absolute right-[-1px] top-[-6px]"
                     variant="ghost"
