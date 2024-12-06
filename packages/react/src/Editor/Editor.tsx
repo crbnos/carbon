@@ -1,5 +1,6 @@
 "use client";
 
+import TextStyle from "@tiptap/extension-text-style";
 import type { JSONContent } from "novel";
 import {
   EditorBubble,
@@ -80,6 +81,8 @@ const Editor = ({
   const extensions = useMemo(
     () => [
       ...defaultExtensions,
+      TextStyle,
+
       Command.configure({
         suggestion: {
           items: () => suggestionItems,
