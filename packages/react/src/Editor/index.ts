@@ -1,3 +1,4 @@
+import TextStyle from "@tiptap/extension-text-style";
 import type { JSONContent } from "@tiptap/react";
 import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
 import Editor from "./Editor";
@@ -10,7 +11,7 @@ const generateHTML = (content: JSONContent) => {
   if (!content || !("type" in content)) {
     return "";
   }
-  return DefaultGenerateHTML(content, defaultExtensions);
+  return DefaultGenerateHTML(content, [...defaultExtensions, TextStyle]);
 };
 
 export { Editor, generateHTML };

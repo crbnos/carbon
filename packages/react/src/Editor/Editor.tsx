@@ -82,7 +82,6 @@ const Editor = ({
     () => [
       ...defaultExtensions,
       TextStyle,
-
       Command.configure({
         suggestion: {
           items: () => suggestionItems,
