@@ -1,5 +1,4 @@
-import { generateHTML as DefaultGenerateHTML } from "@tiptap/react";
-import type { JSONContent } from "novel";
+import type { JSONContent } from "@tiptap/react";
 
 import {
   Accordion,
@@ -115,8 +114,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "./Dropdown";
-import { Editor } from "./Editor";
-import { defaultExtensions } from "./Editor/extensions";
 import { File } from "./File";
 import {
   FormControl,
@@ -227,7 +224,6 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "./Resizable";
-import { RichText, useRichText } from "./RichText";
 import { ScrollArea, ScrollBar } from "./ScrollArea";
 import {
   Select,
@@ -295,16 +291,6 @@ import type {
 } from "./hooks/useShortcutKeys";
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
-
-const generateHTML = (content: JSONContent) => {
-  if (typeof window === "undefined") {
-    return "";
-  }
-  if (!content || !("type" in content)) {
-    return "";
-  }
-  return DefaultGenerateHTML(content, defaultExtensions);
-};
 
 export * from "./hooks";
 export {
@@ -401,7 +387,6 @@ export {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-  Editor,
   File,
   FormControl,
   FormErrorMessage,
@@ -489,7 +474,6 @@ export {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  RichText,
   ScrollArea,
   ScrollBar,
   Select,
@@ -557,7 +541,6 @@ export {
   VStack,
   buttonVariants,
   cn,
-  generateHTML,
   getValidChildren,
   multiSelectTriggerVariants,
   reactNodeToString,
@@ -567,7 +550,6 @@ export {
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,
-  useRichText,
   useSidebar,
 };
 export type {

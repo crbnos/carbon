@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { useParams } from "@remix-run/react";
-import { RichText } from "~/components";
+import RichText from "~/components/RichText";
 import { useRouteData } from "~/hooks";
 import type { Note } from "~/modules/shared";
 import { path } from "~/utils/path";

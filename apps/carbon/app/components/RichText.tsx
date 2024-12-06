@@ -1,10 +1,12 @@
 import { ValidatedForm } from "@carbon/form";
-import { Button, HStack, HTML, VStack } from "@carbon/react";
+import { Button, HStack, VStack } from "@carbon/react";
+import { HTML } from "@carbon/react/HTML";
 import { formatTimeAgo } from "@carbon/utils";
 import { Form } from "@remix-run/react";
 import { Fragment } from "react";
 import { Avatar } from "~/components";
-import { Hidden, RichText as RichTextForm, Submit } from "~/components/Form";
+import { Hidden, Submit } from "~/components/Form";
+import RichTextForm from "~/components/Form/RichText";
 import { usePermissions, useUser } from "~/hooks";
 import type { Note } from "~/modules/shared";
 import { noteValidator } from "~/modules/shared";

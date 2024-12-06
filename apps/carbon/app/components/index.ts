@@ -27,7 +27,6 @@ import ItemThumbnail from "./ItemThumbnail";
 import Location from "./Location";
 import New from "./New";
 import RealtimeDataProvider from "./RealtimeDataProvider";
-import RichText from "./RichText";
 import SearchFilter from "./SearchFilter";
 import Select from "./Select";
 import SupplierAvatar from "./SupplierAvatar";
@@ -61,7 +60,6 @@ export {
   New,
   OperationStatusIcon,
   RealtimeDataProvider,
-  RichText,
   SearchFilter,
   Select,
   SupplierAvatar,

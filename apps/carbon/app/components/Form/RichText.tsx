@@ -1,13 +1,8 @@
 import { useControlField, useField } from "@carbon/form";
-import {
-  FormControl,
-  FormErrorMessage,
-  RichText as RichTextBase,
-  useRichText,
-} from "@carbon/react";
+import { FormControl, FormErrorMessage } from "@carbon/react";
+import { RichText as RichTextBase, useRichText } from "@carbon/react/RichText";
 import type { ComponentProps } from "react";
 import { useEffect } from "react";
-
 type RichTextProps = Omit<ComponentProps<typeof RichTextBase>, "editor"> & {
   name: string;
   output?: "html" | "json" | "text";

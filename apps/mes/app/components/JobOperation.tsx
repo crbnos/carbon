@@ -5,7 +5,6 @@ import {
   Badge,
   Button,
   cn,
-  generateHTML,
   Heading,
   HStack,
   IconButton,
@@ -46,6 +45,7 @@ import {
   VStack,
   type JSONContent,
 } from "@carbon/react";
+import { generateHTML } from "@carbon/react/Editor";
 import {
   Await,
   useFetcher,

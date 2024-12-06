@@ -82,7 +82,10 @@
     "typescript": "^5.2.2"
   },
   "exports": {
-    ".": "./src/index.tsx"
+    ".": "./src/index.tsx",
+    "./Editor": "./src/Editor/index.ts",
+    "./HTML": "./src/HTML.tsx",
+    "./RichText": "./src/RichText/index.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"

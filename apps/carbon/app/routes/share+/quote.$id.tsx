@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  generateHTML,
   Heading,
   HStack,
   Modal,
@@ -32,6 +31,7 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
+import { generateHTML } from "@carbon/react/Editor";
 import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";

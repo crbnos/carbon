@@ -49,7 +49,6 @@ import Part from "./Part";
 import PaymentTerm from "./PaymentTerm";
 import Process from "./Process";
 import Processes from "./Processes";
-import RichText from "./RichText";
 import Sequence from "./Sequence";
 import SequenceOrCustomId from "./SequenceOrCustomId";
 import Service from "./Service";
@@ -117,7 +116,6 @@ export {
   Process,
   Processes,
   Radios,
-  RichText,
   Select,
   SelectControlled,
   Sequence,

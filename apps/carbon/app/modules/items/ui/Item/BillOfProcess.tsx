@@ -17,17 +17,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  Editor,
   HStack,
   IconButton,
   Label,
   VStack,
   cn,
-  generateHTML,
   useDebounce,
   useDisclosure,
   useThrottle,
 } from "@carbon/react";
+import { Editor, generateHTML } from "@carbon/react/Editor";
 import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher, useFetchers } from "@remix-run/react";

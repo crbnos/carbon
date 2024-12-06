@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { RichText } from "~/components";
+import RichText from "~/components/RichText";
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";

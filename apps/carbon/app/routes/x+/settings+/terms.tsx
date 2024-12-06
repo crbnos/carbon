@@ -8,12 +8,11 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Editor,
-  generateHTML,
   HStack,
   useDebounce,
   VStack,
 } from "@carbon/react";
+import { Editor, generateHTML } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { json, redirect, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
