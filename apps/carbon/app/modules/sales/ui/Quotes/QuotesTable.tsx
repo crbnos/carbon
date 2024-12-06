@@ -323,7 +323,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     // eslint-disable-next-line react/display-name
     return (row: Quotation) => (
       <>
-        <MenuItem onClick={() => navigate(path.to.quote(row.id!))}>
+        <MenuItem onClick={() => navigate(path.to.quoteDetails(row.id!))}>
           <MenuIcon icon={<LuPencil />} />
           Edit
         </MenuItem>

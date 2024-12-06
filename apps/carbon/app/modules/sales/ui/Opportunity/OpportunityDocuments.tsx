@@ -34,11 +34,11 @@ import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import {
   LuGripVertical,
+  LuMoreVertical,
   LuRadioTower,
   LuShoppingCart,
   LuUpload,
 } from "react-icons/lu";
-import { MdMoreVert } from "react-icons/md";
 import { DocumentPreview, FileDropzone } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
@@ -135,7 +135,7 @@ const OpportunityDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<MdMoreVert />}
+                              icon={<LuMoreVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>

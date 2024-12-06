@@ -543,8 +543,6 @@ const QuoteSummary = () => {
     salesOrderLines: SalesOrderLine[];
   }>(path.to.quote(quoteId));
 
-  console.log({ routeData });
-
   const { locale } = useLocale();
   const formatter = useMemo(
     () =>
@@ -655,7 +653,7 @@ const QuoteSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>Summary</CardTitle>
+            <CardTitle>Quote {routeData?.quote.quoteId}</CardTitle>
             {routeData?.quote?.expirationDate && (
               <CardDescription>
                 Expires {formatDate(routeData?.quote.expirationDate)}

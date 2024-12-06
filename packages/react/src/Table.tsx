@@ -19,7 +19,7 @@ const Table = forwardRef<
       />
     </div>
   ) : (
-    <div className="rounded-md border overflow-hidden">
+    <div className="rounded-md border w-full overflow-hidden">
       <div className="relative w-full overflow-auto">
         <table
           ref={ref}

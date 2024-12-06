@@ -557,7 +557,6 @@ const JobBillOfProcess = ({
     onToggleItem,
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
-    console.log({ item, items, selectedItemId });
     const isOpen = item.id === selectedItemId;
     const tabs = [
       {

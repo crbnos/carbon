@@ -5,8 +5,12 @@ import type {
   getPurchaseOrders,
   getSupplier,
   getSupplierContacts,
+  getSupplierInteractionByQuote,
   getSupplierLocations,
   getSupplierProcessesBySupplier,
+  getSupplierQuoteLinePricesByQuoteId,
+  getSupplierQuoteLines,
+  getSupplierQuotes,
   getSuppliers,
   getSupplierStatuses,
   getSupplierTypes,
@@ -49,12 +53,28 @@ export type SupplierContact = NonNullable<
   Awaited<ReturnType<typeof getSupplierContacts>>["data"]
 >[number];
 
+export type SupplierInteraction = NonNullable<
+  Awaited<ReturnType<typeof getSupplierInteractionByQuote>>["data"]
+>;
+
 export type SupplierLocation = NonNullable<
   Awaited<ReturnType<typeof getSupplierLocations>>["data"]
 >[number];
 
 export type SupplierProcess = NonNullable<
   Awaited<ReturnType<typeof getSupplierProcessesBySupplier>>["data"]
+>[number];
+
+export type SupplierQuote = NonNullable<
+  Awaited<ReturnType<typeof getSupplierQuotes>>["data"]
+>[number];
+
+export type SupplierQuoteLine = NonNullable<
+  Awaited<ReturnType<typeof getSupplierQuoteLines>>["data"]
+>[number];
+
+export type SupplierQuoteLinePrice = NonNullable<
+  Awaited<ReturnType<typeof getSupplierQuoteLinePricesByQuoteId>>["data"]
 >[number];
 
 export type SupplierStatus = NonNullable<

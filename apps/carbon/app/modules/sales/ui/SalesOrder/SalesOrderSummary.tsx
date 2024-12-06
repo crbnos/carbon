@@ -1,6 +1,7 @@
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   Heading,
@@ -12,6 +13,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
@@ -303,7 +305,14 @@ const SalesOrderSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>Summary</CardTitle>
+            <CardTitle>
+              Sales Order {routeData?.salesOrder.salesOrderId}
+            </CardTitle>
+            {routeData?.salesOrder?.orderDate && (
+              <CardDescription>
+                Ordered {formatDate(routeData.salesOrder.orderDate)}
+              </CardDescription>
+            )}
           </div>
           <CustomerAvatar
             customerId={routeData?.salesOrder?.customerId ?? null}

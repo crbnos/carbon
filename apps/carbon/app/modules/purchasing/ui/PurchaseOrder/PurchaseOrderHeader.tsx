@@ -24,8 +24,8 @@ import type { PurchaseOrder } from "~/modules/purchasing";
 import { PurchasingStatus, usePurchaseOrderTotals } from "~/modules/purchasing";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
-import { usePurchaseOrder } from "../PurchaseOrders/usePurchaseOrder";
 import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
+import { usePurchaseOrder } from "./usePurchaseOrder";
 
 const PurchaseOrderHeader = () => {
   const permissions = usePermissions();

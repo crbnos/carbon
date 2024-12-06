@@ -20,7 +20,7 @@ import {
 import { convertKbToString } from "@carbon/utils";
 import { Await, Outlet } from "@remix-run/react";
 import { Suspense } from "react";
-import { MdMoreVert } from "react-icons/md";
+import { LuMoreVertical } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { PurchaseOrderAttachment } from "~/modules/purchasing";
@@ -127,7 +127,7 @@ const PurchaseOrderDocuments = ({
                                 <DropdownMenuTrigger asChild>
                                   <IconButton
                                     aria-label="More"
-                                    icon={<MdMoreVert />}
+                                    icon={<LuMoreVertical />}
                                     variant="secondary"
                                   />
                                 </DropdownMenuTrigger>

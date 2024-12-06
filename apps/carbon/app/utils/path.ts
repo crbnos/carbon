@@ -129,6 +129,7 @@ export const path = {
     bulkUpdateQuote: `${x}/quote/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
+    bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -315,6 +316,10 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/locations/delete/${id}`),
     deleteSupplierProcess: (supplierId: string, id: string) =>
       generatePath(`${x}/supplier/${supplierId}/processes/delete/${id}`),
+    deleteSupplierQuote: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/delete`),
+    deleteSupplierQuoteLine: (id: string, lineId: string) =>
+      generatePath(`${x}/supplier-quote/${id}/${lineId}/delete`),
     deleteSupplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/delete/${id}`),
     deleteSupplierType: (id: string) =>
@@ -549,6 +554,9 @@ export const path = {
       generatePath(`${x}/supplier/${id}/locations/new`),
     newSupplierProcess: (id: string) =>
       generatePath(`${x}/supplier/${id}/processes/new`),
+    newSupplierQuote: `${x}/supplier-quote/new`,
+    newSupplierQuoteLine: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/new`),
     newSupplierStatus: `${x}/purchasing/supplier-statuses/new`,
     newSupplierType: `${x}/purchasing/supplier-types/new`,
     newTag: `${x}/settings/tags/new`,
@@ -790,6 +798,15 @@ export const path = {
       generatePath(`${x}/supplier/${id}/processes`),
     supplierShipping: (id: string) =>
       generatePath(`${x}/supplier/${id}/shipping`),
+    supplierQuote: (id: string) => generatePath(`${x}/supplier-quote/${id}`),
+    supplierQuotes: `${x}/purchasing/quotes`,
+    supplierQuoteFavorite: `${x}/purchasing/quotes/favorite`,
+    supplierQuoteDetails: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/details`),
+    supplierQuoteExchangeRate: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/exchange-rate`),
+    supplierQuoteLine: (id: string, lineId: string) =>
+      generatePath(`${x}/supplier-quote/${id}/${lineId}/details`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),

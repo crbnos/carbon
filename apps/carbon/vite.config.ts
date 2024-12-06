@@ -7,6 +7,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
   build: {
+    minify: true,
     sourcemap: false,
     rollupOptions: {
       onwarn(warning, defaultHandler) {
@@ -38,6 +39,7 @@ export default defineConfig({
       presets: [vercelPreset()],
       future: {
         unstable_singleFetch: false,
+        unstable_lazyRouteDiscovery: true,
       },
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",

@@ -22,8 +22,7 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
-import { LuUpload } from "react-icons/lu";
-import { MdMoreVert } from "react-icons/md";
+import { LuMoreVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import { DocumentIcon, getDocumentType } from "~/modules/documents";
 import type { ItemFile } from "~/modules/items";
@@ -361,7 +360,7 @@ const OpportunityLineDocuments = ({
                         <DropdownMenuTrigger asChild>
                           <IconButton
                             aria-label="More"
-                            icon={<MdMoreVert />}
+                            icon={<LuMoreVertical />}
                             variant="secondary"
                           />
                         </DropdownMenuTrigger>
@@ -423,7 +422,7 @@ const OpportunityLineDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<MdMoreVert />}
+                              icon={<LuMoreVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>

@@ -16,7 +16,17 @@ type SupplierLocationSelectProps = Omit<
   "options" | "onChange" | "inline"
 > & {
   supplier?: string;
+  inline?: boolean;
   onChange?: (supplier: SupplierLocationType | null) => void;
+};
+
+const SupplierLocationPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const location = options.find((o) => o.value === value);
+  if (!location) return null;
+  return <span>{location.label}</span>;
 };
 
 const SupplierLocation = (props: SupplierLocationSelectProps) => {
@@ -65,6 +75,7 @@ const SupplierLocation = (props: SupplierLocationSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props?.inline ? SupplierLocationPreview : undefined}
         label={props?.label ?? "Supplier Location"}
         onChange={onChange}
         onCreateOption={(option) => {

@@ -229,3 +229,43 @@ export const supplierStatusValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
 });
+
+export const supplierQuoteStatusType = ["Active", "Expired"] as const;
+
+export const supplierQuoteValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  supplierQuoteId: zfd.text(z.string().optional()),
+  supplierId: z.string().min(36, { message: "Customer is required" }),
+  supplierLocationId: zfd.text(z.string().optional()),
+  supplierContactId: zfd.text(z.string().optional()),
+  supplierReference: zfd.text(z.string().optional()),
+  status: z.enum(supplierQuoteStatusType).optional(),
+  notes: z.any().optional(),
+  quotedDate: zfd.text(z.string().optional()),
+  expirationDate: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+});
+
+export const supplierQuoteLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  supplierQuoteId: z.string(),
+  itemId: z.string().min(1, { message: "Part is required" }),
+  itemReadableId: zfd.text(z.string().optional()),
+  description: z.string().min(1, { message: "Description is required" }),
+  supplierPartId: zfd.text(z.string().optional()),
+  inventoryUnitOfMeasureCode: zfd.text(
+    z.string().min(1, { message: "Unit of measure is required" })
+  ),
+  purchaseUnitOfMeasureCode: zfd.text(
+    z.string().min(1, { message: "Unit of measure is required" })
+  ),
+  conversionFactor: zfd.numeric(z.number().optional()),
+  quantity: z.array(
+    zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
+  ),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  ),
+});

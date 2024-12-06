@@ -7,6 +7,11 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Manage",
     routes: [
+      // {
+      //   name: "Supplier Quotes",
+      //   to: path.to.supplierQuotes,
+      //   icon: <LuPackageSearch />,
+      // },
       {
         name: "Suppliers",
         to: path.to.suppliers,

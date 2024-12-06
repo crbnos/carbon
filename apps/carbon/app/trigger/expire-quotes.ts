@@ -23,42 +23,87 @@ export const expireQuotes = schedules.task({
 
     try {
       // Fetch expired quotes that are in sent status and have a sales person assigned
-      const { data: expiredQuotes, error } = await serviceRole
-        .from("quote")
-        .select("*")
-        .eq("status", "Sent")
-        .not("expirationDate", "is", null)
-        .lt("expirationDate", new Date().toISOString());
+      const [expiredQuotes, expiredSupplierQuotes] = await Promise.all([
+        serviceRole
+          .from("quote")
+          .select("*")
+          .eq("status", "Sent")
+          .not("expirationDate", "is", null)
+          .lt("expirationDate", new Date().toISOString()),
+        serviceRole
+          .from("supplierQuote")
+          .select("*")
+          .eq("status", "Active")
+          .not("expirationDate", "is", null)
+          .lt("expirationDate", new Date().toISOString()),
+      ]);
 
-      if (error) {
+      if (expiredQuotes.error) {
         console.error(
-          `Error fetching expired quotes: ${JSON.stringify(error)}`
+          `Error fetching expired quotes: ${JSON.stringify(
+            expiredQuotes.error
+          )}`
         );
         return;
       }
 
-      if (!expiredQuotes?.length) {
+      if (expiredSupplierQuotes.error) {
+        console.error(
+          `Error fetching expired supplier quotes: ${JSON.stringify(
+            expiredSupplierQuotes.error
+          )}`
+        );
+        return;
+      }
+
+      if (expiredSupplierQuotes.data.length > 0) {
+        console.log(
+          `Found ${expiredSupplierQuotes.data.length} expired supplier quotes`
+        );
+        const expireSupplierQuotes = await serviceRole
+          .from("supplierQuote")
+          .update({ status: "Expired" })
+          .in(
+            "id",
+            expiredSupplierQuotes.data.map((quote) => quote.id)
+          );
+
+        if (expireSupplierQuotes.error) {
+          console.error(
+            `Error updating expired supplier quotes: ${JSON.stringify(
+              expireSupplierQuotes.error
+            )}`
+          );
+          return;
+        }
+      } else {
+        console.log("No expired supplier quotes found");
+      }
+
+      if (!expiredQuotes?.data?.length) {
         console.log("No expired quotes found requiring notification");
         return;
       } else {
-        console.log(`Found ${expiredQuotes.length} expired quotes`);
-        const { error } = await serviceRole
+        console.log(`Found ${expiredQuotes.data.length} expired quotes`);
+        const expireQuotes = await serviceRole
           .from("quote")
           .update({ status: "Expired" })
           .in(
             "id",
-            expiredQuotes.map((quote) => quote.id)
+            expiredQuotes.data.map((quote) => quote.id)
           );
 
-        if (error) {
+        if (expireQuotes.error) {
           console.error(
-            `Error updating expired quotes: ${JSON.stringify(error)}`
+            `Error updating expired quotes: ${JSON.stringify(
+              expireQuotes.error
+            )}`
           );
           return;
         }
       }
 
-      const notificationPayloads: TriggerPayload[] = expiredQuotes
+      const notificationPayloads: TriggerPayload[] = expiredQuotes.data
         .filter((quote) => Boolean(quote.salesPersonId))
         .map((quote) => {
           return {

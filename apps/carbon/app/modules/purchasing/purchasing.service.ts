@@ -6,6 +6,7 @@ import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getCurrencyByCode } from "../accounting/accounting.service";
 import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
@@ -15,6 +16,9 @@ import type {
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
+  supplierQuoteLineValidator,
+  supplierQuoteStatusType,
+  supplierQuoteValidator,
   supplierShippingValidator,
   supplierStatusValidator,
   supplierTypeValidator,
@@ -76,7 +80,6 @@ export async function deleteSupplierContact(
       return contactDelete;
     }
   }
-
   return supplierContact;
 }
 
@@ -113,6 +116,34 @@ export async function deleteSupplierProcess(
     .delete()
     .eq("id", supplierProcessId)
     .single();
+}
+
+export async function deleteSupplierQuote(
+  client: SupabaseClient<Database>,
+  supplierQuoteId: string
+) {
+  const [quote, interaction] = await Promise.all([
+    client.from("supplierQuote").delete().eq("id", supplierQuoteId),
+    client
+      .from("supplierInteraction")
+      .update({
+        supplierQuoteId: null,
+      })
+      .eq("supplierQuoteId", supplierQuoteId),
+  ]);
+
+  if (interaction.error) {
+    return interaction;
+  }
+
+  return quote;
+}
+
+export async function deleteSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("supplierQuoteLine").delete().eq("id", id);
 }
 
 export async function deleteSupplierStatus(
@@ -303,6 +334,57 @@ export async function getSupplierContacts(
     .eq("supplierId", supplierId);
 }
 
+export async function getSupplierInteractionByQuote(
+  client: SupabaseClient<Database>,
+  quoteId: string
+) {
+  return client
+    .from("supplierInteraction")
+    .select("*")
+    .eq("supplierQuoteId", quoteId)
+    .single();
+}
+
+export async function getSupplierInteractionByPurchaseOrder(
+  client: SupabaseClient<Database>,
+  purchaseOrderId: string
+) {
+  return client
+    .from("supplierInteraction")
+    .select("*")
+    .eq("purchaseOrderId", purchaseOrderId)
+    .single();
+}
+
+export async function getSupplierInteractionDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  interactionId: string
+) {
+  const result = await client.storage
+    .from("private")
+    .list(`${companyId}/supplier-interaction/${interactionId}`);
+
+  return (
+    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction" })) ?? []
+  );
+}
+
+export async function getSupplierInteractionLineDocuments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lineId: string
+) {
+  const result = await client.storage
+    .from("private")
+    .list(`${companyId}/supplier-interaction-line/${lineId}`);
+
+  return (
+    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction-line" })) ??
+    []
+  );
+}
+
 export async function getSupplierLocations(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -357,6 +439,95 @@ export async function getSupplierProcessesBySupplier(
     .from("supplierProcesses")
     .select("*")
     .eq("supplierId", supplierId);
+}
+
+export async function getSupplierQuote(
+  client: SupabaseClient<Database>,
+  supplierQuoteId: string
+) {
+  return client
+    .from("supplierQuotes")
+    .select("*")
+    .eq("id", supplierQuoteId)
+    .single();
+}
+
+export async function getSupplierQuotes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("supplierQuotes")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `supplierQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierReference.ilike%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "favorite", ascending: false },
+    { column: "id", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  supplierQuoteLineId: string
+) {
+  return client
+    .from("supplierQuoteLines")
+    .select("*")
+    .eq("id", supplierQuoteLineId)
+    .single();
+}
+
+export async function getSupplierQuoteLines(
+  client: SupabaseClient<Database>,
+  supplierQuoteId: string
+) {
+  return client
+    .from("supplierQuoteLines")
+    .select("*")
+    .eq("supplierQuoteId", supplierQuoteId);
+}
+
+export async function getSupplierQuoteLinePrices(
+  client: SupabaseClient<Database>,
+  supplierQuoteLineId: string
+) {
+  return client
+    .from("supplierQuoteLinePrice")
+    .select("*")
+    .eq("supplierQuoteLineId", supplierQuoteLineId);
+}
+
+export async function getSupplierQuoteLinePricesByQuoteId(
+  client: SupabaseClient<Database>,
+  supplierQuoteId: string
+) {
+  return client
+    .from("supplierQuoteLinePrice")
+    .select("*")
+    .eq("supplierQuoteId", supplierQuoteId)
+    .order("supplierQuoteLineId", { ascending: true });
+}
+
+export async function getSupplierQuotesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierQuote")
+    .select("id, supplierQuoteId")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
 }
 
 export async function getSupplierShipping(
@@ -641,63 +812,6 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
-export async function upsertSupplier(
-  client: SupabaseClient<Database>,
-  supplier:
-    | (Omit<z.infer<typeof supplierValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof supplierValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in supplier) {
-    return client.from("supplier").insert([supplier]).select("*").single();
-  }
-  return client
-    .from("supplier")
-    .update({
-      ...sanitize(supplier),
-      updatedAt: today(getLocalTimeZone()).toString(),
-    })
-    .eq("id", supplier.id)
-    .select("id")
-    .single();
-}
-
-export async function upsertSupplierProcess(
-  client: SupabaseClient<Database>,
-  supplierProcess:
-    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-        customFields?: Json;
-      })
-    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
-        id: string;
-        updatedBy: string;
-        customFields?: Json;
-      })
-) {
-  if ("createdBy" in supplierProcess) {
-    return client
-      .from("supplierProcess")
-      .insert([supplierProcess])
-      .select("id")
-      .single();
-  }
-  return client
-    .from("supplierProcess")
-    .update(sanitize(supplierProcess))
-    .eq("id", supplierProcess.id)
-    .select("id")
-    .single();
-}
-
 export async function updateSupplierAccounting(
   client: SupabaseClient<Database>,
   supplierAccounting: z.infer<typeof supplierAccountingValidator> & {
@@ -788,6 +902,56 @@ export async function updateSupplierPayment(
     .from("supplierPayment")
     .update(sanitize(supplierPayment))
     .eq("supplierId", supplierPayment.supplierId);
+}
+
+export async function updateSupplierQuoteExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("supplierQuote").update(update).eq("id", update.id);
+}
+
+export async function updateSupplierQuoteFavorite(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    favorite: boolean;
+    userId: string;
+  }
+) {
+  const { id, favorite, userId } = args;
+  if (!favorite) {
+    return client
+      .from("supplierQuoteFavorite")
+      .delete()
+      .eq("supplierQuoteId", id)
+      .eq("userId", userId);
+  } else {
+    return client
+      .from("supplierQuoteFavorite")
+      .insert({ supplierQuoteId: id, userId: userId });
+  }
+}
+
+export async function updateSupplierQuoteStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof supplierQuoteStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("supplierQuote").update(update).eq("id", update.id);
 }
 
 export async function updateSupplierShipping(
@@ -978,6 +1142,187 @@ export async function upsertPurchaseOrderPayment(
   return client
     .from("purchaseOrderPayment")
     .insert([purchaseOrderPayment])
+    .select("id")
+    .single();
+}
+
+export async function upsertSupplier(
+  client: SupabaseClient<Database>,
+  supplier:
+    | (Omit<z.infer<typeof supplierValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in supplier) {
+    return client.from("supplier").insert([supplier]).select("*").single();
+  }
+  return client
+    .from("supplier")
+    .update({
+      ...sanitize(supplier),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", supplier.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertSupplierProcess(
+  client: SupabaseClient<Database>,
+  supplierProcess:
+    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierProcessValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in supplierProcess) {
+    return client
+      .from("supplierProcess")
+      .insert([supplierProcess])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("supplierProcess")
+    .update(sanitize(supplierProcess))
+    .eq("id", supplierProcess.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertSupplierQuote(
+  client: SupabaseClient<Database>,
+  supplierQuote:
+    | (Omit<
+        z.infer<typeof supplierQuoteValidator>,
+        "id" | "supplierQuoteId"
+      > & {
+        supplierQuoteId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<
+        z.infer<typeof supplierQuoteValidator>,
+        "id" | "supplierQuoteId"
+      > & {
+        id: string;
+        supplierQuoteId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in supplierQuote) {
+    if (supplierQuote.currencyCode) {
+      const currency = await getCurrencyByCode(
+        client,
+        supplierQuote.companyId,
+        supplierQuote.currencyCode
+      );
+      if (currency.data) {
+        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
+        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    } else {
+      supplierQuote.exchangeRate = 1;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+
+    const insert = await client
+      .from("supplierQuote")
+      .insert([supplierQuote])
+      .select("id, supplierQuoteId");
+    if (insert.error) {
+      return insert;
+    }
+
+    const supplierQuoteId = insert.data?.[0]?.id;
+    if (!supplierQuoteId) return insert;
+
+    const supplierInteraction = await client
+      .from("supplierInteraction")
+      .insert([{ supplierQuoteId, companyId: supplierQuote.companyId }]);
+
+    if (supplierInteraction.error) {
+      await deleteSupplierQuote(client, supplierQuoteId);
+      return supplierInteraction;
+    }
+
+    return insert;
+  } else {
+    // Only update the exchange rate if the currency code has changed
+    const existingQuote = await client
+      .from("quote")
+      .select("companyId, currencyCode")
+      .eq("id", supplierQuote.id)
+      .single();
+
+    if (existingQuote.error) return existingQuote;
+
+    const { companyId, currencyCode } = existingQuote.data;
+
+    if (
+      supplierQuote.currencyCode &&
+      currencyCode !== supplierQuote.currencyCode
+    ) {
+      const currency = await getCurrencyByCode(
+        client,
+        companyId,
+        supplierQuote.currencyCode
+      );
+      if (currency.data) {
+        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
+        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    }
+    return client
+      .from("supplierQuote")
+      .update({
+        ...sanitize(supplierQuote),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", supplierQuote.id);
+  }
+}
+
+export async function upsertSupplierQuoteLine(
+  client: SupabaseClient<Database>,
+  supplierQuoteLine:
+    | (Omit<z.infer<typeof supplierQuoteLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierQuoteLineValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in supplierQuoteLine) {
+    return client
+      .from("supplierQuoteLine")
+      .update(sanitize(supplierQuoteLine))
+      .eq("id", supplierQuoteLine.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("supplierQuoteLine")
+    .insert([supplierQuoteLine])
     .select("id")
     .single();
 }

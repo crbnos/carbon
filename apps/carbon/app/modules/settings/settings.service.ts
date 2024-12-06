@@ -283,7 +283,7 @@ export async function getSequences(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "table", ascending: true },
+    { column: "name", ascending: true },
   ]);
   return query;
 }

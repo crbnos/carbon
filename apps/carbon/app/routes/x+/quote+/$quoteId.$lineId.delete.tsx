@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.quoteLine(quoteId, quoteLineId),
       await flash(
         request,
-        error(deleteLine.error, "Failed to update quote line")
+        error(deleteLine.error, "Failed to delete quote line")
       )
     );
   }

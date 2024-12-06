@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getCurrencyByCode } from "~/modules/accounting";
 import { updateQuoteExchangeRate } from "~/modules/sales";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(
-    path.to.quoteDetails(quoteId),
+    requestReferrer(request) ?? path.to.quoteDetails(quoteId),
     await flash(request, success("Successfully updated exchange rate"))
   );
 }

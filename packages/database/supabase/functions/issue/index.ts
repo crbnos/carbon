@@ -217,8 +217,6 @@ serve(async (req: Request) => {
                 ? -Number(quantity)
                 : Number(quantity) - Number(material?.quantityIssued); // set quantity
 
-            console.log({ quantityToIssue });
-
             if (
               material?.methodType !== "Make" &&
               item?.itemTrackingType === "Inventory"

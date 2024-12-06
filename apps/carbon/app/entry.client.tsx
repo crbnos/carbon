@@ -1,4 +1,8 @@
-import { POSTHOG_API_HOST, POSTHOG_PROJECT_PUBLIC_KEY } from "@carbon/auth";
+import {
+  POSTHOG_API_HOST,
+  POSTHOG_PROJECT_PUBLIC_KEY,
+  VERCEL_URL,
+} from "@carbon/auth";
 import { OperatingSystemContextProvider } from "@carbon/react";
 import { I18nProvider } from "@react-aria/i18n";
 import { RemixBrowser } from "@remix-run/react";
@@ -8,11 +12,13 @@ import { hydrateRoot } from "react-dom/client";
 
 function PosthogInit() {
   useEffect(() => {
-    posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
-      api_host: POSTHOG_API_HOST,
-      autocapture: false,
-      capture_pageview: false,
-    });
+    if (VERCEL_URL && !VERCEL_URL?.includes("localhost")) {
+      posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
+        api_host: POSTHOG_API_HOST,
+        autocapture: false,
+        capture_pageview: false,
+      });
+    }
   }, []);
   return null;
 }

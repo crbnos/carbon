@@ -7,7 +7,9 @@ import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
 import PurchaseOrderLines from "./PurchaseOrderLines";
 import PurchaseOrderPaymentForm from "./PurchaseOrderPaymentForm";
 import PurchaseOrderSidebar from "./PurchaseOrderSidebar";
+import PurchaseOrdersTable from "./PurchaseOrdersTable";
 import PurchasingStatus from "./PurchasingStatus";
+import { usePurchaseOrder } from "./usePurchaseOrder";
 import { usePurchaseOrderTotals } from "./usePurchaseOrderTotals";
 
 export {
@@ -20,6 +22,8 @@ export {
   PurchaseOrderLines,
   PurchaseOrderPaymentForm,
   PurchaseOrderSidebar,
+  PurchaseOrdersTable,
   PurchasingStatus,
+  usePurchaseOrder,
   usePurchaseOrderTotals,
 };
