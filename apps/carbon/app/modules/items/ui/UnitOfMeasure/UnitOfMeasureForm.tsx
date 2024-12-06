@@ -24,8 +24,8 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { unitOfMeasureValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { unitOfMeasureValidator } from "../../items.models";
 
 type UnitOfMeasureFormProps = {
   initialValues: z.infer<typeof unitOfMeasureValidator>;

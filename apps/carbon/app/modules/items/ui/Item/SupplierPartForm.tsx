@@ -24,9 +24,9 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { PartSummary } from "~/modules/items";
-import { supplierPartValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { supplierPartValidator } from "../../items.models";
+import type { PartSummary } from "../../types";
 
 type SupplierPartFormProps = {
   initialValues: z.infer<typeof supplierPartValidator>;

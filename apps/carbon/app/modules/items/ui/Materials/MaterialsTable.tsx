@@ -52,12 +52,12 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Material } from "~/modules/items";
-import { itemTrackingTypes } from "~/modules/items";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import { itemTrackingTypes } from "../../items.models";
+import type { Material } from "../../types";
 
 type MaterialsTableProps = {
   data: Material[];

@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { useCallback } from "react";
 import { usePermissions } from "~/hooks";
-import type { SupplierPart } from "~/modules/items";
+import type { SupplierPart } from "../../../types";
 
 export default function useSupplierParts() {
   const { carbon } = useCarbon();

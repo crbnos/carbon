@@ -6,8 +6,8 @@ import { LuBookMarked, LuGlobe, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Substance } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { Substance } from "../../types";
 
 type MaterialSubstancesTableProps = {
   data: Substance[];

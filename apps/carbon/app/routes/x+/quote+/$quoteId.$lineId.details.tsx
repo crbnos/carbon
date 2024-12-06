@@ -165,17 +165,18 @@ export default function QuoteLine() {
   return (
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
+
+      {line.methodType === "Make" && line.status !== "No Quote" && (
+        <QuoteLineCosting
+          quantities={line.quantity ?? [1]}
+          getLineCosts={getLineCosts}
+        />
+      )}
       {line.status !== "No Quote" && (
         <QuoteLinePricing
           key={lineId}
           line={line}
           pricesByQuantity={pricesByQuantity}
-          getLineCosts={getLineCosts}
-        />
-      )}
-      {line.methodType === "Make" && line.status !== "No Quote" && (
-        <QuoteLineCosting
-          quantities={line.quantity ?? [1]}
           getLineCosts={getLineCosts}
         />
       )}

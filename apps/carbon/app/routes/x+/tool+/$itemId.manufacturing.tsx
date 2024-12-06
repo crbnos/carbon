@@ -22,12 +22,12 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
-  BoMExplorer,
   getMakeMethod,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
 } from "~/modules/items";
+import { BoMExplorer } from "~/modules/items/ui/Item";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 

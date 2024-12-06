@@ -59,8 +59,9 @@ import {
   Tool,
   UnitHint,
   WorkCenter,
-  getUnitHint,
 } from "~/components/Form";
+
+import { getUnitHint } from "~/components/Form/UnitHint";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";

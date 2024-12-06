@@ -65,7 +65,7 @@ import SupplierType from "./SupplierType";
 import Suppliers from "./Suppliers";
 import Tags from "./Tags";
 import Tool from "./Tool";
-import UnitHint, { getUnitHint } from "./UnitHint";
+import UnitHint from "./UnitHint";
 import UnitOfMeasure from "./UnitOfMeasure";
 import User from "./User";
 import Users from "./Users";
@@ -99,7 +99,6 @@ export {
   Department,
   Employee,
   Employees,
-  getUnitHint,
   Hidden,
   Input,
   InputControlled,

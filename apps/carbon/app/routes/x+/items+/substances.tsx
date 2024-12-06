@@ -5,10 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  MaterialSubstancesTable,
-  getMaterialSubstances,
-} from "~/modules/items";
+import { getMaterialSubstances } from "~/modules/items";
+import { MaterialSubstancesTable } from "~/modules/items/ui/MaterialSubstances";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

@@ -1,7 +1,6 @@
 import { cn } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
-import { HiSquares2X2 } from "react-icons/hi2";
 import {
   LuAtom,
   LuCheckCircle,
@@ -9,6 +8,7 @@ import {
   LuHeadphones,
   LuPizza,
   LuShoppingCart,
+  LuSquare,
   LuXCircle,
 } from "react-icons/lu";
 
@@ -121,7 +121,7 @@ export const MethodIcon = ({
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
   }
 
-  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
 };
 
 export const MethodItemTypeIcon = ({
@@ -144,7 +144,7 @@ export const MethodItemTypeIcon = ({
       return <LuHeadphones className={className} />;
   }
 
-  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
 };
 
 export function OperationStatusIcon({

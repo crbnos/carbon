@@ -24,8 +24,8 @@ import {
   TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemPostingGroupValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { itemPostingGroupValidator } from "../../items.models";
 
 type ItemPostingGroupFormProps = {
   initialValues: z.infer<typeof itemPostingGroupValidator>;

@@ -14,7 +14,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { WorkCenter } from "~/modules/resources";
+import type { WorkCenter } from "~/modules/resources/types";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { ProductionEvent } from "../../types";

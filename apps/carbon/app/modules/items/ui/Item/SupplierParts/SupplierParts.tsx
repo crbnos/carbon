@@ -19,7 +19,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import Grid from "~/components/Grid";
 import { useCurrencyFormatter } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { SupplierPart } from "~/modules/items";
+import type { SupplierPart } from "../../../types";
 import useSupplierParts from "./useSupplierParts";
 
 type SupplierPartsProps = {

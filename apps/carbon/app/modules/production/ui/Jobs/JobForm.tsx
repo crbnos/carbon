@@ -27,9 +27,9 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import type { jobStatus } from "~/modules/production";
-import { deadlineTypes, jobValidator } from "~/modules/production";
 import { type MethodItemType } from "~/modules/shared";
+import type { jobStatus } from "../../production.models";
+import { deadlineTypes, jobValidator } from "../../production.models";
 
 type JobFormValues = z.infer<typeof jobValidator> & {
   description: string;

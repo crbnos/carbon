@@ -24,8 +24,8 @@ import { useNavigate } from "@remix-run/react";
 import idb from "localforage";
 import { nanoid } from "nanoid";
 import { useCallback, useEffect, useState } from "react";
-import { HiOutlineDocumentDuplicate } from "react-icons/hi";
 import {
+  LuFileCheck,
   LuHardHat,
   LuSearch,
   LuShoppingCart,
@@ -257,9 +257,7 @@ function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
     case "Customer":
       return <LuUserSquare className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Document":
-      return (
-        <HiOutlineDocumentDuplicate className="w-4 h-4 flex-shrink-0 mr-2" />
-      );
+      return <LuFileCheck className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Job":
       return <LuHardHat className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Part":

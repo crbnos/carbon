@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { ProductionEvent } from "~/modules/production";
-import { deadlineTypes, jobOperationStatus } from "~/modules/production";
+import { deadlineTypes, jobOperationStatus } from "../../../production.models";
+import type { ProductionEvent } from "../../../types";
 
 export const columnValidator = z.object({
   id: z.string(),

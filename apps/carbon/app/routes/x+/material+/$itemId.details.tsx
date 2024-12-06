@@ -9,12 +9,10 @@ import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, Material } from "~/modules/items";
-import {
-  ItemDocuments,
-  MaterialForm,
-  materialValidator,
-  upsertMaterial,
-} from "~/modules/items";
+import { materialValidator, upsertMaterial } from "~/modules/items";
+import { ItemDocuments } from "~/modules/items/ui/Item";
+import { MaterialForm } from "~/modules/items/ui/Materials";
+
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

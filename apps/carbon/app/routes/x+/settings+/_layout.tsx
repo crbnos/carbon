@@ -13,10 +13,6 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Settings" }];
 };
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export const handle: Handle = {
   breadcrumb: "Settings",
   to: path.to.company,

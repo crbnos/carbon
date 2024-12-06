@@ -6,13 +6,15 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import {
-  ConsumableHeader,
-  ConsumableProperties,
   getConsumable,
   getItemFiles,
   getPickMethods,
   getSupplierParts,
 } from "~/modules/items";
+import {
+  ConsumableHeader,
+  ConsumableProperties,
+} from "~/modules/items/ui/Consumables";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

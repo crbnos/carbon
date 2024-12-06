@@ -29,13 +29,12 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes,
   toolValidator,
-} from "~/modules/items";
-import { path } from "~/utils/path";
-
+} from "../../items.models";
 type ToolFormProps = {
   initialValues: z.infer<typeof toolValidator> & { tags: string[] };
   type?: "card" | "modal";

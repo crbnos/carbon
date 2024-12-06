@@ -7,16 +7,16 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
-import { InventoryDetails } from "~/modules/inventory";
+import { InventoryDetails } from "~/modules/inventory/ui/Inventory";
 import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
-  PickMethodForm,
   getItemQuantities,
   getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
+import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";

@@ -19,10 +19,12 @@ import {
   getJob,
   getJobDocuments,
   getJobMethodTree,
+} from "~/modules/production";
+import {
   JobBoMExplorer,
   JobHeader,
   JobProperties,
-} from "~/modules/production";
+} from "~/modules/production/ui/Jobs";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

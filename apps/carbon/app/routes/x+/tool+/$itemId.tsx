@@ -5,13 +5,12 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import {
-  ToolHeader,
-  ToolProperties,
   getItemFiles,
   getPickMethods,
   getSupplierParts,
   getTool,
 } from "~/modules/items";
+import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

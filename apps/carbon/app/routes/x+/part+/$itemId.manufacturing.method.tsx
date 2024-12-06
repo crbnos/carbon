@@ -9,14 +9,16 @@ import { redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
-  BillOfMaterial,
-  BillOfProcess,
-  MakeMethodTools,
-  PartManufacturingForm,
   getItemManufacturing,
   partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
+import {
+  BillOfMaterial,
+  BillOfProcess,
+  MakeMethodTools,
+} from "~/modules/items/ui/Item";
+import { PartManufacturingForm } from "~/modules/items/ui/Parts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

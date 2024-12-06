@@ -18,7 +18,7 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemUnitSalePriceValidator } from "~/modules/items";
+import { itemUnitSalePriceValidator } from "../../items.models";
 
 type ItemSalePriceFormProps = {
   initialValues: z.infer<typeof itemUnitSalePriceValidator>;

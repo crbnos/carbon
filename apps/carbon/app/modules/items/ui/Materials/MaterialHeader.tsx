@@ -4,8 +4,8 @@ import { Link, useParams } from "@remix-run/react";
 import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Material } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { Material } from "../../types";
 import { useMaterialNavigation } from "./useMaterialNavigation";
 
 const MaterialHeader = () => {

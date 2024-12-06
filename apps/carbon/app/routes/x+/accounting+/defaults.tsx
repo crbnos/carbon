@@ -9,13 +9,13 @@ import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
 import {
-  AccountDefaultsForm,
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
   getDefaultAccounts,
   updateDefaultBalanceSheetAccounts,
   updateDefaultIncomeAccounts,
 } from "~/modules/accounting";
+import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

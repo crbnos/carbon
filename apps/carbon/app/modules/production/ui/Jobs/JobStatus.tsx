@@ -1,5 +1,5 @@
 import { Status } from "@carbon/react";
-import type { jobStatus } from "~/modules/production/production.models";
+import type { jobStatus } from "../../production.models";
 
 type JobStatusProps = {
   status?: (typeof jobStatus)[number] | null;

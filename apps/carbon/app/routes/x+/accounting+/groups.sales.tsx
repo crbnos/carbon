@@ -7,10 +7,8 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
-import {
-  SalesPostingGroupsTable,
-  getSalesPostingGroups,
-} from "~/modules/accounting";
+import { getSalesPostingGroups } from "~/modules/accounting";
+import { SalesPostingGroupsTable } from "~/modules/accounting/ui/PostingGroups";
 import { getItemPostingGroupsList } from "~/modules/items";
 import { getCustomerTypesList } from "~/modules/sales";
 import type { Handle } from "~/utils/handle";

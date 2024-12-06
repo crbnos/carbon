@@ -8,8 +8,8 @@ import { json, redirect } from "@vercel/remix";
 import {
   getJobOperationsList,
   getProductionEvents,
-  ProductionEventsTable,
 } from "~/modules/production";
+import { ProductionEventsTable } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources";
 import { path, requestReferrer } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

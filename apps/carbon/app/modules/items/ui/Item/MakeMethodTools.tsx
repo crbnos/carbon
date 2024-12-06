@@ -23,9 +23,9 @@ import { useEffect, useState } from "react";
 import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
 import { Hidden, Item } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { getMethodValidator } from "~/modules/items";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { getMethodValidator } from "../../items.models";
 
 type MakeMethodToolsProps = {
   itemId: string;

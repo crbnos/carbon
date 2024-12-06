@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import {
-  SupplierPartForm,
-  supplierPartValidator,
-  upsertSupplierPart,
-} from "~/modules/items";
+import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

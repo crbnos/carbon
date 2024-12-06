@@ -33,16 +33,12 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Job } from "~/modules/production";
-import {
-  deadlineTypes,
-  getDeadlineIcon,
-  getDeadlineText,
-  jobStatus,
-  JobStatus,
-} from "~/modules/production";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
 import { path } from "~/utils/path";
+import { deadlineTypes, jobStatus } from "../../production.models";
+import type { Job } from "../../types";
+import { getDeadlineIcon, getDeadlineText } from "./Deadline";
+import JobStatus from "./JobStatus";
 
 type JobsTableProps = {
   data: Job[];

@@ -6,10 +6,10 @@ import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  ItemPostingGroupForm,
   itemPostingGroupValidator,
   upsertItemPostingGroup,
 } from "~/modules/items";
+import { ItemPostingGroupForm } from "~/modules/items/ui/ItemPostingGroups";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

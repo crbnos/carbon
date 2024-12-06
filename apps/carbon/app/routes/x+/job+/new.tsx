@@ -6,12 +6,8 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
-import {
-  JobForm,
-  jobValidator,
-  upsertJob,
-  upsertJobMethod,
-} from "~/modules/production";
+import { jobValidator, upsertJob, upsertJobMethod } from "~/modules/production";
+import { JobForm } from "~/modules/production/ui/Jobs";
 import { getNextSequence } from "~/modules/settings";
 import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";

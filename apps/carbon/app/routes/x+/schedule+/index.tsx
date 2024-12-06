@@ -30,9 +30,14 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import type { Column, Item } from "~/modules/production";
-import { getActiveJobOperationsByLocation, Kanban } from "~/modules/production";
-import type { Event, Progress } from "~/modules/production/ui/Schedule/Kanban";
+import { getActiveJobOperationsByLocation } from "~/modules/production";
+import type { Column, Item } from "~/modules/production/ui/Schedule";
+
+import {
+  Kanban,
+  type Event,
+  type Progress,
+} from "~/modules/production/ui/Schedule/Kanban";
 import {
   getLocationsList,
   getProcessesList,

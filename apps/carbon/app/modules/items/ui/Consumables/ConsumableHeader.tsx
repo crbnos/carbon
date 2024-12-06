@@ -4,8 +4,8 @@ import { Link, useParams } from "@remix-run/react";
 import { Copy, MethodItemTypeIcon } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Consumable } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { Consumable } from "../../types";
 import { useConsumableNavigation } from "./useConsumableNavigation";
 
 const ConsumableHeader = () => {

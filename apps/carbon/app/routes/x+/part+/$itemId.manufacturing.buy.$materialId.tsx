@@ -5,7 +5,8 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ItemForm, getItem, getMethodMaterial } from "~/modules/items";
+import { getItem, getMethodMaterial } from "~/modules/items";
+import { ItemForm } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

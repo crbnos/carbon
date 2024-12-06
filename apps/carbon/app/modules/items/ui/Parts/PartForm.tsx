@@ -29,12 +29,12 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes,
   partValidator,
-} from "~/modules/items";
-import { path } from "~/utils/path";
+} from "../../items.models";
 
 type PartFormProps = {
   initialValues: z.infer<typeof partValidator> & { tags?: string[] };

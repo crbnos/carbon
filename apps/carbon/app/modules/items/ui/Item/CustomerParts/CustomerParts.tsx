@@ -19,8 +19,8 @@ import { LuMoreVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
-import type { CustomerPart } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { CustomerPart } from "../../../types";
 import useCustomerParts from "./useCustomerParts";
 
 type CustomerPartsProps = {

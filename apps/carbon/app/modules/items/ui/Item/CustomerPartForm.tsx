@@ -14,8 +14,8 @@ import { useNavigate, useParams } from "@remix-run/react";
 import type { z } from "zod";
 import { Customer, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { customerPartValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { customerPartValidator } from "../../items.models";
 
 type CustomerPartFormProps = {
   initialValues: z.infer<typeof customerPartValidator> & {

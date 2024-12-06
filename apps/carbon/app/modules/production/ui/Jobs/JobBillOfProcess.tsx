@@ -66,8 +66,8 @@ import {
   Tool,
   UnitHint,
   WorkCenter,
-  getUnitHint,
 } from "~/components/Form";
+import { getUnitHint } from "~/components/Form/UnitHint";
 import { OperationStatusIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";

@@ -7,8 +7,8 @@ import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { UnitOfMeasure } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { UnitOfMeasure } from "../../types";
 
 type UnitOfMeasuresTableProps = {
   data: UnitOfMeasure[];

@@ -9,9 +9,9 @@ import {
   LuTags,
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PartSummary } from "~/modules/items/types";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
+import type { PartSummary } from "../../types";
 
 export function usePartNavigation() {
   const permissions = usePermissions();

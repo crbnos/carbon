@@ -1,13 +1,13 @@
 import { cn } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
-  HiBeaker,
-  HiClock,
-  HiHandRaised,
-  HiInformationCircle,
-  HiSquares2X2,
-} from "react-icons/hi2";
-import { LuCalendarClock, LuClock } from "react-icons/lu";
+  LuCalendarClock,
+  LuClock,
+  LuFlaskConical,
+  LuHand,
+  LuInfo,
+  LuSquare,
+} from "react-icons/lu";
 import { AttemptIcon } from "~/assets/icons/AttemptIcon";
 import { TaskIcon } from "~/assets/icons/TaskIcon";
 
@@ -18,7 +18,7 @@ type TaskIconProps = {
 
 export function GanttIcon({ name, className }: TaskIconProps) {
   if (!name)
-    return <HiSquares2X2 className={cn(className, "text-muted-foreground")} />;
+    return <LuSquare className={cn(className, "text-muted-foreground")} />;
 
   switch (name) {
     case "job":
@@ -32,29 +32,23 @@ export function GanttIcon({ name, className }: TaskIconProps) {
     case "timecard":
       return <TaskIcon className={cn(className, "text-yellow-500")} />;
     case "inspection":
-      return <HiBeaker className={cn(className, "text-teal-500")} />;
+      return <LuFlaskConical className={cn(className, "text-teal-500")} />;
     case "attempt":
       return <AttemptIcon className={cn(className, "text-muted-foreground")} />;
     case "wait":
-      return <HiClock className={cn(className, "text-yellow-500")} />;
+      return <LuClock className={cn(className, "text-yellow-500")} />;
     //log levels
     case "debug":
     case "log":
     case "info":
-      return (
-        <HiInformationCircle
-          className={cn(className, "text-muted-foreground")}
-        />
-      );
+      return <LuInfo className={cn(className, "text-muted-foreground")} />;
     case "warn":
-      return (
-        <HiInformationCircle className={cn(className, "text-amber-400")} />
-      );
+      return <LuInfo className={cn(className, "text-amber-400")} />;
     case "error":
-      return <HiInformationCircle className={cn(className, "text-rose-500")} />;
+      return <LuInfo className={cn(className, "text-rose-500")} />;
     case "fatal":
-      return <HiHandRaised className={cn(className, "text-rose-800")} />;
+      return <LuHand className={cn(className, "text-rose-800")} />;
   }
 
-  return <HiSquares2X2 className={cn(className, "text-muted-foreground")} />;
+  return <LuSquare className={cn(className, "text-muted-foreground")} />;
 }

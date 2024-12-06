@@ -8,10 +8,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   accountValidator,
-  ChartOfAccountForm,
   getAccount,
   upsertAccount,
 } from "~/modules/accounting";
+import { ChartOfAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

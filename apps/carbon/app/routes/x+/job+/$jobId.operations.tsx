@@ -5,11 +5,9 @@ import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  getJob,
-  getJobOperations,
-  JobOperationsTable,
-} from "~/modules/production";
+import { getJob, getJobOperations } from "~/modules/production";
+import { JobOperationsTable } from "~/modules/production/ui/Jobs";
+
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 

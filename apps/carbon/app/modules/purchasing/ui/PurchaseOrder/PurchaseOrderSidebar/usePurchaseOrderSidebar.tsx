@@ -1,10 +1,6 @@
 import { useParams } from "@remix-run/react";
 import { BsCreditCard, BsTruck } from "react-icons/bs";
-import {
-  HiOutlineDocumentArrowDown,
-  HiOutlineDocumentArrowUp,
-} from "react-icons/hi2";
-import { LuFileText, LuList } from "react-icons/lu";
+import { LuFileDown, LuFileText, LuFileUp, LuList } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -52,14 +48,14 @@ export function usePurchaseOrderSidebar({ lines = 0 }: Props) {
       name: "Internal Documents",
       to: path.to.purchaseOrderInternalDocuments(orderId),
       role: ["employee"],
-      icon: <HiOutlineDocumentArrowDown />,
+      icon: <LuFileDown />,
       shortcut: "Command+Shift+i",
     },
     {
       name: "External Documents",
       to: path.to.purchaseOrderExternalDocuments(orderId),
       role: ["employee", "supplier"],
-      icon: <HiOutlineDocumentArrowUp />,
+      icon: <LuFileUp />,
       shortcut: "Command+Shift+e",
     },
   ].filter(

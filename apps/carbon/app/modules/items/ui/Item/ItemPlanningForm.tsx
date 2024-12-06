@@ -21,9 +21,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { itemPlanningValidator, itemReorderingPolicies } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import {
+  itemPlanningValidator,
+  itemReorderingPolicies,
+} from "../../items.models";
 
 type ItemPlanningFormProps = {
   initialValues: z.infer<typeof itemPlanningValidator>;

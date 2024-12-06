@@ -20,11 +20,13 @@ import {
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
   getProductionDataByOperations,
+} from "~/modules/production";
+import {
   JobBillOfMaterial,
   JobBillOfProcess,
   JobEstimatesVsActuals,
   JobMaterialForm,
-} from "~/modules/production";
+} from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { path } from "~/utils/path";
 

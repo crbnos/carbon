@@ -1,11 +1,11 @@
-import { cn } from "@carbon/react";
 import { Fragment } from "react";
 import {
-  HiChevronDown,
-  HiChevronLeft,
-  HiChevronRight,
-  HiChevronUp,
-} from "react-icons/hi2";
+  LuChevronDown,
+  LuChevronLeft,
+  LuChevronRight,
+  LuChevronUp,
+} from "react-icons/lu";
+import { cn } from "./utils/cn";
 
 import { useOperatingSystem } from "./OperatingSystem";
 import type { Modifier, ShortcutDefinition } from "./hooks/useShortcutKeys";
@@ -56,13 +56,13 @@ function keyString(key: String, isMac: boolean, size: "small" | "medium") {
     case "enter":
       return isMac ? "↵" : key;
     case "arrowdown":
-      return <HiChevronDown className={className} />;
+      return <LuChevronDown className={className} />;
     case "arrowup":
-      return <HiChevronUp className={className} />;
+      return <LuChevronUp className={className} />;
     case "arrowleft":
-      return <HiChevronLeft className={className} />;
+      return <LuChevronLeft className={className} />;
     case "arrowright":
-      return <HiChevronRight className={className} />;
+      return <LuChevronRight className={className} />;
     default:
       return key;
   }

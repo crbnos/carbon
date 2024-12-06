@@ -5,7 +5,8 @@ import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getMethodMaterials, MethodMaterialsTable } from "~/modules/items";
+import { getMethodMaterials } from "~/modules/items";
+import { MethodMaterialsTable } from "~/modules/items/ui/Methods";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -13,6 +14,10 @@ import { getGenericQueryFilters } from "~/utils/query";
 export const handle: Handle = {
   breadcrumb: "Method Materials",
   to: path.to.methodMaterials,
+};
+
+export const config = {
+  runtime: "nodejs",
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
