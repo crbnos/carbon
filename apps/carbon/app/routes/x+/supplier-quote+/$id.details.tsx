@@ -23,6 +23,10 @@ import SupplierQuoteSummary from "~/modules/purchasing/ui/SupplierQuote/Supplier
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
