@@ -1,6 +1,10 @@
-import { swaggerDocsSchema } from "@carbon/database";
+import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { useSelectedLang } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 const functionPath = "rpc/";
 const { rpcs } = Object.entries(swaggerDocsSchema.paths || {}).reduce(

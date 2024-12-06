@@ -1,10 +1,14 @@
 import { getBrowserEnv } from "@carbon/auth";
-import { swaggerDocsSchema } from "@carbon/database";
+import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { useParams } from "@remix-run/react";
 import { TableDocs, useSelectedLang } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
 
 const { SUPABASE_API_URL } = getBrowserEnv();
+
+export const config = {
+  runtime: "nodejs",
+};
 
 const functionPath = "rpc/";
 const { resources } = Object.entries(swaggerDocsSchema.paths || {}).reduce(

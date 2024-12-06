@@ -1,4 +1,4 @@
-import { swaggerDocsSchema } from "@carbon/database";
+import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Button } from "@carbon/react";
 import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
@@ -14,6 +14,10 @@ import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | API Docs" }];
+};
+
+export const config = {
+  runtime: "nodejs",
 };
 
 export const handle: Handle = {

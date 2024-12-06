@@ -17,7 +17,8 @@
     "uuid": "9.0.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./swagger-docs-schema": "./src/swagger-docs-schema.ts"
   },
   "private": true,
   "scripts": {
