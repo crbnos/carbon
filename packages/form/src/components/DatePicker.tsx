@@ -7,7 +7,7 @@ import {
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
-import { getLocalTimeZone, parseDate, toZoned } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useField } from "../hooks";
@@ -38,9 +38,7 @@ const DatePicker = ({
   );
 
   const handleChange = async (newDate: CalendarDate) => {
-    const formattedDate = newDate
-      ? toZoned(newDate, getLocalTimeZone()).toAbsoluteString()
-      : null;
+    const formattedDate = newDate ? newDate.toString() : null;
     flushSync(() => {
       setDate(newDate);
     });
@@ -57,9 +55,7 @@ const DatePicker = ({
     }
   };
 
-  const utcValue = date
-    ? toZoned(date, getLocalTimeZone()).toAbsoluteString()
-    : "";
+  const utcValue = date ? date.toString() : "";
 
   const DatePickerPreview = (
     <span className="flex-grow line-clamp-1">{formatDate(utcValue)}</span>
