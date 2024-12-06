@@ -7,11 +7,8 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import type { SalesOrderStatus } from "~/modules/sales";
-import {
-  SalesOrderForm,
-  salesOrderValidator,
-  upsertSalesOrder,
-} from "~/modules/sales";
+import { salesOrderValidator, upsertSalesOrder } from "~/modules/sales";
+import { SalesOrderForm } from "~/modules/sales/ui/SalesOrder";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

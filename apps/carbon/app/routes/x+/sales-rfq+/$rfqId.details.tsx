@@ -11,13 +11,12 @@ import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
+import { salesRfqValidator, upsertSalesRFQ } from "~/modules/sales";
 import {
   OpportunityDocuments,
   OpportunityNotes,
   OpportunityState,
-  salesRfqValidator,
-  upsertSalesRFQ,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Opportunity";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

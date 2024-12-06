@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUser } from "~/hooks";
-import {
-  CustomerForm,
-  customerValidator,
-  upsertCustomer,
-} from "~/modules/sales";
+import { customerValidator, upsertCustomer } from "~/modules/sales";
+import { CustomerForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

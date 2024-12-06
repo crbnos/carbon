@@ -25,7 +25,7 @@ import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { useMode } from "~/hooks/useMode";
-import type { JobOperation } from "~/modules/production";
+import type { JobOperation } from "~/modules/production/types";
 import type { MethodType } from "~/modules/shared";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {

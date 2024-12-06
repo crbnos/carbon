@@ -5,7 +5,7 @@ import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getPaymentTermsList } from "~/modules/accounting";
-import { PaymentTermForm } from "~/modules/accounting";
+import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
 import { path } from "~/utils/path";
 
 type PaymentTermSelectProps = Omit<ComboboxProps, "options">;

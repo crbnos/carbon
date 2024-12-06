@@ -13,12 +13,14 @@ import { usePermissions } from "~/hooks";
 import {
   getOpportunityLineDocuments,
   getSalesRFQLine,
-  OpportunityLineDocuments,
-  OpportunityLineNotes,
-  SalesRFQLineForm,
   salesRfqLineValidator,
   upsertSalesRFQLine,
 } from "~/modules/sales";
+import {
+  OpportunityLineDocuments,
+  OpportunityLineNotes,
+} from "~/modules/sales/ui/Opportunity";
+import { SalesRFQLineForm } from "~/modules/sales/ui/SalesRFQ";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -22,15 +22,19 @@ import {
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteOperationsByLine,
+  quoteLineValidator,
+  upsertQuoteLine,
+} from "~/modules/sales";
+import {
   OpportunityLineDocuments,
   OpportunityLineNotes,
+} from "~/modules/sales/ui/Opportunity";
+import {
   QuoteLineCosting,
   QuoteLineForm,
   QuoteLinePricing,
-  quoteLineValidator,
-  upsertQuoteLine,
   useLineCosts,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

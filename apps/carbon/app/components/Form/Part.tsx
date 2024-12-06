@@ -2,7 +2,8 @@ import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { PartForm, type ItemReplenishmentSystem } from "~/modules/items";
+import type { ItemReplenishmentSystem } from "~/modules/items";
+import PartForm from "~/modules/items/ui/Parts/PartForm";
 import { useParts } from "~/stores";
 
 type PartSelectProps = Omit<ComboboxProps, "options"> & {

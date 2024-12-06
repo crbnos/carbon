@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import type { getItemPostingGroupsList } from "~/modules/items";
-import { ItemPostingGroupForm } from "~/modules/items";
+import ItemPostingGroupForm from "~/modules/items/ui/ItemPostingGroups/ItemPostingGroupForm";
 import { path } from "~/utils/path";
 
 type ItemPostingGroupSelectProps = Omit<ComboboxProps, "options">;

@@ -3,7 +3,8 @@ import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
-import { useSalesSubmodules } from "~/modules/sales";
+import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

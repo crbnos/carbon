@@ -15,16 +15,17 @@ import type {
   QuotationPayment,
   QuotationShipment,
 } from "~/modules/sales";
+import { quoteValidator, upsertQuote } from "~/modules/sales";
 import {
   OpportunityDocuments,
   OpportunityNotes,
   OpportunityState,
+} from "~/modules/sales/ui/Opportunity";
+import {
   QuotePaymentForm,
   QuoteShipmentForm,
   QuoteSummary,
-  quoteValidator,
-  upsertQuote,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

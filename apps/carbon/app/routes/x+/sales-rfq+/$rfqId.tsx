@@ -11,21 +11,22 @@ import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 
+import { error, getCarbonServiceRole } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
   getOpportunityBySalesRFQ,
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines,
+} from "~/modules/sales";
+import {
   SalesRFQExplorer,
   SalesRFQHeader,
   SalesRFQProperties,
-} from "~/modules/sales";
-
-import { error, getCarbonServiceRole } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+} from "~/modules/sales/ui/SalesRFQ";
 import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimiticDocumentDrag";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

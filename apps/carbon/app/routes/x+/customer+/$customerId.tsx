@@ -5,12 +5,11 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  CustomerHeader,
-  CustomerSidebar,
   getCustomer,
   getCustomerContacts,
   getCustomerLocations,
 } from "~/modules/sales";
+import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

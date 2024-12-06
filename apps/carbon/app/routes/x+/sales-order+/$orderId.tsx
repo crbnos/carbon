@@ -12,10 +12,12 @@ import {
   getOpportunityDocuments,
   getSalesOrder,
   getSalesOrderLines,
+} from "~/modules/sales";
+import {
   SalesOrderExplorer,
   SalesOrderHeader,
   SalesOrderProperties,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/SalesOrder";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -8,7 +8,8 @@ import type {
   CustomerStatus as CustomerStatusStatus,
   getCustomerStatusesList,
 } from "~/modules/sales";
-import { CustomerStatusForm } from "~/modules/sales";
+import CustomerStatusForm from "~/modules/sales/ui/CustomerStatuses/CustomerStatusForm";
+
 import { path } from "~/utils/path";
 
 type CustomerStatusSelectProps = Omit<ComboboxProps, "options">;

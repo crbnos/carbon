@@ -23,15 +23,19 @@ import type {
   SalesOrderLineType,
 } from "~/modules/sales";
 import {
-  OpportunityLineDocuments,
-  OpportunityLineNotes,
-  SalesOrderLineForm,
-  SalesOrderLineJobs,
   getOpportunityLineDocuments,
   getSalesOrderLine,
   salesOrderLineValidator,
   upsertSalesOrderLine,
 } from "~/modules/sales";
+import {
+  OpportunityLineDocuments,
+  OpportunityLineNotes,
+} from "~/modules/sales/ui/Opportunity";
+import {
+  SalesOrderLineForm,
+  SalesOrderLineJobs,
+} from "~/modules/sales/ui/SalesOrder";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

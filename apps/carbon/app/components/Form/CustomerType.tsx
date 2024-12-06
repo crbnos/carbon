@@ -6,7 +6,7 @@ import { useMemo, useRef, useState } from "react";
 import { useRouteData } from "~/hooks";
 import type { SupplierStatus } from "~/modules/purchasing";
 import type { getCustomerTypesList } from "~/modules/sales";
-import { CustomerTypeForm } from "~/modules/sales";
+import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { path } from "~/utils/path";
 
 type CustomerTypeSelectProps = Omit<ComboboxProps, "options">;

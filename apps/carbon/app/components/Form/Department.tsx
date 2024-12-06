@@ -4,7 +4,7 @@ import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import type { getDepartmentsList } from "~/modules/people";
-import { DepartmentForm } from "~/modules/people";
+import DepartmentForm from "~/modules/people/ui/Departments/DepartmentForm";
 import { path } from "~/utils/path";
 
 type DepartmentSelectProps = Omit<ComboboxProps, "options">;

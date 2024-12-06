@@ -10,11 +10,13 @@ import {
   getQuoteMaterial,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
+} from "~/modules/sales";
+import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools,
   QuoteMaterialForm,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

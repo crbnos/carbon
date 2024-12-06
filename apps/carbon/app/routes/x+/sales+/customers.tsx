@@ -5,11 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  CustomersTable,
-  getCustomerStatuses,
-  getCustomers,
-} from "~/modules/sales";
+import { getCustomerStatuses, getCustomers } from "~/modules/sales";
+import { CustomersTable } from "~/modules/sales/ui/Customers";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

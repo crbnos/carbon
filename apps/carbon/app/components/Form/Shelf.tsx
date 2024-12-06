@@ -4,8 +4,7 @@ import { useDisclosure } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { getShelvesList } from "~/modules/inventory";
-
-import { ShelfForm } from "~/modules/inventory";
+import ShelfForm from "~/modules/inventory/ui/Shelves/ShelfForm";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 

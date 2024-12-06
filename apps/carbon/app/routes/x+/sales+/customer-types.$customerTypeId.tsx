@@ -6,11 +6,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  CustomerTypeForm,
   customerTypeValidator,
   getCustomerType,
   upsertCustomerType,
 } from "~/modules/sales";
+import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

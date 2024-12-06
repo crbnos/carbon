@@ -19,12 +19,11 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  ConsumableForm,
-  MaterialForm,
-  PartForm,
-  ToolForm,
-} from "~/modules/items";
+
+import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
+import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
+import PartForm from "~/modules/items/ui/Parts/PartForm";
+import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 import { methodItemType, type MethodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { MethodItemTypeIcon } from "../Icons";
