@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  DepartmentForm,
-  departmentValidator,
-  upsertDepartment,
-} from "~/modules/people";
+import { departmentValidator, upsertDepartment } from "~/modules/people";
+import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

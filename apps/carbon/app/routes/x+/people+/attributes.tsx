@@ -6,10 +6,10 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  AttributeCategoriesTable,
   getAttributeCategories,
   getAttributeDataTypes,
 } from "~/modules/people";
+import { AttributeCategoriesTable } from "~/modules/people/ui/Attributes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

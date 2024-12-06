@@ -21,8 +21,8 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { currencyValidator } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { currencyValidator } from "../../accounting.models";
 
 type CurrencyFormProps = {
   initialValues: z.infer<typeof currencyValidator>;

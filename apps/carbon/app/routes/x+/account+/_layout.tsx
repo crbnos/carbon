@@ -2,7 +2,7 @@ import { Heading, VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { DetailSidebar } from "~/components/Layout/Navigation";
-import { useAccountSubmodules } from "~/modules/account";
+import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

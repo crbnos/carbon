@@ -16,12 +16,12 @@ import { useNavigate } from "@remix-run/react";
 import { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { AccountListItem } from "~/modules/accounting";
+import { path } from "~/utils/path";
 import {
   defaultBalanceSheetAccountValidator,
   defaultIncomeAcountValidator,
-} from "~/modules/accounting";
-import { path } from "~/utils/path";
+} from "../../accounting.models";
+import type { AccountListItem } from "../../types";
 
 const defaultUnion = z.union([
   defaultBalanceSheetAccountValidator,

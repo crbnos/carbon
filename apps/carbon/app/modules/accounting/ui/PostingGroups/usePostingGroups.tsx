@@ -5,7 +5,7 @@ import type {
   InventoryPostingGroup,
   PurchasingPostingGroup,
   SalesPostingGroup,
-} from "~/modules/accounting";
+} from "../../types";
 
 export default function usePostingGroups(table: string) {
   const { carbon } = useCarbon();

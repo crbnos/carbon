@@ -1125,7 +1125,7 @@ const Quote = ({
       </Card>
       {termsHTML && (
         <div
-          className="prose dark:prose-invert text-muted-foreground max-w-none"
+          className="prose dark:prose-invert text-muted-foreground max-w-5xl mx-auto"
           dangerouslySetInnerHTML={{
             __html: termsHTML,
           }}

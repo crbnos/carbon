@@ -6,10 +6,10 @@ import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import {
-  AttributeCategoryForm,
   attributeCategoryValidator,
   insertAttributeCategory,
 } from "~/modules/people";
+import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {

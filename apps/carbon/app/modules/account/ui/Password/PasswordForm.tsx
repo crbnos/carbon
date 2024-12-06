@@ -9,8 +9,8 @@ import {
 } from "@carbon/react";
 import { useRef, useState } from "react";
 import { Password, Submit } from "~/components/Form";
-import { accountPasswordValidator } from "~/modules/account";
 import { path } from "~/utils/path";
+import { accountPasswordValidator } from "../../account.models";
 
 const PasswordForm = () => {
   const [passwordsMatch, setPasswordsMatch] = useState(false);

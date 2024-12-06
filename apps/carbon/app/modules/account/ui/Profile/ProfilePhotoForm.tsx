@@ -3,8 +3,8 @@ import { Button, File as FileUpload, VStack, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { Avatar } from "~/components";
-import type { Account } from "~/modules/account";
 import { path } from "~/utils/path";
+import type { Account } from "../../types";
 
 type ProfilePhotoFormProps = {
   user: Account;

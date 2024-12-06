@@ -10,12 +10,9 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import {
-  accountClassTypes,
-  incomeBalanceTypes,
-  type AccountCategory,
-} from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { accountClassTypes, incomeBalanceTypes } from "../../accounting.models";
+import type { AccountCategory } from "../../types";
 
 type AccountCategoriesTableProps = {
   data: AccountCategory[];

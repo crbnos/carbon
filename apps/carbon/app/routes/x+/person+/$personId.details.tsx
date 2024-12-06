@@ -7,7 +7,8 @@ import { json, redirect } from "@vercel/remix";
 import { path } from "~/utils/path";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@carbon/react";
-import { ProfileForm, getAccount } from "~/modules/account";
+import { getAccount } from "~/modules/account";
+import { ProfileForm } from "~/modules/account/ui/Profile";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

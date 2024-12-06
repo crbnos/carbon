@@ -8,7 +8,7 @@ import { Enumerable } from "~/components/Enumerable";
 import Grid from "~/components/Grid";
 import { useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Chart } from "~/modules/accounting";
+import type { Chart } from "../../types";
 
 type ChartOfAccountsTableProps = {
   data: Chart[];

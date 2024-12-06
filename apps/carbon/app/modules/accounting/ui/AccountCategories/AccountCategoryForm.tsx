@@ -19,13 +19,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { path } from "~/utils/path";
 import {
   accountCategoryValidator,
   accountClassTypes,
   incomeBalanceTypes,
-} from "~/modules/accounting";
-import { path } from "~/utils/path";
-
+} from "../../accounting.models";
 type AccountCategoryFormProps = {
   initialValues: z.infer<typeof accountCategoryValidator>;
   onClose: () => void;

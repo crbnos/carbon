@@ -6,11 +6,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  AttributeCategoryForm,
   attributeCategoryValidator,
   getAttributeCategory,
   updateAttributeCategory,
 } from "~/modules/people";
+import { AttributeCategoryForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

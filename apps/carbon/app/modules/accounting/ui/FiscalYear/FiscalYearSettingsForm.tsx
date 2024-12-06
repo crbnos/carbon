@@ -10,9 +10,9 @@ import {
 import type { z } from "zod";
 import { Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { fiscalYearSettingsValidator } from "~/modules/accounting";
 import { months } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { fiscalYearSettingsValidator } from "../../accounting.models";
 
 type FiscalYearSettingsFormProps = {
   initialValues: z.infer<typeof fiscalYearSettingsValidator>;

@@ -14,13 +14,12 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  ProfileForm,
-  ProfilePhotoForm,
   accountProfileValidator,
   getAccount,
   updateAvatar,
   updatePublicAccount,
 } from "~/modules/account";
+import { ProfileForm, ProfilePhotoForm } from "~/modules/account/ui/Profile";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

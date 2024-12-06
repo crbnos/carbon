@@ -5,12 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  ShiftForm,
-  getShift,
-  shiftValidator,
-  upsertShift,
-} from "~/modules/people";
+import { getShift, shiftValidator, upsertShift } from "~/modules/people";
+import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

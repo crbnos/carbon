@@ -3,11 +3,8 @@ import { useMemo } from "react";
 import { Table } from "~/components";
 import { EditableList } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
-import type {
-  AccountListItem,
-  InventoryPostingGroup,
-} from "~/modules/accounting";
 import type { ListItem } from "~/types";
+import type { AccountListItem, InventoryPostingGroup } from "../../types";
 import usePostingGroups from "./usePostingGroups";
 
 type InventoryPostingGroupsTableProps = {

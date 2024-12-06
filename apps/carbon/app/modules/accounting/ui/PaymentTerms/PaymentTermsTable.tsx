@@ -14,11 +14,9 @@ import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import {
-  paymentTermsCalculationMethod,
-  type PaymentTerm,
-} from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { paymentTermsCalculationMethod } from "../../accounting.models";
+import type { PaymentTerm } from "../../types";
 
 type PaymentTermsTableProps = {
   data: PaymentTerm[];
