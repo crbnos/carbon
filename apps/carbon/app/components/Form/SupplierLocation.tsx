@@ -5,10 +5,10 @@ import { formatAddress } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef } from "react";
 import {
-  SupplierLocationForm,
   type SupplierLocation as SupplierLocationType,
   type getSupplierLocations,
 } from "~/modules/purchasing";
+import { SupplierLocationForm } from "~/modules/purchasing/ui/Supplier";
 import { path } from "~/utils/path";
 
 type SupplierLocationSelectProps = Omit<

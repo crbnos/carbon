@@ -7,11 +7,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { PurchaseOrderLineType } from "~/modules/purchasing";
 import {
-  PurchaseOrderLineForm,
   getPurchaseOrderLine,
   purchaseOrderLineValidator,
   upsertPurchaseOrderLine,
 } from "~/modules/purchasing";
+import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

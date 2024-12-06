@@ -41,7 +41,8 @@ import {
 import { useSupplierProcesses } from "~/components/Form/SupplierProcess";
 import WorkCenters from "~/components/Form/WorkCenters";
 import { usePermissions } from "~/hooks";
-import { SupplierProcessForm } from "~/modules/purchasing";
+import { SupplierProcessForm } from "~/modules/purchasing/ui/Supplier";
+
 import { processValidator } from "~/modules/resources";
 import { processTypes } from "~/modules/shared";
 import { path } from "~/utils/path";

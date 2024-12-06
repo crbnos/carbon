@@ -1,5 +1,5 @@
 import { Outlet } from "@remix-run/react";
-import { PurchaseOrderLines } from "~/modules/purchasing";
+import { PurchaseOrderLines } from "~/modules/purchasing/ui/PurchaseOrder";
 
 export default function PurchaseOrderLinesRoute() {
   return (

@@ -6,14 +6,16 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { useEffect } from "react";
 import {
-  PurchaseOrderHeader,
-  PurchaseOrderSidebar,
   getPurchaseOrder,
   getPurchaseOrderExternalDocuments,
   getPurchaseOrderInternalDocuments,
   getPurchaseOrderLines,
-  usePurchaseOrderTotals,
 } from "~/modules/purchasing";
+import {
+  PurchaseOrderHeader,
+  PurchaseOrderSidebar,
+  usePurchaseOrderTotals,
+} from "~/modules/purchasing/ui/PurchaseOrder";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

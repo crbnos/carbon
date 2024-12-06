@@ -4,8 +4,10 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { supplierQuoteLineValidator } from "~/modules/purchasing/purchasing.models";
-import { upsertSupplierQuoteLine } from "~/modules/purchasing/purchasing.service";
+import {
+  supplierQuoteLineValidator,
+  upsertSupplierQuoteLine,
+} from "~/modules/purchasing";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

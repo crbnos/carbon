@@ -35,13 +35,11 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
-import {
-  PurchasingStatus,
-  purchaseOrderStatusType,
-} from "~/modules/purchasing";
+import { purchaseOrderStatusType } from "~/modules/purchasing";
 import { usePeople, useSuppliers } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
+import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
 
 type PurchaseOrdersTableProps = {

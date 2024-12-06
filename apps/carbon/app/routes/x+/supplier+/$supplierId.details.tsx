@@ -7,11 +7,8 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail } from "~/modules/purchasing";
-import {
-  SupplierForm,
-  supplierValidator,
-  upsertSupplier,
-} from "~/modules/purchasing";
+import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

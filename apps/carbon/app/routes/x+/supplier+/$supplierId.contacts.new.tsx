@@ -13,10 +13,10 @@ import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierContactForm,
   insertSupplierContact,
   supplierContactValidator,
 } from "~/modules/purchasing";
+import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { supplierContactsQuery } from "~/utils/react-query";

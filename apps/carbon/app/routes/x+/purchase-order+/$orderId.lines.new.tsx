@@ -7,10 +7,10 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import type { PurchaseOrderLineType } from "~/modules/purchasing";
 import {
-  PurchaseOrderLineForm,
   purchaseOrderLineValidator,
   upsertPurchaseOrderLine,
 } from "~/modules/purchasing";
+import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -1,7 +1,7 @@
 import { useParams } from "@remix-run/react";
 import { useRouteData } from "~/hooks";
 import type { PurchaseOrderAttachment } from "~/modules/purchasing";
-import { PurchaseOrderDocuments } from "~/modules/purchasing";
+import { PurchaseOrderDocuments } from "~/modules/purchasing/ui/PurchaseOrder";
 import { path } from "~/utils/path";
 
 export function action() {

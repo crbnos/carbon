@@ -29,10 +29,10 @@ import Grid from "~/components/Grid";
 import { useRealtime, useRouteData, useUser } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
-import { usePurchaseOrderTotals } from "~/modules/purchasing";
 import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { usePurchaseOrderTotals } from "../usePurchaseOrderTotals";
 import usePurchaseOrderLines from "./usePurchaseOrderLines";
 
 const PurchaseOrderLines = () => {

@@ -13,11 +13,11 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierLocationForm,
   getSupplierLocation,
   supplierLocationValidator,
   updateSupplierLocation,
 } from "~/modules/purchasing";
+import SupplierLocationForm from "~/modules/purchasing/ui/Supplier/SupplierLocationForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { supplierLocationsQuery } from "~/utils/react-query";

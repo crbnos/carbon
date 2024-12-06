@@ -3,7 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
-import { SupplierForm } from "~/modules/purchasing";
+import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 import SupplierAvatar from "../SupplierAvatar";
 

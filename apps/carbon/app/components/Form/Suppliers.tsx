@@ -2,7 +2,7 @@ import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { SupplierForm } from "~/modules/purchasing";
+import { SupplierForm } from "~/modules/purchasing/ui/Supplier";
 import { useSuppliers } from "~/stores";
 
 type SupplierSelectProps = Omit<CreatableMultiSelectProps, "options"> & {

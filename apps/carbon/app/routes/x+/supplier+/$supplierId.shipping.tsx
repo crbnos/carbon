@@ -6,14 +6,13 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierShippingForm,
   getSupplierShipping,
   supplierShippingValidator,
   updateSupplierShipping,
 } from "~/modules/purchasing";
+import SupplierShippingForm from "~/modules/purchasing/ui/Supplier/SupplierShippingForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "purchasing",

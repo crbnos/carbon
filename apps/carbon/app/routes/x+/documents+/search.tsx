@@ -15,6 +15,10 @@ import {
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     view: "documents",

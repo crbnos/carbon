@@ -22,6 +22,10 @@ export const handle: Handle = {
   to: path.to.people,
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "people",

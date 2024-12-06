@@ -11,10 +11,11 @@ import type {
   PurchaseOrderType,
 } from "~/modules/purchasing";
 import {
-  PurchaseOrderForm,
   purchaseOrderValidator,
   upsertPurchaseOrder,
 } from "~/modules/purchasing";
+import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
+
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

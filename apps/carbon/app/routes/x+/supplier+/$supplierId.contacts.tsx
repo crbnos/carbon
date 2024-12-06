@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { SupplierContacts, getSupplierContacts } from "~/modules/purchasing";
+import { getSupplierContacts } from "~/modules/purchasing";
+import SupplierContacts from "~/modules/purchasing/ui/Supplier/SupplierContacts";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

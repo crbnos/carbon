@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUser } from "~/hooks";
-import {
-  SupplierForm,
-  supplierValidator,
-  upsertSupplier,
-} from "~/modules/purchasing";
+import { supplierValidator, upsertSupplier } from "~/modules/purchasing";
+import SupplierForm from "~/modules/purchasing/ui/Supplier/SupplierForm";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

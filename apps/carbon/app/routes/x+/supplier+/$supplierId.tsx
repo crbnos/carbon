@@ -5,12 +5,12 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierHeader,
-  SupplierSidebar,
   getSupplier,
   getSupplierContacts,
   getSupplierLocations,
 } from "~/modules/purchasing";
+import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
+import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

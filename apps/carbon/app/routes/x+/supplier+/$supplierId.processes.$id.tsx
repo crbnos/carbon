@@ -8,10 +8,10 @@ import { redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { SupplierProcess } from "~/modules/purchasing";
 import {
-  SupplierProcessForm,
   supplierProcessValidator,
   upsertSupplierProcess,
 } from "~/modules/purchasing";
+import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

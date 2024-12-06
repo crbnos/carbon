@@ -8,7 +8,8 @@ import type {
   SupplierType as SupplierTypeType,
   getSupplierTypesList,
 } from "~/modules/purchasing";
-import { SupplierTypeForm } from "~/modules/purchasing";
+import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
+
 import { path } from "~/utils/path";
 
 type SupplierTypeSelectProps = Omit<ComboboxProps, "options">;

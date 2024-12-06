@@ -6,11 +6,11 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierPaymentForm,
   getSupplierPayment,
   supplierPaymentValidator,
   updateSupplierPayment,
 } from "~/modules/purchasing";
+import SupplierPaymentForm from "~/modules/purchasing/ui/Supplier/SupplierPaymentForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -8,10 +8,10 @@ import { redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import {
-  PurchaseOrderForm,
   purchaseOrderValidator,
   upsertPurchaseOrder,
 } from "~/modules/purchasing";
+import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

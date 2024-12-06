@@ -6,8 +6,10 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
-import { supplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
-import { upsertSupplierQuote } from "~/modules/purchasing/purchasing.service";
+import {
+  supplierQuoteValidator,
+  upsertSupplierQuote,
+} from "~/modules/purchasing";
 import { SupplierQuoteForm } from "~/modules/purchasing/ui/SupplierQuote";
 import { getNextSequence } from "~/modules/settings/settings.service";
 import { setCustomFields } from "~/utils/form";

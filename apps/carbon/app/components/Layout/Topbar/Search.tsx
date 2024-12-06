@@ -42,19 +42,20 @@ import {
 import { RxMagnifyingGlass } from "react-icons/rx";
 import { MethodItemTypeIcon } from "~/components/Icons";
 import { useModules, useUser } from "~/hooks";
-import { useAccountSubmodules } from "~/modules/account";
-import { useAccountingSubmodules } from "~/modules/accounting";
-import { useDocumentsSubmodules } from "~/modules/documents";
-import { useInventorySubmodules } from "~/modules/inventory";
-import { useInvoicingSubmodules } from "~/modules/invoicing";
-import { useItemsSubmodules } from "~/modules/items";
-import { usePeopleSubmodules } from "~/modules/people";
-import { useProductionSubmodules } from "~/modules/production";
-import { usePurchasingSubmodules } from "~/modules/purchasing";
-import { useResourcesSubmodules } from "~/modules/resources";
-import { useSalesSubmodules } from "~/modules/sales";
-import { useSettingsSubmodules } from "~/modules/settings";
-import { useUsersSubmodules } from "~/modules/users";
+import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
+import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
+import useDocumentsSubmodules from "~/modules/documents/ui/useDocumentsSubmodules";
+import useInventorySubmodules from "~/modules/inventory/ui/useInventorySubmodules";
+import useInvoicingSubmodules from "~/modules/invoicing/ui/useInvoicingSubmodules";
+import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
+import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
+import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
+import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
+import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
+import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
+import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
+import useUsersSubmodules from "~/modules/users/ui/useUsersSubmodules";
+
 import type { Authenticated, Route } from "~/types";
 
 type SearchResult = {

@@ -6,14 +6,14 @@ import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
+import { getCurrencyByCode } from "~/modules/accounting";
 import {
   getSupplierInteractionByQuote,
   getSupplierInteractionDocuments,
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines,
-} from "~/modules/purchasing/purchasing.service";
+} from "~/modules/purchasing";
 import {
   SupplierQuoteHeader,
   SupplierQuoteProperties,

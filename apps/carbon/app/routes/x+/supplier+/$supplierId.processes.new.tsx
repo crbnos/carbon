@@ -6,10 +6,10 @@ import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  SupplierProcessForm,
   supplierProcessValidator,
   upsertSupplierProcess,
 } from "~/modules/purchasing";
+import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

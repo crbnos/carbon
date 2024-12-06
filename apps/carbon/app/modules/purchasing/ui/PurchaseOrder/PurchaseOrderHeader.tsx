@@ -21,11 +21,13 @@ import { Assignee, useOptimisticAssignment } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseOrder } from "~/modules/purchasing";
-import { PurchasingStatus, usePurchaseOrderTotals } from "~/modules/purchasing";
+
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
+import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
+import { usePurchaseOrderTotals } from "./usePurchaseOrderTotals";
 
 const PurchaseOrderHeader = () => {
   const permissions = usePermissions();

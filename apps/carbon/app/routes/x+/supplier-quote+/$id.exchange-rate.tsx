@@ -2,8 +2,8 @@ import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
-import { updateSupplierQuoteExchangeRate } from "~/modules/purchasing/purchasing.service";
+import { getCurrencyByCode } from "~/modules/accounting";
+import { updateSupplierQuoteExchangeRate } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {

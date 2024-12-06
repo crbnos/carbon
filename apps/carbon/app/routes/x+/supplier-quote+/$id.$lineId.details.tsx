@@ -8,14 +8,14 @@ import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
-import { supplierQuoteLineValidator } from "~/modules/purchasing/purchasing.models";
+import type { SupplierQuoteLinePrice } from "~/modules/purchasing";
 import {
   getSupplierInteractionLineDocuments,
   getSupplierQuoteLine,
   getSupplierQuoteLinePrices,
+  supplierQuoteLineValidator,
   upsertSupplierQuoteLine,
-} from "~/modules/purchasing/purchasing.service";
-import type { SupplierQuoteLinePrice } from "~/modules/purchasing/types";
+} from "~/modules/purchasing";
 import {
   SupplierInteractionLineDocuments,
   SupplierInteractionLineNotes,

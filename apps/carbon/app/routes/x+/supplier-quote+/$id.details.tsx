@@ -9,8 +9,10 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import { supplierQuoteValidator } from "~/modules/purchasing/purchasing.models";
-import { upsertSupplierQuote } from "~/modules/purchasing/purchasing.service";
+import {
+  supplierQuoteValidator,
+  upsertSupplierQuote,
+} from "~/modules/purchasing";
 import type {
   SupplierInteraction,
   SupplierQuote,

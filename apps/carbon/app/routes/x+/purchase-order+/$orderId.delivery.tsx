@@ -6,11 +6,11 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  PurchaseOrderDeliveryForm,
   getPurchaseOrderDelivery,
   purchaseOrderDeliveryValidator,
   upsertPurchaseOrderDelivery,
 } from "~/modules/purchasing";
+import { PurchaseOrderDeliveryForm } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
