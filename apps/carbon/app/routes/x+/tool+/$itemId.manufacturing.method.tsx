@@ -7,7 +7,8 @@ import {
   BillOfMaterial,
   BillOfProcess,
   MakeMethodTools,
-} from "~/modules/items";
+} from "~/modules/items/ui/Item";
+
 import { path } from "~/utils/path";
 
 export default function MakeMethodRoute() {

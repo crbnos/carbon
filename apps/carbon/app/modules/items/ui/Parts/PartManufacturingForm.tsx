@@ -16,8 +16,8 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { partManufacturingValidator } from "~/modules/items";
 import type { action } from "~/routes/x+/part+/$itemId.manufacturing.method";
+import { partManufacturingValidator } from "../../items.models";
 
 type PartManufacturingFormProps = {
   initialValues: z.infer<typeof partManufacturingValidator>;

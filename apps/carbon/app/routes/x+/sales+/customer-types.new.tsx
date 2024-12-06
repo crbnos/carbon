@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  CustomerTypeForm,
-  customerTypeValidator,
-  upsertCustomerType,
-} from "~/modules/sales";
+import { customerTypeValidator, upsertCustomerType } from "~/modules/sales";
+import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

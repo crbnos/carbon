@@ -30,8 +30,8 @@ import {
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
 import { usePermissions, useUser } from "~/hooks";
-import { salesOrderValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { salesOrderValidator } from "../../sales.models";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 

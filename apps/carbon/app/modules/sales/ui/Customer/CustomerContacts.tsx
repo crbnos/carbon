@@ -14,8 +14,8 @@ import { LuPencil, LuTrash } from "react-icons/lu";
 import { Contact, New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import type { CustomerContact } from "~/modules/sales/types";
 import { path } from "~/utils/path";
+import type { CustomerContact } from "../../types";
 
 type CustomerContactsProps = {
   contacts: CustomerContact[];

@@ -22,8 +22,9 @@ import { Await, Outlet } from "@remix-run/react";
 import { Suspense } from "react";
 import { LuMoreVertical } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
-import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { PurchaseOrderAttachment } from "~/modules/purchasing";
+import DocumentIcon from "~/components/DocumentIcon";
+import { getDocumentType } from "~/modules/shared";
+import type { PurchaseOrderAttachment } from "../../../types";
 import PurchaseOrderDocumentForm from "./PurchaseOrderDocumentForm";
 import { usePurchaseOrderDocuments } from "./usePurchaseOrderDocuments";
 

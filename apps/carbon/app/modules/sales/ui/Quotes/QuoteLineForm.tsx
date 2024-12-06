@@ -39,14 +39,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Quotation, QuotationLine } from "~/modules/sales";
-import {
-  DeleteQuoteLine,
-  quoteLineStatusType,
-  quoteLineValidator,
-} from "~/modules/sales";
+import type { Quotation, QuotationLine } from "../../types";
+
 import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { quoteLineStatusType, quoteLineValidator } from "../../sales.models";
+import DeleteQuoteLine from "./DeleteQuoteLine";
 
 type QuoteLineFormProps = {
   initialValues: z.infer<typeof quoteLineValidator>;

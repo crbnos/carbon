@@ -5,6 +5,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -26,14 +27,14 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
+import { path } from "~/utils/path";
+import { capitalize } from "~/utils/string";
 import {
   itemReplenishmentSystems,
   itemTrackingTypes,
   itemValidator,
-} from "~/modules/items";
-import type { MethodItemType } from "~/modules/shared";
-import { path } from "~/utils/path";
-import { capitalize } from "~/utils/string";
+} from "../../items.models";
 
 type ItemFormProps = {
   initialValues: z.infer<typeof itemValidator>;
@@ -81,6 +82,7 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
               {initialValues.readableId}
               <Copy text={initialValues.readableId ?? ""} />
             </CardTitle>
+            <CardDescription>{initialValues.name}</CardDescription>
           </CardHeader>
           <CardAction>
             <Button isIcon asChild variant="ghost" size="lg">

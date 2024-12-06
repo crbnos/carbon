@@ -1,8 +1,9 @@
 import { Badge, HStack, cn } from "@carbon/react";
 import { LuDownload } from "react-icons/lu";
 import { DocumentPreview } from "~/components";
-import { DocumentIcon, getDocumentType } from "~/modules/documents";
+import DocumentIcon from "~/components/DocumentIcon";
 import type { MethodItemType } from "~/modules/shared";
+import { getDocumentType } from "~/modules/shared";
 import type { ItemFile } from "../../types";
 import { useItemDocuments } from "./ItemDocuments";
 

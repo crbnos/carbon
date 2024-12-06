@@ -6,8 +6,8 @@ import { LuBookMarked, LuEuro, LuPencil, LuPercent } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Currency } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import type { Currency } from "../../types";
 
 type CurrenciesTableProps = {
   data: Currency[];

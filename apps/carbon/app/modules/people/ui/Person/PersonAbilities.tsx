@@ -6,8 +6,11 @@ import type { IconType } from "react-icons";
 
 import { BsBarChartFill, BsCheckLg } from "react-icons/bs";
 import { FaThumbsUp } from "react-icons/fa";
-import type { EmployeeAbility } from "~/modules/resources";
-import { AbilityEmployeeStatus, getTrainingStatus } from "~/modules/resources";
+import {
+  AbilityEmployeeStatus,
+  getTrainingStatus,
+  type EmployeeAbility,
+} from "~/modules/resources/types";
 import { path } from "~/utils/path";
 
 type PersonAbilitiesProps = {

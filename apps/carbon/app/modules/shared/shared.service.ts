@@ -1,5 +1,7 @@
 import type { Database } from "@carbon/database";
+import { supportedModelTypes } from "@carbon/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { documentTypes } from "./shared.models";
 
 export async function deleteNote(
   client: SupabaseClient<Database>,
@@ -29,6 +31,53 @@ export async function getBase64ImageFromSupabase(
 
 export async function getCountries(client: SupabaseClient<Database>) {
   return client.from("country").select("*").order("name");
+}
+
+export function getDocumentType(
+  fileName: string
+): (typeof documentTypes)[number] {
+  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
+  if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
+    return "Archive";
+  }
+
+  if (["pdf"].includes(extension)) {
+    return "PDF";
+  }
+
+  if (["doc", "docx", "txt", "rtf"].includes(extension)) {
+    return "Document";
+  }
+
+  if (["ppt", "pptx"].includes(extension)) {
+    return "Presentation";
+  }
+
+  if (["csv", "xls", "xlsx"].includes(extension)) {
+    return "Spreadsheet";
+  }
+
+  if (["txt"].includes(extension)) {
+    return "Text";
+  }
+
+  if (["png", "jpg", "jpeg", "gif", "avif"].includes(extension)) {
+    return "Image";
+  }
+
+  if (["mp4", "mov", "avi", "wmv", "flv", "mkv"].includes(extension)) {
+    return "Video";
+  }
+
+  if (["mp3", "wav", "wma", "aac", "ogg", "flac"].includes(extension)) {
+    return "Audio";
+  }
+
+  if (supportedModelTypes.includes(extension)) {
+    return "Model";
+  }
+
+  return "Other";
 }
 
 export async function getNotes(

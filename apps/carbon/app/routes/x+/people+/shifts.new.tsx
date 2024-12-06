@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { ShiftForm, shiftValidator, upsertShift } from "~/modules/people";
+import { shiftValidator, upsertShift } from "~/modules/people";
+import { ShiftForm } from "~/modules/people/ui/Shifts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

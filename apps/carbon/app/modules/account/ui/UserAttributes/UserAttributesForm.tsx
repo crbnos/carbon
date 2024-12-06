@@ -17,16 +17,16 @@ import {
 } from "~/components/Form";
 import { UserSelect } from "~/components/Selectors";
 import { usePermissions, useUser } from "~/hooks";
-import type { PublicAttributes } from "~/modules/account";
+import { DataType } from "~/modules/shared";
+import { path } from "~/utils/path";
 import {
   attributeBooleanValidator,
   attributeNumericValidator,
   attributeTextValidator,
   attributeUserValidator,
   deleteUserAttributeValueValidator,
-} from "~/modules/account";
-import { DataType } from "~/modules/shared";
-import { path } from "~/utils/path";
+} from "../../account.models";
+import type { PublicAttributes } from "../../types";
 
 type UserAttributesFormProps = {
   attributeCategory?: PublicAttributes;

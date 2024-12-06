@@ -5,10 +5,12 @@ import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 import {
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
+} from "~/modules/sales";
+import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import { path } from "~/utils/path";
 
 import { error } from "@carbon/auth";

@@ -4,8 +4,8 @@ import { Link, useParams } from "@remix-run/react";
 import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { Tool } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { Tool } from "../../types";
 import { useToolNavigation } from "./useToolNavigation";
 
 const ToolHeader = () => {

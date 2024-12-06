@@ -10,11 +10,8 @@ import type {
   AccountIncomeBalance,
   AccountType,
 } from "~/modules/accounting";
-import {
-  ChartOfAccountForm,
-  accountValidator,
-  upsertAccount,
-} from "~/modules/accounting";
+import { accountValidator, upsertAccount } from "~/modules/accounting";
+import { ChartOfAccountForm } from "~/modules/accounting/ui/ChartOfAccounts";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

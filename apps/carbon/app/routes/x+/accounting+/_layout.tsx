@@ -7,11 +7,8 @@ import type { LoaderFunctionArgs, MetaFunction } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { GroupedContentSidebar } from "~/components/Layout";
 import { CollapsibleSidebarProvider } from "~/components/Layout/Navigation";
-import {
-  getAccountsList,
-  getBaseCurrency,
-  useAccountingSubmodules,
-} from "~/modules/accounting";
+import { getAccountsList, getBaseCurrency } from "~/modules/accounting";
+import useAccountingSubmodules from "~/modules/accounting/ui/useAccountingSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

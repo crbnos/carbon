@@ -37,8 +37,9 @@ import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { CustomerAvatar, EmployeeAvatarGroup } from "~/components";
-import { getDeadlineIcon, getDeadlineText } from "~/modules/production";
+
 import { path } from "~/utils/path";
+import { getDeadlineIcon, getDeadlineText } from "../../../Jobs/Deadline";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
 type ItemCardProps = {

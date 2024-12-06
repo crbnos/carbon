@@ -31,10 +31,11 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Job, jobOperationValidator } from "~/modules/production";
-import { jobMaterialValidator } from "~/modules/production";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import type { jobOperationValidator } from "../../production.models";
+import { jobMaterialValidator } from "../../production.models";
+import type { Job } from "../../types";
 
 type JobMaterialFormProps = {
   initialValues: z.infer<typeof jobMaterialValidator> & {

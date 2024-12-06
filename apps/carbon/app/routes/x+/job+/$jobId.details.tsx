@@ -17,11 +17,11 @@ import { CadModel, Documents } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
-  JobNotes,
   jobValidator,
   recalculateJobRequirements,
   upsertJob,
 } from "~/modules/production";
+import { JobNotes } from "~/modules/production/ui/Jobs";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";

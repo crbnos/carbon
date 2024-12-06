@@ -27,9 +27,9 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { Customer } from "~/modules/sales";
-import { customerValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { customerValidator } from "../../sales.models";
+import type { Customer } from "../../types";
 
 type CustomerFormProps = {
   initialValues: z.infer<typeof customerValidator>;

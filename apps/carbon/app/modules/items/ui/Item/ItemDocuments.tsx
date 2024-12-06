@@ -23,9 +23,10 @@ import {
 import { convertKbToString } from "@carbon/utils";
 import { LuAxis3D, LuMoreVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
-import { DocumentIcon, getDocumentType } from "~/modules/documents";
-import type { ItemFile } from "~/modules/items";
+import DocumentIcon from "~/components/DocumentIcon";
 import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
+import { getDocumentType } from "~/modules/shared";
+import type { ItemFile } from "../../types";
 
 import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";

@@ -5,7 +5,7 @@ import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
-import { WorkCenterForm } from "~/modules/resources";
+import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
 
 type WorkCenterSelectProps = Omit<ComboboxProps, "options"> & {

@@ -9,12 +9,9 @@ import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, ToolSummary } from "~/modules/items";
-import {
-  ItemDocuments,
-  ToolForm,
-  toolValidator,
-  upsertTool,
-} from "~/modules/items";
+import { toolValidator, upsertTool } from "~/modules/items";
+import { ItemDocuments } from "~/modules/items/ui/Item";
+import { ToolForm } from "~/modules/items/ui/Tools";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -8,8 +8,8 @@ import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { CustomerType } from "~/modules/sales";
 import { path } from "~/utils/path";
+import type { CustomerType } from "../../types";
 
 type CustomerTypesTableProps = {
   data: CustomerType[];

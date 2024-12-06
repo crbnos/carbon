@@ -18,8 +18,8 @@ import { useEffect } from "react";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { materialSubstanceValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { materialSubstanceValidator } from "../../items.models";
 
 type MaterialSubstanceFormProps = {
   initialValues: z.infer<typeof materialSubstanceValidator>;

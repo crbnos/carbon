@@ -18,8 +18,8 @@ import { useEffect } from "react";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { customerStatusValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { customerStatusValidator } from "../../sales.models";
 
 type CustomerStatusFormProps = {
   initialValues: z.infer<typeof customerStatusValidator>;

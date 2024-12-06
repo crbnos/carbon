@@ -5,11 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  PeopleTable,
-  getAttributeCategories,
-  getPeople,
-} from "~/modules/people";
+import { getAttributeCategories, getPeople } from "~/modules/people";
+import { PeopleTable } from "~/modules/people/ui/People";
 import { getEmployeeTypes } from "~/modules/users";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

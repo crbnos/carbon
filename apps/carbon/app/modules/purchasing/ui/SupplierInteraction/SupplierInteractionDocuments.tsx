@@ -38,8 +38,9 @@ import {
   LuUpload,
 } from "react-icons/lu";
 import { DocumentPreview, FileDropzone } from "~/components";
+import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
-import { DocumentIcon, getDocumentType } from "~/modules/documents";
+import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { SupplierInteraction } from "../../types";

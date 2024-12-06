@@ -1,7 +1,6 @@
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  CustomerLocationForm,
   type CustomerLocation as CustomerLocationType,
   type getCustomerLocations,
 } from "~/modules/sales";
@@ -11,6 +10,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure } from "@carbon/react";
 import { formatAddress } from "@carbon/utils";
+import CustomerLocationForm from "~/modules/sales/ui/Customer/CustomerLocationForm";
 
 type CustomerLocationSelectProps = Omit<
   ComboboxProps,

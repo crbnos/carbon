@@ -37,9 +37,10 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { SalesRFQ, SalesRFQLine } from "~/modules/sales";
-import { DeleteSalesRFQLine, salesRfqLineValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { salesRfqLineValidator } from "../../sales.models";
+import type { SalesRFQ, SalesRFQLine } from "../../types";
+import DeleteSalesRFQLine from "./DeleteSalesRFQLine";
 
 type SalesRFQLineFormProps = {
   initialValues: z.infer<typeof salesRfqLineValidator>;

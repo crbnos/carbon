@@ -1,7 +1,6 @@
 import { Badge, cn, HStack } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
-import { HiSquares2X2 } from "react-icons/hi2";
 import {
   LuAtom,
   LuCheckCircle,
@@ -11,6 +10,7 @@ import {
   LuHeadphones,
   LuPizza,
   LuShoppingCart,
+  LuSquare,
   LuTimer,
   LuXCircle,
 } from "react-icons/lu";
@@ -25,7 +25,7 @@ import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { useMode } from "~/hooks/useMode";
-import type { JobOperation } from "~/modules/production";
+import type { JobOperation } from "~/modules/production/types";
 import type { MethodType } from "~/modules/shared";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
@@ -49,9 +49,7 @@ export const TrackingTypeIcon = ({
     case "Non-Inventory":
       return <TbTargetOff className={cn("text-red-500", className)} />;
     default:
-      return (
-        <HiSquares2X2 className={cn("text-muted-foreground", className)} />
-      );
+      return <LuSquare className={cn("text-muted-foreground", className)} />;
   }
 };
 
@@ -75,7 +73,7 @@ export const MethodItemTypeIcon = ({
       return <LuHeadphones className={className} />;
   }
 
-  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
 };
 
 export const MethodIcon = ({
@@ -100,7 +98,7 @@ export const MethodIcon = ({
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
   }
 
-  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
 };
 
 export const TimeTypeIcon = ({
@@ -119,7 +117,7 @@ export const TimeTypeIcon = ({
       return <LuHammer className={className} />;
   }
 
-  return <HiSquares2X2 className={cn("text-muted-foreground", className)} />;
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
 };
 
 type MethodBadgeProps = {

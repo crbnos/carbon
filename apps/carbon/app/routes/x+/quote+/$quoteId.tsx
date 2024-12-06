@@ -19,10 +19,12 @@ import {
   getQuotePayment,
   getQuoteShipment,
   getSalesOrderLines,
+} from "~/modules/sales";
+import {
   QuoteExplorer,
   QuoteHeader,
   QuoteProperties,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

@@ -7,11 +7,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import {
-  ItemPlanningForm,
   getItemPlanning,
   itemPlanningValidator,
   upsertItemPlanning,
 } from "~/modules/items";
+import { ItemPlanningForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";

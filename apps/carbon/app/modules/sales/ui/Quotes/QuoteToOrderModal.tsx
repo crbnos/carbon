@@ -48,7 +48,7 @@ import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { getDocumentType } from "~/modules/documents";
+import { getDocumentType } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   Quotation,

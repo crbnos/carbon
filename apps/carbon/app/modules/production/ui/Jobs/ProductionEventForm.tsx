@@ -28,7 +28,7 @@ import {
   WorkCenter,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { productionEventValidator } from "~/modules/production";
+import { productionEventValidator } from "../../production.models";
 
 type ProductionEventFormProps = {
   initialValues: z.infer<typeof productionEventValidator>;

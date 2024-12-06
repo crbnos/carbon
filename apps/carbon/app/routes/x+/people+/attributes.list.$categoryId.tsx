@@ -6,10 +6,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
 import {
-  AttributeCategoryDetail,
   getAttributeCategory,
   updateAttributeSortOrder,
 } from "~/modules/people";
+import { AttributeCategoryDetail } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

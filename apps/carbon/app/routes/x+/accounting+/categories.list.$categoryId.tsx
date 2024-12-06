@@ -6,10 +6,10 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
 import {
-  AccountCategoryDetail,
   getAccountCategory,
   getAccountSubcategoriesByCategory,
 } from "~/modules/accounting";
+import { AccountCategoryDetail } from "~/modules/accounting/ui/AccountCategories";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

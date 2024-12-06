@@ -7,10 +7,10 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import type { AccountClass, AccountIncomeBalance } from "~/modules/accounting";
 import {
-  AccountCategoryForm,
   accountCategoryValidator,
   upsertAccountCategory,
 } from "~/modules/accounting";
+import { AccountCategoryForm } from "~/modules/accounting/ui/AccountCategories";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 

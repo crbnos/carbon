@@ -1,17 +1,16 @@
-import {
-  HiArrowPath,
-  HiBoltSlash,
-  HiBugAnt,
-  HiCheckCircle,
-  HiFire,
-  HiNoSymbol,
-  HiPauseCircle,
-  HiRectangleStack,
-} from "react-icons/hi2";
-
 import { Spinner, cn } from "@carbon/react";
 import assertNever from "assert-never";
-import { LuSnowflake, LuXCircle } from "react-icons/lu";
+import {
+  LuBan,
+  LuCheckCircle,
+  LuCircleSlash,
+  LuFlame,
+  LuLayers,
+  LuPauseCircle,
+  LuRefreshCcw,
+  LuSnowflake,
+  LuXCircle,
+} from "react-icons/lu";
 
 export type GanttTaskStatus =
   | "PENDING"
@@ -112,9 +111,7 @@ export function GanttTaskStatusIcon({
   switch (status) {
     case "PENDING":
       return (
-        <HiRectangleStack
-          className={cn(runStatusClassNameColor(status), className)}
-        />
+        <LuLayers className={cn(runStatusClassNameColor(status), className)} />
       );
     case "EXECUTING":
       return (
@@ -130,31 +127,29 @@ export function GanttTaskStatusIcon({
       );
     case "RETRYING_AFTER_FAILURE":
       return (
-        <HiArrowPath
+        <LuRefreshCcw
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
     case "PAUSED":
       return (
-        <HiPauseCircle
+        <LuPauseCircle
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
     case "CANCELED":
       return (
-        <HiNoSymbol
-          className={cn(runStatusClassNameColor(status), className)}
-        />
+        <LuBan className={cn(runStatusClassNameColor(status), className)} />
       );
     case "INTERRUPTED":
       return (
-        <HiBoltSlash
+        <LuCircleSlash
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
     case "COMPLETED_SUCCESSFULLY":
       return (
-        <HiCheckCircle
+        <LuCheckCircle
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
@@ -164,11 +159,11 @@ export function GanttTaskStatusIcon({
       );
     case "SYSTEM_FAILURE":
       return (
-        <HiBugAnt className={cn(runStatusClassNameColor(status), className)} />
+        <LuXCircle className={cn(runStatusClassNameColor(status), className)} />
       );
     case "CRASHED":
       return (
-        <HiFire className={cn(runStatusClassNameColor(status), className)} />
+        <LuFlame className={cn(runStatusClassNameColor(status), className)} />
       );
 
     default: {

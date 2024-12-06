@@ -9,7 +9,7 @@ import {
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Number, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
-import { itemCostValidator } from "~/modules/items";
+import { itemCostValidator } from "../../items.models";
 
 type ItemCostingFormProps = {
   initialValues: z.infer<typeof itemCostValidator>;

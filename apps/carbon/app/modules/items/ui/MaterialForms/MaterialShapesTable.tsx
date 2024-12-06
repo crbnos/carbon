@@ -6,8 +6,8 @@ import { LuBookMarked, LuGlobe, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Form } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { Form } from "../../types";
 
 type MaterialShapesTableProps = {
   data: Form[];

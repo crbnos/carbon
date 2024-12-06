@@ -4,11 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  MaterialForm,
-  materialValidator,
-  upsertMaterial,
-} from "~/modules/items";
+import { materialValidator, upsertMaterial } from "~/modules/items";
+import { MaterialForm } from "~/modules/items/ui/Materials";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

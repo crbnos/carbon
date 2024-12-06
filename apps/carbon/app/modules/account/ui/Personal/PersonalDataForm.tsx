@@ -1,9 +1,9 @@
 import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { Submit } from "~/components/Form";
-import type { PersonalData } from "~/modules/account";
-import { accountPersonalDataValidator } from "~/modules/account";
 import { path } from "~/utils/path";
+import { accountPersonalDataValidator } from "../../account.models";
+import type { PersonalData } from "../../types";
 
 type PersonalDataFormProps = {
   personalData: PersonalData;

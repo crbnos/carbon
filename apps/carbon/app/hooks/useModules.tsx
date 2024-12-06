@@ -11,9 +11,9 @@ import {
   LuUsers,
   LuWrench,
 } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 import { path } from "~/utils/path";
+import { usePermissions } from "./usePermissions";
 
 export function useModules() {
   const permissions = usePermissions();

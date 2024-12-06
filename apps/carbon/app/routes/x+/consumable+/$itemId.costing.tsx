@@ -7,11 +7,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getAccountsList } from "~/modules/accounting";
 import {
-  ItemCostingForm,
   getItemCost,
   itemCostValidator,
   upsertItemCost,
 } from "~/modules/items";
+import { ItemCostingForm } from "~/modules/items/ui/Item";
+
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

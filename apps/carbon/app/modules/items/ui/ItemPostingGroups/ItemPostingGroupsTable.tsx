@@ -7,8 +7,8 @@ import { New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { ItemPostingGroup } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { ItemPostingGroup } from "../../types";
 
 type ItemPostingGroupsTableProps = {
   data: ItemPostingGroup[];

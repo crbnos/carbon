@@ -30,8 +30,8 @@ import {
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
 import { usePermissions, useUser } from "~/hooks";
-import { quoteValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
+import { quoteValidator } from "../../sales.models";
 
 type QuoteFormValues = z.infer<typeof quoteValidator>;
 

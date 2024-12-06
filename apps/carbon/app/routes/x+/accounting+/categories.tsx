@@ -5,10 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  AccountCategoriesTable,
-  getAccountCategories,
-} from "~/modules/accounting";
+import { getAccountCategories } from "~/modules/accounting";
+import { AccountCategoriesTable } from "~/modules/accounting/ui/AccountCategories";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

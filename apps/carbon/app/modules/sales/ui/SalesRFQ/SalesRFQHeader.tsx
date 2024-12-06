@@ -32,8 +32,8 @@ import {
 import { RiProgress4Line } from "react-icons/ri";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
 import { path } from "~/utils/path";
+import type { Opportunity, SalesRFQ, SalesRFQLine } from "../../types";
 import SalesRFQStatus from "./SalesRFQStatus";
 
 const SalesRFQHeader = () => {

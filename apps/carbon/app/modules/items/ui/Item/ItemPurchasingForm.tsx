@@ -19,9 +19,9 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PartSummary } from "~/modules/items";
-import { itemPurchasingValidator } from "~/modules/items";
 import { path } from "~/utils/path";
+import { itemPurchasingValidator } from "../../items.models";
+import type { PartSummary } from "../../types";
 
 type ItemPurchasingFormProps = {
   initialValues: z.infer<typeof itemPurchasingValidator>;

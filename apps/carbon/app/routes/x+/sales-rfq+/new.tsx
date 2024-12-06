@@ -7,11 +7,8 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import type { SalesRFQStatusType } from "~/modules/sales";
-import {
-  SalesRFQForm,
-  salesRfqValidator,
-  upsertSalesRFQ,
-} from "~/modules/sales";
+import { salesRfqValidator, upsertSalesRFQ } from "~/modules/sales";
+import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";

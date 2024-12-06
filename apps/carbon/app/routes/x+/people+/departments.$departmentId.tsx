@@ -6,11 +6,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  DepartmentForm,
   departmentValidator,
   getDepartment,
   upsertDepartment,
 } from "~/modules/people";
+import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

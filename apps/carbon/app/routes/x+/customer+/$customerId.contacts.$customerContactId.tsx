@@ -13,11 +13,11 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  CustomerContactForm,
   customerContactValidator,
   getCustomerContact,
   updateCustomerContact,
 } from "~/modules/sales";
+import { CustomerContactForm } from "~/modules/sales/ui/Customer";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { customerContactsQuery } from "~/utils/react-query";

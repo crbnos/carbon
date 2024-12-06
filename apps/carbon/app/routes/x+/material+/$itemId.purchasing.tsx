@@ -8,12 +8,11 @@ import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { SupplierPart } from "~/modules/items";
 import {
-  ItemPurchasingForm,
-  SupplierParts,
   getItemReplenishment,
   itemPurchasingValidator,
   upsertItemPurchasing,
 } from "~/modules/items";
+import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

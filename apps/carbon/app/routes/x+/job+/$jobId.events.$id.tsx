@@ -7,12 +7,12 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  ProductionEventForm,
   getJobOperations,
   getProductionEvent,
   productionEventValidator,
   upsertProductionEvent,
 } from "~/modules/production";
+import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources";
 import { getParams, path } from "~/utils/path";
 

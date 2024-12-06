@@ -4,7 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { HolidayForm, holidayValidator, upsertHoliday } from "~/modules/people";
+import { holidayValidator, upsertHoliday } from "~/modules/people";
+import { HolidayForm } from "~/modules/people/ui/Holidays";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

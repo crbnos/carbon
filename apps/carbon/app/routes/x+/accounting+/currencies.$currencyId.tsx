@@ -8,11 +8,11 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  CurrencyForm,
   currencyValidator,
   getCurrency,
   upsertCurrency,
 } from "~/modules/accounting";
+import { CurrencyForm } from "~/modules/accounting/ui/Currencies";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { currenciesQuery } from "~/utils/react-query";

@@ -2,9 +2,9 @@ import { ValidatedForm } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
-import { accountProfileValidator } from "~/modules/account";
-import type { User } from "~/modules/users";
+import type { User } from "~/modules/users/types";
 import { path } from "~/utils/path";
+import { accountProfileValidator } from "../../account.models";
 
 type ProfileFormProps = {
   user: User;

@@ -5,12 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  HolidayForm,
-  getHoliday,
-  holidayValidator,
-  upsertHoliday,
-} from "~/modules/people";
+import { getHoliday, holidayValidator, upsertHoliday } from "~/modules/people";
+import { HolidayForm } from "~/modules/people/ui/Holidays";
 import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

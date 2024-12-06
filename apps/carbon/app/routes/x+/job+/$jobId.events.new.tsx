@@ -7,10 +7,10 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
   getJobOperations,
-  ProductionEventForm,
   productionEventValidator,
   upsertProductionEvent,
 } from "~/modules/production";
+import { ProductionEventForm } from "~/modules/production/ui/Jobs";
 import { getWorkCentersList } from "~/modules/resources";
 import { getParams, path } from "~/utils/path";
 

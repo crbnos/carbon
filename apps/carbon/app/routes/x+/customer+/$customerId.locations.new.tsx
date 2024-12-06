@@ -8,10 +8,10 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUser } from "~/hooks";
 import {
-  CustomerLocationForm,
   customerLocationValidator,
   insertCustomerLocation,
 } from "~/modules/sales";
+import { CustomerLocationForm } from "~/modules/sales/ui/Customer";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { customerLocationsQuery } from "~/utils/react-query";

@@ -11,7 +11,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ToolForm } from "~/modules/items";
+import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 
 import { useTools } from "~/stores";
 

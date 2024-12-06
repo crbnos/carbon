@@ -41,12 +41,14 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { JobStatus } from "~/modules/production";
-import type { SalesOrder } from "~/modules/sales";
-import { SalesStatus, salesOrderStatusType } from "~/modules/sales";
+
+import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
+import { salesOrderStatusType } from "../../sales.models";
+import type { SalesOrder } from "../../types";
+import SalesStatus from "./SalesStatus";
 
 type SalesOrdersTableProps = {
   data: SalesOrder[];
@@ -178,30 +180,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         },
       },
       {
-        accessorKey: "customerReference",
-        header: "Customer Ref.",
-        cell: (item) => item.getValue(),
-        meta: {
-          icon: <LuQrCode />,
-        },
-      },
-      {
-        accessorKey: "orderDate",
-        header: "Order Date",
-        cell: (item) => formatDate(item.getValue<string>()),
-        meta: {
-          icon: <LuCalendar />,
-        },
-      },
-      {
-        accessorKey: "orderTotal",
-        header: "Order Total",
-        cell: (item) => currencyFormatter.format(item.getValue<number>()),
-        meta: {
-          icon: <LuDollarSign />,
-        },
-      },
-      {
         id: "jobs",
         header: "Jobs",
         cell: ({ row }) => {
@@ -247,6 +225,31 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           );
         },
       },
+      {
+        accessorKey: "customerReference",
+        header: "Customer Ref.",
+        cell: (item) => item.getValue(),
+        meta: {
+          icon: <LuQrCode />,
+        },
+      },
+      {
+        accessorKey: "orderDate",
+        header: "Order Date",
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
+      },
+      {
+        accessorKey: "orderTotal",
+        header: "Order Total",
+        cell: (item) => currencyFormatter.format(item.getValue<number>()),
+        meta: {
+          icon: <LuDollarSign />,
+        },
+      },
+
       {
         id: "assignee",
         header: "Assignee",

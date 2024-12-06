@@ -7,11 +7,11 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  FiscalYearSettingsForm,
   fiscalYearSettingsValidator,
   getFiscalYearSettings,
   updateFiscalYearSettings,
 } from "~/modules/accounting";
+import { FiscalYearSettingsForm } from "~/modules/accounting/ui/FiscalYear";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

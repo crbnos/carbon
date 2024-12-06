@@ -1,5 +1,5 @@
 import { Status } from "@carbon/react";
-import type { salesOrderStatusType } from "~/modules/sales";
+import type { salesOrderStatusType } from "../../sales.models";
 
 type SalesOrderStatusProps = {
   status?: (typeof salesOrderStatusType)[number] | null;

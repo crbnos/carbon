@@ -6,13 +6,12 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { useRealtime } from "~/hooks";
 import {
-  PartHeader,
-  PartProperties,
   getItemFiles,
   getPart,
   getPickMethods,
   getSupplierParts,
 } from "~/modules/items";
+import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";

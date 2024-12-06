@@ -24,12 +24,12 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { PaymentTermCalculationMethod } from "~/modules/accounting";
+import { path } from "~/utils/path";
 import {
   paymentTermValidator,
   paymentTermsCalculationMethod,
-} from "~/modules/accounting";
-import { path } from "~/utils/path";
+} from "../../accounting.models";
+import type { PaymentTermCalculationMethod } from "../../types";
 
 type PaymentTermFormProps = {
   initialValues: z.infer<typeof paymentTermValidator>;

@@ -7,11 +7,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  UnitOfMeasureForm,
   getUnitOfMeasure,
   unitOfMeasureValidator,
   upsertUnitOfMeasure,
 } from "~/modules/items";
+import { UnitOfMeasureForm } from "~/modules/items/ui/UnitOfMeasure";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, uomsQuery } from "~/utils/react-query";

@@ -21,12 +21,12 @@ import { useState } from "react";
 import { LuAlertTriangle } from "react-icons/lu";
 import { CustomerContact, SelectControlled } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
+import { path } from "~/utils/path";
+import { quoteFinalizeValidator } from "../../sales.models";
 import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
-  quoteFinalizeValidator,
-} from "~/modules/sales";
-import { path } from "~/utils/path";
+} from "../../sales.service";
 import type { Quotation, QuotationLine, QuotationPrice } from "../../types";
 
 type QuotationFinalizeModalProps = {

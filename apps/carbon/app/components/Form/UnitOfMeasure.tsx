@@ -8,7 +8,7 @@ import type {
   UnitOfMeasureListItem,
   getUnitOfMeasuresList,
 } from "~/modules/items";
-import { UnitOfMeasureForm } from "~/modules/items";
+import UnitOfMeasureForm from "~/modules/items/ui/UnitOfMeasure/UnitOfMeasureForm";
 import { path } from "~/utils/path";
 import { Enumerable } from "../Enumerable";
 

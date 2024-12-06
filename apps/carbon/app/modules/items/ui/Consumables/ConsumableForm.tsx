@@ -29,8 +29,8 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
-import { consumableValidator, itemTrackingTypes } from "~/modules/items";
 import { path } from "~/utils/path";
+import { consumableValidator, itemTrackingTypes } from "../../items.models";
 
 type ConsumableFormProps = {
   initialValues: z.infer<typeof consumableValidator> & { tags: string[] };

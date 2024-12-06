@@ -37,7 +37,8 @@ import { Currency, Input, Submit } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useRouteData, useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
-import { companyValidator, type Company } from "~/modules/settings";
+import type { Company } from "~/modules/settings";
+import { companyValidator } from "~/modules/settings/settings.models";
 import { path } from "~/utils/path";
 
 export const BreadcrumbHandle = z.object({

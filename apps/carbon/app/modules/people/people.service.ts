@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { DataType } from "~/modules/shared";
 import type { Employee } from "~/modules/users";
-import { getEmployees } from "~/modules/users";
+import { getEmployees } from "~/modules/users/users.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";

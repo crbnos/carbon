@@ -7,11 +7,8 @@ import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting";
-import {
-  PaymentTermForm,
-  paymentTermValidator,
-  upsertPaymentTerm,
-} from "~/modules/accounting";
+import { paymentTermValidator, upsertPaymentTerm } from "~/modules/accounting";
+import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";

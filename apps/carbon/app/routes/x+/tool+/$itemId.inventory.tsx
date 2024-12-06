@@ -10,13 +10,13 @@ import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
 import type { ToolSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
-  PickMethodForm,
   getItemQuantities,
   getItemShelfQuantities,
   getPickMethod,
   pickMethodValidator,
   upsertPickMethod,
 } from "~/modules/items";
+import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";

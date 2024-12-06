@@ -8,8 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import {
   getQuoteMaterial,
   getQuoteOperationsByMethodId,
-  QuoteMaterialForm,
 } from "~/modules/sales";
+import { QuoteMaterialForm } from "~/modules/sales/ui/Quotes";
 import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {

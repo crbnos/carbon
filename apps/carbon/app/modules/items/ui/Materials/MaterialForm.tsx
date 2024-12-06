@@ -31,13 +31,13 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { useNextItemId, usePermissions, useRouteData, useUser } from "~/hooks";
+import type { ListItem } from "~/types";
+import { path } from "~/utils/path";
+import { itemTrackingTypes, materialValidator } from "../../items.models";
 import type {
   getMaterialFormsList,
   getMaterialSubstancesList,
-} from "~/modules/items";
-import { itemTrackingTypes, materialValidator } from "~/modules/items";
-import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
+} from "../../items.service";
 
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator> & { tags?: string[] };

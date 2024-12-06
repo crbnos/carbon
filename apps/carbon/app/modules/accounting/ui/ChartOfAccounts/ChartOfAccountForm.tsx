@@ -25,19 +25,19 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type {
-  AccountCategory as AccountCategoryType,
-  AccountClass,
-  AccountIncomeBalance,
-} from "~/modules/accounting";
+import { path } from "~/utils/path";
 import {
   accountClassTypes,
   accountTypes,
   accountValidator,
   consolidatedRateTypes,
   incomeBalanceTypes,
-} from "~/modules/accounting";
-import { path } from "~/utils/path";
+} from "../../accounting.models";
+import type {
+  AccountCategory as AccountCategoryType,
+  AccountClass,
+  AccountIncomeBalance,
+} from "../../types";
 
 type ChartOfAccountFormProps = {
   initialValues: z.infer<typeof accountValidator>;

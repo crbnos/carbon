@@ -6,11 +6,11 @@ import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  CustomerShippingForm,
   customerShippingValidator,
   getCustomerShipping,
   updateCustomerShipping,
 } from "~/modules/sales";
+import { CustomerShippingForm } from "~/modules/sales/ui/Customer";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

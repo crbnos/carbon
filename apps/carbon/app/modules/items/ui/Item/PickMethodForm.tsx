@@ -17,9 +17,9 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import { pickMethodValidator } from "../../items.models";
 
 type PickMethodFormProps = {
   initialValues: z.infer<typeof pickMethodValidator>;

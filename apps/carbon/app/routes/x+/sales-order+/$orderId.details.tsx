@@ -12,15 +12,19 @@ import {
   getQuote,
   getSalesOrderPayment,
   getSalesOrderShipment,
-  OpportunityDocuments,
-  OpportunityNotes,
-  OpportunityState,
-  SalesOrderPaymentForm,
-  SalesOrderShipmentForm,
-  SalesOrderSummary,
   salesOrderValidator,
   upsertSalesOrder,
 } from "~/modules/sales";
+import {
+  OpportunityDocuments,
+  OpportunityNotes,
+  OpportunityState,
+} from "~/modules/sales/ui/Opportunity";
+import {
+  SalesOrderPaymentForm,
+  SalesOrderShipmentForm,
+  SalesOrderSummary,
+} from "~/modules/sales/ui/SalesOrder";
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";

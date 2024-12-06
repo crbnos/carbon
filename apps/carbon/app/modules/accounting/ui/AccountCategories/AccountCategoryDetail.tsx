@@ -19,10 +19,9 @@ import { useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { ConfirmDelete } from "~/components/Modals";
-
 import { useUrlParams } from "~/hooks";
-import type { AccountCategory, AccountSubcategory } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import type { AccountCategory, AccountSubcategory } from "../../types";
 
 type AccountCategoryDetailProps = {
   accountCategory: AccountCategory;

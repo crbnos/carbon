@@ -4,8 +4,8 @@ import { Link, useParams } from "@remix-run/react";
 import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
-import type { PartSummary } from "~/modules/items";
 import { path } from "~/utils/path";
+import type { PartSummary } from "../../types";
 import { usePartNavigation } from "./usePartNavigation";
 
 const PartHeader = () => {

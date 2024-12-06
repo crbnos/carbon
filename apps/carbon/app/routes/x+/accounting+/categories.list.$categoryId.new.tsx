@@ -1,9 +1,9 @@
 import { useNavigate, useParams } from "@remix-run/react";
 import {
-  AccountSubcategoryForm,
   accountSubcategoryValidator,
   upsertAccountSubcategory,
 } from "~/modules/accounting";
+import { AccountSubcategoryForm } from "~/modules/accounting/ui/AccountCategories";
 
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";

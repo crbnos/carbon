@@ -9,7 +9,7 @@ import { path } from "~/utils/path";
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
-import { CustomerContactForm } from "~/modules/sales";
+import CustomerContactForm from "~/modules/sales/ui/Customer/CustomerContactForm";
 
 type CustomerContactSelectProps = Omit<
   ComboboxProps,

@@ -9,11 +9,8 @@ import {
   accountProfileValidator,
   updatePublicAccount,
 } from "~/modules/account";
-import {
-  PersonPreview,
-  PersonSidebar,
-  getEmployeeSummary,
-} from "~/modules/people";
+import { getEmployeeSummary } from "~/modules/people";
+import { PersonPreview, PersonSidebar } from "~/modules/people/ui/Person";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

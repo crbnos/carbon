@@ -17,9 +17,9 @@ import { useParams } from "@remix-run/react";
 import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { AccountCategory } from "~/modules/accounting";
-import { accountSubcategoryValidator } from "~/modules/accounting";
 import { path } from "~/utils/path";
+import { accountSubcategoryValidator } from "../../accounting.models";
+import type { AccountCategory } from "../../types";
 
 type AccountSubcategoryFormProps = {
   initialValues: z.infer<typeof accountSubcategoryValidator>;

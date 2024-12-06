@@ -4,10 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  AccountSubcategoryForm,
-  getAccountSubcategory,
-} from "~/modules/accounting";
+import { getAccountSubcategory } from "~/modules/accounting";
+import { AccountSubcategoryForm } from "~/modules/accounting/ui/AccountCategories";
 import { getCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

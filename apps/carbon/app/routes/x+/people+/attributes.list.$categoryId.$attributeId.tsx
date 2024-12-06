@@ -6,7 +6,8 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
-import { AttributeForm, getAttribute } from "~/modules/people";
+import { getAttribute } from "~/modules/people";
+import { AttributeForm } from "~/modules/people/ui/Attributes";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

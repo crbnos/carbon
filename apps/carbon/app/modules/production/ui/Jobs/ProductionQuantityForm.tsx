@@ -24,7 +24,7 @@ import {
 } from "~/components/Form";
 import ScrapReason from "~/components/Form/ScrapReason";
 import { usePermissions } from "~/hooks";
-import { productionQuantityValidator } from "~/modules/production";
+import { productionQuantityValidator } from "../../production.models";
 
 type ProductionQuantityFormProps = {
   initialValues: z.infer<typeof productionQuantityValidator>;

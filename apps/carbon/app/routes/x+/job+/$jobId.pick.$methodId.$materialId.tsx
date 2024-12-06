@@ -8,8 +8,8 @@ import { flash } from "@carbon/auth/session.server";
 import {
   getJobMaterial,
   getJobOperationsByMethodId,
-  JobMaterialForm,
 } from "~/modules/production";
+import { JobMaterialForm } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { path } from "~/utils/path";
 

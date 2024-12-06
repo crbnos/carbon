@@ -35,17 +35,15 @@ import {
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
-import type { Document, DocumentLabel } from "~/modules/documents";
-import {
-  DocumentIcon,
-  documentSourceTypes,
-  documentTypes,
-} from "~/modules/documents";
+import { documentTypes } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import { documentSourceTypes } from "../../documents.models";
+import type { Document, DocumentLabel } from "../../types";
 import DocumentCreateForm from "./DocumentCreateForm";
 import { useDocument } from "./useDocument";
 

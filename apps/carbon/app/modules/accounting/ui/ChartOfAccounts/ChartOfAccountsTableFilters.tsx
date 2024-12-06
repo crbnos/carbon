@@ -11,7 +11,7 @@ import { parseDate } from "@internationalized/date";
 import { LuCalendarDays, LuX } from "react-icons/lu";
 import { New, Select } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
-import { incomeBalanceTypes } from "~/modules/accounting";
+import { incomeBalanceTypes } from "../../accounting.models";
 
 const ChartOfAccountsTableFilters = () => {
   const [params, setParams] = useUrlParams();

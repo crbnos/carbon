@@ -7,15 +7,17 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
-  BillOfMaterial,
-  BillOfProcess,
-  ItemForm,
-  MakeMethodTools,
   getItem,
   getMethodMaterial,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
 } from "~/modules/items";
+import {
+  BillOfMaterial,
+  BillOfProcess,
+  ItemForm,
+  MakeMethodTools,
+} from "~/modules/items/ui/Item";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {

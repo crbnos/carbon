@@ -22,15 +22,19 @@ import {
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteOperationsByLine,
+  quoteLineValidator,
+  upsertQuoteLine,
+} from "~/modules/sales";
+import {
   OpportunityLineDocuments,
   OpportunityLineNotes,
+} from "~/modules/sales/ui/Opportunity";
+import {
   QuoteLineCosting,
   QuoteLineForm,
   QuoteLinePricing,
-  quoteLineValidator,
-  upsertQuoteLine,
   useLineCosts,
-} from "~/modules/sales";
+} from "~/modules/sales/ui/Quotes";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -161,17 +165,18 @@ export default function QuoteLine() {
   return (
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
+
+      {line.methodType === "Make" && line.status !== "No Quote" && (
+        <QuoteLineCosting
+          quantities={line.quantity ?? [1]}
+          getLineCosts={getLineCosts}
+        />
+      )}
       {line.status !== "No Quote" && (
         <QuoteLinePricing
           key={lineId}
           line={line}
           pricesByQuantity={pricesByQuantity}
-          getLineCosts={getLineCosts}
-        />
-      )}
-      {line.methodType === "Make" && line.status !== "No Quote" && (
-        <QuoteLineCosting
-          quantities={line.quantity ?? [1]}
           getLineCosts={getLineCosts}
         />
       )}

@@ -26,9 +26,9 @@ import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Customer, CustomerStatus } from "~/modules/sales";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
+import type { Customer, CustomerStatus } from "../../types";
 
 type CustomersTableProps = {
   data: Customer[];

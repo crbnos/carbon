@@ -1,12 +1,12 @@
 import { useParams } from "@remix-run/react";
 import { DetailSidebar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
 import type {
   CustomerContact,
   CustomerDetail,
   CustomerLocation,
-} from "~/modules/sales";
-import { path } from "~/utils/path";
+} from "../../../types";
 import { useCustomerSidebar } from "./useCustomerSidebar";
 
 const CustomerSidebar = () => {
