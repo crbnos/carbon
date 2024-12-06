@@ -77,6 +77,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 }
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export default function SupplierQuoteRoute() {
   const params = useParams();
   const { id } = params;
