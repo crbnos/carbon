@@ -5,7 +5,7 @@ import { VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
@@ -22,8 +22,10 @@ import { path } from "~/utils/path";
 const SupplierQuoteExplorer = lazy(
   () => import("~/modules/purchasing/ui/SupplierQuote/SupplierQuoteExplorer")
 );
-const SupplierQuoteProperties = lazy(
-  () => import("~/modules/purchasing/ui/SupplierQuote/SupplierQuoteProperties")
+const SupplierQuoteProperties = lazy(() =>
+  import("~/modules/purchasing").then((mod) => ({
+    default: mod.SupplierQuoteProperties,
+  }))
 );
 
 export const handle: Handle = {
@@ -94,19 +96,17 @@ export default function SupplierQuoteRoute() {
         <SupplierQuoteHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
-            <Suspense fallback={null}>
-              <ResizablePanels
-                explorer={<SupplierQuoteExplorer />}
-                content={
-                  <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                    <VStack spacing={2} className="p-2">
-                      <Outlet />
-                    </VStack>
-                  </div>
-                }
-                properties={<SupplierQuoteProperties />}
-              />
-            </Suspense>
+            <ResizablePanels
+              explorer={<SupplierQuoteExplorer />}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={2} className="p-2">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={<SupplierQuoteProperties />}
+            />
           </div>
         </div>
       </div>
