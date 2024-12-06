@@ -16,14 +16,11 @@
     "typescript": "^5.2.2",
     "uuid": "9.0.0"
   },
-  "files": [
-    "dist/**"
-  ],
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
+  "exports": {
+    ".": "./src/index.ts"
+  },
   "private": true,
   "scripts": {
-    "build": "tsup",
     "clean": "rimraf .turbo node_modules dist",
     "db:function:new": "supabase functions new",
     "db:init": "supabase init",
@@ -36,11 +33,9 @@
     "db:stop": "supabase stop",
     "db:types": "supabase gen types typescript --local > src/types.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
-    "dev": "tsup --watch",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "setup": "tsx src/seed.ts"
   },
   "sideEffects": false,
-  "types": "./dist/index.d.ts",
   "version": "*"
 }

@@ -35,7 +35,6 @@
   "private": true,
   "scripts": {
     "clean": "rimraf .turbo node_modules dist",
-    "dev": "tsup src/index.tsx --format esm,cjs --watch --dts --external react",
     "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
     "test": "jest"
   },
