@@ -39,7 +39,7 @@ export default defineConfig({
       presets: [vercelPreset()],
       future: {
         unstable_singleFetch: false,
-        unstable_lazyRouteDiscovery: true,
+        unstable_lazyRouteDiscovery: false,
       },
       ignoredRouteFiles: ["**/.*"],
       serverModuleFormat: "esm",
