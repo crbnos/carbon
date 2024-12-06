@@ -164,7 +164,7 @@ const SalesRFQHeader = () => {
             {routeData?.opportunity?.quoteId === null ? (
               <Button
                 isDisabled={
-                  !["Ready for Quote", "Closed"].includes(status) ||
+                  !["Ready for Quote", "Closed", "Quoted"].includes(status) ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "sales")
                 }

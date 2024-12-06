@@ -185,7 +185,8 @@ export default function QuoteLine() {
         table="quoteLine"
         title="Notes"
         subTitle={line.itemReadableId ?? ""}
-        notes={line.notes as JSONContent}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
       />
       <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
         <Suspense

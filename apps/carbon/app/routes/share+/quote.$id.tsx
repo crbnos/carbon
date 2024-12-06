@@ -301,7 +301,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       quote: quote.data,
       company: company.data,
       companySettings: companySettings.data,
-      quoteLines: quoteLines.data,
+      quoteLines:
+        quoteLines.data?.map(({ internalNotes, ...line }) => ({
+          ...line,
+        })) ?? [],
       thumbnails: thumbnails,
       quoteLinePrices: quoteLinePrices.data,
       customerDetails: customerDetails.data,
@@ -426,7 +429,6 @@ const LineItems = ({
       ? quoteLines.map((line) => line.id!).filter(Boolean)
       : []
   );
-
   useEffect(() => {
     Object.entries(selectedLines).forEach(([lineId, line]) => {
       if (line.quantity === 0 && openItems.includes(lineId)) {
@@ -498,14 +500,6 @@ const LineItems = ({
                   <div className="flex items-center gap-x-4 justify-between flex-grow">
                     <Heading>{line.itemReadableId}</Heading>
                     <HStack spacing={4}>
-                      {/* <span className="font-medium text-xl">
-                        {formatter.format(
-                          (selectedLines[line.id!]?.convertedNetUnitPrice ??
-                            0) *
-                            (selectedLines[line.id!]?.quantity ?? 0) +
-                            (selectedLines[line.id!]?.convertedAddOn ?? 0)
-                        )}
-                      </span> */}
                       <MotionNumber
                         className="font-bold text-xl"
                         value={
@@ -535,6 +529,14 @@ const LineItems = ({
                   <span className="text-muted-foreground text-base truncate">
                     {line.description}
                   </span>
+                  {Object.keys(line.externalNotes ?? {}).length > 0 && (
+                    <div
+                      className="prose dark:prose-invert prose-sm mt-2 text-muted-foreground"
+                      dangerouslySetInnerHTML={{
+                        __html: generateHTML(line.externalNotes as JSONContent),
+                      }}
+                    />
+                  )}
                 </div>
               </VStack>
             </HStack>
@@ -570,7 +572,7 @@ const LineItems = ({
 };
 
 type LinePricingOptionsProps = {
-  line: QuotationLine;
+  line: Omit<QuotationLine, "internalNotes">;
   options: QuotationPrice[];
   quoteCurrency: string;
   shouldConvertCurrency: boolean;
@@ -860,7 +862,7 @@ const LinePricingOptions = ({
       {selectedLine.quantity !== 0 && !hasSalesOrder && (
         <HStack spacing={2} className="w-full justify-end items-center">
           <Button
-            variant="secondary"
+            variant="primary"
             leftIcon={<LuXCircle />}
             onClick={() => {
               setSelectedValue("0");

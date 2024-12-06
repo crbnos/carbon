@@ -92,7 +92,7 @@ const SalesOrderPDF = ({
           ]}
         />
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
             <Text style={tw("text-sm")}>{customerName}</Text>
             {customerAddressLine1 && (
@@ -110,7 +110,7 @@ const SalesOrderPDF = ({
             </Text>
             <Text style={tw("text-sm")}>{customerCountryName}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Bill To</Text>
             <Text style={tw("text-sm")}>{paymentCustomerName}</Text>
             {paymentAddressLine1 && (
@@ -130,31 +130,31 @@ const SalesOrderPDF = ({
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Customer Order #</Text>
             <Text style={tw("text-sm")}>{salesOrder?.customerReference}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
             <Text style={tw("text-sm")}>
               {salesOrder?.receiptRequestedDate}
             </Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Promised Date</Text>
             <Text style={tw("text-sm")}>{salesOrder?.receiptPromisedDate}</Text>
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
             <Text style={tw("text-sm")}>{salesOrder?.shippingMethodName}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Terms</Text>
             <Text style={tw("text-sm")}>{salesOrder?.shippingTermName}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Payment Terms</Text>
             <Text style={tw("text-sm")}>{salesOrder?.paymentTermName}</Text>
           </View>
@@ -162,7 +162,7 @@ const SalesOrderPDF = ({
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
             )}
           >
             <Text style={tw("w-5/12 text-left")}>Description</Text>
@@ -175,44 +175,53 @@ const SalesOrderPDF = ({
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300"
+                  "flex flex-col w-full gap-4 py-3 px-[6px] border-b border-gray-300"
                 )}
                 key={line.id}
               >
-                <View style={tw("w-5/12")}>
-                  <Text style={tw("font-bold mb-1")}>
-                    {getLineDescription(line)}
+                <View style={tw("flex flex-row justify-between ")}>
+                  <View style={tw("w-5/12")}>
+                    <Text style={tw("font-bold mb-1")}>
+                      {getLineDescription(line)}
+                    </Text>
+                    <Text style={tw("text-[9px] opacity-80")}>
+                      {getLineDescriptionDetails(line)}
+                    </Text>
+                  </View>
+                  <Text style={tw("w-1/6 text-right")}>
+                    {line.salesOrderLineType === "Comment"
+                      ? ""
+                      : `${line.saleQuantity} ${line.unitOfMeasureCode}`}
                   </Text>
-                  <Text style={tw("text-[9px] opacity-80")}>
-                    {getLineDescriptionDetails(line)}
+                  <Text style={tw("w-1/6 text-right")}>
+                    {line.salesOrderLineType === "Comment"
+                      ? null
+                      : formatter.format(line.convertedUnitPrice ?? 0)}
+                  </Text>
+                  <Text style={tw("w-1/6 text-right")}>
+                    {line.salesOrderLineType === "Comment"
+                      ? null
+                      : formatter.format(
+                          (line.convertedAddOnCost ?? 0) +
+                            (line.convertedShippingCost ?? 0)
+                        )}
+                  </Text>
+                  <Text style={tw("w-1/6 text-right")}>
+                    {line.salesOrderLineType === "Comment"
+                      ? null
+                      : formatter.format(getLineTotal(line))}
                   </Text>
                 </View>
-                <Text style={tw("w-1/6 text-right")}>
-                  {line.salesOrderLineType === "Comment"
-                    ? ""
-                    : `${line.saleQuantity} ${line.unitOfMeasureCode}`}
-                </Text>
-                <Text style={tw("w-1/6 text-right")}>
-                  {line.salesOrderLineType === "Comment"
-                    ? null
-                    : formatter.format(line.convertedUnitPrice ?? 0)}
-                </Text>
-                <Text style={tw("w-1/6 text-right")}>
-                  {line.salesOrderLineType === "Comment"
-                    ? null
-                    : formatter.format(
-                        (line.convertedAddOnCost ?? 0) +
-                          (line.convertedShippingCost ?? 0)
-                      )}
-                </Text>
-                <Text style={tw("w-1/6 text-right")}>
-                  {line.salesOrderLineType === "Comment"
-                    ? null
-                    : formatter.format(getLineTotal(line))}
-                </Text>
+                {Object.keys(line.externalNotes ?? {}).length > 0 && (
+                  <Note
+                    key={`${line.id}-notes`}
+                    content={line.externalNotes as JSONContent}
+                  />
+                )}
               </View>
             );
           })}
+
           {salesOrder.shippingCost && (
             <View
               style={tw(
@@ -230,7 +239,7 @@ const SalesOrderPDF = ({
           )}
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"
             )}
           >
             <Text>Total</Text>

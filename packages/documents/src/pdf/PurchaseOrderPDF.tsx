@@ -99,7 +99,7 @@ const PurchaseOrderPDF = ({
           ]}
         />
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col w-1/3 text-sm gap-1")}>
+          <View style={tw("flex flex-col w-1/3 text-sm gap-2")}>
             <Text style={tw("text-gray-500 text-xs")}>Supplier</Text>
             <Text>{supplierName}</Text>
             {supplierAddressLine1 && <Text>{supplierAddressLine1}</Text>}
@@ -114,7 +114,7 @@ const PurchaseOrderPDF = ({
             <Text>{supplierCountryName}</Text>
           </View>
           {dropShipment ? (
-            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
+            <View style={tw("flex flex-col text-sm gap-2 w-1/3")}>
               <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{customerName}</Text>
               {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
@@ -129,7 +129,7 @@ const PurchaseOrderPDF = ({
               <Text>{customerCountryName}</Text>
             </View>
           ) : (
-            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
+            <View style={tw("flex flex-col text-sm gap-2 w-1/3")}>
               <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{deliveryName}</Text>
               {deliveryAddressLine1 && <Text>{deliveryAddressLine1}</Text>}
@@ -146,29 +146,29 @@ const PurchaseOrderPDF = ({
           )}
         </View>
         <View style={tw("flex flex-row justify-between mb-5 text-sm")}>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Supplier Order #</Text>
             <Text>{purchaseOrder?.supplierReference}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
             <Text>{purchaseOrder?.receiptRequestedDate}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Promised Date</Text>
             <Text>{purchaseOrder?.receiptPromisedDate}</Text>
           </View>
         </View>
         <View style={tw("flex flex-row justify-between mb-5")}>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
             <Text>{purchaseOrder?.shippingMethodName}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Terms</Text>
             <Text>{purchaseOrder?.shippingTermName}</Text>
           </View>
-          <View style={tw("flex flex-col gap-1 w-1/3")}>
+          <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Payment Terms</Text>
             <Text>{purchaseOrder?.paymentTermName}</Text>
           </View>
@@ -176,7 +176,7 @@ const PurchaseOrderPDF = ({
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-1.5 px-[6px] border-t border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
             )}
           >
             <Text style={tw("w-1/2")}>Description</Text>
@@ -187,38 +187,46 @@ const PurchaseOrderPDF = ({
           {purchaseOrderLines.map((line) => (
             <View
               style={tw(
-                "flex flex-row justify-between py-1.5 px-[6px] border-b border-gray-300"
+                "flex flex-col w-full gap-4 py-3 px-[6px] border-b border-gray-300"
               )}
               key={line.id}
             >
-              <View style={tw("w-1/2")}>
-                <Text style={tw("font-bold mb-1")}>
-                  {getLineDescription(line)}
+              <View style={tw("flex flex-row justify-between")}>
+                <View style={tw("w-1/2")}>
+                  <Text style={tw("font-bold mb-1")}>
+                    {getLineDescription(line)}
+                  </Text>
+                  <Text style={tw("text-[9px] opacity-80")}>
+                    {getLineDescriptionDetails(line)}
+                  </Text>
+                </View>
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.purchaseOrderLineType === "Comment"
+                    ? ""
+                    : `${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode}`}
                 </Text>
-                <Text style={tw("text-[9px] opacity-80")}>
-                  {getLineDescriptionDetails(line)}
+                <Text style={tw("w-1/6 text-right")}>
+                  {line.purchaseOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(line.unitPrice ?? 0)}
+                </Text>
+                <Text style={tw("w-1/5 text-right")}>
+                  {line.purchaseOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(getLineTotal(line))}
                 </Text>
               </View>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
-                  ? ""
-                  : `${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode}`}
-              </Text>
-              <Text style={tw("w-1/6 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
-                  ? null
-                  : formatter.format(line.unitPrice ?? 0)}
-              </Text>
-              <Text style={tw("w-1/5 text-right")}>
-                {line.purchaseOrderLineType === "Comment"
-                  ? null
-                  : formatter.format(getLineTotal(line))}
-              </Text>
+              {/* {Object.keys(line.externalNotes ?? {}).length > 0 && (
+                <Note
+                  key={`${line.id}-notes`}
+                  content={line.externalNotes as JSONContent}
+                />
+              )} */}
             </View>
           ))}
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-1.5 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+              "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"
             )}
           >
             <Text>Total</Text>

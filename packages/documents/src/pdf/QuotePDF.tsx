@@ -142,9 +142,7 @@ const QuotePDF = ({
         />
         <View style={tw("flex flex-row mb-5")}>
           <View style={tw("flex flex-col gap-1 w-1/3 text-xs")}>
-            <Text style={tw("text-gray-500 font-bold text-xs")}>
-              Quote Submitted To
-            </Text>
+            <Text style={tw(" font-bold text-xs")}>Quote Submitted To</Text>
             <Text>{customerName}</Text>
             {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
             {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
@@ -162,7 +160,7 @@ const QuotePDF = ({
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300 text-gray-500 font-bold uppercase"
+              "flex flex-row justify-between items-center py-3 px-[6px] border-t border-b border-gray-300  font-bold uppercase"
             )}
           >
             <View style={tw("w-1/3")}>
@@ -198,137 +196,150 @@ const QuotePDF = ({
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 mb-2"
+                  "flex flex-col gap-2 py-3 px-[6px] border-b border-gray-300 mb-2"
                 )}
                 key={line.id}
               >
-                <View style={tw("w-1/3")}>
-                  <View>
-                    <Text style={tw("font-bold mb-1")}>
-                      {getLineDescription(line)}
-                    </Text>
-                    <Text style={tw("text-[9px] opacity-80")}>
-                      {getLineDescriptionDetails(line)}
-                    </Text>
-                  </View>
-
-                  {thumbnails && line.id in thumbnails && (
-                    <View style={tw("mt-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
+                <View style={tw("flex flex-row justify-between")}>
+                  <View style={tw("w-1/3")}>
+                    <View>
+                      <Text style={tw("font-bold mb-1")}>
+                        {getLineDescription(line)}
+                      </Text>
+                      <Text style={tw("text-[9px] opacity-80")}>
+                        {getLineDescriptionDetails(line)}
+                      </Text>
                     </View>
-                  )}
 
-                  {line.status !== "No Quote" &&
-                    (Object.keys(additionalCharges).length > 0 ||
-                      pricesByLine[line.id]?.some(
-                        (price) => (price.shippingCost ?? 0) > 0
-                      ) ||
-                      line.taxPercent) && (
-                      <View style={tw("mt-2.5")}>
-                        <Text style={tw("text-[9px] font-bold")}>
-                          Tax & Fees
-                        </Text>
-                        {pricesByLine[line.id]?.some(
-                          (price) => (price.shippingCost ?? 0) > 0
-                        ) && (
-                          <Text style={tw("text-[9px] opacity-80")}>
-                            - Shipping
-                          </Text>
-                        )}
-                        {Object.values(additionalCharges)
-                          .sort((a, b) =>
-                            a.description.localeCompare(b.description)
-                          )
-                          .map((charge) => {
-                            return charge.description ? (
-                              <Text
-                                key={charge.description}
-                                style={tw("text-[9px] opacity-80")}
-                              >
-                                - {charge.description}
-                              </Text>
-                            ) : null;
-                          })}
-                        {line.taxPercent && (
-                          <Text style={tw("text-[9px] opacity-80")}>
-                            - Tax ({line.taxPercent * 100}%)
-                          </Text>
-                        )}
+                    {thumbnails && line.id in thumbnails && (
+                      <View style={tw("mt-2")}>
+                        <Image
+                          src={thumbnails[line.id]!}
+                          style={tw("w-full h-auto")}
+                        />
                       </View>
                     )}
-                </View>
-                <View style={tw("flex flex-col w-2/3 gap-2")}>
-                  {line.status !== "No Quote" ? (
-                    line.quantity.map((quantity, index) => {
-                      const prices = pricesByLine[line.id] ?? [];
-                      const price = prices.find(
-                        (price) => price.quantity === quantity
-                      );
-                      const netUnitPrice = price?.convertedNetUnitPrice ?? 0;
-                      const netExtendedPrice =
-                        price?.convertedNetExtendedPrice ?? 0;
 
-                      const additionalCharge =
-                        additionalChargesByQuantity[index] ?? 0;
-
-                      const additionalChargePlusShipping =
-                        additionalCharge + (price?.convertedShippingCost ?? 0);
-
-                      const taxPercent = line.taxPercent ?? 0;
-
-                      const totalPrice =
-                        (netExtendedPrice + additionalChargePlusShipping) *
-                        (1 + taxPercent);
-
-                      return (
-                        <View key={quantity} style={tw("flex flex-row")}>
-                          <Text style={tw("w-1/5 text-right")}>{quantity}</Text>
-                          <Text style={tw("w-1/5 text-right")}>
-                            {netUnitPrice
-                              ? formatter.format(netUnitPrice)
-                              : "-"}
+                    {line.status !== "No Quote" &&
+                      (Object.keys(additionalCharges).length > 0 ||
+                        pricesByLine[line.id]?.some(
+                          (price) => (price.shippingCost ?? 0) > 0
+                        ) ||
+                        line.taxPercent) && (
+                        <View style={tw("mt-2.5")}>
+                          <Text style={tw("text-[9px] font-bold")}>
+                            Tax & Fees
                           </Text>
-                          <Text style={tw("w-1/5 text-right")}>
-                            {additionalChargePlusShipping
-                              ? formatter.format(additionalChargePlusShipping)
-                              : "-"}
-                          </Text>
-                          <Text style={tw("w-1/5 text-right")}>
-                            {price ? `${price.leadTime} days` : "-"}
-                          </Text>
-                          <Text style={tw("w-1/5 text-right")}>
-                            {netUnitPrice ? formatter.format(totalPrice) : "-"}
-                          </Text>
-                        </View>
-                      );
-                    })
-                  ) : (
-                    <View>
-                      <View style={tw("flex flex-row")}>
-                        <Text style={tw("w-1/5 text-right font-bold")}>
-                          No Quote
-                        </Text>
-                        <View style={tw("w-3/5 ml-auto")}>
-                          {line.noQuoteReason && (
-                            <Text style={tw("text-sm")}>
-                              {line.noQuoteReason}
+                          {pricesByLine[line.id]?.some(
+                            (price) => (price.shippingCost ?? 0) > 0
+                          ) && (
+                            <Text style={tw("text-[9px] opacity-80")}>
+                              - Shipping
+                            </Text>
+                          )}
+                          {Object.values(additionalCharges)
+                            .sort((a, b) =>
+                              a.description.localeCompare(b.description)
+                            )
+                            .map((charge) => {
+                              return charge.description ? (
+                                <Text
+                                  key={charge.description}
+                                  style={tw("text-[9px] opacity-80")}
+                                >
+                                  - {charge.description}
+                                </Text>
+                              ) : null;
+                            })}
+                          {line.taxPercent && (
+                            <Text style={tw("text-[9px] opacity-80")}>
+                              - Tax ({line.taxPercent * 100}%)
                             </Text>
                           )}
                         </View>
+                      )}
+                  </View>
+                  <View style={tw("flex flex-col w-2/3 gap-2")}>
+                    {line.status !== "No Quote" ? (
+                      line.quantity.map((quantity, index) => {
+                        const prices = pricesByLine[line.id] ?? [];
+                        const price = prices.find(
+                          (price) => price.quantity === quantity
+                        );
+                        const netUnitPrice = price?.convertedNetUnitPrice ?? 0;
+                        const netExtendedPrice =
+                          price?.convertedNetExtendedPrice ?? 0;
+
+                        const additionalCharge =
+                          additionalChargesByQuantity[index] ?? 0;
+
+                        const additionalChargePlusShipping =
+                          additionalCharge +
+                          (price?.convertedShippingCost ?? 0);
+
+                        const taxPercent = line.taxPercent ?? 0;
+
+                        const totalPrice =
+                          (netExtendedPrice + additionalChargePlusShipping) *
+                          (1 + taxPercent);
+
+                        return (
+                          <View key={quantity} style={tw("flex flex-row")}>
+                            <Text style={tw("w-1/5 text-right")}>
+                              {quantity}
+                            </Text>
+                            <Text style={tw("w-1/5 text-right")}>
+                              {netUnitPrice
+                                ? formatter.format(netUnitPrice)
+                                : "-"}
+                            </Text>
+                            <Text style={tw("w-1/5 text-right")}>
+                              {additionalChargePlusShipping
+                                ? formatter.format(additionalChargePlusShipping)
+                                : "-"}
+                            </Text>
+                            <Text style={tw("w-1/5 text-right")}>
+                              {price ? `${price.leadTime} days` : "-"}
+                            </Text>
+                            <Text style={tw("w-1/5 text-right")}>
+                              {netUnitPrice
+                                ? formatter.format(totalPrice)
+                                : "-"}
+                            </Text>
+                          </View>
+                        );
+                      })
+                    ) : (
+                      <View>
+                        <View style={tw("flex flex-row")}>
+                          <Text style={tw("w-1/5 text-right font-bold")}>
+                            No Quote
+                          </Text>
+                          <View style={tw("w-3/5 ml-auto")}>
+                            {line.noQuoteReason && (
+                              <Text style={tw("text-sm")}>
+                                {line.noQuoteReason}
+                              </Text>
+                            )}
+                          </View>
+                        </View>
                       </View>
-                    </View>
-                  )}
+                    )}
+                  </View>
                 </View>
+                {Object.keys(line.externalNotes ?? {}).length > 0 && (
+                  <Note
+                    key={`${line.id}-notes`}
+                    content={line.externalNotes as JSONContent}
+                  />
+                )}
               </View>
             );
           })}
           {shipment?.shippingCost && (
             <View
               style={tw(
-                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold text-gray-500 uppercase"
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold  uppercase"
               )}
             >
               <Text>Shipping</Text>
@@ -342,10 +353,12 @@ const QuotePDF = ({
         </View>
       </View>
       <View style={tw("flex flex-col gap-4 w-full")}>
-        <Note
-          title="Notes"
-          content={(quote.externalNotes ?? {}) as JSONContent}
-        />
+        {Object.keys(quote.externalNotes ?? {}).length > 0 && (
+          <Note
+            title="Notes"
+            content={(quote.externalNotes ?? {}) as JSONContent}
+          />
+        )}
         <Note title="Standard Terms & Conditions" content={terms} />
       </View>
     </Template>

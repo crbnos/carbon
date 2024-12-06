@@ -14990,7 +14990,9 @@ export type Database = {
           customFields: Json | null
           description: string
           estimatorId: string | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           itemId: string
           itemReadableId: string | null
           itemType: string
@@ -14998,7 +15000,6 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
           noQuoteReason: string | null
-          notes: Json | null
           quantity: number[] | null
           quoteId: string
           quoteRevisionId: number
@@ -15018,7 +15019,9 @@ export type Database = {
           customFields?: Json | null
           description: string
           estimatorId?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           itemId: string
           itemReadableId?: string | null
           itemType?: string
@@ -15026,7 +15029,6 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           noQuoteReason?: string | null
-          notes?: Json | null
           quantity?: number[] | null
           quoteId: string
           quoteRevisionId?: number
@@ -15046,7 +15048,9 @@ export type Database = {
           customFields?: Json | null
           description?: string
           estimatorId?: string | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           itemId?: string
           itemReadableId?: string | null
           itemType?: string
@@ -15054,7 +15058,6 @@ export type Database = {
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
           noQuoteReason?: string | null
-          notes?: Json | null
           quantity?: number[] | null
           quoteId?: string
           quoteRevisionId?: number
@@ -17434,14 +17437,15 @@ export type Database = {
           customFields: Json | null
           description: string | null
           exchangeRate: number | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           invoicedComplete: boolean
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"]
           modelUploadId: string | null
-          notes: Json | null
           promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
@@ -17475,14 +17479,15 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           exchangeRate?: number | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
-          notes?: Json | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -17516,14 +17521,15 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           exchangeRate?: number | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
           methodType?: Database["public"]["Enums"]["methodType"]
           modelUploadId?: string | null
-          notes?: Json | null
           promisedDate?: string | null
           quantityInvoiced?: number | null
           quantitySent?: number | null
@@ -27419,14 +27425,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27767,7 +27773,9 @@ export type Database = {
           customFields: Json | null
           description: string | null
           estimatorId: string | null
+          externalNotes: Json | null
           id: string | null
+          internalNotes: Json | null
           itemId: string | null
           itemReadableId: string | null
           itemType: string | null
@@ -27779,11 +27787,11 @@ export type Database = {
           modelSize: number | null
           modelUploadId: string | null
           noQuoteReason: string | null
-          notes: Json | null
           quantity: number[] | null
           quoteId: string | null
           quoteRevisionId: number | null
           status: Database["public"]["Enums"]["quoteLineStatus"] | null
+          tags: string[] | null
           taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
@@ -29014,7 +29022,9 @@ export type Database = {
           customFields: Json | null
           description: string | null
           exchangeRate: number | null
+          externalNotes: Json | null
           id: string | null
+          internalNotes: Json | null
           invoicedComplete: boolean | null
           itemId: string | null
           itemReadableId: string | null
@@ -29025,7 +29035,6 @@ export type Database = {
           modelPath: string | null
           modelSize: number | null
           modelUploadId: string | null
-          notes: Json | null
           promisedDate: string | null
           quantityInvoiced: number | null
           quantitySent: number | null
@@ -29202,14 +29211,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -29510,6 +29519,7 @@ export type Database = {
           order: number | null
           quantity: number[] | null
           salesRfqId: string | null
+          tags: string[] | null
           thumbnailPath: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null

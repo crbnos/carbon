@@ -121,7 +121,8 @@ export default function SalesRFQLine() {
         table="salesRfqLine"
         title="Notes"
         subTitle={line.customerPartId ?? ""}
-        notes={line.internalNotes as JSONContent}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
       />
       <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
         <Suspense

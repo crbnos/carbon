@@ -193,7 +193,8 @@ serve(async (req: Request) => {
                   itemReadableId: line.itemReadableId,
                   locationId: line.locationId ?? quote.data.locationId,
                   methodType: line.methodType,
-                  notes: line.notes,
+                  internalNotes: line.internalNotes,
+                  externalNotes: line.externalNotes,
                   saleQuantity: selectedLines![line.id!].quantity,
                   status: "Ordered",
                   unitOfMeasureCode: line.unitOfMeasureCode,
@@ -547,6 +548,7 @@ serve(async (req: Request) => {
             .selectAll()
             .where("salesRfqId", "=", id)
             .execute();
+
           const quoteLineInserts: Database["public"]["Tables"]["quoteLine"]["Insert"][] =
             salesRfqLinesWithItemIds.map((line) => ({
               id: line.id ?? undefined,
@@ -560,7 +562,8 @@ serve(async (req: Request) => {
               locationId: salesRfq.data?.locationId,
               methodType: line.methodType!,
               modelUploadId: line.modelUploadId,
-              notes: line.internalNotes,
+              internalNotes: line.internalNotes,
+              externalNotes: line.externalNotes,
               quantity: line.quantity,
               status: "Not Started",
               unitOfMeasureCode: line.unitOfMeasureCode,

@@ -13,9 +13,11 @@ const convertTiptapJSON = (
     case "doc":
       return (
         <View style={{ fontSize: 11 }}>
-          <View style={styles.thead}>
-            <Text>{args?.title ?? "Notes"}</Text>
-          </View>
+          {args?.title && (
+            <View style={styles.thead}>
+              <Text>{args?.title}</Text>
+            </View>
+          )}
           {node.content.map((child, index) => convertTiptapJSON(child))}
         </View>
       );
@@ -113,7 +115,7 @@ const convertTiptapJSON = (
   }
 };
 
-const Note = ({ title, content }: { title: string; content: JSONContent }) => {
+const Note = ({ title, content }: { title?: string; content: JSONContent }) => {
   if (!content || !("content" in content)) return null;
   return <View>{convertTiptapJSON(content, { title })}</View>;
 };
@@ -127,6 +129,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginTop: "20px",
+    marginBottom: "10px",
     padding: "6px 3px 6px 3px",
     borderTop: 1,
     borderTopColor: "#CCCCCC",
@@ -136,7 +139,6 @@ const styles = StyleSheet.create({
     borderBottomStyle: "solid",
     fontSize: 9,
     fontWeight: 700,
-    color: "#7d7d7d",
     textTransform: "uppercase",
   },
   tfoot: {
