@@ -1,5 +1,5 @@
 import { getBrowserEnv } from "@carbon/auth";
-import { swaggerDocsSchema } from "@carbon/database";
+import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { cn } from "@carbon/react";
 import { LuTable2 } from "react-icons/lu";
 import type { ValidLang } from "~/modules/api";
