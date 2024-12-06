@@ -209,6 +209,17 @@ const QuoteLinePricing = ({
     });
   };
 
+  const onUpdatePrecision = (precision: number | string) => {
+    const formData = new FormData();
+    const numericPrecision =
+      typeof precision === "string" ? precision.length : precision;
+    formData.append("precision", numericPrecision.toString());
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.quoteLineUpdatePrecision(quoteId, lineId),
+    });
+  };
+
   const onUpdateCost = async (value: number) => {
     if (!line.itemId) return;
     const formData = new FormData();
@@ -280,45 +291,79 @@ const QuoteLinePricing = ({
         </CardHeader>
         {permissions.can("update", "sales") && (
           <CardAction>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  leftIcon={<LuRefreshCcw />}
-                  rightIcon={<LuChevronDown />}
-                  isLoading={
-                    fetcher.state === "loading" &&
-                    fetcher.formAction ===
-                      path.to.quoteLineRecalculatePrice(quoteId, lineId)
-                  }
-                  isDisabled={
-                    !isEditable ||
-                    (fetcher.state === "loading" &&
+            <HStack>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    rightIcon={<LuChevronDown />}
+                    isLoading={
+                      fetcher.state === "loading" &&
                       fetcher.formAction ===
-                        path.to.quoteLineRecalculatePrice(quoteId, lineId))
-                  }
-                >
-                  Recalculate
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => onRecalculate(0)}>
-                  0% Markup
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRecalculate(10)}>
-                  10% Markup
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRecalculate(15)}>
-                  15% Markup
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRecalculate(20)}>
-                  20% Markup
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onRecalculate(30)}>
-                  30% Markup
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                        path.to.quoteLineUpdatePrecision(quoteId, lineId)
+                    }
+                    isDisabled={
+                      !isEditable ||
+                      (fetcher.state === "loading" &&
+                        fetcher.formAction ===
+                          path.to.quoteLineUpdatePrecision(quoteId, lineId))
+                    }
+                  >
+                    Precision
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onUpdatePrecision(2)}>
+                    .00
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onUpdatePrecision(3)}>
+                    .000
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onUpdatePrecision(4)}>
+                    .0000
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuRefreshCcw />}
+                    rightIcon={<LuChevronDown />}
+                    isLoading={
+                      fetcher.state === "loading" &&
+                      fetcher.formAction ===
+                        path.to.quoteLineRecalculatePrice(quoteId, lineId)
+                    }
+                    isDisabled={
+                      !isEditable ||
+                      (fetcher.state === "loading" &&
+                        fetcher.formAction ===
+                          path.to.quoteLineRecalculatePrice(quoteId, lineId))
+                    }
+                  >
+                    Recalculate
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onRecalculate(0)}>
+                    0% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(10)}>
+                    10% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(15)}>
+                    15% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(20)}>
+                    20% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(30)}>
+                    30% Markup
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </HStack>
           </CardAction>
         )}
       </HStack>
