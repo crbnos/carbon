@@ -91,7 +91,8 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
   const newQuoteLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<QuotationLine | null>(null);
-  const isDisabled = quoteData?.quote?.status !== "Draft";
+  const isDisabled =
+    !permissions.can("delete", "sales") || quoteData?.quote?.status !== "Draft";
 
   const onDeleteLine = (line: QuotationLine) => {
     setDeleteLine(line);

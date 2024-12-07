@@ -105,7 +105,7 @@ const SupplierQuoteProperties = () => {
   const permissions = usePermissions();
 
   const isDisabled =
-    !permissions.can("update", "sales") ||
+    !permissions.can("update", "purchasing") ||
     !["Active"].includes(routeData?.quote?.status ?? "");
 
   return (
@@ -164,7 +164,7 @@ const SupplierQuoteProperties = () => {
         table="supplierQuote"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "sales")}
+        isReadOnly={!permissions.can("update", "purchasing")}
       />
       <ValidatedForm
         defaultValues={{ supplierId: routeData?.quote?.supplierId }}
