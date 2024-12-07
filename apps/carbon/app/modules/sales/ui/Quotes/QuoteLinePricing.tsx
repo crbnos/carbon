@@ -76,6 +76,8 @@ const QuoteLinePricing = ({
     setPrices(pricesByQuantity);
   }, [pricesByQuantity]);
 
+  const unitPricePrecision = line.unitPricePrecision ?? 2;
+
   const routeData = useRouteData<{
     quote: Quotation;
   }>(path.to.quote(quoteId));
@@ -242,6 +244,13 @@ const QuoteLinePricing = ({
       .eq("id", quoteId)
       .single();
 
+    const quoteLineData = await carbon
+      .from("quoteLine")
+      .select("unitPricePrecision")
+      .eq("id", lineId)
+      .single();
+    const unitPricePrecision = quoteLineData.data?.unitPricePrecision ?? 2;
+
     const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
@@ -258,14 +267,19 @@ const QuoteLinePricing = ({
         createdBy: userId,
       } as unknown as QuotationPrice;
     }
-    newPrices[quantity] = { ...newPrices[quantity], [key]: value };
+    let roundedValue = value;
+    if (key === "unitPrice") {
+      // Round the value to the precision of the quote line
+      roundedValue = Number(value.toFixed(unitPricePrecision));
+    }
+    newPrices[quantity] = { ...newPrices[quantity], [key]: roundedValue };
 
     setPrices(newPrices);
 
     if (hasPrice) {
       const { error } = await carbon
         .from("quoteLinePrice")
-        .update({ [key]: value })
+        .update({ [key]: roundedValue })
         .eq("quoteLineId", lineId)
         .eq("quantity", quantity);
       if (error) {
@@ -522,6 +536,7 @@ const QuoteLinePricing = ({
                       formatOptions={{
                         style: "currency",
                         currency: baseCurrency,
+                        maximumFractionDigits: unitPricePrecision,
                       }}
                       minValue={0}
                       onChange={(value) => {

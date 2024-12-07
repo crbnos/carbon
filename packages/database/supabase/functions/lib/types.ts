@@ -15380,7 +15380,6 @@ export type Database = {
           quoteLineId: string
           shippingCost: number
           unitPrice: number
-          unitPricePrecision: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -15401,7 +15400,6 @@ export type Database = {
           quoteLineId: string
           shippingCost?: number
           unitPrice?: number
-          unitPricePrecision?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15422,7 +15420,6 @@ export type Database = {
           quoteLineId?: string
           shippingCost?: number
           unitPrice?: number
-          unitPricePrecision?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -27911,6 +27908,7 @@ export type Database = {
           thumbnailPath: string | null
           unitCost: number | null
           unitOfMeasureCode: string | null
+          unitPricePrecision: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
