@@ -1,21 +1,24 @@
 -- Add the unitPricePrecision to quoteLine and quoteLinePrice
 ALTER TABLE "quoteLine" ADD COLUMN "unitPricePrecision" INTEGER NOT NULL DEFAULT 2 CHECK ("unitPricePrecision" IN (2, 3, 4));
-ALTER TABLE "quoteLinePrice" ADD COLUMN "unitPricePrecision" INTEGER NOT NULL DEFAULT 2 CHECK ("unitPricePrecision" IN (2, 3, 4));
 
--- Add a trigger to update the unitPricePrecision on quoteLinePrice when the unitPricePrecision on quoteLine is updated
-CREATE OR REPLACE FUNCTION update_quote_line_price_unit_price_precision()
-RETURNS TRIGGER AS $$
-BEGIN
-  UPDATE "quoteLinePrice"
-  SET "unitPricePrecision" = NEW."unitPricePrecision"
-  WHERE "quoteLineId" = NEW."id";
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER update_quote_line_price_unit_price_precision_trigger
-AFTER UPDATE OF "unitPricePrecision" ON "quoteLine"
-FOR EACH ROW
-WHEN (OLD."unitPricePrecision" IS DISTINCT FROM NEW."unitPricePrecision")
-EXECUTE FUNCTION update_quote_line_price_unit_price_precision();
+DROP VIEW IF EXISTS "quoteLines";
+CREATE OR REPLACE VIEW "quoteLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    ql.*,
+    CASE
+      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+      WHEN i."thumbnailPath" IS NULL AND imu."thumbnailPath" IS NOT NULL THEN imu."thumbnailPath"
+      ELSE i."thumbnailPath"
+    END as "thumbnailPath",
+    COALESCE(mu.id, imu.id) as "modelId",
+    COALESCE(mu."autodeskUrn", imu."autodeskUrn") as "autodeskUrn",
+    COALESCE(mu."modelPath", imu."modelPath") as "modelPath",
+    COALESCE(mu."name", imu."name") as "modelName",
+    COALESCE(mu."size", imu."size") as "modelSize",
+    ic."unitCost" as "unitCost"
+  FROM "quoteLine" ql
+  LEFT JOIN "modelUpload" mu ON ql."modelUploadId" = mu."id"
+  INNER JOIN "item" i ON i.id = ql."itemId"
+  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
+  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
+);

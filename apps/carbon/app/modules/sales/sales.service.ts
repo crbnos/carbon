@@ -1745,6 +1745,12 @@ export async function upsertQuoteLinePrices(
     .eq("id", quoteId)
     .single();
 
+  const quoteLineUnitPricePrecision = await client
+    .from("quoteLine")
+    .select("unitPricePrecision")
+    .eq("id", lineId)
+    .single();
+
   const pricesByQuantity = existingPrices.data.reduce<
     Record<
       number,
@@ -1762,6 +1768,12 @@ export async function upsertQuoteLinePrices(
     if (p.quantity in pricesByQuantity) {
       return {
         ...p,
+        unitPrice: Number(
+          // Round the unit price to the precision of the quote line
+          p.unitPrice.toFixed(
+            quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
+          )
+        ),
         discountPercent: pricesByQuantity[p.quantity].discountPercent,
         leadTime: pricesByQuantity[p.quantity].leadTime,
         quoteId: quoteId,
@@ -1770,6 +1782,12 @@ export async function upsertQuoteLinePrices(
     }
     return {
       ...p,
+      unitPrice: Number(
+        // Round the unit price to the precision of the quote line
+        p.unitPrice.toFixed(
+          quoteLineUnitPricePrecision.data?.unitPricePrecision ?? 2
+        )
+      ),
       quoteId: quoteId,
       exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
     };
