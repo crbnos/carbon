@@ -138,8 +138,11 @@ export async function createCustomerAccount(
   }
 }
 
-export async function acceptInvite(code: string) {
-  const serviceRole = getCarbonServiceRole();
+export async function acceptInvite(
+  serviceRole: SupabaseClient<Database>,
+  code: string,
+  email?: string
+) {
   const invite = await serviceRole
     .from("invite")
     .select("*")
@@ -149,8 +152,14 @@ export async function acceptInvite(code: string) {
 
   if (invite.error) return invite;
 
+  if (email && invite.data.email !== email) {
+    throw new Error(
+      "Invite code does not match email. Please logout and try again."
+    );
+  }
+
   const user = await getUserByEmail(invite.data.email);
-  if (user.error || !user.data) return user;
+  if (user.error) return user;
 
   const [activate, addUser, setPermissions] = await Promise.all([
     activateEmployee(serviceRole, {
@@ -196,10 +205,12 @@ export async function acceptInvite(code: string) {
     return setPermissions;
   }
 
-  return await serviceRole
+  return serviceRole
     .from("invite")
     .update({ acceptedAt: new Date().toISOString() })
-    .eq("code", code);
+    .eq("code", code)
+    .select("*")
+    .single();
 }
 
 async function activateEmployee(
@@ -652,8 +663,8 @@ export async function getUserByEmail(email: string) {
   return getCarbonServiceRole()
     .from("user")
     .select("*")
-    .eq("email", email)
-    .maybeSingle();
+    .eq("email", email.toLowerCase())
+    .single();
 }
 
 export async function getUserClaims(userId: string, companyId: string) {

@@ -13,7 +13,7 @@ export async function getUserByEmail(email: string) {
     .from("user")
     .select("*")
     .eq("email", email.toLowerCase())
-    .maybeSingle();
+    .single();
 }
 
 export async function getUserClaims(userId: string, companyId: string) {

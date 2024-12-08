@@ -2,7 +2,6 @@ import {
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
-  HStack,
   MenuIcon,
   MenuItem,
   useDisclosure,
@@ -71,8 +70,8 @@ const EmployeesTable = memo(
       return [
         {
           header: "User",
-          cell: ({ row }) => (
-            <HStack>
+          cell: ({ row }) => {
+            return row.original.active === true ? (
               <Hyperlink
                 to={`${path.to.employeeAccount(
                   row.original.id!
@@ -80,8 +79,12 @@ const EmployeesTable = memo(
               >
                 <EmployeeAvatar size="sm" employeeId={row.original.id} />
               </Hyperlink>
-            </HStack>
-          ),
+            ) : (
+              <div className="opacity-70">
+                <EmployeeAvatar size="sm" employeeId={row.original.id} />
+              </div>
+            );
+          },
           meta: {
             icon: <LuUser />,
           },
@@ -174,16 +177,6 @@ const EmployeesTable = memo(
             <DropdownMenuItem
               onClick={() => {
                 setSelectedUserIds(selectedRows.map((row) => row.id!));
-                resendInviteModal.onOpen();
-              }}
-              disabled={!permissions.can("create", "users")}
-            >
-              <LuMailCheck className="mr-2 h-4 w-4" />
-              <span>Resend Account Invite</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => {
-                setSelectedUserIds(selectedRows.map((row) => row.id!));
                 deactivateEmployeeModal.onOpen();
               }}
               disabled={!permissions.can("delete", "users")}
@@ -194,32 +187,35 @@ const EmployeesTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, bulkEditDrawer, resendInviteModal, deactivateEmployeeModal]
+      [permissions, bulkEditDrawer, deactivateEmployeeModal]
     );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
         return (
           <>
-            <MenuItem
-              onClick={() =>
-                navigate(
-                  `${path.to.employeeAccount(row.id!)}?${params.toString()}`
-                )
-              }
-            >
-              <MenuIcon icon={<LuPencil />} />
-              Edit Permissions
-            </MenuItem>
-            <MenuItem
-              onClick={() => {
-                setSelectedUserIds([row.id!]);
-                resendInviteModal.onOpen();
-              }}
-            >
-              <MenuIcon icon={<LuMailCheck />} />
-              Resend Account Invite
-            </MenuItem>
+            {row.active === true ? (
+              <MenuItem
+                onClick={() =>
+                  navigate(
+                    `${path.to.employeeAccount(row.id!)}?${params.toString()}`
+                  )
+                }
+              >
+                <MenuIcon icon={<LuPencil />} />
+                Edit Permissions
+              </MenuItem>
+            ) : (
+              <MenuItem
+                onClick={() => {
+                  setSelectedUserIds([row.id!]);
+                  resendInviteModal.onOpen();
+                }}
+              >
+                <MenuIcon icon={<LuMailCheck />} />
+                Resend Account Invite
+              </MenuItem>
+            )}
             {row.active === true && (
               <MenuItem
                 onClick={(e) => {

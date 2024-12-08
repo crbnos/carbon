@@ -56,16 +56,17 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 
   const { email } = validation.data;
   const user = await getUserByEmail(email);
-
+  console.log({ user });
   if (user.data && user.data.active) {
     const companies = await getCompaniesForUser(
       getCarbonServiceRole(),
       user.data.id
     );
+
     if (companies.length > 0) {
-      const authSession = await sendMagicLink(email);
-      if (!authSession) {
-        return json(error(authSession, "Failed to send magic link"), {
+      const magicLink = await sendMagicLink(email);
+      if (!magicLink) {
+        return json(error(magicLink, "Failed to send magic link"), {
           status: 500,
         });
       }
@@ -74,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
     console.error(`No user found for email: ${email}`);
   }
 
-  return json(success("Success"));
+  return json(success());
 }
 
 export default function ForgotPasswordRoute() {
