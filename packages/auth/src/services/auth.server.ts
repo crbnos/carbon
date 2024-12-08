@@ -33,10 +33,16 @@ export async function createEmailAuthAccount(
   return data.user;
 }
 
-export async function deleteAuthAccount(userId: string) {
-  const { error } = await getCarbonServiceRole().auth.admin.deleteUser(userId);
+export async function deleteAuthAccount(
+  client: SupabaseClient<Database>,
+  userId: string
+) {
+  const [supabaseDelete, carbonDelete] = await Promise.all([
+    client.auth.admin.deleteUser(userId),
+    client.from("user").delete().eq("id", userId),
+  ]);
 
-  if (error) return null;
+  if (supabaseDelete.error || carbonDelete.error) return null;
 
   return true;
 }

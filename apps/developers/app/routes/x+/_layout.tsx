@@ -12,10 +12,10 @@ import { useEffect } from "react";
 
 import {
   CarbonProvider,
+  getAppUrl,
   getCarbon,
   getCompanies,
   getUser,
-  VERCEL_URL,
 } from "@carbon/auth";
 import {
   destroyAuthSession,
@@ -25,10 +25,6 @@ import {
 import { AppSidebar } from "~/components/AppSidebar";
 import Breadcrumbs from "~/components/Breadcrumbs";
 import { path } from "~/utils/path";
-
-export const ERP_URL = VERCEL_URL?.includes("localhost")
-  ? "http://localhost:3000"
-  : `https://app.carbonos.dev`;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -53,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
-    throw redirect(ERP_URL);
+    throw redirect(getAppUrl());
   }
 
   return json({

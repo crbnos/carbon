@@ -13,8 +13,9 @@ import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
 import type {
   CompanyPermission,
-  EmployeeRow,
+  EmployeeInsert,
   EmployeeTypePermission,
+  InviteInsert,
   Module,
   Permission,
   User,
@@ -111,12 +112,12 @@ export async function createCustomerAccount(
     ]);
 
     if (updateContact.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(updateContact.error, "Failed to update customer contact");
     }
 
     if (createCustomerAccount.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(
         createCustomerAccount.error,
         "Failed to create a customer account"
@@ -124,12 +125,12 @@ export async function createCustomerAccount(
     }
 
     if (userToCompany.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(userToCompany.error, "Failed to add user to company");
     }
 
     if (permissionsUpdate.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(permissionsUpdate.error, "Failed to add user permissions");
     }
 
@@ -137,7 +138,195 @@ export async function createCustomerAccount(
   }
 }
 
+export async function acceptInvite(code: string) {
+  const serviceRole = getCarbonServiceRole();
+  const invite = await serviceRole
+    .from("invite")
+    .select("*")
+    .eq("code", code)
+    .is("acceptedAt", null)
+    .single();
+
+  if (invite.error) return invite;
+
+  const user = await getUserByEmail(invite.data.email);
+  if (user.error || !user.data) return user;
+
+  const [activate, addUser, setPermissions] = await Promise.all([
+    activateEmployee(serviceRole, {
+      userId: user.data.id,
+      companyId: invite.data.companyId,
+    }),
+    addUserToCompany(serviceRole, {
+      userId: user.data.id,
+      companyId: invite.data.companyId,
+      role: "employee",
+    }),
+    setUserPermissions(
+      serviceRole,
+      user.data.id,
+      invite.data.permissions as Record<string, string[]>
+    ),
+  ]);
+
+  if (activate.error) {
+    console.error(activate.error);
+    await rollbackInviteAccept(serviceRole, {
+      userId: user.data.id,
+      companyId: invite.data.companyId,
+    });
+    return activate;
+  }
+
+  if (addUser.error) {
+    console.error(addUser.error);
+    await rollbackInviteAccept(serviceRole, {
+      userId: user.data.id,
+      companyId: invite.data.companyId,
+    });
+    return addUser;
+  }
+
+  if (setPermissions.error) {
+    console.error(setPermissions.error);
+    await rollbackInviteAccept(serviceRole, {
+      userId: user.data.id,
+      companyId: invite.data.companyId,
+    });
+    return setPermissions;
+  }
+
+  return await serviceRole
+    .from("invite")
+    .update({ acceptedAt: new Date().toISOString() })
+    .eq("code", code);
+}
+
+async function activateEmployee(
+  client: SupabaseClient<Database>,
+  {
+    userId,
+    companyId,
+  }: {
+    userId: string;
+    companyId: string;
+  }
+) {
+  return client
+    .from("employee")
+    .update({ active: true })
+    .eq("id", userId)
+    .eq("companyId", companyId);
+}
+
 export async function createEmployeeAccount(
+  client: SupabaseClient<Database>,
+  {
+    email,
+    firstName,
+    lastName,
+    employeeType,
+    locationId,
+    companyId,
+    createdBy,
+  }: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    employeeType: string;
+    locationId: string;
+    companyId: string;
+    createdBy: string;
+  }
+): Promise<
+  | { success: false; message: string }
+  | { success: true; code: string; userId: string }
+> {
+  const employeeTypePermissions = await getPermissionsByEmployeeType(
+    client,
+    employeeType
+  );
+  if (employeeTypePermissions.error) {
+    return { success: false, message: employeeTypePermissions.error.message };
+  }
+
+  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
+  const serviceRole = getCarbonServiceRole();
+  const user = await getUserByEmail(email);
+  let userId = "";
+  let isNewUser = false;
+
+  if (user.data) {
+    userId = user.data.id;
+  } else {
+    isNewUser = true;
+    const createSupabaseUser = await serviceRole.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password: crypto.randomUUID(),
+      email_confirm: true,
+    });
+
+    if (createSupabaseUser.error) {
+      return { success: false, message: createSupabaseUser.error.message };
+    }
+
+    userId = createSupabaseUser.data.user.id;
+    const createCarbonUser = await createUser(serviceRole, {
+      id: userId,
+      email: email.toLowerCase(),
+      firstName,
+      lastName,
+      avatarUrl: null,
+    });
+
+    if (createCarbonUser.error) {
+      await deleteAuthAccount(serviceRole, userId);
+      return { success: false, message: createCarbonUser.error.message };
+    }
+  }
+
+  const code = crypto.randomUUID();
+  const [employeeInsert, jobInsert, inviteInsert] = await Promise.all([
+    insertEmployee(client, {
+      id: userId,
+      employeeTypeId: employeeType,
+      active: false,
+      companyId,
+    }),
+    insertEmployeeJob(client, {
+      id: userId,
+      companyId,
+      locationId,
+    }),
+    insertInvite(serviceRole, {
+      role: "employee",
+      permissions,
+      email,
+      companyId,
+      createdBy,
+      code,
+    }),
+  ]);
+
+  if (employeeInsert.error) {
+    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    return { success: false, message: employeeInsert.error.message };
+  }
+
+  if (jobInsert.error) {
+    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    return { success: false, message: jobInsert.error.message };
+  }
+
+  if (inviteInsert.error) {
+    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    return { success: false, message: inviteInsert.error.message };
+  }
+
+  return { success: true, code, userId };
+}
+
+export async function createEmployeeAccountDeprecated(
   client: SupabaseClient<Database>,
   {
     email,
@@ -170,8 +359,8 @@ export async function createEmployeeAccount(
 
   const user = await getUserByEmail(email);
   let userExists = false;
-
   let userId = "";
+
   if (user.data) {
     userExists = true;
     userId = user.data.id;
@@ -203,6 +392,7 @@ export async function createEmployeeAccount(
       insertEmployee(client, {
         id: userId,
         employeeTypeId: employeeType,
+        active: true,
         companyId,
       }),
       insertEmployeeJob(client, {
@@ -215,22 +405,22 @@ export async function createEmployeeAccount(
     ]);
 
   if (employeeInsert.error) {
-    if (!userExists) await deleteAuthAccount(userId);
+    if (!userExists) await deleteAuthAccount(serviceRole, userId);
     return error(employeeInsert.error, "Failed to create a employee account");
   }
 
   if (jobInsert.error) {
-    if (!userExists) await deleteAuthAccount(userId);
+    if (!userExists) await deleteAuthAccount(serviceRole, userId);
     return error(jobInsert.error, "Failed to create a job");
   }
 
   if (userToCompany.error) {
-    if (!userExists) await deleteAuthAccount(userId);
+    if (!userExists) await deleteAuthAccount(serviceRole, userId);
     return error(userToCompany.error, "Failed to add user to company");
   }
 
   if (permissionsUpdate.error) {
-    if (!userExists) await deleteAuthAccount(userId);
+    if (!userExists) await deleteAuthAccount(serviceRole, userId);
     return error(permissionsUpdate.error, "Failed to update user permissions");
   }
 
@@ -313,12 +503,12 @@ export async function createSupplierAccount(
     ]);
 
     if (updateContact.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(updateContact.error, "Failed to update supplier contact");
     }
 
     if (createSupplierAccount.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(
         createSupplierAccount.error,
         "Failed to create a supplier account"
@@ -326,12 +516,12 @@ export async function createSupplierAccount(
     }
 
     if (userToCompany.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(userToCompany.error, "Failed to add user to company");
     }
 
     if (permissionsUpdate.error) {
-      await deleteAuthAccount(userId);
+      await deleteAuthAccount(serviceRole, userId);
       return error(
         permissionsUpdate.error,
         "Failed to create user permissions"
@@ -349,7 +539,7 @@ async function createUser(
   const { data, error } = await insertUser(client, user);
 
   if (error) {
-    await deleteAuthAccount(user.id);
+    await deleteAuthAccount(client, user.id);
   }
 
   return { data, error };
@@ -542,9 +732,23 @@ async function insertCustomerAccount(
 
 export async function insertEmployee(
   client: SupabaseClient<Database>,
-  employee: EmployeeRow
+  employee: EmployeeInsert
 ) {
   return client.from("employee").insert([employee]).select("*").single();
+}
+
+export async function insertInvite(
+  client: SupabaseClient<Database>,
+  invite: InviteInsert
+) {
+  return client
+    .from("invite")
+    .upsert([invite], {
+      onConflict: "email, companyId",
+      ignoreDuplicates: false,
+    })
+    .select("*")
+    .single();
 }
 
 async function insertSupplierAccount(
@@ -826,6 +1030,24 @@ export async function resetPassword(userId: string, password: string) {
   return getCarbonServiceRole().auth.admin.updateUserById(userId, {
     password,
   });
+}
+
+async function rollbackInviteAccept(
+  serviceRole: SupabaseClient<Database>,
+  { userId, companyId }: { userId: string; companyId: string }
+) {
+  await Promise.all([
+    serviceRole
+      .from("employee")
+      .update({ active: false })
+      .eq("id", userId)
+      .eq("companyId", companyId),
+    serviceRole
+      .from("userToCompany")
+      .delete()
+      .eq("userId", userId)
+      .eq("companyId", companyId),
+  ]);
 }
 
 async function setUserPermissions(

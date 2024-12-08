@@ -121,6 +121,7 @@ serve(async (req: Request) => {
             id: String(userId),
             employeeTypeId,
             companyId,
+            active: true,
           },
         ])
         .execute();

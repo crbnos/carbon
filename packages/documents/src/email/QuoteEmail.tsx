@@ -4,7 +4,7 @@ import {
   Body,
   Column,
   Container,
-  Head,
+  Font,
   Html,
   Img,
   Link,
@@ -36,10 +36,42 @@ const QuoteEmail = ({
 
   return (
     <Html lang="en">
-      <Head />
       <Preview>{`${quote.quoteId} from ${company.name}`}</Preview>
 
       <Tailwind>
+        <head>
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={400}
+            fontStyle="normal"
+          />
+
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={500}
+            fontStyle="normal"
+          />
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-800-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={800}
+            fontStyle="normal"
+          />
+        </head>
         <Body className="bg-white font-sans">
           <Container className="mx-auto my-[20px] w-[660px] max-w-full">
             <Section>

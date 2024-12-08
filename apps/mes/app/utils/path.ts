@@ -1,10 +1,7 @@
-import { SUPABASE_API_URL } from "@carbon/auth";
+import { getAppUrl, SUPABASE_API_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
-export const ERP_URL =
-  process.env.NODE_ENV === "development"
-    ? "http://localhost:3000"
-    : `https://app.carbonos.dev`;
+export const ERP_URL = getAppUrl();
 
 const x = "/x";
 const api = "/api";

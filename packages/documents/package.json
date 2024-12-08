@@ -25,7 +25,8 @@
     "typescript": "^5.2.2"
   },
   "exports": {
-    ".": "./src/index.tsx"
+    "./email": "./src/email/index.ts",
+    "./pdf": "./src/pdf/index.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"

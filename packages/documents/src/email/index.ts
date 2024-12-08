@@ -1,4 +1,6 @@
+import InviteEmail from "./InviteEmail";
 import PurchaseOrderEmail from "./PurchaseOrderEmail";
 import QuoteEmail from "./QuoteEmail";
+import SalesOrderEmail from "./SalesOrderEmail";
 
-export { PurchaseOrderEmail, QuoteEmail };
+export { InviteEmail, PurchaseOrderEmail, QuoteEmail, SalesOrderEmail };

@@ -4,7 +4,7 @@ import {
   Body,
   Column,
   Container,
-  Head,
+  Font,
   Hr,
   Html,
   Img,
@@ -59,14 +59,44 @@ const SalesOrderEmail = ({
   const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
 
   const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
-  const shouldConvertCurrency =
-    company.baseCurrencyCode !== salesOrder.currencyCode;
 
   return (
     <Html>
-      <Head />
       <Preview>{`${salesOrder.salesOrderId} from ${company.name}`}</Preview>
       <Tailwind>
+        <head>
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={400}
+            fontStyle="normal"
+          />
+
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={500}
+            fontStyle="normal"
+          />
+          <Font
+            fontFamily="Geist"
+            fallbackFontFamily="Helvetica"
+            webFont={{
+              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-800-normal.woff2",
+              format: "woff2",
+            }}
+            fontWeight={800}
+            fontStyle="normal"
+          />
+        </head>
         <Body className="bg-white font-sans">
           <Container className="mx-auto py-5 px-0 w-[660px] max-w-full">
             <Section>
@@ -196,9 +226,7 @@ const SalesOrderEmail = ({
                     <Text className="text-xs font-semibold">
                       {line.salesOrderLineType === "Comment"
                         ? "-"
-                        : formatter.format(
-                            getLineTotal(line, shouldConvertCurrency)
-                          )}
+                        : formatter.format(getLineTotal(line))}
                     </Text>
                   </Column>
                 </Row>
@@ -215,9 +243,7 @@ const SalesOrderEmail = ({
                 <Column className="border-l border-gray-200 h-12"></Column>
                 <Column className="w-[90px] pr-5">
                   <Text className="text-base font-semibold whitespace-nowrap">
-                    {formatter.format(
-                      getTotal(salesOrderLines, shouldConvertCurrency)
-                    )}
+                    {formatter.format(getTotal(salesOrderLines, salesOrder))}
                   </Text>
                 </Column>
               </Row>

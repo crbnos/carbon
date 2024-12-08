@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { PurchaseOrderEmail } from "@carbon/documents";
+import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
