@@ -1,4 +1,4 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error, getAppUrl, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
@@ -94,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
         invitedByName: user.data.fullName ?? "",
         email,
         companyName: company.data.name,
-        inviteCode: result.code,
+        inviteLink: `${getAppUrl()}/invite/${result.code}`,
         ip,
         location,
       })

@@ -1,4 +1,3 @@
-import { getAppUrl } from "@carbon/auth";
 import {
   Body,
   Button,
@@ -19,24 +18,20 @@ interface Props {
   invitedByEmail?: string;
   invitedByName?: string;
   companyName?: string;
-  inviteCode?: string;
+  inviteLink?: string;
   ip?: string;
   location?: string;
 }
-
-const baseAppUrl = getAppUrl();
 
 export const InviteEmail = ({
   invitedByEmail = "tom@sawyer.com",
   invitedByName = "Tom Sawyer",
   email = "huckleberry@sawyer.com",
   companyName = "Tombstone",
-  inviteCode = "1234567890",
+  inviteLink = "https://carbonos.dev/invite/1234567890",
   ip = "38.38.38.38",
   location = "Tombstone, AZ",
 }: Props) => {
-  const inviteLink = `${baseAppUrl}/invite/${inviteCode}`;
-
   return (
     <Html>
       <Tailwind>

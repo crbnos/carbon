@@ -29,12 +29,12 @@ export default function ConfirmMagicLink() {
     <AnimatePresence>
       <VStack
         spacing={4}
-        className="max-w-lg pt-[20dvh] items-center text-center"
+        className="max-w-lg pt-[16dvh] items-center text-center"
       >
         <motion.img
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+          transition={{ duration: 1, ease: "easeInOut" }}
           src="/carbon-logo-dark.png"
           alt="Carbon Logo"
           className="block dark:hidden max-w-[60px] mb-3"
@@ -42,14 +42,14 @@ export default function ConfirmMagicLink() {
         <motion.img
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
+          transition={{ duration: 1, ease: "easeInOut" }}
           src="/carbon-logo-light.png"
           alt="Carbon Logo"
           className="hidden dark:block max-w-[60px] mb-3"
         />
         <Heading
           {...fade}
-          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
           size="h1"
           className="m-0"
         >
@@ -57,7 +57,7 @@ export default function ConfirmMagicLink() {
         </Heading>
         <motion.p
           {...fade}
-          transition={{ duration: 1.4, ease: "easeInOut", delay: 1.9 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.9 }}
           className="text-muted-foreground text-sm pb-4"
         >
           CarbonOS is the operating system for manufacturing
@@ -65,7 +65,7 @@ export default function ConfirmMagicLink() {
 
         <Button
           {...fade}
-          transition={{ duration: 1, delay: 2.4 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 1.4 }}
           size="lg"
           onClick={() => {
             window.location.href = getConfirmationURL(token);

@@ -34,9 +34,6 @@ const EmployeeAvatar = ({
     return (
       <HStack className="no-underline">
         <Avatar size={"xs"} {...props} />
-        {withName && (
-          <span className="text-muted-foreground">Deactivated user</span>
-        )}
       </HStack>
     );
   }

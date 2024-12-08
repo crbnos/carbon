@@ -25,7 +25,7 @@ export const path = {
     endShift: `${x}/end-shift`,
     feedback: `${x}/feedback`,
     finish: `${x}/finish`,
-    forgotPassword: "/forgot-password",
+    forgotPassword: `${ERP_URL}/forgot-password`,
     healthcheck: "/healthcheck",
     issue: `${x}/issue`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),

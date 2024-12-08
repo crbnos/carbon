@@ -12,7 +12,8 @@ CREATE TABLE "invite" (
   
   CONSTRAINT "invite_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "invite_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id"),
-  CONSTRAINT "invite_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id")
+  CONSTRAINT "invite_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id"),
+  CONSTRAINT "invite_email_companyId_key" UNIQUE ("email", "companyId")
 );
 
 CREATE INDEX "invite_unaccepted_code_idx" ON "invite" ("code") WHERE "acceptedAt" IS NULL;

@@ -2,13 +2,13 @@ import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import { getCarbonServiceRole } from "@carbon/auth";
-import { deactivateUser, resendInvite } from "~/modules/users/users.server";
+import { deactivateUser } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 
 const serviceRole = getCarbonServiceRole();
 export const userAdminSchema = z.object({
   id: z.string(),
-  type: z.enum(["resend", "deactivate"]),
+  type: z.enum(["deactivate"]),
   companyId: z.string(),
 });
 
@@ -20,10 +20,6 @@ export const userAdminTask = task({
     let result: Result;
 
     switch (payload.type) {
-      case "resend":
-        console.log(`📫 Resending invite for ${payload.id}`);
-        result = await resendInvite(serviceRole, payload.id);
-        break;
       case "deactivate":
         console.log(`🚭 Deactivating ${payload.id}`);
         result = await deactivateUser(
