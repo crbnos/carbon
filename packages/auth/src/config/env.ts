@@ -104,6 +104,21 @@ export const SUPABASE_ANON_PUBLIC = getEnv("SUPABASE_ANON_PUBLIC", {
   isSecret: false,
 });
 
+export function getAppUrl() {
+  if (
+    process.env.VERCEL_ENV === "production" ||
+    process.env.NODE_ENV === "production"
+  ) {
+    return "https://app.carbonos.dev";
+  }
+
+  if (process.env.VERCEL_ENV === "preview") {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  return "http://localhost:3000";
+}
+
 export function getBrowserEnv() {
   return {
     SUPABASE_API_URL,

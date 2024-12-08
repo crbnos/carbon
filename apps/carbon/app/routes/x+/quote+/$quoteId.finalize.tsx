@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { QuoteEmail } from "@carbon/documents";
+import { QuoteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";

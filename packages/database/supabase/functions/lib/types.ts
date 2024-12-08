@@ -2942,16 +2942,19 @@ export type Database = {
       }
       customerAccount: {
         Row: {
+          active: boolean
           companyId: string
           customerId: string
           id: string
         }
         Insert: {
+          active?: boolean
           companyId: string
           customerId: string
           id: string
         }
         Update: {
+          active?: boolean
           companyId?: string
           customerId?: string
           id?: string
@@ -4494,16 +4497,19 @@ export type Database = {
       }
       employee: {
         Row: {
+          active: boolean
           companyId: string
           employeeTypeId: string
           id: string
         }
         Insert: {
+          active?: boolean
           companyId: string
           employeeTypeId: string
           id: string
         }
         Update: {
+          active?: boolean
           companyId?: string
           employeeTypeId?: string
           id?: string
@@ -5826,6 +5832,106 @@ export type Database = {
           jsonschema?: Json
         }
         Relationships: []
+      }
+      invite: {
+        Row: {
+          acceptedAt: string | null
+          code: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          email: string
+          id: string
+          permissions: Json
+          role: Database["public"]["Enums"]["role"]
+        }
+        Insert: {
+          acceptedAt?: string | null
+          code: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          email: string
+          id?: string
+          permissions?: Json
+          role: Database["public"]["Enums"]["role"]
+        }
+        Update: {
+          acceptedAt?: string | null
+          code?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          email?: string
+          id?: string
+          permissions?: Json
+          role?: Database["public"]["Enums"]["role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "invite_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "invite_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invite_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
       }
       item: {
         Row: {
@@ -20167,16 +20273,19 @@ export type Database = {
       }
       supplierAccount: {
         Row: {
+          active: boolean
           companyId: string
           id: string
           supplierId: string
         }
         Insert: {
+          active?: boolean
           companyId: string
           id: string
           supplierId: string
         }
         Update: {
+          active?: boolean
           companyId?: string
           id?: string
           supplierId?: string
@@ -29211,14 +29320,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

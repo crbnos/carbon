@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { PurchaseOrderPDF } from "@carbon/documents";
+import { PurchaseOrderPDF } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
