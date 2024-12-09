@@ -1,6 +1,56 @@
-import { LuMoveUpRight } from "react-icons/lu";
+import { LuMoveUpRight, LuSend } from "react-icons/lu";
+import { getSlackClient } from "~/lib/slack.server";
+
+import { Input, Submit, ValidatedForm } from "@carbon/form";
+import { toast } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { useEffect } from "react";
+import { z } from "zod";
+
+const emailValidator = z.object({
+  email: z.string().email(),
+});
+
+export async function action({ request }: ActionFunctionArgs) {
+  const formData = await request.formData();
+  const email = String(formData.get("email"));
+
+  if (!email) {
+    return json(
+      { success: false, message: "Email is required" },
+      { status: 400 }
+    );
+  }
+
+  const slackClient = getSlackClient();
+  await slackClient.sendMessage({
+    channel: "#leads",
+    text: "New lead from website",
+    blocks: [
+      {
+        type: "section",
+        text: { type: "mrkdwn", text: `New lead: ${email}` },
+      },
+    ],
+  });
+
+  return json({ success: true, message: "Email submitted" });
+}
 
 export default function Route() {
+  const fetcher = useFetcher<typeof action>();
+
+  useEffect(() => {
+    if (!fetcher.data) return;
+
+    if (fetcher.data.success) {
+      toast.success("Email submitted");
+    } else {
+      toast.error(fetcher.data.message ?? "Failed to submit email");
+    }
+  }, [fetcher.data]);
+
   return (
     <>
       <header className="flex select-none items-center bg-background pl-5 pr-4 border-b h-[52px] border-transparent">
@@ -32,26 +82,31 @@ export default function Route() {
 
         <div
           id="intro"
-          className="flex flex-col pt-[28dvh] mx-auto w-container text-center"
+          className="flex flex-col pt-[24dvh] mx-auto w-container text-center"
         >
           <img
             src="https://app.carbonos.dev/carbon-logo-light.png"
             alt="CarbonOS"
-            className="w-64 mx-auto"
+            className="max-w-64 w-[25dvh] mx-auto"
           />
-          {/* <h1 className="text-[3rem] sm:text-[6rem] md:text-[10rem] lg:text-[14rem] font-bold tracking-tighter lg:tracking-[-0.75rem] text-foreground">
-            CarbonOS
-          </h1> */}
-          {/* <p className="mb-6 text-center text-muted-foreground">
-            Realtime, collaborative, and powerful manufacturing software.
-          </p> */}
-          {/* <Button
-            className="rounded-full w-fit mx-auto"
-            size="lg"
-            rightIcon={<LuMoveUpRight />}
+
+          <ValidatedForm
+            validator={emailValidator}
+            fetcher={fetcher}
+            method="post"
+            className="flex flex-col gap-3 my-8"
           >
-            Get Started
-          </Button> */}
+            <Input name="email" label="Email" />
+            <Submit
+              className="h-10"
+              variant="secondary"
+              leftIcon={<LuSend />}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Get Updates
+            </Submit>
+          </ValidatedForm>
         </div>
       </div>
     </>
