@@ -201,7 +201,7 @@ const CadModelUpload = ({
     <div
       {...getRootProps()}
       className={cn(
-        "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full",
+        "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full min-h-[400px] ",
         !hasFile &&
           "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card border-2 border-dashed",
         className
