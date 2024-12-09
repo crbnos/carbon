@@ -170,6 +170,7 @@ export default function QuoteLine() {
         <QuoteLineCosting
           quantities={line.quantity ?? [1]}
           getLineCosts={getLineCosts}
+          unitPricePrecision={line.unitPricePrecision}
         />
       )}
       {line.status !== "No Quote" && (
