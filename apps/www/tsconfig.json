@@ -4,7 +4,8 @@
     "**/*.ts",
     "**/*.tsx",
     "app/modules/documents/documents.service.ts",
-    "../carbon/app/components/Breadcrumb.tsx"
+    "../carbon/app/components/Breadcrumb.tsx",
+    "../carbon/app/routes/api+/subscribe.tsx"
   ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],

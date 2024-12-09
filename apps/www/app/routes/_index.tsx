@@ -1,6 +1,29 @@
-import { LuMoveUpRight } from "react-icons/lu";
+import { LuMoveUpRight, LuSend } from "react-icons/lu";
+
+import { getAppUrl } from "@carbon/auth";
+import { Input, Submit, ValidatedForm } from "@carbon/form";
+import { toast } from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
+import { useEffect } from "react";
+import { z } from "zod";
+
+const emailValidator = z.object({
+  email: z.string().email(),
+});
 
 export default function Route() {
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
+
+  useEffect(() => {
+    if (!fetcher.data) return;
+
+    if (fetcher.data.success) {
+      toast.success("Email submitted");
+    } else {
+      toast.error(fetcher.data.message ?? "Failed to submit email");
+    }
+  }, [fetcher.data]);
+
   return (
     <>
       <header className="flex select-none items-center bg-background pl-5 pr-4 border-b h-[52px] border-transparent">
@@ -32,26 +55,32 @@ export default function Route() {
 
         <div
           id="intro"
-          className="flex flex-col pt-[28dvh] mx-auto w-container text-center"
+          className="flex flex-col pt-[24dvh] mx-auto w-container text-center"
         >
           <img
             src="https://app.carbonos.dev/carbon-logo-light.png"
             alt="CarbonOS"
-            className="w-64 mx-auto"
+            className="max-w-64 w-[25dvh] mx-auto"
           />
-          {/* <h1 className="text-[3rem] sm:text-[6rem] md:text-[10rem] lg:text-[14rem] font-bold tracking-tighter lg:tracking-[-0.75rem] text-foreground">
-            CarbonOS
-          </h1> */}
-          {/* <p className="mb-6 text-center text-muted-foreground">
-            Realtime, collaborative, and powerful manufacturing software.
-          </p> */}
-          {/* <Button
-            className="rounded-full w-fit mx-auto"
-            size="lg"
-            rightIcon={<LuMoveUpRight />}
+
+          <ValidatedForm
+            action={`${getAppUrl()}/api/subscribe`}
+            validator={emailValidator}
+            fetcher={fetcher}
+            method="post"
+            className="flex flex-col gap-3 my-8"
           >
-            Get Started
-          </Button> */}
+            <Input name="email" label="Email" />
+            <Submit
+              className="h-10"
+              variant="secondary"
+              leftIcon={<LuSend />}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Get Updates
+            </Submit>
+          </ValidatedForm>
         </div>
       </div>
     </>

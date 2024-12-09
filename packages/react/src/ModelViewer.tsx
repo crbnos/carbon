@@ -57,7 +57,7 @@ export function ModelViewer({
       if (viewerRef.current === null) {
         let viewer = new OV.EmbeddedViewer(parentDiv.current, {
           camera: new OV.Camera(
-            new OV.Coord3D(0, 0, 100),
+            new OV.Coord3D(100, 100, 100),
             new OV.Coord3D(0, 0, 0),
             new OV.Coord3D(0, 1, 0),
             45.0
@@ -81,21 +81,16 @@ export function ModelViewer({
                 const center = boundingSphere.center;
                 const radius = boundingSphere.radius;
                 const camera = viewer3D.GetCamera();
-                const direction = new OV.Coord3D(0, 0, 1);
+                const direction = new OV.Coord3D(1, 1, 1);
                 const eye = new OV.Coord3D(
-                  center.x + direction.x * radius * 2.5,
-                  center.y + direction.y * radius * 2.5,
-                  center.z + direction.z * radius * 2.5
+                  center.x + direction.x * radius * 1.5,
+                  center.y + direction.y * radius * 1.5,
+                  center.z + direction.z * radius * 1.5
                 );
                 camera.center = center;
                 camera.eye = eye;
                 camera.up = new OV.Coord3D(0, 1, 0);
                 viewer3D.SetCamera(camera);
-              }
-
-              if (onDataUrl) {
-                const dataUrl = viewer3D.GetImageAsDataUrl(300, 300, true);
-                onDataUrl?.(dataUrl);
               }
             }
 
@@ -147,11 +142,11 @@ export function ModelViewer({
       const center = boundingSphere.center;
       const radius = boundingSphere.radius;
       const camera = viewer3D.GetCamera();
-      const direction = new OV.Coord3D(0, 0, 1);
+      const direction = new OV.Coord3D(1, 1, 1);
       const eye = new OV.Coord3D(
-        center.x + direction.x * radius * 2.5,
-        center.y + direction.y * radius * 2.5,
-        center.z + direction.z * radius * 2.5
+        center.x + direction.x * radius * 1.5,
+        center.y + direction.y * radius * 1.5,
+        center.z + direction.z * radius * 1.5
       );
       camera.center = center;
       camera.eye = eye;

@@ -12,8 +12,7 @@ import {
 import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
-import { flushSync } from "react-dom";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuUploadCloud } from "react-icons/lu";
 import { useUser } from "~/hooks";
@@ -53,75 +52,9 @@ const CadModel = ({
 
   const fetcher = useFetcher<{}>();
   const [file, setFile] = useState<File | null>(null);
-  const [id, setId] = useState<string | null>(null);
-  const [dataUrl, setDataUrl] = useState<string | null>(null);
-
-  const uploadThumbnail = async () => {
-    if (!dataUrl) return;
-    if (!id) return;
-    if (!carbon) return;
-
-    const base64Data = dataUrl.split(",")[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-
-    const byteArray = new Uint8Array(byteNumbers);
-    const thumbnailFile = new File([byteArray], "thumbnail.png", {
-      type: "image/png",
-    });
-
-    if (!carbon) {
-      toast.error("Failed to initialize carbon client");
-      return;
-    }
-
-    const thumbnailId = nanoid();
-    const thumbnailPath = `${companyId}/thumbnails/${thumbnailId}.png`;
-
-    const thumbnailUpload = await carbon.storage
-      .from("private")
-      .upload(thumbnailPath, thumbnailFile, {
-        upsert: true,
-        contentType: "image/png",
-      });
-
-    if (thumbnailUpload.error) {
-      toast.error("Failed to upload thumbnail");
-    }
-
-    const update = await carbon
-      .from("modelUpload")
-      .update({
-        thumbnailPath: thumbnailUpload.data!.path,
-      })
-      .eq("id", id);
-
-    if (update.error) {
-      toast.error("Failed to update model upload");
-    }
-  };
-
-  // we want to upload the thumbnail after the file is uploaded
-  useEffect(() => {
-    if (file && modelPath && dataUrl && id) {
-      uploadThumbnail();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataUrl, file, id, modelPath]);
-
-  const onDataUrl = (dataUrl: string) => {
-    setDataUrl(dataUrl);
-  };
 
   const onFileChange = async (file: File | null) => {
     const modelId = nanoid();
-    flushSync(() => {
-      setId(modelId);
-    });
 
     setFile(file);
 
@@ -190,7 +123,6 @@ const CadModel = ({
             file={file}
             url={modelPath ? getPrivateUrl(modelPath) : null}
             mode={mode}
-            onDataUrl={onDataUrl}
             className={viewerClassName}
           />
         ) : (
@@ -269,7 +201,7 @@ const CadModelUpload = ({
     <div
       {...getRootProps()}
       className={cn(
-        "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full",
+        "group flex flex-col flex-grow rounded-lg border border-border bg-gradient-to-tr from-background to-card text-card-foreground shadow-sm w-full min-h-[400px] ",
         !hasFile &&
           "cursor-pointer hover:border-primary/30 hover:border-dashed hover:to-primary/10 hover:via-card border-2 border-dashed",
         className
