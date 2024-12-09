@@ -48,7 +48,7 @@ export async function getCustomers(
   let query = client
     .from("customerAccount")
     .select(
-      `user!inner(id, fullName, firstName, lastName, email, avatarUrl, active), 
+      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl), 
       customer!inner(name, customerType!left(name))`,
       { count: "exact" }
     )

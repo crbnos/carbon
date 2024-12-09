@@ -22,7 +22,11 @@ import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Customer } from "~/modules/users";
-import { DeactivateUsersModal, ResendInviteModal } from "~/modules/users";
+import {
+  DeactivateUsersModal,
+  ResendInviteModal,
+  RevokeInviteModal,
+} from "~/modules/users";
 import { useCustomers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -46,6 +50,7 @@ const CustomerAccountsTable = memo(
 
     const deactivateCustomerModal = useDisclosure();
     const resendInviteModal = useDisclosure();
+    const revokeInviteModal = useDisclosure();
     const [customers] = useCustomers();
 
     const canEdit = permissions.can("update", "users");
@@ -152,7 +157,7 @@ const CustomerAccountsTable = memo(
           },
         },
         {
-          accessorKey: "user.active",
+          accessorKey: "active",
           header: "Active",
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
@@ -177,31 +182,38 @@ const CustomerAccountsTable = memo(
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => {
-        const selectedUserIds = selectedRows.reduce<string[]>((acc, row) => {
-          if (row.user && !Array.isArray(row.user)) {
-            acc.push(row.user.id);
-          }
-          return acc;
-        }, []);
-
         return (
           <DropdownMenuContent>
             <DropdownMenuItem
               onClick={() => {
-                setSelectedUserIds(selectedUserIds);
+                setSelectedUserIds(
+                  selectedRows
+                    .filter((row) => row.active === false)
+                    .map((row) => row.user.id)
+                );
                 resendInviteModal.onOpen();
               }}
-              disabled={!permissions.can("create", "users")}
+              disabled={
+                !permissions.can("create", "users") ||
+                selectedRows.every((row) => row.active === true)
+              }
             >
               <LuMailCheck className="mr-2 h-4 w-4" />
-              <span>Resend Account Invite</span>
+              <span>Resend Invite</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                setSelectedUserIds(selectedUserIds);
+                setSelectedUserIds(
+                  selectedRows
+                    .filter((row) => row.active === true)
+                    .map((row) => row.user.id)
+                );
                 deactivateCustomerModal.onOpen();
               }}
-              disabled={!permissions.can("delete", "users")}
+              disabled={
+                !permissions.can("delete", "users") ||
+                selectedRows.every((row) => row.active === false)
+              }
             >
               <LuBan className="mr-2 h-4 w-4" />
               <span>Deactivate Users</span>
@@ -209,41 +221,60 @@ const CustomerAccountsTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, resendInviteModal, deactivateCustomerModal]
+      [permissions, deactivateCustomerModal, resendInviteModal]
     );
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {
-        if (Array.isArray(row.user) || !row.user) {
-          return null;
-        }
-        const userId = row.user.id as string;
         return (
           <>
-            <MenuItem
-              onClick={() => {
-                setSelectedUserIds([userId]);
-                resendInviteModal.onOpen();
-              }}
-            >
-              <MenuIcon icon={<LuMailCheck />} />
-              Resend Account Invite
-            </MenuItem>
-            {row.user?.active === true && (
-              <MenuItem
-                onClick={(e) => {
-                  setSelectedUserIds([userId]);
-                  deactivateCustomerModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuBan />} />
-                Deactivate Customer
-              </MenuItem>
+            {row.active === true ? (
+              <>
+                <MenuItem
+                  onClick={(e) => {
+                    setSelectedUserIds([row.user.id]);
+                    deactivateCustomerModal.onOpen();
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <MenuIcon icon={<LuBan />} />
+                  Deactivate Account
+                </MenuItem>
+              </>
+            ) : (
+              <>
+                <MenuItem
+                  onClick={() => {
+                    setSelectedUserIds([row.user.id]);
+                    resendInviteModal.onOpen();
+                  }}
+                >
+                  <MenuIcon icon={<LuMailCheck />} />
+                  Resend Account Invite
+                </MenuItem>
+                {permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.user.id]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    Revoke Invite
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );
       },
-      [deactivateCustomerModal, resendInviteModal]
+      [
+        deactivateCustomerModal,
+        permissions,
+        resendInviteModal,
+        revokeInviteModal,
+      ]
     );
 
     return (
@@ -267,7 +298,7 @@ const CustomerAccountsTable = memo(
           <DeactivateUsersModal
             userIds={selectedUserIds}
             isOpen={deactivateCustomerModal.isOpen}
-            redirectTo={path.to.supplierAccounts}
+            redirectTo={path.to.customerAccounts}
             onClose={deactivateCustomerModal.onClose}
           />
         )}
@@ -276,6 +307,13 @@ const CustomerAccountsTable = memo(
             userIds={selectedUserIds}
             isOpen={resendInviteModal.isOpen}
             onClose={resendInviteModal.onClose}
+          />
+        )}
+        {revokeInviteModal.isOpen && (
+          <RevokeInviteModal
+            userIds={selectedUserIds}
+            isOpen={revokeInviteModal.isOpen}
+            onClose={revokeInviteModal.onClose}
           />
         )}
       </>

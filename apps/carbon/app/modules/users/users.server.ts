@@ -1,9 +1,5 @@
 import { error, getCarbonServiceRole, success } from "@carbon/auth";
-import {
-  deleteAuthAccount,
-  sendInviteByEmail,
-  sendMagicLink,
-} from "@carbon/auth/auth.server";
+import { deleteAuthAccount, sendInviteByEmail } from "@carbon/auth/auth.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
@@ -24,119 +20,6 @@ import { getPermissionsByEmployeeType } from "~/modules/users";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";
-
-export async function addUserToCompany(
-  client: SupabaseClient<Database>,
-  userToCompany: {
-    userId: string;
-    companyId: string;
-    role: "employee" | "customer" | "supplier";
-  }
-) {
-  return client.from("userToCompany").insert(userToCompany);
-}
-
-export async function createCustomerAccount(
-  client: SupabaseClient<Database>,
-  {
-    id,
-    customerId,
-    companyId,
-  }: {
-    id: string;
-    customerId: string;
-    companyId: string;
-  }
-): Promise<Result> {
-  // TODO: convert to transaction and call this at the end of the transaction
-  const customerContact = await getCustomerContact(client, id);
-  if (
-    customerContact.error ||
-    customerContact.data === null ||
-    Array.isArray(customerContact.data.contact) ||
-    customerContact.data.contact === null
-  ) {
-    return error(customerContact.error, "Failed to get customer contact");
-  }
-
-  const { email, firstName, lastName } = customerContact.data.contact;
-
-  const user = await getUserByEmail(email);
-  if (user.data) {
-    // TODO: user already exists -- send company invite
-    // await addUserToCompany(client, { userId: user.data.id, companyId });
-    return error(
-      null,
-      "User already exists. Adding to team not implemented yet."
-    );
-  } else {
-    // user does not exist -- create user
-    const invitation = await sendInviteByEmail(email);
-
-    if (invitation.error)
-      return error(invitation.error.message, "Failed to send invitation email");
-
-    const userId = invitation.data.user.id;
-
-    const insertUser = await createUser(client, {
-      id: userId,
-      email: email.toLowerCase(),
-      firstName: firstName ?? "",
-      lastName: lastName ?? "",
-      avatarUrl: null,
-    });
-
-    if (insertUser.error)
-      return error(insertUser.error, "Failed to create a new user");
-
-    if (!insertUser.data)
-      return error(insertUser, "No data returned from create user");
-
-    const permissions = makeCustomerPermissions(companyId);
-    const serviceRole = getCarbonServiceRole();
-
-    const [
-      updateContact,
-      createCustomerAccount,
-      userToCompany,
-      permissionsUpdate,
-    ] = await Promise.all([
-      client.from("customerContact").update({ userId }).eq("id", id),
-      insertCustomerAccount(client, {
-        id: userId,
-        customerId,
-        companyId,
-      }),
-      addUserToCompany(client, { userId, companyId, role: "customer" }),
-      setUserPermissions(serviceRole, userId, permissions),
-    ]);
-
-    if (updateContact.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(updateContact.error, "Failed to update customer contact");
-    }
-
-    if (createCustomerAccount.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(
-        createCustomerAccount.error,
-        "Failed to create a customer account"
-      );
-    }
-
-    if (userToCompany.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(userToCompany.error, "Failed to add user to company");
-    }
-
-    if (permissionsUpdate.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(permissionsUpdate.error, "Failed to add user permissions");
-    }
-
-    return success("Customer account created");
-  }
-}
 
 export async function acceptInvite(
   serviceRole: SupabaseClient<Database>,
@@ -161,15 +44,33 @@ export async function acceptInvite(
   const user = await getUserByEmail(invite.data.email);
   if (user.error) return user;
 
+  const activationFunction =
+    invite.data.role === "employee"
+      ? activateEmployee
+      : invite.data.role === "customer"
+      ? activateCustomer
+      : invite.data.role === "supplier"
+      ? activateSupplier
+      : null;
+
+  if (!activationFunction) {
+    return {
+      data: null,
+      error: {
+        message: "Invalid invite role",
+      },
+    };
+  }
+
   const [activate, addUser, setPermissions] = await Promise.all([
-    activateEmployee(serviceRole, {
+    activationFunction(serviceRole, {
       userId: user.data.id,
       companyId: invite.data.companyId,
     }),
     addUserToCompany(serviceRole, {
       userId: user.data.id,
       companyId: invite.data.companyId,
-      role: "employee",
+      role: invite.data.role,
     }),
     setUserPermissions(
       serviceRole,
@@ -180,7 +81,7 @@ export async function acceptInvite(
 
   if (activate.error) {
     console.error(activate.error);
-    await rollbackInviteAccept(serviceRole, {
+    await rollbackInvite(serviceRole, {
       userId: user.data.id,
       companyId: invite.data.companyId,
     });
@@ -189,7 +90,7 @@ export async function acceptInvite(
 
   if (addUser.error) {
     console.error(addUser.error);
-    await rollbackInviteAccept(serviceRole, {
+    await rollbackInvite(serviceRole, {
       userId: user.data.id,
       companyId: invite.data.companyId,
     });
@@ -198,7 +99,7 @@ export async function acceptInvite(
 
   if (setPermissions.error) {
     console.error(setPermissions.error);
-    await rollbackInviteAccept(serviceRole, {
+    await rollbackInvite(serviceRole, {
       userId: user.data.id,
       companyId: invite.data.companyId,
     });
@@ -211,6 +112,23 @@ export async function acceptInvite(
     .eq("code", code)
     .select("*")
     .single();
+}
+
+async function activateCustomer(
+  client: SupabaseClient<Database>,
+  {
+    userId,
+    companyId,
+  }: {
+    userId: string;
+    companyId: string;
+  }
+) {
+  return client
+    .from("customerAccount")
+    .update({ active: true })
+    .eq("id", userId)
+    .eq("companyId", companyId);
 }
 
 async function activateEmployee(
@@ -228,6 +146,146 @@ async function activateEmployee(
     .update({ active: true })
     .eq("id", userId)
     .eq("companyId", companyId);
+}
+
+async function activateSupplier(
+  client: SupabaseClient<Database>,
+  {
+    userId,
+    companyId,
+  }: {
+    userId: string;
+    companyId: string;
+  }
+) {
+  return client
+    .from("supplierAccount")
+    .update({ active: true })
+    .eq("id", userId)
+    .eq("companyId", companyId);
+}
+
+export async function addUserToCompany(
+  client: SupabaseClient<Database>,
+  userToCompany: {
+    userId: string;
+    companyId: string;
+    role: "employee" | "customer" | "supplier";
+  }
+) {
+  return client.from("userToCompany").insert(userToCompany);
+}
+
+export async function createCustomerAccount(
+  client: SupabaseClient<Database>,
+  {
+    id,
+    customerId,
+    companyId,
+    createdBy,
+  }: {
+    id: string;
+    customerId: string;
+    companyId: string;
+    createdBy: string;
+  }
+): Promise<
+  | { success: false; message: string }
+  | { success: true; code: string; userId: string; email: string }
+> {
+  const customerContact = await getCustomerContact(client, id);
+  if (
+    customerContact.error ||
+    customerContact.data === null ||
+    customerContact.data.contact === null
+  ) {
+    return { success: false, message: "Failed to get customer contact" };
+  }
+
+  const { email, firstName, lastName } = customerContact.data.contact;
+
+  const permissions = makeCustomerPermissions(companyId);
+  const serviceRole = getCarbonServiceRole();
+  const user = await getUserByEmail(email);
+  let userId = "";
+  let isNewUser = false;
+
+  if (user.data) {
+    userId = user.data.id;
+  } else {
+    isNewUser = true;
+    const createSupabaseUser = await serviceRole.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password: crypto.randomUUID(),
+      email_confirm: true,
+    });
+
+    if (createSupabaseUser.error) {
+      return { success: false, message: createSupabaseUser.error.message };
+    }
+
+    userId = createSupabaseUser.data.user.id;
+    const createCarbonUser = await createUser(serviceRole, {
+      id: userId,
+      email: email.toLowerCase(),
+      firstName: firstName ?? "",
+      lastName: lastName ?? "",
+      avatarUrl: null,
+    });
+
+    if (createCarbonUser.error) {
+      await deleteAuthAccount(serviceRole, userId);
+      return { success: false, message: createCarbonUser.error.message };
+    }
+  }
+
+  const code = crypto.randomUUID();
+  const [contactUpdate, customerAccountInsert, inviteInsert] =
+    await Promise.all([
+      client.from("customerContact").update({ userId }).eq("id", id),
+      insertCustomerAccount(client, {
+        id: userId,
+        customerId,
+        companyId,
+      }),
+      insertInvite(serviceRole, {
+        role: "customer",
+        permissions,
+        email,
+        companyId,
+        createdBy,
+        code,
+      }),
+    ]);
+
+  if (contactUpdate.error) {
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateCustomer(serviceRole, userId, companyId);
+    }
+    return { success: false, message: contactUpdate.error.message };
+  }
+
+  if (customerAccountInsert.error) {
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateCustomer(serviceRole, userId, companyId);
+    }
+    return { success: false, message: customerAccountInsert.error.message };
+  }
+
+  if (inviteInsert.error) {
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateCustomer(serviceRole, userId, companyId);
+    }
+    return { success: false, message: inviteInsert.error.message };
+  }
+
+  return { success: true, code, userId, email };
 }
 
 export async function createEmployeeAccount(
@@ -320,122 +378,33 @@ export async function createEmployeeAccount(
   ]);
 
   if (employeeInsert.error) {
-    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateEmployee(serviceRole, userId, companyId);
+    }
     return { success: false, message: employeeInsert.error.message };
   }
 
   if (jobInsert.error) {
-    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateEmployee(serviceRole, userId, companyId);
+    }
     return { success: false, message: jobInsert.error.message };
   }
 
   if (inviteInsert.error) {
-    if (isNewUser) await deleteAuthAccount(serviceRole, userId);
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateEmployee(serviceRole, userId, companyId);
+    }
     return { success: false, message: inviteInsert.error.message };
   }
 
   return { success: true, code, userId };
-}
-
-export async function createEmployeeAccountDeprecated(
-  client: SupabaseClient<Database>,
-  {
-    email,
-    firstName,
-    lastName,
-    employeeType,
-    locationId,
-    companyId,
-  }: {
-    email: string;
-    firstName: string;
-    lastName: string;
-    employeeType: string;
-    locationId: string;
-    companyId: string;
-  }
-): Promise<Result> {
-  const employeeTypePermissions = await getPermissionsByEmployeeType(
-    client,
-    employeeType
-  );
-  if (employeeTypePermissions.error)
-    return error(
-      employeeTypePermissions.error,
-      "Failed to get employee type permissions"
-    );
-
-  const permissions = makePermissionsFromEmployeeType(employeeTypePermissions);
-  const serviceRole = getCarbonServiceRole();
-
-  const user = await getUserByEmail(email);
-  let userExists = false;
-  let userId = "";
-
-  if (user.data) {
-    userExists = true;
-    userId = user.data.id;
-  } else {
-    const invitation = await sendInviteByEmail(email);
-
-    if (invitation.error)
-      return error(invitation.error.message, "Failed to send invitation email");
-
-    userId = invitation.data.user.id;
-
-    const insertUser = await createUser(client, {
-      id: userId,
-      email: email.toLowerCase(),
-      firstName,
-      lastName,
-      avatarUrl: null,
-    });
-
-    if (insertUser.error)
-      return error(insertUser.error, "Failed to create a new user");
-
-    if (!insertUser.data)
-      return error(insertUser, "No data returned from create user");
-  }
-
-  const [employeeInsert, jobInsert, userToCompany, permissionsUpdate] =
-    await Promise.all([
-      insertEmployee(client, {
-        id: userId,
-        employeeTypeId: employeeType,
-        active: true,
-        companyId,
-      }),
-      insertEmployeeJob(client, {
-        id: userId,
-        companyId,
-        locationId,
-      }),
-      addUserToCompany(client, { userId, companyId, role: "employee" }),
-      setUserPermissions(serviceRole, userId, permissions),
-    ]);
-
-  if (employeeInsert.error) {
-    if (!userExists) await deleteAuthAccount(serviceRole, userId);
-    return error(employeeInsert.error, "Failed to create a employee account");
-  }
-
-  if (jobInsert.error) {
-    if (!userExists) await deleteAuthAccount(serviceRole, userId);
-    return error(jobInsert.error, "Failed to create a job");
-  }
-
-  if (userToCompany.error) {
-    if (!userExists) await deleteAuthAccount(serviceRole, userId);
-    return error(userToCompany.error, "Failed to add user to company");
-  }
-
-  if (permissionsUpdate.error) {
-    if (!userExists) await deleteAuthAccount(serviceRole, userId);
-    return error(permissionsUpdate.error, "Failed to update user permissions");
-  }
-
-  return success(userId);
 }
 
 export async function createSupplierAccount(
@@ -556,24 +525,89 @@ async function createUser(
   return { data, error };
 }
 
-export async function deactivateUser(
-  client: SupabaseClient<Database>,
+export async function deactivateCustomer(
+  serviceRole: SupabaseClient<Database>,
   userId: string,
   companyId: string
 ): Promise<Result> {
-  const serviceRole = getCarbonServiceRole();
   const currentPermissions = await serviceRole
     .from("userPermission")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
   if (currentPermissions.error) {
     return error(currentPermissions.error, "Failed to get user permissions");
   }
 
   const permissions = Object.entries(
-    currentPermissions.data?.permissions as Record<string, string[]>
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
+
+  const [updatePermissions, userToCompanyDelete, customerAccountDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("customerAccount")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("search")
+        .delete()
+        .eq("uuid", userId)
+        .eq("companyId", companyId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (customerAccountDelete.error) {
+    return error(
+      customerAccountDelete.error,
+      "Failed to remove customer account"
+    );
+  }
+
+  return success("Sucessfully deactivated customer");
+}
+
+export async function deactivateEmployee(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
+  }
+
+  const permissions = Object.entries(
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
   ).reduce<Record<string, string[]>>((acc, [key, value]) => {
     acc[key] = value.filter((id) => id !== companyId);
     return acc;
@@ -618,7 +652,128 @@ export async function deactivateUser(
     return error(employeeDelete.error, "Failed to remove employee");
   }
 
-  return success("Sucessfully deactivated user");
+  return success("Sucessfully deactivated employee");
+}
+
+export async function deactivateUser(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  const userToCompany = await serviceRole
+    .from("userToCompany")
+    .select("role")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (userToCompany.error) {
+    // maybe they are invited but not added to the company yet
+    const user = await serviceRole
+      .from("user")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (user.error) {
+      return error(user.error, "Failed to get user");
+    }
+
+    const invite = await serviceRole
+      .from("invite")
+      .select("*")
+      .eq("email", user.data?.email)
+      .eq("companyId", companyId)
+      .single();
+    if (invite.error) {
+      return error(invite.error, "Failed to get invite");
+    }
+
+    if (invite.data?.role === "customer") {
+      return deactivateCustomer(serviceRole, userId, companyId);
+    } else if (invite.data?.role === "employee") {
+      return deactivateEmployee(serviceRole, userId, companyId);
+    } else if (invite.data?.role === "supplier") {
+      return deactivateSupplier(serviceRole, userId, companyId);
+    } else {
+      throw new Error("Invalid user role");
+    }
+  }
+
+  if (userToCompany.data?.role === "customer") {
+    return deactivateCustomer(serviceRole, userId, companyId);
+  } else if (userToCompany.data?.role === "employee") {
+    return deactivateEmployee(serviceRole, userId, companyId);
+  } else if (userToCompany.data?.role === "supplier") {
+    return deactivateSupplier(serviceRole, userId, companyId);
+  } else {
+    throw new Error("Invalid user role");
+  }
+}
+
+export async function deactivateSupplier(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
+  }
+
+  const permissions = Object.entries(
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
+
+  const [updatePermissions, userToCompanyDelete, supplierAccountDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("supplierAccount")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("search")
+        .delete()
+        .eq("uuid", userId)
+        .eq("companyId", companyId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (supplierAccountDelete.error) {
+    return error(
+      supplierAccountDelete.error,
+      "Failed to remove supplier account"
+    );
+  }
+
+  return success("Sucessfully deactivated supplier");
 }
 
 export async function getClaims(
@@ -754,7 +909,7 @@ export async function insertInvite(
 ) {
   return client
     .from("invite")
-    .upsert([invite], {
+    .upsert([{ ...invite, acceptedAt: null }], {
       onConflict: "email, companyId",
       ignoreDuplicates: false,
     })
@@ -1020,21 +1175,17 @@ function makeSupplierPermissions(companyId: string) {
   return permissions;
 }
 
-export async function resendInvite(
+export async function getInvite(
   client: SupabaseClient<Database>,
-  userId: string
-): Promise<Result> {
-  const user = await getUser(client, userId);
-  if (user.error || !user.data) {
-    return error(user.error, "Failed to get user");
-  }
-
-  const invite = await sendMagicLink(user.data.email);
-  if (invite.error) {
-    return error(invite.error, "Failed to send invite");
-  }
-
-  return success("Succesfully sent invite");
+  email: string,
+  companyId: string
+) {
+  return client
+    .from("invite")
+    .select("*")
+    .eq("email", email)
+    .eq("companyId", companyId)
+    .single();
 }
 
 export async function resetPassword(userId: string, password: string) {
@@ -1043,7 +1194,7 @@ export async function resetPassword(userId: string, password: string) {
   });
 }
 
-async function rollbackInviteAccept(
+async function rollbackInvite(
   serviceRole: SupabaseClient<Database>,
   { userId, companyId }: { userId: string; companyId: string }
 ) {
@@ -1055,6 +1206,16 @@ async function rollbackInviteAccept(
       .eq("companyId", companyId),
     serviceRole
       .from("userToCompany")
+      .delete()
+      .eq("userId", userId)
+      .eq("companyId", companyId),
+    serviceRole
+      .from("customerAccount")
+      .delete()
+      .eq("userId", userId)
+      .eq("companyId", companyId),
+    serviceRole
+      .from("supplierAccount")
       .delete()
       .eq("userId", userId)
       .eq("companyId", companyId),

@@ -7,7 +7,11 @@ import { redirect } from "@vercel/remix";
 import { REFRESH_ACCESS_TOKEN_THRESHOLD, VERCEL_URL } from "../config/env";
 import { getCarbon, getCarbonServiceRole } from "../lib/supabase";
 import { path } from "../utils/path";
-import { flash, requireAuthSession } from "./session.server";
+import {
+  destroyAuthSession,
+  flash,
+  requireAuthSession,
+} from "./session.server";
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
@@ -140,6 +144,9 @@ export async function requirePermissions(
   );
 
   if (!hasRequiredPermissions) {
+    if (myClaims.role === null) {
+      throw redirect("/", await destroyAuthSession(request));
+    }
     throw redirect(
       path.to.authenticatedRoot,
       await flash(

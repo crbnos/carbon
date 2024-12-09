@@ -134,7 +134,7 @@ export function Document({
 
   // Combine the styles with proper selectors
   const themeStyle = {
-    ...(mode === "dark" ? darkVars : lightVars),
+    ...(mode === "light" ? lightVars : darkVars),
     "--radius": "0.5rem",
   } as React.CSSProperties;
 
