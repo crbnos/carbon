@@ -710,6 +710,7 @@ export const path = {
     resendInvite: `${x}/users/resend-invite`,
     resetPassword: "/reset-password",
     resources: `${x}/resources`,
+    revokeInvite: `${x}/users/revoke-invite`,
     root: "/",
     routings: `${x}/items/routing`,
     sales: `${x}/sales`,

@@ -28,6 +28,7 @@ import {
   BulkEditPermissionsForm,
   DeactivateUsersModal,
   ResendInviteModal,
+  RevokeInviteModal,
 } from "~/modules/users";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -63,6 +64,7 @@ const EmployeesTable = memo(
     const bulkEditDrawer = useDisclosure();
     const deactivateEmployeeModal = useDisclosure();
     const resendInviteModal = useDisclosure();
+    const revokeInviteModal = useDisclosure();
 
     const canEdit = permissions.can("update", "users");
 
@@ -166,20 +168,51 @@ const EmployeesTable = memo(
           <DropdownMenuContent>
             <DropdownMenuItem
               onClick={() => {
-                setSelectedUserIds(selectedRows.map((row) => row.id!));
+                setSelectedUserIds(
+                  selectedRows
+                    .filter((row) => row.active === true)
+                    .map((row) => row.id!)
+                );
                 bulkEditDrawer.onOpen();
               }}
-              disabled={!permissions.can("update", "users")}
+              disabled={
+                !permissions.can("update", "users") ||
+                selectedRows.every((row) => row.active === false)
+              }
             >
               <LuShield className="mr-2 h-4 w-4" />
               <span>Edit Permissions</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => {
-                setSelectedUserIds(selectedRows.map((row) => row.id!));
+                setSelectedUserIds(
+                  selectedRows
+                    .filter((row) => row.active === false)
+                    .map((row) => row.id!)
+                );
+                resendInviteModal.onOpen();
+              }}
+              disabled={
+                !permissions.can("create", "users") ||
+                selectedRows.every((row) => row.active === true)
+              }
+            >
+              <LuMailCheck className="mr-2 h-4 w-4" />
+              <span>Resend Invite</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setSelectedUserIds(
+                  selectedRows
+                    .filter((row) => row.active === true)
+                    .map((row) => row.id!)
+                );
                 deactivateEmployeeModal.onOpen();
               }}
-              disabled={!permissions.can("delete", "users")}
+              disabled={
+                !permissions.can("delete", "users") ||
+                selectedRows.every((row) => row.active === false)
+              }
             >
               <LuBan className="mr-2 h-4 w-4" />
               <span>Deactivate Users</span>
@@ -187,7 +220,7 @@ const EmployeesTable = memo(
           </DropdownMenuContent>
         );
       },
-      [permissions, bulkEditDrawer, deactivateEmployeeModal]
+      [permissions, bulkEditDrawer, deactivateEmployeeModal, resendInviteModal]
     );
 
     const renderContextMenu = useCallback(
@@ -195,42 +228,64 @@ const EmployeesTable = memo(
         return (
           <>
             {row.active === true ? (
-              <MenuItem
-                onClick={() =>
-                  navigate(
-                    `${path.to.employeeAccount(row.id!)}?${params.toString()}`
-                  )
-                }
-              >
-                <MenuIcon icon={<LuPencil />} />
-                Edit Permissions
-              </MenuItem>
+              <>
+                <MenuItem
+                  onClick={() =>
+                    navigate(
+                      `${path.to.employeeAccount(row.id!)}?${params.toString()}`
+                    )
+                  }
+                >
+                  <MenuIcon icon={<LuPencil />} />
+                  Edit Permissions
+                </MenuItem>
+                <MenuItem
+                  onClick={(e) => {
+                    setSelectedUserIds([row.id!]);
+                    deactivateEmployeeModal.onOpen();
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <MenuIcon icon={<LuBan />} />
+                  Deactivate Account
+                </MenuItem>
+              </>
             ) : (
-              <MenuItem
-                onClick={() => {
-                  setSelectedUserIds([row.id!]);
-                  resendInviteModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuMailCheck />} />
-                Resend Account Invite
-              </MenuItem>
-            )}
-            {row.active === true && (
-              <MenuItem
-                onClick={(e) => {
-                  setSelectedUserIds([row.id!]);
-                  deactivateEmployeeModal.onOpen();
-                }}
-              >
-                <MenuIcon icon={<LuBan />} />
-                Deactivate Account
-              </MenuItem>
+              <>
+                <MenuItem
+                  onClick={() => {
+                    setSelectedUserIds([row.id!]);
+                    resendInviteModal.onOpen();
+                  }}
+                >
+                  <MenuIcon icon={<LuMailCheck />} />
+                  Resend Account Invite
+                </MenuItem>
+                {permissions.can("delete", "users") && (
+                  <MenuItem
+                    onClick={() => {
+                      setSelectedUserIds([row.id!]);
+                      revokeInviteModal.onOpen();
+                    }}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <MenuIcon icon={<LuBan />} />
+                    Revoke Invite
+                  </MenuItem>
+                )}
+              </>
             )}
           </>
         );
       },
-      [deactivateEmployeeModal, navigate, params, resendInviteModal]
+      [
+        deactivateEmployeeModal,
+        navigate,
+        params,
+        permissions,
+        resendInviteModal,
+        revokeInviteModal,
+      ]
     );
 
     return (
@@ -268,6 +323,13 @@ const EmployeesTable = memo(
             userIds={selectedUserIds}
             isOpen={resendInviteModal.isOpen}
             onClose={resendInviteModal.onClose}
+          />
+        )}
+        {revokeInviteModal.isOpen && (
+          <RevokeInviteModal
+            userIds={selectedUserIds}
+            isOpen={revokeInviteModal.isOpen}
+            onClose={revokeInviteModal.onClose}
           />
         )}
       </>

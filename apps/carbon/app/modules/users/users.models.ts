@@ -25,7 +25,7 @@ export const createEmployeeValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
   employeeType: z.string().min(20, { message: "Employee type is required" }),
-  locationId: z.string().min(0, { message: "Location is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
 });
 
 export const createSupplierAccountValidator = z.object({
@@ -81,7 +81,13 @@ export const groupValidator = z.object({
 export const resendInviteValidator = z.object({
   users: z
     .array(z.string().min(36, { message: "Invalid user id" }))
-    .min(1, { message: "Group members are required" }),
+    .min(1, { message: "Users are required" }),
+});
+
+export const revokeInviteValidator = z.object({
+  users: z
+    .array(z.string().min(36, { message: "Invalid user id" }))
+    .min(1, { message: "Users are required" }),
 });
 
 export const userPermissionsValidator = z.object({
