@@ -5,13 +5,14 @@ import { Input, Submit, ValidatedForm } from "@carbon/form";
 import { toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
-import {
-  emailValidator,
-  type action,
-} from "../../../carbon/app/routes/api+/subscribe";
+import { z } from "zod";
+
+const emailValidator = z.object({
+  email: z.string().email(),
+});
 
 export default function Route() {
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
 
   useEffect(() => {
     if (!fetcher.data) return;
