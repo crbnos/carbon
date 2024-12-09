@@ -4,6 +4,10 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",
