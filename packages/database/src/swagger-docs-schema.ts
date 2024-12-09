@@ -460,6 +460,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierAccount.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierAccount.active",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -528,6 +531,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierAccount.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierAccount.active",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -548,6 +554,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierAccount.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierAccount.active",
           },
           {
             $ref: "#/parameters/body.supplierAccount",
@@ -1108,6 +1117,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerAccount.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.customerAccount.active",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -1176,6 +1188,9 @@ export default {
             $ref: "#/parameters/rowFilter.customerAccount.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.customerAccount.active",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -1196,6 +1211,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.customerAccount.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerAccount.active",
           },
           {
             $ref: "#/parameters/body.customerAccount",
@@ -5074,7 +5092,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.taxPercent",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLines.notes",
+            $ref: "#/parameters/rowFilter.salesOrderLines.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLines.externalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLines.thumbnailPath",
@@ -10351,7 +10372,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
+            $ref: "#/parameters/rowFilter.salesOrderLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.externalNotes",
           },
           {
             $ref: "#/parameters/select",
@@ -10527,7 +10551,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
+            $ref: "#/parameters/rowFilter.salesOrderLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.externalNotes",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -10657,7 +10684,10 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.taxPercent",
           },
           {
-            $ref: "#/parameters/rowFilter.salesOrderLine.notes",
+            $ref: "#/parameters/rowFilter.salesOrderLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.externalNotes",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -14797,7 +14827,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLines.unitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLines.notes",
+            $ref: "#/parameters/rowFilter.quoteLines.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.companyId",
@@ -14831,6 +14861,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.externalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.thumbnailPath",
@@ -19624,13 +19660,13 @@ export default {
             $ref: "#/parameters/rowFilter.employees.avatarUrl",
           },
           {
-            $ref: "#/parameters/rowFilter.employees.active",
-          },
-          {
             $ref: "#/parameters/rowFilter.employees.employeeTypeId",
           },
           {
             $ref: "#/parameters/rowFilter.employees.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.employees.active",
           },
           {
             $ref: "#/parameters/select",
@@ -22849,6 +22885,177 @@ export default {
           },
         },
         tags: ["receiptLine"],
+      },
+    },
+    "/invite": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.invite.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.email",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.permissions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.role",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.acceptedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/invite",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["invite"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.invite",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["invite"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.invite.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.email",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.permissions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.role",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.acceptedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["invite"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.invite.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.email",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.permissions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.role",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.invite.acceptedAt",
+          },
+          {
+            $ref: "#/parameters/body.invite",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["invite"],
       },
     },
     "/quoteLinePrice": {
@@ -26282,6 +26489,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLines.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqLines.tags",
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqLines.modelId",
@@ -34630,7 +34840,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.unitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.notes",
+            $ref: "#/parameters/rowFilter.quoteLine.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.companyId",
@@ -34667,6 +34877,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/select",
@@ -34767,7 +34980,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.unitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.notes",
+            $ref: "#/parameters/rowFilter.quoteLine.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.companyId",
@@ -34804,6 +35017,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -34858,7 +35074,7 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.unitOfMeasureCode",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteLine.notes",
+            $ref: "#/parameters/rowFilter.quoteLine.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.companyId",
@@ -34895,6 +35111,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -36559,6 +36778,9 @@ export default {
             $ref: "#/parameters/rowFilter.employee.employeeTypeId",
           },
           {
+            $ref: "#/parameters/rowFilter.employee.active",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -36627,6 +36849,9 @@ export default {
             $ref: "#/parameters/rowFilter.employee.employeeTypeId",
           },
           {
+            $ref: "#/parameters/rowFilter.employee.active",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -36647,6 +36872,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employee.employeeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.employee.active",
           },
           {
             $ref: "#/parameters/body.employee",
@@ -40262,7 +40490,7 @@ export default {
       type: "object",
     },
     supplierAccount: {
-      required: ["id", "supplierId", "companyId"],
+      required: ["id", "supplierId", "companyId", "active"],
       properties: {
         id: {
           description:
@@ -40281,6 +40509,11 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
+        },
+        active: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -40471,7 +40704,7 @@ export default {
       type: "object",
     },
     customerAccount: {
-      required: ["id", "customerId", "companyId"],
+      required: ["id", "customerId", "companyId", "active"],
       properties: {
         id: {
           description:
@@ -40490,6 +40723,11 @@ export default {
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
+        },
+        active: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -42283,7 +42521,10 @@ export default {
           format: "numeric",
           type: "number",
         },
-        notes: {
+        internalNotes: {
+          format: "jsonb",
+        },
+        externalNotes: {
           format: "jsonb",
         },
         thumbnailPath: {
@@ -45095,7 +45336,10 @@ export default {
           format: "numeric",
           type: "number",
         },
-        notes: {
+        internalNotes: {
+          format: "jsonb",
+        },
+        externalNotes: {
           format: "jsonb",
         },
       },
@@ -47051,7 +47295,7 @@ export default {
           format: "text",
           type: "string",
         },
-        notes: {
+        internalNotes: {
           format: "json",
         },
         companyId: {
@@ -47106,6 +47350,16 @@ export default {
         taxPercent: {
           format: "numeric",
           type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        externalNotes: {
+          format: "jsonb",
         },
         thumbnailPath: {
           format: "text",
@@ -49178,10 +49432,6 @@ export default {
           format: "text",
           type: "string",
         },
-        active: {
-          format: "boolean",
-          type: "boolean",
-        },
         employeeTypeId: {
           description:
             "Note:\nThis is a Foreign Key to `employeeType.id`.<fk table='employeeType' column='id'/>",
@@ -49193,6 +49443,10 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
+        },
+        active: {
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -50775,6 +51029,64 @@ export default {
       },
       type: "object",
     },
+    invite: {
+      required: [
+        "id",
+        "code",
+        "email",
+        "permissions",
+        "role",
+        "companyId",
+        "createdBy",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        code: {
+          format: "text",
+          type: "string",
+        },
+        email: {
+          format: "text",
+          type: "string",
+        },
+        permissions: {
+          format: "jsonb",
+        },
+        role: {
+          enum: ["customer", "employee", "supplier"],
+          format: "public.role",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        acceptedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     quoteLinePrice: {
       required: [
         "quoteId",
@@ -52254,6 +52566,13 @@ export default {
           format: "text",
           type: "string",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         modelId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -52636,7 +52955,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -52685,7 +53004,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56098,7 +56417,7 @@ export default {
           format: "text",
           type: "string",
         },
-        notes: {
+        internalNotes: {
           format: "json",
         },
         companyId: {
@@ -56161,6 +56480,9 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        externalNotes: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -56883,7 +57205,7 @@ export default {
       type: "object",
     },
     employee: {
-      required: ["id", "companyId", "employeeTypeId"],
+      required: ["id", "companyId", "employeeTypeId", "active"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -56901,6 +57223,11 @@ export default {
             "Note:\nThis is a Foreign Key to `employeeType.id`.<fk table='employeeType' column='id'/>",
           format: "text",
           type: "string",
+        },
+        active: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -57716,6 +58043,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplierAccount.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
     "body.supplierType": {
       name: "supplierType",
       description: "supplierType",
@@ -57973,6 +58307,13 @@ export default {
       name: "companyId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.customerAccount.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
@@ -60293,8 +60634,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLines.notes": {
-      name: "notes",
+    "rowFilter.salesOrderLines.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLines.externalNotes": {
+      name: "externalNotes",
       required: false,
       format: "jsonb",
       in: "query",
@@ -63869,8 +64217,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.salesOrderLine.notes": {
-      name: "notes",
+    "rowFilter.salesOrderLine.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.externalNotes": {
+      name: "externalNotes",
       required: false,
       format: "jsonb",
       in: "query",
@@ -66474,8 +66829,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLines.notes": {
-      name: "notes",
+    "rowFilter.quoteLines.internalNotes": {
+      name: "internalNotes",
       required: false,
       format: "json",
       in: "query",
@@ -66555,6 +66910,20 @@ export default {
       name: "taxPercent",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -69194,13 +69563,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.employees.active": {
-      name: "active",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.employees.employeeTypeId": {
       name: "employeeTypeId",
       required: false,
@@ -69212,6 +69574,13 @@ export default {
       name: "companyId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.employees.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
@@ -71318,6 +71687,78 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.invite": {
+      name: "invite",
+      description: "invite",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/invite",
+      },
+    },
+    "rowFilter.invite.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.code": {
+      name: "code",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.email": {
+      name: "email",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.permissions": {
+      name: "permissions",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.role": {
+      name: "role",
+      required: false,
+      format: "public.role",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.invite.acceptedAt": {
+      name: "acceptedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
     "body.quoteLinePrice": {
       name: "quoteLinePrice",
       description: "quoteLinePrice",
@@ -73247,6 +73688,13 @@ export default {
       name: "customerPartRevision",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqLines.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -78273,8 +78721,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteLine.notes": {
-      name: "notes",
+    "rowFilter.quoteLine.internalNotes": {
+      name: "internalNotes",
       required: false,
       format: "json",
       in: "query",
@@ -78361,6 +78809,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLine.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -79347,6 +79802,13 @@ export default {
       name: "employeeTypeId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.employee.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
