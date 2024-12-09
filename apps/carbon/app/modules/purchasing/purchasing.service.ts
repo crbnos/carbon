@@ -11,6 +11,7 @@ import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
   purchaseOrderPaymentValidator,
+  purchaseOrderStatusType,
   purchaseOrderValidator,
   supplierAccountingValidator,
   supplierContactValidator,
@@ -158,28 +159,6 @@ export async function deleteSupplierType(
   supplierTypeId: string
 ) {
   return client.from("supplierType").delete().eq("id", supplierTypeId);
-}
-
-export async function getPurchaseOrderExternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  purchaseOrderId: string
-) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/purchasing/external/${purchaseOrderId}`);
-  return result.data ?? [];
-}
-
-export async function getPurchaseOrderInternalDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  purchaseOrderId: string
-) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/purchasing/internal/${purchaseOrderId}`);
-  return result.data ?? [];
 }
 
 export async function getPurchaseOrder(
@@ -812,6 +791,18 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
+export async function updatePurchaseOrderStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof purchaseOrderStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("purchaseOrder").update(update).eq("id", update.id);
+}
+
 export async function updateSupplierAccounting(
   client: SupabaseClient<Database>,
   supplierAccounting: z.infer<typeof supplierAccountingValidator> & {
@@ -1043,6 +1034,12 @@ export async function upsertPurchaseOrder(
         invoiceSupplierContactId: invoiceSupplierContactId,
         invoiceSupplierLocationId: invoiceSupplierLocationId,
         paymentTermId: paymentTermId,
+        companyId: purchaseOrder.companyId,
+      },
+    ]),
+    client.from("supplierInteraction").insert([
+      {
+        purchaseOrderId,
         companyId: purchaseOrder.companyId,
       },
     ]),

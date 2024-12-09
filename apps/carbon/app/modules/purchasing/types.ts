@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
+import type { FileObject } from "@supabase/storage-js";
 import type {
-  getPurchaseOrderExternalDocuments,
   getPurchaseOrderLines,
   getPurchaseOrders,
   getSupplier,
@@ -16,10 +16,7 @@ import type {
   getSupplierTypes,
 } from "./purchasing.service";
 
-// TODO: we should just use the FileObject type from supabase
-export type PurchaseOrderAttachment = NonNullable<
-  Awaited<ReturnType<typeof getPurchaseOrderExternalDocuments>>
->[number];
+export type PurchaseOrderAttachment = FileObject; // TODO: remove
 
 export type PurchaseOrder = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]

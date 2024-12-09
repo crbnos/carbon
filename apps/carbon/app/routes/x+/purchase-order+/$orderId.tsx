@@ -1,27 +1,26 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Outlet, useLoaderData } from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { ClientOnly, VStack } from "@carbon/react";
+import { Outlet, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { useEffect } from "react";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getPurchaseOrder,
-  getPurchaseOrderExternalDocuments,
-  getPurchaseOrderInternalDocuments,
   getPurchaseOrderLines,
+  getSupplier,
+  getSupplierInteractionByPurchaseOrder,
+  getSupplierInteractionDocuments,
 } from "~/modules/purchasing";
-import {
-  PurchaseOrderHeader,
-  PurchaseOrderSidebar,
-  usePurchaseOrderTotals,
-} from "~/modules/purchasing/ui/PurchaseOrder";
+import { PurchaseOrderHeader } from "~/modules/purchasing/ui/PurchaseOrder";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: "Orders",
   to: path.to.purchaseOrders,
+  module: "purchasing",
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -34,64 +33,70 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [purchaseOrder, purchaseOrderLines] = await Promise.all([
+  const [purchaseOrder, lines, interaction] = await Promise.all([
     getPurchaseOrder(serviceRole, orderId),
     getPurchaseOrderLines(serviceRole, orderId),
+    getSupplierInteractionByPurchaseOrder(serviceRole, orderId),
   ]);
+
+  if (!interaction.data) throw new Error("Failed to get interaction record");
 
   if (purchaseOrder.error) {
     throw redirect(
-      path.to.purchaseOrders,
+      path.to.items,
       await flash(
         request,
-        error(purchaseOrder.error, "Failed to load purchase order summary")
+        error(purchaseOrder.error, "Failed to load purchaseOrder")
       )
     );
   }
 
+  const supplier = purchaseOrder.data?.supplierId
+    ? await getSupplier(serviceRole, purchaseOrder.data.supplierId)
+    : null;
+
   return defer({
     purchaseOrder: purchaseOrder.data,
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    externalDocuments: getPurchaseOrderExternalDocuments(
+    lines: lines.data ?? [],
+    files: getSupplierInteractionDocuments(
       serviceRole,
       companyId,
-      orderId
+      interaction.data.id
     ),
-    internalDocuments: getPurchaseOrderInternalDocuments(
-      serviceRole,
-      companyId,
-      orderId
-    ),
+    interaction: interaction.data,
+    supplier: supplier?.data ?? null,
   });
 }
 
-export async function action({ request }: ActionFunctionArgs) {
-  throw redirect(request.headers.get("Referer") ?? request.url);
-}
-
 export default function PurchaseOrderRoute() {
-  const { purchaseOrderLines } = useLoaderData<typeof loader>();
-  const [, setPurchaseOrderTotals] = usePurchaseOrderTotals();
-
-  useEffect(() => {
-    const totals = purchaseOrderLines.reduce(
-      (acc, line) => {
-        acc.total += (line.purchaseQuantity ?? 0) * (line.unitPrice ?? 0);
-
-        return acc;
-      },
-      { total: 0 }
-    );
-    setPurchaseOrderTotals(totals);
-  }, [purchaseOrderLines, setPurchaseOrderTotals]);
+  const params = useParams();
+  const { orderId } = params;
+  if (!orderId) throw new Error("Could not find orderId");
 
   return (
-    <>
-      <PurchaseOrderHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <PurchaseOrderSidebar />
-        <Outlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <PurchaseOrderHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanels
+                  explorer={null}
+                  content={
+                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={2} className="p-2">
+                        <Outlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={null}
+                />
+              )}
+            </ClientOnly>
+          </div>
+        </div>
       </div>
-    </>
+    </PanelProvider>
   );
 }

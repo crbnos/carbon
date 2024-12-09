@@ -42,6 +42,8 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 
+import { usePaymentTerm } from "~/components/Form/PaymentTerm";
+import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { favoriteSchema } from "~/types/validators";
@@ -66,6 +68,8 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 
   const [people] = usePeople();
   const [customers] = useCustomers();
+  const shippingMethods = useShippingMethod();
+  const paymentTerms = usePaymentTerm();
 
   const fetcher = useFetcher<{}>();
   const optimisticFavorite = useOptimisticFavorite();
@@ -276,22 +280,31 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         },
       },
       {
-        accessorKey: "shippingMethodName",
+        accessorKey: "shippingMethodId",
         header: "Shipping Method",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <Enumerable
+            value={
+              shippingMethods.find((sm) => sm.value === item.getValue<string>())
+                ?.label ?? null
+            }
+          />
+        ),
         meta: {
           icon: <LuTruck />,
         },
       },
-      // {
-      //   accessorKey: "shippingTermName",
-      //   header: "Shipping Term",
-      //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
-      // },
       {
-        accessorKey: "paymentTermName",
+        accessorKey: "paymentTermId",
         header: "Payment Method",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        cell: (item) => (
+          <Enumerable
+            value={
+              paymentTerms.find((pt) => pt.value === item.getValue<string>())
+                ?.label ?? null
+            }
+          />
+        ),
         meta: {
           icon: <LuCreditCard />,
         },
