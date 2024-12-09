@@ -1,42 +1,10 @@
 import { LuMoveUpRight, LuSend } from "react-icons/lu";
-import { getSlackClient } from "~/lib/slack.server";
 
 import { Input, Submit, ValidatedForm } from "@carbon/form";
 import { toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
-import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { useEffect } from "react";
-import { z } from "zod";
-
-const emailValidator = z.object({
-  email: z.string().email(),
-});
-
-export async function action({ request }: ActionFunctionArgs) {
-  const formData = await request.formData();
-  const email = String(formData.get("email"));
-
-  if (!email) {
-    return json(
-      { success: false, message: "Email is required" },
-      { status: 400 }
-    );
-  }
-
-  const slackClient = getSlackClient();
-  await slackClient.sendMessage({
-    channel: "#leads",
-    text: "New lead from website",
-    blocks: [
-      {
-        type: "section",
-        text: { type: "mrkdwn", text: `New lead: ${email}` },
-      },
-    ],
-  });
-
-  return json({ success: true, message: "Email submitted" });
-}
+import { emailValidator, type action } from "./subscribe";
 
 export default function Route() {
   const fetcher = useFetcher<typeof action>();
