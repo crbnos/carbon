@@ -4,7 +4,7 @@ import { Input, Submit, ValidatedForm } from "@carbon/form";
 import { toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect } from "react";
-import { emailValidator, type action } from "./subscribe";
+import { emailValidator, type action } from "./api+/subscribe";
 
 export default function Route() {
   const fetcher = useFetcher<typeof action>();
@@ -59,6 +59,7 @@ export default function Route() {
           />
 
           <ValidatedForm
+            action="/api/subscribe"
             validator={emailValidator}
             fetcher={fetcher}
             method="post"
