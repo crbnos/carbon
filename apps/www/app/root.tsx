@@ -1,4 +1,4 @@
-import { Button, Heading } from "@carbon/react";
+import { Button, Heading, Toaster } from "@carbon/react";
 import {
   Links,
   Meta,
@@ -49,6 +49,7 @@ function Document({
       <body className="h-full w-full flex flex-col bg-background text-foreground antialiased selection:bg-[#00cc9937] selection:text-[#007763fd] dark:selection:bg-[#00fff61d] dark:selection:text-[#67ffded2]">
         {children}
 
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
         <Analytics />
