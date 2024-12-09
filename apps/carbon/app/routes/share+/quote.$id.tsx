@@ -645,6 +645,16 @@ const LinePricingOptions = ({
     });
   });
 
+  const unitPriceformatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: quote.currencyCode ?? "USD",
+        maximumFractionDigits: line.unitPricePrecision ?? 2,
+      }),
+    [locale, quote.currencyCode, line.unitPricePrecision]
+  );
+
   return (
     <VStack spacing={4}>
       <RadioGroup
@@ -722,7 +732,9 @@ const LinePricingOptions = ({
                       </Td>
                       <Td>{option.quantity}</Td>
                       <Td>
-                        {formatter.format(option.convertedNetUnitPrice ?? 0)}
+                        {unitPriceformatter.format(
+                          option.convertedNetUnitPrice ?? 0
+                        )}
                       </Td>
                       <Td>
                         {formatter.format(
