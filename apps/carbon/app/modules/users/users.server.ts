@@ -1,5 +1,5 @@
 import { error, getCarbonServiceRole, success } from "@carbon/auth";
-import { deleteAuthAccount, sendInviteByEmail } from "@carbon/auth/auth.server";
+import { deleteAuthAccount } from "@carbon/auth/auth.server";
 import { flash, requireAuthSession } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
@@ -413,43 +413,50 @@ export async function createSupplierAccount(
     id,
     supplierId,
     companyId,
+    createdBy,
   }: {
     id: string;
     supplierId: string;
     companyId: string;
+    createdBy: string;
   }
-): Promise<Result> {
-  // TODO: convert to transaction and call this at the end of the transaction
+): Promise<
+  | { success: false; message: string }
+  | { success: true; code: string; userId: string; email: string }
+> {
   const supplierContact = await getSupplierContact(client, id);
   if (
     supplierContact.error ||
     supplierContact.data === null ||
-    Array.isArray(supplierContact.data.contact) ||
     supplierContact.data.contact === null
   ) {
-    return error(supplierContact.error, "Failed to get supplier contact");
+    return { success: false, message: "Failed to get supplier contact" };
   }
 
   const { email, firstName, lastName } = supplierContact.data.contact;
 
+  const permissions = makeSupplierPermissions(companyId);
+  const serviceRole = getCarbonServiceRole();
   const user = await getUserByEmail(email);
+  let userId = "";
+  let isNewUser = false;
+
   if (user.data) {
-    // TODO: user already exists -- send company invite
-    // await addUserToCompany(client, { userId: user.data.id, companyId, role: "supplier"});
-    return error(
-      null,
-      "User already exists. Adding to team not implemented yet."
-    );
+    userId = user.data.id;
   } else {
-    // user does not exist -- create user
-    const invitation = await sendInviteByEmail(email);
+    isNewUser = true;
+    const createSupabaseUser = await serviceRole.auth.admin.createUser({
+      email: email.toLowerCase(),
+      password: crypto.randomUUID(),
+      email_confirm: true,
+    });
 
-    if (invitation.error)
-      return error(invitation.error.message, "Failed to send invitation email");
+    if (createSupabaseUser.error) {
+      return { success: false, message: createSupabaseUser.error.message };
+    }
 
-    const userId = invitation.data.user.id;
-
-    const insertUser = await createUser(client, {
+    userId = createSupabaseUser.data.user.id;
+    const createCarbonUser = await createUser(serviceRole, {
       id: userId,
       email: email.toLowerCase(),
       firstName: firstName ?? "",
@@ -457,59 +464,59 @@ export async function createSupplierAccount(
       avatarUrl: null,
     });
 
-    if (insertUser.error)
-      return error(insertUser.error, "Failed to create a new user");
+    if (createCarbonUser.error) {
+      await deleteAuthAccount(serviceRole, userId);
+      return { success: false, message: createCarbonUser.error.message };
+    }
+  }
 
-    if (!insertUser.data)
-      return error(insertUser, "No data returned from create user");
-
-    const serviceRole = getCarbonServiceRole();
-    const permissions = makeSupplierPermissions(companyId);
-
-    const [
-      updateContact,
-      createSupplierAccount,
-      userToCompany,
-      permissionsUpdate,
-    ] = await Promise.all([
+  const code = crypto.randomUUID();
+  const [contactUpdate, supplierAccountInsert, inviteInsert] =
+    await Promise.all([
       client.from("supplierContact").update({ userId }).eq("id", id),
       insertSupplierAccount(client, {
-        id: insertUser.data[0].id,
+        id: userId,
         supplierId,
         companyId,
       }),
-      addUserToCompany(client, { userId, companyId, role: "supplier" }),
-      setUserPermissions(serviceRole, userId, permissions),
+      insertInvite(serviceRole, {
+        role: "supplier",
+        permissions,
+        email,
+        companyId,
+        createdBy,
+        code,
+      }),
     ]);
 
-    if (updateContact.error) {
+  if (contactUpdate.error) {
+    if (isNewUser) {
       await deleteAuthAccount(serviceRole, userId);
-      return error(updateContact.error, "Failed to update supplier contact");
+    } else {
+      await deactivateSupplier(serviceRole, userId, companyId);
     }
-
-    if (createSupplierAccount.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(
-        createSupplierAccount.error,
-        "Failed to create a supplier account"
-      );
-    }
-
-    if (userToCompany.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(userToCompany.error, "Failed to add user to company");
-    }
-
-    if (permissionsUpdate.error) {
-      await deleteAuthAccount(serviceRole, userId);
-      return error(
-        permissionsUpdate.error,
-        "Failed to create user permissions"
-      );
-    }
-
-    return success("Supplier account created");
+    return { success: false, message: contactUpdate.error.message };
   }
+
+  if (supplierAccountInsert.error) {
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateSupplier(serviceRole, userId, companyId);
+    }
+    return { success: false, message: supplierAccountInsert.error.message };
+  }
+
+  if (inviteInsert.error) {
+    if (isNewUser) {
+      await deleteAuthAccount(serviceRole, userId);
+    } else {
+      await deactivateSupplier(serviceRole, userId, companyId);
+    }
+    return { success: false, message: inviteInsert.error.message };
+  }
+
+  return { success: true, code, userId, email };
 }
 
 async function createUser(

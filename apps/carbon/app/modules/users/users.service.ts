@@ -207,7 +207,7 @@ export async function getSuppliers(
   let query = client
     .from("supplierAccount")
     .select(
-      `user!inner(id, fullName, firstName, lastName, email, avatarUrl, active), 
+      `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl), 
       supplier!inner(name, supplierType!left(name))`,
       { count: "exact" }
     )
