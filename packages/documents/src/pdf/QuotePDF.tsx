@@ -193,6 +193,12 @@ const QuotePDF = ({
               }
             );
 
+            const unitPriceFormatter = getCurrencyFormatter(
+              currencyCode,
+              locale,
+              line.unitPricePrecision
+            );
+
             return (
               <View
                 style={tw(
@@ -290,7 +296,7 @@ const QuotePDF = ({
                             </Text>
                             <Text style={tw("w-1/5 text-right")}>
                               {netUnitPrice
-                                ? formatter.format(netUnitPrice)
+                                ? unitPriceFormatter.format(netUnitPrice)
                                 : "-"}
                             </Text>
                             <Text style={tw("w-1/5 text-right")}>
