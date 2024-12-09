@@ -10,6 +10,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
   Input,
@@ -108,6 +110,10 @@ const QuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
+  const unitPriceFormatter = useCurrencyFormatter(
+    routeData?.quote?.currencyCode ?? baseCurrency,
+    unitPricePrecision
+  );
   const presentationCurrencyFormatter = useCurrencyFormatter(
     routeData?.quote?.currencyCode ?? baseCurrency
   );
@@ -213,9 +219,7 @@ const QuoteLinePricing = ({
 
   const onUpdatePrecision = (precision: number | string) => {
     const formData = new FormData();
-    const numericPrecision =
-      typeof precision === "string" ? precision.length : precision;
-    formData.append("precision", numericPrecision.toString());
+    formData.append("precision", precision.toString());
     fetcher.submit(formData, {
       method: "post",
       action: path.to.quoteLineUpdatePrecision(quoteId, lineId),
@@ -327,15 +331,18 @@ const QuoteLinePricing = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => onUpdatePrecision(2)}>
-                    .00
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onUpdatePrecision(3)}>
-                    .000
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onUpdatePrecision(4)}>
-                    .0000
-                  </DropdownMenuItem>
+                  <DropdownMenuRadioGroup
+                    value={unitPricePrecision.toString()}
+                    onValueChange={(value) => onUpdatePrecision(value)}
+                  >
+                    <DropdownMenuRadioItem value="2">.00</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="3">
+                      .000
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="4">
+                      .0000
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
               <DropdownMenu>
@@ -602,7 +609,7 @@ const QuoteLinePricing = ({
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <VStack spacing={0}>
-                      <span>{formatter.format(price)}</span>
+                      <span>{unitPriceFormatter.format(price)}</span>
                     </VStack>
                   </Td>
                 );
