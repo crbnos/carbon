@@ -7,10 +7,6 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { assign } from "~/modules/shared/shared.server";
 import type { notifyTask } from "~/trigger/notify";
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 

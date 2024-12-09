@@ -8,10 +8,6 @@ import {
 } from "~/modules/production";
 import type { recalculateTask } from "~/trigger/recalculate";
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "production",
