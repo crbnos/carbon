@@ -1,21 +1,20 @@
 import { getSlackClient } from "~/lib/slack.server";
 
+import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
+
+export const config = { runtime: "nodejs" };
 
 export const emailValidator = z.object({
   email: z.string().email(),
 });
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const email = String(formData.get("email"));
+  const validation = await validator(emailValidator).validate(formData);
 
-  if (!email) {
+  if (validation.error) {
     return json(
       { success: false, message: "Email is required" },
       { status: 400 }
@@ -29,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     blocks: [
       {
         type: "section",
-        text: { type: "mrkdwn", text: `New lead: ${email}` },
+        text: { type: "mrkdwn", text: `New lead: ${validation.data.email}` },
       },
     ],
   });
