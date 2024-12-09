@@ -1,6 +1,5 @@
 import { LuMoveUpRight, LuSend } from "react-icons/lu";
 
-import { getAppUrl } from "@carbon/auth";
 import { Input, Submit, ValidatedForm } from "@carbon/form";
 import { toast } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
@@ -64,7 +63,7 @@ export default function Route() {
           />
 
           <ValidatedForm
-            action={`${getAppUrl()}/api/subscribe`}
+            action={`/api/subscribe`}
             validator={emailValidator}
             fetcher={fetcher}
             method="post"
