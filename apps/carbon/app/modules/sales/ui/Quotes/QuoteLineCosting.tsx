@@ -31,10 +31,11 @@ import type { Costs } from "../../types";
 const QuoteLineCosting = ({
   quantities,
   getLineCosts,
+  unitPricePrecision,
 }: {
   quantities: number[];
-
   getLineCosts: (quantity: number) => Costs;
+  unitPricePrecision: number;
 }) => {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -46,6 +47,7 @@ const QuoteLineCosting = ({
   }));
 
   const formatter = useCurrencyFormatter();
+  const unitCostFormatter = useCurrencyFormatter(undefined, unitPricePrecision);
 
   const detailsDisclosure = useDisclosure();
 
@@ -105,8 +107,10 @@ const QuoteLineCosting = ({
                       </span>
                       <span className="text-muted-foreground text-xs">
                         {totalMaterialCost && quantity > 0
-                          ? formatter.format(totalMaterialCost / quantity)
-                          : formatter.format(0)}
+                          ? unitCostFormatter.format(
+                              totalMaterialCost / quantity
+                            )
+                          : unitCostFormatter.format(0)}
                       </span>
                     </VStack>
                   </Td>
@@ -145,8 +149,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.partCost && quantity > 0
-                              ? formatter.format(costs.partCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.partCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -173,8 +179,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.materialCost && quantity > 0
-                              ? formatter.format(costs.materialCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.materialCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -201,8 +209,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.toolCost && quantity > 0
-                              ? formatter.format(costs.toolCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.toolCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -229,10 +239,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.consumableCost && quantity > 0
-                              ? formatter.format(
+                              ? unitCostFormatter.format(
                                   costs.consumableCost / quantity
                                 )
-                              : formatter.format(0)}
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -259,8 +269,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.serviceCost && quantity > 0
-                              ? formatter.format(costs.serviceCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.serviceCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -285,8 +297,8 @@ const QuoteLineCosting = ({
                       <span>{formatter.format(totalDirectCost)}</span>
                       <span className="text-muted-foreground text-xs">
                         {totalDirectCost && quantity > 0
-                          ? formatter.format(totalDirectCost / quantity)
-                          : formatter.format(0)}
+                          ? unitCostFormatter.format(totalDirectCost / quantity)
+                          : unitCostFormatter.format(0)}
                       </span>
                     </VStack>
                   </Td>
@@ -318,8 +330,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.laborCost && quantity > 0
-                              ? formatter.format(costs.laborCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.laborCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -376,8 +390,10 @@ const QuoteLineCosting = ({
                           </span>
                           <span className="text-muted-foreground text-xs">
                             {costs.machineCost && quantity > 0
-                              ? formatter.format(costs.machineCost / quantity)
-                              : formatter.format(0)}
+                              ? unitCostFormatter.format(
+                                  costs.machineCost / quantity
+                                )
+                              : unitCostFormatter.format(0)}
                           </span>
                         </VStack>
                       </Td>
@@ -431,8 +447,10 @@ const QuoteLineCosting = ({
                       </span>
                       <span className="text-muted-foreground text-xs">
                         {costs.overheadCost && quantity > 0
-                          ? formatter.format(costs.overheadCost / quantity)
-                          : formatter.format(0)}
+                          ? unitCostFormatter.format(
+                              costs.overheadCost / quantity
+                            )
+                          : unitCostFormatter.format(0)}
                       </span>
                     </VStack>
                   </Td>
@@ -457,8 +475,10 @@ const QuoteLineCosting = ({
                       </span>
                       <span className="text-muted-foreground text-xs">
                         {costs.outsideCost && quantity > 0
-                          ? formatter.format(costs.outsideCost / quantity)
-                          : formatter.format(0)}
+                          ? unitCostFormatter.format(
+                              costs.outsideCost / quantity
+                            )
+                          : unitCostFormatter.format(0)}
                       </span>
                     </VStack>
                   </Td>
@@ -489,8 +509,8 @@ const QuoteLineCosting = ({
                       </span>
                       <span className="text-muted-foreground text-xs">
                         {totalCost && quantity > 0
-                          ? formatter.format(totalCost / quantity)
-                          : formatter.format(0)}
+                          ? unitCostFormatter.format(totalCost / quantity)
+                          : unitCostFormatter.format(0)}
                       </span>
                     </VStack>
                   </Td>
