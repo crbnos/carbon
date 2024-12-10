@@ -93,6 +93,7 @@ export async function requirePermissions(
     update?: string | string[];
     delete?: string | string[];
     role?: string;
+    bypassRls?: boolean;
   }
 ): Promise<{
   client: SupabaseClient<Database>;
@@ -104,12 +105,20 @@ export async function requirePermissions(
     request
   );
 
-  const client = getCarbon(accessToken);
-  // early exit if no requiredPermissions are required
-  if (Object.keys(requiredPermissions).length === 0)
-    return { client, companyId, email, userId };
-
   const myClaims = await getUserClaims(userId, companyId);
+
+  // early exit if no requiredPermissions are required
+  if (Object.keys(requiredPermissions).length === 0) {
+    return {
+      client:
+        requiredPermissions.bypassRls && myClaims.role === "employee"
+          ? getCarbonServiceRole()
+          : getCarbon(accessToken),
+      companyId,
+      email,
+      userId,
+    };
+  }
 
   const hasRequiredPermissions = Object.entries(requiredPermissions).every(
     ([action, permission]) => {
@@ -156,7 +165,15 @@ export async function requirePermissions(
     );
   }
 
-  return { client, companyId, email, userId };
+  return {
+    client:
+      requiredPermissions.bypassRls && myClaims.role === "employee"
+        ? getCarbonServiceRole()
+        : getCarbon(accessToken),
+    companyId,
+    email,
+    userId,
+  };
 }
 
 export async function resetPassword(accessToken: string, password: string) {

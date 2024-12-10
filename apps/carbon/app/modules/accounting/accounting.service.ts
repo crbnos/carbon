@@ -196,12 +196,14 @@ export async function getAccountCategoriesList(
 
 export async function getAccountCategory(
   client: SupabaseClient<Database>,
-  accountCategoryId: string
+  accountCategoryId: string,
+  companyId: string
 ) {
   return client
     .from("accountCategory")
     .select("*")
     .eq("id", accountCategoryId)
+    .eq("companyId", companyId)
     .single();
 }
 
@@ -232,12 +234,14 @@ export async function getAccountSubcategories(
 
 export async function getAccountSubcategoriesByCategory(
   client: SupabaseClient<Database>,
-  accountCategoryId: string
+  accountCategoryId: string,
+  companyId: string
 ) {
   return client
     .from("accountSubcategory")
     .select("*")
     .eq("accountCategoryId", accountCategoryId)
+    .eq("companyId", companyId)
     .eq("active", true);
 }
 
