@@ -10,12 +10,13 @@ const payloadSchema = z.object({
   recordId: z.string(),
   description: z.string(),
   event: z.enum([
-    NotificationEvent.SalesRfqAssignment,
-    NotificationEvent.QuoteAssignment,
-    NotificationEvent.SalesOrderAssignment,
-    NotificationEvent.JobAssignment,
     NotificationEvent.DigitalQuoteResponse,
+    NotificationEvent.JobAssignment,
+    NotificationEvent.PurchaseOrderAssignment,
+    NotificationEvent.QuoteAssignment,
     NotificationEvent.QuoteExpired,
+    NotificationEvent.SalesOrderAssignment,
+    NotificationEvent.SalesRfqAssignment,
   ]),
   from: z.string().optional(),
 });

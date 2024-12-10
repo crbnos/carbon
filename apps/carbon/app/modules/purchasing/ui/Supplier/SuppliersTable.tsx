@@ -1,6 +1,6 @@
-import { Button, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Link, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
@@ -8,7 +8,6 @@ import {
   LuCalendar,
   LuEuro,
   LuGlobe,
-  LuPackage,
   LuPencil,
   LuPhone,
   LuPrinter,
@@ -119,20 +118,7 @@ const SuppliersTable = memo(
         //     </Button>
         //   ),
         // },
-        {
-          id: "parts",
-          header: "Parts",
-          cell: ({ row }) => (
-            <Button variant="secondary" asChild>
-              <Link to={`${path.to.parts}?supplierId=${row.original.id}`}>
-                {row.original.partCount ?? 0} Parts
-              </Link>
-            </Button>
-          ),
-          meta: {
-            icon: <LuPackage />,
-          },
-        },
+
         {
           accessorKey: "currencyCode",
           header: "Currency",

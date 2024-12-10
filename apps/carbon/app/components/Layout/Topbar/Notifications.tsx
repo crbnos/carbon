@@ -23,6 +23,7 @@ import {
   LuHammer,
   LuInbox,
   LuMailCheck,
+  LuShoppingCart,
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -121,6 +122,14 @@ function GenericNotification({
   onClose: () => void;
 }) {
   switch (event) {
+    case NotificationEvent.PurchaseOrderAssignment:
+      return (
+        <Notification
+          icon={<LuShoppingCart />}
+          to={path.to.purchaseOrderDetails(id)}
+          {...props}
+        />
+      );
     case NotificationEvent.SalesRfqAssignment:
       return (
         <Notification
@@ -203,6 +212,7 @@ const Notifications = () => {
     if (isOpen && hasUnseenNotifications) {
       markAllMessagesAsSeen();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasUnseenNotifications, isOpen]);
 
   return (

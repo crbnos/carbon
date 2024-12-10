@@ -71,6 +71,8 @@ function getNotificationEvent(table: string): NotificationEvent | null {
       return NotificationEvent.SalesOrderAssignment;
     case "job":
       return NotificationEvent.JobAssignment;
+    case "purchaseOrder":
+      return NotificationEvent.PurchaseOrderAssignment;
     default:
       return null;
   }
