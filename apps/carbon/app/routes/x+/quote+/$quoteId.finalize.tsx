@@ -33,6 +33,7 @@ export async function action(args: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "sales",
     role: "employee",
+    bypassRls: true,
   });
 
   const { quoteId } = params;

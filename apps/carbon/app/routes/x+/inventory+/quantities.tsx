@@ -28,6 +28,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     view: "inventory",
+    bypassRls: true,
   });
 
   const url = new URL(request.url);

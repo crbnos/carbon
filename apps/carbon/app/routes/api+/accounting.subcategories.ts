@@ -6,7 +6,7 @@ import { json } from "@vercel/remix";
 import { getAccountSubcategoriesByCategory } from "~/modules/accounting";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
   });
 
@@ -21,7 +21,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const subcategories = await getAccountSubcategoriesByCategory(
     client,
-    accountCategoryId
+    accountCategoryId,
+    companyId
   );
   if (subcategories.error) {
     return json(
