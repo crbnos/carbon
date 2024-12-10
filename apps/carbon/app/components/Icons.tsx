@@ -36,23 +36,6 @@ export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
   );
 };
 
-export const TrackingTypeIcon = ({
-  type,
-  className,
-}: {
-  type: string;
-  className?: string;
-}) => {
-  switch (type) {
-    case "Inventory":
-      return <TbTargetArrow className={cn("text-blue-500", className)} />;
-    case "Non-Inventory":
-      return <TbTargetOff className={cn("text-red-500", className)} />;
-    default:
-      return <LuSquare className={cn("text-muted-foreground", className)} />;
-  }
-};
-
 export const MethodItemTypeIcon = ({
   type,
   className,
@@ -96,25 +79,6 @@ export const MethodIcon = ({
       );
     case "Pick":
       return <FaCodePullRequest className={cn("text-yellow-500", className)} />;
-  }
-
-  return <LuSquare className={cn("text-muted-foreground", className)} />;
-};
-
-export const TimeTypeIcon = ({
-  type,
-  className,
-}: {
-  type: string;
-  className?: string;
-}) => {
-  switch (type) {
-    case "Setup":
-      return <LuTimer className={className} />;
-    case "Labor":
-      return <LuHardHat className={className} />;
-    case "Machine":
-      return <LuHammer className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;
@@ -179,3 +143,39 @@ export function OperationStatusIcon({
       return null;
   }
 }
+
+export const TrackingTypeIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Inventory":
+      return <TbTargetArrow className={cn("text-blue-500", className)} />;
+    case "Non-Inventory":
+      return <TbTargetOff className={cn("text-red-500", className)} />;
+    default:
+      return <LuSquare className={cn("text-muted-foreground", className)} />;
+  }
+};
+
+export const TimeTypeIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Setup":
+      return <LuTimer className={className} />;
+    case "Labor":
+      return <LuHardHat className={className} />;
+    case "Machine":
+      return <LuHammer className={className} />;
+  }
+
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
+};
