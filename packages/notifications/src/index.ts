@@ -9,12 +9,13 @@ export enum NotificationWorkflow {
 }
 
 export enum NotificationEvent {
-  SalesRfqAssignment = "sales-rfq-assignment",
-  QuoteAssignment = "quote-assignment",
-  SalesOrderAssignment = "sales-order-assignment",
-  JobAssignment = "job-assignment",
   DigitalQuoteResponse = "digital-quote-response",
+  JobAssignment = "job-assignment",
+  PurchaseOrderAssignment = "purchase-order-assignment",
+  QuoteAssignment = "quote-assignment",
   QuoteExpired = "quote-expired",
+  SalesOrderAssignment = "sales-order-assignment",
+  SalesRfqAssignment = "sales-rfq-assignment",
 }
 
 export enum NotificationType {
