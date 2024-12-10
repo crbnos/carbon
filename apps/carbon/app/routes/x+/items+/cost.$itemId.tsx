@@ -10,17 +10,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const unitCost = parseInt(formData.get("unitCost") as string);
+  const unitCost = parseFloat(formData.get("unitCost") as string);
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const deletion = await updateItemCost(client, itemId, {
+  const update = await updateItemCost(client, itemId, {
     unitCost,
     updatedBy: userId,
   });
-  if (deletion.error) {
-    console.error("Failed to update item cost", deletion.error);
+  if (update.error) {
+    console.error("Failed to update item cost", update.error);
     return json({
       error: "Failed to update item cost",
     });

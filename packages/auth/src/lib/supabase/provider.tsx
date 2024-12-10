@@ -28,20 +28,25 @@ export const CarbonProvider = ({
   const refresh = useFetcher<{}>();
 
   useEffect(() => {
-    const handleFocus = () => {
-      refresh.submit(null, {
-        method: "post",
-        action: path.to.refreshSession,
-      });
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        refresh.submit(null, {
+          method: "post",
+          action: path.to.refreshSession,
+        });
+      }
     };
 
     if (isBrowser) {
-      window.addEventListener("focus", handleFocus);
+      document.addEventListener("visibilitychange", handleVisibilityChange);
     }
 
     return () => {
       if (isBrowser) {
-        window.removeEventListener("focus", handleFocus);
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
       }
     };
   }, [refresh]);

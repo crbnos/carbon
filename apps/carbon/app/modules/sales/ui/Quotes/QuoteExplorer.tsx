@@ -18,7 +18,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import {
   LuCheckCircle,
@@ -30,7 +30,7 @@ import {
   LuTrash,
   LuXCircle,
 } from "react-icons/lu";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import {
@@ -40,6 +40,7 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { quoteLineStatusType } from "../../sales.models";
@@ -289,6 +290,23 @@ function QuoteLineItem({
               >
                 <DropdownMenuIcon icon={<LuTrash />} />
                 Delete Line
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link
+                  to={getLinkToItemDetails(
+                    line.itemType as MethodItemType,
+                    line.itemId!
+                  )}
+                >
+                  <DropdownMenuIcon
+                    icon={
+                      <MethodItemTypeIcon
+                        type={line.itemType as MethodItemType}
+                      />
+                    }
+                  />
+                  View Item Master
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

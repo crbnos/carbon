@@ -22,7 +22,7 @@ import {
 
 import { useCarbon } from "@carbon/auth";
 import { TextArea, ValidatedForm } from "@carbon/form";
-import { useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
@@ -41,6 +41,8 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { Quotation, QuotationLine } from "../../types";
 
+import { MethodItemTypeIcon } from "~/components";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { quoteLineStatusType, quoteLineValidator } from "../../sales.models";
@@ -230,6 +232,16 @@ const QuoteLineForm = ({
                         <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
                           <DropdownMenuIcon icon={<LuTrash />} />
                           Delete Line
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link
+                            to={getLinkToItemDetails("Part", itemData.itemId!)}
+                          >
+                            <DropdownMenuIcon
+                              icon={<MethodItemTypeIcon type="Part" />}
+                            />
+                            View Item Master
+                          </Link>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
