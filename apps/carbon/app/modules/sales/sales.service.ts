@@ -521,6 +521,18 @@ export async function getQuote(
   return client.from("quotes").select("*").eq("id", quoteId).single();
 }
 
+export async function getQuoteFavorites(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+) {
+  return client
+    .from("quoteFavorite")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("userId", userId);
+}
+
 export async function getQuotes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -540,7 +552,6 @@ export async function getQuotes(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
     { column: "id", ascending: false },
   ]);
   return query;
@@ -856,6 +867,18 @@ export async function getSalesOrder(
   return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
 }
 
+export async function getSalesOrderFavorites(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+) {
+  return client
+    .from("salesOrderFavorite")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("userId", userId);
+}
+
 export async function getSalesOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -881,8 +904,7 @@ export async function getSalesOrders(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
-    { column: "salesOrderId", ascending: false },
+    { column: "id", ascending: false },
   ]);
 
   return query;
@@ -950,6 +972,18 @@ export async function getSalesRFQ(
   return client.from("salesRfqs").select("*").eq("id", id).single();
 }
 
+export async function getSalesRFQFavorites(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string
+) {
+  return client
+    .from("salesRfqFavorite")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("userId", userId);
+}
+
 export async function getSalesRFQs(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -969,7 +1003,6 @@ export async function getSalesRFQs(
   }
 
   query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false },
     { column: "id", ascending: false },
   ]);
   return query;

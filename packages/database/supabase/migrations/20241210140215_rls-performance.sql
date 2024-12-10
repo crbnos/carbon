@@ -832,8 +832,6 @@ ALTER POLICY "Authenticated users can view custom field tables" ON "customFieldT
   );
 
 
--- pointer
-
 ALTER POLICY "Users can view their own sales order favorites" ON "salesOrderFavorite" 
   USING (
     (SELECT auth.uid())::text = "userId"
@@ -1179,3 +1177,385 @@ ALTER POLICY "Customers with sales_delete can delete lines on their own quote" O
   );
 
 DROP POLICY "Customers with sales_view can their own quote make methods" ON "quoteMakeMethod";
+
+
+
+ALTER POLICY "Employees can view processes" ON "process"
+  USING (
+    has_role('employee', "companyId") AND
+    "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+
+ALTER POLICY "Employees can view work centers" ON "workCenter"
+  USING (
+    has_role('employee', "companyId") AND
+    "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Employees can view work center/processes" ON "workCenterProcess"  
+  USING (
+    has_role('employee', "companyId") AND
+    "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+
+ALTER POLICY "Authenticated users can view countries" ON "country" USING ((SELECT auth.role()) = 'authenticated');
+
+ALTER POLICY "Employees can view jobs" ON "job"
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Customers with production_view can view their own jobs" ON "job"
+  USING (
+    has_role('customer', "companyId") AND
+    has_company_permission('production_view', "companyId") AND
+    "customerId" IN (
+      SELECT "customerId" FROM "customerAccount" WHERE id::uuid = (SELECT auth.uid())
+    )
+  );
+
+ALTER POLICY "Customers with production_view can search for their own jobs" ON "search"
+  USING (
+    has_role('customer', "companyId") AND
+    has_company_permission('production_view', "companyId") AND
+    entity = 'Job' AND
+    uuid IN (
+      SELECT id FROM "job" WHERE "customerId" IN (
+        SELECT "customerId" FROM "customerAccount" WHERE id::uuid = (SELECT auth.uid())
+      )
+    )
+  );
+
+ALTER POLICY "Employees can view job materials" ON "jobMaterial"
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+DROP POLICY "Customers with production_view can view their own job materials" ON "jobMaterial";
+
+
+ALTER POLICY "Employees can view job operations" ON "jobOperation"
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+DROP POLICY "Customers with production_view can view their own job operations" ON "jobOperation";
+
+
+ALTER POLICY "Users can view their own job favorites" ON "jobFavorite" 
+  USING (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+ALTER POLICY "Users can create their own job favorites" ON "jobFavorite" 
+  WITH CHECK (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+ALTER POLICY "Users can delete their own job favorites" ON "jobFavorite"
+  USING (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+
+
+ALTER POLICY "Authenticated users can view currency codes" ON "currencyCode" 
+  USING ((SELECT auth.role()) = 'authenticated');
+
+ALTER POLICY "Employees can view production quantities" ON "productionQuantity"
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Employees can insert production quantities" ON "productionQuantity"
+  WITH CHECK (   
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )  
+);
+
+ALTER POLICY "Employees can delete production quantities" ON "productionQuantity"
+  USING (
+    has_role('employee', "companyId")
+    AND "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Employees can insert production events for their company's job operations" ON "productionEvent"
+  WITH CHECK (
+    has_role('employee', "companyId") AND
+    (SELECT auth.uid())::text = "employeeId" AND
+    "jobOperationId" IN (
+      SELECT "id" FROM "jobOperation" WHERE "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+      )
+    )
+  );
+
+ALTER POLICY "Employees can update production events for their company's job operations" ON "productionEvent"
+  USING (
+    (SELECT auth.uid())::text = "employeeId"
+  );
+
+ALTER POLICY "Employees can insert production quantities for their company's job operations" ON "productionQuantity"
+  WITH CHECK (
+    has_role('employee', "companyId") AND
+    "jobOperationId" IN (
+      SELECT "id" FROM "jobOperation" WHERE "companyId" = ANY(
+        SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+      )
+    )
+  );
+
+
+
+ALTER POLICY "Anyone can read the feedback buckets" ON storage.objects
+  USING (
+    bucket_id = 'feedback'
+    AND ((SELECT auth.role()) = 'authenticated')
+);
+
+ALTER POLICY "Anyone with settings_create can insert into the feedback bucket" ON storage.objects
+  WITH CHECK (
+    bucket_id = 'feedback'
+    AND ((SELECT auth.role()) = 'authenticated')
+);
+
+ALTER POLICY "Employees can view scrap reasons" ON "scrapReason"
+  USING (
+    has_role('employee', "companyId") AND
+    "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Users can view tags in their company" ON "tag"
+  USING (
+    (SELECT auth.uid())::text IN (
+      SELECT "userId" FROM "userToCompany" WHERE "companyId" = "tag"."companyId"
+    )
+  );
+
+ALTER POLICY "Users can insert tags in their company" ON "tag"
+  WITH CHECK (
+    (SELECT auth.uid())::text IN (
+      SELECT "userId" FROM "userToCompany" WHERE "companyId" = "tag"."companyId"
+    )
+  );
+
+ALTER POLICY "Authenticated users can view company settings" ON "companySettings"
+  USING (
+    (SELECT auth.role()) = 'authenticated' AND "id" IN (
+      SELECT "companyId" FROM "userToCompany" WHERE "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+ALTER POLICY "Users can view their own supplier quote favorites" ON "supplierQuoteFavorite" 
+  USING (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+ALTER POLICY "Users can create their own supplier quote favorites" ON "supplierQuoteFavorite" 
+  WITH CHECK (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+ALTER POLICY "Users can delete their own supplier quote favorites" ON "supplierQuoteFavorite"
+  USING (
+    (SELECT auth.uid())::text = "userId"
+  );
+
+ALTER POLICY "Suppliers with purchasing_create can create lines on their own supplier quote" ON "supplierQuoteLine"
+  WITH CHECK (
+    has_company_permission('purchasing_create', "companyId") 
+    AND has_role('supplier', "companyId") 
+    AND "supplierQuoteId" IN (
+      SELECT id FROM "supplierQuote" WHERE "supplierId" IN (
+        SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = (SELECT auth.uid())
+      )
+    )
+  );
+
+ALTER POLICY "Suppliers with purchasing_view can view their own quote line pricing" ON "supplierQuoteLinePrice"
+  USING (
+    has_company_permission('purchasing_view', get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote')) 
+    AND has_role('supplier', get_company_id_from_foreign_key("supplierQuoteId", 'supplierQuote'))
+    AND "supplierQuoteId" IN (
+      SELECT id FROM "supplierQuote" WHERE "supplierId" IN (
+        SELECT "supplierId" FROM "supplierAccount" WHERE id::uuid = (SELECT auth.uid())
+      )
+    )
+  );
+
+ALTER POLICY "Employees can view job operation tools" ON "jobOperationTool"
+  USING (
+    has_role('employee', "companyId") 
+    AND "companyId" = ANY(
+      select "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+);
+
+
+DROP VIEW "salesRfqs";
+CREATE OR REPLACE VIEW "salesRfqs" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+  rfq.*,
+  l."name" AS "locationName",
+  opp."quoteId",
+  opp."salesOrderId"
+  FROM "salesRfq" rfq
+  LEFT JOIN "location" l
+    ON l.id = rfq."locationId"
+  LEFT JOIN "opportunity" opp
+    ON opp."salesRfqId" = rfq.id;
+
+DROP VIEW IF EXISTS "salesOrders";
+CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    s.*,
+    sl."thumbnailPath",
+    sl."itemType", 
+    sl."orderTotal",
+    sl."jobs",
+    st."name" AS "shippingTermName",
+    sp."paymentTermId",
+    ss."shippingMethodId",
+    ss."receiptRequestedDate",
+    ss."receiptPromisedDate",
+    ss."dropShipment",
+    ss."shippingCost",
+    l."name" AS "locationName"
+  FROM "salesOrder" s
+  LEFT JOIN (
+    SELECT 
+      sol."salesOrderId",
+      MIN(CASE
+        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+        ELSE i."thumbnailPath"
+      END) AS "thumbnailPath",
+      SUM((1+COALESCE(sol."taxPercent", 0))*(COALESCE(sol."saleQuantity", 0)*(COALESCE(sol."unitPrice", 0)) + COALESCE(sol."shippingCost", 0) + COALESCE(sol."addOnCost", 0))) AS "orderTotal",
+      MIN(i."type") AS "itemType",
+      ARRAY_AGG(
+        CASE 
+          WHEN j.id IS NOT NULL THEN json_build_object('id', j.id, 'jobId', j."jobId", 'status', j."status")
+          ELSE NULL 
+        END
+      ) FILTER (WHERE j.id IS NOT NULL) AS "jobs"
+    FROM "salesOrderLine" sol
+    LEFT JOIN "item" i
+      ON i."id" = sol."itemId"
+    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    LEFT JOIN "job" j ON j."salesOrderId" = sol."salesOrderId" AND j."salesOrderLineId" = sol."id"
+    GROUP BY sol."salesOrderId"
+  ) sl ON sl."salesOrderId" = s."id"
+  LEFT JOIN "salesOrderShipment" ss ON ss."id" = s."id"
+  LEFT JOIN "shippingTerm" st ON st."id" = ss."shippingTermId"
+  LEFT JOIN "salesOrderPayment" sp ON sp."id" = s."id"
+  LEFT JOIN "location" l ON l."id" = ss."locationId";
+
+DROP VIEW IF EXISTS "purchaseOrders";
+CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    p.*,
+    sm."name" AS "shippingMethodName",
+    st."name" AS "shippingTermName",
+    pt."name" AS "paymentTermName",
+    pd."receiptRequestedDate",
+    pd."receiptPromisedDate",
+    pd."dropShipment",
+    l."id" AS "locationId",
+    l."name" AS "locationName"
+  FROM "purchaseOrder" p
+  LEFT JOIN "purchaseOrderDelivery" pd ON pd."id" = p."id"
+  LEFT JOIN "shippingMethod" sm ON sm."id" = pd."shippingMethodId"
+  LEFT JOIN "shippingTerm" st ON st."id" = pd."shippingTermId"
+  LEFT JOIN "purchaseOrderPayment" pp ON pp."id" = p."id"
+  LEFT JOIN "paymentTerm" pt ON pt."id" = pp."paymentTermId"
+  LEFT JOIN "location" l ON l."id" = pd."locationId";
+
+
+DROP VIEW IF EXISTS "quotes";
+CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+  q.*,
+  ql."thumbnailPath",
+  ql."itemType",
+  l."name" AS "locationName",
+  ql."lines",
+  ql."completedLines",
+  opp."salesRfqId",
+  opp."salesOrderId",
+  qs."shippingCost"
+  FROM "quote" q
+  LEFT JOIN (
+    SELECT 
+      "quoteId",
+      COUNT("quoteLine"."id") FILTER (WHERE "quoteLine"."status" != 'No Quote') AS "lines",
+      COUNT("quoteLine"."id") FILTER (WHERE "quoteLine"."status" = 'Complete') AS "completedLines", 
+      MIN(CASE
+        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+        ELSE i."thumbnailPath"
+      END) AS "thumbnailPath",
+      MIN(i."type") AS "itemType"
+    FROM "quoteLine"
+    INNER JOIN "item" i
+      ON i."id" = "quoteLine"."itemId"
+    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY "quoteId"
+  ) ql ON ql."quoteId" = q.id
+  LEFT JOIN "quoteShipment" qs ON qs."id" = q."id"
+  LEFT JOIN "location" l
+    ON l.id = q."locationId"
+  LEFT JOIN "opportunity" opp
+    ON opp."quoteId" = q.id;
+
+DROP VIEW IF EXISTS "supplierQuotes";
+CREATE OR REPLACE VIEW "supplierQuotes"
+WITH
+  (SECURITY_INVOKER = true) AS
+SELECT
+  q.*,
+  ql."thumbnailPath",
+  ql."itemType"
+FROM
+  "supplierQuote" q
+  LEFT JOIN (
+    SELECT
+      "supplierQuoteId",
+      MIN(
+        CASE
+          WHEN i."thumbnailPath" IS NULL
+          AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+          ELSE i."thumbnailPath"
+        END
+      ) AS "thumbnailPath",
+      MIN(i."type") AS "itemType"
+    FROM
+      "supplierQuoteLine"
+      INNER JOIN "item" i ON i."id" = "supplierQuoteLine"."itemId"
+      LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY
+      "supplierQuoteId"
+  ) ql ON ql."supplierQuoteId" = q.id;

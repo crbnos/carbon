@@ -26655,14 +26655,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27534,14 +27534,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27561,8 +27561,9 @@ export type Database = {
           dropShipment: boolean | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
-          favorite: boolean | null
+          externalNotes: Json | null
           id: string | null
+          internalNotes: Json | null
           locationId: string | null
           locationName: string | null
           notes: string | null
@@ -27579,6 +27580,7 @@ export type Database = {
           supplierId: string | null
           supplierLocationId: string | null
           supplierReference: string | null
+          tags: string[] | null
           type: Database["public"]["Enums"]["purchaseOrderType"] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -28545,7 +28547,6 @@ export type Database = {
           expirationDate: string | null
           externalLinkId: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -29320,14 +29321,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -29352,7 +29353,6 @@ export type Database = {
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -29361,14 +29361,14 @@ export type Database = {
           locationName: string | null
           orderDate: string | null
           orderTotal: number | null
-          paymentTermName: string | null
+          paymentTermId: string | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
           revisionId: number | null
           salesOrderId: string | null
           salesPersonId: string | null
           shippingCost: number | null
-          shippingMethodName: string | null
+          shippingMethodId: string | null
           shippingTermName: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"] | null
           thumbnailPath: string | null
@@ -29600,6 +29600,20 @@ export type Database = {
             referencedRelation: "customerLocation"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "salesOrderPayment_paymentTermId_fkey"
+            columns: ["paymentTermId"]
+            isOneToOne: false
+            referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderShipment_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
         ]
       }
       salesRfqLines: {
@@ -29777,7 +29791,6 @@ export type Database = {
           employeeId: string | null
           expirationDate: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           locationId: string | null
@@ -29789,6 +29802,7 @@ export type Database = {
           salesOrderId: string | null
           salesPersonId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"] | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -30531,7 +30545,6 @@ export type Database = {
           exchangeRateUpdatedAt: string | null
           expirationDate: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null

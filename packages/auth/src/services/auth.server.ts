@@ -122,6 +122,7 @@ export async function requirePermissions(
 
   const hasRequiredPermissions = Object.entries(requiredPermissions).every(
     ([action, permission]) => {
+      if (action === "bypassRls") return true;
       if (typeof permission === "string") {
         if (action === "role") {
           return myClaims.role === permission;

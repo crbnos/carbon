@@ -1,6 +1,6 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -8,7 +8,6 @@ import {
   LuCalendar,
   LuMap,
   LuPencil,
-  LuPin,
   LuQrCode,
   LuStar,
   LuTrash,
@@ -27,7 +26,6 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
-import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import { SalesRFQStatus } from ".";
 import { salesRFQStatusType } from "../../sales.models";
@@ -50,23 +48,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
   const [customers] = useCustomers();
   const [people] = usePeople();
 
-  const fetcher = useFetcher<{}>();
-  const optimisticFavorite = useOptimisticFavorite();
-
-  const rows = useMemo<SalesRFQ[]>(
-    () =>
-      data.map((d) =>
-        d.id === optimisticFavorite?.id
-          ? {
-              ...d,
-              favorite: optimisticFavorite?.favorite
-                ? optimisticFavorite.favorite === "favorite"
-                : d.favorite,
-            }
-          : d
-      ),
-    [data, optimisticFavorite]
-  );
   const customColumns = useCustomColumns<SalesRFQ>("salesRFQ");
   const columns = useMemo<ColumnDef<SalesRFQ>[]>(() => {
     const defaultColumns: ColumnDef<SalesRFQ>[] = [
@@ -75,37 +56,6 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
         header: "RFQ Number",
         cell: ({ row }) => (
           <HStack>
-            {row.original.favorite ? (
-              <fetcher.Form
-                method="post"
-                action={path.to.salesRfqFavorite}
-                className="flex items-center"
-              >
-                <input type="hidden" name="id" value={row.original.id!} />
-                <input type="hidden" name="favorite" value="unfavorite" />
-                <button type="submit">
-                  <LuPin
-                    className="cursor-pointer w-4 h-4 outline-foreground fill-foreground"
-                    type="submit"
-                  />
-                </button>
-              </fetcher.Form>
-            ) : (
-              <fetcher.Form
-                method="post"
-                action={path.to.salesRfqFavorite}
-                className="flex items-center"
-              >
-                <input type="hidden" name="id" value={row.original.id!} />
-                <input type="hidden" name="favorite" value="favorite" />
-                <button type="submit">
-                  <LuPin
-                    className="cursor-pointer w-4 h-4 text-muted-foreground"
-                    type="submit"
-                  />
-                </button>
-              </fetcher.Form>
-            )}
             <Hyperlink to={path.to.salesRfqDetails(row.original.id!)}>
               {row.original.rfqId}
             </Hyperlink>
@@ -264,7 +214,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, fetcher]);
+  }, [customers, people, customColumns]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
@@ -293,7 +243,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       <Table<SalesRFQ>
         count={count}
         columns={columns}
-        data={rows}
+        data={data}
         defaultColumnPinning={{
           left: ["rfqId"],
         }}
@@ -332,19 +282,3 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
 SalesRFQsTable.displayName = "SalesRFQsTable";
 
 export default SalesRFQsTable;
-
-function useOptimisticFavorite() {
-  const fetchers = useFetchers();
-  const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.salesRfqFavorite
-  );
-
-  if (favoriteFetcher && favoriteFetcher.formData) {
-    const id = favoriteFetcher.formData.get("id");
-    const favorite = favoriteFetcher.formData.get("favorite") ?? "off";
-    const submission = favoriteSchema.safeParse({ id, favorite });
-    if (submission.success) {
-      return submission.data;
-    }
-  }
-}

@@ -6,7 +6,6 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useFetcher, useFetchers } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -16,7 +15,6 @@ import {
   LuContainer,
   LuCreditCard,
   LuPencil,
-  LuPin,
   LuQrCode,
   LuStar,
   LuTrash,
@@ -37,7 +35,6 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
 import { usePeople, useSuppliers } from "~/stores";
-import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
@@ -59,23 +56,7 @@ const PurchaseOrdersTable = memo(
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
 
-    const fetcher = useFetcher<{}>();
-    const optimisticFavorite = useOptimisticFavorite();
-
-    const rows = useMemo<PurchaseOrder[]>(
-      () =>
-        data.map((d) =>
-          d.id === optimisticFavorite?.id
-            ? {
-                ...d,
-                favorite: optimisticFavorite?.favorite
-                  ? optimisticFavorite.favorite === "favorite"
-                  : d.favorite,
-              }
-            : d
-        ),
-      [data, optimisticFavorite]
-    );
+    // const optimisticFavorite = useOptimisticFavorite();
 
     const { edit, receive } = usePurchaseOrder();
 
@@ -88,38 +69,6 @@ const PurchaseOrdersTable = memo(
           header: "PO Number",
           cell: ({ row }) => (
             <HStack>
-              {row.original.favorite ? (
-                <fetcher.Form
-                  method="post"
-                  action={path.to.purchaseOrderFavorite}
-                  className="flex items-center"
-                >
-                  <input type="hidden" name="id" value={row.original.id!} />
-                  <input type="hidden" name="favorite" value="unfavorite" />
-                  <button type="submit">
-                    <LuPin
-                      className="cursor-pointer w-4 h-4 outline-foreground fill-foreground flex-shrink-0"
-                      type="submit"
-                    />
-                  </button>
-                </fetcher.Form>
-              ) : (
-                <fetcher.Form
-                  method="post"
-                  action={path.to.purchaseOrderFavorite}
-                  className="flex items-center"
-                >
-                  <input type="hidden" name="id" value={row.original.id!} />
-                  <input type="hidden" name="favorite" value="favorite" />
-                  <button type="submit">
-                    <LuPin
-                      className="cursor-pointer w-4 h-4 text-muted-foreground flex-shrink-0"
-                      type="submit"
-                    />
-                  </button>
-                </fetcher.Form>
-              )}
-
               <Hyperlink to={path.to.purchaseOrderDetails(row.original.id!)}>
                 {row.original.purchaseOrderId}
               </Hyperlink>
@@ -297,7 +246,7 @@ const PurchaseOrdersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [suppliers, people, customColumns, fetcher]);
+    }, [suppliers, people, customColumns]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
@@ -343,7 +292,7 @@ const PurchaseOrdersTable = memo(
         <Table<PurchaseOrder>
           count={count}
           columns={columns}
-          data={rows}
+          data={data}
           defaultColumnPinning={{
             left: ["purchaseOrderId"],
           }}
@@ -389,19 +338,3 @@ const PurchaseOrdersTable = memo(
 PurchaseOrdersTable.displayName = "PurchaseOrdersTable";
 
 export default PurchaseOrdersTable;
-
-function useOptimisticFavorite() {
-  const fetchers = useFetchers();
-  const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.purchaseOrderFavorite
-  );
-
-  if (favoriteFetcher && favoriteFetcher.formData) {
-    const id = favoriteFetcher.formData.get("id");
-    const favorite = favoriteFetcher.formData.get("favorite") ?? "off";
-    const submission = favoriteSchema.safeParse({ id, favorite });
-    if (submission.success) {
-      return submission.data;
-    }
-  }
-}

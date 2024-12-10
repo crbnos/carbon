@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet, useLoaderData } from "@remix-run/react";
@@ -25,18 +25,17 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing",
+    bypassRls: true,
   });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const serviceRole = await getCarbonServiceRole();
-
   const [purchaseOrder, purchaseOrderLines] = await Promise.all([
-    getPurchaseOrder(serviceRole, orderId),
-    getPurchaseOrderLines(serviceRole, orderId),
+    getPurchaseOrder(client, orderId),
+    getPurchaseOrderLines(client, orderId),
   ]);
 
   if (purchaseOrder.error) {
@@ -49,16 +48,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (companyId !== purchaseOrder.data?.companyId) {
+    throw redirect(path.to.purchaseOrders);
+  }
+
   return defer({
     purchaseOrder: purchaseOrder.data,
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     externalDocuments: getPurchaseOrderExternalDocuments(
-      serviceRole,
+      client,
       companyId,
       orderId
     ),
     internalDocuments: getPurchaseOrderInternalDocuments(
-      serviceRole,
+      client,
       companyId,
       orderId
     ),

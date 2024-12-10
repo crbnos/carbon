@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ClientOnly, VStack } from "@carbon/react";
@@ -35,26 +35,30 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
+    bypassRls: true,
   });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
-  const serviceRole = await getCarbonServiceRole();
 
   const [quote, shipment, payment, lines, prices, opportunity, methods] =
     await Promise.all([
-      getQuote(serviceRole, quoteId),
-      getQuoteShipment(serviceRole, quoteId),
-      getQuotePayment(serviceRole, quoteId),
-      getQuoteLines(serviceRole, quoteId),
-      getQuoteLinePricesByQuoteId(serviceRole, quoteId),
-      getOpportunityByQuote(serviceRole, quoteId),
-      getQuoteMethodTrees(serviceRole, quoteId),
+      getQuote(client, quoteId),
+      getQuoteShipment(client, quoteId),
+      getQuotePayment(client, quoteId),
+      getQuoteLines(client, quoteId),
+      getQuoteLinePricesByQuoteId(client, quoteId),
+      getOpportunityByQuote(client, quoteId),
+      getQuoteMethodTrees(client, quoteId),
     ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
+
+  if (companyId !== quote.data?.companyId) {
+    throw redirect(path.to.quotes);
+  }
 
   if (quote.error) {
     throw redirect(
@@ -83,7 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      serviceRole,
+      client,
       companyId,
       quote.data.currencyCode
     );
@@ -95,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
   if (opportunity.data?.salesOrderId) {
     salesOrderLines = await getSalesOrderLines(
-      serviceRole,
+      client,
       opportunity.data.salesOrderId
     );
   }
@@ -104,7 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     quote: quote.data,
     lines: lines.data ?? [],
     methods: methods.data ?? [],
-    files: getOpportunityDocuments(serviceRole, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

@@ -36,18 +36,22 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
   });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const serviceRole = await getCarbonServiceRole();
   const [job, tags] = await Promise.all([
-    getJob(serviceRole, jobId),
-    getTagsList(serviceRole, companyId, "job"),
+    getJob(client, jobId),
+    getTagsList(client, companyId, "job"),
   ]);
+
+  if (companyId !== job.data?.companyId) {
+    throw redirect(path.to.jobs);
+  }
+  const serviceRole = await getCarbonServiceRole();
 
   if (job.error) {
     throw redirect(
