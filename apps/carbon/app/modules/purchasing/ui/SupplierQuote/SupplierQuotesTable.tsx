@@ -1,13 +1,12 @@
 import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
   LuPencil,
-  LuPin,
   LuQrCode,
   LuStar,
   LuTrash,
@@ -26,7 +25,6 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useSuppliers } from "~/stores";
-import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import { supplierQuoteStatusType } from "../../purchasing.models";
 import type { SupplierQuote } from "../../types";
@@ -52,23 +50,8 @@ const SupplierQuotesTable = memo(
     const [suppliers] = useSuppliers();
     const [people] = usePeople();
 
-    const fetcher = useFetcher<{}>();
-    const optimisticFavorite = useOptimisticFavorite();
+    // const optimisticFavorite = useOptimisticFavorite();
 
-    const rows = useMemo<SupplierQuote[]>(
-      () =>
-        data.map((d) =>
-          d.id === optimisticFavorite?.id
-            ? {
-                ...d,
-                favorite: optimisticFavorite?.favorite
-                  ? optimisticFavorite.favorite === "favorite"
-                  : d.favorite,
-              }
-            : d
-        ),
-      [data, optimisticFavorite]
-    );
     const customColumns = useCustomColumns<SupplierQuote>("quote");
     const columns = useMemo<ColumnDef<SupplierQuote>[]>(() => {
       const employeeOptions = people.map((employee) => ({
@@ -82,37 +65,6 @@ const SupplierQuotesTable = memo(
           header: "Quote Number",
           cell: ({ row }) => (
             <HStack>
-              {row.original.favorite ? (
-                <fetcher.Form
-                  method="post"
-                  action={path.to.supplierQuoteFavorite}
-                  className="flex items-center"
-                >
-                  <input type="hidden" name="id" value={row.original.id!} />
-                  <input type="hidden" name="favorite" value="unfavorite" />
-                  <button type="submit">
-                    <LuPin
-                      className="cursor-pointer w-4 h-4 outline-foreground fill-foreground flex-shrink-0"
-                      type="submit"
-                    />
-                  </button>
-                </fetcher.Form>
-              ) : (
-                <fetcher.Form
-                  method="post"
-                  action={path.to.supplierQuoteFavorite}
-                  className="flex items-center"
-                >
-                  <input type="hidden" name="id" value={row.original.id!} />
-                  <input type="hidden" name="favorite" value="favorite" />
-                  <button type="submit">
-                    <LuPin
-                      className="cursor-pointer w-4 h-4 text-muted-foreground flex-shrink-0"
-                      type="submit"
-                    />
-                  </button>
-                </fetcher.Form>
-              )}
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
@@ -257,7 +209,7 @@ const SupplierQuotesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [suppliers, people, customColumns, fetcher]);
+    }, [suppliers, people, customColumns]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
@@ -288,7 +240,7 @@ const SupplierQuotesTable = memo(
         <Table<SupplierQuote>
           count={count}
           columns={columns}
-          data={rows}
+          data={data}
           defaultColumnPinning={{
             left: ["supplierQuoteId"],
           }}
@@ -329,19 +281,3 @@ const SupplierQuotesTable = memo(
 SupplierQuotesTable.displayName = "SupplierQuotesTable";
 
 export default SupplierQuotesTable;
-
-function useOptimisticFavorite() {
-  const fetchers = useFetchers();
-  const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.supplierQuoteFavorite
-  );
-
-  if (favoriteFetcher && favoriteFetcher.formData) {
-    const id = favoriteFetcher.formData.get("id");
-    const favorite = favoriteFetcher.formData.get("favorite") ?? "off";
-    const submission = favoriteSchema.safeParse({ id, favorite });
-    if (submission.success) {
-      return submission.data;
-    }
-  }
-}
