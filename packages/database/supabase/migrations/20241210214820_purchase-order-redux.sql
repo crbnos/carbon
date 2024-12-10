@@ -53,8 +53,7 @@ CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
     ss."receiptPromisedDate",
     ss."dropShipment",
     ss."shippingCost",
-    l."name" AS "locationName",
-    EXISTS(SELECT 1 FROM "salesOrderFavorite" sf WHERE sf."salesOrderId" = s.id AND sf."userId" = auth.uid()::text) AS favorite
+    l."name" AS "locationName"
   FROM "salesOrder" s
   LEFT JOIN (
     SELECT 
@@ -97,8 +96,7 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
     pd."dropShipment",
     pp."paymentTermId",
     l."id" AS "locationId",
-    l."name" AS "locationName",
-    EXISTS(SELECT 1 FROM "purchaseOrderFavorite" pf WHERE pf."purchaseOrderId" = p.id AND pf."userId" = auth.uid()::text) AS favorite
+    l."name" AS "locationName"
   FROM "purchaseOrder" p
   LEFT JOIN (
     SELECT 
