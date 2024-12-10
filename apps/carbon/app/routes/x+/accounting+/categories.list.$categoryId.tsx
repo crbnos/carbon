@@ -13,7 +13,7 @@ import { AccountCategoryDetail } from "~/modules/accounting/ui/AccountCategories
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee",
   });
@@ -22,8 +22,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!categoryId) throw notFound("Invalid categoryId");
 
   const [accountCategory, accountSubcategories] = await Promise.all([
-    getAccountCategory(client, categoryId),
-    getAccountSubcategoriesByCategory(client, categoryId),
+    getAccountCategory(client, categoryId, companyId),
+    getAccountSubcategoriesByCategory(client, categoryId, companyId),
   ]);
   if (accountCategory.error) {
     throw redirect(

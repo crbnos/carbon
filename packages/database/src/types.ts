@@ -27603,14 +27603,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27631,7 +27631,6 @@ export type Database = {
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -28640,7 +28639,6 @@ export type Database = {
           expirationDate: string | null
           externalLinkId: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -29447,7 +29445,6 @@ export type Database = {
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -29886,7 +29883,6 @@ export type Database = {
           employeeId: string | null
           expirationDate: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           locationId: string | null
@@ -29898,6 +29894,7 @@ export type Database = {
           salesOrderId: string | null
           salesPersonId: string | null
           status: Database["public"]["Enums"]["salesRfqStatus"] | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -30640,7 +30637,6 @@ export type Database = {
           exchangeRateUpdatedAt: string | null
           expirationDate: string | null
           externalNotes: Json | null
-          favorite: boolean | null
           id: string | null
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
@@ -32371,7 +32367,6 @@ export type Database = {
           owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
-          user_metadata: Json | null
           version: string | null
         }
         Insert: {
@@ -32385,7 +32380,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Update: {
@@ -32399,7 +32393,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Relationships: [
@@ -32421,7 +32414,6 @@ export type Database = {
           key: string
           owner_id: string | null
           upload_signature: string
-          user_metadata: Json | null
           version: string
         }
         Insert: {
@@ -32432,7 +32424,6 @@ export type Database = {
           key: string
           owner_id?: string | null
           upload_signature: string
-          user_metadata?: Json | null
           version: string
         }
         Update: {
@@ -32443,7 +32434,6 @@ export type Database = {
           key?: string
           owner_id?: string | null
           upload_signature?: string
-          user_metadata?: Json | null
           version?: string
         }
         Relationships: [
@@ -32579,10 +32569,6 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       search: {
         Args: {

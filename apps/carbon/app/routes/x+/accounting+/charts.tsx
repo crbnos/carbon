@@ -20,6 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee",
+    bypassRls: true,
   });
 
   const url = new URL(request.url);

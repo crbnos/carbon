@@ -19,6 +19,7 @@ export const handle: Handle = {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "sales",
+    bypassRls: true,
   });
 
   const url = new URL(request.url);

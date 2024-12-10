@@ -11,7 +11,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useFetcher, useFetchers, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -21,7 +21,6 @@ import {
   LuDollarSign,
   LuExternalLink,
   LuPencil,
-  LuPin,
   LuQrCode,
   LuStar,
   LuTrash,
@@ -46,7 +45,6 @@ import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
-import { favoriteSchema } from "~/types/validators";
 import { path } from "~/utils/path";
 import { salesOrderStatusType } from "../../sales.models";
 import type { SalesOrder } from "../../types";
@@ -71,24 +69,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const shippingMethods = useShippingMethod();
   const paymentTerms = usePaymentTerm();
 
-  const fetcher = useFetcher<{}>();
-  const optimisticFavorite = useOptimisticFavorite();
-
-  const rows = useMemo<SalesOrder[]>(
-    () =>
-      data.map((d) =>
-        d.id === optimisticFavorite?.id
-          ? {
-              ...d,
-              favorite: optimisticFavorite?.favorite
-                ? optimisticFavorite.favorite === "favorite"
-                : d.favorite,
-            }
-          : d
-      ),
-    [data, optimisticFavorite]
-  );
-
   const { edit } = useSalesOrder();
 
   const customColumns = useCustomColumns<SalesOrder>("salesOrder");
@@ -100,38 +80,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         header: "Sales Order Number",
         cell: ({ row }) => (
           <HStack>
-            {row.original.favorite ? (
-              <fetcher.Form
-                method="post"
-                action={path.to.salesOrderFavorite}
-                className="flex items-center"
-              >
-                <input type="hidden" name="id" value={row.original.id!} />
-                <input type="hidden" name="favorite" value="unfavorite" />
-                <button type="submit">
-                  <LuPin
-                    className="cursor-pointer w-4 h-4 outline-foreground fill-foreground flex-shrink-0"
-                    type="submit"
-                  />
-                </button>
-              </fetcher.Form>
-            ) : (
-              <fetcher.Form
-                method="post"
-                action={path.to.salesOrderFavorite}
-                className="flex items-center"
-              >
-                <input type="hidden" name="id" value={row.original.id!} />
-                <input type="hidden" name="favorite" value="favorite" />
-                <button type="submit">
-                  <LuPin
-                    className="cursor-pointer w-4 h-4 text-muted-foreground flex-shrink-0"
-                    type="submit"
-                  />
-                </button>
-              </fetcher.Form>
-            )}
-
             <ItemThumbnail
               size="sm"
               thumbnailPath={row.original.thumbnailPath}
@@ -378,7 +326,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, fetcher, currencyFormatter]);
+  }, [
+    customers,
+    people,
+    customColumns,
+    currencyFormatter,
+    shippingMethods,
+    paymentTerms,
+  ]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
@@ -424,7 +379,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       <Table<SalesOrder>
         count={count}
         columns={columns}
-        data={rows}
+        data={data}
         defaultColumnPinning={{
           left: ["salesOrderId"],
         }}
@@ -469,22 +424,6 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 SalesOrdersTable.displayName = "SalesOrdersTable";
 
 export default SalesOrdersTable;
-
-function useOptimisticFavorite() {
-  const fetchers = useFetchers();
-  const favoriteFetcher = fetchers.find(
-    (f) => f.formAction === path.to.salesOrderFavorite
-  );
-
-  if (favoriteFetcher && favoriteFetcher.formData) {
-    const id = favoriteFetcher.formData.get("id");
-    const favorite = favoriteFetcher.formData.get("favorite") ?? "off";
-    const submission = favoriteSchema.safeParse({ id, favorite });
-    if (submission.success) {
-      return submission.data;
-    }
-  }
-}
 
 export const useSalesOrder = () => {
   const navigate = useNavigate();
