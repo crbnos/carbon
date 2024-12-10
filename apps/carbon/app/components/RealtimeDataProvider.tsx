@@ -2,7 +2,6 @@
 
 import { useCarbon } from "@carbon/auth";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import idb from "localforage";
 import { useEffect, useRef } from "react";
 import { useUser } from "~/hooks";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
@@ -28,6 +27,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   const [, setPeople] = usePeople();
 
   const hydrate = async () => {
+    const idb = (await import("localforage")).default;
     if (!hydratedFromIdb) {
       hydratedFromIdb = true;
 
@@ -94,6 +94,11 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       // @ts-ignore
       people.data?.filter((p) => !p.email?.includes("@carbonos.dev")) ?? []
     );
+
+    idb.setItem("items", items.data);
+    idb.setItem("suppliers", suppliers.data);
+    idb.setItem("customers", customers.data);
+    idb.setItem("people", people.data);
   };
 
   const channelRef = useRef<RealtimeChannel | null>(null);
