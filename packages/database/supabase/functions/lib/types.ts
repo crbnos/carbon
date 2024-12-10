@@ -13404,7 +13404,6 @@ export type Database = {
           supplierLocationId: string | null
           supplierReference: string | null
           tags: string[] | null
-          type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13431,7 +13430,6 @@ export type Database = {
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
-          type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13458,7 +13456,6 @@ export type Database = {
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
-          type?: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -27656,7 +27653,6 @@ export type Database = {
           supplierReference: string | null
           tags: string[] | null
           thumbnailPath: string | null
-          type: Database["public"]["Enums"]["purchaseOrderType"] | null
           updatedAt: string | null
           updatedBy: string | null
         }

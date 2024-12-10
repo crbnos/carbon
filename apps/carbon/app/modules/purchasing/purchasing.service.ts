@@ -769,6 +769,22 @@ export async function releasePurchaseOrder(
     .eq("id", purchaseOrderId);
 }
 
+export async function updatePurchaseOrderExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("salesOrder").update(update).eq("id", update.id);
+}
+
 export async function updatePurchaseOrderFavorite(
   client: SupabaseClient<Database>,
   args: {

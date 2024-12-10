@@ -127,6 +127,7 @@ export const path = {
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateJob: `${x}/job/update`,
+    bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdateQuote: `${x}/quote/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
@@ -626,6 +627,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/delivery`),
     purchaseOrderDetails: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/details`),
+    purchaseOrderExchangeRate: (id: string) =>
+      generatePath(`${x}/purchase-order/${id}/exchange-rate`),
     purchaseOrderExternalDocuments: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/external`),
     purchaseOrderFavorite: `${x}/purchasing/orders/favorite`,

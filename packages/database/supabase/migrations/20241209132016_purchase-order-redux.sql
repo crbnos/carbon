@@ -3,6 +3,8 @@ DROP VIEW "purchaseOrderLines";
 
 ALTER TABLE "purchaseOrder" DROP COLUMN "notes";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN "notes";
+ALTER TABLE "purchaseOrder" DROP COLUMN "type";
+
 
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
@@ -144,3 +146,22 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
   LEFT JOIN "supplierPart" sp ON sp."supplierId" = so."supplierId" AND sp."itemId" = i.id
 );
+
+
+CREATE OR REPLACE FUNCTION update_purchase_order_line_price_exchange_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "purchaseOrderLine"
+  SET "exchangeRate" = NEW."exchangeRate"
+  WHERE "purchaseOrderId" = NEW."id";
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER update_purchase_order_line_price_exchange_rate_trigger
+AFTER UPDATE OF "exchangeRate" ON "supplierQuote"
+FOR EACH ROW
+WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
+EXECUTE FUNCTION update_purchase_order_line_price_exchange_rate();
+

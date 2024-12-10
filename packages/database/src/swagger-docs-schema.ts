@@ -23506,9 +23506,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.revisionId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.type",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrder.status",
           },
           {
@@ -23640,9 +23637,6 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.revisionId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrder.type",
-          },
-          {
             $ref: "#/parameters/rowFilter.purchaseOrder.status",
           },
           {
@@ -23726,9 +23720,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.revisionId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrder.type",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.status",
@@ -40499,9 +40490,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.revisionId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseOrders.type",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.status",
@@ -64292,7 +64280,6 @@ export default {
         "id",
         "purchaseOrderId",
         "revisionId",
-        "type",
         "status",
         "orderDate",
         "supplierId",
@@ -64315,11 +64302,6 @@ export default {
           default: 0,
           format: "integer",
           type: "integer",
-        },
-        type: {
-          enum: ["Purchase", "Return"],
-          format: 'public."purchaseOrderType"',
-          type: "string",
         },
         status: {
           default: "Draft",
@@ -70338,11 +70320,6 @@ export default {
         revisionId: {
           format: "integer",
           type: "integer",
-        },
-        type: {
-          enum: ["Purchase", "Return"],
-          format: 'public."purchaseOrderType"',
-          type: "string",
         },
         status: {
           enum: [
@@ -77456,13 +77433,6 @@ export default {
       name: "revisionId",
       required: false,
       format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.purchaseOrder.type": {
-      name: "type",
-      required: false,
-      format: 'public."purchaseOrderType"',
       in: "query",
       type: "string",
     },
@@ -99868,13 +99838,6 @@ export default {
       name: "revisionId",
       required: false,
       format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.purchaseOrders.type": {
-      name: "type",
-      required: false,
-      format: 'public."purchaseOrderType"',
       in: "query",
       type: "string",
     },

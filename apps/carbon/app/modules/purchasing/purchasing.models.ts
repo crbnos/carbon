@@ -30,13 +30,6 @@ export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
   orderDate: z.string().min(1, { message: "Order Date is required" }),
-  type: z.enum(purchaseOrderTypeType, {
-    errorMap: (issue, ctx) => ({
-      message: "Type is required",
-    }),
-  }),
-  status: z.enum(purchaseOrderStatusType).optional(),
-  notes: zfd.text(z.string().optional()),
   supplierId: z.string().min(36, { message: "Supplier is required" }),
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),

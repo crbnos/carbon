@@ -14,6 +14,7 @@ import {
   getSupplierInteractionDocuments,
 } from "~/modules/purchasing";
 import { PurchaseOrderHeader } from "~/modules/purchasing/ui/PurchaseOrder";
+import PurchaseOrderProperties from "~/modules/purchasing/ui/PurchaseOrder/PurchaseOrderProperties";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -90,7 +91,7 @@ export default function PurchaseOrderRoute() {
                       </VStack>
                     </div>
                   }
-                  properties={null}
+                  properties={<PurchaseOrderProperties />}
                 />
               )}
             </ClientOnly>
