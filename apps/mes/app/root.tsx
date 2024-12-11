@@ -1,4 +1,4 @@
-import { error, getBrowserEnv } from "@carbon/auth";
+import { error, getBrowserEnv, VERCEL_ENV, VERCEL_URL } from "@carbon/auth";
 import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
@@ -66,6 +66,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_API_URL,
         SUPABASE_ANON_PUBLIC,
+        VERCEL_ENV,
+        VERCEL_URL,
       },
       mode: getMode(request),
       theme: getTheme(request),
