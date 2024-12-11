@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -20,6 +21,8 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { purchaseOrderPaymentValidator } from "~/modules/purchasing";
+import type { action } from "~/routes/x+/purchase-order+/$orderId.payment";
+import { path } from "~/utils/path";
 
 type PurchaseOrderPaymentFormProps = {
   initialValues: z.infer<typeof purchaseOrderPaymentValidator>;
@@ -28,6 +31,12 @@ type PurchaseOrderPaymentFormProps = {
 const PurchaseOrderPaymentForm = ({
   initialValues,
 }: PurchaseOrderPaymentFormProps) => {
+  const { orderId } = useParams();
+  if (!orderId) {
+    throw new Error("orderId not found");
+  }
+
+  const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
 
   const [supplier, setSupplier] = useState<string | undefined>(
@@ -35,12 +44,14 @@ const PurchaseOrderPaymentForm = ({
   );
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={purchaseOrderPaymentValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card isCollapsible defaultCollapsed>
+      <ValidatedForm
+        method="post"
+        action={path.to.purchaseOrderPayment(orderId)}
+        validator={purchaseOrderPaymentValidator}
+        defaultValues={initialValues}
+        fetcher={fetcher}
+      >
         <CardHeader>
           <CardTitle>Payment</CardTitle>
         </CardHeader>
@@ -74,8 +85,8 @@ const PurchaseOrderPaymentForm = ({
             Save
           </Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

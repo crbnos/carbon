@@ -110,6 +110,8 @@ const PurchaseOrderProperties = () => {
     !permissions.can("update", "purchasing") ||
     !["Draft", "To Review"].includes(routeData?.purchaseOrder?.status ?? "");
 
+  console.log("xxx", routeData?.purchaseOrder);
+
   return (
     <VStack
       spacing={4}
@@ -278,6 +280,47 @@ const PurchaseOrderProperties = () => {
           isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("orderDate", date);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          receiptPromisedDate:
+            routeData?.purchaseOrder?.receiptPromisedDate ?? "",
+        }}
+        validator={z.object({
+          receiptPromisedDate: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <DatePicker
+          name="receiptPromisedDate"
+          label="Receipt Promised Date"
+          inline
+          isDisabled={isDisabled}
+          onChange={(date) => {
+            onUpdate("receiptPromisedDate", date);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          deliveryDate: routeData?.purchaseOrder?.deliveryDate ?? "",
+        }}
+        validator={z.object({
+          deliveryDate: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <DatePicker
+          name="deliveryDate"
+          label="Delivery Date"
+          inline
+          isDisabled={isDisabled}
+          onChange={(date) => {
+            onUpdate("deliveryDate", date);
           }}
         />
       </ValidatedForm>

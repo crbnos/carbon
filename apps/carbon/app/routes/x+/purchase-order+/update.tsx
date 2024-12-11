@@ -19,6 +19,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return json({ error: { message: "Invalid form data" }, data: null });
   }
 
+  console.log({ field, value });
+
   switch (field) {
     case "supplierId":
       let currencyCode: string | undefined;
@@ -63,11 +65,14 @@ export async function action({ request }: ActionFunctionArgs) {
           .in("id", ids as string[])
       );
     case "locationId":
+    case "deliveryDate":
+    case "receiptPromisedDate":
+    case "receiptRequestedDate":
       return json(
         await client
           .from("purchaseOrderDelivery")
           .update({
-            locationId: value ?? undefined,
+            [field]: value ?? undefined,
             updatedBy: userId,
             updatedAt: new Date().toISOString(),
           })

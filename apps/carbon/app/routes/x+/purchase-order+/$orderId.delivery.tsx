@@ -40,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (updatePurchaseOrderDelivery.error) {
     throw redirect(
-      path.to.purchaseOrderDelivery(orderId),
+      path.to.purchaseOrderDetails(orderId),
       await flash(
         request,
         error(
@@ -52,7 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.purchaseOrderDelivery(orderId),
+    path.to.purchaseOrderDetails(orderId),
     await flash(request, success("Updated purchase order delivery"))
   );
 }

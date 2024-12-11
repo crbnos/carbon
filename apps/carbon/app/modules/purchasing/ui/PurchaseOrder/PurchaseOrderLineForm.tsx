@@ -44,6 +44,7 @@ import {
   purchaseOrderLineValidator,
 } from "~/modules/purchasing";
 import { methodItemType } from "~/modules/shared";
+import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
@@ -64,7 +65,7 @@ const PurchaseOrderLineForm = ({
 
   const { company, defaults } = useUser();
   const { orderId } = useParams();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useFetcher<typeof action>();
 
   if (!orderId) throw new Error("orderId not found");
   const sharedPurchasingData = useRouteData<{
@@ -257,8 +258,8 @@ const PurchaseOrderLineForm = ({
                   ? path.to.purchaseOrderLine(orderId, initialValues.id!)
                   : path.to.newPurchaseOrderLine(orderId)
               }
-              fetcher={fetcher}
               className="w-full"
+              fetcher={fetcher}
               onSubmit={() => {
                 if (type === "modal") onClose?.();
               }}
@@ -460,7 +461,9 @@ const PurchaseOrderLineForm = ({
                 </VStack>
               </ModalCardBody>
               <ModalCardFooter>
-                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Submit isDisabled={isDisabled} withBlocker={false}>
+                  Save
+                </Submit>
               </ModalCardFooter>
             </ValidatedForm>
           </ModalCardContent>

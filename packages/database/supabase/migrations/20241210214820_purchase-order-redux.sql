@@ -96,6 +96,7 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
     pd."shippingTermId",
     pd."receiptRequestedDate",
     pd."receiptPromisedDate",
+    pd."deliveryDate",
     pd."dropShipment",
     pp."paymentTermId",
     l."id" AS "locationId",

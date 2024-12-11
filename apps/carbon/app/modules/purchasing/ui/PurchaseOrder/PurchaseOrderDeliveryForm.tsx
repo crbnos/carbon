@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@carbon/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -22,6 +23,8 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { purchaseOrderDeliveryValidator } from "~/modules/purchasing";
+import type { action } from "~/routes/x+/purchase-order+/$orderId.delivery";
+import { path } from "~/utils/path";
 
 type PurchaseOrderDeliveryFormProps = {
   initialValues: z.infer<typeof purchaseOrderDeliveryValidator>;
@@ -32,7 +35,13 @@ const PurchaseOrderDeliveryForm = ({
   initialValues,
 }: // shippingTerms,
 PurchaseOrderDeliveryFormProps) => {
+  const { orderId } = useParams();
+  if (!orderId) {
+    throw new Error("orderId not found");
+  }
+
   const permissions = usePermissions();
+  const fetcher = useFetcher<typeof action>();
   const [dropShip, setDropShip] = useState<boolean>(
     initialValues.dropShipment ?? false
   );
@@ -40,20 +49,17 @@ PurchaseOrderDeliveryFormProps) => {
     initialValues.customerId
   );
 
-  // const shippingTermOptions = shippingTerms.map((term) => ({
-  //   label: term.name,
-  //   value: term.id,
-  // }));
-
   const isSupplier = permissions.is("supplier");
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={purchaseOrderDeliveryValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card isCollapsible defaultCollapsed>
+      <ValidatedForm
+        method="post"
+        action={path.to.purchaseOrderDelivery(orderId)}
+        validator={purchaseOrderDeliveryValidator}
+        defaultValues={initialValues}
+        fetcher={fetcher}
+      >
         <CardHeader>
           <CardTitle>Delivery</CardTitle>
         </CardHeader>
@@ -107,8 +113,8 @@ PurchaseOrderDeliveryFormProps) => {
             Save
           </Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 
