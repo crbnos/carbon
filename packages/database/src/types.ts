@@ -13395,7 +13395,6 @@ export type Database = {
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
-          notes: string | null
           orderDate: string
           purchaseOrderId: string
           revisionId: number
@@ -13405,7 +13404,6 @@ export type Database = {
           supplierLocationId: string | null
           supplierReference: string | null
           tags: string[] | null
-          type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13423,7 +13421,6 @@ export type Database = {
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
-          notes?: string | null
           orderDate?: string
           purchaseOrderId: string
           revisionId?: number
@@ -13433,7 +13430,6 @@ export type Database = {
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
-          type: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13451,7 +13447,6 @@ export type Database = {
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
-          notes?: string | null
           orderDate?: string
           purchaseOrderId?: string
           revisionId?: number
@@ -13461,7 +13456,6 @@ export type Database = {
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
-          type?: Database["public"]["Enums"]["purchaseOrderType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13947,13 +13941,17 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string | null
+          exchangeRate: number | null
+          extendedPrice: number | null
+          externalNotes: Json | null
           id: string
+          internalNotes: Json | null
           inventoryUnitOfMeasureCode: string | null
           invoicedComplete: boolean
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
-          notes: Json | null
+          modelUploadId: string | null
           purchaseOrderId: string
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity: number | null
@@ -13966,7 +13964,14 @@ export type Database = {
           requiresInspection: boolean
           setupPrice: number | null
           shelfId: string | null
+          shippingCost: number | null
+          supplierExtendedPrice: number | null
+          supplierShippingCost: number
+          supplierTaxAmount: number
+          supplierUnitPrice: number | null
           tags: string[] | null
+          taxAmount: number | null
+          taxPercent: number | null
           unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -13980,13 +13985,17 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
+          exchangeRate?: number | null
+          extendedPrice?: number | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
-          notes?: Json | null
+          modelUploadId?: string | null
           purchaseOrderId: string
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
@@ -13999,7 +14008,14 @@ export type Database = {
           requiresInspection?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxAmount?: number | null
+          taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -14013,13 +14029,17 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string | null
+          exchangeRate?: number | null
+          extendedPrice?: number | null
+          externalNotes?: Json | null
           id?: string
+          internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
-          notes?: Json | null
+          modelUploadId?: string | null
           purchaseOrderId?: string
           purchaseOrderLineType?: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
@@ -14032,7 +14052,14 @@ export type Database = {
           requiresInspection?: boolean
           setupPrice?: number | null
           shelfId?: string | null
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number | null
           tags?: string[] | null
+          taxAmount?: number | null
+          taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -14100,6 +14127,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "item"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
@@ -20034,6 +20089,7 @@ export type Database = {
           supplierTypeId: string | null
           tags: string[] | null
           taxId: string | null
+          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
           website: string | null
@@ -20056,6 +20112,7 @@ export type Database = {
           supplierTypeId?: string | null
           tags?: string[] | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -20078,6 +20135,7 @@ export type Database = {
           supplierTypeId?: string | null
           tags?: string[] | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -27299,13 +27357,18 @@ export type Database = {
         Row: {
           accountNumber: string | null
           assetId: string | null
+          autodeskUrn: string | null
           companyId: string | null
           conversionFactor: number | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
           description: string | null
+          exchangeRate: number | null
+          extendedPrice: number | null
+          externalNotes: Json | null
           id: string | null
+          internalNotes: Json | null
           inventoryUnitOfMeasureCode: string | null
           invoicedComplete: boolean | null
           itemDescription: string | null
@@ -27313,6 +27376,11 @@ export type Database = {
           itemName: string | null
           itemReadableId: string | null
           locationId: string | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
           purchaseOrderId: string | null
           purchaseOrderLineType:
             | Database["public"]["Enums"]["purchaseOrderLineType"]
@@ -27327,49 +27395,22 @@ export type Database = {
           requiresInspection: boolean | null
           setupPrice: number | null
           shelfId: string | null
-          supplierId: string | null
+          shippingCost: number | null
+          supplierExtendedPrice: number | null
           supplierPartId: string | null
+          supplierShippingCost: number | null
+          supplierTaxAmount: number | null
+          supplierUnitPrice: number | null
           tags: string[] | null
+          taxAmount: number | null
+          taxPercent: number | null
+          thumbnailPath: string | null
+          unitCost: number | null
           unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "purchaseOrder_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseOrder_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "purchaseOrder_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "purchaseOrder_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseOrder_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "purchaseOrderLine_accountNumber_fkey"
             columns: ["accountNumber", "companyId"]
@@ -27432,6 +27473,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "item"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "purchaseOrderLine_purchaseOrderId_fkey"
@@ -27561,30 +27630,32 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customFields: Json | null
+          deliveryDate: string | null
           dropShipment: boolean | null
           exchangeRate: number | null
           exchangeRateUpdatedAt: string | null
           externalNotes: Json | null
           id: string | null
           internalNotes: Json | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
           locationId: string | null
           locationName: string | null
-          notes: string | null
           orderDate: string | null
-          paymentTermName: string | null
+          orderTotal: number | null
+          paymentTermId: string | null
           purchaseOrderId: string | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
           revisionId: number | null
-          shippingMethodName: string | null
-          shippingTermName: string | null
+          shippingMethodId: string | null
+          shippingTermId: string | null
           status: Database["public"]["Enums"]["purchaseOrderStatus"] | null
           supplierContactId: string | null
           supplierId: string | null
           supplierLocationId: string | null
           supplierReference: string | null
           tags: string[] | null
-          type: Database["public"]["Enums"]["purchaseOrderType"] | null
+          thumbnailPath: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -27812,6 +27883,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseOrderDelivery_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderDelivery_shippingTermId_fkey"
+            columns: ["shippingTermId"]
+            isOneToOne: false
+            referencedRelation: "shippingTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderPayment_paymentTermId_fkey"
+            columns: ["paymentTermId"]
+            isOneToOne: false
+            referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -30779,6 +30871,7 @@ export type Database = {
           supplierTypeId: string | null
           tags: string[] | null
           taxId: string | null
+          taxPercent: number | null
           type: string | null
           updatedAt: string | null
           updatedBy: string | null
@@ -31487,6 +31580,7 @@ export type Database = {
           operationQuantity: number
           quantityComplete: number
           quantityScrapped: number
+          thumbnailPath: string
         }[]
       }
       get_claims: {
@@ -32279,7 +32373,6 @@ export type Database = {
           owner_id: string | null
           path_tokens: string[] | null
           updated_at: string | null
-          user_metadata: Json | null
           version: string | null
         }
         Insert: {
@@ -32293,7 +32386,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Update: {
@@ -32307,7 +32399,6 @@ export type Database = {
           owner_id?: string | null
           path_tokens?: string[] | null
           updated_at?: string | null
-          user_metadata?: Json | null
           version?: string | null
         }
         Relationships: [
@@ -32329,7 +32420,6 @@ export type Database = {
           key: string
           owner_id: string | null
           upload_signature: string
-          user_metadata: Json | null
           version: string
         }
         Insert: {
@@ -32340,7 +32430,6 @@ export type Database = {
           key: string
           owner_id?: string | null
           upload_signature: string
-          user_metadata?: Json | null
           version: string
         }
         Update: {
@@ -32351,7 +32440,6 @@ export type Database = {
           key?: string
           owner_id?: string | null
           upload_signature?: string
-          user_metadata?: Json | null
           version?: string
         }
         Relationships: [
@@ -32487,10 +32575,6 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       search: {
         Args: {

@@ -190,6 +190,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           salesOrderId: op.salesOrderId,
           salesOrderLineId: op.salesOrderLineId,
           status: op.operationStatus,
+          thumbnailPath: op.thumbnailPath,
         };
       }) ?? []) satisfies Item[],
       processes: processes.data ?? [],
@@ -284,6 +285,7 @@ export default function Operations() {
                     showProgress={false}
                     showStatus
                     showSalesOrder={false}
+                    showThumbnail
                   />
                 )}
               </ClientOnly>

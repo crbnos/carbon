@@ -219,6 +219,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         setupDuration: operation.setupDuration,
         laborDuration: operation.laborDuration,
         machineDuration: operation.machineDuration,
+        thumbnailPath: op.thumbnailPath,
       };
     }) ?? []) satisfies Item[],
     processes: processes.data ?? [],
@@ -343,6 +344,7 @@ export default function ScheduleRoute() {
                   showProgress
                   showStatus
                   showSalesOrder
+                  showThumbnail
                 />
               )}
             </ClientOnly>
