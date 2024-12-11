@@ -38,7 +38,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import { getDeadlineIcon, getDeadlineText } from "../../../Jobs/Deadline";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
 
@@ -101,6 +101,7 @@ export function ItemCard({
   showProgress,
   showStatus,
   showSalesOrder,
+  showThumbnail,
 }: ItemCardProps) {
   const {
     setNodeRef,
@@ -215,6 +216,15 @@ export function ItemCard({
           )}
       </CardHeader>
       <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
+        {showThumbnail && item.thumbnailPath && (
+          <div className="flex justify-center">
+            <img
+              src={getPrivateUrl(item.thumbnailPath)}
+              alt={item.title}
+              className="w-full h-auto rounded-lg"
+            />
+          </div>
+        )}
         {showDescription && item.description && (
           <HStack className="justify-start space-x-2">
             <LuClipboardCheck className="text-muted-foreground" />
