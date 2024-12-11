@@ -1,6 +1,4 @@
 import PurchaseOrderDeliveryForm from "./PurchaseOrderDeliveryForm";
-import PurchaseOrderDocuments from "./PurchaseOrderDocuments";
-import PurchaseOrderDocumentForm from "./PurchaseOrderDocuments/PurchaseOrderDocumentForm";
 import PurchaseOrderExplorer from "./PurchaseOrderExplorer";
 import PurchaseOrderForm from "./PurchaseOrderForm";
 import PurchaseOrderHeader from "./PurchaseOrderHeader";
@@ -14,8 +12,6 @@ import { usePurchaseOrderTotals } from "./usePurchaseOrderTotals";
 
 export {
   PurchaseOrderDeliveryForm,
-  PurchaseOrderDocumentForm,
-  PurchaseOrderDocuments,
   PurchaseOrderExplorer,
   PurchaseOrderForm,
   PurchaseOrderHeader,
