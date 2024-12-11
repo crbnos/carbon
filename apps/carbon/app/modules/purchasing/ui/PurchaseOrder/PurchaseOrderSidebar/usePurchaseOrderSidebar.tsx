@@ -1,6 +1,6 @@
 import { useParams } from "@remix-run/react";
 import { BsCreditCard, BsTruck } from "react-icons/bs";
-import { LuFileDown, LuFileText, LuFileUp, LuList } from "react-icons/lu";
+import { LuFileDown, LuFileText, LuFileUp } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -23,13 +23,13 @@ export function usePurchaseOrderSidebar({ lines = 0 }: Props) {
       icon: <LuFileText />,
       shortcut: "Command+Shift+s",
     },
-    {
-      name: "Lines",
-      to: path.to.purchaseOrderLines(orderId),
-      count: lines,
-      icon: <LuList />,
-      shortcut: "Command+Shift+l",
-    },
+    // {
+    //   name: "Lines",
+    //   to: path.to.purchaseOrderLines(orderId),
+    //   count: lines,
+    //   icon: <LuList />,
+    //   shortcut: "Command+Shift+l",
+    // },
     {
       name: "Delivery",
       to: path.to.purchaseOrderDelivery(orderId),

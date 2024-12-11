@@ -95,8 +95,7 @@ export const purchaseOrderLineValidator = z
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
-    unitPrice: zfd.numeric(z.number().optional()),
-    setupPrice: zfd.numeric(z.number().optional()),
+    supplierUnitPrice: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
   })

@@ -13,8 +13,12 @@ import {
   getSupplierInteractionByPurchaseOrder,
   getSupplierInteractionDocuments,
 } from "~/modules/purchasing";
-import { PurchaseOrderHeader } from "~/modules/purchasing/ui/PurchaseOrder";
-import PurchaseOrderProperties from "~/modules/purchasing/ui/PurchaseOrder/PurchaseOrderProperties";
+import {
+  PurchaseOrderExplorer,
+  PurchaseOrderHeader,
+  PurchaseOrderProperties,
+} from "~/modules/purchasing/ui/PurchaseOrder";
+
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -86,7 +90,7 @@ export default function PurchaseOrderRoute() {
             <ClientOnly fallback={null}>
               {() => (
                 <ResizablePanels
-                  explorer={null}
+                  explorer={<PurchaseOrderExplorer />}
                   content={
                     <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                       <VStack spacing={2} className="p-2">

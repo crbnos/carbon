@@ -20089,6 +20089,7 @@ export type Database = {
           supplierTypeId: string | null
           tags: string[] | null
           taxId: string | null
+          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
           website: string | null
@@ -20111,6 +20112,7 @@ export type Database = {
           supplierTypeId?: string | null
           tags?: string[] | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -20133,6 +20135,7 @@ export type Database = {
           supplierTypeId?: string | null
           tags?: string[] | null
           taxId?: string | null
+          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
           website?: string | null
@@ -29413,14 +29416,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -30867,6 +30870,7 @@ export type Database = {
           supplierTypeId: string | null
           tags: string[] | null
           taxId: string | null
+          taxPercent: number | null
           type: string | null
           updatedAt: string | null
           updatedBy: string | null

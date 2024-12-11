@@ -5,7 +5,6 @@ import { validationError, validator } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { PurchaseOrderLineType } from "~/modules/purchasing";
 import {
   purchaseOrderLineValidator,
   upsertPurchaseOrderLine,
@@ -43,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createPurchaseOrderLine.error) {
     throw redirect(
-      path.to.purchaseOrderLines(orderId),
+      path.to.purchaseOrderDetails(orderId),
       await flash(
         request,
         error(
@@ -54,7 +53,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.purchaseOrderLines(orderId));
+  const purchaseOrderLineId = createPurchaseOrderLine.data.id;
+
+  throw redirect(path.to.purchaseOrderLine(orderId, purchaseOrderLineId));
 }
 
 export default function NewPurchaseOrderLineRoute() {
@@ -64,10 +65,10 @@ export default function NewPurchaseOrderLineRoute() {
 
   const initialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Part" as PurchaseOrderLineType,
+    purchaseOrderLineType: "Part" as const,
     itemId: "",
     purchaseQuantity: 1,
-    unitPrice: 0,
+    supplierUnitPrice: 0,
     setupPrice: 0,
     purchaseUnitOfMeasureCode: "",
     inventoryUnitOfMeasureCode: "",
@@ -75,10 +76,5 @@ export default function NewPurchaseOrderLineRoute() {
     shelfId: "",
   };
 
-  return (
-    <PurchaseOrderLineForm
-      // @ts-ignore
-      initialValues={initialValues}
-    />
-  );
+  return <PurchaseOrderLineForm initialValues={initialValues} />;
 }

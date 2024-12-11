@@ -285,7 +285,7 @@ export const path = {
     deletePurchaseOrder: (id: string) =>
       generatePath(`${x}/purchase-order/delete/${id}`),
     deletePurchaseOrderLine: (orderId: string, lineId: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines/delete/${lineId}`),
+      generatePath(`${x}/purchase-order/${orderId}/${lineId}/delete`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/${id}/delete`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
@@ -525,7 +525,7 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}/lines/new`),
     newPurchaseOrder: `${x}/purchase-order/new`,
     newPurchaseOrderLine: (id: string) =>
-      generatePath(`${x}/purchase-order/${id}/lines/new`),
+      generatePath(`${x}/purchase-order/${id}/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
     newQuoteLineCost: (id: string, lineId: string) =>
@@ -632,12 +632,8 @@ export const path = {
     purchaseOrderExternalDocuments: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/external`),
     purchaseOrderFavorite: `${x}/purchasing/orders/favorite`,
-    purchaseOrderInternalDocuments: (id: string) =>
-      generatePath(`${x}/purchase-order/${id}/internal`),
-    purchaseOrderLines: (orderId: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines`),
     purchaseOrderLine: (orderId: string, id: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines/${id}`),
+      generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
     purchaseOrderPayment: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/payment`),
     purchaseOrderRelease: (id: string) =>

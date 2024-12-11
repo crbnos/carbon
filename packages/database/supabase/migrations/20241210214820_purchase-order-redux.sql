@@ -35,7 +35,10 @@ ALTER TABLE "purchaseOrderLine" ADD COLUMN "taxAmount" NUMERIC(10,5) GENERATED A
   "supplierTaxAmount" * "exchangeRate"
 ) STORED;
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "taxPercent" NUMERIC(10,5) GENERATED ALWAYS AS (
-  "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "purchaseQuantity")
+  CASE 
+    WHEN (("supplierUnitPrice" + "supplierShippingCost") * "purchaseQuantity") = 0 THEN 0
+    ELSE "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "purchaseQuantity")
+  END
 ) STORED;
 
 DROP VIEW IF EXISTS "salesOrders";
@@ -162,4 +165,34 @@ AFTER UPDATE OF "exchangeRate" ON "supplierQuote"
 FOR EACH ROW
 WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
 EXECUTE FUNCTION update_purchase_order_line_price_exchange_rate();
+
+
+ALTER TABLE "supplier" ADD COLUMN "taxPercent" NUMERIC(10,5) NOT NULL DEFAULT 0 CHECK ("taxPercent" >= 0 AND "taxPercent" <= 1);
+
+
+DROP VIEW IF EXISTS "suppliers";
+CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS 
+  SELECT 
+    s.*,
+    st.name AS "type",    
+    ss.name AS "status",
+    po.count AS "orderCount",
+    p.count AS "partCount"
+  FROM "supplier" s
+  LEFT JOIN "supplierType" st ON st.id = s."supplierTypeId"
+  LEFT JOIN "supplierStatus" ss ON ss.id = s."supplierStatusId"
+  LEFT JOIN (
+    SELECT 
+      "supplierId",
+      COUNT(*) AS "count"
+    FROM "purchaseOrder"
+    GROUP BY "supplierId"
+  ) po ON po."supplierId" = s.id
+  LEFT JOIN (
+    SELECT 
+      "supplierId",
+      COUNT(*) AS "count"
+    FROM "supplierPart"
+    GROUP BY "supplierId"
+  ) p ON p."supplierId" = s.id;
 

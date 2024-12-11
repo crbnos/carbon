@@ -1,10 +1,8 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { ConfirmDelete } from "~/components/Modals";
 import {
   deletePurchaseOrderLine,
   getPurchaseOrderLine,
@@ -22,7 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchaseOrderLine = await getPurchaseOrderLine(client, lineId);
   if (purchaseOrderLine.error) {
     throw redirect(
-      path.to.purchaseOrderLines(orderId),
+      path.to.purchaseOrderDetails(orderId),
       await flash(
         request,
         error(purchaseOrderLine.error, "Failed to get purchase order line")
@@ -48,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (deleteTypeError) {
     throw redirect(
-      path.to.purchaseOrderLines(orderId),
+      path.to.purchaseOrderDetails(orderId),
       await flash(
         request,
         error(deleteTypeError, "Failed to delete purchase order line")
@@ -57,30 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.purchaseOrderLines(orderId),
+    path.to.purchaseOrderDetails(orderId),
     await flash(request, success("Successfully deleted purchase order line"))
-  );
-}
-
-export default function DeletePurchaseOrderLineRoute() {
-  const { lineId, orderId } = useParams();
-  const { purchaseOrderLine } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-
-  if (!purchaseOrderLine) return null;
-  if (!lineId) throw notFound("Could not find lineId");
-  if (!orderId) throw notFound("Could not find orderId");
-
-  const onCancel = () => navigate(path.to.purchaseOrderLines(orderId));
-
-  return (
-    <ConfirmDelete
-      action={path.to.deletePurchaseOrderLine(orderId, lineId)}
-      name="Purchase Order Line"
-      text={`Are you sure you want to delete the purchase order line for ${
-        purchaseOrderLine.purchaseQuantity ?? 0
-      } ${purchaseOrderLine.description ?? ""}? This cannot be undone.`}
-      onCancel={onCancel}
-    />
   );
 }

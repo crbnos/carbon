@@ -1,21 +1,23 @@
 import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  cn,
   FormControl,
   FormLabel,
-  HStack,
   Input,
+  ModalCard,
+  ModalCardBody,
+  ModalCardContent,
+  ModalCardDescription,
+  ModalCardFooter,
+  ModalCardHeader,
+  ModalCardProvider,
+  ModalCardTitle,
+  useDisclosure,
   VStack,
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
-import { useNavigate, useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
@@ -34,6 +36,7 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   PurchaseOrder,
+  PurchaseOrderLine,
   PurchaseOrderLineType,
 } from "~/modules/purchasing";
 import {
@@ -43,19 +46,25 @@ import {
 import { methodItemType } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
+import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 
 type PurchaseOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseOrderLineValidator>;
+  type?: "card" | "modal";
+  onClose?: () => void;
 };
 
 const PurchaseOrderLineForm = ({
   initialValues,
+  type,
+  onClose,
 }: PurchaseOrderLineFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
-  const navigate = useNavigate();
+
   const { company, defaults } = useUser();
   const { orderId } = useParams();
+  const fetcher = useFetcher<{}>();
 
   if (!orderId) throw new Error("orderId not found");
   const sharedPurchasingData = useRouteData<{
@@ -74,14 +83,16 @@ const PurchaseOrderLineForm = ({
 
   const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
-  const [type, setType] = useState(initialValues.purchaseOrderLineType);
+  const [itemType, setItemType] = useState<PurchaseOrderLineType>(
+    initialValues.purchaseOrderLineType
+  );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
     description: string;
     purchaseQuantity: number;
-    unitPrice: number;
+    supplierUnitPrice: number;
     purchaseUom: string;
     inventoryUom: string;
     conversionFactor: number;
@@ -92,7 +103,7 @@ const PurchaseOrderLineForm = ({
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     purchaseQuantity: initialValues.purchaseQuantity ?? 1,
-    unitPrice: initialValues.unitPrice ?? 0,
+    supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: initialValues.conversionFactor ?? 1,
@@ -107,22 +118,21 @@ const PurchaseOrderLineForm = ({
     ? !permissions.can("update", "purchasing")
     : !permissions.can("create", "purchasing");
 
-  const purchaseOrderLineTypeOptions = purchaseOrderLineType.map((type) => ({
-    label: type,
-    value: type,
+  const purchaseOrderLineTypeOptions = purchaseOrderLineType.map((t) => ({
+    label: t,
+    value: t,
   }));
 
-  const onClose = () => navigate(-1);
+  const deleteDisclosure = useDisclosure();
 
-  const onTypeChange = (type: PurchaseOrderLineType) => {
-    // @ts-ignore
-    setType(type);
+  const onTypeChange = (t: PurchaseOrderLineType) => {
+    setItemType(t);
     setItemData({
       itemId: "",
       itemReadableId: "",
       description: "",
       purchaseQuantity: 1,
-      unitPrice: 0,
+      supplierUnitPrice: 0,
       inventoryUom: "",
       purchaseUom: "",
       conversionFactor: 1,
@@ -133,7 +143,7 @@ const PurchaseOrderLineForm = ({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
-    switch (type) {
+    switch (itemType) {
       case "Consumable":
       case "Material":
       case "Part":
@@ -171,7 +181,8 @@ const PurchaseOrderLineForm = ({
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
           purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
-          unitPrice: supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+          supplierUnitPrice:
+            supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
           purchaseUom:
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??
@@ -195,7 +206,7 @@ const PurchaseOrderLineForm = ({
       //     itemReadableId: service.data?.readableId ?? "",
       //     description: service.data?.name ?? "",
       //     purchaseQuantity: 1,
-      //     unitPrice: 0,
+      //     supplierUnitPrice: 0,
       //     purchaseUom: "EA",
       //     inventoryUom: "EA",
       //     conversionFactor: 1,
@@ -206,7 +217,7 @@ const PurchaseOrderLineForm = ({
       //   break;
       default:
         throw new Error(
-          `Invalid invoice line type: ${type} is not implemented`
+          `Invalid purchase order line type: ${itemType} is not implemented`
         );
     }
   };
@@ -233,207 +244,235 @@ const PurchaseOrderLineForm = ({
   };
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DrawerContent>
-        <ValidatedForm
-          defaultValues={initialValues}
-          validator={purchaseOrderLineValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.purchaseOrderLine(orderId, initialValues.id!)
-              : path.to.newPurchaseOrderLine(orderId)
-          }
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? "Edit" : "New"} Purchase Order Line
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="id" />
-            <Hidden name="purchaseOrderId" />
-            <Hidden name="itemReadableId" value={itemData.itemReadableId} />
-            <Hidden name="description" value={itemData.description} />
-            <Hidden
-              name="inventoryUnitOfMeasureCode"
-              value={itemData?.inventoryUom}
-            />
-            <VStack spacing={4}>
-              <Select
-                name="purchaseOrderLineType"
-                label="Type"
-                options={purchaseOrderLineTypeOptions}
-                onChange={(value) => {
-                  onTypeChange(value?.value as PurchaseOrderLineType);
-                }}
-              />
-              {/* @ts-ignore */}
-              {methodItemType.includes(type) && (
-                <Item
-                  name="itemId"
-                  label={type}
-                  // @ts-ignore
-                  type={type}
-                  onChange={(value) => {
-                    onItemChange(value?.value as string);
-                  }}
-                />
-              )}
-
-              {type === "G/L Account" && (
-                <Account
-                  name="accountNumber"
-                  label="Account"
-                  classes={["Expense", "Asset"]}
-                  onChange={(value) => {
-                    setItemData({
-                      itemId: "",
-                      itemReadableId: "",
-                      description: value?.label ?? "",
-                      purchaseQuantity: 1,
-                      unitPrice: 0,
-                      purchaseUom: "EA",
-                      inventoryUom: "EA",
-                      conversionFactor: 1,
-                      shelfId: "",
-                      minimumOrderQuantity: 0,
-                    });
-                  }}
-                />
-              )}
-              {type === "Fixed Asset" && (
-                // TODO: implement Fixed Asset
-                <Select name="assetId" label="Asset" options={[]} />
-              )}
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Input
-                  value={itemData.description}
-                  onChange={(e) =>
-                    setItemData((d) => ({ ...d, description: e.target.value }))
-                  }
-                />
-              </FormControl>
-              {type !== "Comment" && (
-                <>
-                  <NumberControlled
-                    minValue={itemData.minimumOrderQuantity}
-                    name="purchaseQuantity"
-                    label="Quantity"
-                    value={itemData.purchaseQuantity}
-                    onChange={(value) => {
-                      setItemData((d) => ({
-                        ...d,
-                        purchaseQuantity: value,
-                      }));
-                    }}
-                  />
-                  <NumberControlled
-                    name="unitPrice"
-                    label="Unit Price"
-                    value={itemData.unitPrice}
-                    onChange={(value) =>
-                      setItemData((d) => ({
-                        ...d,
-                        unitPrice: value,
-                      }))
-                    }
-                  />
-
-                  {["Part", "Material", "Consumable", "Tool"].includes(
-                    type
-                  ) && (
-                    <>
-                      <UnitOfMeasure
-                        name="purchaseUnitOfMeasureCode"
-                        label="Unit of Measure"
-                        value={itemData.purchaseUom}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            setItemData((d) => ({
-                              ...d,
-                              purchaseUom: newValue?.value as string,
-                            }));
-                          }
-                        }}
-                      />
-                      <ConversionFactor
-                        name="conversionFactor"
-                        purchasingCode={itemData.purchaseUom}
-                        inventoryCode={itemData.inventoryUom}
-                        value={itemData.conversionFactor}
-                        onChange={(value) => {
-                          setItemData((d) => ({
-                            ...d,
-                            conversionFactor: value,
-                          }));
-                        }}
-                      />
-                    </>
+    <>
+      <ModalCardProvider type={type}>
+        <ModalCard onClose={onClose}>
+          <ModalCardContent size="xxlarge">
+            <ValidatedForm
+              defaultValues={initialValues}
+              validator={purchaseOrderLineValidator}
+              method="post"
+              action={
+                isEditing
+                  ? path.to.purchaseOrderLine(orderId, initialValues.id!)
+                  : path.to.newPurchaseOrderLine(orderId)
+              }
+              fetcher={fetcher}
+              className="w-full"
+              onSubmit={() => {
+                if (type === "modal") onClose?.();
+              }}
+            >
+              <ModalCardHeader>
+                <ModalCardTitle
+                  className={cn(
+                    isEditing &&
+                      !itemData?.itemReadableId &&
+                      "text-muted-foreground"
                   )}
-
-                  {[
-                    "Part",
-                    "Service",
-                    "Material",
-                    "Tool",
-                    "Consumable",
-                    "Fixed Asset",
-                  ].includes(type) && (
-                    <Combobox
-                      name="locationId"
-                      label="Location"
-                      options={locationOptions}
-                      value={locationId}
-                      onChange={onLocationChange}
-                    />
-                  )}
-                  {[
-                    "Part",
-                    "Service",
-                    "Material",
-                    "Tool",
-                    "Consumable",
-                    "Fixed Asset",
-                  ].includes(type) && (
-                    <Shelf
-                      name="shelfId"
-                      label="Shelf"
-                      locationId={locationId}
-                      value={itemData.shelfId ?? undefined}
-                      onChange={(newValue) => {
-                        if (newValue) {
-                          setItemData((d) => ({
-                            ...d,
-                            shelfId: newValue?.id,
-                          }));
-                        }
+                >
+                  {isEditing
+                    ? itemData?.itemReadableId || "..."
+                    : "New Purchase Order Line"}
+                </ModalCardTitle>
+                <ModalCardDescription>
+                  {isEditing
+                    ? itemData?.description || itemType
+                    : "A purchase order line contains order details for a particular item"}
+                </ModalCardDescription>
+              </ModalCardHeader>
+              <ModalCardBody>
+                <Hidden name="id" />
+                <Hidden name="purchaseOrderId" />
+                <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+                <Hidden name="description" value={itemData.description} />
+                <Hidden
+                  name="inventoryUnitOfMeasureCode"
+                  value={itemData?.inventoryUom}
+                />
+                <VStack>
+                  <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                    <Select
+                      name="purchaseOrderLineType"
+                      label="Type"
+                      options={purchaseOrderLineTypeOptions}
+                      onChange={(value) => {
+                        onTypeChange(value?.value as PurchaseOrderLineType);
                       }}
                     />
-                  )}
-                </>
-              )}
-              <CustomFormFields table="purchaseOrderLine" />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
-              <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+                    {/* @ts-ignore */}
+                    {methodItemType.includes(itemType) && (
+                      <Item
+                        name="itemId"
+                        label={itemType}
+                        // @ts-ignore
+                        type={itemType}
+                        onChange={(value) => {
+                          onItemChange(value?.value as string);
+                        }}
+                      />
+                    )}
+
+                    {itemType === "G/L Account" && (
+                      <Account
+                        name="accountNumber"
+                        label="Account"
+                        classes={["Expense", "Asset"]}
+                        onChange={(value) => {
+                          setItemData({
+                            itemId: "",
+                            itemReadableId: "",
+                            description: value?.label ?? "",
+                            purchaseQuantity: 1,
+                            supplierUnitPrice: 0,
+                            purchaseUom: "EA",
+                            inventoryUom: "EA",
+                            conversionFactor: 1,
+                            shelfId: "",
+                            minimumOrderQuantity: 0,
+                          });
+                        }}
+                      />
+                    )}
+                    {itemType === "Fixed Asset" && (
+                      // TODO: implement Fixed Asset
+                      <Select name="assetId" label="Asset" options={[]} />
+                    )}
+                    <FormControl>
+                      <FormLabel>Description</FormLabel>
+                      <Input
+                        value={itemData.description}
+                        onChange={(e) =>
+                          setItemData((d) => ({
+                            ...d,
+                            description: e.target.value,
+                          }))
+                        }
+                      />
+                    </FormControl>
+                    {itemType !== "Comment" && (
+                      <>
+                        <NumberControlled
+                          minValue={itemData.minimumOrderQuantity}
+                          name="purchaseQuantity"
+                          label="Quantity"
+                          value={itemData.purchaseQuantity}
+                          onChange={(value) => {
+                            setItemData((d) => ({
+                              ...d,
+                              purchaseQuantity: value,
+                            }));
+                          }}
+                        />
+                        <NumberControlled
+                          name="supplierUnitPrice"
+                          label="Unit Price"
+                          value={itemData.supplierUnitPrice}
+                          formatOptions={{
+                            style: "currency",
+                            currency:
+                              routeData?.purchaseOrder?.currencyCode ??
+                              company.baseCurrencyCode,
+                          }}
+                          onChange={(value) =>
+                            setItemData((d) => ({
+                              ...d,
+                              supplierUnitPrice: value,
+                            }))
+                          }
+                        />
+
+                        {["Part", "Material", "Consumable", "Tool"].includes(
+                          itemType
+                        ) && (
+                          <>
+                            <UnitOfMeasure
+                              name="purchaseUnitOfMeasureCode"
+                              label="Unit of Measure"
+                              value={itemData.purchaseUom}
+                              onChange={(newValue) => {
+                                if (newValue) {
+                                  setItemData((d) => ({
+                                    ...d,
+                                    purchaseUom: newValue?.value as string,
+                                  }));
+                                }
+                              }}
+                            />
+                            <ConversionFactor
+                              name="conversionFactor"
+                              purchasingCode={itemData.purchaseUom}
+                              inventoryCode={itemData.inventoryUom}
+                              value={itemData.conversionFactor}
+                              onChange={(value) => {
+                                setItemData((d) => ({
+                                  ...d,
+                                  conversionFactor: value,
+                                }));
+                              }}
+                            />
+                          </>
+                        )}
+
+                        {[
+                          "Part",
+                          "Service",
+                          "Material",
+                          "Tool",
+                          "Consumable",
+                          "Fixed Asset",
+                        ].includes(itemType) && (
+                          <Combobox
+                            name="locationId"
+                            label="Location"
+                            options={locationOptions}
+                            value={locationId}
+                            onChange={onLocationChange}
+                          />
+                        )}
+                        {[
+                          "Part",
+                          "Service",
+                          "Material",
+                          "Tool",
+                          "Consumable",
+                          "Fixed Asset",
+                        ].includes(itemType) && (
+                          <Shelf
+                            name="shelfId"
+                            label="Shelf"
+                            locationId={locationId}
+                            value={itemData.shelfId ?? undefined}
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                setItemData((d) => ({
+                                  ...d,
+                                  shelfId: newValue?.id,
+                                }));
+                              }
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                    <CustomFormFields table="purchaseOrderLine" />
+                  </div>
+                </VStack>
+              </ModalCardBody>
+              <ModalCardFooter>
+                <Submit isDisabled={isDisabled}>Save</Submit>
+              </ModalCardFooter>
+            </ValidatedForm>
+          </ModalCardContent>
+        </ModalCard>
+      </ModalCardProvider>
+      {isEditing && deleteDisclosure.isOpen && (
+        <DeletePurchaseOrderLine
+          line={initialValues as PurchaseOrderLine}
+          onCancel={deleteDisclosure.onClose}
+        />
+      )}
+    </>
   );
 };
 

@@ -2,10 +2,10 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import type { PurchaseOrderLineType } from "~/modules/purchasing";
+import { Fragment } from "react/jsx-runtime";
 import {
   getPurchaseOrderLine,
   purchaseOrderLineValidator,
@@ -76,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (updatePurchaseOrderLine.error) {
     throw redirect(
-      path.to.purchaseOrderLines(orderId),
+      path.to.purchaseOrderLine(orderId, lineId),
       await flash(
         request,
         error(
@@ -87,26 +87,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.purchaseOrderLines(orderId));
+  throw redirect(path.to.purchaseOrderLine(orderId, lineId));
 }
 
 export default function EditPurchaseOrderLineRoute() {
+  const { orderId, lineId } = useParams();
+  if (!orderId) throw new Error("orderId not found");
+  if (!lineId) throw new Error("lineId not found");
+
   const { purchaseOrderLine } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseOrderLine?.id ?? undefined,
     purchaseOrderId: purchaseOrderLine?.purchaseOrderId ?? "",
-    purchaseOrderLineType:
-      purchaseOrderLine?.purchaseOrderLineType ??
-      ("Part" as PurchaseOrderLineType),
+    purchaseOrderLineType: (purchaseOrderLine?.purchaseOrderLineType ??
+      "Part") as "Part",
     itemId: purchaseOrderLine?.itemId ?? "",
     itemReadableId: purchaseOrderLine?.itemReadableId ?? "",
     accountNumber: purchaseOrderLine?.accountNumber ?? "",
     assetId: purchaseOrderLine?.assetId ?? "",
     description: purchaseOrderLine?.description ?? "",
     purchaseQuantity: purchaseOrderLine?.purchaseQuantity ?? 1,
-    unitPrice: purchaseOrderLine?.unitPrice ?? 0,
-    setupPrice: purchaseOrderLine?.setupPrice ?? 0,
+    supplierUnitPrice: purchaseOrderLine?.supplierUnitPrice ?? 0,
+    supplierShippingCost: purchaseOrderLine?.supplierShippingCost ?? 0,
     purchaseUnitOfMeasureCode:
       purchaseOrderLine?.purchaseUnitOfMeasureCode ?? "",
     inventoryUnitOfMeasureCode:
@@ -117,10 +120,11 @@ export default function EditPurchaseOrderLineRoute() {
   };
 
   return (
-    <PurchaseOrderLineForm
-      key={initialValues.id}
-      // @ts-ignore
-      initialValues={initialValues}
-    />
+    <Fragment key={lineId}>
+      <PurchaseOrderLineForm
+        key={initialValues.id}
+        initialValues={initialValues}
+      />
+    </Fragment>
   );
 }

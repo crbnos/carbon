@@ -1,4 +1,9 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
@@ -20,7 +25,7 @@ import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 export const config = { runtime: "nodejs" };
@@ -62,6 +67,18 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
+  if (purchaseOrder.data.companyId !== companyId) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error("You are not authorized to release this purchase order")
+      )
+    );
+  }
+
+  const serviceRole = getCarbonServiceRole();
+
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {
     validate: Intl.DateTimeFormat.supportedLocalesOf,
@@ -81,7 +98,7 @@ export async function action(args: ActionFunctionArgs) {
 
     const documentFilePath = `${companyId}/purchasing/external/${orderId}/${fileName}`;
 
-    const documentFileUpload = await client.storage
+    const documentFileUpload = await serviceRole.storage
       .from("private")
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
@@ -99,7 +116,7 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    const createDocument = await upsertDocument(client, {
+    const createDocument = await upsertDocument(serviceRole, {
       path: documentFilePath,
       name: fileName,
       size: Math.round(file.byteLength / 1024),
@@ -150,12 +167,12 @@ export async function action(args: ActionFunctionArgs) {
           purchaseOrderLocations,
           buyer,
         ] = await Promise.all([
-          getCompany(client, companyId),
-          getSupplierContact(client, supplierContact),
-          getPurchaseOrder(client, orderId),
-          getPurchaseOrderLines(client, orderId),
-          getPurchaseOrderLocations(client, orderId),
-          getUser(client, userId),
+          getCompany(serviceRole, companyId),
+          getSupplierContact(serviceRole, supplierContact),
+          getPurchaseOrder(serviceRole, orderId),
+          getPurchaseOrderLines(serviceRole, orderId),
+          getPurchaseOrderLocations(serviceRole, orderId),
+          getUser(serviceRole, userId),
         ]);
 
         if (!supplier?.data?.contact)
@@ -218,7 +235,7 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.purchaseOrderExternalDocuments(orderId),
+    requestReferrer(request) ?? path.to.purchaseOrder(orderId),
     await flash(request, success("Purchase order released"))
   );
 }
