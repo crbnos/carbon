@@ -28,7 +28,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 
 import { DeadlineIcon } from "~/components/Icons";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import type { DisplaySettings, Item } from "../types";
 
 type ItemCardProps = {
@@ -83,6 +83,7 @@ export function ItemCard({
   showProgress,
   showStatus,
   showSalesOrder,
+  showThumbnail,
 }: ItemCardProps) {
   const isOverdue =
     item.deadlineType !== "No Deadline" && item.dueDate
@@ -139,6 +140,15 @@ export function ItemCard({
             )}
         </CardHeader>
         <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
+          {showThumbnail && item.thumbnailPath && (
+            <div className="flex justify-center">
+              <img
+                src={getPrivateUrl(item.thumbnailPath)}
+                alt={item.title}
+                className="w-full h-auto"
+              />
+            </div>
+          )}
           {showDescription && item.description && (
             <HStack className="justify-start space-x-2">
               <LuClipboardCheck className="text-muted-foreground" />

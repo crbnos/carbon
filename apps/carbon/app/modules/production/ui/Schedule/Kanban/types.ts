@@ -25,6 +25,7 @@ export type DisplaySettings = {
   showProgress: boolean;
   showStatus: boolean;
   showSalesOrder: boolean;
+  showThumbnail: boolean;
 };
 
 export type DraggableData = ColumnDragData | ItemDragData;
@@ -56,6 +57,7 @@ const itemValidator = z.object({
   setupDuration: z.number().optional(),
   laborDuration: z.number().optional(),
   machineDuration: z.number().optional(),
+  thumbnailPath: z.string().optional(),
 });
 
 export type Item = z.infer<typeof itemValidator>;

@@ -31580,6 +31580,7 @@ export type Database = {
           operationQuantity: number
           quantityComplete: number
           quantityScrapped: number
+          thumbnailPath: string
         }[]
       }
       get_claims: {
