@@ -28,7 +28,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 
 import { DeadlineIcon } from "~/components/Icons";
-import { path } from "~/utils/path";
+import { getPrivateUrl, path } from "~/utils/path";
 import type { DisplaySettings, Item } from "../types";
 
 type ItemCardProps = {
@@ -143,9 +143,9 @@ export function ItemCard({
           {showThumbnail && item.thumbnailPath && (
             <div className="flex justify-center">
               <img
-                src={item.thumbnailPath}
+                src={getPrivateUrl(item.thumbnailPath)}
                 alt={item.title}
-                className="w-full max-w-[200px] h-auto"
+                className="w-full h-auto"
               />
             </div>
           )}

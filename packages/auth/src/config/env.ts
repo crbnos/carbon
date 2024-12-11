@@ -9,6 +9,7 @@ declare global {
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       VERCEL_URL: string;
+      VERCEL_ENV: string;
     };
   }
 }
@@ -27,6 +28,7 @@ declare global {
       SUPABASE_URL: string;
       SUPABASE_SERVICE_ROLE: string;
       VERCEL_URL: string;
+      VERCEL_ENV: string;
     }
   }
 }
@@ -93,6 +95,10 @@ export const VERCEL_ENV = getEnv("VERCEL_ENV", {
   isSecret: false,
   isRequired: false,
 });
+export const NODE_ENV = getEnv("NODE_ENV", {
+  isSecret: false,
+  isRequired: false,
+});
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false,
 });
@@ -105,14 +111,11 @@ export const SUPABASE_ANON_PUBLIC = getEnv("SUPABASE_ANON_PUBLIC", {
 });
 
 export function getAppUrl() {
-  if (
-    process.env.VERCEL_ENV === "production" ||
-    process.env.NODE_ENV === "production"
-  ) {
+  if (VERCEL_ENV === "production" || NODE_ENV === "production") {
     return "https://app.carbonos.dev";
   }
 
-  if (process.env.VERCEL_ENV === "preview") {
+  if (VERCEL_ENV === "preview") {
     return `https://${process.env.VERCEL_URL}`;
   }
 
@@ -126,6 +129,9 @@ export function getBrowserEnv() {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     NOVU_APPLICATION_ID,
+    VERCEL_ENV,
+    VERCEL_URL,
+    NODE_ENV,
   };
 }
 

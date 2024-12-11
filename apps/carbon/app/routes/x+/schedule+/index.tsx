@@ -8,10 +8,16 @@ import {
   Button,
   ClientOnly,
   HStack,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Spinner,
+  Switch,
   toast,
   useInterval,
+  useLocalStorage,
   useMount,
+  VStack,
 } from "@carbon/react";
 import {
   getLocalTimeZone,
@@ -23,7 +29,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuAlertTriangle, LuPlusCircle } from "react-icons/lu";
+import { LuAlertTriangle, LuPlusCircle, LuSettings2 } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
@@ -33,11 +39,12 @@ import { useUrlParams, useUser } from "~/hooks";
 import { getActiveJobOperationsByLocation } from "~/modules/production";
 import type { Column, Item } from "~/modules/production/ui/Schedule";
 
-import {
-  Kanban,
-  type Event,
-  type Progress,
+import type {
+  DisplaySettings,
+  Event,
+  Progress,
 } from "~/modules/production/ui/Schedule/Kanban";
+import { Kanban } from "~/modules/production/ui/Schedule/Kanban";
 import {
   getLocationsList,
   getProcessesList,
@@ -234,7 +241,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function ScheduleRoute() {
+const defaultDisplaySettings: DisplaySettings = {
+  showDuration: true,
+  showCustomer: true,
+  showDescription: true,
+  showDueDate: true,
+  showEmployee: true,
+  showProgress: true,
+  showStatus: true,
+  showSalesOrder: true,
+  showThumbnail: true,
+};
+
+const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
+function KanbanSchedule() {
   const {
     columns,
     items: initialItems,
@@ -243,6 +263,10 @@ export default function ScheduleRoute() {
   } = useLoaderData<typeof loader>();
 
   const [items, setItems] = useState<Item[]>(initialItems);
+  const [displaySettings, setDisplaySettings] = useLocalStorage(
+    DISPLAY_SETTINGS_KEY,
+    defaultDisplaySettings
+  );
 
   useEffect(() => {
     setItems(initialItems);
@@ -310,9 +334,118 @@ export default function ScheduleRoute() {
       <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
         <HStack>
           <SearchFilter param="search" size="sm" placeholder="Search" />
-
           <Filter filters={filters} />
         </HStack>
+
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              leftIcon={<LuSettings2 />}
+              variant="secondary"
+              className="border-dashed border-border"
+            >
+              Settings
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48">
+            <VStack>
+              <Switch
+                variant="small"
+                label="Customer"
+                checked={displaySettings.showCustomer}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showCustomer: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Description"
+                checked={displaySettings.showDescription}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showDescription: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Due Date"
+                checked={displaySettings.showDueDate}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showDueDate: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Duration"
+                checked={displaySettings.showDuration}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showDuration: checked,
+                  }))
+                }
+              />
+              {/* <Switch 
+                variant="small" 
+                label="Employee"
+                checked={displaySettings.showEmployee}
+                onCheckedChange={(checked) => setDisplaySettings(prev => ({...prev, showEmployee: checked}))}
+              /> */}
+              <Switch
+                variant="small"
+                label="Progress"
+                checked={displaySettings.showProgress}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showProgress: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Status"
+                checked={displaySettings.showStatus}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showStatus: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Sales Order"
+                checked={displaySettings.showSalesOrder}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showSalesOrder: checked,
+                  }))
+                }
+              />
+              <Switch
+                variant="small"
+                label="Thumbnail"
+                checked={displaySettings.showThumbnail}
+                onCheckedChange={(checked) =>
+                  setDisplaySettings((prev) => ({
+                    ...prev,
+                    showThumbnail: checked,
+                  }))
+                }
+              />
+            </VStack>
+          </PopoverContent>
+        </Popover>
       </HStack>
       {currentFilters.length > 0 && (
         <HStack className="px-4 py-1.5 justify-between bg-card border-b border-border w-full">
@@ -324,30 +457,12 @@ export default function ScheduleRoute() {
       <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
         <div className="flex flex-1 min-h-0 w-full relative">
           {columns.length > 0 ? (
-            <ClientOnly
-              fallback={
-                <div className="flex h-full w-full items-center justify-center">
-                  <Spinner className="h-8 w-8" />
-                </div>
-              }
-            >
-              {() => (
-                <Kanban
-                  columns={columns}
-                  items={items}
-                  progressByItemId={progressByOperation}
-                  showCustomer
-                  showDescription
-                  showDueDate
-                  showDuration
-                  showEmployee
-                  showProgress
-                  showStatus
-                  showSalesOrder
-                  showThumbnail
-                />
-              )}
-            </ClientOnly>
+            <Kanban
+              columns={columns}
+              items={items}
+              progressByItemId={progressByOperation}
+              {...displaySettings}
+            />
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
@@ -374,6 +489,20 @@ export default function ScheduleRoute() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ScheduleRoute() {
+  return (
+    <ClientOnly
+      fallback={
+        <div className="flex h-full w-full items-center justify-center">
+          <Spinner className="h-8 w-8" />
+        </div>
+      }
+    >
+      {() => <KanbanSchedule />}
+    </ClientOnly>
   );
 }
 
