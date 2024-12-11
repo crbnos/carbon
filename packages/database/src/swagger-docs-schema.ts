@@ -17014,6 +17014,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.taxPercent",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -17133,6 +17136,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplier.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.supplier.taxPercent",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17204,6 +17210,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplier.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplier.taxPercent",
           },
           {
             $ref: "#/parameters/body.supplier",
@@ -33601,6 +33610,9 @@ export default {
             $ref: "#/parameters/rowFilter.suppliers.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.suppliers.taxPercent",
+          },
+          {
             $ref: "#/parameters/rowFilter.suppliers.type",
           },
           {
@@ -33746,6 +33758,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.receiptPromisedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.deliveryDate",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.dropShipment",
@@ -48504,7 +48519,7 @@ export default {
       type: "object",
     },
     supplier: {
-      required: ["id", "name", "companyId", "createdAt"],
+      required: ["id", "name", "companyId", "createdAt", "taxPercent"],
       properties: {
         id: {
           default: "extensions.uuid_generate_v4()",
@@ -48605,6 +48620,11 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        taxPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -55832,6 +55852,10 @@ export default {
           },
           type: "array",
         },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
+        },
         type: {
           format: "text",
           type: "string",
@@ -56015,6 +56039,10 @@ export default {
           type: "string",
         },
         receiptPromisedDate: {
+          format: "date",
+          type: "string",
+        },
+        deliveryDate: {
           format: "date",
           type: "string",
         },
@@ -68726,6 +68754,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplier.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "body.customFieldTable": {
       name: "customFieldTable",
       description: "customFieldTable",
@@ -78095,6 +78130,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.suppliers.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.suppliers.type": {
       name: "type",
       required: false,
@@ -78344,6 +78386,13 @@ export default {
     },
     "rowFilter.purchaseOrders.receiptPromisedDate": {
       name: "receiptPromisedDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.deliveryDate": {
+      name: "deliveryDate",
       required: false,
       format: "date",
       in: "query",

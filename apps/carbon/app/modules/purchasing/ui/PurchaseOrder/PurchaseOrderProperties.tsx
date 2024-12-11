@@ -110,8 +110,6 @@ const PurchaseOrderProperties = () => {
     !permissions.can("update", "purchasing") ||
     !["Draft", "To Review"].includes(routeData?.purchaseOrder?.status ?? "");
 
-  console.log("xxx", routeData?.purchaseOrder);
-
   return (
     <VStack
       spacing={4}

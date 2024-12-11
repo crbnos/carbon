@@ -24,6 +24,7 @@ import {
 import {
   PurchaseOrderDeliveryForm,
   PurchaseOrderPaymentForm,
+  PurchaseOrderSummary,
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import {
   SupplierInteractionDocuments,
@@ -178,6 +179,7 @@ export default function PurchaseOrderBasicRoute() {
 
   return (
     <>
+      <PurchaseOrderSummary />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={orderData.purchaseOrder.id}

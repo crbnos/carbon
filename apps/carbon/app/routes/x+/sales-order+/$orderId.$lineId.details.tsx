@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (line.error) {
     throw redirect(
-      path.to.salesOrder(orderId),
+      path.to.salesOrderDetails(orderId),
       await flash(request, error(line.error, "Failed to load sales order line"))
     );
   }

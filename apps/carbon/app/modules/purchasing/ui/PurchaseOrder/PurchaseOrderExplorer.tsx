@@ -45,6 +45,8 @@ export default function PurchaseOrderExplorer() {
   }>(path.to.purchaseOrder(orderId));
   const permissions = usePermissions();
 
+  console.log({ routeData: purchaseOrderData });
+
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
     purchaseOrderLineType: "Part" as const,

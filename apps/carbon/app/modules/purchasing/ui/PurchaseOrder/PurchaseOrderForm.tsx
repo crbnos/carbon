@@ -17,7 +17,6 @@ import type { z } from "zod";
 import {
   Currency,
   CustomFormFields,
-  DatePicker,
   Hidden,
   Input,
   Submit,
@@ -45,7 +44,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
     currencyCode: initialValues.currencyCode,
   });
   const isEditing = initialValues.id !== undefined;
-  const isSupplier = permissions.is("supplier");
 
   const onSupplierChange = async (
     newValue: {
@@ -134,12 +132,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 name="supplierContactId"
                 label="Supplier Contact"
                 supplier={supplier.id}
-              />
-
-              <DatePicker
-                name="orderDate"
-                label="Order Date"
-                isDisabled={isSupplier}
               />
 
               <Currency

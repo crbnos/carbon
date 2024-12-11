@@ -144,7 +144,8 @@ export default function SupplierQuoteLine() {
         table="supplierQuoteLine"
         title="Notes"
         subTitle={line.itemReadableId ?? ""}
-        notes={line.notes as JSONContent}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
       />
 
       <Suspense

@@ -22,11 +22,11 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   Account,
-  Combobox,
   ConversionFactor,
   CustomFormFields,
   Hidden,
   Item,
+  Location,
   NumberControlled,
   Select,
   Shelf,
@@ -45,7 +45,6 @@ import {
 } from "~/modules/purchasing";
 import { methodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 
@@ -68,26 +67,19 @@ const PurchaseOrderLineForm = ({
   const fetcher = useFetcher<typeof action>();
 
   if (!orderId) throw new Error("orderId not found");
-  const sharedPurchasingData = useRouteData<{
-    locations: ListItem[];
-  }>(path.to.purchaseOrderRoot);
 
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
-
-  const locations = sharedPurchasingData?.locations ?? [];
-  const locationOptions = locations.map((location) => ({
-    label: location.name,
-    value: location.id,
-  }));
 
   const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
   const [itemType, setItemType] = useState<PurchaseOrderLineType>(
     initialValues.purchaseOrderLineType
   );
-  const [locationId, setLocationId] = useState(defaults.locationId ?? "");
+  const [locationId, setLocationId] = useState(
+    initialValues.locationId ?? defaults.locationId ?? ""
+  );
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
@@ -423,10 +415,9 @@ const PurchaseOrderLineForm = ({
                           "Consumable",
                           "Fixed Asset",
                         ].includes(itemType) && (
-                          <Combobox
+                          <Location
                             name="locationId"
                             label="Location"
-                            options={locationOptions}
                             value={locationId}
                             onChange={onLocationChange}
                           />

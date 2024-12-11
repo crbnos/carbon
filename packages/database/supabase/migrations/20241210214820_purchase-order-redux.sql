@@ -197,3 +197,23 @@ CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS
     GROUP BY "supplierId"
   ) p ON p."supplierId" = s.id;
 
+
+DROP VIEW IF EXISTS "supplierQuoteLines";
+ALTER TABLE "supplierQuoteLine" DROP COLUMN "notes";
+ALTER TABLE "supplierQuoteLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "supplierQuoteLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
+
+DROP VIEW IF EXISTS "supplierQuoteLines";
+CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    ql.*,
+    i."type" as "itemType",
+    i."thumbnailPath",
+    ic."unitCost" as "unitCost"
+  FROM "supplierQuoteLine" ql
+  INNER JOIN "item" i ON i.id = ql."itemId"
+  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
+);
+
+ALTER TABLE "purchaseOrder" ALTER COLUMN "orderDate" DROP DEFAULT,
+                           ALTER COLUMN "orderDate" DROP NOT NULL;

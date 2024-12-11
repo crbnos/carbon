@@ -2,32 +2,51 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData, useParams } from "@remix-run/react";
+import type { JSONContent } from "@carbon/react";
+import { Spinner } from "@carbon/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { Fragment } from "react/jsx-runtime";
+import { CadModel } from "~/components";
+import { usePermissions } from "~/hooks";
 import {
   getPurchaseOrderLine,
+  getSupplierInteractionLineDocuments,
   purchaseOrderLineValidator,
   upsertPurchaseOrderLine,
 } from "~/modules/purchasing";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
+import {
+  SupplierInteractionLineDocuments,
+  SupplierInteractionLineNotes,
+} from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing",
     role: "employee",
+    bypassRls: true,
   });
 
-  const { lineId } = params;
+  const { orderId, lineId } = params;
+  if (!orderId) throw notFound("orderId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const purchaseOrderLine = await getPurchaseOrderLine(client, lineId);
+  const line = await getPurchaseOrderLine(client, lineId);
+  if (line.error) {
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(line.error, "Failed to load sales order line"))
+    );
+  }
 
-  return json({
-    purchaseOrderLine: purchaseOrderLine?.data ?? null,
+  return defer({
+    line: line?.data ?? null,
+    files: getSupplierInteractionLineDocuments(client, companyId, lineId),
   });
 }
 
@@ -95,28 +114,27 @@ export default function EditPurchaseOrderLineRoute() {
   if (!orderId) throw new Error("orderId not found");
   if (!lineId) throw new Error("lineId not found");
 
-  const { purchaseOrderLine } = useLoaderData<typeof loader>();
+  const permissions = usePermissions();
+
+  const { line, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
-    id: purchaseOrderLine?.id ?? undefined,
-    purchaseOrderId: purchaseOrderLine?.purchaseOrderId ?? "",
-    purchaseOrderLineType: (purchaseOrderLine?.purchaseOrderLineType ??
-      "Part") as "Part",
-    itemId: purchaseOrderLine?.itemId ?? "",
-    itemReadableId: purchaseOrderLine?.itemReadableId ?? "",
-    accountNumber: purchaseOrderLine?.accountNumber ?? "",
-    assetId: purchaseOrderLine?.assetId ?? "",
-    description: purchaseOrderLine?.description ?? "",
-    purchaseQuantity: purchaseOrderLine?.purchaseQuantity ?? 1,
-    supplierUnitPrice: purchaseOrderLine?.supplierUnitPrice ?? 0,
-    supplierShippingCost: purchaseOrderLine?.supplierShippingCost ?? 0,
-    purchaseUnitOfMeasureCode:
-      purchaseOrderLine?.purchaseUnitOfMeasureCode ?? "",
-    inventoryUnitOfMeasureCode:
-      purchaseOrderLine?.inventoryUnitOfMeasureCode ?? "",
-    conversionFactor: purchaseOrderLine?.conversionFactor ?? 1,
-    shelfId: purchaseOrderLine?.shelfId ?? "",
-    ...getCustomFields(purchaseOrderLine?.customFields),
+    id: line?.id ?? undefined,
+    purchaseOrderId: line?.purchaseOrderId ?? "",
+    purchaseOrderLineType: (line?.purchaseOrderLineType ?? "Part") as "Part",
+    itemId: line?.itemId ?? "",
+    itemReadableId: line?.itemReadableId ?? "",
+    accountNumber: line?.accountNumber ?? "",
+    assetId: line?.assetId ?? "",
+    description: line?.description ?? "",
+    purchaseQuantity: line?.purchaseQuantity ?? 1,
+    supplierUnitPrice: line?.supplierUnitPrice ?? 0,
+    supplierShippingCost: line?.supplierShippingCost ?? 0,
+    purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
+    inventoryUnitOfMeasureCode: line?.inventoryUnitOfMeasureCode ?? "",
+    conversionFactor: line?.conversionFactor ?? 1,
+    shelfId: line?.shelfId ?? "",
+    ...getCustomFields(line?.customFields),
   };
 
   return (
@@ -125,6 +143,45 @@ export default function EditPurchaseOrderLineRoute() {
         key={initialValues.id}
         initialValues={initialValues}
       />
+      <SupplierInteractionLineNotes
+        id={line?.id ?? ""}
+        table="purchaseOrderLine"
+        title="Notes"
+        subTitle={line.itemReadableId ?? ""}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
+      />
+      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
+        <Suspense
+          fallback={
+            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+              <Spinner className="h-10 w-10" />
+            </div>
+          }
+        >
+          <Await resolve={files}>
+            {(resolvedFiles) => (
+              <SupplierInteractionLineDocuments
+                files={resolvedFiles ?? []}
+                id={orderId}
+                lineId={lineId}
+                type="Purchase Order"
+              />
+            )}
+          </Await>
+        </Suspense>
+        <CadModel
+          isReadOnly={!permissions.can("update", "purchasing")}
+          metadata={{
+            itemId: line?.itemId ?? undefined,
+          }}
+          modelPath={line?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        />
+      </div>
+      <Outlet />
     </Fragment>
   );
 }

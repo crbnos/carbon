@@ -29,7 +29,6 @@ export const purchaseOrderStatusType = [
 export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
-  orderDate: z.string().min(1, { message: "Order Date is required" }),
   supplierId: z.string().min(36, { message: "Supplier is required" }),
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),

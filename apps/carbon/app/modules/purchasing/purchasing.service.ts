@@ -252,7 +252,7 @@ export async function getPurchaseOrderLine(
   purchaseOrderLineId: string
 ) {
   return client
-    .from("purchaseOrderLine")
+    .from("purchaseOrderLines")
     .select("*")
     .eq("id", purchaseOrderLineId)
     .single();
