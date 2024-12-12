@@ -18,6 +18,7 @@ import {
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplierContact,
+  getSupplierInteractionByPurchaseOrder,
   purchaseOrderReleaseValidator,
   releasePurchaseOrder,
 } from "~/modules/purchasing";
@@ -56,13 +57,28 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const purchaseOrder = await getPurchaseOrder(client, orderId);
+  const serviceRole = getCarbonServiceRole();
+
+  const [purchaseOrder, supplierInteraction] = await Promise.all([
+    getPurchaseOrder(serviceRole, orderId),
+    getSupplierInteractionByPurchaseOrder(serviceRole, orderId),
+  ]);
   if (purchaseOrder.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
       await flash(
         request,
         error(purchaseOrder.error, "Failed to get purchase order")
+      )
+    );
+  }
+
+  if (supplierInteraction.error) {
+    throw redirect(
+      path.to.purchaseOrder(orderId),
+      await flash(
+        request,
+        error(supplierInteraction.error, "Failed to get supplier interaction")
       )
     );
   }
@@ -76,8 +92,6 @@ export async function action(args: ActionFunctionArgs) {
       )
     );
   }
-
-  const serviceRole = getCarbonServiceRole();
 
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {
@@ -96,7 +110,7 @@ export async function action(args: ActionFunctionArgs) {
         .slice(0, -5)}.pdf`
     );
 
-    const documentFilePath = `${companyId}/purchasing/external/${orderId}/${fileName}`;
+    const documentFilePath = `${companyId}/supplier-interaction/${supplierInteraction.data.id}/${fileName}`;
 
     const documentFileUpload = await serviceRole.storage
       .from("private")

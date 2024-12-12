@@ -13395,7 +13395,7 @@ export type Database = {
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
-          orderDate: string
+          orderDate: string | null
           purchaseOrderId: string
           revisionId: number
           status: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -13421,7 +13421,7 @@ export type Database = {
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
-          orderDate?: string
+          orderDate?: string | null
           purchaseOrderId: string
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -13447,7 +13447,7 @@ export type Database = {
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
-          orderDate?: string
+          orderDate?: string | null
           purchaseOrderId?: string
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
@@ -16786,6 +16786,7 @@ export type Database = {
           id: string
           invoiced: boolean | null
           locationId: string | null
+          notes: Json | null
           postingDate: string | null
           receiptId: string
           sourceDocument:
@@ -16809,6 +16810,7 @@ export type Database = {
           id?: string
           invoiced?: boolean | null
           locationId?: string | null
+          notes?: Json | null
           postingDate?: string | null
           receiptId: string
           sourceDocument?:
@@ -16832,6 +16834,7 @@ export type Database = {
           id?: string
           invoiced?: boolean | null
           locationId?: string | null
+          notes?: Json | null
           postingDate?: string | null
           receiptId?: string
           sourceDocument?:
@@ -17041,6 +17044,7 @@ export type Database = {
           itemReadableId: string | null
           lineId: string | null
           locationId: string | null
+          notes: Json | null
           orderQuantity: number
           outstandingQuantity: number
           receiptId: string
@@ -17061,6 +17065,7 @@ export type Database = {
           itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
+          notes?: Json | null
           orderQuantity: number
           outstandingQuantity?: number
           receiptId: string
@@ -17081,6 +17086,7 @@ export type Database = {
           itemReadableId?: string | null
           lineId?: string | null
           locationId?: string | null
+          notes?: Json | null
           orderQuantity?: number
           outstandingQuantity?: number
           receiptId?: string
@@ -17153,13 +17159,6 @@ export type Database = {
             columns: ["receiptId"]
             isOneToOne: false
             referencedRelation: "receipt"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receiptLine_receiptId_fkey"
-            columns: ["receiptId"]
-            isOneToOne: false
-            referencedRelation: "receipts"
             referencedColumns: ["id"]
           },
           {
@@ -26719,14 +26718,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -28961,215 +28960,6 @@ export type Database = {
           },
           {
             foreignKeyName: "quote_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      receipts: {
-        Row: {
-          assignee: string | null
-          companyId: string | null
-          createdAt: string | null
-          createdBy: string | null
-          customFields: Json | null
-          externalDocumentId: string | null
-          id: string | null
-          invoiced: boolean | null
-          locationId: string | null
-          locationName: string | null
-          postingDate: string | null
-          receiptId: string | null
-          sourceDocument:
-            | Database["public"]["Enums"]["receiptSourceDocument"]
-            | null
-          sourceDocumentId: string | null
-          sourceDocumentReadableId: string | null
-          status: Database["public"]["Enums"]["receiptStatus"] | null
-          supplierId: string | null
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "receipt_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "receipt_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "receipt_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "receipt_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "receipt_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
-            foreignKeyName: "receipt_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "supplier"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "contractors"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "receipt_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["supplierId"]
-          },
-          {
-            foreignKeyName: "receipt_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderSuppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_supplierId_fkey"
-            columns: ["supplierId"]
-            isOneToOne: false
-            referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receipt_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"

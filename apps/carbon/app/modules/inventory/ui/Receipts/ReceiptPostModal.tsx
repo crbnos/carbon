@@ -9,23 +9,20 @@ import {
   ModalOverlay,
   ModalTitle,
 } from "@carbon/react";
-import { Form, useNavigate, useNavigation, useParams } from "@remix-run/react";
+import { Form, useNavigation, useParams } from "@remix-run/react";
 import { path } from "~/utils/path";
 
-const ReceiptPostModal = () => {
+const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
   const navigation = useNavigation();
-  const navigate = useNavigate();
-
-  const onCancel = () => navigate(-1);
 
   return (
     <Modal
       open={true}
       onOpenChange={(open) => {
-        if (!open) onCancel();
+        if (!open) onClose();
       }}
     >
       <ModalOverlay />
@@ -36,7 +33,7 @@ const ReceiptPostModal = () => {
         <ModalBody>Are you sure you want to post this receipt?</ModalBody>
         <ModalFooter>
           <HStack>
-            <Button variant="solid" onClick={onCancel}>
+            <Button variant="solid" onClick={onClose}>
               Cancel
             </Button>
             <Form action={path.to.receiptPost(receiptId)} method="post">

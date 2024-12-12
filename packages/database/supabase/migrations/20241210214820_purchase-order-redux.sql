@@ -217,3 +217,8 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
 
 ALTER TABLE "purchaseOrder" ALTER COLUMN "orderDate" DROP DEFAULT,
                            ALTER COLUMN "orderDate" DROP NOT NULL;
+
+ALTER TABLE "receipt" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "receiptLine" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
+
+DROP VIEW "receipts";

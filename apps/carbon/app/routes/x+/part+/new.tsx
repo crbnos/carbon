@@ -71,7 +71,7 @@ export default function PartsNewRoute() {
   };
 
   return (
-    <div className="max-w-[50rem] w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <PartForm initialValues={initialValues} />
     </div>
   );

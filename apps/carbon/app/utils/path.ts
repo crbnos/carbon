@@ -298,7 +298,7 @@ export const path = {
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
 
-    deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
+    deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>

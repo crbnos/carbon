@@ -761,6 +761,7 @@ export async function releasePurchaseOrder(
     .from("purchaseOrder")
     .update({
       status: "To Receive and Invoice",
+      orderDate: today(getLocalTimeZone()).toString(),
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })

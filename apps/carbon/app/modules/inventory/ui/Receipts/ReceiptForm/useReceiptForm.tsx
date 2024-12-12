@@ -20,10 +20,6 @@ export default function useReceiptForm() {
   const [error, setError] = useState<string | null>(null);
   const { carbon } = useCarbon();
 
-  const routeData = useRouteData<{
-    locations: ListItem[];
-  }>(path.to.receiptRoot);
-
   const [locationId, setLocationId] = useState<string | null>(
     receipt.locationId ?? user.defaults.locationId ?? null
   );
@@ -71,7 +67,6 @@ export default function useReceiptForm() {
   return {
     error,
     locationId,
-    locations: routeData?.locations ?? [],
     supplierId,
     sourceDocuments,
     setLocationId,

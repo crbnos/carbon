@@ -14,6 +14,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  Location,
   Select,
   Submit,
 } from "~/components/Form";
@@ -41,7 +42,6 @@ const formId = "receipt-form";
 const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
   const permissions = usePermissions();
   const {
-    locations,
     locationId,
     sourceDocuments,
     supplierId,
@@ -51,10 +51,6 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
 
   const isPosted = status === "Posted";
   const isEditing = initialValues.id !== undefined;
-  const locationOptions = locations.map((l) => ({
-    label: l.name,
-    value: l.id,
-  }));
 
   return (
     <ValidatedForm
@@ -71,7 +67,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           {!isEditing && (
             <CardDescription>
               A receipt is a record of a part received from a supplier or
-              transfered from another location.
+              transferred from another location.
             </CardDescription>
           )}
         </CardHeader>
@@ -81,10 +77,9 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           <VStack spacing={4} className="min-h-full">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 w-full">
               <Input name="receiptId" label="Receipt ID" isReadOnly />
-              <Combobox
+              <Location
                 name="locationId"
                 label="Location"
-                options={locationOptions}
                 value={locationId ?? undefined}
                 onChange={(newValue) => {
                   if (newValue) setLocationId(newValue.value as string);

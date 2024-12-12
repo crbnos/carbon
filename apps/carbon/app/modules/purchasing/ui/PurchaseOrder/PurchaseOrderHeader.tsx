@@ -13,6 +13,7 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
+  LuArrowDownLeft,
   LuCheckCheck,
   LuChevronDown,
   LuEye,
@@ -106,7 +107,7 @@ const PurchaseOrderHeader = () => {
             >
               Release
             </Button>
-            {/* <Button
+            <Button
               leftIcon={<LuArrowDownLeft />}
               isDisabled={
                 !["To Receive", "To Receive and Invoice"].includes(
@@ -126,6 +127,7 @@ const PurchaseOrderHeader = () => {
             >
               Receive
             </Button>
+            {/*
             <Button
               leftIcon={<LuCreditCard />}
               isDisabled={
