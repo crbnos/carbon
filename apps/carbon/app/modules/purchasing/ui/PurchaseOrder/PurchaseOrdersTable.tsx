@@ -9,7 +9,7 @@ import { formatDate } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
-  LuArrowDownLeft,
+  LuArrowBigDownDash,
   LuBookMarked,
   LuCalendar,
   LuContainer,
@@ -308,7 +308,7 @@ const PurchaseOrdersTable = memo(
               receive(row);
             }}
           >
-            <MenuIcon icon={<LuArrowDownLeft />} />
+            <MenuIcon icon={<LuArrowBigDownDash />} />
             Receive
           </MenuItem>
           <MenuItem

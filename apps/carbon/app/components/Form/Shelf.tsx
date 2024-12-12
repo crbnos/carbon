@@ -13,37 +13,25 @@ type ShelfSelectProps = Omit<ComboboxProps, "options" | "onChange"> & {
   onChange?: (shelf: ListItem | null) => void;
 };
 
-const Shelf = (props: ShelfSelectProps) => {
-  const shelvesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getShelvesList>>>();
+const ShelfPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const shelf = options.find((o) => o.value === value);
+  if (!shelf) return null;
+  return shelf.label;
+};
 
+const Shelf = (props: ShelfSelectProps) => {
   const newShelfModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (props?.locationId) {
-      shelvesFetcher.load(path.to.api.shelves(props.locationId));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.locationId]);
-
-  const options = useMemo(
-    () =>
-      shelvesFetcher.data?.data?.map((c) => ({
-        value: c.id,
-        label: c.name,
-      })) ?? [],
-
-    [shelvesFetcher.data]
-  );
+  const { options, data } = useShelves(props.locationId);
 
   const onChange = (newValue: { label: string; value: string } | null) => {
     const shelf =
-      shelvesFetcher.data?.data?.find(
-        (shelf) => shelf.id === newValue?.value
-      ) ?? null;
-
+      data?.data?.find((shelf) => shelf.id === newValue?.value) ?? null;
     props.onChange?.(shelf as ListItem | null);
   };
 
@@ -54,6 +42,7 @@ const Shelf = (props: ShelfSelectProps) => {
         options={options}
         {...props}
         label={props?.label ?? "Shelf"}
+        inline={props.inline ? ShelfPreview : undefined}
         onChange={onChange}
         onCreateOption={(option) => {
           newShelfModal.onOpen();
@@ -77,3 +66,26 @@ const Shelf = (props: ShelfSelectProps) => {
 };
 
 export default Shelf;
+
+export function useShelves(locationId?: string) {
+  const shelvesFetcher =
+    useFetcher<Awaited<ReturnType<typeof getShelvesList>>>();
+
+  useEffect(() => {
+    if (locationId) {
+      shelvesFetcher.load(path.to.api.shelves(locationId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locationId]);
+
+  const options = useMemo(
+    () =>
+      shelvesFetcher.data?.data?.map((c) => ({
+        value: c.id,
+        label: c.name,
+      })) ?? [],
+    [shelvesFetcher.data]
+  );
+
+  return { options, data: shelvesFetcher.data };
+}

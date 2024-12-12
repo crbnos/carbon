@@ -60,7 +60,7 @@ const InventoryDetails = ({
             <CardDescription>
               <VStack>Quantity on Purchase Order</VStack>
             </CardDescription>
-            <CardTitle className="text-4xl opacity-20">
+            <CardTitle className="text-4xl ">
               {`${formatter.format(quantities?.quantityOnPurchaseOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
@@ -70,13 +70,13 @@ const InventoryDetails = ({
             <CardDescription>
               <VStack>Quantity on Sales Order</VStack>
             </CardDescription>
-            <CardTitle className="text-4xl opacity-20">
+            <CardTitle className="text-4xl">
               {`${formatter.format(quantities?.quantityOnSalesOrder ?? 0)}`}
             </CardTitle>
           </CardHeader>
         </Card>
         <Card>
-          <CardHeader className="pb-8">
+          <CardHeader className="pb-8 ">
             <CardDescription>
               <VStack>Quantity on Production Order</VStack>
             </CardDescription>

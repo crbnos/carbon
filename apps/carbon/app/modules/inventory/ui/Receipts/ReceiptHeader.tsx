@@ -6,7 +6,13 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
-import { LuPanelLeft, LuPanelRight } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuCreditCard,
+  LuPanelLeft,
+  LuPanelRight,
+  LuShoppingCart,
+} from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
@@ -54,10 +60,18 @@ const ReceiptHeader = () => {
             <ReceiptStatus status={routeData?.receipt?.status} />
           </HStack>
           <HStack>
+            <SourceDocumentLink
+              sourceDocument={routeData.receipt.sourceDocument ?? undefined}
+              sourceDocumentId={routeData.receipt.sourceDocumentId ?? undefined}
+              sourceDocumentReadableId={
+                routeData.receipt.sourceDocumentReadableId ?? undefined
+              }
+            />
             <Button
               variant={canPost && !isPosted ? "primary" : "secondary"}
               onClick={postModal.onOpen}
               isDisabled={!canPost || isPosted || !permissions.is("employee")}
+              leftIcon={<LuCheckCheck />}
             >
               Post
             </Button>
@@ -76,5 +90,38 @@ const ReceiptHeader = () => {
     </>
   );
 };
+
+function SourceDocumentLink({
+  sourceDocument,
+  sourceDocumentId,
+  sourceDocumentReadableId,
+}: {
+  sourceDocument?: string;
+  sourceDocumentId?: string;
+  sourceDocumentReadableId?: string;
+}) {
+  if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
+    return null;
+  switch (sourceDocument) {
+    case "Purchase Order":
+      return (
+        <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+          <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
+            Purchase Order
+          </Link>
+        </Button>
+      );
+    case "Purchase Invoice":
+      return (
+        <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
+          <Link to={path.to.purchaseInvoice(sourceDocumentId!)}>
+            Purchase Invoice
+          </Link>
+        </Button>
+      );
+    default:
+      return null;
+  }
+}
 
 export default ReceiptHeader;

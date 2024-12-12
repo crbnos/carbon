@@ -286,7 +286,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Receipt
+            {row.postingDate ? "View Receipt" : "Edit Receipt"}
           </MenuItem>
           <MenuItem
             disabled={

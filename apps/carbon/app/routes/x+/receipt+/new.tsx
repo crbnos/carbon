@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         );
       }
 
-      throw redirect(path.to.receiptLines(purchaseOrderReceipt.data.id));
+      throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
     default:
       const defaultReceipt = await serviceRole.functions.invoke<{
         id: string;

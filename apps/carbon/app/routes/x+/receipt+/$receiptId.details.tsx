@@ -14,6 +14,7 @@ import { useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import {
   ReceiptForm,
+  ReceiptLines,
   getReceipt,
   receiptValidator,
   upsertReceipt,
@@ -134,11 +135,16 @@ export default function ReceiptDetailsRoute() {
   };
 
   return (
-    <ReceiptForm
-      key={initialValues.receiptId}
-      // @ts-ignore
-      initialValues={initialValues}
-      receiptLines={routeData.receiptLines}
-    />
+    <>
+      <ReceiptForm
+        key={initialValues.receiptId}
+        // @ts-ignore
+        initialValues={initialValues}
+        status={routeData.receipt.status}
+        receiptLines={routeData.receiptLines}
+      />
+
+      <ReceiptLines />
+    </>
   );
 }

@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
   Heading,
@@ -13,13 +14,14 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
-  LuArrowDownLeft,
+  LuArrowBigDownDash,
   LuCheckCheck,
   LuChevronDown,
   LuEye,
   LuFile,
   LuPanelLeft,
   LuPanelRight,
+  LuPlusCircle,
   LuRefreshCw,
 } from "react-icons/lu";
 
@@ -28,9 +30,10 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 
+import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
 import PurchasingStatus from "./PurchasingStatus";
-import { usePurchaseOrder } from "./usePurchaseOrder";
+import { usePurchaseOrder, usePurchaseOrderReceipts } from "./usePurchaseOrder";
 
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
@@ -50,6 +53,7 @@ const PurchaseOrderHeader = () => {
 
   const statusFetcher = useFetcher<{}>();
   const { receive, invoice } = usePurchaseOrder();
+  const receipts = usePurchaseOrderReceipts(orderId);
   const releaseDisclosure = useDisclosure();
 
   return (
@@ -107,26 +111,73 @@ const PurchaseOrderHeader = () => {
             >
               Release
             </Button>
-            <Button
-              leftIcon={<LuArrowDownLeft />}
-              isDisabled={
-                !["To Receive", "To Receive and Invoice"].includes(
-                  routeData?.purchaseOrder?.status ?? ""
-                )
-              }
-              variant={
-                ["To Receive", "To Receive and Invoice"].includes(
-                  routeData?.purchaseOrder?.status ?? ""
-                )
-                  ? "primary"
-                  : "secondary"
-              }
-              onClick={() => {
-                receive(routeData?.purchaseOrder);
-              }}
-            >
-              Receive
-            </Button>
+            {receipts.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuArrowBigDownDash />}
+                    variant={
+                      ["To Receive", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                        ? "primary"
+                        : "secondary"
+                    }
+                    rightIcon={<LuChevronDown />}
+                  >
+                    Receipts
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    disabled={
+                      !["To Receive", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                    }
+                    onClick={() => {
+                      receive(routeData?.purchaseOrder);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuPlusCircle />} />
+                    New Receipt
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {receipts.map((receipt) => (
+                    <DropdownMenuItem key={receipt.id} asChild>
+                      <Link to={path.to.receipt(receipt.id)}>
+                        <DropdownMenuIcon icon={<LuArrowBigDownDash />} />
+                        <HStack spacing={8}>
+                          <span>{receipt.receiptId}</span>
+                          <ReceiptStatus status={receipt.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                leftIcon={<LuArrowBigDownDash />}
+                isDisabled={
+                  !["To Receive", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                }
+                variant={
+                  ["To Receive", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() => {
+                  receive(routeData?.purchaseOrder);
+                }}
+              >
+                Receive
+              </Button>
+            )}
             {/*
             <Button
               leftIcon={<LuCreditCard />}
