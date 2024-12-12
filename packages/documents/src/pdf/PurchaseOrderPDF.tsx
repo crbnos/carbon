@@ -114,7 +114,7 @@ const PurchaseOrderPDF = ({
             <Text>{supplierCountryName}</Text>
           </View>
           {dropShipment ? (
-            <View style={tw("flex flex-col text-sm gap-2 w-1/3")}>
+            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
               <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{customerName}</Text>
               {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
@@ -129,7 +129,7 @@ const PurchaseOrderPDF = ({
               <Text>{customerCountryName}</Text>
             </View>
           ) : (
-            <View style={tw("flex flex-col text-sm gap-2 w-1/3")}>
+            <View style={tw("flex flex-col text-sm gap-1 w-1/3")}>
               <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
               <Text>{deliveryName}</Text>
               {deliveryAddressLine1 && <Text>{deliveryAddressLine1}</Text>}
@@ -147,7 +147,7 @@ const PurchaseOrderPDF = ({
         </View>
         <View style={tw("flex flex-row justify-between mb-5 text-sm")}>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Supplier Order #</Text>
+            <Text style={tw("text-gray-500 text-xs")}>Reference #</Text>
             <Text>{purchaseOrder?.supplierReference}</Text>
           </View>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
@@ -159,7 +159,7 @@ const PurchaseOrderPDF = ({
             <Text>{purchaseOrder?.receiptPromisedDate}</Text>
           </View>
         </View>
-        <View style={tw("flex flex-row justify-between mb-5")}>
+        {/* <View style={tw("flex flex-row justify-between mb-5")}>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Shipping Method</Text>
             <Text>{purchaseOrder?.shippingMethodName}</Text>
@@ -172,7 +172,7 @@ const PurchaseOrderPDF = ({
             <Text style={tw("text-gray-500 text-xs")}>Payment Terms</Text>
             <Text>{purchaseOrder?.paymentTermName}</Text>
           </View>
-        </View>
+        </View> */}
         <View style={tw("mb-5 text-xs")}>
           <View
             style={tw(
@@ -235,13 +235,11 @@ const PurchaseOrderPDF = ({
             </Text>
           </View>
         </View>
-        {purchaseOrder?.notes && (
-          <View style={tw("flex flex-row mb-5")}>
-            <View style={tw("w-1/2")}>
-              <Text style={tw("text-gray-500 text-xs")}>Notes</Text>
-              <Text style={tw("text-sm")}>{purchaseOrder?.notes}</Text>
-            </View>
-          </View>
+        {purchaseOrder?.externalNotes && (
+          <Note
+            title="Notes"
+            content={(purchaseOrder.externalNotes ?? {}) as JSONContent}
+          />
         )}
       </View>
       <View style={tw("flex flex-col gap-4 w-full")}>

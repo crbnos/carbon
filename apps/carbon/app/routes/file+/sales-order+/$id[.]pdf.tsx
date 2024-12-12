@@ -3,6 +3,8 @@ import { SalesOrderPDF } from "@carbon/documents/pdf";
 import type { JSONContent } from "@carbon/react";
 import { renderToStream } from "@react-pdf/renderer";
 import { type LoaderFunctionArgs } from "@vercel/remix";
+import { getPaymentTermsList } from "~/modules/accounting";
+import { getShippingMethodsList } from "~/modules/inventory";
 import {
   getSalesOrder,
   getSalesOrderCustomerDetails,
@@ -22,14 +24,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [company, salesOrder, salesOrderLines, salesOrderLocations, terms] =
-    await Promise.all([
-      getCompany(client, companyId),
-      getSalesOrder(client, id),
-      getSalesOrderLines(client, id),
-      getSalesOrderCustomerDetails(client, id),
-      getSalesTerms(client, companyId),
-    ]);
+  const [
+    company,
+    salesOrder,
+    salesOrderLines,
+    salesOrderLocations,
+    terms,
+    paymentTerms,
+    shippingMethods,
+  ] = await Promise.all([
+    getCompany(client, companyId),
+    getSalesOrder(client, id),
+    getSalesOrderLines(client, id),
+    getSalesOrderCustomerDetails(client, id),
+    getSalesTerms(client, companyId),
+    getPaymentTermsList(client, companyId),
+    getShippingMethodsList(client, companyId),
+  ]);
 
   if (company.error) {
     console.error(company.error);
@@ -76,6 +87,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       salesOrderLines={salesOrderLines.data ?? []}
       salesOrderLocations={salesOrderLocations.data}
       terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+      paymentTerms={paymentTerms.data ?? []}
+      shippingMethods={shippingMethods.data ?? []}
       title="Sales Order"
     />
   );

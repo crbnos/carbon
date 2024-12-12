@@ -70,7 +70,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
         )}
 
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
               <IconButton
                 size={size ?? "sm"}
@@ -78,8 +78,11 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
                 aria-label={value ? "Edit" : "Add"}
                 icon={value ? <LuSettings2 /> : <LuPlus />}
                 isDisabled={isReadOnly}
+                disabled={isReadOnly}
                 ref={ref}
-                onClick={() => setOpen(true)}
+                onClick={() => {
+                  if (!isReadOnly) setOpen(true);
+                }}
               />
             ) : (
               <CommandTrigger

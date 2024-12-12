@@ -27,6 +27,7 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 
+import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
 import PurchasingStatus from "./PurchasingStatus";
 import { usePurchaseOrder } from "./usePurchaseOrder";
 
@@ -156,7 +157,7 @@ const PurchaseOrderHeader = () => {
                 variant="secondary"
                 leftIcon={<LuRefreshCw />}
                 isDisabled={
-                  !["Cancelled", "Closed", "Completed"].includes(
+                  ["Draft", "Cancelled", "Closed", "Completed"].includes(
                     routeData?.purchaseOrder?.status ?? ""
                   ) ||
                   statusFetcher.state !== "idle" ||
@@ -180,6 +181,13 @@ const PurchaseOrderHeader = () => {
           </HStack>
         </HStack>
       </div>
+
+      {releaseDisclosure.isOpen && (
+        <PurchaseOrderReleaseModal
+          purchaseOrder={routeData?.purchaseOrder}
+          onClose={releaseDisclosure.onClose}
+        />
+      )}
     </>
   );
 };
