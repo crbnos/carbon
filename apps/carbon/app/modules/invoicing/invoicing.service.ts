@@ -2,7 +2,10 @@ import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import { getSupplierPayment } from "~/modules/purchasing";
+import {
+  getSupplierPayment,
+  insertSupplierInteraction,
+} from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -118,10 +121,12 @@ export async function upsertPurchaseInvoice(
       .select("id, invoiceId");
   }
 
-  const [supplierPayment] = await Promise.all([
+  const [supplierInteraction, supplierPayment] = await Promise.all([
+    insertSupplierInteraction(client, purchaseInvoice.companyId),
     getSupplierPayment(client, purchaseInvoice.supplierId),
   ]);
 
+  if (supplierInteraction.error) return supplierInteraction;
   if (supplierPayment.error) return supplierPayment;
 
   const { paymentTermId } = supplierPayment.data;
@@ -133,6 +138,7 @@ export async function upsertPurchaseInvoice(
         ...purchaseInvoice,
         invoiceSupplierId:
           purchaseInvoice.invoiceSupplierId ?? purchaseInvoice.supplierId ?? "",
+        supplierInteractionId: supplierInteraction.data.id,
         currencyCode: purchaseInvoice.currencyCode ?? "USD",
         paymentTermId: purchaseInvoice.paymentTermId ?? paymentTermId,
       },

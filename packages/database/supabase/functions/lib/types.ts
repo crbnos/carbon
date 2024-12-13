@@ -12594,6 +12594,7 @@ export type Database = {
           status: Database["public"]["Enums"]["purchaseInvoiceStatus"]
           subtotal: number
           supplierId: string | null
+          supplierInteractionId: string
           supplierReference: string | null
           tags: string[] | null
           totalAmount: number
@@ -12624,6 +12625,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchaseInvoiceStatus"]
           subtotal?: number
           supplierId?: string | null
+          supplierInteractionId: string
           supplierReference?: string | null
           tags?: string[] | null
           totalAmount?: number
@@ -12654,6 +12656,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchaseInvoiceStatus"]
           subtotal?: number
           supplierId?: string | null
+          supplierInteractionId?: string
           supplierReference?: string | null
           tags?: string[] | null
           totalAmount?: number
@@ -12867,6 +12870,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchaseInvoice_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchaseInvoice_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -12911,26 +12921,35 @@ export type Database = {
           conversionFactor: number | null
           createdAt: string
           createdBy: string
-          currencyCode: string
           customFields: Json | null
           description: string | null
           exchangeRate: number
+          extendedPrice: number | null
           id: string
+          internalNotes: Json | null
           inventoryUnitOfMeasureCode: string | null
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId: string | null
           itemReadableId: string | null
           locationId: string | null
+          modelUploadId: string | null
           purchaseOrderId: string | null
           purchaseOrderLineId: string | null
           purchaseUnitOfMeasureCode: string | null
           quantity: number
           serviceId: string | null
           shelfId: string | null
+          shippingCost: number | null
+          supplierExtendedPrice: number | null
+          supplierShippingCost: number
+          supplierTaxAmount: number
+          supplierUnitPrice: number
           tags: string[] | null
+          taxAmount: number | null
+          taxPercent: number | null
           totalAmount: number | null
-          unitPrice: number
+          unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12941,26 +12960,35 @@ export type Database = {
           conversionFactor?: number | null
           createdAt?: string
           createdBy: string
-          currencyCode: string
           customFields?: Json | null
           description?: string | null
           exchangeRate?: number
+          extendedPrice?: number | null
           id?: string
+          internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           invoiceId: string
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          modelUploadId?: string | null
           purchaseOrderId?: string | null
           purchaseOrderLineId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
           serviceId?: string | null
           shelfId?: string | null
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number
           tags?: string[] | null
+          taxAmount?: number | null
+          taxPercent?: number | null
           totalAmount?: number | null
-          unitPrice?: number
+          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12971,30 +12999,67 @@ export type Database = {
           conversionFactor?: number | null
           createdAt?: string
           createdBy?: string
-          currencyCode?: string
           customFields?: Json | null
           description?: string | null
           exchangeRate?: number
+          extendedPrice?: number | null
           id?: string
+          internalNotes?: Json | null
           inventoryUnitOfMeasureCode?: string | null
           invoiceId?: string
           invoiceLineType?: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
           itemReadableId?: string | null
           locationId?: string | null
+          modelUploadId?: string | null
           purchaseOrderId?: string | null
           purchaseOrderLineId?: string | null
           purchaseUnitOfMeasureCode?: string | null
           quantity?: number
           serviceId?: string | null
           shelfId?: string | null
+          shippingCost?: number | null
+          supplierExtendedPrice?: number | null
+          supplierShippingCost?: number
+          supplierTaxAmount?: number
+          supplierUnitPrice?: number
           tags?: string[] | null
+          taxAmount?: number | null
+          taxPercent?: number | null
           totalAmount?: number | null
-          unitPrice?: number
+          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
           {
             foreignKeyName: "purchaseInvoiceLines_accountNumber_fkey"
             columns: ["accountNumber", "companyId"]
@@ -13071,20 +13136,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLines_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currencies"
-            referencedColumns: ["code", "companyId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLines_currencyCode_fkey"
-            columns: ["currencyCode", "companyId"]
-            isOneToOne: false
-            referencedRelation: "currency"
-            referencedColumns: ["code", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_inventoryUnitOfMeasureCode_fkey"
@@ -13401,6 +13452,7 @@ export type Database = {
           status: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId: string | null
           supplierId: string
+          supplierInteractionId: string
           supplierLocationId: string | null
           supplierReference: string | null
           tags: string[] | null
@@ -13427,6 +13479,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId?: string | null
           supplierId: string
+          supplierInteractionId: string
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
@@ -13453,6 +13506,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId?: string | null
           supplierId?: string
+          supplierInteractionId?: string
           supplierLocationId?: string | null
           supplierReference?: string | null
           tags?: string[] | null
@@ -13640,6 +13694,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {
@@ -16796,6 +16857,7 @@ export type Database = {
           sourceDocumentReadableId: string | null
           status: Database["public"]["Enums"]["receiptStatus"]
           supplierId: string | null
+          supplierInteractionId: string | null
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -16820,6 +16882,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["receiptStatus"]
           supplierId?: string | null
+          supplierInteractionId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16844,6 +16907,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["receiptStatus"]
           supplierId?: string | null
+          supplierInteractionId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -16994,6 +17058,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {
@@ -20570,32 +20641,14 @@ export type Database = {
         Row: {
           companyId: string
           id: string
-          purchaseOrderCompletedDate: string | null
-          purchaseOrderId: string | null
-          quoteDocumentPath: string | null
-          salesOrderDocumentPath: string | null
-          supplierQuoteCompletedDate: string | null
-          supplierQuoteId: string | null
         }
         Insert: {
           companyId: string
           id?: string
-          purchaseOrderCompletedDate?: string | null
-          purchaseOrderId?: string | null
-          quoteDocumentPath?: string | null
-          salesOrderDocumentPath?: string | null
-          supplierQuoteCompletedDate?: string | null
-          supplierQuoteId?: string | null
         }
         Update: {
           companyId?: string
           id?: string
-          purchaseOrderCompletedDate?: string | null
-          purchaseOrderId?: string | null
-          quoteDocumentPath?: string | null
-          salesOrderDocumentPath?: string | null
-          supplierQuoteCompletedDate?: string | null
-          supplierQuoteId?: string | null
         }
         Relationships: [
           {
@@ -20625,41 +20678,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrder"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderLocations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplierInteraction_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplierInteraction_supplierQuoteId_fkey"
-            columns: ["supplierQuoteId"]
-            isOneToOne: false
-            referencedRelation: "supplierQuote"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplierInteraction_supplierQuoteId_fkey"
-            columns: ["supplierQuoteId"]
-            isOneToOne: false
-            referencedRelation: "supplierQuotes"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -21446,6 +21464,7 @@ export type Database = {
           status: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId: string | null
           supplierId: string
+          supplierInteractionId: string
           supplierLocationId: string | null
           supplierQuoteId: string
           supplierReference: string | null
@@ -21471,6 +21490,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId: string
+          supplierInteractionId: string
           supplierLocationId?: string | null
           supplierQuoteId: string
           supplierReference?: string | null
@@ -21496,6 +21516,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["supplierQuoteStatus"]
           supplierContactId?: string | null
           supplierId?: string
+          supplierInteractionId?: string
           supplierLocationId?: string | null
           supplierQuoteId?: string
           supplierReference?: string | null
@@ -21649,6 +21670,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuote_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {
@@ -26718,14 +26746,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -27608,14 +27636,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -27654,6 +27682,7 @@ export type Database = {
           status: Database["public"]["Enums"]["purchaseOrderStatus"] | null
           supplierContactId: string | null
           supplierId: string | null
+          supplierInteractionId: string | null
           supplierLocationId: string | null
           supplierReference: string | null
           tags: string[] | null
@@ -27842,6 +27871,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrder_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {
@@ -29210,14 +29246,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -30443,6 +30479,7 @@ export type Database = {
           status: Database["public"]["Enums"]["supplierQuoteStatus"] | null
           supplierContactId: string | null
           supplierId: string | null
+          supplierInteractionId: string | null
           supplierLocationId: string | null
           supplierQuoteId: string | null
           supplierReference: string | null
@@ -30597,6 +30634,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuote_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {

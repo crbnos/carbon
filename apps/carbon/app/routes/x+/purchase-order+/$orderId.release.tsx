@@ -18,7 +18,6 @@ import {
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplierContact,
-  getSupplierInteractionByPurchaseOrder,
   purchaseOrderReleaseValidator,
   releasePurchaseOrder,
 } from "~/modules/purchasing";
@@ -59,9 +58,8 @@ export async function action(args: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const [purchaseOrder, supplierInteraction] = await Promise.all([
+  const [purchaseOrder] = await Promise.all([
     getPurchaseOrder(serviceRole, orderId),
-    getSupplierInteractionByPurchaseOrder(serviceRole, orderId),
   ]);
   if (purchaseOrder.error) {
     throw redirect(
@@ -69,16 +67,6 @@ export async function action(args: ActionFunctionArgs) {
       await flash(
         request,
         error(purchaseOrder.error, "Failed to get purchase order")
-      )
-    );
-  }
-
-  if (supplierInteraction.error) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(supplierInteraction.error, "Failed to get supplier interaction")
       )
     );
   }
@@ -110,7 +98,7 @@ export async function action(args: ActionFunctionArgs) {
         .slice(0, -5)}.pdf`
     );
 
-    const documentFilePath = `${companyId}/supplier-interaction/${supplierInteraction.data.id}/${fileName}`;
+    const documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
 
     const documentFileUpload = await serviceRole.storage
       .from("private")

@@ -2,8 +2,8 @@ DROP VIEW "purchaseOrders";
 DROP VIEW "purchaseOrderLines";
 
 ALTER TABLE "purchaseOrder" DROP COLUMN "notes";
-ALTER TABLE "purchaseOrderLine" DROP COLUMN "notes";
 ALTER TABLE "purchaseOrder" DROP COLUMN "type";
+ALTER TABLE "purchaseOrderLine" DROP COLUMN "notes";
 
 
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
@@ -85,42 +85,7 @@ CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "salesOrderPayment" sp ON sp."id" = s."id"
   LEFT JOIN "location" l ON l."id" = ss."locationId";
 
-DROP VIEW IF EXISTS "purchaseOrders";
-CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
-  SELECT
-    p.*,
-    pl."thumbnailPath",
-    pl."itemType", 
-    pl."orderTotal",
-    pd."shippingMethodId",
-    pd."shippingTermId",
-    pd."receiptRequestedDate",
-    pd."receiptPromisedDate",
-    pd."deliveryDate",
-    pd."dropShipment",
-    pp."paymentTermId",
-    l."id" AS "locationId",
-    l."name" AS "locationName"
-  FROM "purchaseOrder" p
-  LEFT JOIN (
-    SELECT 
-      pol."purchaseOrderId",
-      MIN(CASE
-        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
-        ELSE i."thumbnailPath"
-      END) AS "thumbnailPath",
-      SUM(COALESCE(pol."purchaseQuantity", 0)*(COALESCE(pol."supplierUnitPrice", 0)) + COALESCE(pol."supplierShippingCost", 0) + COALESCE(pol."taxAmount", 0)) AS "orderTotal",
-      MIN(i."type") AS "itemType"
-    FROM "purchaseOrderLine" pol
-    LEFT JOIN "item" i
-      ON i."id" = pol."itemId"
-    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-    GROUP BY pol."purchaseOrderId"
-  ) pl ON pl."purchaseOrderId" = p."id"
-  LEFT JOIN "purchaseOrderDelivery" pd ON pd."id" = p."id"
-  LEFT JOIN "shippingTerm" st ON st."id" = pd."shippingTermId"
-  LEFT JOIN "purchaseOrderPayment" pp ON pp."id" = p."id"
-  LEFT JOIN "location" l ON l."id" = pd."locationId";
+
 
 DROP VIEW IF EXISTS "purchaseOrderLines";
 CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS (
@@ -162,14 +127,13 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE OR REPLACE TRIGGER update_purchase_order_line_price_exchange_rate_trigger
-AFTER UPDATE OF "exchangeRate" ON "supplierQuote"
+AFTER UPDATE OF "exchangeRate" ON "purchaseOrder"
 FOR EACH ROW
 WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
 EXECUTE FUNCTION update_purchase_order_line_price_exchange_rate();
 
 
 ALTER TABLE "supplier" ADD COLUMN "taxPercent" NUMERIC(10,5) NOT NULL DEFAULT 0 CHECK ("taxPercent" >= 0 AND "taxPercent" <= 1);
-
 
 DROP VIEW IF EXISTS "suppliers";
 CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS 
@@ -222,3 +186,134 @@ ALTER TABLE "receipt" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "receiptLine" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
 
 DROP VIEW "receipts";
+
+ALTER TABLE "supplierInteraction" DROP COLUMN "purchaseOrderId";
+ALTER TABLE "supplierInteraction" DROP COLUMN "purchaseOrderCompletedDate";
+ALTER TABLE "supplierInteraction" DROP COLUMN "supplierQuoteId";
+ALTER TABLE "supplierInteraction" DROP COLUMN "supplierQuoteCompletedDate";
+ALTER TABLE "supplierInteraction" DROP COLUMN "quoteDocumentPath";
+ALTER TABLE "supplierInteraction" DROP COLUMN "salesOrderDocumentPath";
+
+ALTER TABLE "supplierQuote" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "purchaseOrder" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "receipt" ADD COLUMN "supplierInteractionId" TEXT REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "purchaseInvoice" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+
+
+DROP VIEW IF EXISTS "supplierQuotes";
+CREATE OR REPLACE VIEW "supplierQuotes"
+WITH
+  (SECURITY_INVOKER = true) AS
+SELECT
+  q.*,
+  ql."thumbnailPath",
+  ql."itemType"
+FROM
+  "supplierQuote" q
+  LEFT JOIN (
+    SELECT
+      "supplierQuoteId",
+      MIN(
+        CASE
+          WHEN i."thumbnailPath" IS NULL
+          AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+          ELSE i."thumbnailPath"
+        END
+      ) AS "thumbnailPath",
+      MIN(i."type") AS "itemType"
+    FROM
+      "supplierQuoteLine"
+      INNER JOIN "item" i ON i."id" = "supplierQuoteLine"."itemId"
+      LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY
+      "supplierQuoteId"
+  ) ql ON ql."supplierQuoteId" = q.id;
+
+DROP VIEW IF EXISTS "purchaseOrders";
+CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    p.*,
+    pl."thumbnailPath",
+    pl."itemType", 
+    pl."orderTotal",
+    pd."shippingMethodId",
+    pd."shippingTermId",
+    pd."receiptRequestedDate",
+    pd."receiptPromisedDate",
+    pd."deliveryDate",
+    pd."dropShipment",
+    pp."paymentTermId",
+    l."id" AS "locationId",
+    l."name" AS "locationName"
+  FROM "purchaseOrder" p
+  LEFT JOIN (
+    SELECT 
+      pol."purchaseOrderId",
+      MIN(CASE
+        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+        ELSE i."thumbnailPath"
+      END) AS "thumbnailPath",
+      SUM(COALESCE(pol."purchaseQuantity", 0)*(COALESCE(pol."supplierUnitPrice", 0)) + COALESCE(pol."supplierShippingCost", 0) + COALESCE(pol."taxAmount", 0)) AS "orderTotal",
+      MIN(i."type") AS "itemType"
+    FROM "purchaseOrderLine" pol
+    LEFT JOIN "item" i
+      ON i."id" = pol."itemId"
+    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY pol."purchaseOrderId"
+  ) pl ON pl."purchaseOrderId" = p."id"
+  LEFT JOIN "purchaseOrderDelivery" pd ON pd."id" = p."id"
+  LEFT JOIN "shippingTerm" st ON st."id" = pd."shippingTermId"
+  LEFT JOIN "purchaseOrderPayment" pp ON pp."id" = p."id"
+  LEFT JOIN "location" l ON l."id" = pd."locationId";
+
+
+DROP VIEW IF EXISTS "purchaseInvoiceLines";
+ALTER TABLE "purchaseInvoiceLine" DROP COLUMN "currencyCode";
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
+
+ALTER TABLE "purchaseInvoiceLine" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "unitPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+  "supplierUnitPrice" * "exchangeRate"
+) STORED;
+
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "supplierExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+  "supplierUnitPrice" * "quantity"
+) STORED;
+
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "extendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+  "supplierUnitPrice" * "exchangeRate" * "quantity"
+) STORED;
+
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "supplierShippingCost" NUMERIC(10,5) NOT NULL DEFAULT 0;
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "shippingCost" NUMERIC(10,5) GENERATED ALWAYS AS (
+  "supplierShippingCost" * "exchangeRate"
+) STORED;
+
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "modelUploadId" TEXT REFERENCES "modelUpload"("id") ON DELETE SET NULL;
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "supplierTaxAmount" NUMERIC(10,5) NOT NULL DEFAULT 0;
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "taxAmount" NUMERIC(10,5) GENERATED ALWAYS AS (
+  "supplierTaxAmount" * "exchangeRate"
+) STORED;
+ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "taxPercent" NUMERIC(10,5) GENERATED ALWAYS AS (
+  CASE 
+    WHEN (("supplierUnitPrice" + "supplierShippingCost") * "quantity") = 0 THEN 0
+    ELSE "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "quantity")
+  END
+) STORED;
+
+CREATE OR REPLACE FUNCTION update_purchase_invoice_line_price_exchange_rate()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE "purchaseInvoiceLine"
+  SET "exchangeRate" = NEW."exchangeRate"
+  WHERE "purchaseInvoiceId" = NEW."id";
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER update_purchase_invoice_line_price_exchange_rate_trigger
+AFTER UPDATE OF "exchangeRate" ON "purchaseInvoice"
+FOR EACH ROW
+WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
+EXECUTE FUNCTION update_purchase_invoice_line_price_exchange_rate();

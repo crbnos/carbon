@@ -10,7 +10,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderLines,
   getSupplier,
-  getSupplierInteractionByPurchaseOrder,
+  getSupplierInteraction,
   getSupplierInteractionDocuments,
 } from "~/modules/purchasing";
 import {
@@ -37,13 +37,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrder, lines, interaction] = await Promise.all([
+  const [purchaseOrder, lines] = await Promise.all([
     getPurchaseOrder(client, orderId),
     getPurchaseOrderLines(client, orderId),
-    getSupplierInteractionByPurchaseOrder(client, orderId),
   ]);
 
-  if (!interaction.data) throw new Error("Failed to get interaction record");
+  if (purchaseOrder.data?.companyId !== companyId) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error("You are not authorized to view this purchase order")
+      )
+    );
+  }
 
   if (purchaseOrder.error) {
     throw redirect(
@@ -59,9 +66,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.purchaseOrders);
   }
 
-  const supplier = purchaseOrder.data?.supplierId
-    ? await getSupplier(client, purchaseOrder.data.supplierId)
-    : null;
+  const [supplier, interaction] = await Promise.all([
+    purchaseOrder.data?.supplierId
+      ? getSupplier(client, purchaseOrder.data.supplierId)
+      : null,
+    getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId!),
+  ]);
 
   return defer({
     purchaseOrder: purchaseOrder.data,
@@ -69,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getSupplierInteractionDocuments(
       client,
       companyId,
-      interaction.data.id
+      purchaseOrder.data.supplierInteractionId!
     ),
     interaction: interaction.data,
     supplier: supplier?.data ?? null,

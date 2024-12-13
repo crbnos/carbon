@@ -123,21 +123,7 @@ export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
 ) {
-  const [quote, interaction] = await Promise.all([
-    client.from("supplierQuote").delete().eq("id", supplierQuoteId),
-    client
-      .from("supplierInteraction")
-      .update({
-        supplierQuoteId: null,
-      })
-      .eq("supplierQuoteId", supplierQuoteId),
-  ]);
-
-  if (interaction.error) {
-    return interaction;
-  }
-
-  return quote;
+  return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
 }
 
 export async function deleteSupplierQuoteLine(
@@ -312,26 +298,11 @@ export async function getSupplierContacts(
     .eq("supplierId", supplierId);
 }
 
-export async function getSupplierInteractionByQuote(
+export async function getSupplierInteraction(
   client: SupabaseClient<Database>,
-  quoteId: string
+  id: string
 ) {
-  return client
-    .from("supplierInteraction")
-    .select("*")
-    .eq("supplierQuoteId", quoteId)
-    .single();
-}
-
-export async function getSupplierInteractionByPurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string
-) {
-  return client
-    .from("supplierInteraction")
-    .select("*")
-    .eq("purchaseOrderId", purchaseOrderId)
-    .single();
+  return client.from("supplierInteraction").select("*").eq("id", id).single();
 }
 
 export async function getSupplierInteractionDocuments(
@@ -705,6 +676,17 @@ export async function insertSupplierContact(
     .single();
 }
 
+export async function insertSupplierInteraction(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("supplierInteraction")
+    .insert([{ companyId }])
+    .select("id")
+    .single();
+}
+
 export async function insertSupplierLocation(
   client: SupabaseClient<Database>,
   supplierLocation: {
@@ -1003,12 +985,15 @@ export async function upsertPurchaseOrder(
       .select("id, purchaseOrderId");
   }
 
-  const [supplierPayment, supplierShipping, purchaser] = await Promise.all([
-    getSupplierPayment(client, purchaseOrder.supplierId),
-    getSupplierShipping(client, purchaseOrder.supplierId),
-    getEmployeeJob(client, purchaseOrder.createdBy, purchaseOrder.companyId),
-  ]);
+  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
+    await Promise.all([
+      insertSupplierInteraction(client, purchaseOrder.companyId),
+      getSupplierPayment(client, purchaseOrder.supplierId),
+      getSupplierShipping(client, purchaseOrder.supplierId),
+      getEmployeeJob(client, purchaseOrder.createdBy, purchaseOrder.companyId),
+    ]);
 
+  if (supplierInteraction.error) return supplierInteraction;
   if (supplierPayment.error) return supplierPayment;
   if (supplierShipping.error) return supplierShipping;
 
@@ -1025,7 +1010,9 @@ export async function upsertPurchaseOrder(
 
   const order = await client
     .from("purchaseOrder")
-    .insert([{ ...purchaseOrder }])
+    .insert([
+      { ...purchaseOrder, supplierInteractionId: supplierInteraction.data?.id },
+    ])
     .select("id, purchaseOrderId");
 
   if (order.error) return order;
@@ -1049,12 +1036,6 @@ export async function upsertPurchaseOrder(
         invoiceSupplierContactId: invoiceSupplierContactId,
         invoiceSupplierLocationId: invoiceSupplierLocationId,
         paymentTermId: paymentTermId,
-        companyId: purchaseOrder.companyId,
-      },
-    ]),
-    client.from("supplierInteraction").insert([
-      {
-        purchaseOrderId,
         companyId: purchaseOrder.companyId,
       },
     ]),
@@ -1253,25 +1234,30 @@ export async function upsertSupplierQuote(
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
 
+    const supplierInteraction = await insertSupplierInteraction(
+      client,
+      supplierQuote.companyId
+    );
+
+    if (supplierInteraction.error) return supplierInteraction;
+
     const insert = await client
       .from("supplierQuote")
-      .insert([supplierQuote])
-      .select("id, supplierQuoteId");
+      .insert([
+        {
+          ...supplierQuote,
+          supplierInteractionId: supplierInteraction.data?.id,
+        },
+      ])
+      .select("id, supplierQuoteId")
+      .single();
+
     if (insert.error) {
       return insert;
     }
 
-    const supplierQuoteId = insert.data?.[0]?.id;
+    const supplierQuoteId = insert.data?.id;
     if (!supplierQuoteId) return insert;
-
-    const supplierInteraction = await client
-      .from("supplierInteraction")
-      .insert([{ supplierQuoteId, companyId: supplierQuote.companyId }]);
-
-    if (supplierInteraction.error) {
-      await deleteSupplierQuote(client, supplierQuoteId);
-      return supplierInteraction;
-    }
 
     return insert;
   } else {

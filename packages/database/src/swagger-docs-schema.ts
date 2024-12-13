@@ -6499,6 +6499,12 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6615,6 +6621,12 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.receipt.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6683,6 +6695,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receipt.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
           },
           {
             $ref: "#/parameters/body.receipt",
@@ -8206,24 +8224,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierInteraction.id",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.quoteDocumentPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.salesOrderDocumentPath",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
           },
           {
@@ -8289,24 +8289,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierInteraction.id",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.quoteDocumentPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.salesOrderDocumentPath",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
           },
           {
@@ -8324,24 +8306,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.supplierInteraction.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.purchaseOrderCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.supplierQuoteCompletedDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.quoteDocumentPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierInteraction.salesOrderDocumentPath",
           },
           {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
@@ -8944,6 +8908,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuotes.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuotes.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/rowFilter.supplierQuotes.thumbnailPath",
           },
           {
@@ -9442,6 +9409,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.externalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -9573,6 +9543,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.externalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -9656,6 +9629,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -13354,9 +13330,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.notes",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
           },
           {
@@ -13376,6 +13349,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/select",
@@ -13473,9 +13452,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.notes",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
           },
           {
@@ -13495,6 +13471,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -13546,9 +13528,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.notes",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
           },
           {
@@ -13568,6 +13547,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLine.externalNotes",
           },
           {
             $ref: "#/parameters/body.supplierQuoteLine",
@@ -15133,6 +15118,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -15261,6 +15249,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuote.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15341,6 +15332,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuote.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuote.supplierInteractionId",
           },
           {
             $ref: "#/parameters/body.supplierQuote",
@@ -19144,6 +19138,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -19287,6 +19284,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -19382,6 +19382,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoice.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
           },
           {
             $ref: "#/parameters/body.purchaseInvoice",
@@ -22831,6 +22834,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLine.notes",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -22944,6 +22950,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLine.notes",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23009,6 +23018,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLine.notes",
           },
           {
             $ref: "#/parameters/body.receiptLine",
@@ -33739,6 +33751,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.externalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrders.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrders.thumbnailPath",
           },
           {
@@ -34687,105 +34702,6 @@ export default {
           },
         },
         tags: ["document"],
-      },
-    },
-    "/receipts": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.receipts.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.receiptId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.sourceDocument",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.sourceDocumentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.sourceDocumentReadableId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.externalDocumentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.supplierId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.status",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.postingDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.invoiced",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.assignee",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.updatedBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receipts.locationName",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/receipts",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["receipts"],
       },
     },
     "/attributeDataType": {
@@ -37912,9 +37828,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLines.notes",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.taxPercent",
           },
           {
@@ -37934,6 +37847,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLines.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLines.externalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.itemType",
@@ -43603,6 +43522,15 @@ export default {
           },
           type: "array",
         },
+        notes: {
+          format: "json",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -44282,34 +44210,6 @@ export default {
           format: "text",
           type: "string",
         },
-        purchaseOrderId: {
-          description:
-            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        purchaseOrderCompletedDate: {
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        supplierQuoteId: {
-          description:
-            "Note:\nThis is a Foreign Key to `supplierQuote.id`.<fk table='supplierQuote' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        supplierQuoteCompletedDate: {
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        quoteDocumentPath: {
-          format: "text",
-          type: "string",
-        },
-        salesOrderDocumentPath: {
-          format: "text",
-          type: "string",
-        },
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
@@ -44673,6 +44573,12 @@ export default {
           format: "text",
           type: "string",
         },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -44992,11 +44898,11 @@ export default {
         "purchaseOrderId",
         "revisionId",
         "status",
-        "orderDate",
         "supplierId",
         "companyId",
         "createdAt",
         "createdBy",
+        "supplierInteractionId",
       ],
       properties: {
         id: {
@@ -45030,7 +44936,6 @@ export default {
           type: "string",
         },
         orderDate: {
-          default: "CURRENT_DATE",
           format: "date",
           type: "string",
         },
@@ -45128,6 +45033,12 @@ export default {
         },
         externalNotes: {
           format: "json",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -46767,9 +46678,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        notes: {
-          format: "json",
-        },
         taxPercent: {
           default: 0,
           format: "numeric",
@@ -46806,6 +46714,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        externalNotes: {
+          format: "json",
         },
       },
       type: "object",
@@ -47671,6 +47585,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "supplierInteractionId",
       ],
       properties: {
         id: {
@@ -47785,6 +47700,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -49380,6 +49301,7 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
+        "supplierInteractionId",
       ],
       properties: {
         id: {
@@ -49534,6 +49456,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -51298,6 +51226,9 @@ export default {
           default: 1,
           format: "numeric",
           type: "number",
+        },
+        notes: {
+          format: "json",
         },
       },
       type: "object",
@@ -56002,6 +55933,12 @@ export default {
         externalNotes: {
           format: "json",
         },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -56477,112 +56414,6 @@ export default {
           type: "string",
         },
         sourceDocumentId: {
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    receipts: {
-      properties: {
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        receiptId: {
-          format: "text",
-          type: "string",
-        },
-        locationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        sourceDocument: {
-          enum: [
-            "Sales Order",
-            "Sales Invoice",
-            "Sales Return Order",
-            "Purchase Order",
-            "Purchase Invoice",
-            "Purchase Return Order",
-            "Inbound Transfer",
-            "Outbound Transfer",
-            "Manufacturing Consumption",
-            "Manufacturing Output",
-          ],
-          format: 'public."receiptSourceDocument"',
-          type: "string",
-        },
-        sourceDocumentId: {
-          format: "text",
-          type: "string",
-        },
-        sourceDocumentReadableId: {
-          format: "text",
-          type: "string",
-        },
-        externalDocumentId: {
-          format: "text",
-          type: "string",
-        },
-        supplierId: {
-          description:
-            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        status: {
-          enum: ["Draft", "Pending", "Posted"],
-          format: 'public."receiptStatus"',
-          type: "string",
-        },
-        postingDate: {
-          format: "date",
-          type: "string",
-        },
-        invoiced: {
-          format: "boolean",
-          type: "boolean",
-        },
-        assignee: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        customFields: {
-          format: "jsonb",
-        },
-        locationName: {
           format: "text",
           type: "string",
         },
@@ -57905,9 +57736,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        notes: {
-          format: "json",
-        },
         taxPercent: {
           format: "numeric",
           type: "number",
@@ -57943,6 +57771,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        externalNotes: {
+          format: "json",
         },
         itemType: {
           enum: [
@@ -62131,6 +61965,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.receipt.notes": {
+      name: "notes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receipt.supplierInteractionId": {
+      name: "supplierInteractionId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderTransaction": {
       name: "purchaseOrderTransaction",
       description: "purchaseOrderTransaction",
@@ -62960,48 +62808,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierInteraction.purchaseOrderId": {
-      name: "purchaseOrderId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierInteraction.purchaseOrderCompletedDate": {
-      name: "purchaseOrderCompletedDate",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierInteraction.supplierQuoteId": {
-      name: "supplierQuoteId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierInteraction.supplierQuoteCompletedDate": {
-      name: "supplierQuoteCompletedDate",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierInteraction.quoteDocumentPath": {
-      name: "quoteDocumentPath",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierInteraction.salesOrderDocumentPath": {
-      name: "salesOrderDocumentPath",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierInteraction.companyId": {
       name: "companyId",
       required: false,
@@ -63481,6 +63287,13 @@ export default {
     },
     "rowFilter.supplierQuotes.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuotes.supplierInteractionId": {
+      name: "supplierInteractionId",
       required: false,
       format: "text",
       in: "query",
@@ -64060,6 +63873,13 @@ export default {
       name: "externalNotes",
       required: false,
       format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.supplierInteractionId": {
+      name: "supplierInteractionId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -66194,13 +66014,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLine.notes": {
-      name: "notes",
-      required: false,
-      format: "json",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLine.taxPercent": {
       name: "taxPercent",
       required: false,
@@ -66247,6 +66060,20 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLine.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLine.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      format: "json",
       in: "query",
       type: "string",
     },
@@ -67639,6 +67466,13 @@ export default {
     },
     "rowFilter.supplierQuote.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuote.supplierInteractionId": {
+      name: "supplierInteractionId",
       required: false,
       format: "text",
       in: "query",
@@ -69835,6 +69669,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoice.supplierInteractionId": {
+      name: "supplierInteractionId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -72182,6 +72023,13 @@ export default {
       name: "conversionFactor",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLine.notes": {
+      name: "notes",
+      required: false,
+      format: "json",
       in: "query",
       type: "string",
     },
@@ -78342,6 +78190,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrders.supplierInteractionId": {
+      name: "supplierInteractionId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseOrders.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -78942,148 +78797,6 @@ export default {
     },
     "rowFilter.document.sourceDocumentId": {
       name: "sourceDocumentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "body.receipts": {
-      name: "receipts",
-      description: "receipts",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/receipts",
-      },
-    },
-    "rowFilter.receipts.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.receiptId": {
-      name: "receiptId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.sourceDocument": {
-      name: "sourceDocument",
-      required: false,
-      format: 'public."receiptSourceDocument"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.sourceDocumentId": {
-      name: "sourceDocumentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.sourceDocumentReadableId": {
-      name: "sourceDocumentReadableId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.externalDocumentId": {
-      name: "externalDocumentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.supplierId": {
-      name: "supplierId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.status": {
-      name: "status",
-      required: false,
-      format: 'public."receiptStatus"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.postingDate": {
-      name: "postingDate",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.invoiced": {
-      name: "invoiced",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.assignee": {
-      name: "assignee",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.customFields": {
-      name: "customFields",
-      required: false,
-      format: "jsonb",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receipts.locationName": {
-      name: "locationName",
       required: false,
       format: "text",
       in: "query",
@@ -80838,13 +80551,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLines.notes": {
-      name: "notes",
-      required: false,
-      format: "json",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLines.taxPercent": {
       name: "taxPercent",
       required: false,
@@ -80891,6 +80597,20 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLines.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLines.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      format: "json",
       in: "query",
       type: "string",
     },

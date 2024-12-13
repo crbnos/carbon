@@ -59,7 +59,7 @@ export async function action({ request }: ActionFunctionArgs) {
     customFields: setCustomFields(formData),
   });
 
-  if (createSupplierQuote.error || !createSupplierQuote.data?.[0]) {
+  if (createSupplierQuote.error || !createSupplierQuote.data?.id) {
     throw redirect(
       path.to.supplierQuotes,
       await flash(
@@ -69,9 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const order = createSupplierQuote.data?.[0];
-
-  throw redirect(path.to.supplierQuote(order.id!));
+  throw redirect(path.to.supplierQuote(createSupplierQuote.data.id));
 }
 
 export default function SupplierQuoteNewRoute() {

@@ -3,6 +3,7 @@ import { toast } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import type { Receipt } from "~/modules/inventory";
+import type { PurchaseInvoice } from "~/modules/invoicing";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
@@ -38,33 +39,50 @@ export const usePurchaseOrder = () => {
   };
 };
 
-export const usePurchaseOrderReceipts = (purchaseOrderId: string) => {
+export const usePurchaseOrderRelatedDocuments = (
+  supplierInteractionId: string
+) => {
   const [receipts, setReceipts] = useState<
     Pick<Receipt, "id" | "receiptId" | "status">[]
   >([]);
+  const [invoices, setInvoices] = useState<
+    Pick<PurchaseInvoice, "id" | "invoiceId" | "status">[]
+  >([]);
+
   const { carbon } = useCarbon();
 
-  const getReceipts = useCallback(
-    async (purchaseOrderId: string) => {
-      if (!carbon || !purchaseOrderId) return;
-      const { data, error } = await carbon
-        .from("receipt")
-        .select("id, receiptId, status")
-        .eq("sourceDocumentId", purchaseOrderId);
+  const getRelatedDocuments = useCallback(
+    async (supplierInteractionId: string) => {
+      if (!carbon || !supplierInteractionId) return;
+      const [receipts, invoices] = await Promise.all([
+        carbon
+          .from("receipt")
+          .select("id, receiptId, status")
+          .eq("supplierInteractionId", supplierInteractionId),
+        carbon
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status")
+          .eq("supplierInteractionId", supplierInteractionId),
+      ]);
 
-      if (error) {
+      if (receipts.error) {
         toast.error("Failed to load receipts");
-        return;
+      } else {
+        setReceipts(receipts.data);
       }
 
-      setReceipts(data);
+      if (invoices.error) {
+        toast.error("Failed to load invoices");
+      } else {
+        setInvoices(invoices.data);
+      }
     },
     [carbon]
   );
 
   useEffect(() => {
-    getReceipts(purchaseOrderId);
-  }, [getReceipts, purchaseOrderId]);
+    getRelatedDocuments(supplierInteractionId);
+  }, [getRelatedDocuments, supplierInteractionId]);
 
-  return receipts;
+  return { receipts, invoices };
 };
