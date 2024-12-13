@@ -101,6 +101,7 @@ const PurchaseOrderLines = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate(`delete/${row.original.id}`)}
+                    destructive
                     disabled={!isEditable || !canDelete}
                   >
                     <DropdownMenuIcon icon={<LuTrash />} />

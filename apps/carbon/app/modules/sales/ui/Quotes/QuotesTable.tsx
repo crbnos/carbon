@@ -279,6 +279,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         </MenuItem>
         <MenuItem
           disabled={!permissions.can("delete", "sales")}
+          destructive
           onClick={() => {
             setSelectedQuotation(row);
             deleteQuotationModal.onOpen();

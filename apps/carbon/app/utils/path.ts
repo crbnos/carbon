@@ -732,6 +732,8 @@ export const path = {
       generatePath(`${x}/sales-order/${orderId}/${id}/details`),
     salesOrderLineToJob: (orderId: string, lineId: string) =>
       generatePath(`${x}/sales-order/${orderId}/${lineId}/job`),
+    salesOrderLinesToJobs: (orderId: string) =>
+      generatePath(`${x}/sales-order/${orderId}/lines/jobs`),
     salesOrderPayment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/payment`),
     salesOrderRelease: (id: string) =>

@@ -208,6 +208,7 @@ const CustomersTable = memo(
               Edit
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "sales")}
               onClick={() => {
                 setSelectedCustomer(row);

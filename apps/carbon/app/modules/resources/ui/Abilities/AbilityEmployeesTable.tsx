@@ -114,6 +114,7 @@ const AbilityEmployeesTable = ({
             Edit Employee Ability
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
               navigate(path.to.deleteEmployeeAbility(abilityId, row.id));

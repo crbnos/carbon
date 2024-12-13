@@ -102,6 +102,7 @@ const SupplierProccesses = ({ processes }: SupplierProccessesProps) => {
                         )
                       )
                     }
+                    destructive
                     disabled={!canDelete}
                   >
                     <DropdownMenuIcon icon={<LuTrash />} />

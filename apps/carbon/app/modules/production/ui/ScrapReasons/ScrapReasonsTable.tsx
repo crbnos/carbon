@@ -54,6 +54,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
             Edit Scrap Reason
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "sales")}
             onClick={() => {
               navigate(

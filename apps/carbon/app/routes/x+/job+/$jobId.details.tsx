@@ -100,7 +100,7 @@ export default function JobDetailsRoute() {
         notes={jobData?.job.notes as JSONContent}
       />
       {permissions.is("employee") && (
-        <div className="grid grid-cols-1 2xl:grid-cols-2 w-full gap-2">
+        <>
           <Suspense
             fallback={
               <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
@@ -132,7 +132,7 @@ export default function JobDetailsRoute() {
             uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
             viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
           />
-        </div>
+        </>
       )}
     </VStack>
   );

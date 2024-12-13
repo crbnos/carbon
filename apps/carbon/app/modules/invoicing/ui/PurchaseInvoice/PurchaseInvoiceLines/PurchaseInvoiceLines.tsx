@@ -99,6 +99,7 @@ const PurchaseInvoiceLines = () => {
                   <DropdownMenuItem
                     onClick={() => navigate(`delete/${row.original.id}`)}
                     disabled={!isEditable || !canDelete}
+                    destructive
                   >
                     <DropdownMenuIcon icon={<LuTrash />} />
                     Delete Line

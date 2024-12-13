@@ -68,6 +68,7 @@ const SupplierStatusesTable = memo(
               Edit Supplier Status
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "purchasing")}
               onClick={() => {
                 navigate(

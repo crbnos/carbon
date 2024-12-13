@@ -46,6 +46,7 @@ const CustomerLocations = ({ locations }: CustomerLocationsProps) => {
       if (permissions.can("delete", "sales")) {
         actions.push({
           label: "Delete Location",
+          destructive: true,
           icon: <LuTrash />,
           onClick: () => {
             setSelectedLocation(location);

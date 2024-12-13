@@ -193,6 +193,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             Edit Process
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
               navigate(

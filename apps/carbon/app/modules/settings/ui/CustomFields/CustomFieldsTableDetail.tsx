@@ -147,7 +147,7 @@ const CustomFieldCategoryDetail = ({
             Edit Custom Field
           </Link>
         </MenuItem>
-        <MenuItem onClick={() => onDelete(fieldMap[fieldId])}>
+        <MenuItem destructive onClick={() => onDelete(fieldMap[fieldId])}>
           <MenuIcon icon={<LuTrash />} />
           Delete Custom Field
         </MenuItem>

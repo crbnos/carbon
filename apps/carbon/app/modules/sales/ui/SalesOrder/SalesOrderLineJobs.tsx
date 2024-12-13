@@ -168,8 +168,8 @@ export function SalesOrderLineJobs({
               action={path.to.salesOrderLineToJob(orderId, lineId)}
               defaultValues={{
                 customerId: salesOrder.customerId ?? undefined,
-                dueDate: line.promisedDate ?? "",
                 deadlineType: "Hard Deadline",
+                dueDate: line.promisedDate ?? "",
                 itemId: line.itemId ?? undefined,
                 locationId: line.locationId ?? "",
                 modelUploadId: line.modelUploadId ?? undefined,

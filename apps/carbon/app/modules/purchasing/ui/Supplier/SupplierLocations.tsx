@@ -48,6 +48,7 @@ const SupplierLocations = ({ locations }: SupplierLocationsProps) => {
         actions.push({
           label: "Delete Location",
           icon: <LuTrash />,
+          destructive: true,
           onClick: () => {
             setSelectedLocation(location);
             deleteLocationModal.onOpen();

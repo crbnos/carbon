@@ -231,7 +231,10 @@ const SalesOrderLineForm = ({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={deleteDisclosure.onOpen}>
+                        <DropdownMenuItem
+                          destructive
+                          onClick={deleteDisclosure.onOpen}
+                        >
                           <DropdownMenuIcon icon={<LuTrash />} />
                           Delete Line
                         </DropdownMenuItem>

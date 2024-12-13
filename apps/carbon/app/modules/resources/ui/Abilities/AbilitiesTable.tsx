@@ -109,6 +109,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
             Edit Ability
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
               navigate(path.to.deleteAbility(row.id));

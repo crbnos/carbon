@@ -158,6 +158,7 @@ const SupplierInteractionDocuments = ({
                               Download
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              destructive
                               disabled={!canDelete}
                               onClick={() => deleteAttachment(attachment)}
                             >
