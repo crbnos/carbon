@@ -64,7 +64,7 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full bg-primary-foreground flex flex-col flex-shrink-0 snap-center rounded-none from-card/20 via-card/20",
+    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/20 via-card/20",
     {
       variants: {
         dragging: {
@@ -91,7 +91,16 @@ export function ColumnCard({
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          {column.active && <PulsingDot />}
+          {column.active ? (
+            <PulsingDot />
+          ) : (
+            <div
+              className={cn(
+                "w-2 h-2 bg-muted rounded-full mt-2",
+                totalDuration > 0 && "bg-red-500"
+              )}
+            />
+          )}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
             {totalDuration > 0 ? (

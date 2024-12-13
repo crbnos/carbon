@@ -219,6 +219,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         progress: 0, // set in the client
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,
+        quantity: op.operationQuantity,
+        quantityCompleted: op.quantityComplete,
+        quantityScrapped: op.quantityScrapped,
         salesOrderReadableId: op.salesOrderReadableId,
         salesOrderId: op.salesOrderId,
         salesOrderLineId: op.salesOrderLineId,
@@ -248,6 +251,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showDueDate: true,
   showEmployee: true,
   showProgress: true,
+  showQuantity: true,
   showStatus: true,
   showSalesOrder: true,
   showThumbnail: true,
@@ -280,7 +284,7 @@ function KanbanSchedule() {
     setItems((prevItems) => sortItems(prevItems));
   }, [sortItems]);
 
-  const progressByOperation = useProgressByOperation(
+  const { progressByOperation } = useProgressByOperation(
     items,
     setItems,
     sortItems
@@ -349,100 +353,30 @@ function KanbanSchedule() {
           </PopoverTrigger>
           <PopoverContent className="w-48">
             <VStack>
-              <Switch
-                variant="small"
-                label="Customer"
-                checked={displaySettings.showCustomer}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showCustomer: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Description"
-                checked={displaySettings.showDescription}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showDescription: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Due Date"
-                checked={displaySettings.showDueDate}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showDueDate: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Duration"
-                checked={displaySettings.showDuration}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showDuration: checked,
-                  }))
-                }
-              />
-              {/* <Switch 
-                variant="small" 
-                label="Employee"
-                checked={displaySettings.showEmployee}
-                onCheckedChange={(checked) => setDisplaySettings(prev => ({...prev, showEmployee: checked}))}
-              /> */}
-              <Switch
-                variant="small"
-                label="Progress"
-                checked={displaySettings.showProgress}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showProgress: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Status"
-                checked={displaySettings.showStatus}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showStatus: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Sales Order"
-                checked={displaySettings.showSalesOrder}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showSalesOrder: checked,
-                  }))
-                }
-              />
-              <Switch
-                variant="small"
-                label="Thumbnail"
-                checked={displaySettings.showThumbnail}
-                onCheckedChange={(checked) =>
-                  setDisplaySettings((prev) => ({
-                    ...prev,
-                    showThumbnail: checked,
-                  }))
-                }
-              />
+              {[
+                { key: "showCustomer", label: "Customer" },
+                { key: "showDescription", label: "Description" },
+                { key: "showDueDate", label: "Due Date" },
+                { key: "showDuration", label: "Duration" },
+                { key: "showProgress", label: "Progress" },
+                { key: "showQuantity", label: "Quantity" },
+                { key: "showStatus", label: "Status" },
+                { key: "showSalesOrder", label: "Sales Order" },
+                { key: "showThumbnail", label: "Thumbnail" },
+              ].map(({ key, label }) => (
+                <Switch
+                  key={key}
+                  variant="small"
+                  label={label}
+                  checked={displaySettings[key as keyof typeof displaySettings]}
+                  onCheckedChange={(checked) =>
+                    setDisplaySettings((prev) => ({
+                      ...prev,
+                      [key]: checked,
+                    }))
+                  }
+                />
+              ))}
             </VStack>
           </PopoverContent>
         </Popover>
@@ -529,7 +463,9 @@ function useProgressByOperation(
 
       const { data, error } = await carbon
         .from("productionEvent")
-        .select("id, jobOperationId, duration, startTime, endTime, duration")
+        .select(
+          "id, jobOperationId, duration, startTime, endTime, duration, employeeId"
+        )
         .eq("companyId", companyId)
         .in("jobOperationId", operationIds);
 
@@ -570,11 +506,17 @@ function useProgressByOperation(
 
         let currentProgress = 0;
         let active = false;
+        let employees: Set<string> = new Set();
         events.forEach((event) => {
           if (event.endTime && event.duration) {
             currentProgress += event.duration * 1000;
           } else if (event.startTime) {
             active = true;
+
+            if (event.employeeId) {
+              employees.add(event.employeeId);
+            }
+
             const startTime = toZoned(
               parseAbsolute(event.startTime, getLocalTimeZone()),
               getLocalTimeZone()
@@ -591,20 +533,24 @@ function useProgressByOperation(
           totalDuration,
           progress: currentProgress,
           active,
+          employees,
         };
       }
     );
 
-    return progress;
+    return { progress };
   }, [productionEventsByOperation, items]);
 
   useInterval(() => {
-    setProgressByOperation(getProgress());
-  }, 1000);
+    const { progress } = getProgress();
+
+    setProgressByOperation(progress);
+  }, 5000);
 
   useEffect(() => {
     if (Object.keys(productionEventsByOperation).length > 0) {
-      setProgressByOperation(getProgress());
+      const { progress } = getProgress();
+      setProgressByOperation(progress);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productionEventsByOperation]);
@@ -716,5 +662,5 @@ function useProgressByOperation(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
-  return progressByOperation;
+  return { progressByOperation };
 }

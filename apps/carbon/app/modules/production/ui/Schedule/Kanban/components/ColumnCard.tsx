@@ -29,6 +29,8 @@ type ColumnCardProps = {
   items: Item[];
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
+  selectedGroup: string | null;
+  setSelectedGroup: (jobId: string | null) => void;
 } & DisplaySettings;
 
 export function ColumnCard({
@@ -36,6 +38,8 @@ export function ColumnCard({
   items,
   isOverlay,
   progressByItemId,
+  selectedGroup,
+  setSelectedGroup,
   ...displaySettings
 }: ColumnCardProps) {
   const [params] = useUrlParams();
@@ -104,7 +108,16 @@ export function ColumnCard({
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          {isActive && <PulsingDot />}
+          {isActive ? (
+            <PulsingDot />
+          ) : (
+            <div
+              className={cn(
+                "w-2 h-2 bg-muted rounded-full mt-2",
+                totalDuration > 0 && "bg-red-500"
+              )}
+            />
+          )}
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
             {totalDuration > 0 ? (
@@ -138,8 +151,13 @@ export function ColumnCard({
                   status: progressByItemId[item.id]?.active
                     ? "In Progress"
                     : item.status,
+                  employeeIds: progressByItemId[item.id]?.employees
+                    ? Array.from(progressByItemId[item.id].employees!)
+                    : undefined,
                   progress: progressByItemId[item.id]?.progress ?? 0,
                 }}
+                selectedGroup={selectedGroup}
+                setSelectedGroup={setSelectedGroup}
                 {...displaySettings}
               />
             ))}

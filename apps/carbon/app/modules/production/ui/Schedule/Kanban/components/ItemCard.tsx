@@ -24,8 +24,11 @@ import {
   LuCheckCircle,
   LuClipboardCheck,
   LuExternalLink,
+  LuFlashlight,
+  LuFlashlightOff,
   LuGripVertical,
   LuTimer,
+  LuTrash,
   LuUsers,
   LuUserSquare,
   LuXCircle,
@@ -38,6 +41,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 
+import { FaTasks } from "react-icons/fa";
 import { getPrivateUrl, path } from "~/utils/path";
 import { getDeadlineIcon, getDeadlineText } from "../../../Jobs/Deadline";
 import type { DisplaySettings, Item, ItemDragData } from "../types";
@@ -45,12 +49,18 @@ import type { DisplaySettings, Item, ItemDragData } from "../types";
 type ItemCardProps = {
   item: Item;
   isOverlay?: boolean;
+  selectedGroup: string | null;
+  setSelectedGroup: (jobId: string | null) => void;
 } & DisplaySettings;
 
 const cardVariants = cva(
   "dark:bg-gradient-to-tr dark:via-card dark:to-card dark:hover:to-muted/30 dark:hover:via-muted/30 bg-card hover:bg-muted/30",
   {
     variants: {
+      highlighted: {
+        true: "ring-2 ring-primary opacity-100",
+        false: "",
+      },
       dragging: {
         over: "ring-2 ring-primary opacity-30",
         overlay:
@@ -61,9 +71,9 @@ const cardVariants = cva(
           "border-emerald-600/30 dark:from-emerald-600/10 bg-emerald-600/5",
         Ready: "",
         Done: "",
-        Paused: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
+        Paused: "",
         Canceled: "border-red-500/30 dark:from-red-500/10 bg-red-500/5",
-        Waiting: "border-yellow-500/30 dark:from-yellow-500/10 bg-yellow-500/5",
+        Waiting: "",
         Todo: "border-border",
       },
     },
@@ -91,6 +101,7 @@ const cardHeaderVariants = cva("border-b", {
 });
 
 export function ItemCard({
+  selectedGroup,
   item,
   isOverlay,
   showCustomer,
@@ -99,9 +110,11 @@ export function ItemCard({
   showDuration,
   showEmployee,
   showProgress,
+  showQuantity,
   showStatus,
   showSalesOrder,
   showThumbnail,
+  setSelectedGroup,
 }: ItemCardProps) {
   const {
     setNodeRef,
@@ -120,6 +133,8 @@ export function ItemCard({
       roleDescription: "item",
     },
   });
+
+  const isHighlighted = selectedGroup === item.title;
 
   const style = {
     transition,
@@ -140,6 +155,7 @@ export function ItemCard({
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           status: item.status,
+          highlighted: isHighlighted,
         })
       )}
     >
@@ -167,6 +183,14 @@ export function ItemCard({
           </div>
           <HStack spacing={0} className="-mr-4">
             <IconButton
+              aria-label="Highlight job"
+              icon={isHighlighted ? <LuFlashlightOff /> : <LuFlashlight />}
+              variant={"ghost"}
+              onClick={() =>
+                setSelectedGroup?.(isHighlighted ? null : item.title)
+              }
+            />
+            <IconButton
               aria-label="Move item"
               icon={<LuGripVertical />}
               variant={"ghost"}
@@ -192,28 +216,45 @@ export function ItemCard({
           Number.isFinite(item?.duration) &&
           Number(item?.progress) >= 0 &&
           Number(item?.duration) >= 0 && (
-            <Progress
-              indicatorClassName={
-                (item.progress ?? 0) > (item.duration ?? 0)
-                  ? "bg-destructive"
-                  : item.status === "Paused"
-                  ? "bg-yellow-500"
-                  : ""
-              }
-              numerator={
-                item.progress ? formatDurationMilliseconds(item.progress) : ""
-              }
-              denominator={
-                item.duration ? formatDurationMilliseconds(item.duration) : ""
-              }
-              value={Math.min(
-                item.progress && item.duration
-                  ? (item.progress / item.duration) * 100
-                  : 0,
-                100
-              )}
-            />
+            <HStack>
+              <Progress
+                indicatorClassName={
+                  (item.progress ?? 0) > (item.duration ?? 0)
+                    ? "bg-destructive"
+                    : item.status === "Paused"
+                    ? "bg-yellow-500"
+                    : ""
+                }
+                numerator={
+                  item.progress ? formatDurationMilliseconds(item.progress) : ""
+                }
+                denominator={
+                  item.duration ? formatDurationMilliseconds(item.duration) : ""
+                }
+                value={Math.min(
+                  item.progress && item.duration
+                    ? (item.progress / item.duration) * 100
+                    : 0,
+                  100
+                )}
+              />
+              <LuTimer className="text-muted-foreground w-4 h-4" />
+            </HStack>
           )}
+        {showProgress && item.quantity && (
+          <HStack>
+            <Progress
+              numerator={(item.quantityCompleted ?? 0).toString()}
+              denominator={(item.quantity ?? 0).toString()}
+              value={
+                item.quantityCompleted && item.quantity
+                  ? (item.quantityCompleted / item.quantity) * 100
+                  : 0
+              }
+            />
+            <FaTasks className="text-muted-foreground w-4 h-4" />
+          </HStack>
+        )}
       </CardHeader>
       <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
         {showThumbnail && item.thumbnailPath && (
@@ -300,10 +341,19 @@ export function ItemCard({
           </HStack>
         )}
 
-        {showEmployee && item.employeeIds && (
-          <HStack className="justify-start space-x-2">
-            <LuUsers className="text-muted-foreground" />
-            <EmployeeAvatarGroup employeeIds={item.employeeIds} />
+        {showEmployee &&
+          Array.isArray(item.employeeIds) &&
+          item.employeeIds.length > 0 && (
+            <HStack className="justify-start space-x-2">
+              <LuUsers className="text-muted-foreground" />
+              <EmployeeAvatarGroup employeeIds={item.employeeIds} />
+            </HStack>
+          )}
+
+        {showQuantity && Number(item.quantityScrapped) > 0 && (
+          <HStack className="justify-start space-x-2 text-red-500">
+            <LuTrash className="w-4 h-4" />
+            <span className="text-sm">{item.quantityScrapped} Scrapped</span>
           </HStack>
         )}
       </CardContent>

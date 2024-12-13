@@ -210,7 +210,7 @@ export default function ScheduleRoute() {
   return (
     <ClientOnly
       fallback={
-        <div className="flex h-screen w-full items-center justify-center">
+        <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width))] items-center justify-center">
           <Spinner className="h-8 w-8" />
         </div>
       }
@@ -279,7 +279,7 @@ function KanbanSchedule() {
   }, [processes, workCenters]);
 
   return (
-    <div className="flex flex-col h-full w-full">
+    <div className="flex flex-col h-screen w-full">
       <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
@@ -411,7 +411,7 @@ function KanbanSchedule() {
           </HStack>
         )}
         <div className="flex flex-grow h-full items-stretch overflow-hidden relative">
-          <div className="flex flex-1 min-h-0 w-full relative">
+          <div className="flex flex-1 min-h-full w-full relative">
             {columns.length > 0 ? (
               <Kanban
                 columns={columns}
