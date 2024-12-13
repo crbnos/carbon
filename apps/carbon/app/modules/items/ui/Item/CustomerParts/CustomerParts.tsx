@@ -68,6 +68,7 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
                         path.to.deleteCustomerPart(itemId, row.original.id!)
                       )
                     }
+                    destructive
                     disabled={!canDelete}
                   >
                     <DropdownMenuIcon icon={<LuTrash />} />

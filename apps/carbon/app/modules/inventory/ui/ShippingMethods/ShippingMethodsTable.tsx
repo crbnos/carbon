@@ -111,6 +111,7 @@ const ShippingMethodsTable = memo(
             </MenuItem>
             <MenuItem
               disabled={!permissions.can("delete", "inventory")}
+              destructive
               onClick={() => {
                 navigate(
                   `${path.to.deleteShippingMethod(row.id)}?${params.toString()}`

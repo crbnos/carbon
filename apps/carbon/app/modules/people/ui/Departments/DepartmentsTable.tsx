@@ -75,6 +75,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
             Edit Department
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "people")}
             onClick={() => {
               navigate(

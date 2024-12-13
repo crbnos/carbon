@@ -225,6 +225,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           Edit
         </MenuItem>
         <MenuItem
+          destructive
           disabled={!permissions.can("delete", "sales")}
           onClick={() => {
             setSelectedSalesRFQ(row);

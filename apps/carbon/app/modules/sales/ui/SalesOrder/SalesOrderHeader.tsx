@@ -8,6 +8,7 @@ import {
   HStack,
   Heading,
   IconButton,
+  useDisclosure,
 } from "@carbon/react";
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
@@ -17,6 +18,8 @@ import {
   LuChevronDown,
   LuEye,
   LuFile,
+  LuGitCompare,
+  LuMoreVertical,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -25,9 +28,11 @@ import {
 
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { path } from "~/utils/path";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 
+import Confirm from "~/components/Modals/Confirm/Confirm";
 import SalesStatus from "./SalesStatus";
 
 const SalesOrderHeader = () => {
@@ -43,7 +48,10 @@ const SalesOrderHeader = () => {
 
   const permissions = usePermissions();
 
-  const statusFetcher = useFetcher<{}>();
+  const statusFetcher = useFetcher<typeof statusAction>();
+
+  const salesOrderToJobsModal = useDisclosure();
+  // const deleteSalesOrderModal = useDisclosure();
 
   return (
     <>
@@ -61,6 +69,40 @@ const SalesOrderHeader = () => {
                 <span>{routeData?.salesOrder?.salesOrderId}</span>
               </Heading>
             </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More options"
+                  icon={<LuMoreVertical />}
+                  variant="ghost"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  disabled={
+                    !permissions.can("create", "production") ||
+                    !!routeData?.salesOrder?.jobs
+                  }
+                  onClick={salesOrderToJobsModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuGitCompare />} />
+                  Convert Lines to Jobs
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem
+                  destructive
+                  disabled={
+                    !permissions.can("delete", "sales") ||
+                    !["Draft", "Needs Approval"].includes(
+                      routeData?.salesOrder?.status ?? ""
+                    )
+                  }
+                  onClick={deleteSalesOrderModal.onOpen}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  Delete Sales Order
+                </DropdownMenuItem> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <SalesStatus status={routeData?.salesOrder?.status} />
           </HStack>
           <HStack>
@@ -207,6 +249,16 @@ const SalesOrderHeader = () => {
           </HStack>
         </HStack>
       </div>
+      {salesOrderToJobsModal.isOpen && (
+        <Confirm
+          title="Convert Lines to Jobs"
+          text="Are you sure you want to create jobs for this sales order? This will create jobs for all lines that don't already have jobs."
+          confirmText="Create Jobs"
+          onCancel={salesOrderToJobsModal.onClose}
+          onSubmit={salesOrderToJobsModal.onClose}
+          action={path.to.salesOrderLinesToJobs(orderId)}
+        />
+      )}
     </>
   );
 };

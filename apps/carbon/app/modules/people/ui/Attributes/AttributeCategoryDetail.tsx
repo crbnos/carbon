@@ -123,7 +123,10 @@ const AttributeCategoryDetail = ({
             Edit Attribute
           </Link>
         </MenuItem>
-        <MenuItem onClick={() => onDelete(attributeMap[attributeId])}>
+        <MenuItem
+          destructive
+          onClick={() => onDelete(attributeMap[attributeId])}
+        >
           <MenuIcon icon={<LuTrash />} />
           Delete Attribute
         </MenuItem>

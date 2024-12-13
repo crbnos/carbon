@@ -188,6 +188,7 @@ const ProductionEventsTable = memo(
             Edit Event
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => onDelete(row)}
           >

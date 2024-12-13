@@ -222,6 +222,7 @@ const SupplierQuotesTable = memo(
             Edit
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "purchasing")}
             onClick={() => {
               setSelectedSupplierQuote(row);

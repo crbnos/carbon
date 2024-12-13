@@ -244,7 +244,7 @@ const EmployeesTable = memo(
                     setSelectedUserIds([row.id!]);
                     deactivateEmployeeModal.onOpen();
                   }}
-                  className="text-destructive hover:text-destructive"
+                  destructive
                 >
                   <MenuIcon icon={<LuBan />} />
                   Deactivate Account
@@ -267,7 +267,7 @@ const EmployeesTable = memo(
                       setSelectedUserIds([row.id!]);
                       revokeInviteModal.onOpen();
                     }}
-                    className="text-destructive hover:text-destructive"
+                    destructive
                   >
                     <MenuIcon icon={<LuBan />} />
                     Revoke Invite

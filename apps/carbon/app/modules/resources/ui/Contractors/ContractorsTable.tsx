@@ -123,6 +123,7 @@ const ContractorsTable = memo(
               Edit Contractor
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "resources")}
               onClick={() => {
                 navigate(

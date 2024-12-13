@@ -342,6 +342,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           </MenuItem>*/}
         <MenuItem
           disabled={!permissions.can("delete", "sales")}
+          destructive
           onClick={() => {
             setSelectedSalesOrder(row);
             deleteSalesOrderModal.onOpen();

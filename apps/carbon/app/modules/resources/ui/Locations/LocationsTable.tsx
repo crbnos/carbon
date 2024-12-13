@@ -141,6 +141,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
             Edit Location
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
               navigate(

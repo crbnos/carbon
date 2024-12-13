@@ -291,6 +291,7 @@ const SupplierInteractionLineDocuments = ({
                               Download
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              destructive
                               disabled={!canDelete}
                               onClick={() => deleteFile(file)}
                             >

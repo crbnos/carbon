@@ -385,6 +385,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
           Edit Part
         </MenuItem>
         <MenuItem
+          destructive
           disabled={!permissions.can("delete", "parts")}
           onClick={() => {
             setSelectedItem(row);

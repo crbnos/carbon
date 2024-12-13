@@ -134,6 +134,7 @@ const AttributeCategoriesTable = memo(
               Edit Attribute Category
             </MenuItem>
             <MenuItem
+              destructive
               disabled={row.protected || !permissions.can("delete", "users")}
               onClick={() => onDelete(row)}
             >

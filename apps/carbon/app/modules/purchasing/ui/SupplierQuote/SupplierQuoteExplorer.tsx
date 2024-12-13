@@ -216,6 +216,7 @@ function SupplierQuoteLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
                     e.stopPropagation();

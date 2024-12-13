@@ -69,6 +69,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
             Edit Employee Type
           </MenuItem>
           <MenuItem
+            destructive
             disabled={row.protected || !permissions.can("delete", "users")}
             onClick={() => {
               navigate(

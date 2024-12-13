@@ -235,7 +235,7 @@ const CustomerAccountsTable = memo(
                     setSelectedUserIds([row.user.id]);
                     deactivateCustomerModal.onOpen();
                   }}
-                  className="text-destructive hover:text-destructive"
+                  className="text-red-500 hover:text-red-500"
                 >
                   <MenuIcon icon={<LuBan />} />
                   Deactivate Account
@@ -258,7 +258,7 @@ const CustomerAccountsTable = memo(
                       setSelectedUserIds([row.user.id]);
                       revokeInviteModal.onOpen();
                     }}
-                    className="text-destructive hover:text-destructive"
+                    destructive
                   >
                     <MenuIcon icon={<LuBan />} />
                     Revoke Invite

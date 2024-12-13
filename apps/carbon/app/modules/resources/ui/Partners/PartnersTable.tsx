@@ -99,6 +99,7 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
             Edit Partner
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {
               navigate(

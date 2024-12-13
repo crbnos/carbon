@@ -80,6 +80,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "people")}
+            destructive
             onClick={() => {
               navigate(`${path.to.deleteHoliday(row.id)}?${params.toString()}`);
             }}
