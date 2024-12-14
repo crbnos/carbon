@@ -80,6 +80,7 @@ const SalesOrderHeader = () => {
               <DropdownMenuContent>
                 <DropdownMenuItem
                   disabled={
+                    routeData?.salesOrder?.status !== "Confirmed" ||
                     !permissions.can("create", "production") ||
                     !!routeData?.salesOrder?.jobs
                   }
