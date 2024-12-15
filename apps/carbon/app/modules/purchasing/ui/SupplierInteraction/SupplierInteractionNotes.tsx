@@ -30,7 +30,7 @@ const SupplierInteractionNotes = ({
   externalNotes: initialExternalNotes,
 }: {
   id: string | null;
-  table: "supplierQuote" | "purchaseOrder";
+  table: "supplierQuote" | "purchaseOrder" | "receipt" | "purchaseInvoice";
   title: string;
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
@@ -111,10 +111,12 @@ const SupplierInteractionNotes = ({
               </CardDescription>
             </CardHeader>
             <CardAction>
-              <TabsList>
-                <TabsTrigger value="internal">Internal</TabsTrigger>
-                <TabsTrigger value="external">External</TabsTrigger>
-              </TabsList>
+              {["supplierQuote", "purchaseOrder"].includes(table) && (
+                <TabsList>
+                  <TabsTrigger value="internal">Internal</TabsTrigger>
+                  <TabsTrigger value="external">External</TabsTrigger>
+                </TabsList>
+              )}
             </CardAction>
           </HStack>
           <CardContent>
@@ -137,25 +139,27 @@ const SupplierInteractionNotes = ({
                 />
               )}
             </TabsContent>
-            <TabsContent value="external">
-              {permissions.can("update", "sales") ? (
-                <Editor
-                  initialValue={(externalNotes ?? {}) as JSONContent}
-                  onUpload={onUploadImage}
-                  onChange={(value) => {
-                    setExternalNotes(value);
-                    onUpdateExternalNotes(value);
-                  }}
-                />
-              ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(externalNotes as JSONContent),
-                  }}
-                />
-              )}
-            </TabsContent>
+            {["purchaseOrder", "purchaseInvoice"].includes(table) && (
+              <TabsContent value="external">
+                {permissions.can("update", "sales") ? (
+                  <Editor
+                    initialValue={(externalNotes ?? {}) as JSONContent}
+                    onUpload={onUploadImage}
+                    onChange={(value) => {
+                      setExternalNotes(value);
+                      onUpdateExternalNotes(value);
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="prose dark:prose-invert"
+                    dangerouslySetInnerHTML={{
+                      __html: generateHTML(externalNotes as JSONContent),
+                    }}
+                  />
+                )}
+              </TabsContent>
+            )}
           </CardContent>
         </Tabs>
       </Card>

@@ -128,6 +128,7 @@ export const path = {
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateJob: `${x}/job/update`,
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
+    bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
     bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
@@ -280,7 +281,7 @@ export const path = {
     deleteProductionQuantity: (id: string) =>
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
     deletePurchaseInvoice: (id: string) =>
-      generatePath(`${x}/purchase-invoice/delete/${id}`),
+      generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
       generatePath(`${x}/purchase-invoice/${invoiceId}/lines/delete/${lineId}`),
     deletePurchaseOrder: (id: string) =>
@@ -615,6 +616,8 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDetails: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/details`),
+    purchaseInvoiceExchangeRate: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/exchange-rate`),
     purchaseInvoiceLine: (invoiceId: string, id: string) =>
       generatePath(`${x}/purchase-invoice/${invoiceId}/lines/${id}`),
     purchaseInvoiceLines: (id: string) =>
@@ -622,7 +625,7 @@ export const path = {
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
-    purchaseInvoices: `${x}/invoicing/purchasing`,
+    purchaseInvoices: `${x}/purchasing/invoices`,
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
     purchaseOrderDelivery: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/delivery`),

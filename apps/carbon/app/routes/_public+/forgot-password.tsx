@@ -62,6 +62,7 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
       getCarbonServiceRole(),
       user.data.id
     );
+    console.log({ companies });
 
     if (companies.length > 0) {
       const magicLink = await sendMagicLink(email);

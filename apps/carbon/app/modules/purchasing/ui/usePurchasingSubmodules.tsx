@@ -1,5 +1,6 @@
 import {
   LuContainer,
+  LuCreditCard,
   LuLayoutList,
   LuPackageSearch,
   LuShapes,
@@ -13,19 +14,24 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
     name: "Manage",
     routes: [
       {
-        name: "Purchase Orders",
-        to: path.to.purchaseOrders,
-        icon: <LuLayoutList />,
+        name: "Suppliers",
+        to: path.to.suppliers,
+        icon: <LuContainer />,
       },
       {
-        name: "Supplier Quotes",
+        name: "Quotes",
         to: path.to.supplierQuotes,
         icon: <LuPackageSearch />,
       },
       {
-        name: "Suppliers",
-        to: path.to.suppliers,
-        icon: <LuContainer />,
+        name: "Orders",
+        to: path.to.purchaseOrders,
+        icon: <LuLayoutList />,
+      },
+      {
+        name: "Invoices",
+        to: path.to.purchaseInvoices,
+        icon: <LuCreditCard />,
       },
     ],
   },

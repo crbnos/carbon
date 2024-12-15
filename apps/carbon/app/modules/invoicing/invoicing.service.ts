@@ -77,7 +77,7 @@ export async function getPurchaseInvoiceLines(
   purchaseInvoiceId: string
 ) {
   return client
-    .from("purchaseInvoiceLine")
+    .from("purchaseInvoiceLines")
     .select("*")
     .eq("invoiceId", purchaseInvoiceId)
     .order("createdAt", { ascending: true });
@@ -173,12 +173,7 @@ export async function upsertPurchaseInvoiceLine(
 
   return client
     .from("purchaseInvoiceLine")
-    .insert([
-      {
-        ...purchaseInvoiceLine,
-        currencyCode: purchaseInvoiceLine.currencyCode ?? "USD",
-      },
-    ])
+    .insert([purchaseInvoiceLine])
     .select("id")
     .single();
 }

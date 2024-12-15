@@ -3,9 +3,8 @@ DROP VIEW "purchaseOrderLines";
 
 ALTER TABLE "purchaseOrder" DROP COLUMN "notes";
 ALTER TABLE "purchaseOrder" DROP COLUMN "type";
+
 ALTER TABLE "purchaseOrderLine" DROP COLUMN "notes";
-
-
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
 
@@ -182,8 +181,7 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
 ALTER TABLE "purchaseOrder" ALTER COLUMN "orderDate" DROP DEFAULT,
                            ALTER COLUMN "orderDate" DROP NOT NULL;
 
-ALTER TABLE "receipt" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
-ALTER TABLE "receiptLine" ADD COLUMN "notes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "receipt" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 
 DROP VIEW "receipts";
 
@@ -268,6 +266,11 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
 
 
 DROP VIEW IF EXISTS "purchaseInvoiceLines";
+
+ALTER TABLE "purchaseInvoice" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "purchaseInvoice" ADD COLUMN "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE;
+ALTER TABLE "purchaseInvoice" ADD COLUMN "locationId" TEXT REFERENCES "location"("id") ON DELETE SET NULL;
+
 ALTER TABLE "purchaseInvoiceLine" DROP COLUMN "currencyCode";
 ALTER TABLE "purchaseInvoiceLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 
@@ -317,3 +320,66 @@ AFTER UPDATE OF "exchangeRate" ON "purchaseInvoice"
 FOR EACH ROW
 WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
 EXECUTE FUNCTION update_purchase_invoice_line_price_exchange_rate();
+
+DROP VIEW "purchaseInvoices";
+CREATE OR REPLACE VIEW "purchaseInvoices" WITH(SECURITY_INVOKER=true) AS 
+  SELECT 
+    pi."id",
+    pi."invoiceId",
+    pi."supplierId",
+    pi."invoiceSupplierId",
+    pi."supplierInteractionId",
+    pi."supplierReference",
+    pi."invoiceSupplierContactId",
+    pi."invoiceSupplierLocationId",
+    pi."locationId",
+    pi."postingDate",
+    pi."dateIssued",
+    pi."dateDue",
+    pi."datePaid",
+    pi."paymentTermId",
+    pi."currencyCode",
+    pi."exchangeRate",
+    pi."exchangeRateUpdatedAt",
+    pi."subtotal",
+    pi."totalDiscount",
+    pi."totalAmount",
+    pi."totalTax",
+    pi."balance",
+    pi."assignee",
+    pi."createdBy",
+    pi."createdAt",
+    pi."updatedBy",
+    pi."updatedAt",
+    pi."internalNotes",
+    pi."customFields",
+    pi."companyId",
+    CASE
+      WHEN pi."dateDue" < CURRENT_DATE AND pi."status" = 'Submitted' THEN 'Overdue'
+      ELSE pi."status"
+    END AS status,
+    pt."name" AS "paymentTermName"
+  FROM "purchaseInvoice" pi
+  LEFT JOIN "paymentTerm" pt ON pt."id" = pi."paymentTermId";
+
+DROP VIEW IF EXISTS "purchaseInvoiceLines";
+CREATE OR REPLACE VIEW "purchaseInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
+  SELECT
+    pl.*,
+    CASE
+      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+      WHEN i."thumbnailPath" IS NULL AND imu."thumbnailPath" IS NOT NULL THEN imu."thumbnailPath"
+      ELSE i."thumbnailPath"
+    END as "thumbnailPath",
+    i.name as "itemName",
+    i.description as "itemDescription",
+    ic."unitCost" as "unitCost",
+    sp."supplierPartId"
+  FROM "purchaseInvoiceLine" pl
+  INNER JOIN "purchaseInvoice" pi ON pi.id = pl."invoiceId"
+  LEFT JOIN "modelUpload" mu ON pl."modelUploadId" = mu."id"
+  INNER JOIN "item" i ON i.id = pl."itemId"
+  LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
+  LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
+  LEFT JOIN "supplierPart" sp ON sp."supplierId" = pi."supplierId" AND sp."itemId" = i.id
+);

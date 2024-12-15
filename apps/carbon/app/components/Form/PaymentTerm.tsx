@@ -8,7 +8,18 @@ import type { getPaymentTermsList } from "~/modules/accounting";
 import PaymentTermForm from "~/modules/accounting/ui/PaymentTerms/PaymentTermForm";
 import { path } from "~/utils/path";
 
-type PaymentTermSelectProps = Omit<ComboboxProps, "options">;
+type PaymentTermSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
+  inline?: boolean;
+};
+
+const PaymentTermPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const paymentTerm = options.find((o) => o.value === value);
+  if (!paymentTerm) return null;
+  return <span>{paymentTerm.label}</span>;
+};
 
 const PaymentTerm = (props: PaymentTermSelectProps) => {
   const options = usePaymentTerm();
@@ -24,6 +35,7 @@ const PaymentTerm = (props: PaymentTermSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? PaymentTermPreview : undefined}
         label={props?.label ?? "Payment Term"}
         onCreateOption={(option) => {
           newPaymentTermModal.onOpen();
@@ -52,6 +64,7 @@ const PaymentTerm = (props: PaymentTermSelectProps) => {
     <Combobox
       options={options}
       {...props}
+      inline={props.inline ? PaymentTermPreview : undefined}
       label={props?.label ?? "Payment Term"}
     />
   );

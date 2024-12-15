@@ -20,7 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
-    case "supplierId":
+    case "invoiceSupplierId":
       let currencyCode: string | undefined;
       if (value && ids.length === 1) {
         const supplier = await client
@@ -39,9 +39,11 @@ export async function action({ request }: ActionFunctionArgs) {
           // TODO: update delivery and payment terms
           return json(
             await client
-              .from("purchaseOrder")
+              .from("purchaseInvoice")
               .update({
-                supplierId: value ?? undefined,
+                invoiceSupplierId: value ?? undefined,
+                invoiceSupplierContactId: null,
+                invoiceSupplierLocationId: null,
                 currencyCode: currencyCode ?? undefined,
                 exchangeRate: currency.data?.exchangeRate ?? 1,
                 updatedBy: userId,
@@ -54,7 +56,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       return json(
         await client
-          .from("purchaseOrder")
+          .from("purchaseInvoice")
           .update({
             supplierId: value ?? undefined,
             updatedBy: userId,
@@ -62,20 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
           })
           .in("id", ids as string[])
       );
-    case "locationId":
-    case "deliveryDate":
-    case "receiptPromisedDate":
-    case "receiptRequestedDate":
-      return json(
-        await client
-          .from("purchaseOrderDelivery")
-          .update({
-            [field]: value ?? undefined,
-            updatedBy: userId,
-            updatedAt: new Date().toISOString(),
-          })
-          .in("id", ids as string[])
-      );
+
     case "currencyCode":
       if (value) {
         const currency = await getCurrencyByCode(
@@ -86,10 +75,10 @@ export async function action({ request }: ActionFunctionArgs) {
         if (currency.data) {
           return json(
             await client
-              .from("purchaseOrder")
+              .from("purchaseInvoice")
               .update({
                 currencyCode: value as string,
-                exchangeRate: currency.data.exchangeRate,
+                exchangeRate: currency.data.exchangeRate ?? 1,
                 updatedBy: userId,
                 updatedAt: new Date().toISOString(),
               })
@@ -98,15 +87,19 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
     // don't break -- just let it catch the next case
-    case "supplierContactId":
-    case "supplierLocationId":
+    case "supplierId":
+    case "invoiceSupplierContactId":
+    case "invoiceSupplierLocationId":
+    case "locationId":
     case "supplierReference":
+    case "paymentTermId":
     case "exchangeRate":
-
-    case "orderDate":
+    case "dateIssued":
+    case "dateDue":
+    case "datePaid":
       return json(
         await client
-          .from("purchaseOrder")
+          .from("purchaseInvoice")
           .update({
             [field]: value ? value : null,
             updatedBy: userId,

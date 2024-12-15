@@ -12584,11 +12584,14 @@ export type Database = {
           dateIssued: string | null
           datePaid: string | null
           exchangeRate: number
+          exchangeRateUpdatedAt: string | null
           id: string
+          internalNotes: Json | null
           invoiceId: string
           invoiceSupplierContactId: string | null
           invoiceSupplierId: string | null
           invoiceSupplierLocationId: string | null
+          locationId: string | null
           paymentTermId: string | null
           postingDate: string | null
           status: Database["public"]["Enums"]["purchaseInvoiceStatus"]
@@ -12615,11 +12618,14 @@ export type Database = {
           dateIssued?: string | null
           datePaid?: string | null
           exchangeRate?: number
+          exchangeRateUpdatedAt?: string | null
           id?: string
+          internalNotes?: Json | null
           invoiceId: string
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
           invoiceSupplierLocationId?: string | null
+          locationId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
           status?: Database["public"]["Enums"]["purchaseInvoiceStatus"]
@@ -12646,11 +12652,14 @@ export type Database = {
           dateIssued?: string | null
           datePaid?: string | null
           exchangeRate?: number
+          exchangeRateUpdatedAt?: string | null
           id?: string
+          internalNotes?: Json | null
           invoiceId?: string
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
           invoiceSupplierLocationId?: string | null
+          locationId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
           status?: Database["public"]["Enums"]["purchaseInvoiceStatus"]
@@ -12826,6 +12835,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseInvoice_paymentTermId_fkey"
@@ -13356,6 +13379,13 @@ export type Database = {
             columns: ["invoiceLineId"]
             isOneToOne: false
             referencedRelation: "purchaseInvoiceLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoicePriceChange_invoiceLineId_fkey"
+            columns: ["invoiceLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoiceLines"
             referencedColumns: ["id"]
           },
           {
@@ -16845,9 +16875,9 @@ export type Database = {
           customFields: Json | null
           externalDocumentId: string | null
           id: string
+          internalNotes: Json | null
           invoiced: boolean | null
           locationId: string | null
-          notes: Json | null
           postingDate: string | null
           receiptId: string
           sourceDocument:
@@ -16870,9 +16900,9 @@ export type Database = {
           customFields?: Json | null
           externalDocumentId?: string | null
           id?: string
+          internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
-          notes?: Json | null
           postingDate?: string | null
           receiptId: string
           sourceDocument?:
@@ -16895,9 +16925,9 @@ export type Database = {
           customFields?: Json | null
           externalDocumentId?: string | null
           id?: string
+          internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
-          notes?: Json | null
           postingDate?: string | null
           receiptId?: string
           sourceDocument?:
@@ -27127,6 +27157,285 @@ export type Database = {
           },
         ]
       }
+      purchaseInvoiceLines: {
+        Row: {
+          accountNumber: string | null
+          assetId: string | null
+          companyId: string | null
+          conversionFactor: number | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          description: string | null
+          exchangeRate: number | null
+          extendedPrice: number | null
+          id: string | null
+          internalNotes: Json | null
+          inventoryUnitOfMeasureCode: string | null
+          invoiceId: string | null
+          invoiceLineType: Database["public"]["Enums"]["payableLineType"] | null
+          itemDescription: string | null
+          itemId: string | null
+          itemName: string | null
+          itemReadableId: string | null
+          locationId: string | null
+          modelUploadId: string | null
+          purchaseOrderId: string | null
+          purchaseOrderLineId: string | null
+          purchaseUnitOfMeasureCode: string | null
+          quantity: number | null
+          serviceId: string | null
+          shelfId: string | null
+          shippingCost: number | null
+          supplierExtendedPrice: number | null
+          supplierPartId: string | null
+          supplierShippingCost: number | null
+          supplierTaxAmount: number | null
+          supplierUnitPrice: number | null
+          tags: string[] | null
+          taxAmount: number | null
+          taxPercent: number | null
+          thumbnailPath: string | null
+          totalAmount: number | null
+          unitCost: number | null
+          unitPrice: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_accountNumber_fkey"
+            columns: ["accountNumber", "companyId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["number", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_accountNumber_fkey"
+            columns: ["accountNumber", "companyId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["number", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_inventoryUnitOfMeasureCode_fkey"
+            columns: ["inventoryUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_invoiceId_fkey"
+            columns: ["invoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_invoiceId_fkey"
+            columns: ["invoiceId"]
+            isOneToOne: false
+            referencedRelation: "purchaseInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseOrderLineId_fkey"
+            columns: ["purchaseOrderLineId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_purchaseUnitOfMeasureCode_fkey"
+            columns: ["purchaseUnitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       purchaseInvoices: {
         Row: {
           assignee: string | null
@@ -27140,15 +27449,21 @@ export type Database = {
           dateIssued: string | null
           datePaid: string | null
           exchangeRate: number | null
+          exchangeRateUpdatedAt: string | null
           id: string | null
+          internalNotes: Json | null
           invoiceId: string | null
+          invoiceSupplierContactId: string | null
           invoiceSupplierId: string | null
+          invoiceSupplierLocationId: string | null
+          locationId: string | null
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
           status: Database["public"]["Enums"]["purchaseInvoiceStatus"] | null
           subtotal: number | null
           supplierId: string | null
+          supplierInteractionId: string | null
           supplierReference: string | null
           totalAmount: number | null
           totalDiscount: number | null
@@ -27270,6 +27585,13 @@ export type Database = {
             referencedColumns: ["code", "companyId"]
           },
           {
+            foreignKeyName: "purchaseInvoice_invoiceSupplierContactId_fkey"
+            columns: ["invoiceSupplierContactId"]
+            isOneToOne: false
+            referencedRelation: "supplierContact"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchaseInvoice_invoiceSupplierId_fkey"
             columns: ["invoiceSupplierId"]
             isOneToOne: false
@@ -27303,6 +27625,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "suppliers"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_invoiceSupplierLocationId_fkey"
+            columns: ["invoiceSupplierLocationId"]
+            isOneToOne: false
+            referencedRelation: "supplierLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseInvoice_paymentTermId_fkey"
@@ -27344,6 +27687,13 @@ export type Database = {
             columns: ["supplierId"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoice_supplierInteractionId_fkey"
+            columns: ["supplierInteractionId"]
+            isOneToOne: false
+            referencedRelation: "supplierInteraction"
             referencedColumns: ["id"]
           },
           {

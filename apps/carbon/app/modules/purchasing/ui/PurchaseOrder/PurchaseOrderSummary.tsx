@@ -20,10 +20,10 @@ import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
-import { CustomerAvatar } from "~/components";
+import { SupplierAvatar } from "~/components";
 import { usePercentFormatter, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
-import type { PurchaseOrderLine } from "../../types";
+import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
 
 const LineItems = ({
   currencyCode,
@@ -241,9 +241,9 @@ const PurchaseOrderSummary = () => {
   if (!orderId) throw new Error("Could not find orderId");
 
   const routeData = useRouteData<{
-    purchaseOrder: any;
-    lines: any[];
-    customer: any;
+    purchaseOrder: PurchaseOrder;
+    lines: PurchaseOrderLine[];
+    supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
   const { locale } = useLocale();
@@ -260,19 +260,16 @@ const PurchaseOrderSummary = () => {
   const subtotal =
     routeData?.lines?.reduce((acc, line) => {
       const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
-      const addOns = (line.convertedAddOnCost ?? 0) + (line.shippingCost ?? 0);
+      const addOns = line.shippingCost ?? 0;
       return acc + lineTotal + addOns;
     }, 0) ?? 0;
 
   const tax =
     routeData?.lines?.reduce((acc, line) => {
-      return acc + line.taxAmount;
+      return acc + (line.taxAmount ?? 0);
     }, 0) ?? 0;
 
-  const shippingCost =
-    (routeData?.purchaseOrder?.shippingCost ?? 0) *
-    (routeData?.purchaseOrder?.exchangeRate ?? 1);
-  const total = subtotal + tax + shippingCost;
+  const total = subtotal + tax;
 
   return (
     <Card>
@@ -288,8 +285,8 @@ const PurchaseOrderSummary = () => {
               </CardDescription>
             )}
           </div>
-          <CustomerAvatar
-            customerId={routeData?.purchaseOrder?.customerId ?? null}
+          <SupplierAvatar
+            supplierId={routeData?.purchaseOrder?.supplierId ?? null}
           />
         </HStack>
       </CardHeader>
@@ -324,19 +321,7 @@ const PurchaseOrderSummary = () => {
               locales={locale}
             />
           </HStack>
-          {shippingCost > 0 && (
-            <HStack className="justify-between text-base text-muted-foreground w-full">
-              <span>Shipping:</span>
-              <MotionNumber
-                value={shippingCost}
-                format={{
-                  style: "currency",
-                  currency: routeData?.purchaseOrder?.currencyCode ?? "USD",
-                }}
-                locales={locale}
-              />
-            </HStack>
-          )}
+
           <HStack className="justify-between text-xl font-bold w-full">
             <span>Total:</span>
             <MotionNumber

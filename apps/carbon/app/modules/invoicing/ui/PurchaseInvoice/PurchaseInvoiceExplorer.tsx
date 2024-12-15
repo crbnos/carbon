@@ -14,7 +14,6 @@ import {
   TooltipTrigger,
   useDisclosure,
   useKeyboardShortcuts,
-  useMount,
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
@@ -25,54 +24,51 @@ import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import {
   useOptimisticLocation,
   usePermissions,
-  useRealtime,
   useRouteData,
   useUser,
 } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { Supplier } from "~/modules/purchasing/types";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
-import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
-import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
+import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../types";
+import DeletePurchaseInvoiceLine from "./DeletePurchaseInvoiceLine";
+import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
 
-export default function PurchaseOrderExplorer() {
+export default function PurchaseInvoiceExplorer() {
   const { defaults } = useUser();
-  const { orderId } = useParams();
-  if (!orderId) throw new Error("Could not find orderId");
-  const purchaseOrderData = useRouteData<{
-    purchaseOrder: PurchaseOrder;
-    lines: PurchaseOrderLine[];
+  const { invoiceId } = useParams();
+  if (!invoiceId) throw new Error("Could not find invoiceId");
+  const purchaseInvoiceData = useRouteData<{
+    purchaseInvoice: PurchaseInvoice;
+    purchaseInvoiceLines: PurchaseInvoiceLine[];
     supplier: Supplier;
-  }>(path.to.purchaseOrder(orderId));
+  }>(path.to.purchaseInvoice(invoiceId));
   const permissions = usePermissions();
 
-  const purchaseOrderLineInitialValues = {
-    purchaseOrderId: orderId,
-    purchaseOrderLineType: "Part" as const,
+  const purchaseInvoiceLineInitialValues = {
+    invoiceId: invoiceId,
+    invoiceLineType: "Part" as const,
     purchaseQuantity: 1,
-    supplierUnitPrice: 0,
     locationId:
-      purchaseOrderData?.purchaseOrder?.locationId ?? defaults.locationId ?? "",
-    supplierTaxAmount: 0,
+      purchaseInvoiceData?.purchaseInvoice?.locationId ??
+      defaults.locationId ??
+      "",
+    supplierUnitPrice: 0,
     supplierShippingCost: 0,
-    exchangeRate: purchaseOrderData?.purchaseOrder?.exchangeRate ?? 1,
+    supplierTaxAmount: 0,
+    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
   };
 
-  const newPurchaseOrderLineDisclosure = useDisclosure();
+  const newPurchaseInvoiceLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
-  const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
-  const isDisabled = purchaseOrderData?.purchaseOrder?.status !== "Draft";
-
-  useRealtime(
-    "modelUpload",
-    `modelPath=in.(${purchaseOrderData?.lines
-      .map((d) => d.modelPath)
-      .join(",")})`
+  const [deleteLine, setDeleteLine] = useState<PurchaseInvoiceLine | null>(
+    null
   );
+  const isDisabled = purchaseInvoiceData?.purchaseInvoice?.status !== "Draft";
 
-  const onDeleteLine = (line: PurchaseOrderLine) => {
+  const onDeleteLine = (line: PurchaseInvoiceLine) => {
     setDeleteLine(line);
     deleteLineDisclosure.onOpen();
   };
@@ -97,9 +93,9 @@ export default function PurchaseOrderExplorer() {
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
         >
-          {purchaseOrderData?.lines && purchaseOrderData?.lines?.length > 0 ? (
-            purchaseOrderData?.lines.map((line) => (
-              <PurchaseOrderLineItem
+          {purchaseInvoiceData?.purchaseInvoiceLines?.length ? (
+            purchaseInvoiceData.purchaseInvoiceLines.map((line) => (
+              <PurchaseInvoiceLineItem
                 key={line.id}
                 isDisabled={isDisabled}
                 line={line}
@@ -113,7 +109,7 @@ export default function PurchaseOrderExplorer() {
                   isDisabled={isDisabled}
                   leftIcon={<LuPlusCircle />}
                   variant="secondary"
-                  onClick={newPurchaseOrderLineDisclosure.onOpen}
+                  onClick={newPurchaseInvoiceLineDisclosure.onOpen}
                 >
                   Add Line Item
                 </Button>
@@ -130,7 +126,7 @@ export default function PurchaseOrderExplorer() {
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuPlusCircle />}
                 variant="secondary"
-                onClick={newPurchaseOrderLineDisclosure.onOpen}
+                onClick={newPurchaseInvoiceLineDisclosure.onOpen}
               >
                 Add Line Item
               </Button>
@@ -144,66 +140,58 @@ export default function PurchaseOrderExplorer() {
           </Tooltip>
         </div>
       </VStack>
-      {newPurchaseOrderLineDisclosure.isOpen && (
-        <PurchaseOrderLineForm
-          initialValues={purchaseOrderLineInitialValues}
+      {newPurchaseInvoiceLineDisclosure.isOpen && (
+        <PurchaseInvoiceLineForm
+          initialValues={purchaseInvoiceLineInitialValues}
           type="modal"
-          onClose={newPurchaseOrderLineDisclosure.onClose}
+          onClose={newPurchaseInvoiceLineDisclosure.onClose}
         />
       )}
       {deleteLineDisclosure.isOpen && (
-        <DeletePurchaseOrderLine line={deleteLine!} onCancel={onDeleteCancel} />
+        <DeletePurchaseInvoiceLine
+          line={deleteLine!}
+          onCancel={onDeleteCancel}
+        />
       )}
     </>
   );
 }
 
-type PurchaseOrderLineItemProps = {
-  line: PurchaseOrderLine;
+type PurchaseInvoiceLineItemProps = {
+  line: PurchaseInvoiceLine;
   isDisabled: boolean;
-  onDelete: (line: PurchaseOrderLine) => void;
+  onDelete: (line: PurchaseInvoiceLine) => void;
 };
 
-function PurchaseOrderLineItem({
+function PurchaseInvoiceLineItem({
   line,
   isDisabled,
   onDelete,
-}: PurchaseOrderLineItemProps) {
-  const { orderId, lineId } = useParams();
-  if (!orderId) throw new Error("Could not find orderId");
+}: PurchaseInvoiceLineItemProps) {
+  const { invoiceId } = useParams();
+  if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
-  const disclosure = useDisclosure();
   const location = useOptimisticLocation();
 
-  useMount(() => {
-    if (lineId === line.id) {
-      disclosure.onOpen();
-    }
-  });
-
   const isSelected =
-    location.pathname === path.to.purchaseOrderLine(orderId, line.id!);
+    location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
 
   return (
     <VStack spacing={0}>
       <Link
-        to={path.to.purchaseOrderLine(orderId, line.id!)}
-        prefetch="intent"
+        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+        // prefetch="intent"
         className="w-full"
       >
         <HStack
           className={cn(
             "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
-            !disclosure.isOpen && "border-b border-border",
+            "border-b border-border",
             isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
           )}
         >
           <HStack spacing={2}>
-            <ItemThumbnail
-              thumbnailPath={line.thumbnailPath}
-              type="Part" // TODO
-            />
-
+            <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
             <VStack spacing={0}>
               <span className="font-semibold line-clamp-1">
                 {line.itemReadableId}
@@ -235,11 +223,11 @@ function PurchaseOrderLineItem({
                   Delete Line
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
-                {methodItemType.includes(line?.purchaseOrderLineType ?? "") && (
+                {methodItemType.includes(line.invoiceLineType ?? "") && (
                   <DropdownMenuItem asChild>
                     <Link
                       to={getLinkToItemDetails(
-                        line.purchaseOrderLineType as MethodItemType,
+                        line.invoiceLineType as MethodItemType,
                         line.itemId!
                       )}
                     >

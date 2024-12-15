@@ -4,8 +4,10 @@ import { methodItemType } from "~/modules/shared";
 export const documentSourceTypes = [
   "Job",
   "Purchase Order",
+  "Purchase Invoice",
   "Quote",
   "Request for Quote",
+  "Supplier Quote",
   ...methodItemType,
 ] as const;
 

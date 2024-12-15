@@ -9,11 +9,11 @@ import { path } from "~/utils/path";
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
-    create: "purchasing",
+    update: "invoicing",
   });
 
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
+  const { invoiceId } = params;
+  if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const formData = await request.formData();
   const currencyCode = formData.get("currencyCode") as string;
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("Could not find currency");
 
   const update = await updatePurchaseOrderExchangeRate(client, {
-    id: orderId,
+    id: invoiceId,
     exchangeRate: currency.data.exchangeRate,
   });
 
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(
-    path.to.purchaseOrderDetails(orderId),
+    path.to.purchaseInvoiceDetails(invoiceId),
     await flash(request, success("Successfully updated exchange rate"))
   );
 }

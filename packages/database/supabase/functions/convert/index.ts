@@ -77,29 +77,40 @@ serve(async (req: Request) => {
     switch (type) {
       case "purchaseOrderToPurchaseInvoice": {
         const purchaseOrderId = id;
-        const [purchaseOrder, purchaseOrderLines, purchaseOrderPayment] =
-          await Promise.all([
-            client
-              .from("purchaseOrder")
-              .select("*")
-              .eq("id", purchaseOrderId)
-              .single(),
-            client
-              .from("purchaseOrderLine")
-              .select("*")
-              .eq("purchaseOrderId", purchaseOrderId),
-            client
-              .from("purchaseOrderPayment")
-              .select("*")
-              .eq("id", purchaseOrderId)
-              .single(),
-          ]);
+        const [
+          purchaseOrder,
+          purchaseOrderLines,
+          purchaseOrderPayment,
+          purchaseOrderDelivery,
+        ] = await Promise.all([
+          client
+            .from("purchaseOrder")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+          client
+            .from("purchaseOrderLine")
+            .select("*")
+            .eq("purchaseOrderId", purchaseOrderId),
+          client
+            .from("purchaseOrderPayment")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+          client
+            .from("purchaseOrderDelivery")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+        ]);
 
         if (!purchaseOrder.data) throw new Error("Purchase order not found");
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
         if (!purchaseOrderPayment.data)
           throw new Error("Purchase order payment not found");
+        if (!purchaseOrderDelivery.data)
+          throw new Error("Purchase order delivery not found");
 
         const uninvoicedLines = purchaseOrderLines?.data?.reduce<
           (typeof purchaseOrderLines)["data"]
@@ -144,8 +155,10 @@ serve(async (req: Request) => {
                 purchaseOrderPayment.data.invoiceSupplierContactId,
               invoiceSupplierLocationId:
                 purchaseOrderPayment.data.invoiceSupplierLocationId,
+              locationId: purchaseOrderDelivery.data.locationId,
               paymentTermId: purchaseOrderPayment.data.paymentTermId,
               currencyCode: purchaseOrder.data.currencyCode ?? "USD",
+              dateIssued: new Date().toISOString().split("T")[0],
               exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
               supplierInteractionId: purchaseOrder.data.supplierInteractionId,

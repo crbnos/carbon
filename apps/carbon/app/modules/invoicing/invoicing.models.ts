@@ -31,6 +31,7 @@ export const purchaseInvoiceValidator = z.object({
   supplierReference: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
   invoiceSupplierId: zfd.text(z.string().optional()),
   invoiceSupplierContactId: zfd.text(z.string().optional()),
   invoiceSupplierLocationId: zfd.text(z.string().optional()),
@@ -59,11 +60,12 @@ export const purchaseInvoiceLineValidator = z
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
-    unitPrice: zfd.numeric(z.number().optional()),
+    supplierUnitPrice: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
-    currencyCode: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
+    supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
   })
   .refine(
     (data) =>
