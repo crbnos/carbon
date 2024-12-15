@@ -313,6 +313,7 @@ const PurchaseOrdersTable = memo(
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "purchasing")}
+            destructive
             onClick={() => {
               setSelectedPurchaseOrder(row);
               deletePurchaseOrderModal.onOpen();

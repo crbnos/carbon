@@ -99,6 +99,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
             Edit Group
           </MenuItem>
           <MenuItem
+            destructive
             disabled={
               row.isEmployeeTypeGroup ||
               row.isCustomerTypeGroup ||

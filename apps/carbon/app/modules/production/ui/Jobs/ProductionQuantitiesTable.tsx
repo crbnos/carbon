@@ -177,6 +177,7 @@ const ProductionQuantitiesTable = memo(
             Edit Quantity
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => onDelete(row)}
           >

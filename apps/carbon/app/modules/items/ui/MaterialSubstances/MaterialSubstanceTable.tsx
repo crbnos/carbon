@@ -83,6 +83,7 @@ const MaterialSubstancesTable = memo(
               disabled={
                 !permissions.can("delete", "parts") || row.companyId === null
               }
+              destructive
               onClick={() => {
                 navigate(
                   `${path.to.deleteMaterialSubstance(

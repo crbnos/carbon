@@ -40,6 +40,7 @@ const Kanban = ({
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
     // Get stored column order from localStorage
     const storedOrder = localStorage.getItem(COLUMN_ORDER_KEY);
@@ -219,6 +220,8 @@ const Kanban = ({
                 items={items.filter((item) => item.columnId === col.id)}
                 progressByItemId={progressByItemId}
                 {...displaySettings}
+                selectedGroup={selectedGroup}
+                setSelectedGroup={setSelectedGroup}
               />
             );
           })}
@@ -233,24 +236,31 @@ const Kanban = ({
                 <ColumnCard
                   isOverlay
                   column={activeColumn}
+                  selectedGroup={selectedGroup}
                   items={items.filter(
                     (item) => item.columnId === activeColumn.id
                   )}
                   progressByItemId={progressByItemId}
                   {...displaySettings}
+                  setSelectedGroup={setSelectedGroup}
                 />
               )}
               {activeItem && (
                 <ItemCard
+                  selectedGroup={selectedGroup}
                   item={{
                     ...activeItem,
                     status: progressByItemId[activeItem.id]?.active
                       ? "In Progress"
                       : activeItem.status,
+                    employeeIds: progressByItemId[activeItem.id]?.employees
+                      ? Array.from(progressByItemId[activeItem.id].employees!)
+                      : undefined,
                     progress: progressByItemId[activeItem.id]?.progress ?? 0,
                   }}
                   isOverlay
                   {...displaySettings}
+                  setSelectedGroup={setSelectedGroup}
                 />
               )}
             </DragOverlay>,

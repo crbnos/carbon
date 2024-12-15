@@ -287,6 +287,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
               !!row.postingDate ||
               row.status === "Pending"
             }
+            destructive
             onClick={() => {
               setSelectedReceipt(row);
               deleteReceiptModal.onOpen();

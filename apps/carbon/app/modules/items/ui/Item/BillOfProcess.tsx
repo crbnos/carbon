@@ -1252,7 +1252,7 @@ function ToolsListItem({
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  className="text-destructive"
+                  destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
                   Delete

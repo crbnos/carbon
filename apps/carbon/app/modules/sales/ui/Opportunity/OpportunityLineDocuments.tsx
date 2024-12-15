@@ -373,6 +373,7 @@ const OpportunityLineDocuments = ({
                             Download
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            destructive
                             disabled={!canDelete}
                             onClick={() => deleteModel(lineId)}
                           >
@@ -430,6 +431,7 @@ const OpportunityLineDocuments = ({
                               Download
                             </DropdownMenuItem>
                             <DropdownMenuItem
+                              destructive
                               disabled={!canDelete}
                               onClick={() => deleteFile(file)}
                             >

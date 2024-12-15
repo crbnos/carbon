@@ -69,6 +69,7 @@ const ItemPostingGroupsTable = memo(
               Edit Item Group
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
                 navigate(

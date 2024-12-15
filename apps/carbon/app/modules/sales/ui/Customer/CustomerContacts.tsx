@@ -49,6 +49,7 @@ const CustomerContacts = ({ contacts }: CustomerContactsProps) => {
       if (permissions.can("delete", "sales")) {
         actions.push({
           label: "Delete Contact",
+          destructive: true,
           icon: <LuTrash />,
           onClick: () => {
             setSelectedContact(contact);

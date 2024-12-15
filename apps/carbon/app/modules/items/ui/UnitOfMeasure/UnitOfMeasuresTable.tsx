@@ -64,6 +64,7 @@ const UnitOfMeasuresTable = memo(
               Edit Unit of Measure
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "parts")}
               onClick={() => {
                 navigate(`${path.to.deleteUom(row.id)}?${params.toString()}`);

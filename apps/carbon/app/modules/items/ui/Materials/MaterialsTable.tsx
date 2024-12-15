@@ -412,6 +412,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           Edit Material
         </MenuItem>
         <MenuItem
+          destructive
           disabled={!permissions.can("delete", "parts")}
           onClick={() => {
             setSelectedItem(row);

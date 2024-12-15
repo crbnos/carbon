@@ -66,6 +66,7 @@ const CustomerStatusesTable = memo(
               Edit Customer Status
             </MenuItem>
             <MenuItem
+              destructive
               disabled={!permissions.can("delete", "sales")}
               onClick={() => {
                 navigate(

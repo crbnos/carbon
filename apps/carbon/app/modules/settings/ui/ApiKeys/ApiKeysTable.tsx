@@ -91,6 +91,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
             Edit API Key
           </MenuItem>
           <MenuItem
+            destructive
             onClick={() => {
               navigate(
                 `${path.to.deleteApiKey(row.id!)}?${params?.toString()}`

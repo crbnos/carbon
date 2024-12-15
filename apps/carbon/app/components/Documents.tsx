@@ -295,6 +295,7 @@ const Documents = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           disabled={!canDelete}
+                          destructive
                           onClick={() => deleteModel()}
                         >
                           Delete
@@ -354,6 +355,7 @@ const Documents = ({
                           <DropdownMenuItem
                             disabled={!canDelete || file.bucket !== writeBucket}
                             onClick={() => deleteFile(file)}
+                            destructive
                           >
                             Delete
                           </DropdownMenuItem>

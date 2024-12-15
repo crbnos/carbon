@@ -368,6 +368,7 @@ const ConsumablesTable = memo(
           </MenuItem>
           <MenuItem
             disabled={!permissions.can("delete", "parts")}
+            destructive
             onClick={() => {
               setSelectedItem(row);
               deleteItemModal.onOpen();

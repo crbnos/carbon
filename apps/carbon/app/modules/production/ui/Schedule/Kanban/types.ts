@@ -23,6 +23,7 @@ export type DisplaySettings = {
   showDuration: boolean;
   showEmployee: boolean;
   showProgress: boolean;
+  showQuantity: boolean;
   showStatus: boolean;
   showSalesOrder: boolean;
   showThumbnail: boolean;
@@ -32,7 +33,7 @@ export type DraggableData = ColumnDragData | ItemDragData;
 
 export type Event = Pick<
   ProductionEvent,
-  "id" | "jobOperationId" | "duration" | "startTime" | "endTime"
+  "id" | "jobOperationId" | "duration" | "startTime" | "endTime" | "employeeId"
 >;
 
 const itemValidator = z.object({
@@ -50,6 +51,9 @@ const itemValidator = z.object({
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
   progress: z.number().optional(), // miliseconds
+  quantity: z.number().optional(),
+  quantityCompleted: z.number().optional(),
+  quantityScrapped: z.number().optional(),
   status: z.enum(jobOperationStatus).optional(),
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),
@@ -71,4 +75,5 @@ export type Progress = {
   totalDuration: number;
   progress: number;
   active: boolean;
+  employees?: Set<string>;
 };

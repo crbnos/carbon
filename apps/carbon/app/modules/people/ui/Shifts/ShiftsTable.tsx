@@ -119,6 +119,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
             Edit Shift
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "people")}
             onClick={() => {
               navigate(`${path.to.deleteShift(row.id!)}?${params.toString()}`);

@@ -381,6 +381,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
           Edit Tool
         </MenuItem>
         <MenuItem
+          destructive
           disabled={!permissions.can("delete", "parts")}
           onClick={() => {
             setSelectedItem(row);

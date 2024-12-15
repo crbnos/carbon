@@ -433,6 +433,7 @@ const DocumentsTable = memo(
           </MenuItem>
           <MenuItem
             disabled={canDelete(row)}
+            destructive
             onClick={() => {
               setSelectedDocument(row);
               deleteDocumentModal.onOpen();

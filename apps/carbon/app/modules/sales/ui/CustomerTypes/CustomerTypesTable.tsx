@@ -64,6 +64,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
             Edit Customer Type
           </MenuItem>
           <MenuItem
+            destructive
             disabled={row.protected || !permissions.can("delete", "sales")}
             onClick={() => {
               navigate(

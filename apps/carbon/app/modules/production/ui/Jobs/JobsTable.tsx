@@ -397,6 +397,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           Edit Job
         </MenuItem>
         <MenuItem
+          destructive
           disabled={!permissions.can("delete", "production")}
           onClick={() => onDelete(row)}
         >

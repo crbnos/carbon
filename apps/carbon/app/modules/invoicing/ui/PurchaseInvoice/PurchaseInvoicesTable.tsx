@@ -251,6 +251,7 @@ const PurchaseInvoicesTable = memo(
             disabled={
               row.status !== "Draft" || !permissions.can("delete", "invoicing")
             }
+            destructive
             onClick={() => {
               setSelectedPurchaseInvoice(row);
               closePurchaseInvoiceModal.onOpen();
