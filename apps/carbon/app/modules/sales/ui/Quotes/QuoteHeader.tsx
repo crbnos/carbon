@@ -91,7 +91,7 @@ const QuoteHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.quoteDetails(quoteId)}>
-              <Heading size="h3" className="flex items-center gap-2">
+              <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.quote?.quoteId}</span>
               </Heading>
             </Link>

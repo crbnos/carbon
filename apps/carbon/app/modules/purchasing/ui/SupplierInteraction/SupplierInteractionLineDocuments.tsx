@@ -37,6 +37,11 @@ import { useCallback } from "react";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { stripSpecialCharacters } from "~/utils/string";
 
+type SupportedDocument =
+  | "Supplier Quote"
+  | "Purchase Order"
+  | "Purchase Invoice";
+
 const useSupplierInteractionLineDocuments = ({
   id,
   lineId,
@@ -44,7 +49,7 @@ const useSupplierInteractionLineDocuments = ({
 }: {
   id: string;
   lineId: string;
-  type: "Supplier Quote" | "Purchase Order";
+  type: SupportedDocument;
 }) => {
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -183,7 +188,7 @@ type SupplierInteractionLineDocumentsProps = {
   files: FileObject[];
   id: string;
   lineId: string;
-  type: "Supplier Quote" | "Purchase Order";
+  type: SupportedDocument;
 };
 
 const SupplierInteractionLineDocuments = ({
@@ -328,7 +333,7 @@ export default SupplierInteractionLineDocuments;
 type SupplierInteractionLineDocumentFormProps = {
   id: string;
   lineId: string;
-  type: "Supplier Quote" | "Purchase Order";
+  type: SupportedDocument;
 };
 
 const SupplierInteractionLineDocumentForm = ({

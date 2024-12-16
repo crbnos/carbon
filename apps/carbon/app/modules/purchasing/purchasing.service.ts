@@ -1006,6 +1006,21 @@ export async function upsertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId } = supplierShipping.data;
 
+  if (purchaseOrder.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      purchaseOrder.companyId,
+      purchaseOrder.currencyCode
+    );
+    if (currency.data) {
+      purchaseOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
+      purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  } else {
+    purchaseOrder.exchangeRate = 1;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const locationId = purchaser?.data?.locationId ?? null;
 
   const order = await client

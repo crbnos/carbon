@@ -9,7 +9,7 @@ import { formatDate } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
-  LuArrowBigDownDash,
+  LuArrowDownToLine,
   LuBookMarked,
   LuCalendar,
   LuContainer,
@@ -308,11 +308,14 @@ const PurchaseOrdersTable = memo(
               receive(row);
             }}
           >
-            <MenuIcon icon={<LuArrowBigDownDash />} />
+            <MenuIcon icon={<LuArrowDownToLine />} />
             Receive
           </MenuItem>
           <MenuItem
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={
+              !permissions.can("delete", "purchasing") ||
+              !["Draft"].includes(row.status ?? "")
+            }
             destructive
             onClick={() => {
               setSelectedPurchaseOrder(row);

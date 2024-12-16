@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
   if (purchaseInvoiceLine.error) {
     throw redirect(
-      path.to.purchaseInvoiceLines(invoiceId),
+      path.to.purchaseInvoiceDetails(invoiceId),
       await flash(
         request,
         error(purchaseInvoiceLine.error, "Failed to get purchase invoice line")
@@ -48,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (deleteTypeError) {
     throw redirect(
-      path.to.purchaseInvoiceLines(invoiceId),
+      path.to.purchaseInvoiceDetails(invoiceId),
       await flash(
         request,
         error(deleteTypeError, "Failed to delete purchase invoice line")
@@ -57,7 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.purchaseInvoiceLines(invoiceId),
+    path.to.purchaseInvoiceDetails(invoiceId),
     await flash(request, success("Successfully deleted purchase invoice line"))
   );
 }
@@ -71,7 +71,7 @@ export default function DeletePurchaseInvoiceLineRoute() {
   if (!lineId) throw notFound("Could not find lineId");
   if (!invoiceId) throw notFound("Could not find invoiceId");
 
-  const onCancel = () => navigate(path.to.purchaseInvoiceLines(invoiceId));
+  const onCancel = () => navigate(path.to.purchaseInvoiceDetails(invoiceId));
 
   return (
     <ConfirmDelete

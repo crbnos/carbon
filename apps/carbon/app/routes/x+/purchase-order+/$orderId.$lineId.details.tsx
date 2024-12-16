@@ -71,13 +71,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  if (data.purchaseOrderLineType === "G/L Account") {
-    data.assetId = undefined;
-    data.itemId = undefined;
-  } else if (data.purchaseOrderLineType === "Fixed Asset") {
-    data.accountNumber = undefined;
-    data.itemId = undefined;
-  } else if (data.purchaseOrderLineType === "Comment") {
+  // if (data.purchaseOrderLineType === "G/L Account") {
+  //   data.assetId = undefined;
+  //   data.itemId = undefined;
+  // } else if (data.purchaseOrderLineType === "Fixed Asset") {
+  //   data.accountNumber = undefined;
+  //   data.itemId = undefined;
+  // } else
+  if (data.purchaseOrderLineType === "Comment") {
     data.accountNumber = undefined;
     data.assetId = undefined;
     data.itemId = undefined;
@@ -153,36 +154,36 @@ export default function EditPurchaseOrderLineRoute() {
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
       />
-      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
-        <Suspense
-          fallback={
-            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          }
-        >
-          <Await resolve={files}>
-            {(resolvedFiles) => (
-              <SupplierInteractionLineDocuments
-                files={resolvedFiles ?? []}
-                id={orderId}
-                lineId={lineId}
-                type="Purchase Order"
-              />
-            )}
-          </Await>
-        </Suspense>
-        <CadModel
-          isReadOnly={!permissions.can("update", "purchasing")}
-          metadata={{
-            itemId: line?.itemId ?? undefined,
-          }}
-          modelPath={line?.modelPath ?? null}
-          title="CAD Model"
-          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        />
-      </div>
+
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={files}>
+          {(resolvedFiles) => (
+            <SupplierInteractionLineDocuments
+              files={resolvedFiles ?? []}
+              id={orderId}
+              lineId={lineId}
+              type="Purchase Order"
+            />
+          )}
+        </Await>
+      </Suspense>
+      <CadModel
+        isReadOnly={!permissions.can("update", "purchasing")}
+        metadata={{
+          itemId: line?.itemId ?? undefined,
+        }}
+        modelPath={line?.modelPath ?? null}
+        title="CAD Model"
+        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+      />
+
       <Outlet />
     </Fragment>
   );

@@ -124,38 +124,37 @@ export default function SalesRFQLine() {
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
       />
-      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
-        <Suspense
-          fallback={
-            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          }
-        >
-          <Await resolve={files}>
-            {(resolvedFiles) => (
-              <OpportunityLineDocuments
-                files={resolvedFiles ?? []}
-                id={rfqId}
-                lineId={lineId}
-                modelUpload={line ?? undefined}
-                type="Request for Quote"
-              />
-            )}
-          </Await>
-        </Suspense>
-        <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
-          metadata={{
-            salesRfqLineId: line.id ?? undefined,
-            itemId: line.itemId ?? undefined,
-          }}
-          modelPath={line?.modelPath ?? null}
-          title="CAD Model"
-          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        />
-      </div>
+
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={files}>
+          {(resolvedFiles) => (
+            <OpportunityLineDocuments
+              files={resolvedFiles ?? []}
+              id={rfqId}
+              lineId={lineId}
+              modelUpload={line ?? undefined}
+              type="Request for Quote"
+            />
+          )}
+        </Await>
+      </Suspense>
+      <CadModel
+        isReadOnly={!permissions.can("update", "sales")}
+        metadata={{
+          salesRfqLineId: line.id ?? undefined,
+          itemId: line.itemId ?? undefined,
+        }}
+        modelPath={line?.modelPath ?? null}
+        title="CAD Model"
+        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+      />
 
       <Outlet />
     </Fragment>

@@ -1,4 +1,4 @@
-import { LuArrowBigDownDash, LuBox, LuTruck } from "react-icons/lu";
+import { LuArrowDownToLine, LuBox, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -42,7 +42,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Receipts",
         to: path.to.receipts,
-        icon: <LuArrowBigDownDash />,
+        icon: <LuArrowDownToLine />,
       },
       // {
       //   name: "Shipments",

@@ -22,7 +22,7 @@ const PartHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.partDetails(itemId)}>
-            <Heading size="h3" className="flex items-center gap-2">
+            <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Part" />} /> */}
               <span>{routeData?.partSummary?.id}</span>
             </Heading>

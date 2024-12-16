@@ -6499,7 +6499,7 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.receipt.notes",
+            $ref: "#/parameters/rowFilter.receipt.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
@@ -6621,7 +6621,7 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.receipt.notes",
+            $ref: "#/parameters/rowFilter.receipt.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
@@ -6697,7 +6697,7 @@ export default {
             $ref: "#/parameters/rowFilter.receipt.tags",
           },
           {
-            $ref: "#/parameters/rowFilter.receipt.notes",
+            $ref: "#/parameters/rowFilter.receipt.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.receipt.supplierInteractionId",
@@ -13110,6 +13110,174 @@ export default {
         tags: ["shelf"],
       },
     },
+    "/purchaseInvoiceLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.invoiceLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.purchaseOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.purchaseOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.serviceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.accountNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.assetId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.supplierUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.inventoryUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.purchaseUnitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.supplierExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.extendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.supplierShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.itemDescription",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.unitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.supplierPartId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/purchaseInvoiceLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["purchaseInvoiceLines"],
+      },
+    },
     "/supplierLedger": {
       get: {
         parameters: [
@@ -19141,6 +19309,15 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.locationId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -19287,6 +19464,15 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.locationId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -19385,6 +19571,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoice.supplierInteractionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoice.locationId",
           },
           {
             $ref: "#/parameters/body.purchaseInvoice",
@@ -22834,9 +23029,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.notes",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -22950,9 +23142,6 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.notes",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23018,9 +23207,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLine.notes",
           },
           {
             $ref: "#/parameters/body.receiptLine",
@@ -25135,10 +25321,22 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoices.supplierId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.invoiceSupplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseInvoices.supplierReference",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoices.invoiceSupplierId",
+            $ref: "#/parameters/rowFilter.purchaseInvoices.invoiceSupplierContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.invoiceSupplierLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.locationId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoices.postingDate",
@@ -25160,6 +25358,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoices.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.exchangeRateUpdatedAt",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoices.subtotal",
@@ -25190,6 +25391,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoices.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.internalNotes",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoices.customFields",
@@ -37384,13 +37588,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.exchangeRate",
@@ -37424,6 +37625,36 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/select",
@@ -37527,13 +37758,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.exchangeRate",
@@ -37567,6 +37795,36 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -37624,13 +37882,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierUnitPrice",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
-          },
-          {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.currencyCode",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.exchangeRate",
@@ -37664,6 +37919,36 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierExtendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.extendedPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine",
@@ -43522,7 +43807,7 @@ export default {
           },
           type: "array",
         },
-        notes: {
+        internalNotes: {
           format: "json",
         },
         supplierInteractionId: {
@@ -46536,6 +46821,212 @@ export default {
       },
       type: "object",
     },
+    purchaseInvoiceLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseInvoice.id`.<fk table='purchaseInvoice' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceLineType: {
+          enum: [
+            "Comment",
+            "G/L Account",
+            "Fixed Asset",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."payableLineType"',
+          type: "string",
+        },
+        purchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        purchaseOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrderLine.id`.<fk table='purchaseOrderLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        serviceId: {
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        accountNumber: {
+          format: "text",
+          type: "string",
+        },
+        assetId: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        totalAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        inventoryUnitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        purchaseUnitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        conversionFactor: {
+          format: "numeric",
+          type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierExtendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierShippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierTaxAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemDescription: {
+          format: "text",
+          type: "string",
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierPartId: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     supplierLedger: {
       required: [
         "id",
@@ -49463,6 +49954,19 @@ export default {
           format: "text",
           type: "string",
         },
+        internalNotes: {
+          format: "json",
+        },
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -51227,9 +51731,6 @@ export default {
           format: "numeric",
           type: "number",
         },
-        notes: {
-          format: "json",
-        },
       },
       type: "object",
     },
@@ -52069,13 +52570,37 @@ export default {
           format: "text",
           type: "string",
         },
+        invoiceSupplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         supplierReference: {
           format: "text",
           type: "string",
         },
-        invoiceSupplierId: {
+        invoiceSupplierContactId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierContact.id`.<fk table='supplierContact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceSupplierLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -52108,6 +52633,10 @@ export default {
         exchangeRate: {
           format: "numeric",
           type: "number",
+        },
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
         },
         subtotal: {
           format: "numeric",
@@ -52154,6 +52683,9 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
+        },
+        internalNotes: {
+          format: "json",
         },
         customFields: {
           format: "jsonb",
@@ -57499,12 +58031,13 @@ export default {
         "invoiceId",
         "invoiceLineType",
         "quantity",
-        "unitPrice",
-        "currencyCode",
+        "supplierUnitPrice",
         "exchangeRate",
         "companyId",
         "createdBy",
         "createdAt",
+        "supplierShippingCost",
+        "supplierTaxAmount",
       ],
       properties: {
         id: {
@@ -57589,7 +58122,7 @@ export default {
           format: "numeric",
           type: "number",
         },
-        unitPrice: {
+        supplierUnitPrice: {
           default: 0,
           format: "numeric",
           type: "number",
@@ -57597,10 +58130,6 @@ export default {
         totalAmount: {
           format: "numeric",
           type: "number",
-        },
-        currencyCode: {
-          format: "text",
-          type: "string",
         },
         exchangeRate: {
           default: 1,
@@ -57656,6 +58185,49 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierExtendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        extendedPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        supplierShippingCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierTaxAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -61965,8 +62537,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receipt.notes": {
-      name: "notes",
+    "rowFilter.receipt.internalNotes": {
+      name: "internalNotes",
       required: false,
       format: "json",
       in: "query",
@@ -65842,6 +66414,309 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.purchaseInvoiceLines": {
+      name: "purchaseInvoiceLines",
+      description: "purchaseInvoiceLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/purchaseInvoiceLines",
+      },
+    },
+    "rowFilter.purchaseInvoiceLines.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.invoiceLineType": {
+      name: "invoiceLineType",
+      required: false,
+      format: 'public."payableLineType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.purchaseOrderId": {
+      name: "purchaseOrderId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.purchaseOrderLineId": {
+      name: "purchaseOrderLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.serviceId": {
+      name: "serviceId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.shelfId": {
+      name: "shelfId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.accountNumber": {
+      name: "accountNumber",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.assetId": {
+      name: "assetId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.supplierUnitPrice": {
+      name: "supplierUnitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.totalAmount": {
+      name: "totalAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.inventoryUnitOfMeasureCode": {
+      name: "inventoryUnitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.purchaseUnitOfMeasureCode": {
+      name: "purchaseUnitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.conversionFactor": {
+      name: "conversionFactor",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.supplierExtendedPrice": {
+      name: "supplierExtendedPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.supplierShippingCost": {
+      name: "supplierShippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.supplierTaxAmount": {
+      name: "supplierTaxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemName": {
+      name: "itemName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.itemDescription": {
+      name: "itemDescription",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.unitCost": {
+      name: "unitCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLines.supplierPartId": {
+      name: "supplierPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.supplierLedger": {
       name: "supplierLedger",
       description: "supplierLedger",
@@ -69679,6 +70554,27 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoice.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoice.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoice.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.customerStatus": {
       name: "customerStatus",
       description: "customerStatus",
@@ -72026,13 +72922,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.notes": {
-      name: "notes",
-      required: false,
-      format: "json",
-      in: "query",
-      type: "string",
-    },
     "body.invite": {
       name: "invite",
       description: "invite",
@@ -73125,6 +74014,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoices.invoiceSupplierId": {
+      name: "invoiceSupplierId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.supplierInteractionId": {
+      name: "supplierInteractionId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseInvoices.supplierReference": {
       name: "supplierReference",
       required: false,
@@ -73132,8 +74035,22 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoices.invoiceSupplierId": {
-      name: "invoiceSupplierId",
+    "rowFilter.purchaseInvoices.invoiceSupplierContactId": {
+      name: "invoiceSupplierContactId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.invoiceSupplierLocationId": {
+      name: "invoiceSupplierLocationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.locationId": {
+      name: "locationId",
       required: false,
       format: "text",
       in: "query",
@@ -73185,6 +74102,13 @@ export default {
       name: "exchangeRate",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
+      required: false,
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -73255,6 +74179,13 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
       in: "query",
       type: "string",
     },
@@ -80337,8 +81268,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLine.unitPrice": {
-      name: "unitPrice",
+    "rowFilter.purchaseInvoiceLine.supplierUnitPrice": {
+      name: "supplierUnitPrice",
       required: false,
       format: "numeric",
       in: "query",
@@ -80348,13 +81279,6 @@ export default {
       name: "totalAmount",
       required: false,
       format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.purchaseInvoiceLine.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -80432,6 +81356,76 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.supplierExtendedPrice": {
+      name: "supplierExtendedPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.extendedPrice": {
+      name: "extendedPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.supplierShippingCost": {
+      name: "supplierShippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.supplierTaxAmount": {
+      name: "supplierTaxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoiceLine.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },

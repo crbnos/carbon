@@ -20,7 +20,6 @@ import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Account,
   ConversionFactor,
   CustomFormFields,
   Hidden,
@@ -167,13 +166,18 @@ const PurchaseInvoiceLineForm = ({
           description: item.data?.name ?? "",
           quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:
-            supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
+            (routeData?.purchaseInvoice?.exchangeRate ?? 1),
           purchaseUom:
+            supplierPart?.data?.supplierUnitOfMeasureCode ??
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??
             "EA",
           inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-          conversionFactor: itemReplenishment?.conversionFactor ?? 1,
+          conversionFactor:
+            supplierPart?.data?.conversionFactor ??
+            itemReplenishment?.conversionFactor ??
+            1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });
 
@@ -248,6 +252,10 @@ const PurchaseInvoiceLineForm = ({
               <Hidden name="itemReadableId" value={itemData.itemReadableId} />
               <Hidden name="description" value={itemData.description} />
               <Hidden
+                name="exchangeRate"
+                value={routeData?.purchaseInvoice?.exchangeRate ?? 1}
+              />
+              <Hidden
                 name="inventoryUnitOfMeasureCode"
                 value={itemData?.inventoryUom}
               />
@@ -275,7 +283,7 @@ const PurchaseInvoiceLineForm = ({
                     />
                   )}
 
-                  {itemType === "G/L Account" && (
+                  {/* {itemType === "G/L Account" && (
                     <Account
                       name="accountNumber"
                       label="Account"
@@ -298,7 +306,7 @@ const PurchaseInvoiceLineForm = ({
                   )}
                   {itemType === "Fixed Asset" && (
                     <Select name="assetId" label="Asset" options={[]} />
-                  )}
+                  )} */}
                   <FormControl>
                     <FormLabel>Description</FormLabel>
                     <Input

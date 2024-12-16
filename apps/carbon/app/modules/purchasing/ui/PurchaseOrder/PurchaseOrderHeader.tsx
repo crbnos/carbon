@@ -14,7 +14,7 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
-  LuArrowBigDownDash,
+  LuArrowDownToLine,
   LuCheckCheck,
   LuChevronDown,
   LuCreditCard,
@@ -76,7 +76,7 @@ const PurchaseOrderHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.purchaseOrderDetails(orderId)}>
-              <Heading size="h3" className="flex items-center gap-2">
+              <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.purchaseOrder?.purchaseOrderId}</span>
               </Heading>
             </Link>
@@ -126,7 +126,7 @@ const PurchaseOrderHeader = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    leftIcon={<LuArrowBigDownDash />}
+                    leftIcon={<LuArrowDownToLine />}
                     variant={
                       ["To Receive", "To Receive and Invoice"].includes(
                         routeData?.purchaseOrder?.status ?? ""
@@ -159,7 +159,7 @@ const PurchaseOrderHeader = () => {
                   {receipts.map((receipt) => (
                     <DropdownMenuItem key={receipt.id} asChild>
                       <Link to={path.to.receipt(receipt.id)}>
-                        <DropdownMenuIcon icon={<LuArrowBigDownDash />} />
+                        <DropdownMenuIcon icon={<LuArrowDownToLine />} />
                         <HStack spacing={8}>
                           <span>{receipt.receiptId}</span>
                           <ReceiptStatus status={receipt.status} />
@@ -171,7 +171,7 @@ const PurchaseOrderHeader = () => {
               </DropdownMenu>
             ) : (
               <Button
-                leftIcon={<LuArrowBigDownDash />}
+                leftIcon={<LuArrowDownToLine />}
                 isDisabled={
                   !["To Receive", "To Receive and Invoice"].includes(
                     routeData?.purchaseOrder?.status ?? ""

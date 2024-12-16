@@ -53,7 +53,7 @@ const ReceiptHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.receiptDetails(receiptId)}>
-              <Heading size="h3" className="flex items-center gap-2">
+              <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.receipt?.receiptId}</span>
               </Heading>
             </Link>

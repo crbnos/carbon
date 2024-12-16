@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Invoices",
+  breadcrumb: "Purchase Invoices",
   to: path.to.purchaseInvoices,
 };
 

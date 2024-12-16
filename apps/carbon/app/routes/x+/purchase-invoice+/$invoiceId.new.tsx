@@ -2,10 +2,12 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteData } from "@carbon/remix";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { PurchaseInvoiceLineType } from "~/modules/invoicing";
+import { useUser } from "~/hooks";
+import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
   PurchaseInvoiceLineForm,
   purchaseInvoiceLineValidator,
@@ -43,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (createPurchaseInvoiceLine.error) {
     throw redirect(
-      path.to.purchaseInvoiceLines(invoiceId),
+      path.to.purchaseInvoiceDetails(invoiceId),
       await flash(
         request,
         error(
@@ -54,23 +56,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.purchaseInvoiceLines(invoiceId));
+  throw redirect(
+    path.to.purchaseInvoiceLine(invoiceId, createPurchaseInvoiceLine.data.id)
+  );
 }
 
 export default function NewPurchaseInvoiceLineRoute() {
+  const { defaults } = useUser();
   const { invoiceId } = useParams();
+  if (!invoiceId) throw new Error("Could not find purchase invoice id");
+  const purchaseInvoiceData = useRouteData<{
+    purchaseInvoice: PurchaseInvoice;
+  }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceId) throw new Error("Could not find purchase invoice id");
 
   const initialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Part" as PurchaseInvoiceLineType,
-    itemId: "",
-    quantity: 1,
-    unitPrice: 0,
-    setupPrice: 0,
-    unitOfMeasureCode: "",
-    shelfId: "",
+    invoiceLineType: "Part" as const,
+    purchaseQuantity: 1,
+    locationId:
+      purchaseInvoiceData?.purchaseInvoice?.locationId ??
+      defaults.locationId ??
+      "",
+    supplierUnitPrice: 0,
+    supplierShippingCost: 0,
+    supplierTaxAmount: 0,
+    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
   };
 
   return <PurchaseInvoiceLineForm initialValues={initialValues} />;

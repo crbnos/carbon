@@ -31,7 +31,7 @@ const SupplierInteractionLineNotes = ({
   externalNotes: initialExternalNotes,
 }: {
   id: string | null;
-  table: "supplierQuoteLine" | "purchaseOrderLine";
+  table: "supplierQuoteLine" | "purchaseOrderLine" | "purchaseInvoiceLine";
   title: string;
   subTitle: string;
   internalNotes?: JSONContent;
@@ -114,10 +114,12 @@ const SupplierInteractionLineNotes = ({
               </CardDescription>
             </CardHeader>
             <CardAction>
-              <TabsList>
-                <TabsTrigger value="internal">Internal</TabsTrigger>
-                <TabsTrigger value="external">External</TabsTrigger>
-              </TabsList>
+              {["supplierQuoteLine", "purchaseOrderLine"].includes(table) && (
+                <TabsList>
+                  <TabsTrigger value="internal">Internal</TabsTrigger>
+                  <TabsTrigger value="external">External</TabsTrigger>
+                </TabsList>
+              )}
             </CardAction>
           </HStack>
           <CardContent>
@@ -140,25 +142,27 @@ const SupplierInteractionLineNotes = ({
                 />
               )}
             </TabsContent>
-            <TabsContent value="external">
-              {permissions.can("update", "purchasing") ? (
-                <Editor
-                  initialValue={(externalNotes ?? {}) as JSONContent}
-                  onUpload={onUploadImage}
-                  onChange={(value) => {
-                    setExternalNotes(value);
-                    onUpdateExternalNotes(value);
-                  }}
-                />
-              ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(externalNotes as JSONContent),
-                  }}
-                />
-              )}
-            </TabsContent>
+            {["supplierQuoteLine", "purchaseOrderLine"].includes(table) && (
+              <TabsContent value="external">
+                {permissions.can("update", "purchasing") ? (
+                  <Editor
+                    initialValue={(externalNotes ?? {}) as JSONContent}
+                    onUpload={onUploadImage}
+                    onChange={(value) => {
+                      setExternalNotes(value);
+                      onUpdateExternalNotes(value);
+                    }}
+                  />
+                ) : (
+                  <div
+                    className="prose dark:prose-invert"
+                    dangerouslySetInnerHTML={{
+                      __html: generateHTML(externalNotes as JSONContent),
+                    }}
+                  />
+                )}
+              </TabsContent>
+            )}
           </CardContent>
         </Tabs>
       </Card>

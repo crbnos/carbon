@@ -25,7 +25,6 @@ import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import {
   useOptimisticLocation,
   usePermissions,
-  useRealtime,
   useRouteData,
   useUser,
 } from "~/hooks";
@@ -64,13 +63,6 @@ export default function PurchaseOrderExplorer() {
   const deleteLineDisclosure = useDisclosure();
   const [deleteLine, setDeleteLine] = useState<PurchaseOrderLine | null>(null);
   const isDisabled = purchaseOrderData?.purchaseOrder?.status !== "Draft";
-
-  useRealtime(
-    "modelUpload",
-    `modelPath=in.(${purchaseOrderData?.lines
-      .map((d) => d.modelPath)
-      .join(",")})`
-  );
 
   const onDeleteLine = (line: PurchaseOrderLine) => {
     setDeleteLine(line);
@@ -225,6 +217,7 @@ function PurchaseOrderLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
+                  destructive
                   disabled={isDisabled || !permissions.can("update", "sales")}
                   onClick={(e) => {
                     e.stopPropagation();

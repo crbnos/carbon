@@ -237,7 +237,7 @@ serve(async (req: Request) => {
         invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
 
       const invoiceLineUnitPriceInInventoryUnit =
-        invoiceLine.unitPrice / (invoiceLine.conversionFactor ?? 1);
+        (invoiceLine.unitPrice ?? 0) / (invoiceLine.conversionFactor ?? 1);
 
       // declaring shared variables between part and service cases
       // outside of the switch case to avoid redeclaring them
@@ -347,7 +347,7 @@ serve(async (req: Request) => {
               locationId: invoiceLine.locationId,
               shelfId: invoiceLine.shelfId,
               unitOfMeasure: invoiceLine.inventoryUnitOfMeasureCode ?? "EA",
-              unitPrice: invoiceLine.unitPrice,
+              unitPrice: invoiceLine.unitPrice ?? 0,
               createdBy: invoiceLine.createdBy,
               companyId,
             });
@@ -383,8 +383,9 @@ serve(async (req: Request) => {
               itemId: invoiceLine.itemId,
               itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
-              cost: invoiceLine.quantity * invoiceLine.unitPrice,
-              costPostedToGL: invoiceLine.quantity * invoiceLine.unitPrice,
+              cost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
+              costPostedToGL:
+                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
               companyId,
             });
 
@@ -399,7 +400,7 @@ serve(async (req: Request) => {
                 description: "Inventory Account",
                 amount: debit(
                   "asset",
-                  invoiceLine.quantity * invoiceLine.unitPrice
+                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
                 ),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
@@ -415,7 +416,7 @@ serve(async (req: Request) => {
                 description: "Direct Cost Applied",
                 amount: credit(
                   "expense",
-                  invoiceLine.quantity * invoiceLine.unitPrice
+                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
                 ),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
@@ -431,7 +432,7 @@ serve(async (req: Request) => {
                 description: "Overhead Account",
                 amount: debit(
                   "asset",
-                  invoiceLine.quantity * invoiceLine.unitPrice
+                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
                 ),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
@@ -447,7 +448,7 @@ serve(async (req: Request) => {
                 description: "Overhead Cost Applied",
                 amount: credit(
                   "expense",
-                  invoiceLine.quantity * invoiceLine.unitPrice
+                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
                 ),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
@@ -466,7 +467,7 @@ serve(async (req: Request) => {
               description: "Purchase Account",
               amount: debit(
                 "expense",
-                invoiceLine.quantity * invoiceLine.unitPrice
+                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
               ),
               quantity: invoiceLineQuantityInInventoryUnit,
               documentType: "Invoice",
@@ -485,7 +486,7 @@ serve(async (req: Request) => {
               description: "Accounts Payable",
               amount: credit(
                 "liability",
-                invoiceLine.quantity * invoiceLine.unitPrice
+                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
               ),
               quantity: invoiceLineQuantityInInventoryUnit,
               documentType: "Invoice",
@@ -499,6 +500,24 @@ serve(async (req: Request) => {
             });
           } // if the line is associated with a purchase order line, we do accrual/reversing
           else {
+            // create the cost entry
+            costLedgerInserts.push({
+              itemLedgerType: "Purchase",
+              costLedgerType: "Direct Cost",
+              adjustment: false,
+              documentType: "Purchase Invoice",
+              documentId: purchaseInvoice.data?.id ?? undefined,
+              externalDocumentId:
+                purchaseInvoice.data?.supplierReference ?? undefined,
+              itemId: invoiceLine.itemId,
+              itemReadableId: invoiceLine.itemReadableId,
+              quantity: invoiceLineQuantityInInventoryUnit,
+              cost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
+              costPostedToGL:
+                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
+              companyId,
+            });
+
             // determine the journal lines that should be reversed
             const existingJournalLines = invoiceLine.purchaseOrderLineId
               ? journalLinesByPurchaseOrderLine[
@@ -646,24 +665,6 @@ serve(async (req: Request) => {
                   quantityCounted += entry[0].quantity;
                   quantityReversed += quantityToReverseForEntry;
                 }
-              });
-
-              // create the cost entry
-              costLedgerInserts.push({
-                itemLedgerType: "Purchase",
-                costLedgerType: "Direct Cost",
-                adjustment: false,
-                documentType: "Purchase Invoice",
-                documentId: purchaseInvoice.data?.id ?? undefined,
-                externalDocumentId:
-                  purchaseInvoice.data?.supplierReference ?? undefined,
-                itemId: invoiceLine.itemId,
-                itemReadableId: invoiceLine.itemReadableId,
-                quantity: quantityToReverse,
-                cost: quantityToReverse * invoiceLineUnitPriceInInventoryUnit,
-                costPostedToGL:
-                  quantityToReverse * invoiceLineUnitPriceInInventoryUnit,
-                companyId,
               });
 
               // create the normal GL entries for a part
@@ -884,7 +885,7 @@ serve(async (req: Request) => {
             // we limit the account to assets and expenses in the UI, so we don't need to check here
             amount: debit(
               "asset",
-              invoiceLine.quantity * invoiceLine.unitPrice
+              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
             ),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
@@ -903,7 +904,7 @@ serve(async (req: Request) => {
             description: "Overhead Cost Applied",
             amount: credit(
               "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
+              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
             ),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
@@ -924,7 +925,7 @@ serve(async (req: Request) => {
             description: "Purchase Account",
             amount: debit(
               "expense",
-              invoiceLine.quantity * invoiceLine.unitPrice
+              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
             ),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
@@ -943,7 +944,7 @@ serve(async (req: Request) => {
             description: "Accounts Payable",
             amount: credit(
               "liability",
-              invoiceLine.quantity * invoiceLine.unitPrice
+              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
             ),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",

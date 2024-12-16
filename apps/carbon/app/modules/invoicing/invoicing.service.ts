@@ -9,6 +9,8 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getCurrencyByCode } from "../accounting/accounting.service";
+import { getEmployeeJob } from "../people/people.service";
 import type {
   purchaseInvoiceLineValidator,
   purchaseInvoiceValidator,
@@ -121,13 +123,36 @@ export async function upsertPurchaseInvoice(
       .select("id, invoiceId");
   }
 
-  const [supplierInteraction, supplierPayment] = await Promise.all([
+  const [supplierInteraction, supplierPayment, purchaser] = await Promise.all([
     insertSupplierInteraction(client, purchaseInvoice.companyId),
     getSupplierPayment(client, purchaseInvoice.supplierId),
+    getEmployeeJob(
+      client,
+      purchaseInvoice.createdBy,
+      purchaseInvoice.companyId
+    ),
   ]);
 
   if (supplierInteraction.error) return supplierInteraction;
   if (supplierPayment.error) return supplierPayment;
+
+  if (purchaseInvoice.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      purchaseInvoice.companyId,
+      purchaseInvoice.currencyCode
+    );
+    if (currency.data) {
+      purchaseInvoice.exchangeRate = currency.data.exchangeRate ?? undefined;
+      purchaseInvoice.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  } else {
+    purchaseInvoice.exchangeRate = 1;
+    purchaseInvoice.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
+  const locationId =
+    purchaseInvoice.locationId ?? purchaser?.data?.locationId ?? null;
 
   const { paymentTermId } = supplierPayment.data;
 
@@ -141,6 +166,7 @@ export async function upsertPurchaseInvoice(
         supplierInteractionId: supplierInteraction.data.id,
         currencyCode: purchaseInvoice.currencyCode ?? "USD",
         paymentTermId: purchaseInvoice.paymentTermId ?? paymentTermId,
+        locationId,
       },
     ])
     .select("id, invoiceId");

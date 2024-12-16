@@ -8,8 +8,8 @@ export const purchaseOrderLineType = [
   "Material",
   "Tool",
   "Consumable",
-  "G/L Account",
-  "Fixed Asset",
+  // "G/L Account",
+  // "Fixed Asset",
   "Comment",
 ] as const;
 
@@ -34,6 +34,8 @@ export const purchaseOrderValidator = z.object({
   supplierContactId: zfd.text(z.string().optional()),
   supplierReference: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });
 
 export const purchaseOrderDeliveryValidator = z
@@ -97,6 +99,7 @@ export const purchaseOrderLineValidator = z
     supplierUnitPrice: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
   })
   .refine(
     (data) =>
@@ -110,22 +113,22 @@ export const purchaseOrderLineValidator = z
       path: ["itemId"], // path of error
     }
   )
-  .refine(
-    (data) =>
-      data.purchaseOrderLineType === "G/L Account" ? data.accountNumber : true,
-    {
-      message: "Account is required",
-      path: ["accountNumber"], // path of error
-    }
-  )
-  .refine(
-    (data) =>
-      data.purchaseOrderLineType === "Fixed Asset" ? data.assetId : true,
-    {
-      message: "Asset is required",
-      path: ["assetId"], // path of error
-    }
-  )
+  // .refine(
+  //   (data) =>
+  //     data.purchaseOrderLineType === "G/L Account" ? data.accountNumber : true,
+  //   {
+  //     message: "Account is required",
+  //     path: ["accountNumber"], // path of error
+  //   }
+  // )
+  // .refine(
+  //   (data) =>
+  //     data.purchaseOrderLineType === "Fixed Asset" ? data.assetId : true,
+  //   {
+  //     message: "Asset is required",
+  //     path: ["assetId"], // path of error
+  //   }
+  // )
   .refine(
     (data) =>
       data.purchaseOrderLineType === "Comment" ? data.description : true,

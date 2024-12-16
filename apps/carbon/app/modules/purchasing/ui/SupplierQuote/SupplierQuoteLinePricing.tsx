@@ -36,9 +36,11 @@ import type {
 const SupplierQuoteLinePricing = ({
   line,
   pricesByQuantity,
+  exchangeRate = 1,
 }: {
   line: SupplierQuoteLine;
   pricesByQuantity: Record<number, SupplierQuoteLinePrice>;
+  exchangeRate?: number;
 }) => {
   const permissions = usePermissions();
 
@@ -83,11 +85,6 @@ const SupplierQuoteLinePricing = ({
     value: number
   ) => {
     if (!carbon) return;
-    const supplierQuoteExchangeRate = await carbon
-      .from("supplierQuote")
-      .select("id, exchangeRate")
-      .eq("id", id)
-      .single();
 
     const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
@@ -98,7 +95,7 @@ const SupplierQuoteLinePricing = ({
         supplierQuoteLineId: lineId,
         quantity,
         leadTime: 0,
-        exchangeRate: supplierQuoteExchangeRate.data?.exchangeRate ?? 1,
+        exchangeRate: exchangeRate ?? 1,
         supplierUnitPrice: 0,
         supplierShippingCost: 0,
         createdBy: userId,
@@ -359,11 +356,12 @@ const SupplierQuoteLinePricing = ({
                     </HStack>
                   </Td>
                   {quantities.map((quantity, index) => {
-                    const exchangeRate = prices[quantity]?.exchangeRate;
+                    const rate =
+                      prices[quantity]?.exchangeRate ?? exchangeRate ?? 1;
                     return (
                       <Td key={index} className="group-hover:bg-muted/50">
                         <VStack spacing={0}>
-                          <span>{exchangeRate ?? 1}</span>
+                          <span>{rate ?? 1}</span>
                         </VStack>
                       </Td>
                     );

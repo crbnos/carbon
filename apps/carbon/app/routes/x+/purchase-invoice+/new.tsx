@@ -5,8 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { useUrlParams } from "~/hooks";
-import type { PurchaseInvoiceStatus } from "~/modules/invoicing";
+import { useUrlParams, useUser } from "~/hooks";
 import {
   PurchaseInvoiceForm,
   purchaseInvoiceValidator,
@@ -119,12 +118,13 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function PurchaseInvoiceNewRoute() {
   const [params] = useUrlParams();
   const supplierId = params.get("supplierId");
+  const { defaults } = useUser();
 
   const initialValues = {
     id: undefined,
     invoiceId: undefined,
     supplierId: supplierId ?? "",
-    status: "Draft" as PurchaseInvoiceStatus,
+    locationId: defaults?.locationId ?? "",
   };
 
   return (

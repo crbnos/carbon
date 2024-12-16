@@ -2,21 +2,29 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData } from "@remix-run/react";
+import type { JSONContent } from "@carbon/react";
+import { Spinner } from "@carbon/react";
+import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import type { PurchaseInvoiceLineType } from "~/modules/invoicing";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
+import { Fragment } from "react/jsx-runtime";
 import {
   PurchaseInvoiceLineForm,
   getPurchaseInvoiceLine,
   purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine,
 } from "~/modules/invoicing";
+import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+import {
+  SupplierInteractionLineDocuments,
+  SupplierInteractionLineNotes,
+} from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
     role: "employee",
   });
@@ -26,8 +34,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
 
-  return json({
+  return defer({
     purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
+    files: getSupplierInteractionLineDocuments(client, companyId, lineId),
   });
 }
 
@@ -52,13 +61,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  if (data.invoiceLineType === "G/L Account") {
-    data.assetId = undefined;
-    data.itemId = undefined;
-  } else if (data.invoiceLineType === "Fixed Asset") {
-    data.accountNumber = undefined;
-    data.itemId = undefined;
-  } else if (data.invoiceLineType === "Comment") {
+  // if (data.invoiceLineType === "G/L Account") {
+  //   data.assetId = undefined;
+  //   data.itemId = undefined;
+  // } else if (data.invoiceLineType === "Fixed Asset") {
+  //   data.accountNumber = undefined;
+  //   data.itemId = undefined;
+  // } else
+  if (data.invoiceLineType === "Comment") {
     data.accountNumber = undefined;
     data.assetId = undefined;
     data.itemId = undefined;
@@ -76,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (updatePurchaseInvoiceLine.error) {
     throw redirect(
-      path.to.purchaseInvoiceLines(invoiceId),
+      path.to.purchaseInvoiceLine(invoiceId, lineId),
       await flash(
         request,
         error(
@@ -87,26 +97,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.purchaseInvoiceLines(invoiceId));
+  throw redirect(path.to.purchaseInvoiceLine(invoiceId, lineId));
 }
 
 export default function EditPurchaseInvoiceLineRoute() {
-  const { purchaseInvoiceLine } = useLoaderData<typeof loader>();
+  const { invoiceId, lineId } = useParams();
+  if (!invoiceId) throw notFound("invoiceId not found");
+  if (!lineId) throw notFound("lineId not found");
+
+  const { purchaseInvoiceLine, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
     id: purchaseInvoiceLine?.id ?? undefined,
     invoiceId: purchaseInvoiceLine?.invoiceId ?? "",
-    invoiceLineType:
-      purchaseInvoiceLine?.invoiceLineType ??
-      ("Part" as PurchaseInvoiceLineType),
+    invoiceLineType: (purchaseInvoiceLine?.invoiceLineType ?? "Part") as "Part",
     itemId: purchaseInvoiceLine?.itemId ?? "",
     itemReadableId: purchaseInvoiceLine?.itemReadableId ?? "",
     accountNumber: purchaseInvoiceLine?.accountNumber ?? "",
     assetId: purchaseInvoiceLine?.assetId ?? "",
     description: purchaseInvoiceLine?.description ?? "",
     quantity: purchaseInvoiceLine?.quantity ?? 1,
-    unitPrice: purchaseInvoiceLine?.unitPrice ?? 0,
-    currencyCode: purchaseInvoiceLine?.currencyCode ?? "USD",
+    supplierUnitPrice: purchaseInvoiceLine?.supplierUnitPrice ?? 0,
+    supplierShippingCost: purchaseInvoiceLine?.supplierShippingCost ?? 0,
+    supplierTaxAmount: purchaseInvoiceLine?.supplierTaxAmount ?? 0,
+    exchangeRate: purchaseInvoiceLine?.exchangeRate ?? 1,
     purchaseUnitOfMeasureCode:
       purchaseInvoiceLine?.purchaseUnitOfMeasureCode ?? "",
     inventoryUnitOfMeasureCode:
@@ -117,10 +131,39 @@ export default function EditPurchaseInvoiceLineRoute() {
   };
 
   return (
-    <PurchaseInvoiceLineForm
-      key={initialValues.id}
-      // @ts-ignore
-      initialValues={initialValues}
-    />
+    <Fragment key={purchaseInvoiceLine?.id}>
+      <PurchaseInvoiceLineForm
+        key={initialValues.id}
+        initialValues={initialValues}
+      />
+      <SupplierInteractionLineNotes
+        id={purchaseInvoiceLine?.id ?? ""}
+        table="purchaseInvoiceLine"
+        title="Notes"
+        subTitle={purchaseInvoiceLine?.itemReadableId ?? ""}
+        internalNotes={purchaseInvoiceLine?.internalNotes as JSONContent}
+      />
+
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={files}>
+          {(resolvedFiles) => (
+            <SupplierInteractionLineDocuments
+              files={resolvedFiles ?? []}
+              id={invoiceId}
+              lineId={lineId}
+              type="Purchase Invoice"
+            />
+          )}
+        </Await>
+      </Suspense>
+
+      <Outlet />
+    </Fragment>
   );
 }

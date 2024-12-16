@@ -13,6 +13,7 @@ import { Fragment } from "react/jsx-runtime";
 import { useRouteData } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import {
+  PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
   upsertPurchaseInvoice,
 } from "~/modules/invoicing";
@@ -101,7 +102,7 @@ export default function PurchaseInvoiceBasicRoute() {
 
   return (
     <Fragment key={invoiceId}>
-      {/* <PurchaseInvoiceSummary /> */}
+      <PurchaseInvoiceSummary />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={invoiceId}

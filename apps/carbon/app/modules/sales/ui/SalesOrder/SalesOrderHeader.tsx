@@ -65,7 +65,7 @@ const SalesOrderHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.salesOrderDetails(orderId)}>
-              <Heading size="h3" className="flex items-center gap-2">
+              <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.salesOrder?.salesOrderId}</span>
               </Heading>
             </Link>

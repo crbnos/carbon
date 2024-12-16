@@ -175,13 +175,18 @@ const PurchaseOrderLineForm = ({
           description: item.data?.name ?? "",
           purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:
-            supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
+            (routeData?.purchaseOrder?.exchangeRate ?? 1),
           purchaseUom:
+            supplierPart?.data?.supplierUnitOfMeasureCode ??
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??
             "EA",
           inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-          conversionFactor: itemReplenishment?.conversionFactor ?? 1,
+          conversionFactor:
+            supplierPart?.data?.conversionFactor ??
+            itemReplenishment?.conversionFactor ??
+            1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });
 
@@ -279,6 +284,10 @@ const PurchaseOrderLineForm = ({
                 <Hidden name="purchaseOrderId" />
                 <Hidden name="itemReadableId" value={itemData.itemReadableId} />
                 <Hidden name="description" value={itemData.description} />
+                <Hidden
+                  name="exchangeRate"
+                  value={routeData?.purchaseOrder?.exchangeRate ?? 1}
+                />
                 <Hidden
                   name="inventoryUnitOfMeasureCode"
                   value={itemData?.inventoryUom}

@@ -113,6 +113,10 @@ CREATE OR REPLACE VIEW "purchaseOrderLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "supplierPart" sp ON sp."supplierId" = so."supplierId" AND sp."itemId" = i.id
 );
 
+ALTER TABLE "purchaseOrder" ALTER COLUMN "exchangeRate" SET DEFAULT 1;
+UPDATE "purchaseOrder" SET "exchangeRate" = 1 WHERE "exchangeRate" IS NULL;
+ALTER TABLE "purchaseOrderLine" ALTER COLUMN "exchangeRate" SET NOT NULL;
+
 
 CREATE OR REPLACE FUNCTION update_purchase_order_line_price_exchange_rate()
 RETURNS TRIGGER AS $$

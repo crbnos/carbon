@@ -20,7 +20,7 @@ const ToolHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.toolDetails(itemId)}>
-            <Heading size="h3" className="flex items-center gap-2">
+            <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Tool" />} /> */}
               <span>{routeData?.toolSummary?.id}</span>
             </Heading>

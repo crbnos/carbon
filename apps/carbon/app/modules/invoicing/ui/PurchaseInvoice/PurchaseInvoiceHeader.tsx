@@ -1,14 +1,25 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   Heading,
   IconButton,
   useDisclosure,
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
-import { useState } from "react";
-import { LuCheckCheck, LuPanelLeft, LuPanelRight } from "react-icons/lu";
+import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
+import {
+  LuArrowDownToLine,
+  LuCheckCheck,
+  LuPanelLeft,
+  LuPanelRight,
+  LuShoppingCart,
+} from "react-icons/lu";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
@@ -23,7 +34,12 @@ const PurchaseInvoiceHeader = () => {
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
-    { itemId: string | null; itemReadableId: string | null; quantity: number }[]
+    {
+      itemId: string | null;
+      itemReadableId: string | null;
+      description: string;
+      quantity: number;
+    }[]
   >([]);
 
   if (!invoiceId) throw new Error("invoiceId not found");
@@ -38,25 +54,70 @@ const PurchaseInvoiceHeader = () => {
   const { toggleExplorer, toggleProperties } = usePanels();
   const isPosted = purchaseInvoice.postingDate !== null;
 
+  const [relatedDocs, setRelatedDocs] = useState<{
+    purchaseOrders: { id: string; readableId: string }[];
+    receipts: { id: string; readableId: string }[];
+  }>({ purchaseOrders: [], receipts: [] });
+
+  // Load related documents on mount
+  useEffect(() => {
+    async function loadRelatedDocs() {
+      if (!carbon || !purchaseInvoice.supplierInteractionId) return;
+
+      const [purchaseOrdersResult, receiptsResult] = await Promise.all([
+        carbon
+          .from("purchaseOrder")
+          .select("id, purchaseOrderId")
+          .eq("supplierInteractionId", purchaseInvoice.supplierInteractionId),
+        carbon
+          .from("receipt")
+          .select("id, receiptId")
+          .eq("supplierInteractionId", purchaseInvoice.supplierInteractionId),
+      ]);
+
+      if (purchaseOrdersResult.error)
+        throw new Error(purchaseOrdersResult.error.message);
+      if (receiptsResult.error) throw new Error(receiptsResult.error.message);
+
+      setRelatedDocs({
+        purchaseOrders:
+          purchaseOrdersResult.data?.map((po) => ({
+            id: po.id,
+            readableId: po.purchaseOrderId,
+          })) ?? [],
+        receipts:
+          receiptsResult.data?.map((r) => ({
+            id: r.id,
+            readableId: r.receiptId,
+          })) ?? [],
+      });
+    }
+
+    loadRelatedDocs();
+  }, [carbon, purchaseInvoice.supplierInteractionId]);
+
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
       .from("purchaseInvoiceLine")
-      .select("itemId, itemReadableId, quantity, conversionFactor")
+      .select("itemId, itemReadableId, description, quantity, conversionFactor")
       .eq("invoiceId", invoiceId)
       .in("invoiceLineType", ["Part", "Material", "Tool", "Consumable"])
-      .is("purchaseInvoiceLineId", null);
+      .is("purchaseOrderLineId", null);
 
     if (error) throw new Error(error.message);
     if (!data) return;
 
     // so that we can ask the user if they want to receive those lines
-    setLinesNotAssociatedWithPO(
-      data?.map((d) => ({
-        ...d,
-        quantity: d.quantity * (d.conversionFactor ?? 1),
-      })) ?? []
+    flushSync(() =>
+      setLinesNotAssociatedWithPO(
+        data?.map((d) => ({
+          ...d,
+          description: d.description ?? "",
+          quantity: d.quantity * (d.conversionFactor ?? 1),
+        })) ?? []
+      )
     );
     postingModal.onOpen();
   };
@@ -73,7 +134,7 @@ const PurchaseInvoiceHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.purchaseInvoiceDetails(invoiceId)}>
-              <Heading size="h3" className="flex items-center gap-2">
+              <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.purchaseInvoice?.invoiceId}</span>
               </Heading>
             </Link>
@@ -82,6 +143,67 @@ const PurchaseInvoiceHeader = () => {
             />
           </HStack>
           <HStack>
+            {relatedDocs.purchaseOrders.length === 1 && (
+              <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+                <Link
+                  to={path.to.purchaseOrderDetails(
+                    relatedDocs.purchaseOrders[0].id
+                  )}
+                >
+                  Purchase Order
+                </Link>
+              </Button>
+            )}
+
+            {relatedDocs.receipts.length === 1 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuArrowDownToLine />}
+                asChild
+              >
+                <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
+                  Receipt
+                </Link>
+              </Button>
+            )}
+
+            {relatedDocs.purchaseOrders.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" leftIcon={<LuShoppingCart />}>
+                    Purchase Orders
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {relatedDocs.purchaseOrders.map((po) => (
+                    <DropdownMenuItem key={po.id} asChild>
+                      <Link to={path.to.purchaseOrderDetails(po.id)}>
+                        {po.readableId}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {relatedDocs.receipts.length > 1 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" leftIcon={<LuArrowDownToLine />}>
+                    Receipts
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {relatedDocs.receipts.map((receipt) => (
+                    <DropdownMenuItem key={receipt.id} asChild>
+                      <Link to={path.to.receipt(receipt.id)}>
+                        {receipt.readableId}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               leftIcon={<LuCheckCheck />}
               variant={
