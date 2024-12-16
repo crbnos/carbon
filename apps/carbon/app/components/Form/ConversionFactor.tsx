@@ -83,8 +83,8 @@ const ConversionFactor = forwardRef<
       }
     }, [setControlValue, value]);
 
-    const [conversionDirection, setConversionDirection] = useState(
-      conversionFactor >= 1
+    const [conversionDirection, setConversionDirection] = useState(() =>
+      controlValue >= 1
         ? ConversionDirection.InventoryToPurchased
         : ConversionDirection.PurchasedToInventory
     );

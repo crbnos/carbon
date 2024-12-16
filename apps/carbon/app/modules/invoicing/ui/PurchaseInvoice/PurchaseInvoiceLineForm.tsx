@@ -277,6 +277,7 @@ const PurchaseInvoiceLineForm = ({
                       label={itemType}
                       // @ts-ignore
                       type={itemType}
+                      replenishmentSystem="Buy"
                       onChange={(value) => {
                         onItemChange(value?.value as string);
                       }}

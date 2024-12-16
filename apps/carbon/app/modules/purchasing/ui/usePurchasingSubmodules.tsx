@@ -5,7 +5,7 @@ import {
   LuPackageSearch,
   LuShapes,
 } from "react-icons/lu";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -22,16 +22,19 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
         name: "Quotes",
         to: path.to.supplierQuotes,
         icon: <LuPackageSearch />,
+        internal: true,
       },
       {
         name: "Orders",
         to: path.to.purchaseOrders,
         icon: <LuLayoutList />,
+        internal: true,
       },
       {
         name: "Invoices",
         to: path.to.purchaseInvoices,
         icon: <LuCreditCard />,
+        internal: true,
       },
     ],
   },
@@ -56,6 +59,11 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
 
 export default function usePurchasingSubmodules() {
   const permissions = usePermissions();
+  const user = useUser();
+  const isInternal = ["carbon.us.org", "carbonos.dev"].some((email) =>
+    user.email.includes(email)
+  );
+
   return {
     groups: purchasingRoutes
       .filter((group) => {
@@ -72,6 +80,9 @@ export default function usePurchasingSubmodules() {
       .map((group) => ({
         ...group,
         routes: group.routes.filter((route) => {
+          if (route.internal) {
+            return isInternal;
+          }
           if (route.role) {
             return permissions.is(route.role);
           } else {
