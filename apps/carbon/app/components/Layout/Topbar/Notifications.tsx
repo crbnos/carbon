@@ -122,35 +122,11 @@ function GenericNotification({
   onClose: () => void;
 }) {
   switch (event) {
-    case NotificationEvent.PurchaseOrderAssignment:
+    case NotificationEvent.DigitalQuoteResponse:
       return (
         <Notification
-          icon={<LuShoppingCart />}
-          to={path.to.purchaseOrderDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesRfqAssignment:
-      return (
-        <Notification
-          icon={<RiProgress2Line />}
-          to={path.to.salesRfq(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.QuoteAssignment:
-      return (
-        <Notification
-          icon={<RiProgress4Line />}
+          icon={<LuDollarSign />}
           to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
-    case NotificationEvent.SalesOrderAssignment:
-      return (
-        <Notification
-          icon={<RiProgress8Line />}
-          to={path.to.salesOrderDetails(id)}
           {...props}
         />
       );
@@ -162,19 +138,60 @@ function GenericNotification({
           {...props}
         />
       );
-    case NotificationEvent.DigitalQuoteResponse:
-      return (
-        <Notification
-          icon={<LuDollarSign />}
-          to={path.to.quoteDetails(id)}
-          {...props}
-        />
-      );
+
     case NotificationEvent.QuoteExpired:
       return (
         <Notification
           icon={<LuCalendarX />}
           to={path.to.quoteDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.PurchaseInvoiceAssignment:
+      return (
+        <Notification
+          icon={<LuShoppingCart />}
+          to={path.to.purchaseInvoiceDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.PurchaseOrderAssignment:
+      return (
+        <Notification
+          icon={<LuShoppingCart />}
+          to={path.to.purchaseOrderDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.QuoteAssignment:
+      return (
+        <Notification
+          icon={<RiProgress4Line />}
+          to={path.to.quoteDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.SalesRfqAssignment:
+      return (
+        <Notification
+          icon={<RiProgress2Line />}
+          to={path.to.salesRfq(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.SalesOrderAssignment:
+      return (
+        <Notification
+          icon={<RiProgress8Line />}
+          to={path.to.salesOrderDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.SupplierQuoteAssignment:
+      return (
+        <Notification
+          icon={<LuDollarSign />}
+          to={path.to.supplierQuoteDetails(id)}
           {...props}
         />
       );

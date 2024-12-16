@@ -11,11 +11,13 @@ export enum NotificationWorkflow {
 export enum NotificationEvent {
   DigitalQuoteResponse = "digital-quote-response",
   JobAssignment = "job-assignment",
+  PurchaseInvoiceAssignment = "purchase-invoice-assignment",
   PurchaseOrderAssignment = "purchase-order-assignment",
   QuoteAssignment = "quote-assignment",
   QuoteExpired = "quote-expired",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
+  SupplierQuoteAssignment = "supplier-quote-assignment",
 }
 
 export enum NotificationType {
