@@ -605,33 +605,31 @@ export const JobOperation = ({
         {activeTab !== "instructions" && (
           <Controls>
             <div className="flex flex-col items-center gap-2 p-4">
-              <div className="w-full hidden tall:block">
-                <VStack spacing={2}>
-                  <VStack spacing={1}>
-                    <span className="text-muted-foreground text-xs">
-                      Work Center
-                    </span>
-                    <Suspense fallback={<Heading size="h4">...</Heading>}>
-                      <Await resolve={workCenter}>
-                        {(resolvedWorkCenter) =>
-                          resolvedWorkCenter.data && (
-                            <Heading size="h4" className="line-clamp-1">
-                              {resolvedWorkCenter.data?.name}
-                            </Heading>
-                          )
-                        }
-                      </Await>
-                    </Suspense>
-                  </VStack>
-
-                  <VStack spacing={1}>
-                    <span className="text-muted-foreground text-xs">Item</span>
-                    <Heading size="h4" className="line-clamp-1">
-                      {operation.itemReadableId}
-                    </Heading>
-                  </VStack>
+              <VStack spacing={2}>
+                <VStack spacing={1}>
+                  <span className="text-muted-foreground text-xs">
+                    Work Center
+                  </span>
+                  <Suspense fallback={<Heading size="h4">...</Heading>}>
+                    <Await resolve={workCenter}>
+                      {(resolvedWorkCenter) =>
+                        resolvedWorkCenter.data && (
+                          <Heading size="h4" className="line-clamp-1">
+                            {resolvedWorkCenter.data?.name}
+                          </Heading>
+                        )
+                      }
+                    </Await>
+                  </Suspense>
                 </VStack>
-              </div>
+
+                <VStack className="hidden tall:flex" spacing={1}>
+                  <span className="text-muted-foreground text-xs">Item</span>
+                  <Heading size="h4" className="line-clamp-1">
+                    {operation.itemReadableId}
+                  </Heading>
+                </VStack>
+              </VStack>
 
               <div className="md:hidden flex flex-col items-center gap-2 w-full">
                 <VStack spacing={1}>
@@ -693,7 +691,6 @@ export const JobOperation = ({
                 operation={operation}
                 value={eventType}
                 onChange={setEventType}
-                className="py-2"
               />
 
               <StartStopButton
@@ -1312,8 +1309,8 @@ function WorkTypeToggle({
       className={cn(
         "grid w-full",
         count <= 1 && "grid-cols-1",
-        count === 2 && "grid-cols-2",
-        count === 3 && "grid-cols-3",
+        count === 2 && "grid-cols-2 py-2",
+        count === 3 && "grid-cols-3 py-2",
         className
       )}
     >
@@ -1470,7 +1467,7 @@ function PauseButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Pause"
-      className="group size-32 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
+      className="group size-24 tall:size-32 flex flex-row items-center gap-2 justify-center bg-red-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-red-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-red-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
     >
       <FaPause className="group-hover:scale-110" />
     </ButtonWithTooltip>
@@ -1482,7 +1479,7 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
     <ButtonWithTooltip
       {...props}
       tooltip="Start"
-      className="group size-32 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
+      className="group size-24 tall:size-32 flex flex-row items-center gap-2 justify-center bg-emerald-500 rounded-full shadow-lg hover:cursor-pointer hover:drop-shadow-xl hover:bg-emerald-600 hover:scale-105 transition-all text-accent disabled:bg-muted disabled:text-muted-foreground/80 text-4xl border-b-4 border-emerald-700 active:border-b-0 active:translate-y-1 disabled:bg-gray-500 disabled:hover:bg-gray-600 disabled:border-gray-700 disabled:text-white"
     >
       <FaPlay className="group-hover:scale-110" />
     </ButtonWithTooltip>

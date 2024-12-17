@@ -93,7 +93,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       screens: {
-        tall: { raw: "(min-height: 700px)" },
+        tall: { raw: "(min-height: 769px)" },
       },
     },
   },
