@@ -403,8 +403,8 @@ export const partValidator = itemValidator.merge(
 
 export const partManufacturingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
-  manufacturingBlocked: zfd.checkbox(),
-  // requiresConfiguration: zfd.checkbox(),
+  // manufacturingBlocked: zfd.checkbox(),
+  requiresConfiguration: zfd.checkbox(),
   lotSize: zfd.numeric(z.number().min(0)),
   scrapPercentage: zfd.numeric(z.number().min(0)),
 });

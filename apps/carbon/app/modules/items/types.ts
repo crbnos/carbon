@@ -1,8 +1,8 @@
 import type { Database } from "@carbon/database";
 import type {
+  getConfigurationOptions,
   getConsumable,
   getConsumables,
-  getFixtures,
   getItemCost,
   getItemCustomerParts,
   getItemFiles,
@@ -29,8 +29,8 @@ import type {
   getUnitOfMeasuresList,
 } from "./items.service";
 
-export type SupplierPart = NonNullable<
-  Awaited<ReturnType<typeof getSupplierParts>>["data"]
+export type ConfigurationOption = NonNullable<
+  Awaited<ReturnType<typeof getConfigurationOptions>>["data"]
 >[number];
 
 export type Consumable = NonNullable<
@@ -47,10 +47,6 @@ export type CustomerPart = NonNullable<
 
 export type Form = NonNullable<
   Awaited<ReturnType<typeof getMaterialForms>>["data"]
->[number];
-
-export type Fixture = NonNullable<
-  Awaited<ReturnType<typeof getFixtures>>["data"]
 >[number];
 
 export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
@@ -136,6 +132,10 @@ export type ServiceType = Database["public"]["Enums"]["serviceType"];
 
 export type Substance = NonNullable<
   Awaited<ReturnType<typeof getMaterialSubstances>>["data"]
+>[number];
+
+export type SupplierPart = NonNullable<
+  Awaited<ReturnType<typeof getSupplierParts>>["data"]
 >[number];
 
 export type Tool = NonNullable<
