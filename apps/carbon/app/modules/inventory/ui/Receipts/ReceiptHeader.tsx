@@ -1,43 +1,39 @@
 import {
-  Card,
-  CardAction,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributeValue,
-  CardAttributes,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Button,
   HStack,
-  Menubar,
-  MenubarItem,
-  VStack,
+  Heading,
+  IconButton,
   useDisclosure,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
-
-import { useParams } from "@remix-run/react";
-import { Assignee, useOptimisticAssignment } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
+import { Link, useParams } from "@remix-run/react";
+import {
+  LuCheckCheck,
+  LuCreditCard,
+  LuPanelLeft,
+  LuPanelRight,
+  LuShoppingCart,
+} from "react-icons/lu";
+import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
 const ReceiptHeader = () => {
-  const permissions = usePermissions();
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const postingModal = useDisclosure();
+  const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLines: ReceiptLine[];
   }>(path.to.receipt(receiptId));
 
-  if (!routeData) throw new Error("Could not find routeData");
+  if (!routeData?.receipt) throw new Error("Failed to load receipt");
+
+  const permissions = usePermissions();
+  const postModal = useDisclosure();
 
   const canPost =
     routeData.receiptLines.length > 0 &&
@@ -45,100 +41,87 @@ const ReceiptHeader = () => {
 
   const isPosted = routeData.receipt.status === "Posted";
 
-  const optimisticAssignment = useOptimisticAssignment({
-    id: receiptId,
-    table: "receipt",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.receipt?.assignee;
-
   return (
     <>
-      <VStack>
-        {permissions.is("employee") && (
-          <Menubar>
-            <MenubarItem
-              isDisabled={!canPost || isPosted}
-              onClick={postingModal.onOpen}
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide">
+        <HStack className="w-full justify-between">
+          <HStack>
+            <IconButton
+              aria-label="Toggle Explorer"
+              icon={<LuPanelLeft />}
+              onClick={toggleExplorer}
+              variant="ghost"
+            />
+            <Link to={path.to.receiptDetails(receiptId)}>
+              <Heading size="h4" className="flex items-center gap-2">
+                <span>{routeData?.receipt?.receiptId}</span>
+              </Heading>
+            </Link>
+            <ReceiptStatus status={routeData?.receipt?.status} />
+          </HStack>
+          <HStack>
+            <SourceDocumentLink
+              sourceDocument={routeData.receipt.sourceDocument ?? undefined}
+              sourceDocumentId={routeData.receipt.sourceDocumentId ?? undefined}
+              sourceDocumentReadableId={
+                routeData.receipt.sourceDocumentReadableId ?? undefined
+              }
+            />
+            <Button
+              variant={canPost && !isPosted ? "primary" : "secondary"}
+              onClick={postModal.onOpen}
+              isDisabled={!canPost || isPosted || !permissions.is("employee")}
+              leftIcon={<LuCheckCheck />}
             >
               Post
-            </MenubarItem>
-          </Menubar>
-        )}
-        <Card>
-          <HStack className="justify-between items-start">
-            <CardHeader>
-              <CardTitle>{routeData?.receipt?.receiptId}</CardTitle>
-              <CardDescription>
-                {routeData?.receipt?.locationName}
-              </CardDescription>
-            </CardHeader>
-            <CardAction>
-              {/* <Button
-            variant="secondary"
-            onClick={() => alert("TODO")}
-            leftIcon={<FaHistory />}
-          >
-            View History
-          </Button> */}
-            </CardAction>
+            </Button>
+
+            <IconButton
+              aria-label="Toggle Properties"
+              icon={<LuPanelRight />}
+              onClick={toggleProperties}
+              variant="ghost"
+            />
           </HStack>
-          <CardContent>
-            <CardAttributes>
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <CardAttributeValue>
-                  <ReceiptStatus status={routeData?.receipt?.status} />
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Assignee</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Assignee
-                    id={receiptId}
-                    table="receipt"
-                    value={assignee ?? ""}
-                    isReadOnly={!permissions.can("update", "inventory")}
-                  />
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Location</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Enumerable value={routeData?.receipt?.locationName} />
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Source Document</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Enumerable
-                    value={routeData?.receipt?.sourceDocument ?? null}
-                  />
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Source Document ID</CardAttributeLabel>
-                <CardAttributeValue>
-                  {routeData?.receipt?.sourceDocumentReadableId}
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Posting Date</CardAttributeLabel>
-                <CardAttributeValue>
-                  {routeData?.receipt?.postingDate
-                    ? formatDate(routeData?.receipt?.postingDate)
-                    : "-"}
-                </CardAttributeValue>
-              </CardAttribute>
-            </CardAttributes>
-          </CardContent>
-        </Card>
-      </VStack>
-      {postingModal.isOpen && <ReceiptPostModal />}
+        </HStack>
+      </div>
+
+      {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
     </>
   );
 };
+
+function SourceDocumentLink({
+  sourceDocument,
+  sourceDocumentId,
+  sourceDocumentReadableId,
+}: {
+  sourceDocument?: string;
+  sourceDocumentId?: string;
+  sourceDocumentReadableId?: string;
+}) {
+  if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
+    return null;
+  switch (sourceDocument) {
+    case "Purchase Order":
+      return (
+        <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+          <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
+            Purchase Order
+          </Link>
+        </Button>
+      );
+    case "Purchase Invoice":
+      return (
+        <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
+          <Link to={path.to.purchaseInvoice(sourceDocumentId!)}>
+            Purchase Invoice
+          </Link>
+        </Button>
+      );
+    default:
+      return null;
+  }
+}
 
 export default ReceiptHeader;

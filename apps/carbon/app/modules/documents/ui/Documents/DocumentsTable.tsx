@@ -615,10 +615,14 @@ function getDocumentLocation(
     //   return path.to.service(sourceDocumentId);
     case "Purchase Order":
       return path.to.purchaseOrder(sourceDocumentId);
+    case "Purchase Invoice":
+      return path.to.purchaseInvoice(sourceDocumentId);
     case "Quote":
       return path.to.quote(sourceDocumentId);
     case "Request for Quote":
       return path.to.salesRfq(sourceDocumentId);
+    case "Supplier Quote":
+      return path.to.supplierQuote(sourceDocumentId);
     case "Job":
       return path.to.job(sourceDocumentId);
     default:

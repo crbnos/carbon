@@ -49,7 +49,7 @@ type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
   interaction: SupplierInteraction;
   id: string;
-  type: "Supplier Quote" | "Purchase Order";
+  type: "Supplier Quote" | "Purchase Order" | "Purchase Invoice";
 };
 
 const SupplierInteractionDocuments = ({
@@ -194,7 +194,7 @@ const SupplierInteractionDocuments = ({
 type SupplierInteractionDocumentFormProps = {
   interactionId: string;
   id: string;
-  type: "Supplier Quote" | "Purchase Order";
+  type: "Supplier Quote" | "Purchase Order" | "Purchase Invoice";
 };
 
 export const useSupplierInteractionDocuments = ({

@@ -1,181 +1,300 @@
 import {
-  Card,
-  CardAction,
-  CardAttribute,
-  CardAttributeLabel,
-  CardAttributeValue,
-  CardAttributes,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+  Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   HStack,
-  Menubar,
-  MenubarItem,
-  VStack,
+  Heading,
+  IconButton,
   useDisclosure,
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
-import { useParams } from "@remix-run/react";
-import { Assignee, useOptimisticAssignment } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseOrder } from "~/modules/purchasing";
 
-import { useSuppliers } from "~/stores";
+import { Link, useFetcher, useParams } from "@remix-run/react";
+import {
+  LuArrowDownToLine,
+  LuCheckCheck,
+  LuChevronDown,
+  LuCreditCard,
+  LuEye,
+  LuFile,
+  LuPanelLeft,
+  LuPanelRight,
+  LuPlusCircle,
+  LuRefreshCw,
+} from "react-icons/lu";
+
+import { usePanels } from "~/components/Layout";
+import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
+import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
+
+import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
+import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
 import PurchasingStatus from "./PurchasingStatus";
-import { usePurchaseOrder } from "./usePurchaseOrder";
-import { usePurchaseOrderTotals } from "./usePurchaseOrderTotals";
+import {
+  usePurchaseOrder,
+  usePurchaseOrderRelatedDocuments,
+} from "./usePurchaseOrder";
 
 const PurchaseOrderHeader = () => {
-  const permissions = usePermissions();
   const { orderId } = useParams();
-  if (!orderId) throw new Error("Could not find orderId");
+  if (!orderId) throw new Error("orderId not found");
 
-  const routeData = useRouteData<{ purchaseOrder: PurchaseOrder }>(
-    path.to.purchaseOrder(orderId)
-  );
+  const { toggleExplorer, toggleProperties } = usePanels();
 
-  if (!routeData?.purchaseOrder) throw new Error("purchaseOrder not found");
-  const isReleased = !["Draft", "Approved"].includes(
-    routeData?.purchaseOrder?.status ?? ""
-  );
+  const routeData = useRouteData<{
+    purchaseOrder: PurchaseOrder;
+    lines: PurchaseOrderLine[];
+  }>(path.to.purchaseOrder(orderId));
 
-  const [purchaseOrderTotals] = usePurchaseOrderTotals();
+  if (!routeData?.purchaseOrder)
+    throw new Error("Failed to load purchase order");
 
-  const formatter = useCurrencyFormatter();
+  const permissions = usePermissions();
 
+  const statusFetcher = useFetcher<{}>();
   const { receive, invoice } = usePurchaseOrder();
-  const releaseDisclosure = useDisclosure();
-
-  const optimisticAssignment = useOptimisticAssignment({
-    id: orderId,
-    table: "purchaseOrder",
-  });
-  const assignee =
-    optimisticAssignment !== undefined
-      ? optimisticAssignment
-      : routeData?.purchaseOrder?.assignee;
-
-  const [suppliers] = useSuppliers();
-  const supplier = suppliers.find(
-    (s) => s.id === routeData.purchaseOrder?.supplierId
+  const { receipts, invoices } = usePurchaseOrderRelatedDocuments(
+    routeData?.purchaseOrder?.supplierInteractionId ?? ""
   );
+
+  const releaseDisclosure = useDisclosure();
 
   return (
     <>
-      <VStack>
-        {permissions.is("employee") && (
-          <Menubar>
-            <MenubarItem asChild>
-              <a
-                target="_blank"
-                href={path.to.file.purchaseOrder(orderId)}
-                rel="noreferrer"
-              >
-                Preview
-              </a>
-            </MenubarItem>
+      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide">
+        <HStack className="w-full justify-between">
+          <HStack>
+            <IconButton
+              aria-label="Toggle Explorer"
+              icon={<LuPanelLeft />}
+              onClick={toggleExplorer}
+              variant="ghost"
+            />
+            <Link to={path.to.purchaseOrderDetails(orderId)}>
+              <Heading size="h4" className="flex items-center gap-2">
+                <span>{routeData?.purchaseOrder?.purchaseOrderId}</span>
+              </Heading>
+            </Link>
+            <PurchasingStatus status={routeData?.purchaseOrder?.status} />
+          </HStack>
+          <HStack>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  leftIcon={<LuEye />}
+                  variant="secondary"
+                  rightIcon={<LuChevronDown />}
+                >
+                  Preview
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem asChild>
+                  <a
+                    target="_blank"
+                    href={path.to.file.purchaseOrder(orderId)}
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    PDF
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <MenubarItem
+            <Button
+              leftIcon={<LuCheckCheck />}
+              variant={
+                routeData?.purchaseOrder?.status === "Draft"
+                  ? "primary"
+                  : "secondary"
+              }
               onClick={releaseDisclosure.onOpen}
-              isDisabled={isReleased}
+              isDisabled={
+                routeData?.purchaseOrder?.status !== "Draft" ||
+                routeData?.lines.length === 0
+              }
             >
               Release
-            </MenubarItem>
-            <MenubarItem
-              onClick={() => {
-                receive(routeData.purchaseOrder);
-              }}
-              isDisabled={
-                routeData?.purchaseOrder?.status !== "To Receive" &&
-                routeData?.purchaseOrder?.status !== "To Receive and Invoice"
-              }
-            >
-              Receive
-            </MenubarItem>
-            <MenubarItem
-              onClick={() => {
-                invoice(routeData.purchaseOrder);
-              }}
-              isDisabled={
-                routeData?.purchaseOrder?.status !== "To Invoice" &&
-                routeData?.purchaseOrder?.status !== "To Receive and Invoice"
-              }
-            >
-              Invoice
-            </MenubarItem>
-          </Menubar>
-        )}
-
-        <Card>
-          <HStack className="justify-between items-start">
-            <CardHeader>
-              <CardTitle>{routeData?.purchaseOrder?.purchaseOrderId}</CardTitle>
-              <CardDescription>
-                {supplier ? supplier.name : "-"}
-              </CardDescription>
-            </CardHeader>
-            <CardAction>
-              {/* <Button
-                variant="secondary"
-                onClick={() => alert("TODO")}
-                leftIcon={<FaHistory />}
+            </Button>
+            {receipts.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuArrowDownToLine />}
+                    variant={
+                      ["To Receive", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                        ? "primary"
+                        : "secondary"
+                    }
+                    rightIcon={<LuChevronDown />}
+                  >
+                    Receipts
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    disabled={
+                      ![
+                        "To Receive",
+                        "To Receive and Invoice",
+                        "To Invoice",
+                      ].includes(routeData?.purchaseOrder?.status ?? "")
+                    }
+                    onClick={() => {
+                      receive(routeData?.purchaseOrder);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuPlusCircle />} />
+                    New Receipt
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {receipts.map((receipt) => (
+                    <DropdownMenuItem key={receipt.id} asChild>
+                      <Link to={path.to.receipt(receipt.id)}>
+                        <DropdownMenuIcon icon={<LuArrowDownToLine />} />
+                        <HStack spacing={8}>
+                          <span>{receipt.receiptId}</span>
+                          <ReceiptStatus status={receipt.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                leftIcon={<LuArrowDownToLine />}
+                isDisabled={
+                  !["To Receive", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                }
+                variant={
+                  ["To Receive", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() => {
+                  receive(routeData?.purchaseOrder);
+                }}
               >
-                Supplier Details
-              </Button> */}
-            </CardAction>
+                Receive
+              </Button>
+            )}
+
+            {invoices?.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuCreditCard />}
+                    rightIcon={<LuChevronDown />}
+                    variant={
+                      ["To Invoice", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                        ? "primary"
+                        : "secondary"
+                    }
+                  >
+                    Invoice
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    disabled={
+                      !["To Invoice", "To Receive and Invoice"].includes(
+                        routeData?.purchaseOrder?.status ?? ""
+                      )
+                    }
+                    onClick={() => {
+                      invoice(routeData?.purchaseOrder);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuPlusCircle />} />
+                    New Invoice
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {invoices.map((invoice) => (
+                    <DropdownMenuItem key={invoice.id} asChild>
+                      <Link to={path.to.purchaseInvoice(invoice.id!)}>
+                        <DropdownMenuIcon icon={<LuCreditCard />} />
+                        <HStack spacing={8}>
+                          <span>{invoice.invoiceId}</span>
+                          <PurchaseInvoicingStatus status={invoice.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                leftIcon={<LuCreditCard />}
+                isDisabled={
+                  !["To Invoice", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                }
+                variant={
+                  ["To Invoice", "To Receive and Invoice"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  )
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() => {
+                  invoice(routeData?.purchaseOrder);
+                }}
+              >
+                Invoice
+              </Button>
+            )}
+
+            <statusFetcher.Form
+              method="post"
+              action={path.to.purchaseOrderStatus(orderId)}
+            >
+              <input type="hidden" name="status" value="Draft" />
+              <Button
+                type="submit"
+                variant="secondary"
+                leftIcon={<LuRefreshCw />}
+                isDisabled={
+                  ["Draft", "Cancelled", "Closed", "Completed"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  ) ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "sales")
+                }
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Draft"
+                }
+              >
+                Reopen
+              </Button>
+            </statusFetcher.Form>
+
+            <IconButton
+              aria-label="Toggle Properties"
+              icon={<LuPanelRight />}
+              onClick={toggleProperties}
+              variant="ghost"
+            />
           </HStack>
-          <CardContent>
-            <CardAttributes>
-              <CardAttribute>
-                <CardAttributeLabel>Status</CardAttributeLabel>
-                <PurchasingStatus status={routeData?.purchaseOrder?.status} />
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Assignee</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Assignee
-                    id={orderId}
-                    table="purchaseOrder"
-                    value={assignee ?? undefined}
-                    isReadOnly={!permissions.can("update", "purchasing")}
-                  />
-                </CardAttributeValue>
-              </CardAttribute>
+        </HStack>
+      </div>
 
-              <CardAttribute>
-                <CardAttributeLabel>Order Date</CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatDate(routeData?.purchaseOrder?.orderDate)}
-                </CardAttributeValue>
-              </CardAttribute>
-
-              <CardAttribute>
-                <CardAttributeLabel>Promised Date</CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatDate(routeData?.purchaseOrder?.receiptPromisedDate)}
-                </CardAttributeValue>
-              </CardAttribute>
-              <CardAttribute>
-                <CardAttributeLabel>Type</CardAttributeLabel>
-                <CardAttributeValue>
-                  <Enumerable value={routeData?.purchaseOrder?.type} />
-                </CardAttributeValue>
-              </CardAttribute>
-
-              <CardAttribute>
-                <CardAttributeLabel>Total</CardAttributeLabel>
-                <CardAttributeValue>
-                  {formatter.format(purchaseOrderTotals?.total ?? 0)}
-                </CardAttributeValue>
-              </CardAttribute>
-            </CardAttributes>
-          </CardContent>
-        </Card>
-      </VStack>
       {releaseDisclosure.isOpen && (
         <PurchaseOrderReleaseModal
           purchaseOrder={routeData?.purchaseOrder}

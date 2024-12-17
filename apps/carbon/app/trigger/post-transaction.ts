@@ -58,6 +58,7 @@ export const postTransactionTask = task({
           console.info(
             `💵 Updating pricing from invoice ${payload.documentId}`
           );
+
           const priceUpdate = await serviceRole.functions.invoke(
             "update-purchased-prices",
             {

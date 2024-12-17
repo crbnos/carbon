@@ -177,6 +177,7 @@ export default function QuoteLine() {
         <QuoteLinePricing
           key={lineId}
           line={line}
+          exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
           pricesByQuantity={pricesByQuantity}
           getLineCosts={getLineCosts}
         />
@@ -189,39 +190,38 @@ export default function QuoteLine() {
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
       />
-      <div className="grid grid-cols-1 2xl:grid-cols-2 w-full flex-grow gap-2 ">
-        <Suspense
-          fallback={
-            <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          }
-        >
-          <Await resolve={files}>
-            {(resolvedFiles) => (
-              <OpportunityLineDocuments
-                files={resolvedFiles ?? []}
-                id={quoteId}
-                lineId={lineId}
-                modelUpload={line ?? undefined}
-                type="Quote"
-              />
-            )}
-          </Await>
-        </Suspense>
 
-        <CadModel
-          isReadOnly={!permissions.can("update", "sales")}
-          metadata={{
-            quoteLineId: line.id ?? undefined,
-            itemId: line.itemId ?? undefined,
-          }}
-          modelPath={line?.modelPath ?? null}
-          title="CAD Model"
-          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-        />
-      </div>
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={files}>
+          {(resolvedFiles) => (
+            <OpportunityLineDocuments
+              files={resolvedFiles ?? []}
+              id={quoteId}
+              lineId={lineId}
+              modelUpload={line ?? undefined}
+              type="Quote"
+            />
+          )}
+        </Await>
+      </Suspense>
+
+      <CadModel
+        isReadOnly={!permissions.can("update", "sales")}
+        metadata={{
+          quoteLineId: line.id ?? undefined,
+          itemId: line.itemId ?? undefined,
+        }}
+        modelPath={line?.modelPath ?? null}
+        title="CAD Model"
+        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+      />
 
       <Outlet />
     </Fragment>

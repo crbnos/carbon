@@ -4,11 +4,15 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner } from "@carbon/react";
+import { useRouteData } from "@carbon/remix";
 import { Await, Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense } from "react";
-import type { SupplierQuoteLinePrice } from "~/modules/purchasing";
+import type {
+  SupplierQuote,
+  SupplierQuoteLinePrice,
+} from "~/modules/purchasing";
 import {
   getSupplierInteractionLineDocuments,
   getSupplierQuoteLine,
@@ -115,6 +119,12 @@ export default function SupplierQuoteLine() {
   if (!id) throw new Error("Could not find id");
   if (!lineId) throw new Error("Could not find lineId");
 
+  const routeData = useRouteData<{
+    quote: SupplierQuote;
+  }>(path.to.supplierQuote(id));
+
+  const exchangeRate = routeData?.quote?.exchangeRate ?? 1;
+
   const initialValues = {
     ...line,
     id: line.id ?? undefined,
@@ -128,7 +138,6 @@ export default function SupplierQuoteLine() {
     inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "",
     purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: line.conversionFactor ?? undefined,
-    taxPercent: line.taxPercent ?? 0,
     itemType: (line.itemType ?? "Part") as MethodItemType,
   };
 
@@ -138,13 +147,15 @@ export default function SupplierQuoteLine() {
       <SupplierQuoteLinePricing
         line={line}
         pricesByQuantity={pricesByQuantity}
+        exchangeRate={exchangeRate}
       />
       <SupplierInteractionLineNotes
         id={line.id}
         table="supplierQuoteLine"
         title="Notes"
         subTitle={line.itemReadableId ?? ""}
-        notes={line.notes as JSONContent}
+        internalNotes={line.internalNotes as JSONContent}
+        externalNotes={line.externalNotes as JSONContent}
       />
 
       <Suspense

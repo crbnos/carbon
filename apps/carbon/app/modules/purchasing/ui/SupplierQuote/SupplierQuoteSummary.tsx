@@ -205,6 +205,8 @@ const LinePricingOptions = ({
           <Tr>
             <Th>Quantity</Th>
             <Th>Unit Price</Th>
+            <Th>Shipping</Th>
+            <Th>Tax</Th>
             <Th>Lead Time</Th>
 
             <Th className="text-right">Total</Th>
@@ -264,6 +266,9 @@ const LinePricingOptions = ({
                       </VStack>
                     </Td>
 
+                    <Td>{formatter.format(option.shippingCost ?? 0)}</Td>
+                    <Td>{formatter.format(option.taxAmount ?? 0)}</Td>
+
                     <Td>
                       {new Intl.NumberFormat(locale, {
                         style: "unit",
@@ -273,9 +278,9 @@ const LinePricingOptions = ({
 
                     <Td className="text-right">
                       {formatter.format(
-                        ((option.unitPrice ?? 0) * option.quantity +
-                          (option.shippingCost ?? 0)) *
-                          (1 + (line.taxPercent ?? 0))
+                        (option.unitPrice ?? 0) * option.quantity +
+                          (option.shippingCost ?? 0) +
+                          (option.supplierTaxAmount ?? 0)
                       )}
                     </Td>
                   </Tr>

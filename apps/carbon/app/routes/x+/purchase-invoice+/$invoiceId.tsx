@@ -1,22 +1,28 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { ClientOnly, VStack } from "@carbon/react";
+import { Outlet, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import { useEffect } from "react";
+import { defer, redirect } from "@vercel/remix";
+import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   PurchaseInvoiceHeader,
-  PurchaseInvoiceSidebar,
   getPurchaseInvoice,
   getPurchaseInvoiceLines,
-  usePurchaseInvoiceTotals,
 } from "~/modules/invoicing";
+import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
+import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
+import {
+  getSupplier,
+  getSupplierInteraction,
+  getSupplierInteractionDocuments,
+} from "~/modules/purchasing/purchasing.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Purchasing",
+  breadcrumb: "Purchase Invoices",
   to: path.to.purchaseInvoices,
 };
 
@@ -25,7 +31,7 @@ export const config = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
   });
 
@@ -47,9 +53,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  const [supplier, interaction] = await Promise.all([
+    purchaseInvoice.data?.supplierId
+      ? getSupplier(client, purchaseInvoice.data.supplierId)
+      : null,
+    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
+  ]);
+
+  return defer({
     purchaseInvoice: purchaseInvoice.data,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
+    files: getSupplierInteractionDocuments(
+      client,
+      companyId,
+      purchaseInvoice.data.supplierInteractionId!
+    ),
+    interaction: interaction.data,
+    supplier: supplier?.data ?? null,
   });
 }
 
@@ -58,27 +78,34 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function PurchaseInvoiceRoute() {
-  const { purchaseInvoiceLines } = useLoaderData<typeof loader>();
-  const [, setPurchaseInvoiceTotals] = usePurchaseInvoiceTotals();
+  const params = useParams();
+  const { invoiceId } = params;
+  if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  useEffect(() => {
-    const totals = purchaseInvoiceLines.reduce(
-      (acc, line) => {
-        acc.total += line?.totalAmount ?? 0;
-
-        return acc;
-      },
-      { total: 0 }
-    );
-    setPurchaseInvoiceTotals(totals);
-  }, [purchaseInvoiceLines, setPurchaseInvoiceTotals]);
   return (
-    <>
-      <PurchaseInvoiceHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <PurchaseInvoiceSidebar />
-        <Outlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <PurchaseInvoiceHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ClientOnly fallback={null}>
+              {() => (
+                <ResizablePanels
+                  explorer={<PurchaseInvoiceExplorer />}
+                  content={
+                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                      <VStack spacing={2} className="p-2">
+                        <Outlet />
+                      </VStack>
+                    </div>
+                  }
+                  properties={<PurchaseInvoiceProperties />}
+                />
+              )}
+            </ClientOnly>
+          </div>
+        </div>
       </div>
-    </>
+    </PanelProvider>
   );
 }

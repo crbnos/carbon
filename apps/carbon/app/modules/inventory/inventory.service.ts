@@ -206,7 +206,7 @@ export async function getReceipts(
   }
 ) {
   let query = client
-    .from("receipts")
+    .from("receipt")
     .select("*", {
       count: "exact",
     })
@@ -229,7 +229,7 @@ export async function getReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
 ) {
-  return client.from("receipts").select("*").eq("id", receiptId).single();
+  return client.from("receipt").select("*").eq("id", receiptId).single();
 }
 
 export async function getReceiptLines(

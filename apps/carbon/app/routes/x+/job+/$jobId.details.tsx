@@ -99,41 +99,38 @@ export default function JobDetailsRoute() {
         subTitle={jobData?.job.itemReadableId ?? ""}
         notes={jobData?.job.notes as JSONContent}
       />
-      {permissions.is("employee") && (
-        <>
-          <Suspense
-            fallback={
-              <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
-                <Spinner className="h-10 w-10" />
-              </div>
-            }
-          >
-            <Await resolve={jobData.files}>
-              {(files) => (
-                <Documents
-                  files={files}
-                  modelUpload={{ ...jobData.job }}
-                  sourceDocument="Job"
-                  sourceDocumentId={jobData.job.id ?? ""}
-                  writeBucket="job"
-                  writeBucketPermission="production"
-                />
-              )}
-            </Await>
-          </Suspense>
-          <CadModel
-            isReadOnly={!permissions.can("update", "production")}
-            metadata={{
-              jobId: jobData?.job?.id ?? undefined,
-              itemId: jobData?.job?.itemId ?? undefined,
-            }}
-            modelPath={jobData?.job?.modelPath ?? null}
-            title="CAD Model"
-            uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
-            viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
-          />
-        </>
-      )}
+
+      <Suspense
+        fallback={
+          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center min-h-[420px] max-h-[70vh]">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={jobData.files}>
+          {(files) => (
+            <Documents
+              files={files}
+              modelUpload={{ ...jobData.job }}
+              sourceDocument="Job"
+              sourceDocumentId={jobData.job.id ?? ""}
+              writeBucket="job"
+              writeBucketPermission="production"
+            />
+          )}
+        </Await>
+      </Suspense>
+      <CadModel
+        isReadOnly={!permissions.can("update", "production")}
+        metadata={{
+          jobId: jobData?.job?.id ?? undefined,
+          itemId: jobData?.job?.itemId ?? undefined,
+        }}
+        modelPath={jobData?.job?.modelPath ?? null}
+        title="CAD Model"
+        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+      />
     </VStack>
   );
 }

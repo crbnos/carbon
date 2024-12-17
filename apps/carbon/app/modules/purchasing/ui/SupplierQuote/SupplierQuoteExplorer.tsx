@@ -21,8 +21,10 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuMoreVertical, LuPlusCircle, LuTrash } from "react-icons/lu";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Supplier, SupplierQuote, SupplierQuoteLine } from "../../types";
 import DeleteSupplierQuoteLine from "./DeleteSupplierQuoteLine";
@@ -45,7 +47,6 @@ export default function SupplierQuoteExplorer() {
     description: "",
     itemId: "",
     quantity: [1],
-    taxPercent: 0,
     inventoryUnitOfMeasureCode: "",
     purchaseUnitOfMeasureCode: "",
   };
@@ -225,6 +226,20 @@ function SupplierQuoteLineItem({
                 >
                   <DropdownMenuIcon icon={<LuTrash />} />
                   Delete Line
+                </DropdownMenuItem>
+
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.itemType as MethodItemType,
+                      line.itemId!
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type="Part" />}
+                    />
+                    View Item Master
+                  </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

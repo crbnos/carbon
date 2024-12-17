@@ -1,16 +1,16 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Outlet } from "@remix-run/react";
+import { VStack } from "@carbon/react";
+import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { PanelProvider } from "~/components/Layout";
 import {
   ReceiptHeader,
-  ReceiptSidebar,
   getReceipt,
   getReceiptLines,
 } from "~/modules/inventory";
-import { getNotes } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -27,10 +27,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, notes] = await Promise.all([
+  const [receipt, receiptLines] = await Promise.all([
     getReceipt(client, receiptId),
     getReceiptLines(client, receiptId),
-    getNotes(client, receiptId),
   ]);
 
   if (receipt.error) {
@@ -43,18 +42,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
-    notes: notes.data ?? [],
   });
 }
 
 export default function ReceiptRoute() {
+  const params = useParams();
+  const { receiptId } = params;
+  if (!receiptId) throw new Error("Could not find receiptId");
+
   return (
-    <>
-      <ReceiptHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <ReceiptSidebar />
-        <Outlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <ReceiptHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <VStack spacing={4} className="h-full p-2 w-full max-w-5xl mx-auto">
+            <Outlet />
+          </VStack>
+        </div>
       </div>
-    </>
+    </PanelProvider>
   );
 }

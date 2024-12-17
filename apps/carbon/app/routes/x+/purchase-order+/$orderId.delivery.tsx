@@ -2,59 +2,14 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData } from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import {
-  getPurchaseOrderDelivery,
   purchaseOrderDeliveryValidator,
   upsertPurchaseOrderDelivery,
 } from "~/modules/purchasing";
-import { PurchaseOrderDeliveryForm } from "~/modules/purchasing/ui/PurchaseOrder";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "purchasing",
-  });
-
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
-
-  const [purchaseOrderDelivery] = await Promise.all([
-    getPurchaseOrderDelivery(client, orderId),
-    // getShippingTermsList(client, companyId),
-  ]);
-
-  if (purchaseOrderDelivery.error) {
-    throw redirect(
-      path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(
-          purchaseOrderDelivery.error,
-          "Failed to load purchase order delivery"
-        )
-      )
-    );
-  }
-
-  // if (shippingTerms.error) {
-  //   throw redirect(
-  //     path.to.purchaseOrders,
-  //     await flash(
-  //       request,
-  //       error(shippingTerms.error, "Failed to load shipping terms")
-  //     )
-  //   );
-  // }
-
-  return json({
-    purchaseOrderDelivery: purchaseOrderDelivery.data,
-    // shippingTerms: shippingTerms.data ?? [],
-  });
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -85,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
   if (updatePurchaseOrderDelivery.error) {
     throw redirect(
-      path.to.purchaseOrderDelivery(orderId),
+      path.to.purchaseOrderDetails(orderId),
       await flash(
         request,
         error(
@@ -97,35 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.purchaseOrderDelivery(orderId),
+    path.to.purchaseOrderDetails(orderId),
     await flash(request, success("Updated purchase order delivery"))
-  );
-}
-
-export default function PurchaseOrderDeliveryRoute() {
-  const { purchaseOrderDelivery } = useLoaderData<typeof loader>();
-
-  const initialValues = {
-    id: purchaseOrderDelivery.id,
-    locationId: purchaseOrderDelivery.locationId ?? "",
-    shippingMethodId: purchaseOrderDelivery.shippingMethodId ?? "",
-    shippingTermId: purchaseOrderDelivery.shippingTermId ?? "",
-    trackingNumber: purchaseOrderDelivery.trackingNumber ?? "",
-    receiptRequestedDate: purchaseOrderDelivery.receiptRequestedDate ?? "",
-    receiptPromisedDate: purchaseOrderDelivery.receiptPromisedDate ?? "",
-    deliveryDate: purchaseOrderDelivery.deliveryDate ?? "",
-    notes: purchaseOrderDelivery.notes ?? "",
-    dropShipment: purchaseOrderDelivery.dropShipment ?? false,
-    customerId: purchaseOrderDelivery.customerId ?? "",
-    customerLocationId: purchaseOrderDelivery.customerLocationId ?? "",
-    ...getCustomFields(purchaseOrderDelivery.customFields),
-  };
-
-  return (
-    <PurchaseOrderDeliveryForm
-      key={initialValues.id}
-      initialValues={initialValues}
-      // shippingTerms={shippingTerms as ListItem[]}
-    />
   );
 }

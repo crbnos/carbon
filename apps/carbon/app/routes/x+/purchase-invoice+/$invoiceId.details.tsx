@@ -2,16 +2,26 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useParams } from "@remix-run/react";
+import type { JSONContent } from "@carbon/react";
+import { Spinner } from "@carbon/react";
+import { Await, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { Suspense } from "react";
+import { Fragment } from "react/jsx-runtime";
 import { useRouteData } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
+import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import {
-  PurchaseInvoiceForm,
+  PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
   upsertPurchaseInvoice,
 } from "~/modules/invoicing";
+import type { SupplierInteraction } from "~/modules/purchasing";
+import {
+  SupplierInteractionDocuments,
+  SupplierInteractionNotes,
+} from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -63,9 +73,12 @@ export default function PurchaseInvoiceBasicRoute() {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
-  const invoiceData = useRouteData<{ purchaseInvoice: PurchaseInvoice }>(
-    path.to.purchaseInvoice(invoiceId)
-  );
+  const invoiceData = useRouteData<{
+    purchaseInvoice: PurchaseInvoice;
+    purchaseInvoiceLines: PurchaseInvoiceLine[];
+    interaction: SupplierInteraction;
+    files: Promise<FileObject[]>;
+  }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceData?.purchaseInvoice)
     throw new Error("purchaseInvoice not found");
@@ -88,6 +101,34 @@ export default function PurchaseInvoiceBasicRoute() {
   };
 
   return (
-    <PurchaseInvoiceForm key={initialValues.id} initialValues={initialValues} />
+    <Fragment key={invoiceId}>
+      <PurchaseInvoiceSummary />
+      <SupplierInteractionNotes
+        key={`notes-${initialValues.id}`}
+        id={invoiceId}
+        title="Notes"
+        table="purchaseInvoice"
+        internalNotes={purchaseInvoice.internalNotes as JSONContent}
+      />
+      <Suspense
+        key={`documents-${invoiceId}`}
+        fallback={
+          <div className="flex w-full min-h-[480px] h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={invoiceData.files}>
+          {(resolvedFiles) => (
+            <SupplierInteractionDocuments
+              interaction={invoiceData.interaction}
+              attachments={resolvedFiles}
+              id={invoiceId}
+              type="Purchase Invoice"
+            />
+          )}
+        </Await>
+      </Suspense>
+    </Fragment>
   );
 }

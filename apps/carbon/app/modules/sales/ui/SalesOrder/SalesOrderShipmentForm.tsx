@@ -23,6 +23,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import type { action } from "~/routes/x+/sales-order+/$orderId.shipment";
 import { path } from "~/utils/path";
 import { salesOrderShipmentValidator } from "../../sales.models";
 import type { SalesOrder } from "../../types";
@@ -37,7 +38,7 @@ const SalesOrderShipmentForm = ({
 }: // shippingTerms,
 SalesOrderShipmentFormProps) => {
   const permissions = usePermissions();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useFetcher<typeof action>();
   const [dropShip, setDropShip] = useState<boolean>(
     initialValues.dropShipment ?? false
   );

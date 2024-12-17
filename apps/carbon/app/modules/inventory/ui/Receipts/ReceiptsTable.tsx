@@ -15,13 +15,7 @@ import {
   LuTrash,
   LuUser,
 } from "react-icons/lu";
-import {
-  EmployeeAvatar,
-  Hyperlink,
-  New,
-  SupplierAvatar,
-  Table,
-} from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
@@ -32,7 +26,7 @@ import {
   receiptSourceDocumentType,
   receiptStatusType,
 } from "~/modules/inventory";
-import { usePeople, useSuppliers } from "~/stores";
+import { usePeople } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -51,7 +45,6 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
 
   const rows = useMemo(() => data, [data]);
   const [people] = usePeople();
-  const [suppliers] = useSuppliers();
   const customColumns = useCustomColumns<Receipt>("receipt");
 
   const columns = useMemo<ColumnDef<Receipt>[]>(() => {
@@ -174,23 +167,23 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
           icon: <LuCalendar />,
         },
       },
-      {
-        id: "supplierId",
-        header: "Supplier",
-        cell: ({ row }) => {
-          return <SupplierAvatar supplierId={row.original.supplierId} />;
-        },
-        meta: {
-          filter: {
-            type: "static",
-            options: suppliers?.map((supplier) => ({
-              value: supplier.id,
-              label: supplier.name,
-            })),
-          },
-          icon: <LuUser />,
-        },
-      },
+      // {
+      //   id: "supplierId",
+      //   header: "Supplier",
+      //   cell: ({ row }) => {
+      //     return <SupplierAvatar supplierId={row.original.supplierId} />;
+      //   },
+      //   meta: {
+      //     filter: {
+      //       type: "static",
+      //       options: suppliers?.map((supplier) => ({
+      //         value: supplier.id,
+      //         label: supplier.name,
+      //       })),
+      //     },
+      //     icon: <LuUser />,
+      //   },
+      // },
       {
         accessorKey: "invoiced",
         header: "Invoiced",
@@ -268,7 +261,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
     ];
 
     return [...result, ...customColumns];
-  }, [locations, suppliers, people, customColumns]);
+  }, [locations, people, customColumns]);
 
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const deleteReceiptModal = useDisclosure();
@@ -286,7 +279,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
             }}
           >
             <MenuIcon icon={<LuPencil />} />
-            Edit Receipt
+            {row.postingDate ? "View Receipt" : "Edit Receipt"}
           </MenuItem>
           <MenuItem
             disabled={

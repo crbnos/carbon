@@ -8,7 +8,7 @@ import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import {
-  getSupplierInteractionByQuote,
+  getSupplierInteraction,
   getSupplierInteractionDocuments,
   getSupplierQuote,
   getSupplierQuoteLinePricesByQuoteId,
@@ -37,14 +37,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   const serviceRole = await getCarbonServiceRole();
 
-  const [quote, lines, prices, interaction] = await Promise.all([
+  const [quote, lines, prices] = await Promise.all([
     getSupplierQuote(serviceRole, id),
     getSupplierQuoteLines(serviceRole, id),
     getSupplierQuoteLinePricesByQuoteId(serviceRole, id),
-    getSupplierInteractionByQuote(serviceRole, id),
   ]);
-
-  if (!interaction.data) throw new Error("Failed to get interaction record");
 
   if (quote.error) {
     throw redirect(
@@ -53,28 +50,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  let exchangeRate = 1;
-  if (quote.data?.currencyCode) {
-    const presentationCurrency = await getCurrencyByCode(
-      serviceRole,
-      companyId,
-      quote.data.currencyCode
+  const [supplierInteraction, presentationCurrency] = await Promise.all([
+    getSupplierInteraction(serviceRole, quote.data.supplierInteractionId!),
+    getCurrencyByCode(serviceRole, companyId, quote.data.currencyCode!),
+  ]);
+
+  if (supplierInteraction.error) {
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(
+        request,
+        error(
+          supplierInteraction.error,
+          "Failed to load supplier interaction record"
+        )
+      )
     );
-    if (presentationCurrency.data?.exchangeRate) {
-      exchangeRate = presentationCurrency.data.exchangeRate;
-    }
+  }
+
+  let exchangeRate = 1;
+  if (quote.data?.currencyCode && presentationCurrency.data?.exchangeRate) {
+    exchangeRate = presentationCurrency.data.exchangeRate;
   }
 
   return defer({
     quote: quote.data,
     lines: lines.data ?? [],
+    prices: prices.data ?? [],
     files: getSupplierInteractionDocuments(
       serviceRole,
       companyId,
-      interaction.data.id
+      quote.data.supplierInteractionId!
     ),
-    prices: prices.data ?? [],
-    interaction: interaction.data,
+    interaction: supplierInteraction.data,
     exchangeRate,
   });
 }

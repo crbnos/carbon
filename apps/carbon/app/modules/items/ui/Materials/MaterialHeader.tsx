@@ -22,7 +22,7 @@ const MaterialHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.materialDetails(itemId)}>
-            <Heading size="h3" className="flex items-center gap-2">
+            <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Material" />} /> */}
               <span>{routeData?.materialSummary?.id}</span>
             </Heading>

@@ -145,6 +145,15 @@ serve(async (req: Request) => {
         await trx
           .insertInto("supplierPart")
           .values(supplierPartInserts)
+          .onConflict((oc) =>
+            oc.columns(["itemId", "supplierId", "companyId"]).doUpdateSet({
+              unitPrice: (eb) => eb.ref("excluded.unitPrice"),
+              conversionFactor: (eb) => eb.ref("excluded.conversionFactor"),
+              supplierUnitOfMeasureCode: (eb) =>
+                eb.ref("excluded.supplierUnitOfMeasureCode"),
+              updatedBy: "system",
+            })
+          )
           .execute();
       }
 

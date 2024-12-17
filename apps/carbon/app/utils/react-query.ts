@@ -58,6 +58,14 @@ export const processesQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low,
 });
 
+export const shelvesQuery = (
+  companyId: string | null,
+  locationId: string | null
+) => ({
+  queryKey: ["shelves", companyId ?? "null", locationId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
 export const shippingMethodsQuery = (companyId: string | null) => ({
   queryKey: ["shippingMethods", companyId ?? "null"],
   staleTime: RefreshRate.Low,

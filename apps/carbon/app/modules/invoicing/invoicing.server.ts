@@ -6,14 +6,12 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   userId: string
 ) {
   const client = getCarbonServiceRole();
-  return client.functions.invoke<{ id: string }>(
-    "create-purchase-invoice-from-purchase-order",
-    {
-      body: {
-        id: purchaseOrderId,
-        companyId,
-        userId,
-      },
-    }
-  );
+  return client.functions.invoke<{ id: string }>("convert", {
+    body: {
+      type: "purchaseOrderToPurchaseInvoice",
+      id: purchaseOrderId,
+      companyId,
+      userId,
+    },
+  });
 }

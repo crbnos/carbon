@@ -9,11 +9,12 @@ import { formatDate } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
-  LuArrowDownLeft,
+  LuArrowDownToLine,
   LuBookMarked,
   LuCalendar,
   LuContainer,
   LuCreditCard,
+  LuDollarSign,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -24,13 +25,16 @@ import {
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   New,
   SupplierAvatar,
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { usePaymentTerm } from "~/components/Form/PaymentTerm";
+import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
@@ -47,6 +51,7 @@ type PurchaseOrdersTableProps = {
 const PurchaseOrdersTable = memo(
   ({ data, count }: PurchaseOrdersTableProps) => {
     const permissions = usePermissions();
+    const currencyFormatter = useCurrencyFormatter();
 
     const [selectedPurchaseOrder, setSelectedPurchaseOrder] =
       useState<PurchaseOrder | null>(null);
@@ -55,6 +60,8 @@ const PurchaseOrdersTable = memo(
 
     const [people] = usePeople();
     const [suppliers] = useSuppliers();
+    const shippingMethods = useShippingMethod();
+    const paymentTerms = usePaymentTerm();
 
     // const optimisticFavorite = useOptimisticFavorite();
 
@@ -69,6 +76,12 @@ const PurchaseOrdersTable = memo(
           header: "PO Number",
           cell: ({ row }) => (
             <HStack>
+              <ItemThumbnail
+                size="sm"
+                thumbnailPath={row.original.thumbnailPath}
+                // @ts-ignore
+                type={row.original.itemType}
+              />
               <Hyperlink to={path.to.purchaseOrderDetails(row.original.id!)}>
                 {row.original.purchaseOrderId}
               </Hyperlink>
@@ -132,6 +145,14 @@ const PurchaseOrdersTable = memo(
           },
         },
         {
+          accessorKey: "orderTotal",
+          header: "Order Total",
+          cell: (item) => currencyFormatter.format(item.getValue<number>()),
+          meta: {
+            icon: <LuDollarSign />,
+          },
+        },
+        {
           id: "assignee",
           header: "Assignee",
           cell: ({ row }) => (
@@ -157,22 +178,32 @@ const PurchaseOrdersTable = memo(
           },
         },
         {
-          accessorKey: "shippingMethodName",
+          accessorKey: "shippingMethodId",
           header: "Shipping Method",
-          cell: (item) => item.getValue(),
+          cell: (item) => (
+            <Enumerable
+              value={
+                shippingMethods.find(
+                  (sm) => sm.value === item.getValue<string>()
+                )?.label ?? null
+              }
+            />
+          ),
           meta: {
             icon: <LuTruck />,
           },
         },
-        // {
-        //   accessorKey: "shippingTermName",
-        //   header: "Shipping Term",
-        //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
-        // },
         {
-          accessorKey: "paymentTermName",
+          accessorKey: "paymentTermId",
           header: "Payment Method",
-          cell: (item) => <Enumerable value={item.getValue<string>()} />,
+          cell: (item) => (
+            <Enumerable
+              value={
+                paymentTerms.find((pt) => pt.value === item.getValue<string>())
+                  ?.label ?? null
+              }
+            />
+          ),
           meta: {
             icon: <LuCreditCard />,
           },
@@ -246,7 +277,14 @@ const PurchaseOrdersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [suppliers, people, customColumns]);
+    }, [
+      suppliers,
+      people,
+      customColumns,
+      currencyFormatter,
+      shippingMethods,
+      paymentTerms,
+    ]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name
@@ -262,7 +300,7 @@ const PurchaseOrdersTable = memo(
 
           <MenuItem
             disabled={
-              !["To Recieve", "To Receive and Invoice"].includes(
+              !["To Receive", "To Receive and Invoice"].includes(
                 row.status ?? ""
               ) || !permissions.can("update", "inventory")
             }
@@ -270,11 +308,14 @@ const PurchaseOrdersTable = memo(
               receive(row);
             }}
           >
-            <MenuIcon icon={<LuArrowDownLeft />} />
+            <MenuIcon icon={<LuArrowDownToLine />} />
             Receive
           </MenuItem>
           <MenuItem
-            disabled={!permissions.can("delete", "purchasing")}
+            disabled={
+              !permissions.can("delete", "purchasing") ||
+              !["Draft"].includes(row.status ?? "")
+            }
             destructive
             onClick={() => {
               setSelectedPurchaseOrder(row);

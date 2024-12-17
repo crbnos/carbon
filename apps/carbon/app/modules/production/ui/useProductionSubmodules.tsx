@@ -1,4 +1,4 @@
-import { LuCalendarClock, LuHardHat, LuTrash } from "react-icons/lu";
+import { LuHardHat, LuKanbanSquare, LuTrash } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -15,7 +15,7 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Schedule",
         to: path.to.schedule,
-        icon: <LuCalendarClock />,
+        icon: <LuKanbanSquare />,
       },
     ],
   },

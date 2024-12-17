@@ -17,22 +17,15 @@ import type { z } from "zod";
 import {
   Currency,
   CustomFormFields,
-  DatePicker,
   Hidden,
   Input,
-  Select,
   Submit,
   Supplier,
   SupplierContact,
   SupplierLocation,
-  TextArea,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import {
-  purchaseOrderStatusType,
-  purchaseOrderTypeType,
-  purchaseOrderValidator,
-} from "~/modules/purchasing";
+import { purchaseOrderValidator } from "~/modules/purchasing";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderValidator>;
 
@@ -51,17 +44,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
     currencyCode: initialValues.currencyCode,
   });
   const isEditing = initialValues.id !== undefined;
-  const isSupplier = permissions.is("supplier");
-
-  const statusOptions = purchaseOrderStatusType.map((status) => ({
-    label: status,
-    value: status,
-  }));
-
-  const typeOptions = purchaseOrderTypeType.map((type) => ({
-    label: type,
-    value: type,
-  }));
 
   const onSupplierChange = async (
     newValue: {
@@ -105,12 +87,13 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
   };
 
   return (
-    <ValidatedForm
-      method="post"
-      validator={purchaseOrderValidator}
-      defaultValues={initialValues}
-    >
-      <Card>
+    <Card>
+      <ValidatedForm
+        method="post"
+        validator={purchaseOrderValidator}
+        defaultValues={initialValues}
+        className="w-full"
+      >
         <CardHeader>
           <CardTitle>
             {isEditing ? "Purchase Order" : "New Purchase Order"}
@@ -140,15 +123,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 onChange={onSupplierChange}
               />
               <Input name="supplierReference" label="Supplier Order Number" />
-              {isEditing && permissions.can("delete", "purchasing") && (
-                <Select
-                  name="status"
-                  label="Status"
-                  value={initialValues.status}
-                  options={statusOptions}
-                  isReadOnly={isSupplier}
-                />
-              )}
               <SupplierLocation
                 name="supplierLocationId"
                 label="Supplier Location"
@@ -158,18 +132,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 name="supplierContactId"
                 label="Supplier Contact"
                 supplier={supplier.id}
-              />
-
-              <DatePicker
-                name="orderDate"
-                label="Order Date"
-                isDisabled={isSupplier}
-              />
-              <Select
-                name="type"
-                label="Type"
-                options={typeOptions}
-                isReadOnly={true} // {isSupplier}
               />
 
               <Currency
@@ -186,9 +148,6 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                 }}
               />
 
-              {isEditing && (
-                <TextArea name="notes" label="Notes" readOnly={isSupplier} />
-              )}
               <CustomFormFields table="purchaseOrder" />
             </div>
           </VStack>
@@ -204,8 +163,8 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
             Save
           </Submit>
         </CardFooter>
-      </Card>
-    </ValidatedForm>
+      </ValidatedForm>
+    </Card>
   );
 };
 

@@ -1,10 +1,16 @@
-import { HStack, Heading, IconButton } from "@carbon/react";
+import {
+  Button,
+  HStack,
+  Heading,
+  IconButton,
+  useDisclosure,
+} from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { LuPanelLeft, LuPanelRight } from "react-icons/lu";
+import { LuPanelLeft, LuPanelRight, LuShoppingCart } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 
 import { path } from "~/utils/path";
 
@@ -15,12 +21,14 @@ import type {
   SupplierQuoteLinePrice,
 } from "../../types";
 import SupplierQuoteStatus from "./SupplierQuoteStatus";
+import SupplierQuoteToOrderDrawer from "./SupplierQuoteToOrderDrawer";
 
 const SupplierQuoteHeader = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
   const { toggleExplorer, toggleProperties } = usePanels();
+  const permissions = usePermissions();
 
   const routeData = useRouteData<{
     quote: SupplierQuote;
@@ -29,7 +37,7 @@ const SupplierQuoteHeader = () => {
     prices: SupplierQuoteLinePrice[];
   }>(path.to.supplierQuote(id));
 
-  // const convertToOrderModal = useDisclosure();
+  const convertToOrderModal = useDisclosure();
 
   return (
     <>
@@ -50,7 +58,7 @@ const SupplierQuoteHeader = () => {
             <SupplierQuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
-            {/* <Button
+            <Button
               isDisabled={
                 routeData?.quote?.status !== "Active" ||
                 !permissions.can("update", "purchasing")
@@ -59,7 +67,7 @@ const SupplierQuoteHeader = () => {
               onClick={convertToOrderModal.onOpen}
             >
               Order
-            </Button> */}
+            </Button>
 
             <IconButton
               aria-label="Toggle Properties"
@@ -71,13 +79,13 @@ const SupplierQuoteHeader = () => {
         </HStack>
       </div>
 
-      {/* <SupplierQuoteToOrderModal
+      <SupplierQuoteToOrderDrawer
         isOpen={convertToOrderModal.isOpen}
         onClose={convertToOrderModal.onClose}
         quote={routeData?.quote!}
         lines={routeData?.lines ?? []}
         pricing={routeData?.prices ?? []}
-      /> */}
+      />
     </>
   );
 };

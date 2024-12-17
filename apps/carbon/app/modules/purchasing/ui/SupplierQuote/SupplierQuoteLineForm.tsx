@@ -34,7 +34,6 @@ import {
   Hidden,
   InputControlled,
   Item,
-  Number,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
@@ -295,18 +294,6 @@ const SupplierQuoteLineForm = ({
                             ...d,
                             conversionFactor: value,
                           }));
-                        }}
-                      />
-                      <Number
-                        name="taxPercent"
-                        label="Tax Percent"
-                        minValue={0}
-                        maxValue={1}
-                        step={0.0001}
-                        formatOptions={{
-                          style: "percent",
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 2,
                         }}
                       />
 

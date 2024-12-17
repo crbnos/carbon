@@ -105,8 +105,6 @@ serve(async (req: Request) => {
           .single();
         if (supplier.error) throw new Error("Failed to fetch supplier");
 
-        const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
-          [];
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
         const journalLineInserts: Omit<
@@ -446,22 +444,6 @@ serve(async (req: Request) => {
               }
             });
 
-            // create the cost ledger entry
-            costLedgerInserts.push({
-              itemLedgerType: "Purchase",
-              costLedgerType: "Direct Cost",
-              adjustment: false,
-              documentType: "Purchase Receipt",
-              documentId: receipt.data?.id ?? undefined,
-              externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
-              itemId: receiptLine.itemId,
-              itemReadableId: receiptLine.itemReadableId ?? "",
-              quantity: quantityToReverse,
-              cost: reversedValue,
-              costPostedToGL: reversedValue,
-              companyId,
-            });
-
             // create the normal GL entries
 
             let journalLineReference = nanoid();
@@ -723,14 +705,6 @@ serve(async (req: Request) => {
             await trx
               .insertInto("itemLedger")
               .values(itemLedgerInserts)
-              .returning(["id"])
-              .execute();
-          }
-
-          if (costLedgerInserts.length > 0) {
-            await trx
-              .insertInto("costLedger")
-              .values(costLedgerInserts)
               .returning(["id"])
               .execute();
           }

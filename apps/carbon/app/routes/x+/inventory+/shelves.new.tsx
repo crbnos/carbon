@@ -2,11 +2,13 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { shelfValidator, upsertShelf } from "~/modules/inventory";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { getCompanyId, shelvesQuery } from "~/utils/react-query";
 
 // export const handle: Handle = {
 //   breadcrumb: "Shelves",
@@ -58,4 +60,26 @@ export async function action({ request }: ActionFunctionArgs) {
   // const shelfId = createShelf.data?.id;
 
   return modal ? json(createShelf) : redirect(path.to.inventory);
+}
+
+export async function clientAction({
+  request,
+  serverAction,
+}: ClientActionFunctionArgs) {
+  const companyId = getCompanyId();
+
+  const formData = await request.clone().formData(); // if we don't clone it we can't access it in the action
+  const validation = await validator(shelfValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  if (companyId && validation.data.locationId) {
+    window.clientCache?.setQueryData(
+      shelvesQuery(companyId, validation.data.locationId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }

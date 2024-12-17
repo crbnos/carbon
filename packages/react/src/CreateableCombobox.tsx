@@ -76,7 +76,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
         )}
 
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger disabled={isReadOnly} asChild>
             {inline ? (
               <HStack>
                 <IconButton
@@ -86,7 +86,10 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
                   icon={value ? <LuSettings2 /> : <LuPlus />}
                   ref={ref}
                   isDisabled={isReadOnly}
-                  onClick={() => setOpen(true)}
+                  disabled={isReadOnly}
+                  onClick={() => {
+                    if (!isReadOnly) setOpen(true);
+                  }}
                 />
                 {!value && inlineAddLabel && (
                   <span className="text-muted-foreground text-sm">

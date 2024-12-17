@@ -2,18 +2,81 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useParams } from "@remix-run/react";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { JSONContent } from "@carbon/react";
+import { Spinner } from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import type { FileObject } from "@supabase/storage-js";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import type { PurchaseOrder } from "~/modules/purchasing";
+import type {
+  PurchaseOrder,
+  PurchaseOrderLine,
+  SupplierInteraction,
+} from "~/modules/purchasing";
 import {
+  getPurchaseOrderDelivery,
+  getPurchaseOrderPayment,
   purchaseOrderValidator,
   upsertPurchaseOrder,
 } from "~/modules/purchasing";
-import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
+import {
+  PurchaseOrderDeliveryForm,
+  PurchaseOrderPaymentForm,
+  PurchaseOrderSummary,
+} from "~/modules/purchasing/ui/PurchaseOrder";
+import {
+  SupplierInteractionDocuments,
+  SupplierInteractionNotes,
+} from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "purchasing",
+  });
+
+  const { orderId } = params;
+  if (!orderId) throw new Error("Could not find orderId");
+
+  const [purchaseOrderDelivery, purchaseOrderPayment] = await Promise.all([
+    getPurchaseOrderDelivery(client, orderId),
+    getPurchaseOrderPayment(client, orderId),
+  ]);
+
+  if (purchaseOrderDelivery.error) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error(
+          purchaseOrderDelivery.error,
+          "Failed to load purchase order delivery"
+        )
+      )
+    );
+  }
+
+  if (purchaseOrderPayment.error) {
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(
+        request,
+        error(
+          purchaseOrderPayment.error,
+          "Failed to load purchase order payment"
+        )
+      )
+    );
+  }
+
+  return json({
+    purchaseOrderDelivery: purchaseOrderDelivery.data,
+    purchaseOrderPayment: purchaseOrderPayment.data,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -58,11 +121,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderBasicRoute() {
+  const { purchaseOrderDelivery, purchaseOrderPayment } =
+    useLoaderData<typeof loader>();
+
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const orderData = useRouteData<{ purchaseOrder: PurchaseOrder }>(
-    path.to.purchaseOrder(orderId)
-  );
+  const orderData = useRouteData<{
+    purchaseOrder: PurchaseOrder;
+    lines: PurchaseOrderLine[];
+    interaction: SupplierInteraction;
+    files: Promise<FileObject[]>;
+  }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 
   const initialValues = {
@@ -73,16 +142,80 @@ export default function PurchaseOrderBasicRoute() {
     supplierLocationId: orderData?.purchaseOrder?.supplierLocationId ?? "",
     supplierReference: orderData?.purchaseOrder?.supplierReference ?? "",
     orderDate: orderData?.purchaseOrder?.orderDate ?? "",
-    type: orderData?.purchaseOrder?.type ?? ("Purchase" as "Purchase"),
+    type: "Purchase",
     status: orderData?.purchaseOrder?.status ?? ("Draft" as "Draft"),
     receiptRequestedDate: orderData?.purchaseOrder?.receiptRequestedDate ?? "",
     receiptPromisedDate: orderData?.purchaseOrder?.receiptPromisedDate ?? "",
-    notes: orderData?.purchaseOrder?.notes ?? "",
     currencyCode: orderData?.purchaseOrder?.currencyCode ?? "",
     ...getCustomFields(orderData?.purchaseOrder?.customFields),
   };
 
+  const deliveryInitialValues = {
+    id: purchaseOrderDelivery.id,
+    locationId: purchaseOrderDelivery.locationId ?? "",
+    shippingMethodId: purchaseOrderDelivery.shippingMethodId ?? "",
+    shippingTermId: purchaseOrderDelivery.shippingTermId ?? "",
+    trackingNumber: purchaseOrderDelivery.trackingNumber ?? "",
+    receiptRequestedDate: purchaseOrderDelivery.receiptRequestedDate ?? "",
+    receiptPromisedDate: purchaseOrderDelivery.receiptPromisedDate ?? "",
+    deliveryDate: purchaseOrderDelivery.deliveryDate ?? "",
+    notes: purchaseOrderDelivery.notes ?? "",
+    dropShipment: purchaseOrderDelivery.dropShipment ?? false,
+    customerId: purchaseOrderDelivery.customerId ?? "",
+    customerLocationId: purchaseOrderDelivery.customerLocationId ?? "",
+    ...getCustomFields(purchaseOrderDelivery.customFields),
+  };
+  const paymentInitialValues = {
+    id: purchaseOrderPayment.id,
+    invoiceSupplierId: purchaseOrderPayment.invoiceSupplierId ?? "",
+    invoiceSupplierLocationId:
+      purchaseOrderPayment.invoiceSupplierLocationId ?? undefined,
+    invoiceSupplierContactId:
+      purchaseOrderPayment.invoiceSupplierContactId ?? undefined,
+    paymentTermId: purchaseOrderPayment.paymentTermId ?? undefined,
+    paymentComplete: purchaseOrderPayment.paymentComplete ?? undefined,
+    ...getCustomFields(purchaseOrderPayment.customFields),
+  };
+
   return (
-    <PurchaseOrderForm key={initialValues.id} initialValues={initialValues} />
+    <>
+      <PurchaseOrderSummary />
+      <SupplierInteractionNotes
+        key={`notes-${initialValues.id}`}
+        id={orderData.purchaseOrder.id}
+        title="Notes"
+        table="purchaseOrder"
+        internalNotes={orderData.purchaseOrder.internalNotes as JSONContent}
+        externalNotes={orderData.purchaseOrder.externalNotes as JSONContent}
+      />
+      <Suspense
+        key={`documents-${orderId}`}
+        fallback={
+          <div className="flex w-full min-h-[480px] h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+            <Spinner className="h-10 w-10" />
+          </div>
+        }
+      >
+        <Await resolve={orderData.files}>
+          {(resolvedFiles) => (
+            <SupplierInteractionDocuments
+              interaction={orderData.interaction}
+              attachments={resolvedFiles}
+              id={orderId}
+              type="Purchase Order"
+            />
+          )}
+        </Await>
+      </Suspense>
+      <PurchaseOrderDeliveryForm
+        key={`delivery-${orderId}`}
+        initialValues={deliveryInitialValues}
+      />
+
+      <PurchaseOrderPaymentForm
+        key={`payment-${orderId}`}
+        initialValues={paymentInitialValues}
+      />
+    </>
   );
 }

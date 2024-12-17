@@ -1,17 +1,14 @@
 import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 import PurchaseInvoiceHeader from "./PurchaseInvoiceHeader";
 import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
-import PurchaseInvoiceLines from "./PurchaseInvoiceLines";
-import PurchaseInvoiceSidebar from "./PurchaseInvoiceSidebar";
+import PurchaseInvoicesTable from "./PurchaseInvoicesTable";
+import PurchaseInvoiceSummary from "./PurchaseInvoiceSummary";
 import PurchaseInvoicingStatus from "./PurchaseInvoicingStatus";
-import { usePurchaseInvoiceTotals } from "./usePurchaseInvoiceTotals";
-
 export {
   PurchaseInvoiceForm,
   PurchaseInvoiceHeader,
   PurchaseInvoiceLineForm,
-  PurchaseInvoiceLines,
-  PurchaseInvoiceSidebar,
+  PurchaseInvoiceSummary,
+  PurchaseInvoicesTable,
   PurchaseInvoicingStatus,
-  usePurchaseInvoiceTotals,
 };

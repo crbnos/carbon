@@ -1,5 +1,6 @@
 import * as OV from "online-3d-viewer";
 import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { useMount } from "./hooks";
 import { IconButton } from "./IconButton";
 import { Spinner } from "./Spinner";
@@ -78,6 +79,7 @@ export function ModelViewer({
 
               const boundingSphere = viewer3D.GetBoundingSphere(() => true);
               if (boundingSphere) {
+                const scene = viewer3D.scene;
                 const center = boundingSphere.center;
                 const radius = boundingSphere.radius;
                 const camera = viewer3D.GetCamera();
@@ -91,6 +93,26 @@ export function ModelViewer({
                 camera.eye = eye;
                 camera.up = new OV.Coord3D(0, 1, 0);
                 viewer3D.SetCamera(camera);
+
+                // Add ambient light for overall illumination
+                const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+                scene.add(ambientLight);
+
+                // Add directional lights for isometric highlights
+                const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight1.position.set(1, 1, 1);
+                scene.add(dirLight1);
+
+                const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+                dirLight2.position.set(-1, 0.5, -1);
+                scene.add(dirLight2);
+
+                // Add subtle point light for depth
+                const pointLight = new THREE.PointLight(0xffffff, 0.3);
+                pointLight.position.set(0, radius * 2, 0);
+                scene.add(pointLight);
+
+                viewer3D.Render();
               }
             }
 

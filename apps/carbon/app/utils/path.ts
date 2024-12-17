@@ -127,7 +127,10 @@ export const path = {
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateJob: `${x}/job/update`,
+    bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
+    bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
+    bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
@@ -163,6 +166,8 @@ export const path = {
       generatePath(`${x}/consumable/${id}/suppliers`),
     convertQuoteToOrder: (id: string) =>
       generatePath(`${x}/quote/${id}/convert`),
+    convertSupplierQuoteToOrder: (id: string) =>
+      generatePath(`${x}/supplier-quote/${id}/convert`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
     currencies: `${x}/accounting/currencies`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
@@ -278,13 +283,13 @@ export const path = {
     deleteProductionQuantity: (id: string) =>
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
     deletePurchaseInvoice: (id: string) =>
-      generatePath(`${x}/purchase-invoice/delete/${id}`),
+      generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
-      generatePath(`${x}/purchase-invoice/${invoiceId}/lines/delete/${lineId}`),
+      generatePath(`${x}/purchase-invoice/${invoiceId}/${lineId}/delete`),
     deletePurchaseOrder: (id: string) =>
-      generatePath(`${x}/purchase-order/delete/${id}`),
+      generatePath(`${x}/purchase-order/${id}/delete`),
     deletePurchaseOrderLine: (orderId: string, lineId: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines/delete/${lineId}`),
+      generatePath(`${x}/purchase-order/${orderId}/${lineId}/delete`),
     deleteQuote: (id: string) => generatePath(`${x}/quote/${id}/delete`),
     deleteQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/quote/${id}/${lineId}/delete`),
@@ -297,7 +302,7 @@ export const path = {
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
 
-    deleteReceipt: (id: string) => generatePath(`${x}/receipt/delete/${id}`),
+    deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>
@@ -521,10 +526,10 @@ export const path = {
     newProcess: `${x}/resources/processes/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
-      generatePath(`${x}/purchase-invoice/${id}/lines/new`),
+      generatePath(`${x}/purchase-invoice/${id}/new`),
     newPurchaseOrder: `${x}/purchase-order/new`,
     newPurchaseOrderLine: (id: string) =>
-      generatePath(`${x}/purchase-order/${id}/lines/new`),
+      generatePath(`${x}/purchase-order/${id}/new`),
     newQuote: `${x}/quote/new`,
     newQuoteLine: (id: string) => generatePath(`${x}/quote/${id}/new`),
     newQuoteLineCost: (id: string, lineId: string) =>
@@ -613,33 +618,33 @@ export const path = {
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDetails: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/details`),
+    purchaseInvoiceExchangeRate: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/exchange-rate`),
     purchaseInvoiceLine: (invoiceId: string, id: string) =>
-      generatePath(`${x}/purchase-invoice/${invoiceId}/lines/${id}`),
-    purchaseInvoiceLines: (id: string) =>
-      generatePath(`${x}/purchase-invoice/${id}/lines`),
+      generatePath(`${x}/purchase-invoice/${invoiceId}/${id}/details`),
     purchaseInvoicePost: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/post`),
     purchaseInvoiceRoot: `${x}/purchase-invoice`,
-    purchaseInvoices: `${x}/invoicing/purchasing`,
+    purchaseInvoices: `${x}/purchasing/invoices`,
     purchaseOrder: (id: string) => generatePath(`${x}/purchase-order/${id}`),
     purchaseOrderDelivery: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/delivery`),
     purchaseOrderDetails: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/details`),
+    purchaseOrderExchangeRate: (id: string) =>
+      generatePath(`${x}/purchase-order/${id}/exchange-rate`),
     purchaseOrderExternalDocuments: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/external`),
     purchaseOrderFavorite: `${x}/purchasing/orders/favorite`,
-    purchaseOrderInternalDocuments: (id: string) =>
-      generatePath(`${x}/purchase-order/${id}/internal`),
-    purchaseOrderLines: (orderId: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines`),
     purchaseOrderLine: (orderId: string, id: string) =>
-      generatePath(`${x}/purchase-order/${orderId}/lines/${id}`),
+      generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
     purchaseOrderPayment: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/payment`),
     purchaseOrderRelease: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/release`),
     purchaseOrderRoot: `${x}/purchase-order`,
+    purchaseOrderStatus: (id: string) =>
+      generatePath(`${x}/purchase-order/${id}/status`),
     purchaseOrders: `${x}/purchasing/orders`,
     purchasing: `${x}/purchasing`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
@@ -681,6 +686,8 @@ export const path = {
       ),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
+    quoteLinePriceUpdate: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/price/update`),
     quoteLineRecalculatePrice: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/recalculate-price`),
     quoteLineUpdatePrecision: (quoteId: string, lineId: string) =>
@@ -812,6 +819,8 @@ export const path = {
       generatePath(`${x}/supplier-quote/${id}/exchange-rate`),
     supplierQuoteLine: (id: string, lineId: string) =>
       generatePath(`${x}/supplier-quote/${id}/${lineId}/details`),
+    supplierQuoteLinePriceUpdate: (id: string, lineId: string) =>
+      generatePath(`${x}/supplier-quote/${id}/${lineId}/price/update`),
     supplierRoot: `${x}/supplier`,
     supplierStatus: (id: string) =>
       generatePath(`${x}/purchasing/supplier-statuses/${id}`),

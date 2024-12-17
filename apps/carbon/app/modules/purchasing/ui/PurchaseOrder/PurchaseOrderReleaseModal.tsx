@@ -61,7 +61,8 @@ const PurchaseOrderReleaseModal = ({
             <ModalTitle>{`Release ${purchaseOrder?.purchaseOrderId}`}</ModalTitle>
             <ModalDescription>
               Are you sure you want to release the purchase order? Releasing the
-              order will affect supply and demand.
+              order will affect on order quantities used to calculate supply and
+              demand.
             </ModalDescription>
           </ModalHeader>
           <ModalBody>

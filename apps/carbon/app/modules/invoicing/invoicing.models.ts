@@ -7,8 +7,8 @@ export const purchaseInvoiceLineType = [
   "Material",
   "Tool",
   "Consumable",
-  "Fixed Asset",
-  "G/L Account",
+  // "Fixed Asset",
+  // "G/L Account",
   "Comment",
 ] as const;
 
@@ -31,12 +31,14 @@ export const purchaseInvoiceValidator = z.object({
   supplierReference: zfd.text(z.string().optional()),
   paymentTermId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
   invoiceSupplierId: zfd.text(z.string().optional()),
   invoiceSupplierContactId: zfd.text(z.string().optional()),
   invoiceSupplierLocationId: zfd.text(z.string().optional()),
   dateIssued: zfd.text(z.string().optional()),
   dateDue: zfd.text(z.string().optional()),
-  status: z.enum(purchaseInvoiceStatusType).optional(),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });
 
 export const purchaseInvoiceLineValidator = z
@@ -59,10 +61,11 @@ export const purchaseInvoiceLineValidator = z
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
-    unitPrice: zfd.numeric(z.number().optional()),
+    supplierUnitPrice: zfd.numeric(z.number().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
+    supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
-    currencyCode: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
   })
   .refine(
@@ -87,21 +90,21 @@ export const purchaseInvoiceLineValidator = z
       path: ["locationId"], // path of error
     }
   )
-  .refine(
-    (data) =>
-      data.invoiceLineType === "G/L Account" ? data.accountNumber : true,
-    {
-      message: "Account is required",
-      path: ["accountNumber"], // path of error
-    }
-  )
-  .refine(
-    (data) => (data.invoiceLineType === "Fixed Asset" ? data.assetId : true),
-    {
-      message: "Asset is required",
-      path: ["assetId"], // path of error
-    }
-  )
+  // .refine(
+  //   (data) =>
+  //     data.invoiceLineType === "G/L Account" ? data.accountNumber : true,
+  //   {
+  //     message: "Account is required",
+  //     path: ["accountNumber"], // path of error
+  //   }
+  // )
+  // .refine(
+  //   (data) => (data.invoiceLineType === "Fixed Asset" ? data.assetId : true),
+  //   {
+  //     message: "Asset is required",
+  //     path: ["assetId"], // path of error
+  //   }
+  // )
   .refine(
     (data) => (data.invoiceLineType === "Comment" ? data.description : true),
     {

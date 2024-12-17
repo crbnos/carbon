@@ -7,9 +7,17 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  VStack,
 } from "@carbon/react";
 
-import { Form, useNavigation } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
+import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
 import { path } from "~/utils/path";
 
 type PurchaseInvoicePostModalProps = {
@@ -19,6 +27,7 @@ type PurchaseInvoicePostModalProps = {
   linesToReceive: {
     itemId: string | null;
     itemReadableId: string | null;
+    description: string | null;
     quantity: number;
   }[];
 };
@@ -30,8 +39,8 @@ const PurchaseInvoicePostModal = ({
   linesToReceive,
 }: PurchaseInvoicePostModalProps) => {
   const hasLinesToReceive = linesToReceive.length > 0;
-  const navigation = useNavigation();
 
+  const fetcher = useFetcher<typeof action>();
   return (
     <Modal
       open={isOpen}
@@ -45,19 +54,37 @@ const PurchaseInvoicePostModal = ({
         </ModalHeader>
         <ModalBody>
           {hasLinesToReceive ? (
-            <>
+            <div className="gap-4 w-full flex flex-col">
               <p>
                 Are you sure you want to post this invoice? A receipt will be
                 automatically created and posted for:
               </p>
-              <ul className="mt-2">
-                {linesToReceive.map((line) => (
-                  <li key={line.itemId}>
-                    {`${line.itemReadableId} (${line.quantity})`}
-                  </li>
-                ))}
-              </ul>
-            </>
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>Item</Th>
+                    <Th className="text-right">Quantity</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {linesToReceive.map((line) => (
+                    <Tr key={line.itemId} className="text-sm">
+                      <Td>
+                        <VStack spacing={0}>
+                          <span>{line.itemReadableId}</span>
+                          {line.description && (
+                            <span className="text-xs text-muted-foreground">
+                              {line.description}
+                            </span>
+                          )}
+                        </VStack>
+                      </Td>
+                      <Td className="text-right">{line.quantity}</Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+            </div>
           ) : (
             <p>Are you sure you want to post this invoice?</p>
           )}
@@ -67,13 +94,20 @@ const PurchaseInvoicePostModal = ({
             <Button variant="solid" onClick={onClose}>
               Cancel
             </Button>
-            <Form method="post" action={path.to.purchaseInvoicePost(invoiceId)}>
-              <Button isDisabled={navigation.state !== "idle"} type="submit">
+            <fetcher.Form
+              method="post"
+              action={path.to.purchaseInvoicePost(invoiceId)}
+            >
+              <Button
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+                type="submit"
+              >
                 {hasLinesToReceive
                   ? "Post and Receive Invoice"
                   : "Post Invoice"}
               </Button>
-            </Form>
+            </fetcher.Form>
           </HStack>
         </ModalFooter>
       </ModalContent>

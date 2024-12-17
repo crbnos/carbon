@@ -22,7 +22,7 @@ const ConsumableHeader = () => {
       <VStack spacing={0} className="flex-grow">
         <HStack>
           <Link to={path.to.consumableDetails(itemId)}>
-            <Heading size="h3" className="flex items-center gap-2">
+            <Heading size="h4" className="flex items-center gap-2">
               <MethodItemTypeIcon type="Consumable" className="text-primary" />
               <span>{routeData?.consumableSummary?.id}</span>
             </Heading>

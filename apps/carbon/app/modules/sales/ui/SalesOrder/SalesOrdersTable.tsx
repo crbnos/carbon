@@ -41,6 +41,8 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 
+import { usePaymentTerm } from "~/components/Form/PaymentTerm";
+import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -64,6 +66,8 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 
   const [people] = usePeople();
   const [customers] = useCustomers();
+  const shippingMethods = useShippingMethod();
+  const paymentTerms = usePaymentTerm();
 
   const { edit } = useSalesOrder();
 
@@ -224,22 +228,31 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         },
       },
       {
-        accessorKey: "shippingMethodName",
+        accessorKey: "shippingMethodId",
         header: "Shipping Method",
-        cell: (item) => item.getValue(),
+        cell: (item) => (
+          <Enumerable
+            value={
+              shippingMethods.find((sm) => sm.value === item.getValue<string>())
+                ?.label ?? null
+            }
+          />
+        ),
         meta: {
           icon: <LuTruck />,
         },
       },
-      // {
-      //   accessorKey: "shippingTermName",
-      //   header: "Shipping Term",
-      //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
-      // },
       {
-        accessorKey: "paymentTermName",
+        accessorKey: "paymentTermId",
         header: "Payment Method",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
+        cell: (item) => (
+          <Enumerable
+            value={
+              paymentTerms.find((pt) => pt.value === item.getValue<string>())
+                ?.label ?? null
+            }
+          />
+        ),
         meta: {
           icon: <LuCreditCard />,
         },
@@ -313,7 +326,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [customers, people, customColumns, currencyFormatter]);
+  }, [
+    customers,
+    people,
+    customColumns,
+    currencyFormatter,
+    shippingMethods,
+    paymentTerms,
+  ]);
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name

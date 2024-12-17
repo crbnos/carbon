@@ -17,36 +17,59 @@ import { getNextSequence } from "../shared/get-next-sequence.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
-const payloadValidator = z
-  .object({
-    type: z.enum(["salesRfqToQuote", "quoteToSalesOrder"]),
+const payloadValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("salesRfqToQuote"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
-    selectedLines: z
-      .record(
-        z.string(),
-        z.object({
-          quantity: z.number(),
-          netUnitPrice: z.number(),
-          convertedNetUnitPrice: z.number(),
-          addOn: z.number(),
-          convertedAddOn: z.number(),
-          shippingCost: z.number(),
-          convertedShippingCost: z.number(),
-          leadTime: z.number(),
-        })
-      )
-      .optional(),
+  }),
+  z.object({
+    type: z.literal("purchaseOrderToPurchaseInvoice"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("quoteToSalesOrder"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+    selectedLines: z.record(
+      z.string(),
+      z.object({
+        quantity: z.number(),
+        netUnitPrice: z.number(),
+        convertedNetUnitPrice: z.number(),
+        addOn: z.number(),
+        convertedAddOn: z.number(),
+        shippingCost: z.number(),
+        convertedShippingCost: z.number(),
+        leadTime: z.number(),
+      })
+    ),
     digitalQuoteAcceptedBy: z.string().optional(),
     digitalQuoteAcceptedByEmail: z.string().optional(),
-  })
-  .refine((data) => {
-    if (data.type === "quoteToSalesOrder") {
-      return !!data.selectedLines && typeof data.selectedLines === "object";
-    }
-    return true;
-  });
+  }),
+  z.object({
+    type: z.literal("supplierQuoteToPurchaseOrder"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+    selectedLines: z.record(
+      z.string(),
+      z.object({
+        leadTime: z.number(),
+        quantity: z.number(),
+        shippingCost: z.number(),
+        supplierShippingCost: z.number(),
+        supplierUnitPrice: z.number(),
+        supplierTaxAmount: z.number(),
+        unitPrice: z.number(),
+      })
+    ),
+  }),
+]);
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -55,15 +78,7 @@ serve(async (req: Request) => {
   const payload = await req.json();
   let convertedId = "";
   try {
-    const {
-      type,
-      id,
-      companyId,
-      userId,
-      selectedLines,
-      digitalQuoteAcceptedBy,
-      digitalQuoteAcceptedByEmail,
-    } = payloadValidator.parse(payload);
+    const { type, id, companyId, userId } = payloadValidator.parse(payload);
 
     console.log({
       function: "convert",
@@ -78,7 +93,164 @@ serve(async (req: Request) => {
     );
 
     switch (type) {
+      case "purchaseOrderToPurchaseInvoice": {
+        const purchaseOrderId = id;
+        const [
+          purchaseOrder,
+          purchaseOrderLines,
+          purchaseOrderPayment,
+          purchaseOrderDelivery,
+        ] = await Promise.all([
+          client
+            .from("purchaseOrder")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+          client
+            .from("purchaseOrderLine")
+            .select("*")
+            .eq("purchaseOrderId", purchaseOrderId),
+          client
+            .from("purchaseOrderPayment")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+          client
+            .from("purchaseOrderDelivery")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+        ]);
+
+        if (!purchaseOrder.data) throw new Error("Purchase order not found");
+        if (purchaseOrderLines.error)
+          throw new Error(purchaseOrderLines.error.message);
+        if (!purchaseOrderPayment.data)
+          throw new Error("Purchase order payment not found");
+        if (!purchaseOrderDelivery.data)
+          throw new Error("Purchase order delivery not found");
+
+        const uninvoicedLines = purchaseOrderLines?.data?.reduce<
+          (typeof purchaseOrderLines)["data"]
+        >((acc, line) => {
+          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+            acc.push(line);
+          }
+
+          return acc;
+        }, []);
+
+        const uninvoicedSubtotal = uninvoicedLines?.reduce((acc, line) => {
+          if (
+            line?.quantityToInvoice &&
+            line.unitPrice &&
+            line.quantityToInvoice > 0
+          ) {
+            acc += line.quantityToInvoice * line.unitPrice;
+          }
+
+          return acc;
+        }, 0);
+
+        let purchaseInvoiceId = "";
+
+        await db.transaction().execute(async (trx) => {
+          purchaseInvoiceId = await getNextSequence(
+            trx,
+            "purchaseInvoice",
+            companyId
+          );
+
+          const purchaseInvoice = await trx
+            .insertInto("purchaseInvoice")
+            .values({
+              invoiceId: purchaseInvoiceId!,
+              status: "Draft",
+              supplierId: purchaseOrder.data.supplierId,
+              supplierReference: purchaseOrder.data.supplierReference ?? "",
+              invoiceSupplierId: purchaseOrderPayment.data.invoiceSupplierId,
+              invoiceSupplierContactId:
+                purchaseOrderPayment.data.invoiceSupplierContactId,
+              invoiceSupplierLocationId:
+                purchaseOrderPayment.data.invoiceSupplierLocationId,
+              locationId: purchaseOrderDelivery.data.locationId,
+              paymentTermId: purchaseOrderPayment.data.paymentTermId,
+              currencyCode: purchaseOrder.data.currencyCode ?? "USD",
+              dateIssued: new Date().toISOString().split("T")[0],
+              exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
+              subtotal: uninvoicedSubtotal ?? 0,
+              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+              totalDiscount: 0,
+              totalAmount: uninvoicedSubtotal ?? 0,
+              totalTax: 0,
+              balance: uninvoicedSubtotal ?? 0,
+              companyId,
+              createdBy: userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!purchaseInvoice.id)
+            throw new Error("Purchase invoice not created");
+          purchaseInvoiceId = purchaseInvoice.id;
+
+          const purchaseInvoiceLines = uninvoicedLines?.reduce<
+            Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][]
+          >((acc, line) => {
+            if (
+              line?.quantityToInvoice &&
+              line.quantityToInvoice > 0 &&
+              !line.invoicedComplete
+            ) {
+              acc.push({
+                invoiceId: purchaseInvoiceId,
+                invoiceLineType: line.purchaseOrderLineType,
+                purchaseOrderId: line.purchaseOrderId,
+                purchaseOrderLineId: line.id,
+                itemId: line.itemId,
+                itemReadableId: line.itemReadableId,
+                locationId: line.locationId,
+                shelfId: line.shelfId,
+                accountNumber: line.accountNumber,
+                assetId: line.assetId,
+                description: line.description,
+                quantity: line.quantityToInvoice,
+                supplierUnitPrice: line.supplierUnitPrice ?? 0,
+                supplierShippingCost: line.supplierShippingCost ?? 0,
+                supplierTaxAmount: line.supplierTaxAmount ?? 0,
+                purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+                inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
+                conversionFactor: line.conversionFactor,
+                exchangeRate: line.exchangeRate ?? 1,
+                companyId,
+                createdBy: userId,
+              });
+            }
+            return acc;
+          }, []);
+
+          await trx
+            .insertInto("purchaseInvoiceLine")
+            .values(purchaseInvoiceLines)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: purchaseInvoiceId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
+      }
       case "quoteToSalesOrder": {
+        const {
+          selectedLines,
+          digitalQuoteAcceptedBy,
+          digitalQuoteAcceptedByEmail,
+        } = payload;
         const [quote, quoteLines, quotePayment, quoteShipping, company] =
           await Promise.all([
             client.from("quote").select("*").eq("id", id).single(),
@@ -661,6 +833,216 @@ serve(async (req: Request) => {
               })
             )
         );
+        break;
+      }
+      case "supplierQuoteToPurchaseOrder": {
+        const { selectedLines } = payload;
+        const [quote, quoteLines, company, employeeJob] = await Promise.all([
+          client.from("supplierQuote").select("*").eq("id", id).single(),
+          client
+            .from("supplierQuoteLine")
+            .select("*, item(type)")
+            .eq("supplierQuoteId", id),
+          client.from("company").select("*").eq("id", companyId).single(),
+          client
+            .from("employeeJob")
+            .select("*")
+            .eq("employeeId", userId)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+
+        if (quote.error) throw new Error(`Quote with id ${id} not found`);
+        if (quoteLines.error)
+          throw new Error(`Quote Lines with id ${id} not found`);
+
+        const [supplierPayment, supplierShipping, supplier, pickMethods] =
+          await Promise.all([
+            client
+              .from("supplierPayment")
+              .select("*")
+              .eq("supplierId", quote.data.supplierId)
+              .single(),
+            client
+              .from("supplierShipping")
+              .select("*")
+              .eq("supplierId", quote.data.supplierId)
+              .single(),
+            client
+              .from("supplier")
+              .select("*")
+              .eq("id", quote.data.supplierId)
+              .single(),
+
+            client
+              .from("pickMethod")
+              .select("*")
+              .in(
+                "itemId",
+                quoteLines.data.map((line) => line.itemId)
+              )
+              .eq("locationId", employeeJob.data?.locationId ?? ""),
+          ]);
+
+        if (supplierPayment.error) throw supplierPayment.error;
+        if (supplierShipping.error) throw supplierShipping.error;
+        if (supplier.error) throw supplier.error;
+
+        let insertedPurchaseOrderId = "";
+        await db.transaction().execute(async (trx) => {
+          const purchaseOrderId = await getNextSequence(
+            trx,
+            "purchaseOrder",
+            companyId
+          );
+
+          // Check if any selected lines have quantity 0
+          const hasZeroQuantityLines = quoteLines.data.some(
+            (line) =>
+              line.id &&
+              selectedLines &&
+              line.id in selectedLines &&
+              selectedLines[line.id].quantity === 0
+          );
+
+          const purchaseOrder = await trx
+            .insertInto("purchaseOrder")
+            .values([
+              {
+                purchaseOrderId,
+                supplierId: quote.data.supplierId,
+                supplierContactId: quote.data.supplierContactId,
+                supplierLocationId: quote.data.supplierLocationId,
+                supplierReference: quote.data.supplierReference,
+                supplierInteractionId: quote.data.supplierInteractionId,
+                createdBy: userId,
+                companyId: companyId,
+                currencyCode:
+                  quote.data.currencyCode ??
+                  supplier.data?.currencyCode ??
+                  company.data?.baseCurrencyCode ??
+                  "USD",
+                exchangeRate: quote.data.exchangeRate ?? 1,
+                exchangeRateUpdatedAt:
+                  quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
+              },
+            ])
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!purchaseOrder.id) {
+            throw new Error("purchase order is not created");
+          }
+          insertedPurchaseOrderId = purchaseOrder.id;
+
+          await Promise.all([
+            trx
+              .insertInto("purchaseOrderPayment")
+              .values({
+                id: insertedPurchaseOrderId,
+                invoiceSupplierId: supplierPayment.data.invoiceSupplierId,
+                invoiceSupplierContactId:
+                  supplierPayment.data.invoiceSupplierContactId,
+                invoiceSupplierLocationId:
+                  supplierPayment.data.invoiceSupplierLocationId,
+                paymentTermId: supplierPayment.data.paymentTermId,
+                companyId: companyId,
+              })
+              .execute(),
+            trx
+              .insertInto("purchaseOrderDelivery")
+              .values({
+                id: insertedPurchaseOrderId,
+                locationId: employeeJob.data?.locationId,
+                shippingMethodId: supplierShipping.data.shippingMethodId,
+                shippingTermId: supplierShipping.data.shippingTermId,
+                companyId: companyId,
+              })
+              .execute(),
+          ]);
+
+          const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
+            quoteLines.data
+              .filter(
+                (line) =>
+                  line.id &&
+                  selectedLines &&
+                  line.id in selectedLines &&
+                  selectedLines[line.id].quantity > 0
+              )
+              .map((line) => {
+                return {
+                  purchaseOrderId: insertedPurchaseOrderId,
+                  purchaseOrderLineType: line.item?.type as "Part",
+                  description: line.description,
+                  itemId: line.itemId,
+                  itemReadableId: line.itemReadableId,
+                  locationId: employeeJob.data?.locationId,
+                  shelfId:
+                    pickMethods.data?.find(
+                      (method) => method.itemId === line.itemId
+                    )?.defaultShelfId ?? null,
+                  exchangeRate: quote.data.exchangeRate ?? 1,
+                  conversionFactor: line.conversionFactor,
+                  internalNotes: line.internalNotes,
+                  externalNotes: line.externalNotes,
+                  purchaseQuantity: selectedLines![line.id!].quantity,
+                  inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
+                  purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+                  supplierUnitPrice: selectedLines![line.id!].supplierUnitPrice,
+                  supplierShippingCost:
+                    selectedLines![line.id!].supplierShippingCost,
+                  supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
+                  createdBy: userId,
+                  companyId,
+                };
+              });
+
+          if (purchaseOrderLineInserts.length > 0) {
+            await trx
+              .insertInto("purchaseOrderLine")
+              .values(purchaseOrderLineInserts)
+              .execute();
+
+            await trx
+              .updateTable("item")
+              .set({ active: true })
+              .where(
+                "id",
+                "in",
+                purchaseOrderLineInserts.map((insert) => insert.itemId)
+              )
+              .execute();
+          }
+
+          const supplierPartToItemInserts = quoteLines.data
+            .map((line) => ({
+              companyId,
+              supplierId: quote.data?.supplierId!,
+              supplierPartId: line.supplierPartId!,
+              itemId: line.itemId!,
+              createdBy: userId,
+            }))
+            .filter((line) => !!line.itemId && !!line.supplierPartId);
+          if (supplierPartToItemInserts.length > 0) {
+            await trx
+              .insertInto("supplierPart")
+              .values(supplierPartToItemInserts)
+              .onConflict((oc) =>
+                oc.columns(["supplierId", "itemId"]).doUpdateSet((eb) => ({
+                  supplierPartId: eb.ref("excluded.supplierPartId"),
+                }))
+              )
+              .execute();
+          }
+        });
+
+        if (!insertedPurchaseOrderId) {
+          throw new Error("Failed to insert purchase order");
+        }
+
+        convertedId = insertedPurchaseOrderId;
+
         break;
       }
 

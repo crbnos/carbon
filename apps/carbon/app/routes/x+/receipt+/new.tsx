@@ -24,8 +24,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sourceDocumentId = url.searchParams.get("sourceDocumentId") ?? "";
 
   const defaults = await getUserDefaults(client, userId, companyId);
-
   const serviceRole = getCarbonServiceRole();
+
   switch (sourceDocument) {
     case "Purchase Order":
       const purchaseOrderReceipt = await serviceRole.functions.invoke<{
@@ -49,7 +49,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         );
       }
 
-      throw redirect(path.to.receiptLines(purchaseOrderReceipt.data.id));
+      throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
     default:
       const defaultReceipt = await serviceRole.functions.invoke<{
         id: string;
@@ -60,6 +60,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           userId: userId,
         },
       });
+
       if (!defaultReceipt.data || defaultReceipt.error) {
         throw redirect(
           path.to.receipts,

@@ -1,30 +1,31 @@
 import {
-  Button,
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
+  cn,
   FormControl,
   FormLabel,
-  HStack,
   Input,
+  ModalCard,
+  ModalCardBody,
+  ModalCardContent,
+  ModalCardDescription,
+  ModalCardFooter,
+  ModalCardHeader,
+  ModalCardProvider,
+  ModalCardTitle,
   VStack,
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
-import { useNavigate, useParams } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Account,
-  Combobox,
   ConversionFactor,
   CustomFormFields,
   Hidden,
   Item,
+  Location,
+  Number,
   NumberControlled,
   Select,
   Shelf,
@@ -40,49 +41,43 @@ import {
   purchaseInvoiceLineType,
   purchaseInvoiceLineValidator,
 } from "~/modules/invoicing";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type PurchaseInvoiceLineFormProps = {
   initialValues: z.infer<typeof purchaseInvoiceLineValidator>;
+  type?: "card" | "modal";
+  onClose?: () => void;
 };
 
 const PurchaseInvoiceLineForm = ({
   initialValues,
+  type,
+  onClose,
 }: PurchaseInvoiceLineFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
-  const navigate = useNavigate();
+
   const { company, defaults } = useUser();
   const { invoiceId } = useParams();
 
   if (!invoiceId) throw new Error("invoiceId not found");
-  const sharedInvoicingData = useRouteData<{
-    locations: ListItem[];
-  }>(path.to.purchaseInvoiceRoot);
 
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
   }>(path.to.purchaseInvoice(invoiceId));
 
-  const locations = sharedInvoicingData?.locations ?? [];
-  const locationOptions = locations.map((location) => ({
-    label: location.name,
-    value: location.id,
-  }));
-
   const isEditable = ["Draft"].includes(
     routeData?.purchaseInvoice?.status ?? ""
   );
 
-  const [type, setType] = useState(initialValues.invoiceLineType);
+  const [itemType, setItemType] = useState(initialValues.invoiceLineType);
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
     description: string;
     quantity: number;
-    unitPrice: number;
+    supplierUnitPrice: number;
     purchaseUom: string;
     inventoryUom: string;
     conversionFactor: number;
@@ -93,7 +88,7 @@ const PurchaseInvoiceLineForm = ({
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
-    unitPrice: initialValues.unitPrice ?? 0,
+    supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: initialValues.conversionFactor ?? 1,
@@ -115,16 +110,14 @@ const PurchaseInvoiceLineForm = ({
     })
   );
 
-  const onClose = () => navigate(-1);
-
   const onTypeChange = (type: PurchaseInvoiceLineType) => {
-    setType(type);
+    setItemType(type);
     setItemData({
       itemId: "",
       itemReadableId: "",
       description: "",
       quantity: 1,
-      unitPrice: 0,
+      supplierUnitPrice: 0,
       inventoryUom: "",
       purchaseUom: "",
       conversionFactor: 1,
@@ -135,7 +128,7 @@ const PurchaseInvoiceLineForm = ({
 
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
-    switch (type) {
+    switch (itemType) {
       case "Consumable":
       case "Material":
       case "Part":
@@ -166,7 +159,6 @@ const PurchaseInvoiceLineForm = ({
         ]);
 
         const itemCost = item?.data?.itemCost?.[0];
-
         const itemReplenishment = item?.data?.itemReplenishment;
 
         setItemData({
@@ -174,43 +166,26 @@ const PurchaseInvoiceLineForm = ({
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
           quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
-          unitPrice: supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0,
+          supplierUnitPrice:
+            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
+            (routeData?.purchaseInvoice?.exchangeRate ?? 1),
           purchaseUom:
+            supplierPart?.data?.supplierUnitOfMeasureCode ??
             itemReplenishment?.purchasingUnitOfMeasureCode ??
             item.data?.unitOfMeasureCode ??
             "EA",
           inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-
-          conversionFactor: itemReplenishment?.conversionFactor ?? 1,
+          conversionFactor:
+            supplierPart?.data?.conversionFactor ??
+            itemReplenishment?.conversionFactor ??
+            1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });
 
         break;
-      // case "Service":
-      //   const service = await carbon
-      //     .from("item")
-      //     .select("readableId, name")
-      //     .eq("id", itemId)
-      //     .eq("companyId", company.id)
-      //     .single();
-
-      //   setItemData({
-      //     itemId: itemId,
-      //     itemReadableId: service.data?.readableId ?? "",
-      //     description: service.data?.name ?? "",
-      //     quantity: 1,
-      //     unitPrice: 0,
-      //     purchaseUom: "EA",
-      //     inventoryUom: "EA",
-      //     conversionFactor: 1,
-      //     shelfId: "",
-      //     minimumOrderQuantity: undefined,
-      //   });
-
-      //   break;
       default:
         throw new Error(
-          `Invalid invoice line type: ${type} is not implemented`
+          `Invalid invoice line type: ${itemType} is not implemented`
         );
     }
   };
@@ -237,212 +212,253 @@ const PurchaseInvoiceLineForm = ({
   };
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => {
-        if (!open) onClose();
-      }}
-    >
-      <DrawerContent>
-        <ValidatedForm
-          defaultValues={initialValues}
-          validator={purchaseInvoiceLineValidator}
-          method="post"
-          action={
-            isEditing
-              ? path.to.purchaseInvoiceLine(invoiceId, initialValues.id!)
-              : path.to.newPurchaseInvoiceLine(invoiceId)
-          }
-          className="flex flex-col h-full"
-        >
-          <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? "Edit" : "New"} Purchase Invoice Line
-            </DrawerTitle>
-          </DrawerHeader>
-          <DrawerBody>
-            <Hidden name="id" />
-            <Hidden name="invoiceId" />
-            <Hidden name="itemReadableId" value={itemData.itemReadableId} />
-            <Hidden name="description" value={itemData.description} />
-            <Hidden
-              name="inventoryUnitOfMeasureCode"
-              value={itemData?.inventoryUom}
-            />
-            <VStack spacing={4}>
-              <Select
-                name="invoiceLineType"
-                label="Type"
-                options={purchaseInvoiceLineTypeOptions}
-                onChange={(value) => {
-                  onTypeChange(value?.value as PurchaseInvoiceLineType);
-                }}
+    <ModalCardProvider type={type}>
+      <ModalCard onClose={onClose}>
+        <ModalCardContent size="xxlarge">
+          <ValidatedForm
+            defaultValues={initialValues}
+            validator={purchaseInvoiceLineValidator}
+            method="post"
+            action={
+              isEditing
+                ? path.to.purchaseInvoiceLine(invoiceId, initialValues.id!)
+                : path.to.newPurchaseInvoiceLine(invoiceId)
+            }
+            className="w-full"
+            onSubmit={() => {
+              if (type === "modal") onClose?.();
+            }}
+          >
+            <ModalCardHeader>
+              <ModalCardTitle
+                className={cn(
+                  isEditing &&
+                    !itemData?.itemReadableId &&
+                    "text-muted-foreground"
+                )}
+              >
+                {isEditing
+                  ? itemData?.itemReadableId || "..."
+                  : "New Purchase Invoice Line"}
+              </ModalCardTitle>
+              <ModalCardDescription>
+                {isEditing
+                  ? itemData?.description || itemType
+                  : "A purchase invoice line contains invoice details for a particular item"}
+              </ModalCardDescription>
+            </ModalCardHeader>
+            <ModalCardBody>
+              <Hidden name="id" />
+              <Hidden name="invoiceId" />
+              <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+              <Hidden name="description" value={itemData.description} />
+              <Hidden
+                name="exchangeRate"
+                value={routeData?.purchaseInvoice?.exchangeRate ?? 1}
               />
-              {[
-                "Part",
-                // "Service",
-                "Material",
-                "Tool",
-                "Consumable",
-              ].includes(type) && (
-                <Item
-                  name="itemId"
-                  label={type}
-                  // @ts-ignore
-                  type={type}
-                  onChange={(value) => {
-                    onItemChange(value?.value as string);
-                  }}
-                />
-              )}
-
-              {type === "G/L Account" && (
-                <Account
-                  name="accountNumber"
-                  label="Account"
-                  classes={["Expense", "Asset"]}
-                  onChange={(value) => {
-                    setItemData({
-                      itemId: "",
-                      itemReadableId: "",
-                      description: value?.label ?? "",
-                      quantity: 1,
-                      unitPrice: 0,
-                      purchaseUom: "EA",
-                      inventoryUom: "EA",
-                      conversionFactor: 1,
-                      shelfId: "",
-                      minimumOrderQuantity: 0,
-                    });
-                  }}
-                />
-              )}
-              {type === "Fixed Asset" && (
-                // TODO: implement Fixed Asset
-                <Select name="assetId" label="Asset" options={[]} />
-              )}
-              <FormControl>
-                <FormLabel>Description</FormLabel>
-                <Input
-                  value={itemData.description}
-                  onChange={(e) =>
-                    setItemData((d) => ({ ...d, description: e.target.value }))
-                  }
-                />
-              </FormControl>
-              {type !== "Comment" && (
-                <>
-                  <NumberControlled
-                    minValue={itemData.minimumOrderQuantity}
-                    name="quantity"
-                    label="Quantity"
-                    value={itemData.quantity}
+              <Hidden
+                name="inventoryUnitOfMeasureCode"
+                value={itemData?.inventoryUom}
+              />
+              <VStack>
+                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                  <Select
+                    name="invoiceLineType"
+                    label="Type"
+                    options={purchaseInvoiceLineTypeOptions}
                     onChange={(value) => {
-                      setItemData((d) => ({
-                        ...d,
-                        quantity: value,
-                      }));
+                      onTypeChange(value?.value as PurchaseInvoiceLineType);
                     }}
                   />
-                  <NumberControlled
-                    name="unitPrice"
-                    label="Unit Price"
-                    value={itemData.unitPrice}
-                    onChange={(value) =>
-                      setItemData((d) => ({
-                        ...d,
-                        unitPrice: value,
-                      }))
-                    }
-                  />
-
-                  {["Part", "Material", "Consumable", "Tool"].includes(
-                    type
+                  {["Part", "Material", "Tool", "Consumable"].includes(
+                    itemType
                   ) && (
-                    <>
-                      <UnitOfMeasure
-                        name="purchaseUnitOfMeasureCode"
-                        label="Unit of Measure"
-                        value={itemData.purchaseUom}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            setItemData((d) => ({
-                              ...d,
-                              purchaseUom: newValue?.value as string,
-                            }));
-                          }
-                        }}
-                      />
-                      <ConversionFactor
-                        name="conversionFactor"
-                        purchasingCode={itemData.purchaseUom}
-                        inventoryCode={itemData.inventoryUom}
-                        value={itemData.conversionFactor}
-                        onChange={(value) => {
-                          setItemData((d) => ({
-                            ...d,
-                            conversionFactor: value,
-                          }));
-                        }}
-                      />
-                    </>
-                  )}
-
-                  {[
-                    "Part",
-                    "Service",
-                    "Material",
-                    "Tool",
-                    "Consumable",
-                    "Fixed Asset",
-                  ].includes(type) && (
-                    <Combobox
-                      name="locationId"
-                      label="Location"
-                      options={locationOptions}
-                      value={locationId}
-                      onChange={onLocationChange}
-                    />
-                  )}
-                  {[
-                    "Part",
-                    "Service",
-                    "Material",
-                    "Tool",
-                    "Consumable",
-                    "Fixed Asset",
-                  ].includes(type) && (
-                    <Shelf
-                      name="shelfId"
-                      label="Shelf"
-                      locationId={locationId}
-                      value={itemData.shelfId ?? undefined}
-                      onChange={(newValue) => {
-                        if (newValue) {
-                          setItemData((d) => ({
-                            ...d,
-                            shelfId: newValue?.id,
-                          }));
-                        }
+                    <Item
+                      name="itemId"
+                      label={itemType}
+                      // @ts-ignore
+                      type={itemType}
+                      replenishmentSystem="Buy"
+                      onChange={(value) => {
+                        onItemChange(value?.value as string);
                       }}
                     />
                   )}
-                </>
-              )}
-              <CustomFormFields table="purchaseInvoiceLine" />
-            </VStack>
-          </DrawerBody>
-          <DrawerFooter>
-            <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
-              <Button size="md" variant="solid" onClick={onClose}>
-                Cancel
-              </Button>
-            </HStack>
-          </DrawerFooter>
-        </ValidatedForm>
-      </DrawerContent>
-    </Drawer>
+
+                  {/* {itemType === "G/L Account" && (
+                    <Account
+                      name="accountNumber"
+                      label="Account"
+                      classes={["Expense", "Asset"]}
+                      onChange={(value) => {
+                        setItemData({
+                          itemId: "",
+                          itemReadableId: "",
+                          description: value?.label ?? "",
+                          quantity: 1,
+                          supplierUnitPrice: 0,
+                          purchaseUom: "EA",
+                          inventoryUom: "EA",
+                          conversionFactor: 1,
+                          shelfId: "",
+                          minimumOrderQuantity: 0,
+                        });
+                      }}
+                    />
+                  )}
+                  {itemType === "Fixed Asset" && (
+                    <Select name="assetId" label="Asset" options={[]} />
+                  )} */}
+                  <FormControl>
+                    <FormLabel>Description</FormLabel>
+                    <Input
+                      value={itemData.description}
+                      onChange={(e) =>
+                        setItemData((d) => ({
+                          ...d,
+                          description: e.target.value,
+                        }))
+                      }
+                    />
+                  </FormControl>
+                  {itemType !== "Comment" && (
+                    <>
+                      <NumberControlled
+                        minValue={itemData.minimumOrderQuantity}
+                        name="quantity"
+                        label="Quantity"
+                        value={itemData.quantity}
+                        onChange={(value) => {
+                          setItemData((d) => ({
+                            ...d,
+                            quantity: value,
+                          }));
+                        }}
+                      />
+
+                      {["Part", "Material", "Consumable", "Tool"].includes(
+                        itemType
+                      ) && (
+                        <>
+                          <UnitOfMeasure
+                            name="purchaseUnitOfMeasureCode"
+                            label="Unit of Measure"
+                            value={itemData.purchaseUom}
+                            onChange={(newValue) => {
+                              if (newValue) {
+                                setItemData((d) => ({
+                                  ...d,
+                                  purchaseUom: newValue?.value as string,
+                                }));
+                              }
+                            }}
+                          />
+                          <ConversionFactor
+                            name="conversionFactor"
+                            purchasingCode={itemData.purchaseUom}
+                            inventoryCode={itemData.inventoryUom}
+                            value={itemData.conversionFactor}
+                            onChange={(value) => {
+                              setItemData((d) => ({
+                                ...d,
+                                conversionFactor: value,
+                              }));
+                            }}
+                          />
+                        </>
+                      )}
+
+                      <NumberControlled
+                        name="supplierUnitPrice"
+                        label="Supplier Unit Price"
+                        value={itemData.supplierUnitPrice}
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                        onChange={(value) =>
+                          setItemData((d) => ({
+                            ...d,
+                            supplierUnitPrice: value,
+                          }))
+                        }
+                      />
+                      <Number
+                        name="supplierShippingCost"
+                        label="Shipping"
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                      />
+                      <Number
+                        name="supplierTaxAmount"
+                        label="Tax"
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                      />
+
+                      {[
+                        "Part",
+                        "Service",
+                        "Material",
+                        "Tool",
+                        "Consumable",
+                        "Fixed Asset",
+                      ].includes(itemType) && (
+                        <Location
+                          name="locationId"
+                          label="Location"
+                          value={locationId}
+                          onChange={onLocationChange}
+                        />
+                      )}
+                      {[
+                        "Part",
+                        "Service",
+                        "Material",
+                        "Tool",
+                        "Consumable",
+                        "Fixed Asset",
+                      ].includes(itemType) && (
+                        <Shelf
+                          name="shelfId"
+                          label="Shelf"
+                          locationId={locationId}
+                          value={itemData.shelfId ?? undefined}
+                          onChange={(newValue) => {
+                            if (newValue) {
+                              setItemData((d) => ({
+                                ...d,
+                                shelfId: newValue?.id,
+                              }));
+                            }
+                          }}
+                        />
+                      )}
+                    </>
+                  )}
+                  <CustomFormFields table="purchaseInvoiceLine" />
+                </div>
+              </VStack>
+            </ModalCardBody>
+            <ModalCardFooter>
+              <Submit isDisabled={isDisabled} withBlocker={false}>
+                Save
+              </Submit>
+            </ModalCardFooter>
+          </ValidatedForm>
+        </ModalCardContent>
+      </ModalCard>
+    </ModalCardProvider>
   );
 };
 

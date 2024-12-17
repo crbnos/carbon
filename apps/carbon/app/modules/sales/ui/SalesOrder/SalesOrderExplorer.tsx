@@ -21,7 +21,7 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuMoreVertical, LuPlusCircle, LuTrash } from "react-icons/lu";
-import { Empty, ItemThumbnail } from "~/components";
+import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import {
   useOptimisticLocation,
   usePermissions,
@@ -29,6 +29,9 @@ import {
   useRouteData,
   useUser,
 } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { MethodItemType } from "~/modules/shared";
+import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Customer, SalesOrder, SalesOrderLine } from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
@@ -230,6 +233,22 @@ function SalesOrderLineItem({
                   <DropdownMenuIcon icon={<LuTrash />} />
                   Delete Line
                 </DropdownMenuItem>
+                {/* @ts-expect-error */}
+                {methodItemType.includes(line?.salesOrderLineType ?? "") && (
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={getLinkToItemDetails(
+                        line.salesOrderLineType as MethodItemType,
+                        line.itemId!
+                      )}
+                    >
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={"Part"} />}
+                      />
+                      View Item Master
+                    </Link>
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

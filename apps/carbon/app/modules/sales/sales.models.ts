@@ -691,9 +691,9 @@ export const salesRfqLineValidator = z.object({
   modelUploadId: zfd.text(z.string().optional()),
 });
 
-const selectedLineSchema = z.object({
-  addOn: z.number(),
-  convertedAddOn: z.number(),
+export const selectedLineSchema = z.object({
+  addOn: z.number().optional(),
+  convertedAddOn: z.number().optional(),
   convertedNetUnitPrice: z.number(),
   convertedShippingCost: z.number(),
   leadTime: z.number(),

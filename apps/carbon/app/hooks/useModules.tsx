@@ -46,7 +46,7 @@ export function useModules() {
     {
       permission: "purchasing",
       name: "Purchasing",
-      to: path.to.suppliers,
+      to: path.to.purchaseOrders,
       icon: LuShoppingCart,
     },
 
