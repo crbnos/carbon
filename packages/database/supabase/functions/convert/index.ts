@@ -570,11 +570,6 @@ serve(async (req: Request) => {
               .eq("id", salesRfq.data.customerId)
               .single(),
             client.from("company").select("*").eq("id", companyId).single(),
-            client
-              .from("employeeJob")
-              .select("*")
-              .eq("id", userId)
-              .eq("companyId", companyId),
           ]);
 
         if (customerPayment.error) throw customerPayment.error;
@@ -847,7 +842,7 @@ serve(async (req: Request) => {
           client
             .from("employeeJob")
             .select("*")
-            .eq("employeeId", userId)
+            .eq("id", userId)
             .eq("companyId", companyId)
             .single(),
         ]);
