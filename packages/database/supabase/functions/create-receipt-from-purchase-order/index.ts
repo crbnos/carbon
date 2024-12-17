@@ -118,6 +118,12 @@ serve(async (req: Request) => {
       []
     );
 
+    console.log({ receiptLineItems });
+
+    if (receiptLineItems.length === 0) {
+      throw new Error("No valid receipt line items found");
+    }
+
     let receiptId = hasReceipt ? receipt.data?.id! : "";
     let receiptIdReadable = hasReceipt ? receipt.data?.receiptId! : "";
 
@@ -162,16 +168,18 @@ serve(async (req: Request) => {
         receiptIdReadable = newReceipt?.[0]?.receiptId!;
       }
 
-      await trx
-        .insertInto("receiptLine")
-        .values(
-          receiptLineItems.map((line) => ({
-            ...line,
-            receiptId: receiptId,
-            locationId,
-          }))
-        )
-        .execute();
+      if (receiptLineItems.length > 0) {
+        await trx
+          .insertInto("receiptLine")
+          .values(
+            receiptLineItems.map((line) => ({
+              ...line,
+              receiptId: receiptId,
+              locationId,
+            }))
+          )
+          .execute();
+      }
     });
 
     return new Response(
