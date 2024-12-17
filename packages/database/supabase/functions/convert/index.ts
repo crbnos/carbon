@@ -1029,9 +1029,11 @@ serve(async (req: Request) => {
               .insertInto("supplierPart")
               .values(supplierPartToItemInserts)
               .onConflict((oc) =>
-                oc.columns(["supplierId", "itemId"]).doUpdateSet((eb) => ({
-                  supplierPartId: eb.ref("excluded.supplierPartId"),
-                }))
+                oc
+                  .columns(["itemId", "supplierId", "companyId"])
+                  .doUpdateSet((eb) => ({
+                    supplierPartId: eb.ref("excluded.supplierPartId"),
+                  }))
               )
               .execute();
           }

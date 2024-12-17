@@ -5,7 +5,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { useUrlParams } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import {
   supplierQuoteValidator,
   upsertSupplierQuote,
@@ -74,6 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function SupplierQuoteNewRoute() {
   const [params] = useUrlParams();
+  const { company } = useUser();
   const supplierId = params.get("supplierId");
   const initialValues = {
     supplierContactId: "",
@@ -83,7 +84,7 @@ export default function SupplierQuoteNewRoute() {
     quotedDate: today(getLocalTimeZone()).toString(),
     supplierQuoteId: undefined,
     status: "Active" as const,
-    currencyCode: undefined,
+    currencyCode: company.baseCurrencyCode,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
   };
