@@ -1,39 +1,49 @@
 DROP VIEW "purchaseOrders";
 DROP VIEW "purchaseOrderLines";
 
-ALTER TABLE "purchaseOrder" DROP COLUMN "notes";
-ALTER TABLE "purchaseOrder" DROP COLUMN "type";
+ALTER TABLE "purchaseOrder" DROP COLUMN IF EXISTS "notes";
+ALTER TABLE "purchaseOrder" DROP COLUMN IF EXISTS "type";
 
-ALTER TABLE "purchaseOrderLine" DROP COLUMN "notes";
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "notes";
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "externalNotes" JSON DEFAULT '{}'::JSON;
 
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "exchangeRate" NUMERIC(10,4) DEFAULT 1;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "exchangeRate" NUMERIC(10,4) DEFAULT 1;
 
-ALTER TABLE "purchaseOrderLine" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "unitPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 
+    FROM information_schema.columns 
+    WHERE table_name = 'purchaseOrderLine' 
+    AND column_name = 'supplierUnitPrice'
+  ) THEN
+    ALTER TABLE "purchaseOrderLine" RENAME COLUMN "unitPrice" TO "supplierUnitPrice";
+  END IF;
+END $$;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "unitPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
   "supplierUnitPrice" * "exchangeRate"
 ) STORED;
 
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "supplierExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "supplierExtendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
   "supplierUnitPrice" * "purchaseQuantity"
 ) STORED;
 
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "extendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "extendedPrice" NUMERIC(10,5) GENERATED ALWAYS AS (
   "supplierUnitPrice" * "exchangeRate" * "purchaseQuantity"
 ) STORED;
 
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "supplierShippingCost" NUMERIC(10,5) NOT NULL DEFAULT 0;
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "shippingCost" NUMERIC(10,5) GENERATED ALWAYS AS (
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "supplierShippingCost" NUMERIC(10,5) NOT NULL DEFAULT 0;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "shippingCost" NUMERIC(10,5) GENERATED ALWAYS AS (
   "supplierShippingCost" * "exchangeRate"
 ) STORED;
 
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "modelUploadId" TEXT REFERENCES "modelUpload"("id") ON DELETE SET NULL;
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "supplierTaxAmount" NUMERIC(10,5) NOT NULL DEFAULT 0;
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "taxAmount" NUMERIC(10,5) GENERATED ALWAYS AS (
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "modelUploadId" TEXT REFERENCES "modelUpload"("id") ON DELETE SET NULL;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "supplierTaxAmount" NUMERIC(10,5) NOT NULL DEFAULT 0;
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "taxAmount" NUMERIC(10,5) GENERATED ALWAYS AS (
   "supplierTaxAmount" * "exchangeRate"
 ) STORED;
-ALTER TABLE "purchaseOrderLine" ADD COLUMN "taxPercent" NUMERIC(10,5) GENERATED ALWAYS AS (
+ALTER TABLE "purchaseOrderLine" ADD COLUMN IF NOT EXISTS "taxPercent" NUMERIC(10,5) GENERATED ALWAYS AS (
   CASE 
     WHEN (("supplierUnitPrice" + "supplierShippingCost") * "purchaseQuantity") = 0 THEN 0
     ELSE "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "purchaseQuantity")
@@ -136,7 +146,7 @@ WHEN (OLD."exchangeRate" IS DISTINCT FROM NEW."exchangeRate")
 EXECUTE FUNCTION update_purchase_order_line_price_exchange_rate();
 
 
-ALTER TABLE "supplier" ADD COLUMN "taxPercent" NUMERIC(10,5) NOT NULL DEFAULT 0 CHECK ("taxPercent" >= 0 AND "taxPercent" <= 1);
+ALTER TABLE "supplier" ADD COLUMN IF NOT EXISTS "taxPercent" NUMERIC(10,5) NOT NULL DEFAULT 0 CHECK ("taxPercent" >= 0 AND "taxPercent" <= 1);
 
 DROP VIEW IF EXISTS "suppliers";
 CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS 
@@ -166,10 +176,10 @@ CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS
 
 
 DROP VIEW IF EXISTS "supplierQuoteLines";
-ALTER TABLE "supplierQuoteLine" DROP COLUMN "notes";
-ALTER TABLE "supplierQuoteLine" DROP COLUMN "taxPercent";
-ALTER TABLE "supplierQuoteLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
-ALTER TABLE "supplierQuoteLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "supplierQuoteLine" DROP COLUMN IF EXISTS "notes";
+ALTER TABLE "supplierQuoteLine" DROP COLUMN IF EXISTS "taxPercent";
+ALTER TABLE "supplierQuoteLine" ADD COLUMN IF NOT EXISTS "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "supplierQuoteLine" ADD COLUMN IF NOT EXISTS "externalNotes" JSON DEFAULT '{}'::JSON;
 
 DROP VIEW IF EXISTS "supplierQuoteLines";
 CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
@@ -183,24 +193,26 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
 );
 
-ALTER TABLE "purchaseOrder" ALTER COLUMN "orderDate" DROP DEFAULT,
-                           ALTER COLUMN "orderDate" DROP NOT NULL;
+ALTER TABLE "purchaseOrder" 
+  ALTER COLUMN "orderDate" DROP DEFAULT,
+  ALTER COLUMN "orderDate" DROP NOT NULL;
 
-ALTER TABLE "receipt" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
+ALTER TABLE "receipt" ADD COLUMN IF NOT EXISTS "internalNotes" JSON DEFAULT '{}'::JSON;
 
-DROP VIEW "receipts";
+DROP VIEW IF EXISTS "receipts";
 
-ALTER TABLE "supplierInteraction" DROP COLUMN "purchaseOrderId";
-ALTER TABLE "supplierInteraction" DROP COLUMN "purchaseOrderCompletedDate";
-ALTER TABLE "supplierInteraction" DROP COLUMN "supplierQuoteId";
-ALTER TABLE "supplierInteraction" DROP COLUMN "supplierQuoteCompletedDate";
-ALTER TABLE "supplierInteraction" DROP COLUMN "quoteDocumentPath";
-ALTER TABLE "supplierInteraction" DROP COLUMN "salesOrderDocumentPath";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "purchaseOrderId";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "purchaseOrderCompletedDate";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "supplierQuoteId";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "supplierQuoteCompletedDate";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "quoteDocumentPath";
+ALTER TABLE "supplierInteraction" DROP COLUMN IF EXISTS "salesOrderDocumentPath";
 
-ALTER TABLE "supplierQuote" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "supplierQuote" ADD COLUMN IF NOT EXISTS "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
 
-ALTER TABLE "purchaseOrder" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
-ALTER TABLE "receipt" ADD COLUMN "supplierInteractionId" TEXT REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "purchaseOrder" ADD COLUMN IF NOT EXISTS "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+ALTER TABLE "receipt" ADD COLUMN IF NOT EXISTS "supplierInteractionId" TEXT REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+
 ALTER TABLE "purchaseInvoice" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
 
 
