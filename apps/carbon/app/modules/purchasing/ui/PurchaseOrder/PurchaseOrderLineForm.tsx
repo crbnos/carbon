@@ -16,7 +16,7 @@ import {
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { Number, ValidatedForm } from "@carbon/form";
 import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
@@ -367,23 +367,6 @@ const PurchaseOrderLineForm = ({
                             }));
                           }}
                         />
-                        <NumberControlled
-                          name="supplierUnitPrice"
-                          label="Unit Price"
-                          value={itemData.supplierUnitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode,
-                          }}
-                          onChange={(value) =>
-                            setItemData((d) => ({
-                              ...d,
-                              supplierUnitPrice: value,
-                            }))
-                          }
-                        />
 
                         {["Part", "Material", "Consumable", "Tool"].includes(
                           itemType
@@ -416,7 +399,43 @@ const PurchaseOrderLineForm = ({
                             />
                           </>
                         )}
-
+                        <NumberControlled
+                          name="supplierUnitPrice"
+                          label="Unit Price"
+                          value={itemData.supplierUnitPrice}
+                          formatOptions={{
+                            style: "currency",
+                            currency:
+                              routeData?.purchaseOrder?.currencyCode ??
+                              company.baseCurrencyCode,
+                          }}
+                          onChange={(value) =>
+                            setItemData((d) => ({
+                              ...d,
+                              supplierUnitPrice: value,
+                            }))
+                          }
+                        />
+                        <Number
+                          name="supplierShippingCost"
+                          label="Shipping"
+                          formatOptions={{
+                            style: "currency",
+                            currency:
+                              routeData?.purchaseOrder?.currencyCode ??
+                              company.baseCurrencyCode,
+                          }}
+                        />
+                        <Number
+                          name="supplierTaxAmount"
+                          label="Tax"
+                          formatOptions={{
+                            style: "currency",
+                            currency:
+                              routeData?.purchaseOrder?.currencyCode ??
+                              company.baseCurrencyCode,
+                          }}
+                        />
                         {[
                           "Part",
                           "Service",

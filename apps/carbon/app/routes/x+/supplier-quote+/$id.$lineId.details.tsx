@@ -138,7 +138,6 @@ export default function SupplierQuoteLine() {
     inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "",
     purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: line.conversionFactor ?? undefined,
-    taxPercent: line.taxPercent ?? 0,
     itemType: (line.itemType ?? "Part") as MethodItemType,
   };
 

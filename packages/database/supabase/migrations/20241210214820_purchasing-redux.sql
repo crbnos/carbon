@@ -167,6 +167,7 @@ CREATE OR REPLACE VIEW "suppliers" WITH(SECURITY_INVOKER=true) AS
 
 DROP VIEW IF EXISTS "supplierQuoteLines";
 ALTER TABLE "supplierQuoteLine" DROP COLUMN "notes";
+ALTER TABLE "supplierQuoteLine" DROP COLUMN "taxPercent";
 ALTER TABLE "supplierQuoteLine" ADD COLUMN "internalNotes" JSON DEFAULT '{}'::JSON;
 ALTER TABLE "supplierQuoteLine" ADD COLUMN "externalNotes" JSON DEFAULT '{}'::JSON;
 
@@ -197,6 +198,7 @@ ALTER TABLE "supplierInteraction" DROP COLUMN "quoteDocumentPath";
 ALTER TABLE "supplierInteraction" DROP COLUMN "salesOrderDocumentPath";
 
 ALTER TABLE "supplierQuote" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
+
 ALTER TABLE "purchaseOrder" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
 ALTER TABLE "receipt" ADD COLUMN "supplierInteractionId" TEXT REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
 ALTER TABLE "purchaseInvoice" ADD COLUMN "supplierInteractionId" TEXT NOT NULL REFERENCES "supplierInteraction"("id") ON DELETE RESTRICT;
@@ -255,7 +257,7 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
         WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
         ELSE i."thumbnailPath"
       END) AS "thumbnailPath",
-      SUM(COALESCE(pol."purchaseQuantity", 0)*(COALESCE(pol."supplierUnitPrice", 0)) + COALESCE(pol."supplierShippingCost", 0) + COALESCE(pol."taxAmount", 0)) AS "orderTotal",
+      SUM(COALESCE(pol."purchaseQuantity", 0)*(COALESCE(pol."unitPrice", 0)) + COALESCE(pol."shippingCost", 0) + COALESCE(pol."taxAmount", 0)) AS "orderTotal",
       MIN(i."type") AS "itemType"
     FROM "purchaseOrderLine" pol
     LEFT JOIN "item" i
@@ -358,12 +360,30 @@ CREATE OR REPLACE VIEW "purchaseInvoices" WITH(SECURITY_INVOKER=true) AS
     pi."internalNotes",
     pi."customFields",
     pi."companyId",
+    pl."thumbnailPath",
+    pl."itemType",
+    pl."orderTotal",
     CASE
       WHEN pi."dateDue" < CURRENT_DATE AND pi."status" = 'Submitted' THEN 'Overdue'
       ELSE pi."status"
     END AS status,
     pt."name" AS "paymentTermName"
   FROM "purchaseInvoice" pi
+  LEFT JOIN (
+    SELECT 
+      pol."invoiceId",
+      MIN(CASE
+        WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+        ELSE i."thumbnailPath"
+      END) AS "thumbnailPath",
+      SUM(COALESCE(pol."quantity", 0)*(COALESCE(pol."unitPrice", 0)) + COALESCE(pol."shippingCost", 0) + COALESCE(pol."taxAmount", 0)) AS "orderTotal",
+      MIN(i."type") AS "itemType"
+    FROM "purchaseInvoiceLine" pol
+    LEFT JOIN "item" i
+      ON i."id" = pol."itemId"
+    LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
+    GROUP BY pol."invoiceId"
+  ) pl ON pl."invoiceId" = pi."id"
   LEFT JOIN "paymentTerm" pt ON pt."id" = pi."paymentTermId";
 
 DROP VIEW IF EXISTS "purchaseInvoiceLines";
@@ -387,3 +407,12 @@ CREATE OR REPLACE VIEW "purchaseInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
   LEFT JOIN "supplierPart" sp ON sp."supplierId" = pi."supplierId" AND sp."itemId" = i.id
 );
+
+ALTER TABLE "supplierQuoteLinePrice" ADD COLUMN "supplierTaxAmount" NUMERIC(10,5) NOT NULL DEFAULT 0;
+ALTER TABLE "supplierQuoteLinePrice" ADD COLUMN "taxAmount" NUMERIC(10,5) GENERATED ALWAYS AS ("supplierTaxAmount" * "exchangeRate") STORED;
+ALTER TABLE "supplierQuoteLinePrice" ADD COLUMN "taxPercent" NUMERIC(10,5) GENERATED ALWAYS AS (
+  CASE 
+    WHEN ("supplierUnitPrice" + "supplierShippingCost") * "quantity" = 0 THEN 0
+    ELSE "supplierTaxAmount" / (("supplierUnitPrice" + "supplierShippingCost") * "quantity")
+  END
+) STORED;

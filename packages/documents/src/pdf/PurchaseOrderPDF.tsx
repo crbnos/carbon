@@ -72,7 +72,11 @@ const PurchaseOrderPDF = ({
     customerCountryName,
   } = purchaseOrderLocations;
 
-  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
+  const formatter = getCurrencyFormatter(purchaseOrder.currencyCode, locale);
+  const taxAmount = purchaseOrderLines.reduce(
+    (acc, line) => acc + (line.supplierTaxAmount ?? 0),
+    0
+  );
 
   return (
     <Template
@@ -179,10 +183,11 @@ const PurchaseOrderPDF = ({
               "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
             )}
           >
-            <Text style={tw("w-1/2")}>Description</Text>
-            <Text style={tw("w-1/6 text-right")}>Qty</Text>
-            <Text style={tw("w-1/6 text-right")}>Price</Text>
-            <Text style={tw("w-1/5 text-right")}>Total</Text>
+            <Text style={tw("w-[35%]")}>Description</Text>
+            <Text style={tw("w-[15%] text-right")}>Qty</Text>
+            <Text style={tw("w-[15%] text-right")}>UnitPrice</Text>
+            <Text style={tw("w-[15%] text-right")}>Shipping</Text>
+            <Text style={tw("w-[20%] text-right")}>Total</Text>
           </View>
           {purchaseOrderLines.map((line) => (
             <View
@@ -192,7 +197,7 @@ const PurchaseOrderPDF = ({
               key={line.id}
             >
               <View style={tw("flex flex-row justify-between")}>
-                <View style={tw("w-1/2")}>
+                <View style={tw("w-[35%]")}>
                   <Text style={tw("font-bold mb-1")}>
                     {getLineDescription(line)}
                   </Text>
@@ -200,17 +205,22 @@ const PurchaseOrderPDF = ({
                     {getLineDescriptionDetails(line)}
                   </Text>
                 </View>
-                <Text style={tw("w-1/6 text-right")}>
+                <Text style={tw("w-[15%] text-right")}>
                   {line.purchaseOrderLineType === "Comment"
                     ? ""
                     : `${line.purchaseQuantity} ${line.purchaseUnitOfMeasureCode}`}
                 </Text>
-                <Text style={tw("w-1/6 text-right")}>
+                <Text style={tw("w-[15%] text-right")}>
                   {line.purchaseOrderLineType === "Comment"
                     ? null
-                    : formatter.format(line.unitPrice ?? 0)}
+                    : formatter.format(line.supplierUnitPrice ?? 0)}
                 </Text>
-                <Text style={tw("w-1/5 text-right")}>
+                <Text style={tw("w-[15%] text-right")}>
+                  {line.purchaseOrderLineType === "Comment"
+                    ? null
+                    : formatter.format(line.supplierShippingCost ?? 0)}
+                </Text>
+                <Text style={tw("w-[20%] text-right")}>
                   {line.purchaseOrderLineType === "Comment"
                     ? null
                     : formatter.format(getLineTotal(line))}
@@ -224,6 +234,18 @@ const PurchaseOrderPDF = ({
               )} */}
             </View>
           ))}
+          {taxAmount > 0 && (
+            <View
+              style={tw(
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"
+              )}
+            >
+              <Text>Tax</Text>
+              <Text style={tw(" text-gray-500")}>
+                {formatter.format(taxAmount)}
+              </Text>
+            </View>
+          )}
           <View
             style={tw(
               "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"

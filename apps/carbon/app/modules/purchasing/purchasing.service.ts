@@ -13,6 +13,7 @@ import type {
   purchaseOrderPaymentValidator,
   purchaseOrderStatusType,
   purchaseOrderValidator,
+  selectedLinesValidator,
   supplierAccountingValidator,
   supplierContactValidator,
   supplierPaymentValidator,
@@ -41,6 +42,23 @@ export async function closePurchaseOrder(
     .eq("id", purchaseOrderId)
     .select("id")
     .single();
+}
+
+export async function convertSupplierQuoteToOrder(
+  client: SupabaseClient<Database>,
+  payload: {
+    id: string;
+    selectedLines: z.infer<typeof selectedLinesValidator>;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{ convertedId: string }>("convert", {
+    body: {
+      type: "supplierQuoteToPurchaseOrder",
+      ...payload,
+    },
+  });
 }
 
 export async function deletePurchaseOrder(

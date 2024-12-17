@@ -51,6 +51,24 @@ const payloadValidator = z.discriminatedUnion("type", [
     digitalQuoteAcceptedBy: z.string().optional(),
     digitalQuoteAcceptedByEmail: z.string().optional(),
   }),
+  z.object({
+    type: z.literal("supplierQuoteToPurchaseOrder"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+    selectedLines: z.record(
+      z.string(),
+      z.object({
+        leadTime: z.number(),
+        quantity: z.number(),
+        shippingCost: z.number(),
+        supplierShippingCost: z.number(),
+        supplierUnitPrice: z.number(),
+        supplierTaxAmount: z.number(),
+        unitPrice: z.number(),
+      })
+    ),
+  }),
 ]);
 
 serve(async (req: Request) => {
@@ -815,6 +833,216 @@ serve(async (req: Request) => {
               })
             )
         );
+        break;
+      }
+      case "supplierQuoteToPurchaseOrder": {
+        const { selectedLines } = payload;
+        const [quote, quoteLines, company, employeeJob] = await Promise.all([
+          client.from("supplierQuote").select("*").eq("id", id).single(),
+          client
+            .from("supplierQuoteLine")
+            .select("*, item(type)")
+            .eq("supplierQuoteId", id),
+          client.from("company").select("*").eq("id", companyId).single(),
+          client
+            .from("employeeJob")
+            .select("*")
+            .eq("employeeId", userId)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+
+        if (quote.error) throw new Error(`Quote with id ${id} not found`);
+        if (quoteLines.error)
+          throw new Error(`Quote Lines with id ${id} not found`);
+
+        const [supplierPayment, supplierShipping, supplier, pickMethods] =
+          await Promise.all([
+            client
+              .from("supplierPayment")
+              .select("*")
+              .eq("supplierId", quote.data.supplierId)
+              .single(),
+            client
+              .from("supplierShipping")
+              .select("*")
+              .eq("supplierId", quote.data.supplierId)
+              .single(),
+            client
+              .from("supplier")
+              .select("*")
+              .eq("id", quote.data.supplierId)
+              .single(),
+
+            client
+              .from("pickMethod")
+              .select("*")
+              .in(
+                "itemId",
+                quoteLines.data.map((line) => line.itemId)
+              )
+              .eq("locationId", employeeJob.data?.locationId ?? ""),
+          ]);
+
+        if (supplierPayment.error) throw supplierPayment.error;
+        if (supplierShipping.error) throw supplierShipping.error;
+        if (supplier.error) throw supplier.error;
+
+        let insertedPurchaseOrderId = "";
+        await db.transaction().execute(async (trx) => {
+          const purchaseOrderId = await getNextSequence(
+            trx,
+            "purchaseOrder",
+            companyId
+          );
+
+          // Check if any selected lines have quantity 0
+          const hasZeroQuantityLines = quoteLines.data.some(
+            (line) =>
+              line.id &&
+              selectedLines &&
+              line.id in selectedLines &&
+              selectedLines[line.id].quantity === 0
+          );
+
+          const purchaseOrder = await trx
+            .insertInto("purchaseOrder")
+            .values([
+              {
+                purchaseOrderId,
+                supplierId: quote.data.supplierId,
+                supplierContactId: quote.data.supplierContactId,
+                supplierLocationId: quote.data.supplierLocationId,
+                supplierReference: quote.data.supplierReference,
+                supplierInteractionId: quote.data.supplierInteractionId,
+                createdBy: userId,
+                companyId: companyId,
+                currencyCode:
+                  quote.data.currencyCode ??
+                  supplier.data?.currencyCode ??
+                  company.data?.baseCurrencyCode ??
+                  "USD",
+                exchangeRate: quote.data.exchangeRate ?? 1,
+                exchangeRateUpdatedAt:
+                  quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
+              },
+            ])
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!purchaseOrder.id) {
+            throw new Error("purchase order is not created");
+          }
+          insertedPurchaseOrderId = purchaseOrder.id;
+
+          await Promise.all([
+            trx
+              .insertInto("purchaseOrderPayment")
+              .values({
+                id: insertedPurchaseOrderId,
+                invoiceSupplierId: supplierPayment.data.invoiceSupplierId,
+                invoiceSupplierContactId:
+                  supplierPayment.data.invoiceSupplierContactId,
+                invoiceSupplierLocationId:
+                  supplierPayment.data.invoiceSupplierLocationId,
+                paymentTermId: supplierPayment.data.paymentTermId,
+                companyId: companyId,
+              })
+              .execute(),
+            trx
+              .insertInto("purchaseOrderDelivery")
+              .values({
+                id: insertedPurchaseOrderId,
+                locationId: employeeJob.data?.locationId,
+                shippingMethodId: supplierShipping.data.shippingMethodId,
+                shippingTermId: supplierShipping.data.shippingTermId,
+                companyId: companyId,
+              })
+              .execute(),
+          ]);
+
+          const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
+            quoteLines.data
+              .filter(
+                (line) =>
+                  line.id &&
+                  selectedLines &&
+                  line.id in selectedLines &&
+                  selectedLines[line.id].quantity > 0
+              )
+              .map((line) => {
+                return {
+                  purchaseOrderId: insertedPurchaseOrderId,
+                  purchaseOrderLineType: line.item?.type as "Part",
+                  description: line.description,
+                  itemId: line.itemId,
+                  itemReadableId: line.itemReadableId,
+                  locationId: employeeJob.data?.locationId,
+                  shelfId:
+                    pickMethods.data?.find(
+                      (method) => method.itemId === line.itemId
+                    )?.defaultShelfId ?? null,
+                  exchangeRate: quote.data.exchangeRate ?? 1,
+                  conversionFactor: line.conversionFactor,
+                  internalNotes: line.internalNotes,
+                  externalNotes: line.externalNotes,
+                  purchaseQuantity: selectedLines![line.id!].quantity,
+                  inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
+                  purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+                  supplierUnitPrice: selectedLines![line.id!].supplierUnitPrice,
+                  supplierShippingCost:
+                    selectedLines![line.id!].supplierShippingCost,
+                  supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
+                  createdBy: userId,
+                  companyId,
+                };
+              });
+
+          if (purchaseOrderLineInserts.length > 0) {
+            await trx
+              .insertInto("purchaseOrderLine")
+              .values(purchaseOrderLineInserts)
+              .execute();
+
+            await trx
+              .updateTable("item")
+              .set({ active: true })
+              .where(
+                "id",
+                "in",
+                purchaseOrderLineInserts.map((insert) => insert.itemId)
+              )
+              .execute();
+          }
+
+          const supplierPartToItemInserts = quoteLines.data
+            .map((line) => ({
+              companyId,
+              supplierId: quote.data?.supplierId!,
+              supplierPartId: line.supplierPartId!,
+              itemId: line.itemId!,
+              createdBy: userId,
+            }))
+            .filter((line) => !!line.itemId && !!line.supplierPartId);
+          if (supplierPartToItemInserts.length > 0) {
+            await trx
+              .insertInto("supplierPart")
+              .values(supplierPartToItemInserts)
+              .onConflict((oc) =>
+                oc.columns(["supplierId", "itemId"]).doUpdateSet((eb) => ({
+                  supplierPartId: eb.ref("excluded.supplierPartId"),
+                }))
+              )
+              .execute();
+          }
+        });
+
+        if (!insertedPurchaseOrderId) {
+          throw new Error("Failed to insert purchase order");
+        }
+
+        convertedId = insertedPurchaseOrderId;
+
         break;
       }
 

@@ -97,6 +97,8 @@ export const purchaseOrderLineValidator = z
     inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional()),
+    supplierTaxAmount: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
@@ -159,6 +161,18 @@ export const purchaseOrderReleaseValidator = z
       path: ["supplierContact"], // path of error
     }
   );
+
+export const selectedLineSchema = z.object({
+  leadTime: z.number(),
+  quantity: z.number(),
+  shippingCost: z.number(),
+  supplierShippingCost: z.number(),
+  supplierUnitPrice: z.number(),
+  supplierTaxAmount: z.number(),
+  unitPrice: z.number(),
+});
+
+export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
 export const supplierValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -258,8 +272,5 @@ export const supplierQuoteLineValidator = z.object({
   conversionFactor: zfd.numeric(z.number().optional()),
   quantity: z.array(
     zfd.numeric(z.number().min(0.00001, { message: "Quantity is required" }))
-  ),
-  taxPercent: zfd.numeric(
-    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
 });

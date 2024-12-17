@@ -13498,9 +13498,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.companyId",
           },
           {
@@ -13620,9 +13617,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.companyId",
           },
           {
@@ -13694,9 +13688,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.conversionFactor",
-          },
-          {
-            $ref: "#/parameters/rowFilter.supplierQuoteLine.taxPercent",
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLine.companyId",
@@ -25402,6 +25393,15 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoices.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.itemType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoices.orderTotal",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseInvoices.status",
           },
           {
@@ -26965,6 +26965,15 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27069,6 +27078,15 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27125,6 +27143,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.supplierTaxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierQuoteLinePrice.taxPercent",
           },
           {
             $ref: "#/parameters/body.supplierQuoteLinePrice",
@@ -38113,9 +38140,6 @@ export default {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.supplierQuoteLines.taxPercent",
-          },
-          {
             $ref: "#/parameters/rowFilter.supplierQuoteLines.companyId",
           },
           {
@@ -45299,6 +45323,7 @@ export default {
           type: "string",
         },
         exchangeRate: {
+          default: 1,
           format: "numeric",
           type: "number",
         },
@@ -46385,6 +46410,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "exchangeRate",
         "supplierShippingCost",
         "supplierTaxAmount",
       ],
@@ -47105,7 +47131,6 @@ export default {
         "itemId",
         "description",
         "conversionFactor",
-        "taxPercent",
         "companyId",
         "createdBy",
       ],
@@ -47166,11 +47191,6 @@ export default {
         },
         conversionFactor: {
           default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        taxPercent: {
-          default: 0,
           format: "numeric",
           type: "number",
         },
@@ -52696,6 +52716,26 @@ export default {
           format: "text",
           type: "string",
         },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemType: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."itemType"',
+          type: "string",
+        },
+        orderTotal: {
+          format: "numeric",
+          type: "number",
+        },
         status: {
           enum: [
             "Draft",
@@ -53372,6 +53412,7 @@ export default {
         "supplierShippingCost",
         "createdAt",
         "createdBy",
+        "supplierTaxAmount",
       ],
       properties: {
         supplierQuoteId: {
@@ -53448,6 +53489,19 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        supplierTaxAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        taxAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -58305,10 +58359,6 @@ export default {
           type: "string",
         },
         conversionFactor: {
-          format: "numeric",
-          type: "number",
-        },
-        taxPercent: {
           format: "numeric",
           type: "number",
         },
@@ -66889,13 +66939,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.supplierQuoteLine.taxPercent": {
-      name: "taxPercent",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.supplierQuoteLine.companyId": {
       name: "companyId",
       required: false,
@@ -74203,6 +74246,27 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoices.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.itemType": {
+      name: "itemType",
+      required: false,
+      format: 'public."itemType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseInvoices.orderTotal": {
+      name: "orderTotal",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseInvoices.status": {
       name: "status",
       required: false,
@@ -75156,6 +75220,27 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLinePrice.supplierTaxAmount": {
+      name: "supplierTaxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLinePrice.taxAmount": {
+      name: "taxAmount",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierQuoteLinePrice.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
       in: "query",
       type: "string",
     },
@@ -81540,13 +81625,6 @@ export default {
     },
     "rowFilter.supplierQuoteLines.conversionFactor": {
       name: "conversionFactor",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.supplierQuoteLines.taxPercent": {
-      name: "taxPercent",
       required: false,
       format: "numeric",
       in: "query",

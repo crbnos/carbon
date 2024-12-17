@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -8,6 +8,7 @@ import {
   LuCalendar,
   LuContainer,
   LuCreditCard,
+  LuDollarSign,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -17,13 +18,14 @@ import {
 import {
   EmployeeAvatar,
   Hyperlink,
+  ItemThumbnail,
   New,
   SupplierAvatar,
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRealtime } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import {
@@ -47,6 +49,7 @@ const PurchaseInvoicesTable = memo(
 
     const permissions = usePermissions();
     const navigate = useNavigate();
+    const currencyFormatter = useCurrencyFormatter();
 
     const [selectedPurchaseInvoice, setSelectedPurchaseInvoice] =
       useState<PurchaseInvoice | null>(null);
@@ -62,9 +65,17 @@ const PurchaseInvoicesTable = memo(
           accessorKey: "invoiceId",
           header: "Invoice Number",
           cell: ({ row }) => (
-            <Hyperlink to={path.to.purchaseInvoiceDetails(row.original.id!)}>
-              {row.original?.invoiceId}
-            </Hyperlink>
+            <HStack>
+              <ItemThumbnail
+                size="sm"
+                thumbnailPath={row.original.thumbnailPath}
+                // @ts-ignore
+                type={row.original.itemType}
+              />
+              <Hyperlink to={path.to.purchaseInvoiceDetails(row.original.id!)}>
+                {row.original?.invoiceId}
+              </Hyperlink>
+            </HStack>
           ),
           meta: {
             icon: <LuBookMarked />,
@@ -130,6 +141,14 @@ const PurchaseInvoicesTable = memo(
             },
             pluralHeader: "Statuses",
             icon: <LuStar />,
+          },
+        },
+        {
+          accessorKey: "orderTotal",
+          header: "Order Total",
+          cell: (item) => currencyFormatter.format(item.getValue<number>()),
+          meta: {
+            icon: <LuDollarSign />,
           },
         },
         {
@@ -234,7 +253,7 @@ const PurchaseInvoicesTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, people, suppliers]);
+    }, [currencyFormatter, customColumns, people, suppliers]);
 
     const renderContextMenu = useMemo(() => {
       // eslint-disable-next-line react/display-name

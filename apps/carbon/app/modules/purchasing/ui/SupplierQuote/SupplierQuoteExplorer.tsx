@@ -47,7 +47,6 @@ export default function SupplierQuoteExplorer() {
     description: "",
     itemId: "",
     quantity: [1],
-    taxPercent: 0,
     inventoryUnitOfMeasureCode: "",
     purchaseUnitOfMeasureCode: "",
   };

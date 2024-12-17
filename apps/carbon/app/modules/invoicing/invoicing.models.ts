@@ -62,11 +62,11 @@ export const purchaseInvoiceLineValidator = z
     inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
     supplierUnitPrice: zfd.numeric(z.number().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
+    supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
-    supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
-    supplierTaxAmount: zfd.numeric(z.number().optional().default(0)),
   })
   .refine(
     (data) =>

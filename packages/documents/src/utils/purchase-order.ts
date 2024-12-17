@@ -37,8 +37,12 @@ export function getLineDescriptionDetails(
 export function getLineTotal(
   line: Database["public"]["Views"]["purchaseOrderLines"]["Row"]
 ) {
-  if (line?.purchaseQuantity && line?.unitPrice) {
-    return line.purchaseQuantity * line.unitPrice;
+  if (line?.purchaseQuantity && line?.supplierUnitPrice) {
+    return (
+      line.purchaseQuantity * line.supplierUnitPrice +
+      (line.supplierShippingCost ?? 0) +
+      (line.supplierTaxAmount ?? 0)
+    );
   }
 
   return 0;
@@ -50,8 +54,11 @@ export function getTotal(
   let total = 0;
 
   lines.forEach((line) => {
-    if (line?.purchaseQuantity && line?.unitPrice) {
-      total += line.purchaseQuantity * line.unitPrice;
+    if (line?.purchaseQuantity && line?.supplierUnitPrice) {
+      total +=
+        line.purchaseQuantity * line.supplierUnitPrice +
+        (line?.supplierShippingCost ?? 0) +
+        (line?.supplierTaxAmount ?? 0);
     }
   });
 

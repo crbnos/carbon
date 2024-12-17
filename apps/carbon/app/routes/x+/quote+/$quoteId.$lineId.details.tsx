@@ -177,6 +177,7 @@ export default function QuoteLine() {
         <QuoteLinePricing
           key={lineId}
           line={line}
+          exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
           pricesByQuantity={pricesByQuantity}
           getLineCosts={getLineCosts}
         />

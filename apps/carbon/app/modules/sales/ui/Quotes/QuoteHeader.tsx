@@ -52,7 +52,7 @@ import type {
 } from "../../types";
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
-import QuoteToOrderModal from "./QuoteToOrderModal";
+import QuoteToOrderDrawer from "./QuoteToOrderDrawer";
 
 const QuoteHeader = () => {
   const permissions = usePermissions();
@@ -298,7 +298,7 @@ const QuoteHeader = () => {
         />
       )}
       {/* we use isOpen so we don't lose state */}
-      <QuoteToOrderModal
+      <QuoteToOrderDrawer
         isOpen={convertToOrderModal.isOpen}
         onClose={convertToOrderModal.onClose}
         quote={routeData?.quote!}

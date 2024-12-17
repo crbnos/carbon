@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Button,
   Card,
@@ -57,10 +56,12 @@ import type {
 const QuoteLinePricing = ({
   line,
   pricesByQuantity,
+  exchangeRate,
   getLineCosts,
 }: {
   line: QuotationLine;
   pricesByQuantity: Record<number, QuotationPrice>;
+  exchangeRate: number;
   getLineCosts: (quantity: number) => Costs;
 }) => {
   const permissions = usePermissions();
@@ -87,7 +88,6 @@ const QuoteLinePricing = ({
     permissions.can("update", "sales") &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
-  const { carbon } = useCarbon();
   const fetcher = useFetcher<{ id?: string; error: string | null }>();
   useEffect(() => {
     if (fetcher.data?.error) {
@@ -241,21 +241,9 @@ const QuoteLinePricing = ({
     quantity: number,
     value: number
   ) => {
-    if (!carbon) return;
-    const quoteExchangeRate = await carbon
-      .from("quote")
-      .select("id, exchangeRate")
-      .eq("id", quoteId)
-      .single();
+    const unitPricePrecision = line.unitPricePrecision ?? 2;
 
-    const quoteLineData = await carbon
-      .from("quoteLine")
-      .select("unitPricePrecision")
-      .eq("id", lineId)
-      .single();
-    const unitPricePrecision = quoteLineData.data?.unitPricePrecision ?? 2;
-
-    const hasPrice = prices[quantity];
+    const hasPrice = !!prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
     if (!hasPrice) {
@@ -266,7 +254,7 @@ const QuoteLinePricing = ({
         leadTime: 0,
         unitPrice: 0,
         discountPercent: 0,
-        exchangeRate: quoteExchangeRate.data?.exchangeRate ?? 1,
+        exchangeRate: exchangeRate ?? 1,
         shippingCost: 0,
         createdBy: userId,
       } as unknown as QuotationPrice;
@@ -280,25 +268,21 @@ const QuoteLinePricing = ({
 
     setPrices(newPrices);
 
+    const formData = new FormData();
+    formData.append("hasPrice", hasPrice.toString());
+    formData.append("quantity", quantity.toString());
+    formData.append("quoteLineId", lineId);
     if (hasPrice) {
-      const { error } = await carbon
-        .from("quoteLinePrice")
-        .update({ [key]: roundedValue })
-        .eq("quoteLineId", lineId)
-        .eq("quantity", quantity);
-      if (error) {
-        setPrices(oldPrices);
-      }
+      formData.append("key", key);
+      formData.append("value", roundedValue.toString());
     } else {
-      const { error } = await carbon.from("quoteLinePrice").insert([
-        {
-          ...newPrices[quantity],
-        },
-      ]);
-      if (error) {
-        setPrices(oldPrices);
-      }
+      formData.append("price", JSON.stringify(newPrices[quantity]));
     }
+
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.quoteLinePriceUpdate(quoteId, lineId),
+    });
   };
 
   return (

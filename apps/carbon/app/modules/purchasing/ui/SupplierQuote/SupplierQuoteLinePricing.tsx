@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardContent,
@@ -63,7 +62,6 @@ const SupplierQuoteLinePricing = ({
     permissions.can("update", "purchasing") &&
     ["Active"].includes(routeData?.quote?.status ?? "");
 
-  const { carbon } = useCarbon();
   const fetcher = useFetcher<{ id?: string; error: string | null }>();
   useEffect(() => {
     if (fetcher.data?.error) {
@@ -80,13 +78,16 @@ const SupplierQuoteLinePricing = ({
   );
 
   const onUpdatePrice = async (
-    key: "leadTime" | "supplierUnitPrice" | "supplierShippingCost",
+    key:
+      | "leadTime"
+      | "supplierUnitPrice"
+      | "supplierShippingCost"
+      | "supplierTaxAmount",
     quantity: number,
     value: number
   ) => {
-    if (!carbon) return;
+    const hasPrice = !!prices[quantity];
 
-    const hasPrice = prices[quantity];
     const oldPrices = { ...prices };
     const newPrices = { ...oldPrices };
     if (!hasPrice) {
@@ -98,6 +99,7 @@ const SupplierQuoteLinePricing = ({
         exchangeRate: exchangeRate ?? 1,
         supplierUnitPrice: 0,
         supplierShippingCost: 0,
+        supplierTaxAmount: 0,
         createdBy: userId,
       } as unknown as SupplierQuoteLinePrice;
     }
@@ -105,25 +107,21 @@ const SupplierQuoteLinePricing = ({
 
     setPrices(newPrices);
 
+    const formData = new FormData();
+    formData.append("hasPrice", hasPrice ? "true" : "false");
+    formData.append("quantity", quantity.toString());
+    formData.append("supplierQuoteLineId", lineId);
     if (hasPrice) {
-      const { error } = await carbon
-        .from("supplierQuoteLinePrice")
-        .update({ [key]: value })
-        .eq("supplierQuoteLineId", lineId)
-        .eq("quantity", quantity);
-      if (error) {
-        setPrices(oldPrices);
-      }
+      formData.append("key", key);
+      formData.append("value", value.toString());
     } else {
-      const { error } = await carbon.from("supplierQuoteLinePrice").insert([
-        {
-          ...newPrices[quantity],
-        },
-      ]);
-      if (error) {
-        setPrices(oldPrices);
-      }
+      formData.append("price", JSON.stringify(newPrices[quantity]));
     }
+
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.supplierQuoteLinePriceUpdate(id, lineId),
+    });
   };
 
   const unitOfMeasures = useUnitOfMeasure();
@@ -298,27 +296,35 @@ const SupplierQuoteLinePricing = ({
               })}
             </Tr>
 
-            <Tr className="[&>td]:bg-muted/60">
+            <Tr>
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
-                  <span>Tax Percent</span>
+                  <span>Tax Amount</span>
                 </HStack>
               </Td>
               {quantities.map((quantity, index) => {
-                const taxPercent = line.taxPercent ?? 0;
+                const taxAmount = prices[quantity]?.supplierTaxAmount ?? 0;
                 return (
                   <Td key={index} className="group-hover:bg-muted/50">
                     <NumberField
-                      value={taxPercent}
+                      value={taxAmount}
                       formatOptions={{
-                        style: "percent",
-                        maximumFractionDigits: 2,
+                        style: "currency",
+                        currency:
+                          routeData?.quote?.currencyCode ?? baseCurrency,
+                      }}
+                      minValue={0}
+                      onChange={(value) => {
+                        if (Number.isFinite(value) && value !== taxAmount) {
+                          onUpdatePrice("supplierTaxAmount", quantity, value);
+                        }
                       }}
                     >
                       <NumberInput
                         className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                        isDisabled={!isEditable}
                         size="sm"
-                        isDisabled
+                        min={0}
                       />
                     </NumberField>
                   </Td>
@@ -335,7 +341,7 @@ const SupplierQuoteLinePricing = ({
                 const subtotal =
                   (prices[quantity]?.supplierUnitPrice ?? 0) * quantity +
                   (prices[quantity]?.supplierShippingCost ?? 0);
-                const tax = subtotal * (line.taxPercent ?? 0);
+                const tax = prices[quantity]?.supplierTaxAmount ?? 0;
                 const price = subtotal + tax;
 
                 return (
@@ -378,7 +384,9 @@ const SupplierQuoteLinePricing = ({
                       ((prices[quantity]?.supplierUnitPrice ?? 0) * quantity +
                         (prices[quantity]?.supplierShippingCost ?? 0)) *
                       (prices[quantity]?.exchangeRate ?? 1);
-                    const tax = subtotal * (line.taxPercent ?? 0);
+                    const tax =
+                      (prices[quantity]?.supplierTaxAmount ?? 0) *
+                      (prices[quantity]?.exchangeRate ?? 1);
                     const price = subtotal + tax;
 
                     return (

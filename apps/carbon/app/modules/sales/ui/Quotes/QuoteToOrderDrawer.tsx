@@ -42,6 +42,7 @@ import {
   LuUpload,
   LuUserSquare,
 } from "react-icons/lu";
+import type { z } from "zod";
 import { CustomerAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
@@ -50,6 +51,7 @@ import { useRouteData, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { getDocumentType } from "~/modules/shared";
 import { getPrivateUrl, path } from "~/utils/path";
+import type { selectedLineSchema } from "../../sales.models";
 import type {
   Quotation,
   QuotationLine,
@@ -67,6 +69,8 @@ type QuoteToOrderDrawerProps = {
   onClose: () => void;
 };
 
+type SelectedLine = z.infer<typeof selectedLineSchema>;
+
 const QuoteToOrderDrawer = ({
   isOpen,
   quote,
@@ -76,19 +80,7 @@ const QuoteToOrderDrawer = ({
 }: QuoteToOrderDrawerProps) => {
   const [step, setStep] = useState(0);
   const [selectedLines, setSelectedLines] = useState<
-    Record<
-      string,
-      {
-        quantity: number;
-        netUnitPrice: number;
-        convertedNetUnitPrice: number;
-        addOn: number;
-        convertedAddOn: number;
-        shippingCost: number;
-        convertedShippingCost: number;
-        leadTime: number;
-      }
-    >
+    Record<string, SelectedLine>
   >({});
 
   const { carbon } = useCarbon();
@@ -349,23 +341,7 @@ type LinePricingFormProps = {
   quote: Quotation;
   lines: QuotationLine[];
   pricing: QuotationPrice[];
-  setSelectedLines: Dispatch<
-    SetStateAction<
-      Record<
-        string,
-        {
-          quantity: number;
-          netUnitPrice: number;
-          convertedNetUnitPrice: number;
-          addOn: number;
-          convertedAddOn: number;
-          shippingCost: number;
-          convertedShippingCost: number;
-          leadTime: number;
-        }
-      >
-    >
-  >;
+  setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 };
 
 const LinePricingForm = ({
@@ -436,23 +412,7 @@ type LinePricingOptionsProps = {
   shouldConvertCurrency: boolean;
   quoteExchangeRate: number;
   formatter: Intl.NumberFormat;
-  setSelectedLines: Dispatch<
-    SetStateAction<
-      Record<
-        string,
-        {
-          quantity: number;
-          netUnitPrice: number;
-          convertedNetUnitPrice: number;
-          addOn: number;
-          convertedAddOn: number;
-          shippingCost: number;
-          convertedShippingCost: number;
-          leadTime: number;
-        }
-      >
-    >
-  >;
+  setSelectedLines: Dispatch<SetStateAction<Record<string, SelectedLine>>>;
 };
 
 const LinePricingOptions = ({
@@ -466,7 +426,7 @@ const LinePricingOptions = ({
 }: LinePricingOptionsProps) => {
   const [selectedValue, setSelectedValue] = useState("");
   const [showOverride, setShowOverride] = useState(false);
-  const [overridePricing, setOverridePricing] = useState({
+  const [overridePricing, setOverridePricing] = useState<SelectedLine>({
     quantity: 1,
     leadTime: 0,
     addOn: 0,

@@ -14032,7 +14032,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string | null
-          exchangeRate: number | null
+          exchangeRate: number
           extendedPrice: number | null
           externalNotes: Json | null
           id: string
@@ -14076,7 +14076,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
-          exchangeRate?: number | null
+          exchangeRate?: number
           extendedPrice?: number | null
           externalNotes?: Json | null
           id?: string
@@ -14120,7 +14120,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string | null
-          exchangeRate?: number | null
+          exchangeRate?: number
           extendedPrice?: number | null
           externalNotes?: Json | null
           id?: string
@@ -21835,7 +21835,6 @@ export type Database = {
           supplierQuoteId: string
           supplierQuoteRevisionId: number
           tags: string[] | null
-          taxPercent: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -21858,7 +21857,6 @@ export type Database = {
           supplierQuoteId: string
           supplierQuoteRevisionId?: number
           tags?: string[] | null
-          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21881,7 +21879,6 @@ export type Database = {
           supplierQuoteId?: string
           supplierQuoteRevisionId?: number
           tags?: string[] | null
-          taxPercent?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -22034,7 +22031,10 @@ export type Database = {
           supplierQuoteId: string
           supplierQuoteLineId: string
           supplierShippingCost: number
+          supplierTaxAmount: number
           supplierUnitPrice: number
+          taxAmount: number | null
+          taxPercent: number | null
           unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
@@ -22051,7 +22051,10 @@ export type Database = {
           supplierQuoteId: string
           supplierQuoteLineId: string
           supplierShippingCost?: number
+          supplierTaxAmount?: number
           supplierUnitPrice?: number
+          taxAmount?: number | null
+          taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -22068,7 +22071,10 @@ export type Database = {
           supplierQuoteId?: string
           supplierQuoteLineId?: string
           supplierShippingCost?: number
+          supplierTaxAmount?: number
           supplierUnitPrice?: number
+          taxAmount?: number | null
+          taxPercent?: number | null
           unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -27453,7 +27459,9 @@ export type Database = {
           invoiceSupplierContactId: string | null
           invoiceSupplierId: string | null
           invoiceSupplierLocationId: string | null
+          itemType: Database["public"]["Enums"]["itemType"] | null
           locationId: string | null
+          orderTotal: number | null
           paymentTermId: string | null
           paymentTermName: string | null
           postingDate: string | null
@@ -27462,6 +27470,7 @@ export type Database = {
           supplierId: string | null
           supplierInteractionId: string | null
           supplierReference: string | null
+          thumbnailPath: string | null
           totalAmount: number | null
           totalDiscount: number | null
           totalTax: number | null
@@ -30664,7 +30673,6 @@ export type Database = {
           supplierQuoteId: string | null
           supplierQuoteRevisionId: number | null
           tags: string[] | null
-          taxPercent: number | null
           thumbnailPath: string | null
           unitCost: number | null
           updatedAt: string | null

@@ -13,6 +13,7 @@ export type Action = {
 export type Authenticated<T> = T & {
   role?: Role;
   permission?: string;
+  internal?: boolean;
 };
 
 export type AuthenticatedRouteGroup = {

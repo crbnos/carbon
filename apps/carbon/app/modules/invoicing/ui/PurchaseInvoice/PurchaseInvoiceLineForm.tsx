@@ -25,6 +25,7 @@ import {
   Hidden,
   Item,
   Location,
+  Number,
   NumberControlled,
   Select,
   Shelf,
@@ -334,23 +335,6 @@ const PurchaseInvoiceLineForm = ({
                           }));
                         }}
                       />
-                      <NumberControlled
-                        name="supplierUnitPrice"
-                        label="Supplier Unit Price"
-                        value={itemData.supplierUnitPrice}
-                        formatOptions={{
-                          style: "currency",
-                          currency:
-                            routeData?.purchaseInvoice?.currencyCode ??
-                            company.baseCurrencyCode,
-                        }}
-                        onChange={(value) =>
-                          setItemData((d) => ({
-                            ...d,
-                            supplierUnitPrice: value,
-                          }))
-                        }
-                      />
 
                       {["Part", "Material", "Consumable", "Tool"].includes(
                         itemType
@@ -383,6 +367,44 @@ const PurchaseInvoiceLineForm = ({
                           />
                         </>
                       )}
+
+                      <NumberControlled
+                        name="supplierUnitPrice"
+                        label="Supplier Unit Price"
+                        value={itemData.supplierUnitPrice}
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                        onChange={(value) =>
+                          setItemData((d) => ({
+                            ...d,
+                            supplierUnitPrice: value,
+                          }))
+                        }
+                      />
+                      <Number
+                        name="supplierShippingCost"
+                        label="Shipping"
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                      />
+                      <Number
+                        name="supplierTaxAmount"
+                        label="Tax"
+                        formatOptions={{
+                          style: "currency",
+                          currency:
+                            routeData?.purchaseInvoice?.currencyCode ??
+                            company.baseCurrencyCode,
+                        }}
+                      />
 
                       {[
                         "Part",
