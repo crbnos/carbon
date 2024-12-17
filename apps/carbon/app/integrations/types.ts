@@ -7,7 +7,8 @@ export type IntegrationConfig = {
   category: string;
   logo: React.FC<React.ComponentProps<"svg">>;
   shortDescription: string;
-  description: string | null;
+  description: string;
+  setupInstructions?: React.FC<{ companyId: string }>;
   images: string[];
   settings: {
     name: string;

@@ -36,7 +36,10 @@ export default function SettingsRoute() {
     <CollapsibleSidebarProvider>
       <div className="grid grid-cols-[auto_1fr] w-full h-full">
         <GroupedContentSidebar groups={groups} />
-        <VStack spacing={0} className="h-full">
+        <VStack
+          spacing={0}
+          className="overflow-y-auto scrollbar-hide h-[calc(100dvh-49px)]"
+        >
           <Outlet />
         </VStack>
       </div>

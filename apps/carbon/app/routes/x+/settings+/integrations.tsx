@@ -37,7 +37,9 @@ export default function IntegrationsRoute() {
     <>
       <IntegrationsList
         installedIntegrations={installedIntegrations}
-        availableIntegrations={availableIntegrations}
+        availableIntegrations={availableIntegrations.filter(
+          (i) => i.id !== "paperless-parts"
+        )}
       />
       <Outlet />
     </>
