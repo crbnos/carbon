@@ -53,14 +53,14 @@ const PartManufacturingForm = ({
                 style: "percent",
               }}
             />
-            <Boolean
+            {/* <Boolean
               name="manufacturingBlocked"
               label="Manufacturing Blocked"
-            />
-            {/* <Boolean
+            /> */}
+            <Boolean
               name="requiresConfiguration"
               label="Requires Configuration"
-            /> */}
+            />
             <CustomFormFields table="partReplenishment" />
           </div>
         </CardContent>

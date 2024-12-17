@@ -1332,7 +1332,7 @@ function ToolsForm({
               isDisabled={isDisabled || fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >
-              Add New
+              Add Tool
             </Submit>
           </VStack>
         </ValidatedForm>

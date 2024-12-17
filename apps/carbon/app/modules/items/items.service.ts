@@ -116,24 +116,15 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
-export async function getSupplierParts(
+export async function getConfigurationOptions(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
-    .from("supplierPart")
-    .select(
-      `
-      id, supplier(id, name),
-      supplierPartId, supplierUnitOfMeasureCode,
-      minimumOrderQuantity, conversionFactor,
-      unitPrice,
-      customFields
-    `
-    )
-    .eq("active", true)
-    .eq("itemId", id)
+    .from("configurationOption")
+    .select("*")
+    .eq("itemId", itemId)
     .eq("companyId", companyId);
 }
 
@@ -808,7 +799,7 @@ export async function getServices(
   }
 ) {
   let query = client
-    .from("services")
+    .from("service")
     .select("*", {
       count: "exact",
     })
@@ -853,7 +844,7 @@ export async function getService(
   companyId: string
 ) {
   return client
-    .from("services")
+    .from("service")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
@@ -873,6 +864,27 @@ export async function getServicesList(
     .order("name");
 
   return query;
+}
+
+export async function getSupplierParts(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("supplierPart")
+    .select(
+      `
+      id, supplier(id, name),
+      supplierPartId, supplierUnitOfMeasureCode,
+      minimumOrderQuantity, conversionFactor,
+      unitPrice,
+      customFields
+    `
+    )
+    .eq("active", true)
+    .eq("itemId", id)
+    .eq("companyId", companyId);
 }
 
 export async function getTool(
