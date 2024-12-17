@@ -133,6 +133,7 @@ export default function EditPurchaseOrderLineRoute() {
     supplierShippingCost: line?.supplierShippingCost ?? 0,
     supplierTaxAmount: line?.supplierTaxAmount ?? 0,
     exchangeRate: line?.exchangeRate ?? 1,
+    locationId: line?.locationId ?? "",
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     inventoryUnitOfMeasureCode: line?.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: line?.conversionFactor ?? 1,

@@ -75,16 +75,12 @@ serve(async (req: Request) => {
 
     const hasReceipt = !!receipt.data?.id;
 
-    console.log({ purchaseOrderLines: purchaseOrderLines.data });
-
     const previouslyReceivedQuantitiesByLine = (
       purchaseOrderLines.data ?? []
     ).reduce<Record<string, number>>((acc, d) => {
       if (d.id) acc[d.id] = d.quantityReceived ?? 0;
       return acc;
     }, {});
-
-    console.log({ previouslyReceivedQuantitiesByLine });
 
     const receiptLineItems = purchaseOrderLines.data.reduce<ReceiptLineItem[]>(
       (acc, d) => {
