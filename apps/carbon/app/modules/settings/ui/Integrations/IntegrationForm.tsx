@@ -15,7 +15,7 @@ import {
 } from "@carbon/react";
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { integrations as availableIntegrations } from "~/integrations";
 import { path } from "~/utils/path";
 
@@ -32,6 +32,9 @@ export function IntegrationForm({
 }: IntegrationFormProps) {
   const permissions = usePermissions();
   const isDisabled = !permissions.can("update", "settings");
+  const {
+    company: { id: companyId },
+  } = useUser();
 
   const { id: integrationId } = useParams();
   if (!integrationId) {
@@ -77,7 +80,7 @@ export function IntegrationForm({
                   {installed && <Badge variant="green">Installed</Badge>}
                 </div>
 
-                <span className="text-xs text-[#878787]">
+                <span className="text-xs text-[#878787] text-right">
                   <Badge variant="secondary">{integration.category}</Badge> •
                   Published by CarbonOS
                 </span>
@@ -85,12 +88,19 @@ export function IntegrationForm({
             </VStack>
           </DrawerHeader>
           <DrawerBody>
-            <ScrollArea className="h-[calc(100dvh-240px)]">
-              <VStack spacing={2}>
+            <ScrollArea className="h-[calc(100dvh-240px)] -mx-2">
+              <VStack spacing={4} className="px-2">
                 <Heading size="h3">How it works</Heading>
-                <p className="text-sm text-muted-foreground">
+                <div className="text-sm text-muted-foreground">
                   {integration.description}
-                </p>
+                </div>
+
+                {integration.setupInstructions && (
+                  <>
+                    <Heading size="h3">Setup Instructions</Heading>
+                    <integration.setupInstructions companyId={companyId} />
+                  </>
+                )}
 
                 {integration.settings.map((setting) => {
                   switch (setting.type) {
@@ -120,7 +130,7 @@ export function IntegrationForm({
             </ScrollArea>
             <p className="text-sm text-muted-foreground">
               Carbon Manufacturing Systems does not endorse any third-party
-              software.Report any concerns about app content or behavior.
+              software. Report any concerns about app content or behavior.
             </p>
 
             <a

@@ -230,7 +230,7 @@ const SuppliersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [people, supplierStatuses, customColumns]);
+    }, [supplierStatuses, people, tags, customColumns]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name
