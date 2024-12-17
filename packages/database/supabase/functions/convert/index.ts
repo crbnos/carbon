@@ -573,7 +573,7 @@ serve(async (req: Request) => {
             client
               .from("employeeJob")
               .select("*")
-              .eq("employeeId", userId)
+              .eq("id", userId)
               .eq("companyId", companyId),
           ]);
 

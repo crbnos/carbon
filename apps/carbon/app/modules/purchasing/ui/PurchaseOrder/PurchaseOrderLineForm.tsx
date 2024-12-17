@@ -62,7 +62,7 @@ const PurchaseOrderLineForm = ({
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
-  const { company, defaults } = useUser();
+  const { company } = useUser();
   const { orderId } = useParams();
   const fetcher = useFetcher<typeof action>();
 
@@ -77,9 +77,7 @@ const PurchaseOrderLineForm = ({
   const [itemType, setItemType] = useState<PurchaseOrderLineType>(
     initialValues.purchaseOrderLineType
   );
-  const [locationId, setLocationId] = useState(
-    initialValues.locationId ?? defaults.locationId ?? ""
-  );
+  const [locationId, setLocationId] = useState(initialValues.locationId);
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
