@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -12,6 +12,7 @@ import {
   LuPhone,
   LuPrinter,
   LuStar,
+  LuTag,
   LuUser,
 } from "react-icons/lu";
 import {
@@ -31,11 +32,12 @@ import { path } from "~/utils/path";
 type SuppliersTableProps = {
   data: Supplier[];
   count: number;
+  tags: { name: string }[];
   supplierStatuses: SupplierStatus[];
 };
 
 const SuppliersTable = memo(
-  ({ data, count, supplierStatuses }: SuppliersTableProps) => {
+  ({ data, count, tags, supplierStatuses }: SuppliersTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -87,6 +89,30 @@ const SuppliersTable = memo(
               })),
             },
             icon: <LuUser />,
+          },
+        },
+        {
+          accessorKey: "tags",
+          header: "Tags",
+          cell: ({ row }) => (
+            <HStack spacing={0} className="gap-1">
+              {row.original.tags?.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </HStack>
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: tags?.map((tag) => ({
+                value: tag.name,
+                label: <Badge variant="secondary">{tag.name}</Badge>,
+              })),
+              isArray: true,
+            },
+            icon: <LuTag />,
           },
         },
         // {

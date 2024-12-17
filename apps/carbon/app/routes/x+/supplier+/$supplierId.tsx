@@ -11,6 +11,7 @@ import {
 } from "~/modules/purchasing";
 import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
 import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -20,17 +21,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "purchasing",
   });
 
   const { supplierId } = params;
   if (!supplierId) throw new Error("Could not find supplierId");
 
-  const [supplier, contacts, locations] = await Promise.all([
+  const [supplier, contacts, locations, tags] = await Promise.all([
     getSupplier(client, supplierId),
     getSupplierContacts(client, supplierId),
     getSupplierLocations(client, supplierId),
+    getTagsList(client, companyId, "supplier"),
   ]);
 
   if (supplier.error) {
@@ -47,6 +49,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     supplier: supplier.data,
     contacts: contacts.data ?? [],
     locations: locations.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 

@@ -7,6 +7,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getCustomerStatuses, getCustomers } from "~/modules/sales";
 import { CustomersTable } from "~/modules/sales/ui/Customers";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -29,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [customers, customerStatuses] = await Promise.all([
+  const [customers, customerStatuses, tags] = await Promise.all([
     getCustomers(client, companyId, {
       search,
       limit,
@@ -38,6 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filters,
     }),
     getCustomerStatuses(client, companyId),
+    getTagsList(client, companyId, "customer"),
   ]);
 
   if (customers.error) {
@@ -51,11 +53,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: customers.count ?? 0,
     customers: customers.data ?? [],
     customerStatuses: customerStatuses.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function SalesCustomersRoute() {
-  const { count, customers, customerStatuses } = useLoaderData<typeof loader>();
+  const { count, customers, customerStatuses, tags } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -63,8 +67,8 @@ export default function SalesCustomersRoute() {
         data={customers}
         count={count}
         customerStatuses={customerStatuses}
+        tags={tags}
       />
-
       <Outlet />
     </VStack>
   );

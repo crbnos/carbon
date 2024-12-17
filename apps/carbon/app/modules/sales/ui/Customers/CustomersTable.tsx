@@ -1,4 +1,10 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  Badge,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -12,6 +18,7 @@ import {
   LuPhone,
   LuPrinter,
   LuStar,
+  LuTag,
   LuTrash,
   LuUser,
 } from "react-icons/lu";
@@ -34,10 +41,11 @@ type CustomersTableProps = {
   data: Customer[];
   count: number;
   customerStatuses: CustomerStatus[];
+  tags: { name: string }[];
 };
 
 const CustomersTable = memo(
-  ({ data, count, customerStatuses }: CustomersTableProps) => {
+  ({ data, count, customerStatuses, tags }: CustomersTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
@@ -95,22 +103,30 @@ const CustomersTable = memo(
             icon: <LuUser />,
           },
         },
-        // {
-        //   id: "assignee",
-        //   header: "Assignee",
-        //   cell: ({ row }) => (
-        //     <EmployeeAvatar employeeId={row.original.assignee} />
-        //   ),
-        //   meta: {
-        //     filter: {
-        //       type: "static",
-        //       options: people.map((employee) => ({
-        //         value: employee.id,
-        //         label: employee.name,
-        //       })),
-        //     },
-        //   },
-        // },
+        {
+          accessorKey: "tags",
+          header: "Tags",
+          cell: ({ row }) => (
+            <HStack spacing={0} className="gap-1">
+              {row.original.tags?.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </HStack>
+          ),
+          meta: {
+            filter: {
+              type: "static",
+              options: tags?.map((tag) => ({
+                value: tag.name,
+                label: <Badge variant="secondary">{tag.name}</Badge>,
+              })),
+              isArray: true,
+            },
+            icon: <LuTag />,
+          },
+        },
         {
           accessorKey: "currencyCode",
           header: "Currency",
@@ -196,7 +212,7 @@ const CustomersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [customerStatuses, people, customColumns]);
+    }, [customerStatuses, people, customColumns, tags]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name

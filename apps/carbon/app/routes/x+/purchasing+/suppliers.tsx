@@ -7,6 +7,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getSupplierStatuses, getSuppliers } from "~/modules/purchasing";
 import { SuppliersTable } from "~/modules/purchasing/ui/Supplier";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -31,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [suppliers, supplierStatuses] = await Promise.all([
+  const [suppliers, supplierStatuses, tags] = await Promise.all([
     getSuppliers(client, companyId, {
       search,
       type,
@@ -42,6 +43,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       filters,
     }),
     getSupplierStatuses(client, companyId),
+    getTagsList(client, companyId, "supplier"),
   ]);
 
   if (suppliers.error) {
@@ -55,11 +57,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     count: suppliers.count ?? 0,
     suppliers: suppliers.data ?? [],
     supplierStatuses: supplierStatuses.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 
 export default function PurchasingSuppliersRoute() {
-  const { count, suppliers, supplierStatuses } = useLoaderData<typeof loader>();
+  const { count, suppliers, supplierStatuses, tags } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
@@ -67,6 +71,7 @@ export default function PurchasingSuppliersRoute() {
         data={suppliers}
         count={count}
         supplierStatuses={supplierStatuses}
+        tags={tags}
       />
       <Outlet />
     </VStack>

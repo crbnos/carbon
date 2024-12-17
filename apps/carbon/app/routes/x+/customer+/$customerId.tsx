@@ -10,6 +10,7 @@ import {
   getCustomerLocations,
 } from "~/modules/sales";
 import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
+import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -19,17 +20,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { customerId } = params;
   if (!customerId) throw new Error("Could not find customerId");
 
-  const [customer, contacts, locations] = await Promise.all([
+  const [customer, contacts, locations, tags] = await Promise.all([
     getCustomer(client, customerId),
     getCustomerContacts(client, customerId),
     getCustomerLocations(client, customerId),
+    getTagsList(client, companyId, "customer"),
   ]);
 
   if (customer.error) {
@@ -46,6 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     contacts: contacts.data ?? [],
     locations: locations.data ?? [],
+    tags: tags.data ?? [],
   });
 }
 

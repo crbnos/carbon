@@ -21,7 +21,6 @@ import {
   Separator,
   SidebarTrigger,
   Skeleton,
-  Slider,
   Table,
   Tabs,
   TabsContent,
@@ -1600,14 +1599,6 @@ function QuantityModal({
                     value={quantity}
                     onChange={setQuantity}
                     minValue={1}
-                  />
-                  <Slider
-                    className="py-3"
-                    value={[quantity]}
-                    onValueChange={(value) => setQuantity(value[0])}
-                    step={1}
-                    min={1}
-                    max={operation.operationQuantity}
                   />
                 </>
               )}

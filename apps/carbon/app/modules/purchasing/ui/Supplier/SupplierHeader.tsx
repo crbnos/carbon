@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardAction,
@@ -12,20 +13,26 @@ import {
   VStack,
 } from "@carbon/react";
 
-import { useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
+import { useCallback } from "react";
+import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { Tags } from "~/components/Form";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
+import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
 
 const SupplierHeader = () => {
   const { supplierId } = useParams();
 
   if (!supplierId) throw new Error("Could not find supplierId");
-  const routeData = useRouteData<{ supplier: SupplierDetail }>(
-    path.to.supplier(supplierId)
-  );
+  const fetcher = useFetcher<typeof action>();
+  const routeData = useRouteData<{
+    supplier: SupplierDetail;
+    tags: { name: string }[];
+  }>(path.to.supplier(supplierId));
 
   const sharedSupplierData = useRouteData<{
     supplierStatuses: SupplierStatus[];
@@ -35,14 +42,25 @@ const SupplierHeader = () => {
     (status) => status.id === routeData?.supplier?.supplierStatusId
   )?.name;
 
-  // const optimisticAssignment = useOptimisticAssignment({
-  //   id: supplierId,
-  //   table: "supplier",
-  // });
-  // const assignee =
-  //   optimisticAssignment !== undefined
-  //     ? optimisticAssignment
-  //     : routeData?.supplier?.assignee;
+  const onUpdateTags = useCallback(
+    (value: string[]) => {
+      const formData = new FormData();
+
+      formData.append("ids", supplierId);
+      formData.append("table", "supplier");
+
+      value.forEach((v) => {
+        formData.append("value", v);
+      });
+
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.tags,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [supplierId]
+  );
 
   return (
     <VStack>
@@ -75,6 +93,28 @@ const SupplierHeader = () => {
                 ) : (
                   "-"
                 )}
+              </CardAttributeValue>
+            </CardAttribute>
+            <CardAttribute>
+              <CardAttributeValue>
+                <ValidatedForm
+                  defaultValues={{
+                    tags: routeData?.supplier?.tags ?? [],
+                  }}
+                  validator={z.object({
+                    tags: z.array(z.string()).optional(),
+                  })}
+                  className="w-full"
+                >
+                  <Tags
+                    label="Tags"
+                    name="tags"
+                    availableTags={routeData?.tags ?? []}
+                    table="supplier"
+                    inline
+                    onChange={onUpdateTags}
+                  />
+                </ValidatedForm>
               </CardAttributeValue>
             </CardAttribute>
 
