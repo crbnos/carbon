@@ -44,10 +44,12 @@ export const notifyTask = task({
     function getWorkflow(type: NotificationEvent) {
       switch (type) {
         case NotificationEvent.JobAssignment:
+        case NotificationEvent.PurchaseInvoiceAssignment:
         case NotificationEvent.PurchaseOrderAssignment:
         case NotificationEvent.QuoteAssignment:
         case NotificationEvent.SalesOrderAssignment:
         case NotificationEvent.SalesRfqAssignment:
+        case NotificationEvent.SupplierQuoteAssignment:
           return NotificationWorkflow.Assignment;
         case NotificationEvent.DigitalQuoteResponse:
           return NotificationWorkflow.DigitalQuoteResponse;

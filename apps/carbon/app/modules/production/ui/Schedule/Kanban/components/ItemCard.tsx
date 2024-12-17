@@ -167,21 +167,21 @@ export function ItemCard({
           })
         )}
       >
-        <div className="flex w-full max-w-full justify-between">
-          <div className="flex flex-col space-y-0">
+        <div className="flex w-full max-w-full justify-between items-start gap-0">
+          <div className="flex flex-col space-y-0 min-w-0">
             {item.subtitle && (
-              <span className="text-xs text-muted-foreground line-clamp-1">
+              <span className="text-xs text-muted-foreground truncate">
                 {item.subtitle}
               </span>
             )}
             <Link
               to={`${item.link}?selectedOperation=${item.id}`}
-              className="mr-auto font-semibold line-clamp-1"
+              className="mr-auto font-semibold truncate"
             >
               {item.title}
             </Link>
           </div>
-          <HStack spacing={0} className="-mr-4">
+          <HStack spacing={0} className="flex-shrink-0 -mr-4">
             <IconButton
               aria-label="Highlight job"
               icon={isHighlighted ? <LuFlashlightOff /> : <LuFlashlight />}
