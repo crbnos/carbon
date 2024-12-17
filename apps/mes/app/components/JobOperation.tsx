@@ -605,31 +605,33 @@ export const JobOperation = ({
         {activeTab !== "instructions" && (
           <Controls>
             <div className="flex flex-col items-center gap-2 p-4">
-              <VStack spacing={2}>
-                <VStack spacing={1}>
-                  <span className="text-muted-foreground text-xs">
-                    Work Center
-                  </span>
-                  <Suspense fallback={<Heading size="h4">...</Heading>}>
-                    <Await resolve={workCenter}>
-                      {(resolvedWorkCenter) =>
-                        resolvedWorkCenter.data && (
-                          <Heading size="h4" className="line-clamp-1">
-                            {resolvedWorkCenter.data?.name}
-                          </Heading>
-                        )
-                      }
-                    </Await>
-                  </Suspense>
-                </VStack>
+              <div className="w-full hidden tall:block">
+                <VStack spacing={2}>
+                  <VStack spacing={1}>
+                    <span className="text-muted-foreground text-xs">
+                      Work Center
+                    </span>
+                    <Suspense fallback={<Heading size="h4">...</Heading>}>
+                      <Await resolve={workCenter}>
+                        {(resolvedWorkCenter) =>
+                          resolvedWorkCenter.data && (
+                            <Heading size="h4" className="line-clamp-1">
+                              {resolvedWorkCenter.data?.name}
+                            </Heading>
+                          )
+                        }
+                      </Await>
+                    </Suspense>
+                  </VStack>
 
-                <VStack spacing={1}>
-                  <span className="text-muted-foreground text-xs">Item</span>
-                  <Heading size="h4" className="line-clamp-1">
-                    {operation.itemReadableId}
-                  </Heading>
+                  <VStack spacing={1}>
+                    <span className="text-muted-foreground text-xs">Item</span>
+                    <Heading size="h4" className="line-clamp-1">
+                      {operation.itemReadableId}
+                    </Heading>
+                  </VStack>
                 </VStack>
-              </VStack>
+              </div>
 
               <div className="md:hidden flex flex-col items-center gap-2 w-full">
                 <VStack spacing={1}>
