@@ -1279,6 +1279,12 @@ export async function upsertSupplierQuote(
       .insert([
         {
           ...supplierQuote,
+          status: supplierQuote.expirationDate
+            ? supplierQuote.quotedDate &&
+              supplierQuote.quotedDate > supplierQuote.expirationDate
+              ? "Expired"
+              : "Active"
+            : undefined,
           supplierInteractionId: supplierInteraction.data?.id,
         },
       ])
@@ -1323,6 +1329,11 @@ export async function upsertSupplierQuote(
       .from("supplierQuote")
       .update({
         ...sanitize(supplierQuote),
+        status: supplierQuote.expirationDate
+          ? today(getLocalTimeZone()).toString() > supplierQuote.expirationDate
+            ? "Expired"
+            : "Active"
+          : undefined,
         updatedAt: today(getLocalTimeZone()).toString(),
       })
       .eq("id", supplierQuote.id);

@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { getCurrencyByCode } from "~/modules/accounting";
 
@@ -80,12 +81,28 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierLocationId":
     case "supplierReference":
     case "quotedDate":
-    case "expirationDate":
       return json(
         await client
           .from("supplierQuote")
           .update({
             [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString(),
+          })
+          .in("id", ids as string[])
+      );
+
+    case "expirationDate":
+      return json(
+        await client
+          .from("supplierQuote")
+          .update({
+            status: value
+              ? today(getLocalTimeZone()).toString() > value
+                ? "Expired"
+                : "Active"
+              : "Active",
+            expirationDate: value ? value : null,
             updatedBy: userId,
             updatedAt: new Date().toISOString(),
           })

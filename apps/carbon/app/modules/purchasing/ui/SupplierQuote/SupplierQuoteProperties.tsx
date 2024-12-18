@@ -267,6 +267,7 @@ const SupplierQuoteProperties = () => {
           label="Expiration Date"
           inline
           isDisabled={isDisabled}
+          // minValue={today(getLocalTimeZone())}
           onChange={(date) => {
             onUpdate("expirationDate", date);
           }}

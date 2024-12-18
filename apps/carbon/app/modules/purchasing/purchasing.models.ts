@@ -1,3 +1,4 @@
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -240,21 +241,34 @@ export const supplierStatusValidator = z.object({
 
 export const supplierQuoteStatusType = ["Active", "Expired"] as const;
 
-export const supplierQuoteValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  supplierQuoteId: zfd.text(z.string().optional()),
-  supplierId: z.string().min(36, { message: "Supplier is required" }),
-  supplierLocationId: zfd.text(z.string().optional()),
-  supplierContactId: zfd.text(z.string().optional()),
-  supplierReference: zfd.text(z.string().optional()),
-  status: z.enum(supplierQuoteStatusType).optional(),
-  notes: z.any().optional(),
-  quotedDate: zfd.text(z.string().optional()),
-  expirationDate: zfd.text(z.string().optional()),
-  currencyCode: zfd.text(z.string().optional()),
-  exchangeRate: zfd.numeric(z.number().optional()),
-  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
-});
+export const supplierQuoteValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    supplierQuoteId: zfd.text(z.string().optional()),
+    supplierId: z.string().min(36, { message: "Supplier is required" }),
+    supplierLocationId: zfd.text(z.string().optional()),
+    supplierContactId: zfd.text(z.string().optional()),
+    supplierReference: zfd.text(z.string().optional()),
+    status: z.enum(supplierQuoteStatusType).optional(),
+    notes: z.any().optional(),
+    quotedDate: zfd.text(z.string().optional()),
+    expirationDate: zfd.text(z.string().optional()),
+    currencyCode: zfd.text(z.string().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
+    exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => {
+      if (data.expirationDate) {
+        return data.expirationDate >= today(getLocalTimeZone()).toString();
+      }
+      return true;
+    },
+    {
+      message: "Expiration date must be today or after",
+      path: ["expirationDate"], // path of error
+    }
+  );
 
 export const supplierQuoteLineValidator = z.object({
   id: zfd.text(z.string().optional()),

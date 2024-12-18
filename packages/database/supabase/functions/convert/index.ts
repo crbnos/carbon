@@ -891,15 +891,6 @@ serve(async (req: Request) => {
             companyId
           );
 
-          // Check if any selected lines have quantity 0
-          const hasZeroQuantityLines = quoteLines.data.some(
-            (line) =>
-              line.id &&
-              selectedLines &&
-              line.id in selectedLines &&
-              selectedLines[line.id].quantity === 0
-          );
-
           const purchaseOrder = await trx
             .insertInto("purchaseOrder")
             .values([
@@ -1015,10 +1006,12 @@ serve(async (req: Request) => {
               companyId,
               supplierId: quote.data?.supplierId!,
               supplierPartId: line.supplierPartId!,
+              supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+              conversionFactor: line.conversionFactor,
               itemId: line.itemId!,
               createdBy: userId,
             }))
-            .filter((line) => !!line.itemId && !!line.supplierPartId);
+            .filter((line) => !!line.itemId);
           if (supplierPartToItemInserts.length > 0) {
             await trx
               .insertInto("supplierPart")

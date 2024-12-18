@@ -1,6 +1,7 @@
 import { useControlField, useField } from "@carbon/form";
 import {
   Button,
+  cn,
   CommandTrigger,
   FormControl,
   FormErrorMessage,
@@ -83,10 +84,8 @@ const ConversionFactor = forwardRef<
       }
     }, [setControlValue, value]);
 
-    const [conversionDirection, setConversionDirection] = useState(() =>
-      controlValue >= 1
-        ? ConversionDirection.InventoryToPurchased
-        : ConversionDirection.PurchasedToInventory
+    const [conversionDirection, setConversionDirection] = useState(
+      ConversionDirection.InventoryToPurchased
     );
 
     const switchDirection = () => {
@@ -118,7 +117,7 @@ const ConversionFactor = forwardRef<
       if (conversionDirection === ConversionDirection.InventoryToPurchased) {
         return (
           <>
-            <span>
+            <span className={cn(Number.isNaN(conversionFactor) && "opacity-0")}>
               {`There ${conversionFactor === 1 ? "is" : "are"} ${twoDecimals(
                 conversionFactor
               )} ${inventoryUnit.toLocaleLowerCase()} in one `}

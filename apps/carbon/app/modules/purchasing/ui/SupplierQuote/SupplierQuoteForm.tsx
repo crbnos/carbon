@@ -11,6 +11,7 @@ import {
   cn,
   toast,
 } from "@carbon/react";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
@@ -144,7 +145,11 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                 supplier={supplier.id}
               />
               <DatePicker name="quotedDate" label="Quoted Date" />
-              <DatePicker name="expirationDate" label="Expiration Date" />
+              <DatePicker
+                name="expirationDate"
+                label="Expiration Date"
+                minValue={today(getLocalTimeZone())}
+              />
 
               <Currency
                 name="currencyCode"

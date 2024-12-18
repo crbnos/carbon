@@ -111,7 +111,7 @@ const SupplierInteractionNotes = ({
               </CardDescription>
             </CardHeader>
             <CardAction>
-              {["supplierQuote", "purchaseOrder"].includes(table) && (
+              {["purchaseOrder"].includes(table) && (
                 <TabsList>
                   <TabsTrigger value="internal">Internal</TabsTrigger>
                   <TabsTrigger value="external">External</TabsTrigger>
