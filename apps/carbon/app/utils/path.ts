@@ -140,6 +140,8 @@ export const path = {
     company: `${x}/settings/company`,
     companySwitch: (companyId: string) =>
       generatePath(`${x}/settings/company/switch/${companyId}`),
+    configurationParameter: (itemId: string) =>
+      generatePath(`${x}/part/${itemId}/parameter`),
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
@@ -222,6 +224,8 @@ export const path = {
       generatePath(`${x}/people/attribute/delete/${id}`),
     deleteAttributeCategory: (id: string) =>
       generatePath(`${x}/people/attributes/delete/${id}`),
+    deleteConfigurationParameter: (itemId: string, id: string) =>
+      generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
     deleteContractor: (id: string) =>
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCurrency: (id: string) =>
@@ -473,6 +477,7 @@ export const path = {
       generatePath(`${x}/people/attributes/list/${id}/new`),
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
+
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing/new`),

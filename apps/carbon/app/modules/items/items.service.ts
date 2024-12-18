@@ -8,6 +8,7 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { operationToolValidator } from "../shared";
 import type {
+  configurationParameterValidator,
   consumableValidator,
   customerPartValidator,
   getMethodValidator,
@@ -47,6 +48,13 @@ export async function copyMakeMethod(
       userId: args.userId,
     },
   });
+}
+
+export async function deleteConfigurationParameter(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("configurationParameter").delete().eq("id", id);
 }
 
 export async function deleteItemCustomerPart(
@@ -116,13 +124,13 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
-export async function getConfigurationOptions(
+export async function getConfigurationParameters(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
 ) {
   return client
-    .from("configurationOption")
+    .from("configurationParameter")
     .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId);
@@ -1045,6 +1053,34 @@ export async function updateOperationOrder(
     client.from("methodOperation").update({ order, updatedBy }).eq("id", id)
   );
   return Promise.all(updatePromises);
+}
+
+export async function upsertConfigurationParameter(
+  client: SupabaseClient<Database>,
+  configurationParameter: z.infer<typeof configurationParameterValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { userId, ...data } = configurationParameter;
+  if (configurationParameter.id) {
+    return client
+      .from("configurationParameter")
+      .update(
+        sanitize({
+          ...data,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        })
+      )
+      .eq("id", configurationParameter.id);
+  }
+
+  return client.from("configurationParameter").insert({
+    ...data,
+    createdBy: userId,
+    configurationParameterGroupId: data.configurationParameterGroupId,
+  });
 }
 
 export async function upsertConsumable(

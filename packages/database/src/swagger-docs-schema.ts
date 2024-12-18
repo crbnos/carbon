@@ -2391,6 +2391,213 @@ export default {
         tags: ["tag"],
       },
     },
+    "/configurationParameter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.configurationParameterGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/configurationParameter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["configurationParameter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.configurationParameter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["configurationParameter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.configurationParameterGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationParameter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.configurationParameterGroupId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.configurationParameter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationParameter"],
+      },
+    },
     "/holiday": {
       get: {
         parameters: [
@@ -8953,6 +9160,132 @@ export default {
           },
         },
         tags: ["supplierQuotes"],
+      },
+    },
+    "/configurationParameterGroup": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/configurationParameterGroup",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["configurationParameterGroup"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.configurationParameterGroup",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["configurationParameterGroup"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationParameterGroup"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
+          },
+          {
+            $ref: "#/parameters/body.configurationParameterGroup",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationParameterGroup"],
       },
     },
     "/integration": {
@@ -15958,132 +16291,6 @@ export default {
           },
         },
         tags: ["note"],
-      },
-    },
-    "/configurationOptionGroup": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.companyId",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/configurationOptionGroup",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["configurationOptionGroup"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.configurationOptionGroup",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["configurationOptionGroup"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.companyId",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["configurationOptionGroup"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.name",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOptionGroup.companyId",
-          },
-          {
-            $ref: "#/parameters/body.configurationOptionGroup",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["configurationOptionGroup"],
       },
     },
     "/workCenter": {
@@ -36429,204 +36636,6 @@ export default {
         tags: ["supplierProcesses"],
       },
     },
-    "/configurationOption": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.key",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.label",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.dataType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.listOptions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.configurationOptionGroupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.sortOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/configurationOption",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["configurationOption"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.configurationOption",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["configurationOption"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.key",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.label",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.dataType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.listOptions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.configurationOptionGroupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.sortOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["configurationOption"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.key",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.label",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.dataType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.listOptions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.configurationOptionGroupId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.sortOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.configurationOption.updatedBy",
-          },
-          {
-            $ref: "#/parameters/body.configurationOption",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["configurationOption"],
-      },
-    },
     "/postingGroupInventory": {
       get: {
         parameters: [
@@ -41921,6 +41930,92 @@ export default {
       },
       type: "object",
     },
+    configurationParameter: {
+      required: [
+        "id",
+        "itemId",
+        "label",
+        "key",
+        "dataType",
+        "sortOrder",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        label: {
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        dataType: {
+          enum: ["text", "numeric", "boolean", "list"],
+          format: 'public."configurationParameterDataType"',
+          type: "string",
+        },
+        listOptions: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        configurationParameterGroupId: {
+          description:
+            "Note:\nThis is a Foreign Key to `configurationParameterGroup.id`.<fk table='configurationParameterGroup' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        sortOrder: {
+          default: 1,
+          format: "integer",
+          type: "integer",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     holiday: {
       required: ["id", "name", "date", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -45229,6 +45324,34 @@ export default {
             "Fixture",
           ],
           format: 'public."itemType"',
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    configurationParameterGroup: {
+      required: ["id", "itemId", "name", "companyId"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -48714,34 +48837,6 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    configurationOptionGroup: {
-      required: ["id", "itemId", "name", "companyId"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        name: {
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
           type: "string",
         },
       },
@@ -58007,87 +58102,6 @@ export default {
       },
       type: "object",
     },
-    configurationOption: {
-      required: [
-        "itemId",
-        "key",
-        "label",
-        "dataType",
-        "configurationOptionGroupId",
-        "sortOrder",
-        "companyId",
-        "createdAt",
-        "createdBy",
-      ],
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        key: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        label: {
-          format: "text",
-          type: "string",
-        },
-        dataType: {
-          enum: ["text", "numeric", "boolean", "list"],
-          format: 'public."configurationOptionDataType"',
-          type: "string",
-        },
-        listOptions: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        configurationOptionGroupId: {
-          description:
-            "Note:\nThis is a Foreign Key to `configurationOptionGroup.id`.<fk table='configurationOptionGroup' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        sortOrder: {
-          default: 1,
-          format: "integer",
-          type: "integer",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     postingGroupInventory: {
       required: [
         "id",
@@ -60125,6 +60139,106 @@ export default {
     },
     "rowFilter.tag.createdBy": {
       name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.configurationParameter": {
+      name: "configurationParameter",
+      description: "configurationParameter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/configurationParameter",
+      },
+    },
+    "rowFilter.configurationParameter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.label": {
+      name: "label",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.dataType": {
+      name: "dataType",
+      required: false,
+      format: 'public."configurationParameterDataType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.listOptions": {
+      name: "listOptions",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.configurationParameterGroupId": {
+      name: "configurationParameterGroupId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameter.updatedBy": {
+      name: "updatedBy",
       required: false,
       format: "text",
       in: "query",
@@ -64375,6 +64489,43 @@ export default {
       name: "itemType",
       required: false,
       format: 'public."itemType"',
+      in: "query",
+      type: "string",
+    },
+    "body.configurationParameterGroup": {
+      name: "configurationParameterGroup",
+      description: "configurationParameterGroup",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/configurationParameterGroup",
+      },
+    },
+    "rowFilter.configurationParameterGroup.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameterGroup.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameterGroup.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameterGroup.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -69064,43 +69215,6 @@ export default {
       name: "updatedAt",
       required: false,
       format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.configurationOptionGroup": {
-      name: "configurationOptionGroup",
-      description: "configurationOptionGroup",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/configurationOptionGroup",
-      },
-    },
-    "rowFilter.configurationOptionGroup.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOptionGroup.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOptionGroup.name": {
-      name: "name",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOptionGroup.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -81168,99 +81282,6 @@ export default {
     },
     "rowFilter.supplierProcesses.processName": {
       name: "processName",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "body.configurationOption": {
-      name: "configurationOption",
-      description: "configurationOption",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/configurationOption",
-      },
-    },
-    "rowFilter.configurationOption.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.key": {
-      name: "key",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.label": {
-      name: "label",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.dataType": {
-      name: "dataType",
-      required: false,
-      format: 'public."configurationOptionDataType"',
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.listOptions": {
-      name: "listOptions",
-      required: false,
-      format: "text[]",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.configurationOptionGroupId": {
-      name: "configurationOptionGroupId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.sortOrder": {
-      name: "sortOrder",
-      required: false,
-      format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.configurationOption.updatedBy": {
-      name: "updatedBy",
       required: false,
       format: "text",
       in: "query",
