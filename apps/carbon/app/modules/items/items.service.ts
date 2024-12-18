@@ -8,6 +8,7 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { operationToolValidator } from "../shared";
 import type {
+  configurationParameterOrderValidator,
   configurationParameterValidator,
   consumableValidator,
   customerPartValidator,
@@ -1008,6 +1009,22 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
+export async function updateConfigurationParameterOrder(
+  client: SupabaseClient<Database>,
+  data: Omit<
+    z.infer<typeof configurationParameterOrderValidator>,
+    "configurationParameterGroupId"
+  > & {
+    configurationParameterGroupId?: string | null;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("configurationParameter")
+    .update(sanitize(data))
+    .eq("id", data.id);
+}
+
 export async function updateItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1078,6 +1095,7 @@ export async function upsertConfigurationParameter(
 
   return client.from("configurationParameter").insert({
     ...data,
+    key: data.key ?? "",
     createdBy: userId,
     configurationParameterGroupId: data.configurationParameterGroupId,
   });

@@ -74,6 +74,12 @@ export const itemValidator = z.object({
   active: zfd.checkbox(),
 });
 
+export const configurationParameterOrderValidator = z.object({
+  id: z.string().min(1, { message: "ID is required" }),
+  sortOrder: zfd.numeric(z.number().min(0)),
+  configurationParameterGroupId: zfd.text(z.string().nullable()),
+});
+
 export const configurationParameterValidator = z
   .object({
     id: zfd.text(z.string().optional()),

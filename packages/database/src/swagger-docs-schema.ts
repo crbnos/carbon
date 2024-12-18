@@ -9175,6 +9175,9 @@ export default {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
           },
           {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
+          },
+          {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
           },
           {
@@ -9246,6 +9249,9 @@ export default {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
           },
           {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
+          },
+          {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
           },
           {
@@ -9269,6 +9275,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
           },
           {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
@@ -41983,8 +41992,8 @@ export default {
         },
         sortOrder: {
           default: 1,
-          format: "integer",
-          type: "integer",
+          format: "double precision",
+          type: "number",
         },
         companyId: {
           description:
@@ -45330,7 +45339,7 @@ export default {
       type: "object",
     },
     configurationParameterGroup: {
-      required: ["id", "itemId", "name", "companyId"],
+      required: ["id", "itemId", "name", "sortOrder", "companyId"],
       properties: {
         id: {
           default: "public.xid()",
@@ -45347,6 +45356,11 @@ export default {
         name: {
           format: "text",
           type: "string",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
         },
         companyId: {
           description:
@@ -60205,7 +60219,7 @@ export default {
     "rowFilter.configurationParameter.sortOrder": {
       name: "sortOrder",
       required: false,
-      format: "integer",
+      format: "double precision",
       in: "query",
       type: "string",
     },
@@ -64519,6 +64533,13 @@ export default {
       name: "name",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameterGroup.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
       in: "query",
       type: "string",
     },

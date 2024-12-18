@@ -142,6 +142,8 @@ export const path = {
       generatePath(`${x}/settings/company/switch/${companyId}`),
     configurationParameter: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/parameter`),
+    configurationParameterOrder: (itemId: string) =>
+      generatePath(`${x}/part/${itemId}/parameter/order`),
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,

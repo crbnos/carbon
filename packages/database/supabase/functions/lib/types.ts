@@ -2118,18 +2118,21 @@ export type Database = {
           id: string
           itemId: string
           name: string
+          sortOrder: number
         }
         Insert: {
           companyId: string
           id?: string
           itemId: string
           name: string
+          sortOrder?: number
         }
         Update: {
           companyId?: string
           id?: string
           itemId?: string
           name?: string
+          sortOrder?: number
         }
         Relationships: [
           {
