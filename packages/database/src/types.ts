@@ -1951,13 +1951,14 @@ export type Database = {
           },
         ]
       }
-      configurationOption: {
+      configurationParameter: {
         Row: {
           companyId: string
-          configurationOptionGroupId: string
+          configurationParameterGroupId: string | null
           createdAt: string
           createdBy: string
-          dataType: Database["public"]["Enums"]["configurationOptionDataType"]
+          dataType: Database["public"]["Enums"]["configurationParameterDataType"]
+          id: string
           itemId: string
           key: string
           label: string
@@ -1968,10 +1969,11 @@ export type Database = {
         }
         Insert: {
           companyId: string
-          configurationOptionGroupId: string
+          configurationParameterGroupId?: string | null
           createdAt?: string
           createdBy: string
-          dataType: Database["public"]["Enums"]["configurationOptionDataType"]
+          dataType: Database["public"]["Enums"]["configurationParameterDataType"]
+          id?: string
           itemId: string
           key: string
           label: string
@@ -1982,10 +1984,11 @@ export type Database = {
         }
         Update: {
           companyId?: string
-          configurationOptionGroupId?: string
+          configurationParameterGroupId?: string | null
           createdAt?: string
           createdBy?: string
-          dataType?: Database["public"]["Enums"]["configurationOptionDataType"]
+          dataType?: Database["public"]["Enums"]["configurationParameterDataType"]
+          id?: string
           itemId?: string
           key?: string
           label?: string
@@ -1996,112 +1999,112 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "configurationOption_companyId_fkey"
+            foreignKeyName: "configurationParameter_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_companyId_fkey"
+            foreignKeyName: "configurationParameter_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_companyId_fkey"
+            foreignKeyName: "configurationParameter_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "configurationOption_companyId_fkey"
+            foreignKeyName: "configurationParameter_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "configurationOption_configurationOptionGroupId_fkey"
-            columns: ["configurationOptionGroupId"]
+            foreignKeyName: "configurationParameter_configurationParameterGroupId_fkey"
+            columns: ["configurationParameterGroupId"]
             isOneToOne: false
-            referencedRelation: "configurationOptionGroup"
+            referencedRelation: "configurationParameterGroup"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_createdBy_fkey"
+            foreignKeyName: "configurationParameter_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_createdBy_fkey"
+            foreignKeyName: "configurationParameter_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_createdBy_fkey"
+            foreignKeyName: "configurationParameter_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_createdBy_fkey"
+            foreignKeyName: "configurationParameter_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_createdBy_fkey"
+            foreignKeyName: "configurationParameter_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "configurationOption_itemId_fkey"
+            foreignKeyName: "configurationParameter_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "item"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_updatedBy_fkey"
+            foreignKeyName: "configurationParameter_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_updatedBy_fkey"
+            foreignKeyName: "configurationParameter_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_updatedBy_fkey"
+            foreignKeyName: "configurationParameter_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_updatedBy_fkey"
+            foreignKeyName: "configurationParameter_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOption_updatedBy_fkey"
+            foreignKeyName: "configurationParameter_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -2109,7 +2112,7 @@ export type Database = {
           },
         ]
       }
-      configurationOptionGroup: {
+      configurationParameterGroup: {
         Row: {
           companyId: string
           id: string
@@ -2130,35 +2133,35 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "configurationOptionGroup_companyId_fkey"
+            foreignKeyName: "configurationParameterGroup_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOptionGroup_companyId_fkey"
+            foreignKeyName: "configurationParameterGroup_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "configurationOptionGroup_companyId_fkey"
+            foreignKeyName: "configurationParameterGroup_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "configurationOptionGroup_companyId_fkey"
+            foreignKeyName: "configurationParameterGroup_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "configurationOptionGroup_itemId_fkey"
+            foreignKeyName: "configurationParameterGroup_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "item"
@@ -32393,7 +32396,7 @@ export type Database = {
     }
     Enums: {
       accountingPeriodStatus: "Inactive" | "Active"
-      configurationOptionDataType: "text" | "numeric" | "boolean" | "list"
+      configurationParameterDataType: "text" | "numeric" | "boolean" | "list"
       costLedgerType:
         | "Direct Cost"
         | "Revaluation"

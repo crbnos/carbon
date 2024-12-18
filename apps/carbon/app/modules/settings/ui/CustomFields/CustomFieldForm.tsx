@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -13,6 +14,14 @@ import {
 import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
+import {
+  LuCalendar,
+  LuHash,
+  LuList,
+  LuToggleLeft,
+  LuType,
+  LuUser,
+} from "react-icons/lu";
 import type { z } from "zod";
 import { Array, Hidden, Input, Select, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -43,7 +52,12 @@ const CustomFieldForm = ({
   const options =
     dataTypes?.map((dt) => ({
       value: dt.id.toString(),
-      label: dt.label,
+      label: (
+        <HStack className="w-full">
+          <CustomFieldDataTypeIcon type={dt.id} className="mr-2" />
+          {dt.label}
+        </HStack>
+      ),
     })) ?? [];
 
   const isEditing = initialValues.id !== undefined;
@@ -133,3 +147,30 @@ const CustomFieldForm = ({
 };
 
 export default CustomFieldForm;
+
+function CustomFieldDataTypeIcon({
+  type,
+  className,
+}: {
+  type: DataType;
+  className?: string;
+}) {
+  switch (type) {
+    case DataType.Numeric:
+      return <LuHash className={cn("w-4 h-4 text-blue-600", className)} />;
+    case DataType.Text:
+      return <LuType className={cn("w-4 h-4 text-green-600", className)} />;
+    case DataType.Boolean:
+      return (
+        <LuToggleLeft className={cn("w-4 h-4 text-purple-600", className)} />
+      );
+    case DataType.List:
+      return <LuList className={cn("w-4 h-4 text-orange-600", className)} />;
+    case DataType.Date:
+      return <LuCalendar className={cn("w-4 h-4 text-red-600", className)} />;
+    case DataType.User:
+      return <LuUser className={cn("w-4 h-4 text-yellow-600", className)} />;
+    default:
+      return null;
+  }
+}

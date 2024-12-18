@@ -8,10 +8,12 @@ import {
   standardFactorType,
 } from "../shared";
 
-export const getMethodValidator = z.object({
-  targetId: z.string().min(1, { message: "Please select a target method" }),
-  sourceId: z.string().min(1, { message: "Please select a source method" }),
-});
+export const configurationParameterDataTypes = [
+  "text",
+  "numeric",
+  "boolean",
+  "list",
+] as const;
 
 export const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
 
@@ -72,16 +74,40 @@ export const itemValidator = z.object({
   active: zfd.checkbox(),
 });
 
-export const supplierPartValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  itemId: z.string().min(1, { message: "Item ID is required" }),
-  supplierId: z.string().min(36, { message: "Supplier ID is required" }),
-  supplierPartId: z.string().optional(),
-  supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
-  minimumOrderQuantity: zfd.numeric(z.number().min(0)),
-  conversionFactor: zfd.numeric(z.number().min(0)),
-  unitPrice: zfd.numeric(z.number().min(0)),
-});
+export const configurationParameterValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    itemId: z.string().min(1, { message: "Item ID is required" }),
+    key: zfd.text(z.string().optional()),
+    label: z.string().min(1, { message: "Label is required" }),
+    dataType: z.enum(configurationParameterDataTypes),
+    listOptions: z.string().min(1).array().optional(),
+    configurationParameterGroupId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.dataType === "list") {
+        return !!data.listOptions;
+      }
+      return true;
+    },
+    { message: "List options are required", path: ["listOptions"] }
+  )
+  .refine(
+    (data) => {
+      return data.label.match(/^[a-zA-Z0-9 ]+$/);
+    },
+    {
+      message: "Only alphanumeric characters and spaces are allowed",
+      path: ["label"],
+    }
+  )
+  .refine(
+    (data) => {
+      return data.key?.match(/^[a-z]+(_[a-z]+)*$/);
+    },
+    { message: "Key must be lowercase and underscore separated" }
+  );
 
 export const consumableValidator = itemValidator.merge(
   z.object({
@@ -98,6 +124,11 @@ export const customerPartValidator = z.object({
   customerId: z.string().min(36, { message: "Customer is required" }),
   customerPartId: z.string(),
   customerPartRevision: zfd.text(z.string().optional()),
+});
+
+export const getMethodValidator = z.object({
+  targetId: z.string().min(1, { message: "Please select a target method" }),
+  sourceId: z.string().min(1, { message: "Please select a source method" }),
 });
 
 export const materialValidator = itemValidator.merge(
@@ -425,6 +456,17 @@ export const serviceValidator = itemValidator.merge(
     }),
   })
 );
+
+export const supplierPartValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  supplierId: z.string().min(36, { message: "Supplier ID is required" }),
+  supplierPartId: z.string().optional(),
+  supplierUnitOfMeasureCode: zfd.text(z.string().optional()),
+  minimumOrderQuantity: zfd.numeric(z.number().min(0)),
+  conversionFactor: zfd.numeric(z.number().min(0)),
+  unitPrice: zfd.numeric(z.number().min(0)),
+});
 
 export const toolValidator = itemValidator.merge(
   z.object({
