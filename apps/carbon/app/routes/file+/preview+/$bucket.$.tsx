@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { supportedModelTypes } from "@carbon/react";
 import { type LoaderFunctionArgs } from "@vercel/remix";
@@ -23,7 +24,7 @@ const supportedFileTypes: Record<string, string> = {
 };
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client } = await requirePermissions(request, {});
+  const { companyId } = await requirePermissions(request, {});
   const { bucket } = params;
   let path = params["*"];
 
@@ -42,8 +43,14 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = supportedFileTypes[fileType];
 
+  if (!path.includes(companyId)) {
+    return new Response(null, { status: 403 });
+  }
+
+  const serviceRole = await getCarbonServiceRole();
+
   async function downloadFile() {
-    const result = await client.storage.from(bucket!).download(`${path}`);
+    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
     if (result.error) {
       console.error(result.error);
       return null;
