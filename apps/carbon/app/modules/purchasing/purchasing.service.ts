@@ -752,7 +752,7 @@ export async function insertSupplierLocation(
     .single();
 }
 
-export async function releasePurchaseOrder(
+export async function finalizePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string,
   userId: string

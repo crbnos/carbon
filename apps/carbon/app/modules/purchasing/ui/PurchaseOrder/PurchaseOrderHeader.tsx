@@ -33,7 +33,7 @@ import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
-import PurchaseOrderReleaseModal from "./PurchaseOrderReleaseModal";
+import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
 import {
   usePurchaseOrder,
@@ -62,7 +62,7 @@ const PurchaseOrderHeader = () => {
     routeData?.purchaseOrder?.supplierInteractionId ?? ""
   );
 
-  const releaseDisclosure = useDisclosure();
+  const finalizeDisclosure = useDisclosure();
 
   return (
     <>
@@ -114,13 +114,13 @@ const PurchaseOrderHeader = () => {
                   ? "primary"
                   : "secondary"
               }
-              onClick={releaseDisclosure.onOpen}
+              onClick={finalizeDisclosure.onOpen}
               isDisabled={
                 routeData?.purchaseOrder?.status !== "Draft" ||
                 routeData?.lines.length === 0
               }
             >
-              Release
+              Finalize
             </Button>
             {receipts.length > 0 ? (
               <DropdownMenu>
@@ -295,10 +295,10 @@ const PurchaseOrderHeader = () => {
         </HStack>
       </div>
 
-      {releaseDisclosure.isOpen && (
-        <PurchaseOrderReleaseModal
+      {finalizeDisclosure.isOpen && (
+        <PurchaseOrderFinalizeModal
           purchaseOrder={routeData?.purchaseOrder}
-          onClose={releaseDisclosure.onClose}
+          onClose={finalizeDisclosure.onClose}
         />
       )}
     </>

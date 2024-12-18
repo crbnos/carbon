@@ -15,18 +15,18 @@ import { useState } from "react";
 import { SelectControlled, SupplierContact } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
-import { purchaseOrderReleaseValidator } from "../../purchasing.models";
+import { purchaseOrderFinalizeValidator } from "../../purchasing.models";
 import type { PurchaseOrder } from "../../types";
 
-type PurchaseOrderReleaseModalProps = {
+type PurchaseOrderFinalizeModalProps = {
   onClose: () => void;
   purchaseOrder?: PurchaseOrder;
 };
 
-const PurchaseOrderReleaseModal = ({
+const PurchaseOrderFinalizeModal = ({
   purchaseOrder,
   onClose,
-}: PurchaseOrderReleaseModalProps) => {
+}: PurchaseOrderFinalizeModalProps) => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
 
@@ -49,8 +49,8 @@ const PurchaseOrderReleaseModal = ({
       <ModalContent>
         <ValidatedForm
           method="post"
-          validator={purchaseOrderReleaseValidator}
-          action={path.to.purchaseOrderRelease(orderId)}
+          validator={purchaseOrderFinalizeValidator}
+          action={path.to.purchaseOrderFinalize(orderId)}
           onSubmit={onClose}
           defaultValues={{
             notification: notificationType as "Email" | "None",
@@ -58,11 +58,11 @@ const PurchaseOrderReleaseModal = ({
           }}
         >
           <ModalHeader>
-            <ModalTitle>{`Release ${purchaseOrder?.purchaseOrderId}`}</ModalTitle>
+            <ModalTitle>{`Finalize ${purchaseOrder?.purchaseOrderId}`}</ModalTitle>
             <ModalDescription>
-              Are you sure you want to release the purchase order? Releasing the
-              order will affect on order quantities used to calculate supply and
-              demand.
+              Are you sure you want to finalize the purchase order? Releasing
+              the order will affect on order quantities used to calculate supply
+              and demand.
             </ModalDescription>
           </ModalHeader>
           <ModalBody>
@@ -99,7 +99,7 @@ const PurchaseOrderReleaseModal = ({
             <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Release</Button>
+            <Button type="submit">Finalize</Button>
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
@@ -107,4 +107,4 @@ const PurchaseOrderReleaseModal = ({
   );
 };
 
-export default PurchaseOrderReleaseModal;
+export default PurchaseOrderFinalizeModal;

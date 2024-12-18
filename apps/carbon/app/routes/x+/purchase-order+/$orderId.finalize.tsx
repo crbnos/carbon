@@ -14,12 +14,12 @@ import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import { upsertDocument } from "~/modules/documents";
 import {
+  finalizePurchaseOrder,
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
   getSupplierContact,
-  purchaseOrderReleaseValidator,
-  releasePurchaseOrder,
+  purchaseOrderFinalizeValidator,
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
@@ -45,13 +45,13 @@ export async function action(args: ActionFunctionArgs) {
   let file: ArrayBuffer;
   let fileName: string;
 
-  const release = await releasePurchaseOrder(client, orderId, userId);
-  if (release.error) {
+  const finalize = await finalizePurchaseOrder(client, orderId, userId);
+  if (finalize.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
       await flash(
         request,
-        error(release.error, "Failed to release purchase order")
+        error(finalize.error, "Failed to finalize purchase order")
       )
     );
   }
@@ -76,7 +76,7 @@ export async function action(args: ActionFunctionArgs) {
       path.to.purchaseOrders,
       await flash(
         request,
-        error("You are not authorized to release this purchase order")
+        error("You are not authorized to finalize this purchase order")
       )
     );
   }
@@ -146,7 +146,7 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  const validation = await validator(purchaseOrderReleaseValidator).validate(
+  const validation = await validator(purchaseOrderFinalizeValidator).validate(
     await request.formData()
   );
 
@@ -238,6 +238,6 @@ export async function action(args: ActionFunctionArgs) {
 
   throw redirect(
     requestReferrer(request) ?? path.to.purchaseOrder(orderId),
-    await flash(request, success("Purchase order released"))
+    await flash(request, success("Purchase order finalized"))
   );
 }

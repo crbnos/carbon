@@ -149,7 +149,7 @@ export const purchaseOrderPaymentValidator = z.object({
   paymentComplete: zfd.checkbox(),
 });
 
-export const purchaseOrderReleaseValidator = z
+export const purchaseOrderFinalizeValidator = z
   .object({
     notification: z.enum(["Email", "None"]).optional(),
     supplierContact: zfd.text(z.string().optional()),

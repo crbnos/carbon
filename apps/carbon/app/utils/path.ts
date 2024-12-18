@@ -640,8 +640,8 @@ export const path = {
       generatePath(`${x}/purchase-order/${orderId}/${id}/details`),
     purchaseOrderPayment: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/payment`),
-    purchaseOrderRelease: (id: string) =>
-      generatePath(`${x}/purchase-order/${id}/release`),
+    purchaseOrderFinalize: (id: string) =>
+      generatePath(`${x}/purchase-order/${id}/finalize`),
     purchaseOrderRoot: `${x}/purchase-order`,
     purchaseOrderStatus: (id: string) =>
       generatePath(`${x}/purchase-order/${id}/status`),
