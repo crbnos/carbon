@@ -155,8 +155,8 @@ const PurchaseOrderPDF = ({
             <Text>{purchaseOrder?.supplierReference}</Text>
           </View>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
-            <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
-            <Text>{purchaseOrder?.receiptRequestedDate}</Text>
+            {/* <Text style={tw("text-gray-500 text-xs")}>Requested Date</Text>
+            <Text>{purchaseOrder?.receiptRequestedDate}</Text> */}
           </View>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Promised Date</Text>

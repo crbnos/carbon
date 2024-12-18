@@ -108,7 +108,7 @@ const Table = <T extends object>({
     setInternalData(data);
   }, [data]);
 
-  /* Seletable Rows */
+  /* Selectable Rows */
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
   /* Pagination */

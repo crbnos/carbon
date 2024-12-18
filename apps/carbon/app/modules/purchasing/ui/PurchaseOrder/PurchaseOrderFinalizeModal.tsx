@@ -60,7 +60,7 @@ const PurchaseOrderFinalizeModal = ({
           <ModalHeader>
             <ModalTitle>{`Finalize ${purchaseOrder?.purchaseOrderId}`}</ModalTitle>
             <ModalDescription>
-              Are you sure you want to finalize the purchase order? Releasing
+              Are you sure you want to finalize the purchase order? Finalizing
               the order will affect on order quantities used to calculate supply
               and demand.
             </ModalDescription>
