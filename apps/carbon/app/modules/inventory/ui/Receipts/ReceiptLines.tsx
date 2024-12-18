@@ -201,7 +201,7 @@ function ReceivedQuantity({
       }}
     >
       <NumberInput
-        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
         isDisabled={isReadOnly}
         size="sm"
         min={0}

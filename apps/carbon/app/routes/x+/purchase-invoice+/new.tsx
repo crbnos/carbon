@@ -2,6 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
@@ -125,6 +126,7 @@ export default function PurchaseInvoiceNewRoute() {
     invoiceId: undefined,
     supplierId: supplierId ?? "",
     locationId: defaults?.locationId ?? "",
+    dateIssued: today(getLocalTimeZone()).toString(),
   };
 
   return (
