@@ -150,6 +150,14 @@ const ConversionFactor = forwardRef<
       unitOfMeasureOptions,
     ]);
 
+    useEffect(() => {
+      if (inventoryCode === purchasingCode) {
+        setConversionFactor(1);
+        setControlValue(1);
+        initialValue.current = 1;
+      }
+    }, [inventoryCode, purchasingCode, setControlValue]);
+
     const onPurchaseUnitChange = (v: number) => {
       setConversionFactor(1 / v);
       onChange?.(1 / v);
@@ -190,7 +198,7 @@ const ConversionFactor = forwardRef<
           }}
         >
           <CommandTrigger
-            disabled={isReadOnly}
+            disabled={isReadOnly || inventoryCode === purchasingCode}
             icon={<LuLanguages className="w-4 h-4 opacity-50" />}
             ref={ref}
             onClick={() => setOpen(true)}
