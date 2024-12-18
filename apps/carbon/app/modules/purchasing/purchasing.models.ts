@@ -243,7 +243,7 @@ export const supplierQuoteStatusType = ["Active", "Expired"] as const;
 export const supplierQuoteValidator = z.object({
   id: zfd.text(z.string().optional()),
   supplierQuoteId: zfd.text(z.string().optional()),
-  supplierId: z.string().min(36, { message: "Customer is required" }),
+  supplierId: z.string().min(36, { message: "Supplier is required" }),
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),
   supplierReference: zfd.text(z.string().optional()),
