@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS "configurationParameterGroup" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "itemId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
   CONSTRAINT "configurationParameterGroup_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "configurationParameterGroup_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id"),
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS "configurationParameter" (
   "dataType" "configurationParameterDataType" NOT NULL,
   "listOptions" TEXT[],
   "configurationParameterGroupId" TEXT,
-  "sortOrder" INTEGER NOT NULL DEFAULT 1,
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -71,3 +72,27 @@ FOR ALL USING (
   has_valid_api_key_for_company("companyId")
 );
 
+-- Find duplicate makeMethodId and description combinations
+-- SELECT c."name", i."readableId"
+-- FROM item i 
+-- INNER JOIN "makeMethod" mm ON i.id = mm."itemId"
+-- INNER JOIN 
+-- (
+-- SELECT "makeMethodId", "description", COUNT(*) 
+-- FROM "methodOperation"
+-- GROUP BY "makeMethodId", "description"
+-- HAVING COUNT(*) > 1
+-- ) dups ON dups."makeMethodId" = mm."id"
+-- INNER JOIN "company" c ON c.id = i."companyId"
+
+
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'methodOperation_makeMethodId_description_unique'
+  ) THEN
+    ALTER TABLE "methodOperation" 
+    ADD CONSTRAINT "methodOperation_makeMethodId_description_unique" UNIQUE ("makeMethodId", "description");
+  END IF;
+END $$;

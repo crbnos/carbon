@@ -16,6 +16,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
 import type { action } from "~/routes/x+/part+/$itemId.manufacturing.method";
 import { partManufacturingValidator } from "../../items.models";
 
@@ -29,6 +30,7 @@ const PartManufacturingForm = ({
   const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { itemId } = useParams();
+  const { isInternal } = useFlags();
   if (!itemId) throw new Error("Could not find itemId");
 
   return (
@@ -57,9 +59,11 @@ const PartManufacturingForm = ({
               name="manufacturingBlocked"
               label="Manufacturing Blocked"
             /> */}
+
             <Boolean
               name="requiresConfiguration"
               label="Requires Configuration"
+              isDisabled={!isInternal}
             />
             <CustomFormFields table="partReplenishment" />
           </div>

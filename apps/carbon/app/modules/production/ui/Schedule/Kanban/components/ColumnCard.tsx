@@ -12,7 +12,6 @@ import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
-import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
 import { useUrlParams } from "~/hooks";
 import type {
@@ -44,9 +43,7 @@ export function ColumnCard({
 }: ColumnCardProps) {
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter");
-  const itemsIds = useMemo(() => {
-    return items.map((item) => item.id);
-  }, [items]);
+  const itemsIds = items.map((item) => item.id);
 
   const totalDuration = items.reduce((acc, item) => {
     const progress = progressByItemId[item.id]?.progress ?? 0;
@@ -79,7 +76,7 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/50 via-card/50 to-card",
+    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/50 via-card/50 to-card flex flex-col p-[1px] pt-0",
     {
       variants: {
         dragging: {
@@ -87,6 +84,14 @@ export function ColumnCard({
           over: "ring-2 opacity-30",
           overlay: "ring-2 ring-primary",
         },
+        height: {
+          filtered: "h-[calc(100dvh-135px)]",
+          default: "h-[calc(100dvh-98px)]",
+        },
+      },
+      defaultVariants: {
+        dragging: "default",
+        height: "default",
       },
     }
   );
@@ -97,14 +102,10 @@ export function ColumnCard({
     <Card
       ref={setNodeRef}
       style={style}
-      className={cn(
-        `${variants({
-          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
-        })} flex flex-col p-[1px] pt-0`,
-        currentFilters.length > 0
-          ? "h-[calc(100dvh-135px)]"
-          : "h-[calc(100dvh-98px)]"
-      )}
+      className={variants({
+        dragging: isOverlay ? "overlay" : isDragging ? "over" : "default",
+        height: currentFilters.length > 0 ? "filtered" : "default",
+      })}
     >
       <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
         <div className="flex flex-grow items-start space-x-2">
