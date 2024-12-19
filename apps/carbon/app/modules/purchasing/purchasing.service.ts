@@ -1279,12 +1279,6 @@ export async function upsertSupplierQuote(
       .insert([
         {
           ...supplierQuote,
-          status: supplierQuote.expirationDate
-            ? supplierQuote.quotedDate &&
-              supplierQuote.quotedDate > supplierQuote.expirationDate
-              ? "Expired"
-              : "Active"
-            : undefined,
           supplierInteractionId: supplierInteraction.data?.id,
         },
       ])

@@ -1,7 +1,7 @@
 import { HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { Copy, MethodItemTypeIcon } from "~/components";
+import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -23,8 +23,7 @@ const ConsumableHeader = () => {
         <HStack>
           <Link to={path.to.consumableDetails(itemId)}>
             <Heading size="h4" className="flex items-center gap-2">
-              <MethodItemTypeIcon type="Consumable" className="text-primary" />
-              <span>{routeData?.consumableSummary?.id}</span>
+              {routeData?.consumableSummary?.id}
             </Heading>
           </Link>
           <Copy text={routeData?.consumableSummary?.id ?? ""} />
