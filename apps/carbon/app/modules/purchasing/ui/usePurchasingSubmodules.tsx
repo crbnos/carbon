@@ -5,7 +5,7 @@ import {
   LuPackageSearch,
   LuShapes,
 } from "react-icons/lu";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -59,10 +59,6 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
 
 export default function usePurchasingSubmodules() {
   const permissions = usePermissions();
-  const user = useUser();
-  const isInternal = ["carbon.us.org", "carbonos.dev"].some((email) =>
-    user.email.includes(email)
-  );
 
   return {
     groups: purchasingRoutes
@@ -80,9 +76,6 @@ export default function usePurchasingSubmodules() {
       .map((group) => ({
         ...group,
         routes: group.routes.filter((route) => {
-          if (route.internal) {
-            return isInternal;
-          }
           if (route.role) {
             return permissions.is(route.role);
           } else {
