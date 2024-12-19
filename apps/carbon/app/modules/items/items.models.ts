@@ -120,7 +120,7 @@ export const configurationParameterValidator = z
   )
   .refine(
     (data) => {
-      return data.key?.match(/^[a-z]+(_[a-z]+)*$/);
+      return data.key?.match(/^[a-zA-Z0-9]+(_[a-zA-Z0-9]+)*$/);
     },
     { message: "Key must be lowercase and underscore separated" }
   );

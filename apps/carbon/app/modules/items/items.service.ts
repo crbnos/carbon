@@ -72,6 +72,35 @@ export async function deleteItemCustomerPart(
     .eq("companyId", companyId);
 }
 
+export async function deleteConfigurationParameterGroup(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  // Get any parameters that belong to this group
+  const { data: parameters } = await client
+    .from("configurationParameter")
+    .select("id")
+    .eq("configurationParameterGroupId", id);
+
+  if (parameters && parameters.length > 0) {
+    // Get the ungrouped group
+    const { data: ungrouped } = await client
+      .from("configurationParameterGroup")
+      .select("id")
+      .eq("isUngrouped", true)
+      .single();
+
+    if (ungrouped) {
+      // Update all parameters to use the ungrouped group
+      await client
+        .from("configurationParameter")
+        .update({ configurationParameterGroupId: ungrouped.id })
+        .eq("configurationParameterGroupId", id);
+    }
+  }
+  return client.from("configurationParameterGroup").delete().eq("id", id);
+}
+
 export async function deleteItem(client: SupabaseClient<Database>, id: string) {
   const [itemDelete, searchDelete] = await Promise.all([
     client.from("item").delete().eq("id", id),

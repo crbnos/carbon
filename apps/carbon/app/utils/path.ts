@@ -232,6 +232,8 @@ export const path = {
       generatePath(`${x}/people/attributes/delete/${id}`),
     deleteConfigurationParameter: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
+    deleteConfigurationParameterGroup: (itemId: string, id: string) =>
+      generatePath(`${x}/part/${itemId}/parameter/group/delete/${id}`),
     deleteContractor: (id: string) =>
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCurrency: (id: string) =>
