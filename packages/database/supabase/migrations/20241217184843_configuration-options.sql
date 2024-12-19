@@ -3,8 +3,11 @@ CREATE TABLE IF NOT EXISTS "configurationParameterGroup" (
   "itemId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
+  "isUngrouped" BOOLEAN NOT NULL DEFAULT FALSE,
   "companyId" TEXT NOT NULL,
+
   CONSTRAINT "configurationParameterGroup_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "configurationParameterGroup_name_itemId_unique" UNIQUE ("name", "itemId"),
   CONSTRAINT "configurationParameterGroup_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id"),
   CONSTRAINT "configurationParameterGroup_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id")
 );

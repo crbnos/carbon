@@ -2116,6 +2116,7 @@ export type Database = {
         Row: {
           companyId: string
           id: string
+          isUngrouped: boolean
           itemId: string
           name: string
           sortOrder: number
@@ -2123,6 +2124,7 @@ export type Database = {
         Insert: {
           companyId: string
           id?: string
+          isUngrouped?: boolean
           itemId: string
           name: string
           sortOrder?: number
@@ -2130,6 +2132,7 @@ export type Database = {
         Update: {
           companyId?: string
           id?: string
+          isUngrouped?: boolean
           itemId?: string
           name?: string
           sortOrder?: number

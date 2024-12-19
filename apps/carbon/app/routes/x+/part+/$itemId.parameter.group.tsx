@@ -3,13 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import {
-  configurationParameterOrderValidator,
-  updateConfigurationParameterOrder,
+  configurationParameterGroupValidator,
+  upsertConfigurationParameterGroup,
 } from "~/modules/items";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "parts",
   });
 
@@ -18,24 +18,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const validation = await validator(
-    configurationParameterOrderValidator
+    configurationParameterGroupValidator
   ).validate(formData);
 
   if (validation.error) {
-    console.error(validation.error);
     return json({
       success: false,
       error: "Invalid form data",
     });
   }
 
-  const upsert = await updateConfigurationParameterOrder(client, {
+  const upsert = await upsertConfigurationParameterGroup(client, {
     ...validation.data,
-    configurationParameterGroupId:
-      validation.data.configurationParameterGroupId == "null"
-        ? null
-        : validation.data.configurationParameterGroupId ?? null,
-    updatedBy: userId,
+    itemId,
+    companyId,
   });
 
   if (upsert.error) {
