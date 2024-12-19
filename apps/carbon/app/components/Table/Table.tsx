@@ -71,6 +71,7 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  title?: string;
   withInlineEditing?: boolean;
   withPagination?: boolean;
   withSearch?: boolean;
@@ -91,6 +92,7 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  title,
   withInlineEditing = false,
   withPagination = true,
   withSearch = true,
@@ -565,10 +567,11 @@ const Table = <T extends object>({
         importCSV={importCSV}
         pagination={pagination}
         primaryAction={primaryAction}
-        selectedRows={selectedRows}
         renderActions={renderActions}
+        selectedRows={selectedRows}
         setColumnOrder={setColumnOrder}
         setEditMode={setEditMode}
+        title={title}
         withInlineEditing={withInlineEditing}
         withPagination={withPagination}
         withSearch={withSearch}

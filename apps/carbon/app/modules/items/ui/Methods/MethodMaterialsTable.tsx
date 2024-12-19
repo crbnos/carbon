@@ -126,7 +126,12 @@ const MethodMaterialsTable = memo(
     }, [items]);
 
     return (
-      <Table<MethodMaterial> count={count} columns={columns} data={data} />
+      <Table<MethodMaterial>
+        count={count}
+        columns={columns}
+        data={data}
+        title="Method Materials"
+      />
     );
   }
 );

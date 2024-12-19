@@ -135,6 +135,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Abilities"
     />
   );
 });

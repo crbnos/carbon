@@ -108,6 +108,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}
+      title="Sequences"
     />
   );
 });

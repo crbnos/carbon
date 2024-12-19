@@ -85,6 +85,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Scrap Reasons"
     />
   );
 });

@@ -95,6 +95,7 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Customer Types"
     />
   );
 });

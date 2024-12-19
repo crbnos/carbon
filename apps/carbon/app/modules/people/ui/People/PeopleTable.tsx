@@ -232,6 +232,7 @@ const PeopleTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Employees"
         />
       </>
     );

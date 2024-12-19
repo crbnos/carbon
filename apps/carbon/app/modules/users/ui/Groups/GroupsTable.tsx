@@ -130,6 +130,7 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Groups"
     />
   );
 });

@@ -412,6 +412,7 @@ const ConsumablesTable = memo(
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
           withSelectableRows
+          title="Consumables"
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete

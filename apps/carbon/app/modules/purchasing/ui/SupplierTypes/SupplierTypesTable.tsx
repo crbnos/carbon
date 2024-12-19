@@ -95,6 +95,7 @@ const SupplierTypesTable = memo(({ data, count }: SupplierTypesTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Supplier Types"
     />
   );
 });

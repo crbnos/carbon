@@ -141,6 +141,7 @@ const ShippingMethodsTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Shipping Methods"
       />
     );
   }

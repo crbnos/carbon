@@ -198,6 +198,7 @@ const ProductionQuantitiesTable = memo(
           columns={columns}
           data={data}
           renderContextMenu={renderContextMenu}
+          title="Production Quantities"
         />
         {deleteModal.isOpen && selectedEvent && (
           <ConfirmDelete

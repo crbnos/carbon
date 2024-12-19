@@ -259,6 +259,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
+        title="RFQs"
       />
       {selectedSalesRFQ && selectedSalesRFQ.id && (
         <ConfirmDelete

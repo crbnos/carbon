@@ -103,6 +103,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Departments"
     />
   );
 });

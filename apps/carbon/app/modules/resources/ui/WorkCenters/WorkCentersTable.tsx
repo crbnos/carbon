@@ -249,6 +249,7 @@ const WorkCentersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Work Centers"
         />
 
         {selectedWorkCenter && selectedWorkCenter.id && (

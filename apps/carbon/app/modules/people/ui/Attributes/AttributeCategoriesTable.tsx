@@ -160,6 +160,7 @@ const AttributeCategoriesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Attribute Categories"
         />
         {selectedCategory && selectedCategory.id && (
           <ConfirmDelete

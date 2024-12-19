@@ -127,6 +127,7 @@ const PaymentTermsTable = memo(({ data, count }: PaymentTermsTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Payment Terms"
     />
   );
 });

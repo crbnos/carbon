@@ -96,7 +96,12 @@ const MethodOperationsTable = memo(
     }, [items]);
 
     return (
-      <Table<MethodOperation> count={count} columns={columns} data={data} />
+      <Table<MethodOperation>
+        count={count}
+        columns={columns}
+        data={data}
+        title="Method Operations"
+      />
     );
   }
 );

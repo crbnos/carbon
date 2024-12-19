@@ -153,6 +153,7 @@ const ContractorsTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Contractors"
       />
     );
   }

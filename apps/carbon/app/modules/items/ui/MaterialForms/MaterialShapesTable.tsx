@@ -113,6 +113,7 @@ const MaterialShapesTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Material Forms"
       />
     );
   }

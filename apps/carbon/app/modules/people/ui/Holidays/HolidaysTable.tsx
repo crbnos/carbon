@@ -105,6 +105,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Holidays"
     />
   );
 });

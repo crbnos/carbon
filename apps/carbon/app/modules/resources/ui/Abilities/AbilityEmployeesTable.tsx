@@ -139,6 +139,7 @@ const AbilityEmployeesTable = ({
       renderContextMenu={renderContextMenu}
       withPagination={false}
       withSearch={false}
+      title="Ability Employees"
     />
   );
 };

@@ -279,6 +279,7 @@ const InventoryTable = memo(
                   className="w-64"
                 />
               }
+              title="Inventory"
             />
           </>
         )}

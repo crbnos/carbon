@@ -102,6 +102,7 @@ const ItemPostingGroupsTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Item Posting Groups"
       />
     );
   }

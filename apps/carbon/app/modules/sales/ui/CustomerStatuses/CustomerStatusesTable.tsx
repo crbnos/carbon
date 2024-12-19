@@ -97,6 +97,7 @@ const CustomerStatusesTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Customer Statuses"
       />
     );
   }

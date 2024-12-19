@@ -253,6 +253,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         ) : undefined
       }
       editableComponents={editableComponents}
+      title="Operations"
       withInlineEditing={permissions.can("update", "production")}
     />
   );
