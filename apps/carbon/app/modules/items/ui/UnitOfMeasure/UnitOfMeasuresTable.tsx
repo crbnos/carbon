@@ -93,6 +93,7 @@ const UnitOfMeasuresTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Unit of Measures"
       />
     );
   }

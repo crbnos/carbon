@@ -466,6 +466,7 @@ const DocumentsTable = memo(
             permissions.can("create", "documents") && <DocumentCreateForm />
           }
           renderContextMenu={renderContextMenu}
+          title="Documents"
         />
 
         {selectedDocument && selectedDocument.id && (

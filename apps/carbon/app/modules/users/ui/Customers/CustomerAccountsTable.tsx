@@ -291,6 +291,7 @@ const CustomerAccountsTable = memo(
           }
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
+          title="Customer Accounts"
           withSelectableRows={canEdit}
         />
 

@@ -166,6 +166,7 @@ const AccountCategoriesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Account Categories"
         />
 
         {selectedCategory && selectedCategory.id && (

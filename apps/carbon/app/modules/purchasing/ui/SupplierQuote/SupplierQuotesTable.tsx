@@ -257,6 +257,7 @@ const SupplierQuotesTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Supplier Quotes"
         />
         {selectedSupplierQuote && selectedSupplierQuote.id && (
           <ConfirmDelete

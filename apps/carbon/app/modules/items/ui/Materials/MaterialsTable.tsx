@@ -456,6 +456,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         }
         renderActions={renderActions}
         renderContextMenu={renderContextMenu}
+        title="Materials"
         withSelectableRows
       />
       {selectedItem && selectedItem.id && (

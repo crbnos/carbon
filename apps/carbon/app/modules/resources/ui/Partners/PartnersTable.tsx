@@ -129,6 +129,7 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Partners"
     />
   );
 });

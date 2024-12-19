@@ -287,6 +287,7 @@ const SupplierAccountsTable = memo(
           }
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
+          title="Supplier Accounts"
           withSelectableRows={canEdit}
         />
 

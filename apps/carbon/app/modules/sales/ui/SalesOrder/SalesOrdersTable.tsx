@@ -401,6 +401,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Sales Orders"
       />
 
       {selectedSalesOrder && selectedSalesOrder.id && (

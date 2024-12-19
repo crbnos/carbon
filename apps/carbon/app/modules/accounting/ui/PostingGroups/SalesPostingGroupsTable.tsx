@@ -148,6 +148,7 @@ const SalesPostingGroupsTable = ({
       editableComponents={editableComponents}
       withInlineEditing={canEdit}
       withSearch={false}
+      title="Sales Posting Groups"
     />
   );
 };

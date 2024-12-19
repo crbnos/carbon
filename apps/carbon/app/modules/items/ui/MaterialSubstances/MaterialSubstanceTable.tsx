@@ -115,6 +115,7 @@ const MaterialSubstancesTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Material Substances"
       />
     );
   }

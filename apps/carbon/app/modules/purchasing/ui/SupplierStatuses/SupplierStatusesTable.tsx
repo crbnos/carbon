@@ -99,6 +99,7 @@ const SupplierStatusesTable = memo(
           )
         }
         renderContextMenu={renderContextMenu}
+        title="Supplier Statuses"
       />
     );
   }

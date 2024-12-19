@@ -214,6 +214,7 @@ const ProductionEventsTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Production Events"
         />
         {deleteModal.isOpen && selectedEvent && (
           <ConfirmDelete

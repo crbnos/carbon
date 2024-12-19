@@ -151,6 +151,7 @@ const PurchasingPostingGroupsTable = ({
       editableComponents={editableComponents}
       withInlineEditing={canEdit}
       withSearch={false}
+      title="Purchasing Posting Groups"
     />
   );
 };

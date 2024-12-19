@@ -145,6 +145,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Shifts"
     />
   );
 });

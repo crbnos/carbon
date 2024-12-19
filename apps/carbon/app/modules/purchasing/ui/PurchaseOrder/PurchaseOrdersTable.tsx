@@ -355,6 +355,7 @@ const PurchaseOrdersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Purchase Orders"
         />
 
         {selectedPurchaseOrder && selectedPurchaseOrder.id && (

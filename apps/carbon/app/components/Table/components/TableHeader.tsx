@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  Heading,
   HStack,
   IconButton,
 } from "@carbon/react";
@@ -43,6 +44,7 @@ type HeaderProps<T> = {
   selectedRows: T[];
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
+  title?: string;
   withInlineEditing: boolean;
   withPagination: boolean;
   withSearch: boolean;
@@ -62,6 +64,7 @@ const TableHeader = <T extends object>({
   renderActions,
   setColumnOrder,
   setEditMode,
+  title,
   withInlineEditing,
   withPagination,
   withSearch,
@@ -75,9 +78,46 @@ const TableHeader = <T extends object>({
 
   return (
     <>
-      <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
+      <HStack className="px-4 py-2 justify-between bg-card border-b  w-full">
         <HStack>
           <CollapsibleSidebarTrigger />
+          {title && <Heading size="h3">{title}</Heading>}
+        </HStack>
+        <HStack>
+          {/* <Button variant="secondary" leftIcon={<LuDownload />}>
+            Export
+          </Button> */}
+          <>{primaryAction}</>
+          {importCSV && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="Table actions"
+                  variant="secondary"
+                  icon={<BsThreeDotsVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {importCSV.map(({ table, label }) => (
+                  <DropdownMenuItem
+                    key={table}
+                    onClick={() => {
+                      setImportCSVTable(table);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuImport />} />
+                    Import {label} CSV
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </HStack>
+      </HStack>
+      <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
+        <HStack>
           {withSearch && (
             <SearchFilter param="search" size="sm" placeholder="Search" />
           )}
@@ -134,33 +174,6 @@ const TableHeader = <T extends object>({
                 Edit
               </Button>
             ))}
-          <>{primaryAction}</>
-          {importCSV && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="Table actions"
-                  variant="secondary"
-                  icon={<BsThreeDotsVertical />}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {importCSV.map(({ table, label }) => (
-                  <DropdownMenuItem
-                    key={table}
-                    onClick={() => {
-                      setImportCSVTable(table);
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuImport />} />
-                    Import {label} CSV
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </HStack>
       </HStack>
       {currentFilters.length > 0 && (

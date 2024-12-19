@@ -279,6 +279,7 @@ const SuppliersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          title="Suppliers"
         />
       </>
     );

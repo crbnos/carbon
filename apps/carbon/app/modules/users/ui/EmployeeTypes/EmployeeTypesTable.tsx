@@ -97,6 +97,7 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
         )
       }
       renderContextMenu={renderContextMenu}
+      title="Employee Types"
     />
   );
 });

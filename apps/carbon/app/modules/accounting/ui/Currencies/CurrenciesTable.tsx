@@ -81,6 +81,7 @@ const CurrenciesTable = memo(({ data, count }: CurrenciesTableProps) => {
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}
+      title="Currencies"
     />
   );
 });

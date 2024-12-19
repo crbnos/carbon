@@ -222,6 +222,7 @@ const InventoryPostingGroupsTable = ({
       editableComponents={editableComponents}
       withInlineEditing={canEdit}
       withSearch={false}
+      title="Inventory Posting Groups"
     />
   );
 };

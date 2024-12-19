@@ -429,6 +429,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         }
         renderActions={renderActions}
         renderContextMenu={renderContextMenu}
+        title="Parts"
         withSelectableRows
       />
       {selectedItem && selectedItem.id && (

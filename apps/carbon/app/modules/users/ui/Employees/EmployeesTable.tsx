@@ -302,6 +302,7 @@ const EmployeesTable = memo(
           }
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
+          title="Employees"
           withSelectableRows={canEdit}
         />
         {bulkEditDrawer.isOpen && (

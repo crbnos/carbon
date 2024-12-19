@@ -123,6 +123,7 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
+        title="API Keys"
       />
       <Outlet />
     </>
