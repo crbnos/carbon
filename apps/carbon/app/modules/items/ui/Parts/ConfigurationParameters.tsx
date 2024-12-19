@@ -122,6 +122,7 @@ export default function ConfigurationParametersForm({
   }, [fetcher.data]);
 
   const groupDisclosure = useDisclosure();
+  const deleteGroupDisclosure = useDisclosure();
   const [selectedGroup, setSelectedGroup] =
     useState<ConfigurationParameterGroup | null>(null);
 
@@ -300,6 +301,7 @@ export default function ConfigurationParametersForm({
                           <ParameterGroup
                             group={group}
                             parameters={groupParameters}
+                            deleteGroupDisclosure={deleteGroupDisclosure}
                             groupDisclosure={groupDisclosure}
                             setSelectedGroup={setSelectedGroup}
                           />
@@ -314,6 +316,7 @@ export default function ConfigurationParametersForm({
                         {activeGroup && (
                           <ParameterGroup
                             group={activeGroup}
+                            deleteGroupDisclosure={deleteGroupDisclosure}
                             groupDisclosure={groupDisclosure}
                             isOverlay
                             parameters={parameters.filter(
@@ -340,6 +343,25 @@ export default function ConfigurationParametersForm({
           </div>
         </CardContent>
       </Card>
+      {deleteGroupDisclosure.isOpen && selectedGroup && (
+        <ConfirmDelete
+          action={path.to.deleteConfigurationParameterGroup(
+            itemId,
+            selectedGroup.id
+          )}
+          isOpen
+          name={selectedGroup.name ?? ""}
+          text={`Are you sure you want to delete ${selectedGroup.name}?`}
+          onCancel={() => {
+            deleteGroupDisclosure.onClose();
+            setSelectedGroup(null);
+          }}
+          onSubmit={() => {
+            deleteGroupDisclosure.onClose();
+            setSelectedGroup(null);
+          }}
+        />
+      )}
       {groupDisclosure.isOpen && (
         <Modal
           open={groupDisclosure.isOpen}
@@ -373,7 +395,11 @@ export default function ConfigurationParametersForm({
                 <Input name="name" label="Name" />
               </ModalBody>
               <ModalFooter>
-                <Button variant="secondary" type="button">
+                <Button
+                  variant="secondary"
+                  type="button"
+                  onClick={groupDisclosure.onClose}
+                >
                   Cancel
                 </Button>
                 <Submit
@@ -647,14 +673,16 @@ const variants = cva("border rounded-lg", {
 
 function ParameterGroup({
   group,
-  groupDisclosure,
   isOverlay,
   parameters,
+  groupDisclosure,
+  deleteGroupDisclosure,
   setSelectedGroup,
 }: {
   group: ConfigurationParameterGroup;
   parameters: ConfigurationParameter[];
   isOverlay?: boolean;
+  deleteGroupDisclosure: ReturnType<typeof useDisclosure>;
   groupDisclosure: ReturnType<typeof useDisclosure>;
   setSelectedGroup: (group: ConfigurationParameterGroup) => void;
 }) {
@@ -722,7 +750,16 @@ function ParameterGroup({
               >
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem destructive disabled={group.isUngrouped}>
+              <DropdownMenuItem
+                destructive
+                disabled={group.isUngrouped}
+                onClick={() => {
+                  flushSync(() => {
+                    setSelectedGroup(group);
+                  });
+                  deleteGroupDisclosure.onOpen();
+                }}
+              >
                 Delete
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -744,18 +781,16 @@ function ParameterGroup({
 
 function ConfigurableParameter({
   parameter,
-  className,
   isOverlay,
 }: {
   parameter: ConfigurationParameter;
-  className?: string;
   isOverlay?: boolean;
 }) {
   const { isList, key, onChangeCheckForListType, updateKey } =
     useConfigurationParameters(parameter);
 
   const disclosure = useDisclosure();
-  const deleteModalDisclosure = useDisclosure();
+  const deleteParameterDisclosure = useDisclosure();
   const submitted = useRef(false);
   const fetcher = useFetcher<typeof configurationParameterAction>();
 
@@ -928,7 +963,7 @@ function ConfigurableParameter({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   destructive
-                  onClick={deleteModalDisclosure.onOpen}
+                  onClick={deleteParameterDisclosure.onOpen}
                 >
                   Delete
                 </DropdownMenuItem>
@@ -937,20 +972,20 @@ function ConfigurableParameter({
           </div>
         </div>
       )}
-      {deleteModalDisclosure.isOpen && (
+      {deleteParameterDisclosure.isOpen && (
         <ConfirmDelete
           action={path.to.deleteConfigurationParameter(
             parameter.itemId,
             parameter.id
           )}
-          isOpen={deleteModalDisclosure.isOpen}
+          isOpen={deleteParameterDisclosure.isOpen}
           name={parameter.label}
           text={`Are you sure you want to delete the ${parameter.label} parameter? This will not update any formulas that are using this parameter.`}
           onCancel={() => {
-            deleteModalDisclosure.onClose();
+            deleteParameterDisclosure.onClose();
           }}
           onSubmit={() => {
-            deleteModalDisclosure.onClose();
+            deleteParameterDisclosure.onClose();
           }}
         />
       )}

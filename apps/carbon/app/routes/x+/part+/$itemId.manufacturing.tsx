@@ -6,6 +6,7 @@ import {
   ResizablePanelGroup,
   ScrollArea,
 } from "@carbon/react";
+import type { ShouldRevalidateFunctionArgs } from "@remix-run/react";
 import {
   Outlet,
   json,
@@ -30,6 +31,20 @@ import {
 import { BoMExplorer } from "~/modules/items/ui/Item";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate = ({
+  formAction,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs) => {
+  // Replace '/specific/path' with the path you want to exclude
+  if (
+    formAction &&
+    (formAction.includes("parameter") || formAction.includes("tool"))
+  ) {
+    return false;
+  }
+  return defaultShouldRevalidate;
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
