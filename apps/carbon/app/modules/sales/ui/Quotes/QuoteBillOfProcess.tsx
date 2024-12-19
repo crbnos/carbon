@@ -118,11 +118,7 @@ function makeItems(operations: Operation[]): ItemWithData[] {
 function makeItem(operation: Operation): ItemWithData {
   return {
     id: operation.id!,
-    title: (
-      <h4 className="flex text-xs font-bold uppercase tracking-tighter md:text-sm truncate">
-        {operation.description}
-      </h4>
-    ),
+    title: <h3 className="font-semibold truncate">{operation.description}</h3>,
     checked: false,
     order: operation.operationOrder,
     details: (
