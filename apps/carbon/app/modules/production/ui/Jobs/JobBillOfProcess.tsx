@@ -114,9 +114,7 @@ function makeItem(operation: Operation): ItemWithData {
     id: operation.id!,
     title: (
       <HStack>
-        <h4 className="flex text-xs font-bold uppercase tracking-tighter md:text-sm truncate">
-          {operation.description}
-        </h4>
+        <h3 className="font-semibold truncate">{operation.description}</h3>
         <OperationStatusIcon status={operation.status} />
       </HStack>
     ),

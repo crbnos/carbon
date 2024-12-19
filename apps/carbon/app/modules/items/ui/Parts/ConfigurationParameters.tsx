@@ -181,7 +181,7 @@ export default function ConfigurationParametersForm({
     <>
       <Card isCollapsible>
         <CardHeader>
-          <CardTitle>Parameters</CardTitle>
+          <CardTitle>Configuration Parameters</CardTitle>
         </CardHeader>
 
         <CardContent>
@@ -787,7 +787,7 @@ function ConfigurableParameter({
       disclosure.onClose();
       submitted.current = false;
     }
-  }, [fetcher.state]);
+  }, [disclosure, fetcher.state]);
 
   const isUpdated = parameter.updatedBy !== null;
   const person = isUpdated ? parameter.updatedBy : parameter.createdBy;
