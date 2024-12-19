@@ -5,6 +5,11 @@ import {
   Badge,
   Button,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Heading,
   HStack,
   IconButton,
@@ -121,9 +126,11 @@ import {
   LuAlertTriangle,
   LuChevronLeft,
   LuClipboardCheck,
+  LuDownload,
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
+  LuMoreVertical,
   LuTimer,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
@@ -537,10 +544,7 @@ export const JobOperation = ({
                                   <Td>
                                     <HStack>
                                       <FileIcon type={type} />
-                                      <span
-                                        className="font-medium"
-                                        onClick={() => downloadFile(file)}
-                                      >
+                                      <span className="font-medium">
                                         {["PDF", "Image"].includes(type) ? (
                                           <FilePreview
                                             bucket="private"
@@ -563,7 +567,29 @@ export const JobOperation = ({
                                       )
                                     )}
                                   </Td>
-                                  <Td>{/* Add actions here if needed */}</Td>
+                                  <Td>
+                                    <div className="flex justify-end w-full">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <IconButton
+                                            aria-label="More"
+                                            icon={<LuMoreVertical />}
+                                            variant="secondary"
+                                          />
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                          <DropdownMenuItem
+                                            onClick={() => downloadFile(file)}
+                                          >
+                                            <DropdownMenuIcon
+                                              icon={<LuDownload />}
+                                            />
+                                            Download
+                                          </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                  </Td>
                                 </Tr>
                               );
                             })
