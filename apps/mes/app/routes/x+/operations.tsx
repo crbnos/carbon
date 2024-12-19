@@ -29,6 +29,7 @@ import { getLocation } from "~/services/location.server";
 import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
+  getCustomers,
   getProcessesList,
   getWorkCentersByLocation,
 } from "~/services/operations.service";
@@ -162,6 +163,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return true;
     }) ?? [];
 
+  const customerIds = filteredOperations.map((op) => op.jobCustomerId);
+  const customers = await getCustomers(serviceRole, companyId, customerIds);
+
   return json(
     {
       columns: filteredWorkCenters
@@ -201,6 +205,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }) ?? []) satisfies Item[],
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
+      customers: customers.data ?? [],
     },
     { headers }
   );
@@ -210,7 +215,7 @@ export default function ScheduleRoute() {
   return (
     <ClientOnly
       fallback={
-        <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width))] items-center justify-center">
+        <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
           <Spinner className="h-8 w-8" />
         </div>
       }
@@ -279,7 +284,7 @@ function KanbanSchedule() {
   }, [processes, workCenters]);
 
   return (
-    <div className="flex flex-col h-screen w-full">
+    <div className="flex flex-col h-screen w-[calc(100dvw-var(--sidebar-width-icon))]">
       <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
@@ -419,7 +424,6 @@ function KanbanSchedule() {
                 {...displaySettings}
                 showEmployee={false}
                 showProgress={false}
-                showSalesOrder={false}
               />
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">

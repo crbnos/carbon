@@ -18,6 +18,7 @@ import {
   LuCheckCircle,
   LuClipboardCheck,
   LuTimer,
+  LuUserSquare,
   LuXCircle,
 } from "react-icons/lu";
 
@@ -27,6 +28,8 @@ import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 
+import { useRouteData } from "@carbon/remix";
+import Avatar from "~/components/Avatar";
 import { DeadlineIcon } from "~/components/Icons";
 import { getPrivateUrl, path } from "~/utils/path";
 import type { DisplaySettings, Item } from "../types";
@@ -85,6 +88,14 @@ export function ItemCard({
   showSalesOrder,
   showThumbnail,
 }: ItemCardProps) {
+  const routeData = useRouteData<{
+    customers: { id: string; name: string }[];
+  }>("/x/operations");
+
+  const customer = showCustomer
+    ? routeData?.customers.find((c) => c.id === item.customerId)
+    : undefined;
+
   const isOverdue =
     item.deadlineType !== "No Deadline" && item.dueDate
       ? new Date(item.dueDate) < new Date()
@@ -203,6 +214,16 @@ export function ItemCard({
                 <span className="text-sm">{item.salesOrderReadableId}</span>
               </HStack>
             )}
+
+          {showCustomer && item.customerId && (
+            <HStack className="justify-start space-x-2">
+              <LuUserSquare className="text-muted-foreground" />
+              <HStack className="truncate no-underline hover:no-underline">
+                <Avatar size="xs" name={customer?.name ?? ""} />
+                <span>{customer?.name}</span>
+              </HStack>
+            </HStack>
+          )}
         </CardContent>
       </Card>
     </Link>

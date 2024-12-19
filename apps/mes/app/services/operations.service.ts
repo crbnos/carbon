@@ -63,6 +63,18 @@ export async function getActiveJobCount(
   });
 }
 
+export async function getCustomers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  customerIds: string[]
+) {
+  return client
+    .from("customer")
+    .select("id, name")
+    .in("id", customerIds)
+    .eq("companyId", companyId);
+}
+
 export function getFileType(fileName: string): (typeof documentTypes)[number] {
   const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
   if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
