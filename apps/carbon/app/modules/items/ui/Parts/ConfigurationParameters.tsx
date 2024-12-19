@@ -20,6 +20,12 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   toast,
   useDisclosure,
   VStack,
@@ -33,6 +39,7 @@ import {
 import { cva } from "class-variance-authority";
 import { useEffect, useRef, useState } from "react";
 import {
+  LuFolderOpen,
   LuGripVertical,
   LuHash,
   LuKeySquare,
@@ -46,6 +53,7 @@ import { EmployeeAvatar } from "~/components";
 import type { ConfigurationParameter } from "~/modules/items";
 import {
   configurationParameterDataTypes,
+  configurationParameterGroupValidator,
   configurationParameterValidator,
 } from "~/modules/items";
 import type { action as configurationParameterAction } from "~/routes/x+/part+/$itemId.parameter";
@@ -75,53 +83,24 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, useSortable } from "@dnd-kit/sortable";
+import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { createPortal } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
-
-function useConfigurationParameters(parameter?: ConfigurationParameter) {
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("Could not find itemId");
-  const [key, setKey] = useState(parameter?.key ?? "");
-  const [isList, setIsList] = useState(parameter?.dataType === "list");
-
-  const onChangeCheckForListType = (
-    newValue: {
-      value: string;
-      label: string | JSX.Element;
-    } | null
-  ) => {
-    if (!newValue) return;
-    const type = newValue.value;
-    setIsList(type === "list");
-  };
-
-  const updateKey = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const label = e.target.value;
-    setKey(label.toLowerCase().replace(/ /g, "_"));
-  };
-
-  return {
-    key,
-    isList,
-    itemId,
-    onChangeCheckForListType,
-    setKey,
-    setIsList,
-    updateKey,
-  };
-}
 
 type ConfigurationParameterGroup = {
   id: string;
   name: string;
+  sortOrder: number;
+  isUngrouped: boolean;
 };
 
 export default function ConfigurationParametersForm({
   parameters: initialParameters,
+  groups: initialGroups,
 }: {
   parameters: ConfigurationParameter[];
+  groups: ConfigurationParameterGroup[];
 }) {
   const {
     isList,
@@ -142,16 +121,9 @@ export default function ConfigurationParametersForm({
     }
   }, [fetcher.data]);
 
-  // Dummy groups for now - will be replaced with real data later
-  const [groups] = useState<ConfigurationParameterGroup[]>([
-    { id: "null", name: "Ungrouped" },
-    { id: "group1", name: "Group 1" },
-    { id: "group2", name: "Group 2" },
-  ]);
-
-  const [groupOrder, setGroupOrder] = useState<string[]>(() => {
-    return groups.map((group) => group.id);
-  });
+  const groupDisclosure = useDisclosure();
+  const [selectedGroup, setSelectedGroup] =
+    useState<ConfigurationParameterGroup | null>(null);
 
   const parametersById = new Map<string, ConfigurationParameter>(
     initialParameters.map((parameter) => [parameter.id, parameter])
@@ -173,9 +145,27 @@ export default function ConfigurationParametersForm({
   const parameters = Array.from(parametersById.values()).sort(
     (a, b) => a.sortOrder - b.sortOrder
   );
-
   const [activeParameter, setActiveParameter] =
     useState<ConfigurationParameter | null>(null);
+
+  const groupsById = new Map<string, ConfigurationParameterGroup>(
+    initialGroups.map((group) => [group.id, group])
+  );
+
+  const pendingGroups = usePendingGroups({ itemId });
+
+  // merge pending groups and existing groups
+  for (let pendingGroup of pendingGroups) {
+    let group = groupsById.get(pendingGroup.id);
+    if (group) {
+      groupsById.set(pendingGroup.id, { ...group, ...pendingGroup });
+    }
+  }
+
+  const groups = Array.from(groupsById.values()).sort(
+    (a, b) => a.sortOrder - b.sortOrder
+  );
+
   const [activeGroup, setActiveGroup] =
     useState<ConfigurationParameterGroup | null>(null);
 
@@ -188,148 +178,227 @@ export default function ConfigurationParametersForm({
   );
 
   return (
-    <Card isCollapsible>
-      <CardHeader>
-        <CardTitle>Parameters</CardTitle>
-      </CardHeader>
+    <>
+      <Card isCollapsible>
+        <CardHeader>
+          <CardTitle>Parameters</CardTitle>
+        </CardHeader>
 
-      <CardContent>
-        <div className="flex flex-col gap-4">
-          <div className="p-6 border rounded-lg">
-            <ValidatedForm
-              action={path.to.configurationParameter(itemId)}
-              method="post"
-              validator={configurationParameterValidator}
-              fetcher={fetcher}
-              resetAfterSubmit
-              onSubmit={() => {
-                setKey("");
-                setIsList(false);
-              }}
-              defaultValues={{
-                itemId: itemId,
-                key: "",
-                label: "",
-                dataType: "numeric",
-                listOptions: [],
-                configurationParameterGroupId: undefined,
-              }}
-              className="w-full"
-            >
-              <Hidden name="id" />
-              <Hidden name="itemId" />
-              <Hidden name="key" value={key} />
-              <VStack spacing={4}>
-                <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                  <VStack>
-                    <Input name="label" label="Label" onChange={updateKey} />
-                    {key && (
-                      <HStack spacing={1}>
-                        <LuKeySquare className="w-3 h-3 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          {key}
-                        </span>
-                      </HStack>
-                    )}
-                  </VStack>
-
-                  <Select
-                    name="dataType"
-                    label="Data Type"
-                    options={configurationParameterDataTypes.map((type) => ({
-                      label: (
-                        <HStack className="w-full">
-                          <ConfigurationParameterDataTypeIcon
-                            type={type}
-                            className="mr-2"
-                          />
-                          {capitalize(type)}
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="p-6 border rounded-lg">
+              <ValidatedForm
+                action={path.to.configurationParameter(itemId)}
+                method="post"
+                validator={configurationParameterValidator}
+                fetcher={fetcher}
+                resetAfterSubmit
+                onSubmit={() => {
+                  setKey("");
+                  setIsList(false);
+                }}
+                defaultValues={{
+                  itemId: itemId,
+                  key: "",
+                  label: "",
+                  dataType: "numeric",
+                  listOptions: [],
+                  configurationParameterGroupId: undefined,
+                }}
+                className="w-full"
+              >
+                <Hidden name="id" />
+                <Hidden name="itemId" />
+                <Hidden name="key" value={key} />
+                <VStack spacing={4}>
+                  <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                    <VStack>
+                      <Input name="label" label="Label" onChange={updateKey} />
+                      {key && (
+                        <HStack spacing={1}>
+                          <LuKeySquare className="w-3 h-3 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            {key}
+                          </span>
                         </HStack>
-                      ),
-                      value: type,
-                    }))}
-                    onChange={onChangeCheckForListType}
-                  />
-                  {isList && (
-                    <ArrayInput name="listOptions" label="List Parameters" />
-                  )}
-                </div>
-
-                <Submit
-                  leftIcon={<LuPlusCircle />}
-                  isDisabled={fetcher.state !== "idle"}
-                  isLoading={fetcher.state !== "idle"}
-                >
-                  Add Parameter
-                </Submit>
-              </VStack>
-            </ValidatedForm>
-          </div>
-
-          {parameters.length > 0 && (
-            <DndContext
-              sensors={sensors}
-              onDragStart={onDragStart}
-              onDragEnd={onDragEnd}
-              onDragOver={onDragOver}
-            >
-              <SortableContext items={groupOrder}>
-                <div className="relative"></div>
-                {groups.map((group) => {
-                  const groupParameters = parameters.filter(
-                    (opt) => `${opt.configurationParameterGroupId}` === group.id
-                  );
-
-                  return (
-                    <div
-                      key={group.id}
-                      className={cn(
-                        "transition-opacity",
-                        activeGroup?.id === group.id && "opacity-0"
                       )}
+                    </VStack>
+
+                    <Select
+                      name="dataType"
+                      label="Data Type"
+                      options={configurationParameterDataTypes.map((type) => ({
+                        label: (
+                          <HStack className="w-full">
+                            <ConfigurationParameterDataTypeIcon
+                              type={type}
+                              className="mr-2"
+                            />
+                            {capitalize(type)}
+                          </HStack>
+                        ),
+                        value: type,
+                      }))}
+                      onChange={onChangeCheckForListType}
+                    />
+                    {isList && (
+                      <ArrayInput name="listOptions" label="List Parameters" />
+                    )}
+                  </div>
+                  <HStack spacing={2}>
+                    <Submit
+                      leftIcon={<LuPlusCircle />}
+                      isDisabled={fetcher.state !== "idle"}
+                      isLoading={
+                        fetcher.state !== "idle" &&
+                        fetcher.formAction ===
+                          path.to.configurationParameter(itemId)
+                      }
                     >
-                      <ParameterGroup
-                        group={group}
-                        parameters={groupParameters}
-                      />
-                    </div>
-                  );
-                })}
-              </SortableContext>
-              <ClientOnly fallback={null}>
-                {() =>
-                  createPortal(
-                    <DragOverlay>
-                      {activeGroup && (
-                        <ParameterGroup
-                          group={activeGroup}
-                          parameters={parameters.filter(
-                            (opt) =>
-                              `${opt.configurationParameterGroupId}` ===
-                              activeGroup.id
+                      Add Parameter
+                    </Submit>
+                  </HStack>
+                </VStack>
+              </ValidatedForm>
+            </div>
+            <div className="flex">
+              <Button
+                type="button"
+                variant="secondary"
+                leftIcon={<LuFolderOpen />}
+                onClick={groupDisclosure.onOpen}
+              >
+                Add Group
+              </Button>
+            </div>
+
+            {parameters.length > 0 && (
+              <DndContext
+                sensors={sensors}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                onDragOver={onDragOver}
+              >
+                <SortableContext items={groups.map((g) => g.id)}>
+                  <div className="relative"></div>
+                  {groups
+                    .sort((a, b) => a.sortOrder - b.sortOrder)
+                    .map((group) => {
+                      const groupParameters = parameters.filter(
+                        (opt) =>
+                          `${opt.configurationParameterGroupId}` === group.id
+                      );
+
+                      return (
+                        <div
+                          key={group.id}
+                          className={cn(
+                            "transition-opacity",
+                            activeGroup?.id === group.id && "opacity-0"
                           )}
-                        />
-                      )}
-                      {activeParameter && (
-                        <ConfigurableParameter
-                          parameter={activeParameter}
-                          isOverlay
-                        />
-                      )}
-                    </DragOverlay>,
-                    document.body
-                  )
-                }
-              </ClientOnly>
-            </DndContext>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+                        >
+                          <ParameterGroup
+                            group={group}
+                            parameters={groupParameters}
+                            groupDisclosure={groupDisclosure}
+                            setSelectedGroup={setSelectedGroup}
+                          />
+                        </div>
+                      );
+                    })}
+                </SortableContext>
+                <ClientOnly fallback={null}>
+                  {() =>
+                    createPortal(
+                      <DragOverlay>
+                        {activeGroup && (
+                          <ParameterGroup
+                            group={activeGroup}
+                            groupDisclosure={groupDisclosure}
+                            isOverlay
+                            parameters={parameters.filter(
+                              (opt) =>
+                                `${opt.configurationParameterGroupId}` ===
+                                activeGroup.id
+                            )}
+                            setSelectedGroup={setSelectedGroup}
+                          />
+                        )}
+                        {activeParameter && (
+                          <ConfigurableParameter
+                            parameter={activeParameter}
+                            isOverlay
+                          />
+                        )}
+                      </DragOverlay>,
+                      document.body
+                    )
+                  }
+                </ClientOnly>
+              </DndContext>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      {groupDisclosure.isOpen && (
+        <Modal
+          open={groupDisclosure.isOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              groupDisclosure.onClose();
+              setSelectedGroup(null);
+            }
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm
+              action={path.to.configurationParameterGroup(itemId)}
+              method="post"
+              validator={configurationParameterGroupValidator}
+              fetcher={fetcher}
+              defaultValues={{
+                id: selectedGroup?.id,
+                name: selectedGroup?.name,
+              }}
+              onSubmit={() => {
+                setSelectedGroup(null);
+                groupDisclosure.onClose();
+              }}
+            >
+              <ModalHeader>
+                <ModalTitle>{selectedGroup ? "Edit" : "Add"} Group</ModalTitle>
+              </ModalHeader>
+              <ModalBody>
+                <Hidden name="id" />
+                <Input name="name" label="Name" />
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" type="button">
+                  Cancel
+                </Button>
+                <Submit
+                  isDisabled={
+                    fetcher.state !== "idle" &&
+                    fetcher.formAction ===
+                      path.to.configurationParameterGroup(itemId)
+                  }
+                  isLoading={
+                    fetcher.state !== "idle" &&
+                    fetcher.formAction ===
+                      path.to.configurationParameterGroup(itemId)
+                  }
+                >
+                  Save
+                </Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+    </>
   );
 
   function onDragStart(event: DragStartEvent) {
-    console.log("onDragStart", event);
     if (!hasDraggableData(event.active)) return;
     const data = event.active.data.current;
     if (data?.type === "group") {
@@ -344,7 +413,6 @@ export default function ConfigurationParametersForm({
   }
 
   function onDragEnd(event: DragEndEvent) {
-    console.log("onDragEnd", event);
     setActiveGroup(null);
     setActiveParameter(null);
 
@@ -364,16 +432,60 @@ export default function ConfigurationParametersForm({
     const isActiveAColumn = activeData?.type === "group";
     if (!isActiveAColumn) return;
 
-    setGroupOrder((prevOrder) => {
-      const activeColumnIndex = prevOrder.findIndex((id) => id === activeId);
-      const overGroupIndex = prevOrder.findIndex((id) => id === overId);
+    const activeGroup = groups.find((g) => g.id === activeId);
+    const overGroup = over.data.current?.group;
 
-      return arrayMove(prevOrder, activeColumnIndex, overGroupIndex);
-    });
+    if (!activeGroup || !overGroup) return;
+
+    let sortOrderBefore = 0;
+    let sortOrderAfter = 0;
+
+    if (activeGroup.sortOrder > overGroup.sortOrder) {
+      // Moving up - insert before the over item
+      sortOrderAfter = overGroup.sortOrder;
+
+      // Find the previous group's sort order
+      for (let i = groups.length - 1; i >= 0; i--) {
+        const group = groups[i];
+        if (group.sortOrder < overGroup.sortOrder) {
+          sortOrderBefore = group.sortOrder;
+          break;
+        }
+      }
+    } else {
+      // Moving down - insert after the over item
+      sortOrderBefore = overGroup.sortOrder;
+
+      // Find the next group's sort order
+      for (let i = 0; i < groups.length; i++) {
+        const group = groups[i];
+        if (group.sortOrder > overGroup.sortOrder) {
+          sortOrderAfter = group.sortOrder;
+          break;
+        }
+      }
+      if (sortOrderAfter === 0) {
+        sortOrderAfter = sortOrderBefore + 1;
+      }
+    }
+
+    const newSortOrder = (sortOrderBefore + sortOrderAfter) / 2;
+
+    submit(
+      {
+        id: activeGroup.id,
+        sortOrder: newSortOrder,
+      },
+      {
+        method: "post",
+        action: path.to.configurationParameterGroupOrder(itemId),
+        navigate: false,
+        fetcherKey: `group:${activeGroup.id}`,
+      }
+    );
   }
 
   function onDragOver(event: DragOverEvent) {
-    console.log("onDragOver", event);
     const { active, over } = event;
 
     if (!over) return;
@@ -387,13 +499,6 @@ export default function ConfigurationParametersForm({
 
     const activeData = active.data.current;
     const overData = over.data.current;
-    const overGroup =
-      overData?.type === "parameter"
-        ? groups.find(
-            (group) =>
-              group.id === `${overData.parameter.configurationParameterGroupId}`
-          )
-        : overData?.group;
 
     const isActiveAnParameter = activeData?.type === "parameter";
     const isOverAnParameter = overData?.type === "parameter";
@@ -403,7 +508,7 @@ export default function ConfigurationParametersForm({
 
     if (!isActiveAnParameter) return;
 
-    // Im dropping a Item over another Item
+    // dropping an option over another option
     if (
       isActiveAnParameter &&
       isOverAnParameter &&
@@ -455,6 +560,9 @@ export default function ConfigurationParametersForm({
                 ? null
                 : overParameter.configurationParameterGroupId,
             sortOrder: newSortOrder,
+            label: activeParameter.label,
+            key: activeParameter.key,
+            dataType: activeParameter.dataType,
           },
           {
             method: "post",
@@ -475,6 +583,9 @@ export default function ConfigurationParametersForm({
                 ? null
                 : overParameter.configurationParameterGroupId,
             sortOrder: newSortOrder,
+            label: activeParameter.label,
+            key: activeParameter.key,
+            dataType: activeParameter.dataType,
           },
           {
             method: "post",
@@ -489,7 +600,7 @@ export default function ConfigurationParametersForm({
 
     const isOverAGroup = overData?.type === "group";
 
-    // Im dropping a Item over a column
+    // dropping an option over a group
     if (isActiveAnParameter && isOverAGroup) {
       const activeParameter = parametersById.get(activeId.toString());
       const groupId = overId as string;
@@ -508,10 +619,13 @@ export default function ConfigurationParametersForm({
             id: activeParameter.id,
             configurationParameterGroupId: groupId == "null" ? null : groupId,
             sortOrder: newSortOrder,
+            label: activeParameter.label,
+            key: activeParameter.key,
+            dataType: activeParameter.dataType,
           },
           {
             method: "post",
-            action: path.to.configurationParameter(activeParameter.itemId),
+            action: path.to.configurationParameterOrder(activeParameter.itemId),
             navigate: false,
             fetcherKey: `parameter:${activeParameter.id}`,
           }
@@ -521,16 +635,29 @@ export default function ConfigurationParametersForm({
   }
 }
 
+const variants = cva("border rounded-lg", {
+  variants: {
+    dragging: {
+      default: "",
+      over: "ring-2 opacity-30",
+      overlay: "ring-2 ring-primary",
+    },
+  },
+});
+
 function ParameterGroup({
   group,
-  parameters,
+  groupDisclosure,
   isOverlay,
+  parameters,
+  setSelectedGroup,
 }: {
   group: ConfigurationParameterGroup;
   parameters: ConfigurationParameter[];
   isOverlay?: boolean;
+  groupDisclosure: ReturnType<typeof useDisclosure>;
+  setSelectedGroup: (group: ConfigurationParameterGroup) => void;
 }) {
-  const parametersIds = parameters.map((parameter) => parameter.id);
   const {
     setNodeRef,
     attributes,
@@ -551,16 +678,6 @@ function ParameterGroup({
     transform: CSS.Translate.toString(transform),
   };
 
-  const variants = cva("border rounded-lg", {
-    variants: {
-      dragging: {
-        default: "",
-        over: "ring-2 opacity-30",
-        overlay: "ring-2 ring-primary",
-      },
-    },
-  });
-
   return (
     <div
       key={group.id}
@@ -570,13 +687,16 @@ function ParameterGroup({
         dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
       })}
     >
-      <div className="p-4 border-b bg-muted/30">
+      <div
+        className={cn("p-4 bg-muted/30", parameters.length > 0 && "border-b")}
+      >
         <HStack className="w-full justify-between">
           <HStack>
             <IconButton
               aria-label="Reorder Group"
               icon={<LuGripVertical />}
               variant="ghost"
+              isDisabled={group.id === "null"}
               {...attributes}
               {...listeners}
               className="cursor-grab"
@@ -592,14 +712,27 @@ function ParameterGroup({
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>Edit</DropdownMenuItem>
-              <DropdownMenuItem destructive>Delete</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  flushSync(() => {
+                    setSelectedGroup(group);
+                  });
+                  groupDisclosure.onOpen();
+                }}
+              >
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem destructive disabled={group.isUngrouped}>
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </HStack>
       </div>
       <SortableContext items={parameters.map((opt) => opt.id)}>
-        <div className="p-2 flex flex-col gap-2">
+        <div
+          className={cn("flex flex-col gap-2", parameters.length > 0 && "p-2")}
+        >
           {parameters.map((parameter) => (
             <ConfigurableParameter key={parameter.id} parameter={parameter} />
           ))}
@@ -665,10 +798,10 @@ function ConfigurableParameter({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "border rounded-lg p-4 bg-card",
-        isDragging && "opacity-50",
-        isOverlay && "shadow-lg",
-        className
+        "p-4 bg-card",
+        variants({
+          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+        })
       )}
     >
       {disclosure.isOpen ? (
@@ -737,7 +870,11 @@ function ConfigurableParameter({
               </Button>
               <Submit
                 isDisabled={fetcher.state !== "idle"}
-                isLoading={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formAction ===
+                    path.to.configurationParameter(parameter.itemId)
+                }
               >
                 Save
               </Submit>
@@ -844,13 +981,63 @@ function ConfigurationParameterDataTypeIcon({
   }
 }
 
+function useConfigurationParameters(parameter?: ConfigurationParameter) {
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const [key, setKey] = useState(parameter?.key ?? "");
+  const [isList, setIsList] = useState(parameter?.dataType === "list");
+
+  const onChangeCheckForListType = (
+    newValue: {
+      value: string;
+      label: string | JSX.Element;
+    } | null
+  ) => {
+    if (!newValue) return;
+    const type = newValue.value;
+    setIsList(type === "list");
+  };
+
+  const updateKey = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const label = e.target.value;
+    setKey(label.toLowerCase().replace(/ /g, "_"));
+  };
+
+  return {
+    key,
+    isList,
+    itemId,
+    onChangeCheckForListType,
+    setKey,
+    setIsList,
+    updateKey,
+  };
+}
+
+function usePendingGroups({ itemId }: { itemId: string }) {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        fetcher.formAction === path.to.configurationParameterGroupOrder(itemId)
+      );
+    })
+    .map((fetcher) => {
+      let id = String(fetcher.formData.get("id"));
+      let sortOrder = Number(fetcher.formData.get("sortOrder"));
+      return { id, sortOrder };
+    });
+}
+
 function usePendingParameters({ itemId }: { itemId: string }) {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.configurationParameter(itemId);
+      return fetcher.formAction === path.to.configurationParameterOrder(itemId);
     })
     .map((fetcher) => {
       let configurationParameterGroupId = String(

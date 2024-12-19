@@ -8,6 +8,8 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { operationToolValidator } from "../shared";
 import type {
+  configurationParameterGroupOrderValidator,
+  configurationParameterGroupValidator,
   configurationParameterOrderValidator,
   configurationParameterValidator,
   consumableValidator,
@@ -130,11 +132,30 @@ export async function getConfigurationParameters(
   itemId: string,
   companyId: string
 ) {
-  return client
-    .from("configurationParameter")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
+  const [parameters, groups] = await Promise.all([
+    client
+      .from("configurationParameter")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("configurationParameterGroup")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+  ]);
+
+  if (parameters.error) {
+    console.error(parameters.error);
+    return { groups: [], parameters: [] };
+  }
+
+  if (groups.error) {
+    console.error(groups.error);
+    return { groups: [], parameters: [] };
+  }
+
+  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
 }
 
 export async function getConsumable(
@@ -1009,6 +1030,16 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
+export async function updateConfigurationParameterGroupOrder(
+  client: SupabaseClient<Database>,
+  data: z.infer<typeof configurationParameterGroupOrderValidator>
+) {
+  return client
+    .from("configurationParameterGroup")
+    .update(sanitize(data))
+    .eq("id", data.id);
+}
+
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -1093,11 +1124,82 @@ export async function upsertConfigurationParameter(
       .eq("id", configurationParameter.id);
   }
 
+  let ungroupedGroupId: string | null = null;
+  const existingGroups = await client
+    .from("configurationParameterGroup")
+    .select("id, isUngrouped, sortOrder")
+    .eq("itemId", data.itemId);
+
+  const ungroupedGroup = existingGroups.data?.find(
+    (group) => group.isUngrouped
+  );
+
+  if (ungroupedGroup) {
+    ungroupedGroupId = ungroupedGroup.id;
+  } else {
+    const maxSortOrder =
+      existingGroups.data?.reduce(
+        (max, group) => Math.max(max, group.sortOrder ?? 1),
+        1
+      ) ?? 0;
+    const ungroupedGroupInsert = await client
+      .from("configurationParameterGroup")
+      .insert({
+        itemId: data.itemId,
+        name: "Ungrouped",
+        isUngrouped: true,
+        sortOrder: maxSortOrder + 1,
+        companyId: data.companyId,
+      })
+      .select("id")
+      .single();
+    if (ungroupedGroupInsert.error) return ungroupedGroupInsert;
+    ungroupedGroupId = ungroupedGroupInsert.data.id;
+  }
+
   return client.from("configurationParameter").insert({
     ...data,
     key: data.key ?? "",
     createdBy: userId,
-    configurationParameterGroupId: data.configurationParameterGroupId,
+    configurationParameterGroupId: ungroupedGroupId,
+  });
+}
+
+export async function upsertConfigurationParameterGroup(
+  client: SupabaseClient<Database>,
+  configurationParameterGroup: z.infer<
+    typeof configurationParameterGroupValidator
+  > & {
+    companyId: string;
+    itemId: string;
+  }
+) {
+  const { itemId, ...data } = configurationParameterGroup;
+  if (configurationParameterGroup.id) {
+    return client
+      .from("configurationParameterGroup")
+      .update({
+        name: data.name,
+      })
+      .eq("id", configurationParameterGroup.id);
+  }
+
+  const existingGroups = await client
+    .from("configurationParameterGroup")
+    .select("id, isUngrouped, sortOrder")
+    .eq("itemId", itemId);
+
+  const maxSortOrder =
+    existingGroups.data?.reduce(
+      (max, group) => Math.max(max, group.sortOrder ?? 1),
+      1
+    ) ?? 0;
+
+  return client.from("configurationParameterGroup").insert({
+    ...data,
+    itemId,
+    name: data.name,
+    sortOrder: maxSortOrder + 1,
   });
 }
 

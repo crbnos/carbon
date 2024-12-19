@@ -57,9 +57,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     partManufacturing: partManufacturing.data,
-    configurationParameters: partManufacturing.data.requiresConfiguration
+    configurationParametersAndGroups: partManufacturing.data
+      .requiresConfiguration
       ? getConfigurationParameters(client, itemId, companyId)
-      : Promise.resolve({ data: [], error: null }),
+      : Promise.resolve({ groups: [], parameters: [] }),
   });
 }
 
@@ -107,7 +108,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
-  const { partManufacturing, configurationParameters } =
+  const { partManufacturing, configurationParametersAndGroups } =
     useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -145,11 +146,12 @@ export default function MakeMethodRoute() {
             </Card>
           }
         >
-          <Await resolve={configurationParameters}>
-            {(resolvedParameters) => (
+          <Await resolve={configurationParametersAndGroups}>
+            {(resolvedParametersAndGroups) => (
               <ConfigurationParametersForm
                 key={`options:${itemId}`}
-                parameters={resolvedParameters.data ?? []}
+                parameters={resolvedParametersAndGroups.parameters}
+                groups={resolvedParametersAndGroups.groups}
               />
             )}
           </Await>

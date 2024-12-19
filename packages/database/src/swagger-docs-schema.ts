@@ -9178,6 +9178,9 @@ export default {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.isUngrouped",
+          },
+          {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
           },
           {
@@ -9252,6 +9255,9 @@ export default {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.isUngrouped",
+          },
+          {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
           },
           {
@@ -9278,6 +9284,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationParameterGroup.isUngrouped",
           },
           {
             $ref: "#/parameters/rowFilter.configurationParameterGroup.companyId",
@@ -45339,7 +45348,14 @@ export default {
       type: "object",
     },
     configurationParameterGroup: {
-      required: ["id", "itemId", "name", "sortOrder", "companyId"],
+      required: [
+        "id",
+        "itemId",
+        "name",
+        "sortOrder",
+        "isUngrouped",
+        "companyId",
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -45361,6 +45377,11 @@ export default {
           default: 1,
           format: "double precision",
           type: "number",
+        },
+        isUngrouped: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
         companyId: {
           description:
@@ -64540,6 +64561,13 @@ export default {
       name: "sortOrder",
       required: false,
       format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationParameterGroup.isUngrouped": {
+      name: "isUngrouped",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
