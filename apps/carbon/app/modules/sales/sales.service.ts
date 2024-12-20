@@ -596,14 +596,6 @@ export async function getQuoteCustomerDetails(
     .single();
 }
 
-export async function getQuoteDocuments(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  quoteId: string
-) {
-  return client.storage.from("private").list(`${companyId}/quote/${quoteId}`);
-}
-
 export async function getQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string

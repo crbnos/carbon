@@ -313,7 +313,7 @@ const QuoteBillOfProcess = ({
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/quotes/${selectedItemId}/${nanoid()}.${fileType}`;
+    const fileName = `${companyId}/opportunity-line/${selectedItemId}/${nanoid()}.${fileType}`;
     const result = await carbon?.storage
       .from("private")
       .upload(fileName, file, { upsert: true });
