@@ -2,19 +2,11 @@ import { Badge, MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import {
-  LuBrain,
-  LuClock,
-  LuPencil,
-  LuTrash,
-  LuTrendingUp,
-  LuUsers,
-} from "react-icons/lu";
+import { LuBrain, LuClock, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
 import { EmployeeAvatarGroup, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Abilities, AbilityDatum } from "../../types";
-import AbilityChart from "./AbilityChart";
 
 type AbilitiesTableProps = {
   data: Abilities;
@@ -75,22 +67,6 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         cell: ({ row }) => `${row.original.weeks} weeks`,
         meta: {
           icon: <LuClock />,
-        },
-      },
-      {
-        header: "Efficiency Curve",
-        size: 200,
-        cell: ({ row }) => (
-          <AbilityChart
-            parentHeight={33}
-            parentWidth={200}
-            data={row.original.curve.data}
-            shadowWeeks={row.original.shadowWeeks}
-            margin={{ top: 0, right: 0, bottom: 0, left: 2 }}
-          />
-        ),
-        meta: {
-          icon: <LuTrendingUp />,
         },
       },
     ];
