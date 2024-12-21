@@ -18,7 +18,6 @@ import type { ClientActionFunctionArgs } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { ParentSize } from "@visx/responsive";
 import { useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import {
@@ -30,7 +29,6 @@ import {
 import { Hidden, Input, Submit } from "~/components/Form";
 import type { AbilityDatum } from "~/modules/resources";
 import {
-  AbilityChart,
   AbilityEmployeesTable,
   abilityCurveValidator,
   abilityNameValidator,
@@ -286,19 +284,6 @@ export default function AbilitiesRoute() {
             </ValidatedForm>
           </HStack>
         </HStack>
-        <div className="w-full h-[33vh]">
-          <ParentSize>
-            {({ height, width }) => (
-              <AbilityChart
-                parentHeight={height}
-                parentWidth={width}
-                data={data}
-                shadowWeeks={controlledShadowWeeks}
-                onDataChange={setData}
-              />
-            )}
-          </ParentSize>
-        </div>
       </div>
       <AbilityEmployeesTable
         employees={ability.employeeAbility ?? []}
