@@ -41,13 +41,9 @@ import { useEffect, useRef, useState } from "react";
 import {
   LuFolderOpen,
   LuGripVertical,
-  LuHash,
   LuKeySquare,
-  LuList,
   LuMoreVertical,
   LuPlusCircle,
-  LuToggleLeft,
-  LuType,
 } from "react-icons/lu";
 import { EmployeeAvatar } from "~/components";
 import type { ConfigurationParameter } from "~/modules/items";
@@ -86,6 +82,7 @@ import {
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { createPortal, flushSync } from "react-dom";
+import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 
 type ConfigurationParameterGroup = {
@@ -231,7 +228,7 @@ export default function ConfigurationParametersForm({
                       options={configurationParameterDataTypes.map((type) => ({
                         label: (
                           <HStack className="w-full">
-                            <ConfigurationParameterDataTypeIcon
+                            <ConfiguratorDataTypeIcon
                               type={type}
                               className="mr-2"
                             />
@@ -884,10 +881,7 @@ function ConfigurableParameter({
                 options={configurationParameterDataTypes.map((type) => ({
                   label: (
                     <HStack className="w-full">
-                      <ConfigurationParameterDataTypeIcon
-                        type={type}
-                        className="mr-2"
-                      />
+                      <ConfiguratorDataTypeIcon type={type} className="mr-2" />
                       {capitalize(type)}
                     </HStack>
                   ),
@@ -929,7 +923,7 @@ function ConfigurableParameter({
             />
             <HStack spacing={4} className="flex-1">
               <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-                <ConfigurationParameterDataTypeIcon
+                <ConfiguratorDataTypeIcon
                   type={parameter.dataType}
                   className="w-4 h-4"
                 />
@@ -991,29 +985,6 @@ function ConfigurableParameter({
       )}
     </div>
   );
-}
-
-function ConfigurationParameterDataTypeIcon({
-  type,
-  className,
-}: {
-  type: (typeof configurationParameterDataTypes)[number];
-  className?: string;
-}) {
-  switch (type) {
-    case "numeric":
-      return <LuHash className={cn("w-4 h-4 text-blue-600", className)} />;
-    case "text":
-      return <LuType className={cn("w-4 h-4 text-green-600", className)} />;
-    case "boolean":
-      return (
-        <LuToggleLeft className={cn("w-4 h-4 text-purple-600", className)} />
-      );
-    case "list":
-      return <LuList className={cn("w-4 h-4 text-orange-600", className)} />;
-    default:
-      return null;
-  }
 }
 
 function useConfigurationParameters(parameter?: ConfigurationParameter) {

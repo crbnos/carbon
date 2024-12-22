@@ -37,6 +37,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LuAlertTriangle,
   LuChevronDown,
+  LuFunctionSquare,
   LuHammer,
   LuMoreVertical,
   LuPlusCircle,
@@ -61,6 +62,9 @@ import {
   WorkCenter,
 } from "~/components/Form";
 
+import { flushSync } from "react-dom";
+import { Configurator } from "~/components/Configurator";
+import type { Configuration } from "~/components/Configurator/types";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
@@ -77,6 +81,7 @@ import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
+import type { ConfigurationParameter } from "../../types";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -91,8 +96,10 @@ type ItemWithData = Item & {
 };
 
 type BillOfProcessProps = {
+  configurable?: boolean;
   makeMethodId: string;
   operations: OperationWithTools[];
+  parameters?: ConfigurationParameter[];
 };
 
 type PendingWorkInstructions = {
@@ -111,48 +118,6 @@ type TemporaryItems = {
   [key: string]: Operation;
 };
 
-function makeItems(operations: Operation[]): ItemWithData[] {
-  return operations.map(makeItem);
-}
-
-function makeItem(operation: Operation): ItemWithData {
-  return {
-    id: operation.id!,
-    title: <h3 className="font-semibold truncate">{operation.description}</h3>,
-    checked: false,
-    order: operation.operationOrder,
-    details: (
-      <HStack spacing={1}>
-        {operation.operationType === "Outside" ? (
-          <Badge>Outside</Badge>
-        ) : (
-          <>
-            {(operation?.setupTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                {operation.setupTime} {operation.setupUnit}
-              </Badge>
-            )}
-            {(operation?.laborTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                {operation.laborTime} {operation.laborUnit}
-              </Badge>
-            )}
-            {(operation?.machineTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                {operation.machineTime} {operation.machineUnit}
-              </Badge>
-            )}
-          </>
-        )}
-      </HStack>
-    ),
-    data: operation,
-  };
-}
-
 const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   description: "",
   laborTime: 0,
@@ -168,35 +133,11 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   workInstruction: {},
 };
 
-const usePendingOperations = () => {
-  type PendingItem = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-
-  return useFetchers()
-    .filter((fetcher): fetcher is PendingItem => {
-      return (
-        (fetcher.formAction === path.to.newMethodOperation ||
-          fetcher.formAction?.includes("/items/methods/operation/")) ??
-        false
-      );
-    })
-    .reduce<z.infer<typeof methodOperationValidator>[]>((acc, fetcher) => {
-      const formData = fetcher.formData;
-      const operation = methodOperationValidator.safeParse(
-        Object.fromEntries(formData)
-      );
-
-      if (operation.success) {
-        return [...acc, operation.data];
-      }
-      return acc;
-    }, []);
-};
-
 const BillOfProcess = ({
+  configurable = false,
   makeMethodId,
   operations: initialOperations,
+  parameters,
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
@@ -616,6 +557,11 @@ const BillOfProcess = ({
     );
   };
 
+  const configuratorDisclosure = useDisclosure();
+  const [configuration, setConfiguration] = useState<Configuration | null>(
+    null
+  );
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -624,15 +570,37 @@ const BillOfProcess = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "parts") || selectedItemId !== null
-            }
-            onClick={onAddItem}
-          >
-            Add Operation
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "parts") || selectedItemId !== null
+              }
+              onClick={onAddItem}
+            >
+              Add Operation
+            </Button>
+            {configurable && (
+              <IconButton
+                icon={<LuFunctionSquare />}
+                aria-label="Configure"
+                variant="ghost"
+                onClick={() => {
+                  flushSync(() => {
+                    setConfiguration({
+                      label: "Bill of Process",
+                      code: undefined,
+                      returnType: {
+                        type: "list",
+                        listOptions: operations.map((op) => op.description),
+                      },
+                    });
+                  });
+                  configuratorDisclosure.onOpen();
+                }}
+              />
+            )}
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
@@ -644,6 +612,15 @@ const BillOfProcess = ({
           renderItem={renderListItem}
         />
       </CardContent>
+      {configuratorDisclosure.isOpen && configuration && (
+        <Configurator
+          configuration={configuration}
+          open={configuratorDisclosure.isOpen}
+          parameters={parameters ?? []}
+          onClose={configuratorDisclosure.onClose}
+          onSave={() => {}}
+        />
+      )}
     </Card>
   );
 };
@@ -1352,4 +1329,72 @@ function ToolsForm({
       )}
     </div>
   );
+}
+
+function makeItems(operations: Operation[]): ItemWithData[] {
+  return operations.map(makeItem);
+}
+
+function makeItem(operation: Operation): ItemWithData {
+  return {
+    id: operation.id!,
+    title: <h3 className="font-semibold truncate">{operation.description}</h3>,
+    checked: false,
+    order: operation.operationOrder,
+    details: (
+      <HStack spacing={1}>
+        {operation.operationType === "Outside" ? (
+          <Badge>Outside</Badge>
+        ) : (
+          <>
+            {(operation?.setupTime ?? 0) > 0 && (
+              <Badge variant="secondary">
+                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
+                {operation.setupTime} {operation.setupUnit}
+              </Badge>
+            )}
+            {(operation?.laborTime ?? 0) > 0 && (
+              <Badge variant="secondary">
+                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
+                {operation.laborTime} {operation.laborUnit}
+              </Badge>
+            )}
+            {(operation?.machineTime ?? 0) > 0 && (
+              <Badge variant="secondary">
+                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
+                {operation.machineTime} {operation.machineUnit}
+              </Badge>
+            )}
+          </>
+        )}
+      </HStack>
+    ),
+    data: operation,
+  };
+}
+
+function usePendingOperations() {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        (fetcher.formAction === path.to.newMethodOperation ||
+          fetcher.formAction?.includes("/items/methods/operation/")) ??
+        false
+      );
+    })
+    .reduce<z.infer<typeof methodOperationValidator>[]>((acc, fetcher) => {
+      const formData = fetcher.formData;
+      const operation = methodOperationValidator.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (operation.success) {
+        return [...acc, operation.data];
+      }
+      return acc;
+    }, []);
 }
