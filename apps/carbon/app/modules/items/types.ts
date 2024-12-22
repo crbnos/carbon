@@ -30,7 +30,11 @@ import type {
 } from "./items.service";
 
 export type ConfigurationParameter = NonNullable<
-  Awaited<ReturnType<typeof getConfigurationParameters>>["data"]
+  Awaited<ReturnType<typeof getConfigurationParameters>>["parameters"]
+>[number];
+
+export type ConfigurationParameterGroup = NonNullable<
+  Awaited<ReturnType<typeof getConfigurationParameters>>["groups"]
 >[number];
 
 export type Consumable = NonNullable<

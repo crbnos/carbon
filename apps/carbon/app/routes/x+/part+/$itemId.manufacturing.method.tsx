@@ -2,17 +2,10 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  VStack,
-} from "@carbon/react";
-import { Await, useLoaderData, useParams } from "@remix-run/react";
+import { VStack } from "@carbon/react";
+import { useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { defer, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
@@ -55,12 +48,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return defer({
+  return json({
     partManufacturing: partManufacturing.data,
     configurationParametersAndGroups: partManufacturing.data
       .requiresConfiguration
-      ? getConfigurationParameters(client, itemId, companyId)
-      : Promise.resolve({ groups: [], parameters: [] }),
+      ? await getConfigurationParameters(client, itemId, companyId)
+      : { groups: [], parameters: [] },
   });
 }
 
@@ -136,41 +129,30 @@ export default function MakeMethodRoute() {
         initialValues={manufacturingInitialValues}
       />
       {partManufacturing.requiresConfiguration && (
-        <Suspense
-          fallback={
-            <Card>
-              <CardHeader>
-                <CardTitle>Parameters</CardTitle>
-              </CardHeader>
-              <CardContent className="min-h-[200px]"></CardContent>
-            </Card>
-          }
-        >
-          <Await resolve={configurationParametersAndGroups}>
-            {(resolvedParametersAndGroups) => (
-              <ConfigurationParametersForm
-                key={`options:${itemId}`}
-                parameters={resolvedParametersAndGroups.parameters}
-                groups={resolvedParametersAndGroups.groups}
-              />
-            )}
-          </Await>
-        </Suspense>
+        <ConfigurationParametersForm
+          key={`options:${itemId}`}
+          parameters={configurationParametersAndGroups.parameters}
+          groups={configurationParametersAndGroups.groups}
+        />
       )}
 
       <BillOfProcess
         key={`bop:${itemId}`}
+        configurable={partManufacturing.requiresConfiguration}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
+        parameters={configurationParametersAndGroups.parameters}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
+        configurable={partManufacturing.requiresConfiguration}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
+        parameters={configurationParametersAndGroups.parameters}
       />
     </VStack>
   );

@@ -11,7 +11,9 @@ import {
   CardTitle,
   cn,
   HStack,
+  IconButton,
   toast,
+  useDisclosure,
   useThrottle,
   VStack,
 } from "@carbon/react";
@@ -19,9 +21,11 @@ import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { flushSync } from "react-dom";
+import { LuFunctionSquare, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import type { Configuration } from "~/components/Configurator/types";
 import {
   DefaultMethodType,
   Hidden,
@@ -39,10 +43,12 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 
+import { Configurator } from "~/components/Configurator";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
+import type { ConfigurationParameter } from "../../types";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -55,9 +61,11 @@ type ItemWithData = SortableItem & {
 };
 
 type BillOfMaterialProps = {
+  configurable?: boolean;
   makeMethodId: string;
   materials: Material[];
   operations: Operation[];
+  parameters?: ConfigurationParameter[];
 };
 
 type OrderState = {
@@ -72,57 +80,6 @@ type TemporaryItems = {
   [key: string]: Material;
 };
 
-function makeItems(
-  materials: Material[],
-  orderState: OrderState,
-  checkedState: CheckedState
-): ItemWithData[] {
-  return materials.map((material) => {
-    const order = material.id
-      ? orderState[material.id] ?? material.order
-      : material.order;
-    const checked = material.id ? checkedState[material.id] ?? false : false;
-    return makeItem(material, order, checked);
-  });
-}
-
-function makeItem(
-  material: Material,
-  order: number,
-  checked: boolean
-): ItemWithData {
-  return {
-    id: material.id!,
-    title: (
-      <VStack spacing={0} className="py-2.5">
-        <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
-        {material?.description && (
-          <span className="text-xs text-muted-foreground">
-            {material.description}{" "}
-          </span>
-        )}
-      </VStack>
-    ),
-    checked,
-    details: (
-      <HStack spacing={2}>
-        <Badge variant="secondary">
-          <MethodIcon type={material.methodType} />
-        </Badge>
-
-        <Badge variant="secondary">{material.quantity}</Badge>
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={material.itemType} />
-        </Badge>
-      </HStack>
-    ),
-    data: {
-      ...material,
-      order,
-    },
-  };
-}
-
 const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   description: string;
 } = {
@@ -135,36 +92,12 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
   unitOfMeasureCode: "EA",
 };
 
-const usePendingMaterials = () => {
-  type PendingItem = ReturnType<typeof useFetchers>[number] & {
-    formData: FormData;
-  };
-
-  return useFetchers()
-    .filter((fetcher): fetcher is PendingItem => {
-      return (
-        (fetcher.formAction === path.to.newMethodMaterial ||
-          fetcher.formAction?.includes("/items/methods/material/")) ??
-        false
-      );
-    })
-    .reduce<z.infer<typeof methodMaterialValidator>[]>((acc, fetcher) => {
-      const formData = fetcher.formData;
-      const material = methodMaterialValidator.safeParse(
-        Object.fromEntries(formData)
-      );
-
-      if (material.success) {
-        return [...acc, material.data];
-      }
-      return acc;
-    }, []);
-};
-
 const BillOfMaterial = ({
+  configurable = false,
   makeMethodId,
   materials: initialMaterials,
   operations,
+  parameters,
 }: BillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
@@ -209,7 +142,7 @@ const BillOfMaterial = ({
     materialsById.set(id, material);
   });
 
-  const items = makeItems(
+  const materials = makeItems(
     Array.from(materialsById.values()),
     orderState,
     checkedState
@@ -229,8 +162,8 @@ const BillOfMaterial = ({
     setSelectedItemId(temporaryId);
 
     let newOrder = 1;
-    if (items.length) {
-      newOrder = Math.max(...items.map((item) => item.data.order)) + 1;
+    if (materials.length) {
+      newOrder = Math.max(...materials.map((item) => item.data.order)) + 1;
     }
 
     setTemporaryItems((prev) => ({
@@ -313,16 +246,16 @@ const BillOfMaterial = ({
       const newState = { ...prev };
       let changed = false;
 
-      items.forEach((item) => {
-        if (item.checked) {
-          newState[item.id] = false;
+      materials.forEach((material) => {
+        if (material.checked) {
+          newState[material.id] = false;
           changed = true;
         }
       });
 
       return changed ? newState : prev;
     });
-  }, [items]);
+  }, [materials]);
 
   const renderListItem = ({
     item,
@@ -453,6 +386,11 @@ const BillOfMaterial = ({
     );
   };
 
+  const configuratorDisclosure = useDisclosure();
+  const [configuration, setConfiguration] = useState<Configuration | null>(
+    null
+  );
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -461,26 +399,59 @@ const BillOfMaterial = ({
         </CardHeader>
 
         <CardAction>
-          <Button
-            variant="secondary"
-            isDisabled={
-              !permissions.can("update", "parts") || selectedItemId !== null
-            }
-            onClick={onAddItem}
-          >
-            Add Material
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              isDisabled={
+                !permissions.can("update", "parts") || selectedItemId !== null
+              }
+              onClick={onAddItem}
+            >
+              Add Material
+            </Button>
+            {configurable && (
+              <IconButton
+                icon={<LuFunctionSquare />}
+                aria-label="Configure"
+                variant="ghost"
+                onClick={() => {
+                  flushSync(() => {
+                    setConfiguration({
+                      label: "Bill of Material",
+                      code: undefined,
+                      returnType: {
+                        type: "list",
+                        listOptions: materials.map(
+                          (m) => m.data.itemReadableId!
+                        ),
+                      },
+                    });
+                  });
+                  configuratorDisclosure.onOpen();
+                }}
+              />
+            )}
+          </div>
         </CardAction>
       </HStack>
       <CardContent>
         <SortableList
-          items={items}
+          items={materials}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
         />
       </CardContent>
+      {configuratorDisclosure.isOpen && configuration && (
+        <Configurator
+          configuration={configuration}
+          open={configuratorDisclosure.isOpen}
+          parameters={parameters ?? []}
+          onClose={configuratorDisclosure.onClose}
+          onSave={() => {}}
+        />
+      )}
     </Card>
   );
 };
@@ -695,3 +666,80 @@ function MaterialForm({
     </ValidatedForm>
   );
 }
+
+function makeItems(
+  materials: Material[],
+  orderState: OrderState,
+  checkedState: CheckedState
+): ItemWithData[] {
+  return materials.map((material) => {
+    const order = material.id
+      ? orderState[material.id] ?? material.order
+      : material.order;
+    const checked = material.id ? checkedState[material.id] ?? false : false;
+    return makeItem(material, order, checked);
+  });
+}
+
+function makeItem(
+  material: Material,
+  order: number,
+  checked: boolean
+): ItemWithData {
+  return {
+    id: material.id!,
+    title: (
+      <VStack spacing={0} className="py-2.5">
+        <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+        {material?.description && (
+          <span className="text-xs text-muted-foreground">
+            {material.description}{" "}
+          </span>
+        )}
+      </VStack>
+    ),
+    checked,
+    details: (
+      <HStack spacing={2}>
+        <Badge variant="secondary">
+          <MethodIcon type={material.methodType} />
+        </Badge>
+
+        <Badge variant="secondary">{material.quantity}</Badge>
+        <Badge variant="secondary">
+          <MethodItemTypeIcon type={material.itemType} />
+        </Badge>
+      </HStack>
+    ),
+    data: {
+      ...material,
+      order,
+    },
+  };
+}
+
+const usePendingMaterials = () => {
+  type PendingItem = ReturnType<typeof useFetchers>[number] & {
+    formData: FormData;
+  };
+
+  return useFetchers()
+    .filter((fetcher): fetcher is PendingItem => {
+      return (
+        (fetcher.formAction === path.to.newMethodMaterial ||
+          fetcher.formAction?.includes("/items/methods/material/")) ??
+        false
+      );
+    })
+    .reduce<z.infer<typeof methodMaterialValidator>[]>((acc, fetcher) => {
+      const formData = fetcher.formData;
+      const material = methodMaterialValidator.safeParse(
+        Object.fromEntries(formData)
+      );
+
+      if (material.success) {
+        return [...acc, material.data];
+      }
+      return acc;
+    }, []);
+};
