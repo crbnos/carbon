@@ -237,6 +237,7 @@ export async function getIntegration(
   return client
     .from("companyIntegration")
     .select("*")
+    .eq("active", true)
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
