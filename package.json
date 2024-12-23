@@ -46,7 +46,7 @@
     "db:types": "npm run db:types -w @carbon/database",
     "deploy": "turbo run deploy",
     "dev": "turbo run dev --filter=./apps/carbon --filter=./packages/",
-    "dev:developers": "turbo run dev --filter=./apps/developers --filter=./packages/",
+    "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
     "dev:docs": "turbo run dev --filter=./apps/docs",
     "dev:mes": "turbo run dev --filter=./apps/mes",
     "dev:packages": "turbo run dev --filter=./packages/*",

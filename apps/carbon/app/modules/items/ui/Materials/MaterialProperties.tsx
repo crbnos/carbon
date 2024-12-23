@@ -18,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Await, useFetcher, useParams } from "@remix-run/react";
 import { Suspense, useCallback, useEffect } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
@@ -158,6 +158,24 @@ const MaterialProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>Copy link to material</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label="Copy"
+                  size="sm"
+                  className="p-1"
+                  onClick={() =>
+                    copyToClipboard(routeData?.materialSummary?.itemId ?? "")
+                  }
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Copy material unique identifier</span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

@@ -8,8 +8,10 @@ export type UnitHintProps = Omit<SelectProps, "onChange" | "options"> & {
   defaultUnit?: StandardFactor;
   label?: string;
   helperText?: string;
+  isConfigured?: boolean;
   value: string;
   onChange: (newValue: string) => void;
+  onConfigure?: () => void;
 };
 
 export const getUnitHint = (u?: string) =>
@@ -20,7 +22,9 @@ const UnitHint = ({
   name,
   label,
   helperText,
+  isConfigured,
   value = getUnitHint(defaultUnit),
+  onConfigure,
   ...props
 }: UnitHintProps) => {
   const onChange = (value: string) => {
@@ -29,7 +33,15 @@ const UnitHint = ({
 
   return (
     <FormControl className={props.className}>
-      {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+      {label && (
+        <FormLabel
+          htmlFor={name}
+          isConfigured={isConfigured}
+          onConfigure={onConfigure}
+        >
+          {label}
+        </FormLabel>
+      )}
 
       <Select
         {...props}

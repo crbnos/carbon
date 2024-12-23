@@ -2,9 +2,15 @@ export type Configuration = {
   label: string;
   code?: string;
   returnType: ReturnType;
+  defaultValue?: string | number | boolean | string[] | null;
 };
 
-export type ConfiguratorDataType = "boolean" | "list" | "numeric" | "text";
+export type ConfiguratorDataType =
+  | "boolean"
+  | "list"
+  | "numeric"
+  | "text"
+  | "enum";
 
 export interface ListTypeConfig {
   options: string[];
@@ -24,7 +30,8 @@ export type ParameterInput = {
 };
 
 export type ReturnType = {
-  listOptions?: string[];
+  helperText?: string;
+  listOptions?: string[] | readonly string[];
   type: ConfiguratorDataType;
 };
 
@@ -37,4 +44,5 @@ export const typeMap: TypeMap = {
   list: "string[]",
   numeric: "number",
   text: "string",
+  enum: "string",
 };

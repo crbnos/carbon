@@ -7,7 +7,10 @@ import type { getProcessesList } from "~/modules/resources";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
 
-type ProcessSelectProps = Omit<ComboboxProps, "options">;
+type ProcessSelectProps = Omit<ComboboxProps, "options"> & {
+  isConfigured?: boolean;
+  onConfigure?: () => void;
+};
 
 const Process = (props: ProcessSelectProps) => {
   const newProcessModal = useDisclosure();

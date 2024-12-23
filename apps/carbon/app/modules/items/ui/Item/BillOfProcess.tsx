@@ -75,6 +75,7 @@ import {
   methodOperationOrders,
   operationToolValidator,
   operationTypes,
+  standardFactorType,
 } from "~/modules/shared";
 import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
@@ -139,6 +140,7 @@ const BillOfProcess = ({
   operations: initialOperations,
   parameters,
 }: BillOfProcessProps) => {
+  console.log({ configurable });
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
@@ -384,11 +386,13 @@ const BillOfProcess = ({
               }}
             >
               <OperationForm
+                configurable={configurable}
                 item={item}
                 workInstruction={workInstructions[item.id] ?? {}}
-                setWorkInstructions={setWorkInstructions}
+                onConfigure={onConfigure}
                 setSelectedItemId={setSelectedItemId}
                 setTemporaryItems={setTemporaryItems}
+                setWorkInstructions={setWorkInstructions}
               />
             </motion.div>
           </div>
@@ -562,6 +566,13 @@ const BillOfProcess = ({
     null
   );
 
+  const onConfigure = (configuration: Configuration) => {
+    flushSync(() => {
+      setConfiguration(configuration);
+    });
+    configuratorDisclosure.onOpen();
+  };
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -585,19 +596,19 @@ const BillOfProcess = ({
                 icon={<LuFunctionSquare />}
                 aria-label="Configure"
                 variant="ghost"
-                onClick={() => {
-                  flushSync(() => {
-                    setConfiguration({
-                      label: "Bill of Process",
-                      code: undefined,
-                      returnType: {
-                        type: "list",
-                        listOptions: operations.map((op) => op.description),
-                      },
-                    });
-                  });
-                  configuratorDisclosure.onOpen();
-                }}
+                onClick={
+                  configurable
+                    ? () =>
+                        onConfigure({
+                          label: "Bill of Process",
+                          code: undefined,
+                          returnType: {
+                            type: "list",
+                            listOptions: operations.map((op) => op.description),
+                          },
+                        })
+                    : undefined
+                }
               />
             )}
           </div>
@@ -632,17 +643,21 @@ function isTemporaryId(id: string) {
 }
 
 type OperationFormProps = {
+  configurable: boolean;
   item: ItemWithData;
   workInstruction: JSONContent;
-  setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
+  onConfigure: (configuration: Configuration) => void;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
+  setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
 };
 
 function OperationForm({
+  configurable,
   item,
   setSelectedItemId,
   workInstruction,
+  onConfigure,
   setWorkInstructions,
   setTemporaryItems,
 }: OperationFormProps) {
@@ -706,6 +721,7 @@ function OperationForm({
     machineUnit: string;
     machineUnitHint: string;
     operationType: string;
+    operationOrder: string;
     processId: string;
     setupTime: number;
     setupUnit: string;
@@ -718,6 +734,7 @@ function OperationForm({
     machineTime: item.data.machineTime ?? 0,
     machineUnit: item.data.machineUnit ?? "Hours/Piece",
     machineUnitHint: getUnitHint(item.data.machineUnit),
+    operationOrder: item.data.operationOrder ?? "After Previous",
     operationType: item.data.operationType ?? "Inside",
     processId: item.data.processId ?? "",
     setupTime: item.data.setupTime ?? 0,
@@ -791,6 +808,23 @@ function OperationForm({
         <Process
           name="processId"
           label="Process"
+          isConfigured={false}
+          onConfigure={
+            configurable
+              ? () => {
+                  onConfigure({
+                    label: "Process",
+                    code: undefined,
+                    defaultValue: processData.processId,
+                    returnType: {
+                      type: "text",
+                      helperText:
+                        "the unique identifier for the process. you can get this from the URL when editing a process",
+                    },
+                  });
+                }
+              : undefined
+          }
           onChange={(value) => {
             onProcessChange(value?.value as string);
           }}
@@ -840,6 +874,22 @@ function OperationForm({
               operationType: value?.value as string,
             }));
           }}
+          isConfigured
+          onConfigure={
+            configurable
+              ? () => {
+                  onConfigure({
+                    label: "Operation Type",
+                    code: undefined,
+                    defaultValue: processData.operationType,
+                    returnType: {
+                      type: "enum",
+                      listOptions: ["Inside", "Outside"],
+                    },
+                  });
+                }
+              : undefined
+          }
         />
 
         <InputControlled
@@ -850,6 +900,21 @@ function OperationForm({
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
           className="col-span-2"
+          isConfigured={false}
+          onConfigure={
+            configurable
+              ? () => {
+                  onConfigure({
+                    label: "Description",
+                    code: undefined,
+                    defaultValue: processData.description,
+                    returnType: {
+                      type: "text",
+                    },
+                  });
+                }
+              : undefined
+          }
         />
 
         <Select
@@ -866,6 +931,22 @@ function OperationForm({
               operationOrder: value?.value as string,
             }));
           }}
+          isConfigured={false}
+          onConfigure={
+            configurable
+              ? () => {
+                  onConfigure({
+                    label: "Operation Order",
+                    code: undefined,
+                    defaultValue: processData.operationOrder,
+                    returnType: {
+                      type: "enum",
+                      listOptions: ["After Previous", "With Previous"],
+                    },
+                  });
+                }
+              : undefined
+          }
         />
       </div>
       {processData.operationType === "Inside" && (
@@ -918,6 +999,22 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Setup Unit",
+                          code: undefined,
+                          defaultValue: processData.setupUnitHint,
+                          returnType: {
+                            type: "enum",
+                            listOptions: ["Fixed", "Per Unit"],
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
               <NumberControlled
                 name="setupTime"
@@ -929,6 +1026,21 @@ function OperationForm({
                     ...d,
                     setupTime: newValue,
                   }))
+                }
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Setup Time",
+                          code: undefined,
+                          defaultValue: processData.setupTime,
+                          returnType: {
+                            type: "numeric",
+                          },
+                        });
+                      }
+                    : undefined
                 }
               />
               <StandardFactor
@@ -942,6 +1054,22 @@ function OperationForm({
                     setupUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Setup Unit",
+                          code: undefined,
+                          defaultValue: processData.setupUnit,
+                          returnType: {
+                            type: "enum",
+                            listOptions: standardFactorType,
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -994,6 +1122,22 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Labor Unit",
+                          code: undefined,
+                          defaultValue: processData.laborUnitHint,
+                          returnType: {
+                            type: "enum",
+                            listOptions: ["Fixed", "Per Unit"],
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
               <NumberControlled
                 name="laborTime"
@@ -1005,6 +1149,21 @@ function OperationForm({
                     ...d,
                     laborTime: newValue,
                   }))
+                }
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Labor Time",
+                          code: undefined,
+                          defaultValue: processData.laborTime,
+                          returnType: {
+                            type: "numeric",
+                          },
+                        });
+                      }
+                    : undefined
                 }
               />
               <StandardFactor
@@ -1018,6 +1177,22 @@ function OperationForm({
                     laborUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Labor Unit",
+                          code: undefined,
+                          defaultValue: processData.laborUnit,
+                          returnType: {
+                            type: "enum",
+                            listOptions: standardFactorType,
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>
@@ -1071,6 +1246,22 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Machine Unit",
+                          code: undefined,
+                          defaultValue: processData.machineUnitHint,
+                          returnType: {
+                            type: "enum",
+                            listOptions: ["Fixed", "Per Unit"],
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
               <NumberControlled
                 name="machineTime"
@@ -1082,6 +1273,21 @@ function OperationForm({
                     ...d,
                     machineTime: newValue,
                   }))
+                }
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Machine Time",
+                          code: undefined,
+                          defaultValue: processData.machineTime,
+                          returnType: {
+                            type: "numeric",
+                          },
+                        });
+                      }
+                    : undefined
                 }
               />
               <StandardFactor
@@ -1095,6 +1301,22 @@ function OperationForm({
                     machineUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
+                isConfigured={false}
+                onConfigure={
+                  configurable
+                    ? () => {
+                        onConfigure({
+                          label: "Machine Unit",
+                          code: undefined,
+                          defaultValue: processData.machineUnit,
+                          returnType: {
+                            type: "enum",
+                            listOptions: standardFactorType,
+                          },
+                        });
+                      }
+                    : undefined
+                }
               />
             </div>
           </div>

@@ -270,7 +270,11 @@ const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
       {...props}
     >
       {children}
-      {icon ? icon : <RxMagnifyingGlass className="h-4 w-4 opacity-50" />}
+      {icon ? (
+        icon
+      ) : (
+        <RxMagnifyingGlass className="size-4 flex-shrink-0 opacity-50" />
+      )}
     </button>
   )
 );

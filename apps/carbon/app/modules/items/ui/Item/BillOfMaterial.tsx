@@ -44,7 +44,12 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 
 import { Configurator } from "~/components/Configurator";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import {
+  methodType,
+  type MethodItemType,
+  type MethodType,
+} from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
@@ -365,13 +370,15 @@ const BillOfMaterial = ({
                           }}
                         >
                           <MaterialForm
+                            configurable={configurable}
                             item={item}
-                            setSelectedItemId={setSelectedItemId}
                             methodOperations={operations}
-                            temporaryItems={temporaryItems}
-                            setTemporaryItems={setTemporaryItems}
                             orderState={orderState}
+                            temporaryItems={temporaryItems}
+                            onConfigure={onConfigure}
                             setOrderState={setOrderState}
+                            setSelectedItemId={setSelectedItemId}
+                            setTemporaryItems={setTemporaryItems}
                           />
                         </motion.div>
                       </motion.div>
@@ -390,6 +397,13 @@ const BillOfMaterial = ({
   const [configuration, setConfiguration] = useState<Configuration | null>(
     null
   );
+
+  const onConfigure = (configuration: Configuration) => {
+    flushSync(() => {
+      setConfiguration(configuration);
+    });
+    configuratorDisclosure.onOpen();
+  };
 
   return (
     <Card>
@@ -415,19 +429,14 @@ const BillOfMaterial = ({
                 aria-label="Configure"
                 variant="ghost"
                 onClick={() => {
-                  flushSync(() => {
-                    setConfiguration({
-                      label: "Bill of Material",
-                      code: undefined,
-                      returnType: {
-                        type: "list",
-                        listOptions: materials.map(
-                          (m) => m.data.itemReadableId!
-                        ),
-                      },
-                    });
+                  onConfigure({
+                    label: "Bill of Material",
+                    code: undefined,
+                    returnType: {
+                      type: "list",
+                      listOptions: materials.map((m) => m.data.itemReadableId!),
+                    },
                   });
-                  configuratorDisclosure.onOpen();
                 }}
               />
             )}
@@ -463,27 +472,32 @@ function isTemporaryId(id: string) {
 }
 
 function MaterialForm({
+  configurable,
   item,
-  setSelectedItemId,
   methodOperations,
-  temporaryItems,
-  setTemporaryItems,
   orderState,
+  temporaryItems,
+  onConfigure,
   setOrderState,
+  setSelectedItemId,
+  setTemporaryItems,
 }: {
+  configurable: boolean;
   item: ItemWithData;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   methodOperations: Operation[];
-  temporaryItems: TemporaryItems;
-  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
   orderState: OrderState;
+  temporaryItems: TemporaryItems;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+  setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
+  onConfigure: (configuration: Configuration) => void;
 }) {
   const { carbon } = useCarbon();
   const methodMaterialFetcher = useFetcher<{ id: string }>();
   const params = useParams();
   const { company } = useUser();
   const permissions = usePermissions();
+  const unitOfMeasures = useUnitOfMeasure();
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -572,6 +586,8 @@ function MaterialForm({
     }));
   };
 
+  console.log({ itemData });
+
   return (
     <ValidatedForm
       action={
@@ -603,9 +619,25 @@ function MaterialForm({
             includeInactive
             type={itemType}
             validItemTypes={["Consumable", "Material", "Part"]}
+            isConfigured={false}
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}
+            onConfigure={
+              configurable
+                ? () =>
+                    onConfigure({
+                      label: "Part",
+                      code: undefined,
+                      defaultValue: itemData.itemId,
+                      returnType: {
+                        type: "text",
+                        helperText:
+                          "the unique item identifier of the item (not the part number). you can get the item id from the key icon in the properties panel.",
+                      },
+                    })
+                : undefined
+            }
             onTypeChange={onTypeChange}
           />
           <InputControlled
@@ -613,6 +645,20 @@ function MaterialForm({
             label="Description"
             isReadOnly
             value={itemData.description}
+            isConfigured={false}
+            onConfigure={
+              configurable
+                ? () =>
+                    onConfigure({
+                      label: "Description",
+                      code: undefined,
+                      defaultValue: itemData.description,
+                      returnType: {
+                        type: "text",
+                      },
+                    })
+                : undefined
+            }
             onChange={(newValue) => {
               setItemData((d) => ({ ...d, description: newValue }));
             }}
@@ -631,9 +677,39 @@ function MaterialForm({
             name="methodType"
             label="Method Type"
             value={itemData.methodType}
+            isConfigured={false}
+            onConfigure={
+              configurable
+                ? () =>
+                    onConfigure({
+                      label: "Method Type",
+                      code: undefined,
+                      defaultValue: itemData.methodType,
+                      returnType: {
+                        type: "enum",
+                        listOptions: methodType,
+                      },
+                    })
+                : undefined
+            }
             replenishmentSystem="Buy and Make"
           />
-          <Number name="quantity" label="Quantity" />
+          <Number
+            name="quantity"
+            label="Quantity"
+            isConfigured={false}
+            onConfigure={
+              configurable
+                ? () =>
+                    onConfigure({
+                      label: "Quantity",
+                      code: undefined,
+                      defaultValue: itemData.quantity,
+                      returnType: { type: "numeric" },
+                    })
+                : undefined
+            }
+          />
           <UnitOfMeasure
             name="unitOfMeasureCode"
             value={itemData.unitOfMeasureCode}
@@ -642,6 +718,21 @@ function MaterialForm({
                 ...d,
                 unitOfMeasureCode: newValue?.value ?? "EA",
               }))
+            }
+            isConfigured={false}
+            onConfigure={
+              configurable
+                ? () =>
+                    onConfigure({
+                      label: "Unit of Measure",
+                      code: undefined,
+                      defaultValue: itemData.unitOfMeasureCode,
+                      returnType: {
+                        type: "enum",
+                        listOptions: unitOfMeasures.map((u) => u.value),
+                      },
+                    })
+                : undefined
             }
           />
         </div>

@@ -4,7 +4,7 @@ import type { OnMount } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
 import type * as Monaco from "monaco-editor";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuPlay, LuSave } from "react-icons/lu";
+import { LuPlay, LuPower, LuSave } from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
 import ParameterPanel from "./ParameterPanel";
 import type { Configuration, Parameter, ParameterInput } from "./types";
@@ -32,7 +32,7 @@ export default function Configurator({
   onClose,
   onSave,
 }: ConfiguratorProps) {
-  const { code: defaultCode, label, returnType } = configuration;
+  const { code: defaultCode, defaultValue, label, returnType } = configuration;
 
   const mode = useMode();
   const [output, setOutput] = useState<string>("");
@@ -65,7 +65,7 @@ export default function Configurator({
   }, [defaultParameters]);
 
   const [code, setCode] = useState(
-    generateDefaultCode(parameters, returnType, defaultCode)
+    generateDefaultCode(parameters, returnType, defaultCode, defaultValue)
   );
   const [editor, setEditor] =
     useState<Monaco.editor.IStandaloneCodeEditor | null>(null);
@@ -213,6 +213,22 @@ export default function Configurator({
             );
           }
         }
+      } else if (returnType.type === "enum") {
+        if (Array.isArray(result)) {
+          throw new Error(
+            "Expected return type to be a single value, not an array"
+          );
+        }
+        if (
+          returnType.listOptions &&
+          !returnType.listOptions.includes(result)
+        ) {
+          throw new Error(
+            `Invalid value "${result}". Must be one of: ${returnType.listOptions.join(
+              ", "
+            )}`
+          );
+        }
       } else {
         const actualType = typeof result;
         if (actualType !== typeMap[returnType.type]) {
@@ -240,8 +256,9 @@ export default function Configurator({
       }}
     >
       <ModalContent size="xxxlarge" className="p-0 gap-0 h-[90dvh]">
-        <div className="flex p-6">
+        <div className="flex items-center justify-between p-6 pr-14">
           <ModalTitle>Configure {label}</ModalTitle>
+          <ConfigurationToggle isActive={true} onChange={() => {}} />
         </div>
 
         <div className="flex-1 flex h-full border-t">
@@ -299,5 +316,29 @@ export default function Configurator({
         </div>
       </ModalContent>
     </Modal>
+  );
+}
+
+type ConfigurationToggleProps = {
+  isActive: boolean;
+  onChange: (active: boolean) => void;
+};
+
+function ConfigurationToggle({ isActive, onChange }: ConfigurationToggleProps) {
+  return (
+    <button
+      onClick={() => onChange(!isActive)}
+      className={`
+        flex items-center gap-2 px-4 py-2 rounded-lg
+        ${
+          isActive
+            ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
+            : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
+        }
+        `}
+    >
+      <LuPower className="w-4 h-4" />
+      <span>{isActive ? "Active" : "Inactive"}</span>
+    </button>
   );
 }

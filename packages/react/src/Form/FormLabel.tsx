@@ -2,22 +2,31 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { useFormControlContext } from "./FormControl";
 
-import * as ReactAria from "react-aria-components";
+import { LuFunctionSquare } from "react-icons/lu";
 import { cn } from "../utils/cn";
 
 export const FormLabel = forwardRef<
-  ElementRef<typeof ReactAria.Label>,
-  ComponentPropsWithoutRef<typeof ReactAria.Label> & {
+  ElementRef<"label">,
+  ComponentPropsWithoutRef<"label"> & {
     isOptional?: boolean;
+    isConfigured?: boolean;
+    onConfigure?: () => void;
   }
 >((props, ref) => {
-  const { className, children, isOptional = false, ...rest } = props;
+  const {
+    className,
+    children,
+    isConfigured = false,
+    isOptional = false,
+    onConfigure,
+    ...rest
+  } = props;
 
   const field = useFormControlContext();
   const labelProps = field?.getLabelProps(rest, ref) ?? { ref, ...rest };
 
   return (
-    <ReactAria.Label
+    <label
       {...labelProps}
       ref={ref}
       className="flex items-center justify-between"
@@ -28,10 +37,27 @@ export const FormLabel = forwardRef<
       >
         {children}
       </span>
-      {isOptional && (
-        <span className="text-muted-foreground text-xxs">Optional</span>
+      {(isOptional || onConfigure) && (
+        <div className="flex items-center gap-1">
+          {isOptional && (
+            <span className="text-muted-foreground text-xxs">Optional</span>
+          )}
+          {onConfigure && (
+            <LuFunctionSquare
+              aria-label="Configure"
+              role="button"
+              onClick={onConfigure}
+              className={cn(
+                "size-4",
+                isConfigured
+                  ? "text-emerald-500"
+                  : "opacity-50 hover:opacity-100"
+              )}
+            />
+          )}
+        </div>
       )}
-    </ReactAria.Label>
+    </label>
   );
 });
 

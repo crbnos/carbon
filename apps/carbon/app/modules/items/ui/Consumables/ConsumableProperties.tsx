@@ -164,6 +164,7 @@ const ConsumableProperties = () => {
                 <span>Copy link to consumable</span>
               </TooltipContent>
             </Tooltip>
+
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

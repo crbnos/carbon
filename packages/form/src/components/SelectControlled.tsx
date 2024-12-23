@@ -14,11 +14,13 @@ export type SelectProps = Omit<SelectBaseProps, "onChange"> & {
   name: string;
   label?: string;
   helperText?: string;
+  isConfigured?: boolean;
   isOptional?: boolean;
   options: { value: string | number; label: string | JSX.Element }[];
   onChange?: (
     newValue: { value: string; label: string | JSX.Element } | null
   ) => void;
+  onConfigure?: () => void;
 };
 
 const SelectControlled = ({
@@ -26,7 +28,9 @@ const SelectControlled = ({
   label,
   helperText,
   options,
+  isConfigured,
   isOptional,
+  onConfigure,
   ...props
 }: SelectProps) => {
   const { getInputProps, error } = useField(name);
@@ -50,7 +54,12 @@ const SelectControlled = ({
   return (
     <FormControl isInvalid={!!error}>
       {label && (
-        <FormLabel htmlFor={name} isOptional={isOptional}>
+        <FormLabel
+          htmlFor={name}
+          isConfigured={isConfigured}
+          isOptional={isOptional}
+          onConfigure={onConfigure}
+        >
           {label}
         </FormLabel>
       )}
