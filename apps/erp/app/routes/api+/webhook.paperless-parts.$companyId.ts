@@ -39,8 +39,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const paperlessPartsIntegration = await getIntegration(
     serviceRole,
-    companyId,
-    "paperless-parts"
+    "paperless-parts",
+    companyId
   );
 
   if (paperlessPartsIntegration.error || !paperlessPartsIntegration.data) {
@@ -49,12 +49,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const { apiKey, secretKey } = integrationValidator.parse(
-      paperlessPartsIntegration.data
+      paperlessPartsIntegration.data.metadata
     );
 
-    const payloadText = await request.text();
-    const signatureHeader = request.headers.get("Paperless-Parts-Signature");
+    // The signature provided by Paperless Parts is computed using the Python json.dumps() function,
+    // which formats the JSON string with newlines and whitespace.
+    // We need to remove the newlines and whitespace to match the signature.
+    const payloadText = JSON.stringify(await request.json(), null, 1)
+      .replace(/^ +/gm, " ")
+      .replace(/\n/g, "")
+      .replace(/{ /g, "{")
+      .replace(/ }/g, "}")
+      .replace(/\[ /g, "[")
+      .replace(/ \]/g, "]");
 
+    const signatureHeader =
+      request.headers.get("paperless-parts-signature") ||
+      request.headers.get("Paperless-Parts-Signature");
     if (!signatureHeader) {
       return json({ success: false }, { status: 401 });
     }
