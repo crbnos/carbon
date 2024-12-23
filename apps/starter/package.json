@@ -1,5 +1,5 @@
 {
-  "name": "developers",
+  "name": "starter",
   "type": "module",
   "dependencies": {
     "@carbon/auth": "*",

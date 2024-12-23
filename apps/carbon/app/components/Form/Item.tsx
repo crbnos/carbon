@@ -32,10 +32,12 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   disabledItems?: string[];
   includeInactive?: boolean;
   inline?: boolean;
+  isConfigured?: boolean;
   replenishmentSystem?: "Buy" | "Make";
   type: MethodItemType;
   typeFieldName?: string;
   validItemTypes?: MethodItemType[];
+  onConfigure?: () => void;
   onTypeChange?: (type: MethodItemType) => void;
 };
 
@@ -52,10 +54,12 @@ const Item = ({
   name,
   label,
   helperText,
+  isConfigured = false,
   isOptional = false,
   type,
   typeFieldName = "itemType",
   validItemTypes,
+  onConfigure,
   onTypeChange,
   ...props
 }: ItemSelectProps) => {
@@ -123,7 +127,12 @@ const Item = ({
     <>
       <FormControl isInvalid={!!error} className="w-full">
         {type && (
-          <FormLabel htmlFor={name} isOptional={isOptional}>
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            isOptional={isOptional}
+            onConfigure={onConfigure}
+          >
             {type}
           </FormLabel>
         )}

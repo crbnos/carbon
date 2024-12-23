@@ -106,9 +106,6 @@ export default function LoginRoute() {
           alt="Carbon Logo"
           className="hidden dark:block max-w-[100px] mb-3"
         />
-        <h3 className="font-mono font-bold leading-loose uppercase text-xl">
-          Developers
-        </h3>
       </div>
       <div className="p-8 w-[380px]">
         <ValidatedForm

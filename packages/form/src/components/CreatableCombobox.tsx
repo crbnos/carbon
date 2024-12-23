@@ -18,16 +18,29 @@ export type CreatableComboboxProps = Omit<
   name: string;
   label?: string;
   helperText?: string;
+  isConfigured?: boolean;
   isOptional?: boolean;
   inline?: (
     value: string,
     options: { value: string; label: string; helper?: string }[]
   ) => React.ReactNode;
   onChange?: (newValue: { value: string; label: string } | null) => void;
+  onConfigure?: () => void;
 };
 
 const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
-  ({ name, label, helperText, isOptional = false, ...props }, ref) => {
+  (
+    {
+      name,
+      label,
+      helperText,
+      isConfigured = false,
+      isOptional = false,
+      onConfigure,
+      ...props
+    },
+    ref
+  ) => {
     const { getInputProps, error } = useField(name);
     const [value, setValue] = useControlField<string | undefined>(name);
 
@@ -47,7 +60,12 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     return (
       <FormControl isInvalid={!!error}>
         {label && (
-          <FormLabel htmlFor={name} isOptional={isOptional}>
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            onConfigure={onConfigure}
+            isOptional={isOptional}
+          >
             {label}
           </FormLabel>
         )}

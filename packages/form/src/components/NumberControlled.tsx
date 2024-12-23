@@ -33,7 +33,9 @@ type FormNumberProps = NumberFieldProps & {
   helperText?: string;
   value: number;
   inline?: boolean;
+  isConfigured?: boolean;
   onChange?: (newValue: number) => void;
+  onConfigure?: () => void;
 };
 
 const Number = forwardRef<HTMLInputElement, FormNumberProps>(
@@ -41,11 +43,13 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     {
       name,
       label,
+      isConfigured,
       isRequired,
       isReadOnly,
       helperText,
       value,
       onChange,
+      onConfigure,
       inline = false,
       onBlur,
       ...rest
@@ -100,7 +104,15 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
       </VStack>
     ) : (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+        {label && (
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            onConfigure={onConfigure}
+          >
+            {label}
+          </FormLabel>
+        )}
         <NumberField
           {...getInputProps({
             id: name,

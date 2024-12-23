@@ -27,7 +27,8 @@ export function configureMonaco(monaco: typeof Monaco) {
 export function generateDefaultCode(
   params: Parameter[],
   returnType: ReturnType,
-  defaultCode?: string
+  defaultCode?: string,
+  defaultValue?: string | number | boolean | string[] | null
 ): string {
   const parameterTypes = params
     .map((parameter) => {
@@ -36,6 +37,10 @@ export function generateDefaultCode(
           .map((opt) => `"${opt}"`)
           .join(" | ");
         return ` * @param params.${parameter.name}: ${unionType}`;
+      } else if (parameter.type === "enum") {
+        return ` * @param params.${
+          parameter.name
+        }: ${parameter.config?.options?.join(" | ")}`;
       }
       return ` * @param params.${parameter.name}: ${typeMap[parameter.type]}`;
     })
@@ -44,6 +49,8 @@ export function generateDefaultCode(
   const returnTypeStr =
     returnType.type === "list" && returnType.listOptions
       ? `Array<${returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")}>`
+      : returnType.type === "enum" && returnType.listOptions
+      ? returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")
       : typeMap[returnType.type];
 
   return `
@@ -59,8 +66,14 @@ export function generateDefaultCode(
 
 function configure(params: Params): ${returnTypeStr} {
   // return ${
-    returnType.type === "list"
-      ? "an array of predefined values"
+    returnType.helperText
+      ? returnType.helperText
+      : returnType.type === "list"
+      ? `an array containing any of: [${returnType.listOptions
+          ?.map((opt) => `"${opt}"`)
+          .join(", ")}]`
+      : returnType.type === "enum" && returnType.listOptions
+      ? `one of: ${returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")}`
       : `a ${returnType.type} value`
   }
   ${
@@ -68,13 +81,17 @@ function configure(params: Params): ${returnTypeStr} {
       ? `${defaultCode}`
       : `return ${
           returnType.type === "text"
-            ? '"test"'
+            ? defaultValue
+              ? `"${defaultValue}"`
+              : '"test"'
             : returnType.type === "numeric"
-            ? "1"
+            ? defaultValue?.toString() ?? "1"
             : returnType.type === "boolean"
-            ? "true"
+            ? defaultValue?.toString() ?? "true"
+            : returnType.type === "enum" && returnType.listOptions
+            ? `"${defaultValue ?? returnType.listOptions[0]}"`
             : returnType.listOptions
-            ? `["${returnType.listOptions[0]}"]`
+            ? `[${returnType.listOptions.map((opt) => `"${opt}"`).join(", ")}]`
             : "[]"
         };`
   }
@@ -93,6 +110,8 @@ export function getDefaultValue(
     case "boolean":
       return "true";
     case "list":
+      return listOptions ? listOptions[0] : "";
+    case "enum":
       return listOptions ? listOptions[0] : "";
   }
 }
@@ -115,7 +134,9 @@ export function generateTypeDefinitions(
 
   const returnTypeStr =
     returnType.type === "list" && returnType.listOptions
-      ? `(${returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")})[]`
+      ? `Array<${returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")}>`
+      : returnType.type === "enum" && returnType.listOptions
+      ? returnType.listOptions.map((opt) => `"${opt}"`).join(" | ")
       : returnType.type;
 
   return `

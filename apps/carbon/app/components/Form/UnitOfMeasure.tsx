@@ -14,6 +14,8 @@ import { Enumerable } from "../Enumerable";
 
 type UnitOfMeasureSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   inline?: boolean;
+  isConfigured?: boolean;
+  onConfigure?: () => void;
 };
 
 const UnitOfMeasurePreview = (

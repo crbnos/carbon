@@ -19,17 +19,39 @@ import { useField } from "../hooks";
 type FormNumberProps = NumberFieldProps & {
   name: string;
   label?: string;
+  isConfigured?: boolean;
   isRequired?: boolean;
   helperText?: string;
+  onConfigure?: () => void;
 };
 
 const Number = forwardRef<HTMLInputElement, FormNumberProps>(
-  ({ name, label, isRequired, isReadOnly, helperText, ...rest }, ref) => {
+  (
+    {
+      name,
+      label,
+      isConfigured = false,
+      isRequired,
+      isReadOnly,
+      helperText,
+      onConfigure,
+      ...rest
+    },
+    ref
+  ) => {
     const { getInputProps, error } = useField(name);
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+        {label && (
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            onConfigure={onConfigure}
+          >
+            {label}
+          </FormLabel>
+        )}
         <NumberField
           {...getInputProps({
             id: name,

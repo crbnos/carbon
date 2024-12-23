@@ -18,7 +18,13 @@ import {
 } from "@carbon/react";
 import { Await, Link, useFetcher, useParams } from "@remix-run/react";
 import { Suspense, useCallback, useEffect } from "react";
-import { LuCopy, LuExternalLink, LuLink, LuMove3D } from "react-icons/lu";
+import {
+  LuCopy,
+  LuExternalLink,
+  LuKeySquare,
+  LuLink,
+  LuMove3D,
+} from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
@@ -167,6 +173,24 @@ const PartProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>Copy link to part</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label="Copy"
+                  size="sm"
+                  className="p-1"
+                  onClick={() =>
+                    copyToClipboard(routeData?.partSummary?.itemId ?? "")
+                  }
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Copy part unique identifier</span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

@@ -21,6 +21,7 @@ import { useControlField, useField } from "../hooks";
 type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   name: string;
   label?: ReactNode;
+  isConfigured?: boolean;
   isUppercase?: boolean;
   isRequired?: boolean;
   helperText?: string;
@@ -29,6 +30,7 @@ type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   inline?: boolean;
   value: string;
   onChange?: (newValue: string) => void;
+  onConfigure?: () => void;
 };
 
 const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
@@ -36,6 +38,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
     {
       name,
       label,
+      isConfigured,
       isRequired,
       helperText,
       prefix,
@@ -47,6 +50,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       inline = false,
       isReadOnly,
       onBlur,
+      onConfigure,
       ...rest
     },
     ref
@@ -99,7 +103,15 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
         isRequired={isRequired}
         className={className}
       >
-        {label && <FormLabel htmlFor={name}>{label}</FormLabel>}
+        {label && (
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            onConfigure={onConfigure}
+          >
+            {label}
+          </FormLabel>
+        )}
         {prefix || suffix ? (
           <InputGroup>
             {prefix && <InputLeftAddon children={prefix} />}
