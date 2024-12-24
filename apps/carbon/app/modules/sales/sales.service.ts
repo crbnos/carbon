@@ -702,7 +702,11 @@ export async function getQuoteLines(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quoteLines").select("*").eq("quoteId", quoteId);
+  return client
+    .from("quoteLines")
+    .select("*")
+    .eq("quoteId", quoteId)
+    .order("itemReadableId", { ascending: true });
 }
 
 export async function getSalesOrderCustomerDetails(
@@ -943,7 +947,7 @@ export async function getSalesOrderLines(
     .from("salesOrderLines")
     .select("*")
     .eq("salesOrderId", salesOrderId)
-    .order("createdAt", { ascending: true });
+    .order("itemReadableId", { ascending: true });
 }
 
 export async function getSalesOrderLine(
@@ -1015,7 +1019,7 @@ export async function getSalesRFQLines(
     .from("salesRfqLines")
     .select("*")
     .eq("salesRfqId", salesRfqId)
-    .order("order", { ascending: true });
+    .order("customerPartId", { ascending: true });
 }
 
 export async function insertCustomerContact(
