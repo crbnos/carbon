@@ -173,7 +173,10 @@ const InventoryShelves = ({
                 <Button onClick={adjustmentModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit isDisabled={!permissions.can("update", "inventory")}>
+                <Submit
+                  withBlocker={false}
+                  isDisabled={!permissions.can("update", "inventory")}
+                >
                   Save
                 </Submit>
               </ModalFooter>
