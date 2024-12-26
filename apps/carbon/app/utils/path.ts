@@ -148,6 +148,8 @@ export const path = {
       generatePath(`${x}/part/${itemId}/parameter/group/order`),
     configurationParameterOrder: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/parameter/order`),
+    configurationRule: (itemId: string) =>
+      generatePath(`${x}/part/${itemId}/rule`),
     contractor: (id: string) =>
       generatePath(`${x}/resources/contractors/${id}`),
     contractors: `${x}/resources/contractors`,
@@ -234,6 +236,8 @@ export const path = {
       generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
     deleteConfigurationParameterGroup: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/parameter/group/delete/${id}`),
+    deleteConfigurationRule: (itemId: string, field: string) =>
+      generatePath(`${x}/part/${itemId}/rule/delete/${field}`),
     deleteContractor: (id: string) =>
       generatePath(`${x}/resources/contractors/delete/${id}`),
     deleteCurrency: (id: string) =>

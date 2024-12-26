@@ -10,6 +10,7 @@ import { useRouteData } from "~/hooks";
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
   getConfigurationParameters,
+  getConfigurationRules,
   getItemManufacturing,
   partManufacturingValidator,
   upsertItemManufacturing,
@@ -54,6 +55,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .requiresConfiguration
       ? await getConfigurationParameters(client, itemId, companyId)
       : { groups: [], parameters: [] },
+    configurationRules: partManufacturing.data.requiresConfiguration
+      ? await getConfigurationRules(client, itemId, companyId)
+      : [],
   });
 }
 
@@ -101,8 +105,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
-  const { partManufacturing, configurationParametersAndGroups } =
-    useLoaderData<typeof loader>();
+  const {
+    partManufacturing,
+    configurationParametersAndGroups,
+    configurationRules,
+  } = useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
@@ -143,6 +150,7 @@ export default function MakeMethodRoute() {
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
         parameters={configurationParametersAndGroups.parameters}
+        configurationRules={configurationRules}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
@@ -153,6 +161,7 @@ export default function MakeMethodRoute() {
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
         parameters={configurationParametersAndGroups.parameters}
+        configurationRules={configurationRules}
       />
     </VStack>
   );

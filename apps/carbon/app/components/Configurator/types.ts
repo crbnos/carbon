@@ -1,6 +1,7 @@
 export type Configuration = {
   label: string;
   code?: string;
+  field: string;
   returnType: ReturnType;
   defaultValue?: string | number | boolean | string[] | null;
 };

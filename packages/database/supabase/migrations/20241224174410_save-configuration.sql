@@ -32,20 +32,16 @@ FOR ALL USING (
 );
 
 CREATE TABLE "configurationRule" (
-  "id" UUID NOT NULL DEFAULT uuid_generate_v4(),
   "itemId" TEXT NOT NULL,
   "field" TEXT NOT NULL,
   "code" TEXT NOT NULL,
   "companyId" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  "createdBy" TEXT NOT NULL,
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedBy" TEXT,
 
-  CONSTRAINT "configurationRule_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "configurationRule_pkey" PRIMARY KEY ("itemId", "field"),
   CONSTRAINT "configurationRule_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "configurationRule_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-  CONSTRAINT "configurationRule_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE CASCADE,
   CONSTRAINT "configurationRule_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE CASCADE
 );
 

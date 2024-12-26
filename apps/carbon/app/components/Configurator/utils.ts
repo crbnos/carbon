@@ -152,16 +152,16 @@ ${properties}
 declare function configure(params: Params): ${returnTypeStr};
 `;
 }
-
-export function stripTypeScript(code: string): string {
-  return code
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/interface\s+\w+\s*{[^}]*}/g, "")
-    .replace(/type\s+\w+\s*=\s*[^;]+;/g, "")
-    .replace(/(\w+)\s*:\s*[^,)]+([,)])/g, "$1$2")
-    .replace(/\)\s*:\s*[^{]+({)/g, ") $1")
-    .replace(/as\s+[^;,)]+([;,)])/g, "$1")
-    .replace(/<[^>]+>/g, "")
-    .replace(/\n\s*\n\s*\n/g, "\n\n")
-    .trim();
+export function convertTypescriptToJavaScript(code: string): string {
+  // @ts-expect-error - TypeScript compiler is loaded globally
+  if (window?.ts) {
+    // @ts-expect-error - TypeScript compiler is loaded globally
+    return window.ts.transpileModule(code, {
+      compilerOptions: {
+        // @ts-expect-error - TypeScript compiler is loaded globally
+        target: window.ts.ScriptTarget.ES2020,
+      },
+    }).outputText;
+  }
+  return "";
 }

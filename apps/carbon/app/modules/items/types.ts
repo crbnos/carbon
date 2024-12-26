@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getConfigurationParameters,
+  getConfigurationRules,
   getConsumable,
   getConsumables,
   getItemCost,
@@ -31,6 +32,10 @@ import type {
 
 export type ConfigurationParameter = NonNullable<
   Awaited<ReturnType<typeof getConfigurationParameters>>["parameters"]
+>[number];
+
+export type ConfigurationRule = NonNullable<
+  Awaited<ReturnType<typeof getConfigurationRules>>
 >[number];
 
 export type ConfigurationParameterGroup = NonNullable<

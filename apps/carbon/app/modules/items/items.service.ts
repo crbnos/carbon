@@ -12,6 +12,7 @@ import type {
   configurationParameterGroupValidator,
   configurationParameterOrderValidator,
   configurationParameterValidator,
+  configurationRuleValidator,
   consumableValidator,
   customerPartValidator,
   getMethodValidator,
@@ -58,6 +59,18 @@ export async function deleteConfigurationParameter(
   id: string
 ) {
   return client.from("configurationParameter").delete().eq("id", id);
+}
+
+export async function deleteConfigurationRule(
+  client: SupabaseClient<Database>,
+  field: string,
+  itemId: string
+) {
+  return client
+    .from("configurationRule")
+    .delete()
+    .eq("field", field)
+    .eq("itemId", itemId);
 }
 
 export async function deleteItemCustomerPart(
@@ -185,6 +198,23 @@ export async function getConfigurationParameters(
   }
 
   return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
+}
+
+export async function getConfigurationRules(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const result = await client
+    .from("configurationRule")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
+  if (result.error) {
+    console.error(result.error);
+    return [];
+  }
+  return result.data ?? [];
 }
 
 export async function getConsumable(
@@ -1229,6 +1259,19 @@ export async function upsertConfigurationParameterGroup(
     itemId,
     name: data.name,
     sortOrder: maxSortOrder + 1,
+  });
+}
+
+export async function upsertConfigurationRule(
+  client: SupabaseClient<Database>,
+  configurationRule: z.infer<typeof configurationRuleValidator> & {
+    itemId: string;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  return client.from("configurationRule").upsert(configurationRule, {
+    onConflict: "itemId,field",
   });
 }
 
