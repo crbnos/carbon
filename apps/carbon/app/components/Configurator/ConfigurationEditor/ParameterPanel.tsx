@@ -1,5 +1,5 @@
-import { ConfiguratorDataTypeIcon } from "./Icons";
-import type { Parameter } from "./types";
+import { ConfiguratorDataTypeIcon } from "../Icons";
+import type { Parameter } from "../types";
 
 interface ParameterPanelProps {
   parameters: Parameter[];

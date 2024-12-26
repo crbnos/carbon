@@ -43,7 +43,7 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 
-import { Configurator } from "~/components/Configurator";
+import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   methodType,
@@ -465,7 +465,7 @@ const BillOfMaterial = ({
         />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
-        <Configurator
+        <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}

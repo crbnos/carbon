@@ -1,0 +1,1 @@
+export { ConfiguratorModal } from "./ConfiguratorForm";

@@ -19,17 +19,17 @@ import { LuFunctionSquare, LuPlay, LuSave, LuTrash2 } from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
 import type { action } from "~/routes/x+/part+/$itemId.rule";
 import { path } from "~/utils/path";
-import { ConfirmDelete } from "../Modals";
-import ParameterPanel from "./ParameterPanel";
-import type { Configuration, Parameter, ParameterInput } from "./types";
-import { typeMap } from "./types";
+import { ConfirmDelete } from "../../Modals";
+import type { Configuration, Parameter, ParameterInput } from "../types";
+import { typeMap } from "../types";
 import {
   configureMonaco,
   convertTypescriptToJavaScript,
   generateDefaultCode,
   generateTypeDefinitions,
   getDefaultValue,
-} from "./utils";
+} from "../utils";
+import ParameterPanel from "./ParameterPanel";
 
 interface ConfiguratorProps {
   configuration: Configuration;
