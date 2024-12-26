@@ -1,20 +1,34 @@
 /* eslint-disable no-new-func */
-import { Button, Modal, ModalContent, ModalTitle } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  HStack,
+  IconButton,
+  Modal,
+  ModalContent,
+  ModalTitle,
+  toast,
+  useDisclosure,
+} from "@carbon/react";
 import type { OnMount } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import type * as Monaco from "monaco-editor";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuPlay, LuPower, LuSave } from "react-icons/lu";
+import { LuFunctionSquare, LuPlay, LuSave, LuTrash2 } from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
+import type { action } from "~/routes/x+/part+/$itemId.rule";
+import { path } from "~/utils/path";
+import { ConfirmDelete } from "../Modals";
 import ParameterPanel from "./ParameterPanel";
 import type { Configuration, Parameter, ParameterInput } from "./types";
 import { typeMap } from "./types";
 import {
   configureMonaco,
+  convertTypescriptToJavaScript,
   generateDefaultCode,
   generateTypeDefinitions,
   getDefaultValue,
-  stripTypeScript,
 } from "./utils";
 
 interface ConfiguratorProps {
@@ -22,7 +36,6 @@ interface ConfiguratorProps {
   parameters: ParameterInput[];
   open: boolean;
   onClose: () => void;
-  onSave: (code: string) => void;
 }
 
 export default function Configurator({
@@ -30,12 +43,14 @@ export default function Configurator({
   open,
   parameters: defaultParameters,
   onClose,
-  onSave,
 }: ConfiguratorProps) {
   const { code: defaultCode, defaultValue, label, returnType } = configuration;
+  const isActive = !!defaultCode;
 
   const mode = useMode();
+
   const [output, setOutput] = useState<string>("");
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [parameters, setParameters] = useState<Parameter[]>(
     defaultParameters.map((param) => ({
       name: param.key,
@@ -143,6 +158,10 @@ export default function Configurator({
     }
   }, [parameters, monaco, editor, returnType]);
 
+  const { itemId } = useParams();
+  if (!itemId) throw new Error("Could not find itemId");
+  const fetcher = useFetcher<typeof action>();
+
   const getCodeToSave = () => {
     const lines = code.split("\n");
     const startLine = lockedLines;
@@ -165,15 +184,43 @@ export default function Configurator({
   };
 
   const handleSave = () => {
-    const codeToSave = getCodeToSave();
-    onSave(codeToSave);
+    const formData = new FormData();
+    formData.append("code", getCodeToSave());
+    formData.append("field", configuration.field);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.configurationRule(itemId),
+    });
   };
+
+  useEffect(() => {
+    const head = document.querySelector("head")!;
+    const script = document.createElement("script");
+    script.setAttribute(
+      "src",
+      "https://unpkg.com/typescript@5.5.4/lib/typescript.js"
+    );
+    script.onload = () => setIsScriptLoaded(true);
+    head.appendChild(script);
+    return () => {
+      head.removeChild(script);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (fetcher.data?.success === false) {
+      toast.error("Failed to save configuration rule");
+    }
+
+    if (fetcher.data?.success === true) {
+      onClose();
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data]);
 
   const runCode = useCallback(() => {
     try {
-      // Check for potentially problematic code
-      const codeStr = stripTypeScript(code);
-
       // Create parameters object from the panel
       const parametersObj = parameters.reduce((acc, v) => {
         acc[v.name] =
@@ -189,7 +236,7 @@ export default function Configurator({
       const fn = new Function(
         "parameters",
         `
-        ${codeStr}
+        ${convertTypescriptToJavaScript(code)}
         return configure(parameters);
       `
       );
@@ -244,101 +291,111 @@ export default function Configurator({
     }
   }, [code, parameters, returnType]);
 
+  const deleteDialog = useDisclosure();
+
   if (!open) return null;
 
   return (
-    <Modal
-      open={open}
-      onOpenChange={(open) => {
-        if (!open) {
-          onClose();
-        }
-      }}
-    >
-      <ModalContent size="xxxlarge" className="p-0 gap-0 h-[90dvh]">
-        <div className="flex items-center justify-between p-6 pr-14">
-          <ModalTitle>Configure {label}</ModalTitle>
-          <ConfigurationToggle isActive={true} onChange={() => {}} />
-        </div>
-
-        <div className="flex-1 flex h-full border-t">
-          <div className="flex-1 w-2/3 border-r">
-            <div className="h-full">
-              <Editor
-                height="100%"
-                defaultLanguage="javascript"
-                value={code}
-                onChange={(value) => setCode(value || "")}
-                theme={mode === "light" ? "vs-light" : "vs-dark"}
-                onMount={handleEditorDidMount}
-                options={{
-                  minimap: { enabled: false },
-                  fontSize: 14,
-                  suggest: {
-                    showProperties: true,
-                    showValues: true,
-                    preview: true,
-                  },
-                  quickSuggestions: true,
-                  snippetSuggestions: "inline",
-                  formatOnType: true,
-                  formatOnPaste: true,
-                }}
-              />
-            </div>
+    <>
+      <Modal
+        open={open}
+        onOpenChange={(open) => {
+          if (!open) {
+            onClose();
+          }
+        }}
+      >
+        <ModalContent size="xxxlarge" className="p-0 gap-0 h-[90dvh]">
+          <div className="flex items-center justify-between p-5 pr-14">
+            <ModalTitle>Configure {label}</ModalTitle>
+            <HStack>
+              <Badge variant={isActive ? "green" : "gray"}>
+                {isActive ? "Active" : "Inactive"}
+                <LuFunctionSquare className="ml-1" />
+              </Badge>
+              {isActive && (
+                <IconButton
+                  icon={<LuTrash2 />}
+                  variant="secondary"
+                  size="sm"
+                  onClick={deleteDialog.onOpen}
+                  aria-label="Delete Rule"
+                />
+              )}
+            </HStack>
           </div>
 
-          <div className="w-1/3 flex flex-col">
-            <ParameterPanel parameters={parameters} onChange={setParameters} />
-            <div className="p-4 border-t space-y-2">
-              <Button
-                onClick={handleSave}
-                className="w-full"
-                leftIcon={<LuSave />}
-                variant="secondary"
-              >
-                Save & Close
-              </Button>
-              <Button
-                onClick={runCode}
-                className="w-full"
-                leftIcon={<LuPlay />}
-                variant="primary"
-              >
-                Run Test
-              </Button>
+          <div className="flex-1 flex h-full border-t">
+            <div className="flex-1 w-2/3 border-r">
+              <div className="h-full">
+                <Editor
+                  height="100%"
+                  defaultLanguage="javascript"
+                  value={code}
+                  onChange={(value) => setCode(value || "")}
+                  theme={mode === "light" ? "vs-light" : "vs-dark"}
+                  onMount={handleEditorDidMount}
+                  options={{
+                    minimap: { enabled: false },
+                    fontSize: 14,
+                    suggest: {
+                      showProperties: true,
+                      showValues: true,
+                      preview: true,
+                    },
+                    quickSuggestions: true,
+                    snippetSuggestions: "inline",
+                    formatOnType: true,
+                    formatOnPaste: true,
+                  }}
+                />
+              </div>
+            </div>
 
-              <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] whitespace-pre-wrap">
-                {output}
+            <div className="w-1/3 flex flex-col">
+              <ParameterPanel
+                parameters={parameters}
+                onChange={setParameters}
+              />
+              <div className="p-4 border-t space-y-2">
+                <Button
+                  onClick={runCode}
+                  className="w-full"
+                  leftIcon={<LuPlay />}
+                  variant="secondary"
+                  isDisabled={!isScriptLoaded}
+                >
+                  Run Test
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className="w-full"
+                  leftIcon={<LuSave />}
+                  variant="primary"
+                  isDisabled={fetcher.state !== "idle"}
+                  isLoading={fetcher.state !== "idle"}
+                >
+                  Save & Close
+                </Button>
+
+                <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] whitespace-pre-wrap">
+                  {output}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </ModalContent>
-    </Modal>
-  );
-}
-
-type ConfigurationToggleProps = {
-  isActive: boolean;
-  onChange: (active: boolean) => void;
-};
-
-function ConfigurationToggle({ isActive, onChange }: ConfigurationToggleProps) {
-  return (
-    <button
-      onClick={() => onChange(!isActive)}
-      className={`
-        flex items-center gap-2 px-4 py-2 rounded-lg
-        ${
-          isActive
-            ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800"
-            : "bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800"
-        }
-        `}
-    >
-      <LuPower className="w-4 h-4" />
-      <span>{isActive ? "Active" : "Inactive"}</span>
-    </button>
+        </ModalContent>
+      </Modal>
+      {isActive && deleteDialog.isOpen && (
+        <ConfirmDelete
+          isOpen={deleteDialog.isOpen}
+          action={path.to.deleteConfigurationRule(itemId, configuration.field)}
+          name={label}
+          text={`Are you sure you want to deactivate the ${label} configuration rule?`}
+          onCancel={deleteDialog.onClose}
+          onSubmit={onClose}
+        />
+      )}
+    </>
   );
 }

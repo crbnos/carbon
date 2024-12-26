@@ -82,7 +82,7 @@ import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
-import type { ConfigurationParameter } from "../../types";
+import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -98,6 +98,7 @@ type ItemWithData = Item & {
 
 type BillOfProcessProps = {
   configurable?: boolean;
+  configurationRules?: ConfigurationRule[];
   makeMethodId: string;
   operations: OperationWithTools[];
   parameters?: ConfigurationParameter[];
@@ -136,11 +137,11 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
 
 const BillOfProcess = ({
   configurable = false,
+  configurationRules,
   makeMethodId,
   operations: initialOperations,
   parameters,
 }: BillOfProcessProps) => {
-  console.log({ configurable });
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
@@ -388,6 +389,7 @@ const BillOfProcess = ({
               <OperationForm
                 configurable={configurable}
                 item={item}
+                rulesByField={rulesByField}
                 workInstruction={workInstructions[item.id] ?? {}}
                 onConfigure={onConfigure}
                 setSelectedItemId={setSelectedItemId}
@@ -573,6 +575,10 @@ const BillOfProcess = ({
     configuratorDisclosure.onOpen();
   };
 
+  const rulesByField = new Map(
+    configurationRules?.map((rule) => [rule.field, rule]) ?? []
+  );
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -596,12 +602,17 @@ const BillOfProcess = ({
                 icon={<LuFunctionSquare />}
                 aria-label="Configure"
                 variant="ghost"
+                className={cn(
+                  rulesByField.has("billOfProcess") &&
+                    "text-emerald-500 hover:text-emerald-500"
+                )}
                 onClick={
                   configurable
                     ? () =>
                         onConfigure({
                           label: "Bill of Process",
-                          code: undefined,
+                          field: "billOfProcess",
+                          code: rulesByField.get("billOfProcess")?.code,
                           returnType: {
                             type: "list",
                             listOptions: operations.map((op) => op.description),
@@ -629,7 +640,6 @@ const BillOfProcess = ({
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
-          onSave={() => {}}
         />
       )}
     </Card>
@@ -645,6 +655,7 @@ function isTemporaryId(id: string) {
 type OperationFormProps = {
   configurable: boolean;
   item: ItemWithData;
+  rulesByField: Map<string, ConfigurationRule>;
   workInstruction: JSONContent;
   onConfigure: (configuration: Configuration) => void;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
@@ -655,9 +666,10 @@ type OperationFormProps = {
 function OperationForm({
   configurable,
   item,
-  setSelectedItemId,
+  rulesByField,
   workInstruction,
   onConfigure,
+  setSelectedItemId,
   setWorkInstructions,
   setTemporaryItems,
 }: OperationFormProps) {
@@ -783,6 +795,8 @@ function OperationForm({
     }));
   };
 
+  const key = (field: string) => getFieldKey(field, item.id);
+
   return (
     <ValidatedForm
       action={
@@ -808,13 +822,14 @@ function OperationForm({
         <Process
           name="processId"
           label="Process"
-          isConfigured={false}
+          isConfigured={rulesByField.has(key("processId"))}
           onConfigure={
             configurable
               ? () => {
                   onConfigure({
                     label: "Process",
-                    code: undefined,
+                    field: key("processId"),
+                    code: rulesByField.get(key("processId"))?.code,
                     defaultValue: processData.processId,
                     returnType: {
                       type: "text",
@@ -874,13 +889,14 @@ function OperationForm({
               operationType: value?.value as string,
             }));
           }}
-          isConfigured
+          isConfigured={rulesByField.has(key("operationType"))}
           onConfigure={
             configurable
               ? () => {
                   onConfigure({
                     label: "Operation Type",
-                    code: undefined,
+                    field: key("operationType"),
+                    code: rulesByField.get(key("operationType"))?.code,
                     defaultValue: processData.operationType,
                     returnType: {
                       type: "enum",
@@ -900,13 +916,14 @@ function OperationForm({
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
           className="col-span-2"
-          isConfigured={false}
+          isConfigured={rulesByField.has(key("description"))}
           onConfigure={
             configurable
               ? () => {
                   onConfigure({
                     label: "Description",
-                    code: undefined,
+                    field: key("description"),
+                    code: rulesByField.get(key("description"))?.code,
                     defaultValue: processData.description,
                     returnType: {
                       type: "text",
@@ -931,13 +948,14 @@ function OperationForm({
               operationOrder: value?.value as string,
             }));
           }}
-          isConfigured={false}
+          isConfigured={rulesByField.has(key("operationOrder"))}
           onConfigure={
             configurable
               ? () => {
                   onConfigure({
                     label: "Operation Order",
-                    code: undefined,
+                    field: key("operationOrder"),
+                    code: rulesByField.get(key("operationOrder"))?.code,
                     defaultValue: processData.operationOrder,
                     returnType: {
                       type: "enum",
@@ -999,13 +1017,14 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("setupUnitHint"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Setup Unit",
-                          code: undefined,
+                          field: key("setupUnitHint"),
+                          code: rulesByField.get(key("setupUnitHint"))?.code,
                           defaultValue: processData.setupUnitHint,
                           returnType: {
                             type: "enum",
@@ -1027,13 +1046,14 @@ function OperationForm({
                     setupTime: newValue,
                   }))
                 }
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("setupTime"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Setup Time",
-                          code: undefined,
+                          field: key("setupTime"),
+                          code: rulesByField.get(key("setupTime"))?.code,
                           defaultValue: processData.setupTime,
                           returnType: {
                             type: "numeric",
@@ -1054,13 +1074,14 @@ function OperationForm({
                     setupUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("setupUnit"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Setup Unit",
-                          code: undefined,
+                          field: key("setupUnit"),
+                          code: rulesByField.get(key("setupUnit"))?.code,
                           defaultValue: processData.setupUnit,
                           returnType: {
                             type: "enum",
@@ -1122,13 +1143,14 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("laborUnitHint"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Labor Unit",
-                          code: undefined,
+                          field: key("laborUnitHint"),
+                          code: rulesByField.get(key("laborUnitHint"))?.code,
                           defaultValue: processData.laborUnitHint,
                           returnType: {
                             type: "enum",
@@ -1150,13 +1172,14 @@ function OperationForm({
                     laborTime: newValue,
                   }))
                 }
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("laborTime"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Labor Time",
-                          code: undefined,
+                          field: key("laborTime"),
+                          code: rulesByField.get(key("laborTime"))?.code,
                           defaultValue: processData.laborTime,
                           returnType: {
                             type: "numeric",
@@ -1177,13 +1200,14 @@ function OperationForm({
                     laborUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("laborUnit"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Labor Unit",
-                          code: undefined,
+                          field: key("laborUnit"),
+                          code: rulesByField.get(key("laborUnit"))?.code,
                           defaultValue: processData.laborUnit,
                           returnType: {
                             type: "enum",
@@ -1246,13 +1270,14 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("machineUnitHint"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Machine Unit",
-                          code: undefined,
+                          field: key("machineUnitHint"),
+                          code: rulesByField.get(key("machineUnitHint"))?.code,
                           defaultValue: processData.machineUnitHint,
                           returnType: {
                             type: "enum",
@@ -1274,13 +1299,14 @@ function OperationForm({
                     machineTime: newValue,
                   }))
                 }
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("machineTime"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Machine Time",
-                          code: undefined,
+                          field: key("machineTime"),
+                          code: rulesByField.get(key("machineTime"))?.code,
                           defaultValue: processData.machineTime,
                           returnType: {
                             type: "numeric",
@@ -1301,13 +1327,14 @@ function OperationForm({
                     machineUnit: newValue?.value ?? "Total Minutes",
                   }));
                 }}
-                isConfigured={false}
+                isConfigured={rulesByField.has(key("machineUnit"))}
                 onConfigure={
                   configurable
                     ? () => {
                         onConfigure({
                           label: "Machine Unit",
-                          code: undefined,
+                          field: key("machineUnit"),
+                          code: rulesByField.get(key("machineUnit"))?.code,
                           defaultValue: processData.machineUnit,
                           returnType: {
                             type: "enum",
@@ -1619,4 +1646,8 @@ function usePendingOperations() {
       }
       return acc;
     }, []);
+}
+
+function getFieldKey(field: string, operationId: string) {
+  return `${field}:${operationId}`;
 }

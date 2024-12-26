@@ -53,7 +53,7 @@ import {
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
-import type { ConfigurationParameter } from "../../types";
+import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -71,6 +71,7 @@ type BillOfMaterialProps = {
   materials: Material[];
   operations: Operation[];
   parameters?: ConfigurationParameter[];
+  configurationRules?: ConfigurationRule[];
 };
 
 type OrderState = {
@@ -99,6 +100,7 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
 
 const BillOfMaterial = ({
   configurable = false,
+  configurationRules,
   makeMethodId,
   materials: initialMaterials,
   operations,
@@ -374,6 +376,7 @@ const BillOfMaterial = ({
                             item={item}
                             methodOperations={operations}
                             orderState={orderState}
+                            rulesByField={rulesByField}
                             temporaryItems={temporaryItems}
                             onConfigure={onConfigure}
                             setOrderState={setOrderState}
@@ -405,6 +408,10 @@ const BillOfMaterial = ({
     configuratorDisclosure.onOpen();
   };
 
+  const rulesByField = new Map(
+    configurationRules?.map((rule) => [rule.field, rule]) ?? []
+  );
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -428,16 +435,26 @@ const BillOfMaterial = ({
                 icon={<LuFunctionSquare />}
                 aria-label="Configure"
                 variant="ghost"
-                onClick={() => {
-                  onConfigure({
-                    label: "Bill of Material",
-                    code: undefined,
-                    returnType: {
-                      type: "list",
-                      listOptions: materials.map((m) => m.data.itemReadableId!),
-                    },
-                  });
-                }}
+                className={cn(
+                  rulesByField.has("billOfMaterial") &&
+                    "text-emerald-500 hover:text-emerald-500"
+                )}
+                onClick={
+                  configurable
+                    ? () =>
+                        onConfigure({
+                          label: "Bill of Material",
+                          field: "billOfMaterial",
+                          code: rulesByField.get("billOfMaterial")?.code,
+                          returnType: {
+                            type: "list",
+                            listOptions: materials.map(
+                              (m) => m.data.itemReadableId!
+                            ),
+                          },
+                        })
+                    : undefined
+                }
               />
             )}
           </div>
@@ -458,7 +475,6 @@ const BillOfMaterial = ({
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
-          onSave={() => {}}
         />
       )}
     </Card>
@@ -477,6 +493,7 @@ function MaterialForm({
   methodOperations,
   orderState,
   temporaryItems,
+  rulesByField,
   onConfigure,
   setOrderState,
   setSelectedItemId,
@@ -487,6 +504,7 @@ function MaterialForm({
   methodOperations: Operation[];
   orderState: OrderState;
   temporaryItems: TemporaryItems;
+  rulesByField: Map<string, ConfigurationRule>;
   setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
@@ -586,7 +604,7 @@ function MaterialForm({
     }));
   };
 
-  console.log({ itemData });
+  const key = (field: string) => getFieldKey(field, item.id);
 
   return (
     <ValidatedForm
@@ -619,7 +637,7 @@ function MaterialForm({
             includeInactive
             type={itemType}
             validItemTypes={["Consumable", "Material", "Part"]}
-            isConfigured={false}
+            isConfigured={rulesByField.has(key("itemId"))}
             onChange={(value) => {
               onItemChange(value?.value as string);
             }}
@@ -628,7 +646,8 @@ function MaterialForm({
                 ? () =>
                     onConfigure({
                       label: "Part",
-                      code: undefined,
+                      field: key("itemId"),
+                      code: rulesByField.get(key("itemId"))?.code,
                       defaultValue: itemData.itemId,
                       returnType: {
                         type: "text",
@@ -645,13 +664,14 @@ function MaterialForm({
             label="Description"
             isReadOnly
             value={itemData.description}
-            isConfigured={false}
+            isConfigured={rulesByField.has(key("description"))}
             onConfigure={
               configurable
                 ? () =>
                     onConfigure({
                       label: "Description",
-                      code: undefined,
+                      field: key("description"),
+                      code: rulesByField.get(key("description"))?.code,
                       defaultValue: itemData.description,
                       returnType: {
                         type: "text",
@@ -677,13 +697,14 @@ function MaterialForm({
             name="methodType"
             label="Method Type"
             value={itemData.methodType}
-            isConfigured={false}
+            isConfigured={rulesByField.has(key("methodType"))}
             onConfigure={
               configurable
                 ? () =>
                     onConfigure({
                       label: "Method Type",
-                      code: undefined,
+                      field: key("methodType"),
+                      code: rulesByField.get(key("methodType"))?.code,
                       defaultValue: itemData.methodType,
                       returnType: {
                         type: "enum",
@@ -697,13 +718,14 @@ function MaterialForm({
           <Number
             name="quantity"
             label="Quantity"
-            isConfigured={false}
+            isConfigured={rulesByField.has(key("quantity"))}
             onConfigure={
               configurable
                 ? () =>
                     onConfigure({
                       label: "Quantity",
-                      code: undefined,
+                      field: key("quantity"),
+                      code: rulesByField.get(key("quantity"))?.code,
                       defaultValue: itemData.quantity,
                       returnType: { type: "numeric" },
                     })
@@ -719,13 +741,14 @@ function MaterialForm({
                 unitOfMeasureCode: newValue?.value ?? "EA",
               }))
             }
-            isConfigured={false}
+            isConfigured={rulesByField.has(key("unitOfMeasureCode"))}
             onConfigure={
               configurable
                 ? () =>
                     onConfigure({
                       label: "Unit of Measure",
-                      code: undefined,
+                      field: key("unitOfMeasureCode"),
+                      code: rulesByField.get(key("unitOfMeasureCode"))?.code,
                       defaultValue: itemData.unitOfMeasureCode,
                       returnType: {
                         type: "enum",
@@ -807,6 +830,10 @@ function makeItem(
       order,
     },
   };
+}
+
+function getFieldKey(field: string, materialId: string) {
+  return `${field}:${materialId}`;
 }
 
 const usePendingMaterials = () => {

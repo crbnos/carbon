@@ -1,11 +1,12 @@
 import { cn } from "@carbon/react";
 import { LuHash, LuList, LuToggleLeft, LuType } from "react-icons/lu";
+import type { ConfiguratorDataType } from "./types";
 
 export function ConfiguratorDataTypeIcon({
   type,
   className,
 }: {
-  type: "numeric" | "text" | "boolean" | "list";
+  type: ConfiguratorDataType;
   className?: string;
 }) {
   switch (type) {
@@ -17,6 +18,7 @@ export function ConfiguratorDataTypeIcon({
       return (
         <LuToggleLeft className={cn("w-4 h-4 text-purple-600", className)} />
       );
+    case "enum":
     case "list":
       return <LuList className={cn("w-4 h-4 text-orange-600", className)} />;
     default:

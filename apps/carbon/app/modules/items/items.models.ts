@@ -125,6 +125,11 @@ export const configurationParameterValidator = z
     { message: "Key must be lowercase and underscore separated" }
   );
 
+export const configurationRuleValidator = z.object({
+  field: z.string().min(1, { message: "Field is required" }),
+  code: z.string().min(1, { message: "Code is required" }),
+});
+
 export const consumableValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Consumable ID is required" }).max(255),

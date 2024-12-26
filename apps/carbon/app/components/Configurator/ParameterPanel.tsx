@@ -29,50 +29,52 @@ export default function ParameterPanel({
           </div>
         </div>
 
-        {parameters.map((parameter, index) => (
-          <div
-            key={parameter.name}
-            className="grid grid-cols-2 border-b last:border-b-0 hover:bg-accent"
-          >
-            <div className="px-4 py-2 border-r flex items-center gap-2 min-w-[140px]">
-              <ConfiguratorDataTypeIcon type={parameter.type} />
-              <span className="text-sm font-medium text-foreground">
-                {parameter.name}
-              </span>
+        {parameters
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((parameter, index) => (
+            <div
+              key={parameter.name}
+              className="grid grid-cols-2 border-b last:border-b-0 hover:bg-accent"
+            >
+              <div className="px-4 py-2 border-r flex items-center gap-2 min-w-[140px]">
+                <ConfiguratorDataTypeIcon type={parameter.type} />
+                <span className="text-sm font-medium text-foreground">
+                  {parameter.name}
+                </span>
+              </div>
+              <div className="px-2 py-1">
+                {parameter.type === "boolean" ? (
+                  <select
+                    value={parameter.value}
+                    onChange={(e) => updateValue(index, e.target.value)}
+                    className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
+                  >
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                ) : parameter.type === "list" && parameter.config?.options ? (
+                  <select
+                    value={parameter.value}
+                    onChange={(e) => updateValue(index, e.target.value)}
+                    className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
+                  >
+                    {parameter.config.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type={parameter.type === "numeric" ? "number" : "text"}
+                    value={parameter.value}
+                    onChange={(e) => updateValue(index, e.target.value)}
+                    className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
+                  />
+                )}
+              </div>
             </div>
-            <div className="px-2 py-1">
-              {parameter.type === "boolean" ? (
-                <select
-                  value={parameter.value}
-                  onChange={(e) => updateValue(index, e.target.value)}
-                  className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
-                >
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              ) : parameter.type === "list" && parameter.config?.options ? (
-                <select
-                  value={parameter.value}
-                  onChange={(e) => updateValue(index, e.target.value)}
-                  className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
-                >
-                  {parameter.config.options.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={parameter.type === "numeric" ? "number" : "text"}
-                  value={parameter.value}
-                  onChange={(e) => updateValue(index, e.target.value)}
-                  className="w-full h-full px-2 bg-transparent border-0 focus:ring-0"
-                />
-              )}
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );
