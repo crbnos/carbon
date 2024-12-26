@@ -6,6 +6,7 @@ import { VStack } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { useRouteData } from "~/hooks";
 import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
 import {
@@ -162,6 +163,22 @@ export default function MakeMethodRoute() {
         operations={manufacturingRouteData?.methodOperations}
         parameters={configurationParametersAndGroups.parameters}
         configurationRules={configurationRules}
+      />
+      <ConfiguratorModal
+        initialValues={{
+          material: "Oak",
+          checkbox: true,
+          height: 1,
+          width: 2,
+          a1: 1,
+          a2: 2,
+          a3: 3,
+        }}
+        open={true}
+        onClose={() => {}}
+        groups={configurationParametersAndGroups.groups}
+        parameters={configurationParametersAndGroups.parameters}
+        onSubmit={() => {}}
       />
     </VStack>
   );

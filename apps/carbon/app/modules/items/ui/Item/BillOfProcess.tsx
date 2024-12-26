@@ -63,7 +63,7 @@ import {
 } from "~/components/Form";
 
 import { flushSync } from "react-dom";
-import { Configurator } from "~/components/Configurator";
+import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { ConfirmDelete } from "~/components/Modals";
@@ -632,7 +632,7 @@ const BillOfProcess = ({
         />
       </CardContent>
       {configuratorDisclosure.isOpen && configuration && (
-        <Configurator
+        <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
           parameters={parameters ?? []}
