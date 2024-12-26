@@ -597,7 +597,7 @@ const BillOfProcess = ({
             >
               Add Operation
             </Button>
-            {configurable && (
+            {configurable && operations.length > 0 && (
               <IconButton
                 icon={<LuFunctionSquare />}
                 aria-label="Configure"
@@ -606,19 +606,16 @@ const BillOfProcess = ({
                   rulesByField.has("billOfProcess") &&
                     "text-emerald-500 hover:text-emerald-500"
                 )}
-                onClick={
-                  configurable
-                    ? () =>
-                        onConfigure({
-                          label: "Bill of Process",
-                          field: "billOfProcess",
-                          code: rulesByField.get("billOfProcess")?.code,
-                          returnType: {
-                            type: "list",
-                            listOptions: operations.map((op) => op.description),
-                          },
-                        })
-                    : undefined
+                onClick={() =>
+                  onConfigure({
+                    label: "Bill of Process",
+                    field: "billOfProcess",
+                    code: rulesByField.get("billOfProcess")?.code,
+                    returnType: {
+                      type: "list",
+                      listOptions: operations.map((op) => op.description),
+                    },
+                  })
                 }
               />
             )}
@@ -824,7 +821,7 @@ function OperationForm({
           label="Process"
           isConfigured={rulesByField.has(key("processId"))}
           onConfigure={
-            configurable
+            configurable && !isTemporaryId(item.id)
               ? () => {
                   onConfigure({
                     label: "Process",
@@ -891,7 +888,7 @@ function OperationForm({
           }}
           isConfigured={rulesByField.has(key("operationType"))}
           onConfigure={
-            configurable
+            configurable && !isTemporaryId(item.id)
               ? () => {
                   onConfigure({
                     label: "Operation Type",
@@ -918,7 +915,7 @@ function OperationForm({
           className="col-span-2"
           isConfigured={rulesByField.has(key("description"))}
           onConfigure={
-            configurable
+            configurable && !isTemporaryId(item.id)
               ? () => {
                   onConfigure({
                     label: "Description",
@@ -950,7 +947,7 @@ function OperationForm({
           }}
           isConfigured={rulesByField.has(key("operationOrder"))}
           onConfigure={
-            configurable
+            configurable && !isTemporaryId(item.id)
               ? () => {
                   onConfigure({
                     label: "Operation Order",
@@ -1019,7 +1016,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("setupUnitHint"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Setup Unit",
@@ -1048,7 +1045,7 @@ function OperationForm({
                 }
                 isConfigured={rulesByField.has(key("setupTime"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Setup Time",
@@ -1076,7 +1073,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("setupUnit"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Setup Unit",
@@ -1145,7 +1142,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("laborUnitHint"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Labor Unit",
@@ -1174,7 +1171,7 @@ function OperationForm({
                 }
                 isConfigured={rulesByField.has(key("laborTime"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Labor Time",
@@ -1202,7 +1199,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("laborUnit"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Labor Unit",
@@ -1272,7 +1269,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("machineUnitHint"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Machine Unit",
@@ -1301,7 +1298,7 @@ function OperationForm({
                 }
                 isConfigured={rulesByField.has(key("machineTime"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Machine Time",
@@ -1329,7 +1326,7 @@ function OperationForm({
                 }}
                 isConfigured={rulesByField.has(key("machineUnit"))}
                 onConfigure={
-                  configurable
+                  configurable && !isTemporaryId(item.id)
                     ? () => {
                         onConfigure({
                           label: "Machine Unit",

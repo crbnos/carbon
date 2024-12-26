@@ -430,7 +430,7 @@ const BillOfMaterial = ({
             >
               Add Material
             </Button>
-            {configurable && (
+            {configurable && materials.length > 0 && (
               <IconButton
                 icon={<LuFunctionSquare />}
                 aria-label="Configure"
@@ -439,21 +439,16 @@ const BillOfMaterial = ({
                   rulesByField.has("billOfMaterial") &&
                     "text-emerald-500 hover:text-emerald-500"
                 )}
-                onClick={
-                  configurable
-                    ? () =>
-                        onConfigure({
-                          label: "Bill of Material",
-                          field: "billOfMaterial",
-                          code: rulesByField.get("billOfMaterial")?.code,
-                          returnType: {
-                            type: "list",
-                            listOptions: materials.map(
-                              (m) => m.data.itemReadableId!
-                            ),
-                          },
-                        })
-                    : undefined
+                onClick={() =>
+                  onConfigure({
+                    label: "Bill of Material",
+                    field: "billOfMaterial",
+                    code: rulesByField.get("billOfMaterial")?.code,
+                    returnType: {
+                      type: "list",
+                      listOptions: materials.map((m) => m.data.itemReadableId!),
+                    },
+                  })
                 }
               />
             )}
@@ -642,7 +637,7 @@ function MaterialForm({
               onItemChange(value?.value as string);
             }}
             onConfigure={
-              configurable
+              configurable && !isTemporaryId(item.id)
                 ? () =>
                     onConfigure({
                       label: "Part",
@@ -666,7 +661,7 @@ function MaterialForm({
             value={itemData.description}
             isConfigured={rulesByField.has(key("description"))}
             onConfigure={
-              configurable
+              configurable && !isTemporaryId(item.id)
                 ? () =>
                     onConfigure({
                       label: "Description",
@@ -699,7 +694,7 @@ function MaterialForm({
             value={itemData.methodType}
             isConfigured={rulesByField.has(key("methodType"))}
             onConfigure={
-              configurable
+              configurable && !isTemporaryId(item.id)
                 ? () =>
                     onConfigure({
                       label: "Method Type",
@@ -720,7 +715,7 @@ function MaterialForm({
             label="Quantity"
             isConfigured={rulesByField.has(key("quantity"))}
             onConfigure={
-              configurable
+              configurable && !isTemporaryId(item.id)
                 ? () =>
                     onConfigure({
                       label: "Quantity",
@@ -743,7 +738,7 @@ function MaterialForm({
             }
             isConfigured={rulesByField.has(key("unitOfMeasureCode"))}
             onConfigure={
-              configurable
+              configurable && !isTemporaryId(item.id)
                 ? () =>
                     onConfigure({
                       label: "Unit of Measure",
