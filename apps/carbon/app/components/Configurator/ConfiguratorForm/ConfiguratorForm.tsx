@@ -55,7 +55,7 @@ function getParameterSchema(parameter: ConfigurationParameter) {
         required_error: `${parameter.label} is required`,
       });
     case "boolean":
-      return zfd.checkbox();
+      return z.boolean();
     default:
       return z.any();
   }
@@ -244,21 +244,20 @@ function ConfiguratorFormContent({
   const { currentStep, totalSteps, formData, nextStep, previousStep } =
     useConfigurator();
 
-  const sortedGroups = useMemo(
-    () => [...groups].sort((a, b) => a.sortOrder - b.sortOrder),
-    [groups]
-  );
+  const groupedParameters = useMemo(() => {
+    const sortedGroups = [...groups]
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .filter((group) =>
+        parameters.some((p) => p.configurationParameterGroupId === group.id)
+      );
 
-  const groupedParameters = useMemo(
-    () =>
-      sortedGroups.map((group) => ({
-        group,
-        parameters: parameters
-          .filter((p) => p.configurationParameterGroupId === group.id)
-          .sort((a, b) => a.sortOrder - b.sortOrder),
-      })),
-    [sortedGroups, parameters]
-  );
+    return sortedGroups.map((group) => ({
+      group,
+      parameters: parameters
+        .filter((p) => p.configurationParameterGroupId === group.id)
+        .sort((a, b) => a.sortOrder - b.sortOrder),
+    }));
+  }, [groups, parameters]);
 
   useEffect(() => {
     if (groupedParameters[currentStep]) {
@@ -279,9 +278,16 @@ function ConfiguratorFormContent({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log({
+      currentStep,
+      totalSteps,
+      formData,
+      isStepValid,
+    });
     if (currentStep === totalSteps - 1) {
       const schema = generateConfigurationSchema(parameters);
       const result = schema.safeParse(formData);
+      console.log({ result });
       if (result.success) {
         onSubmit(result.data);
       }
@@ -310,8 +316,9 @@ function ConfiguratorFormContent({
         >
           Previous
         </Button>
+
         <Button type="submit" disabled={!isStepValid}>
-          {currentStep === totalSteps - 1 ? "Submit" : "Next"}
+          {currentStep === totalSteps - 1 ? "Save" : "Next"}
         </Button>
       </div>
     </form>
@@ -319,10 +326,32 @@ function ConfiguratorFormContent({
 }
 
 function ConfiguratorForm(props: ConfiguratorFormProps) {
+  const validGroups = useMemo(
+    () =>
+      props.groups.filter((group) =>
+        props.parameters.some(
+          (p) => p.configurationParameterGroupId === group.id
+        )
+      ),
+    [props.groups, props.parameters]
+  );
+
+  const initialValues = useMemo(() => {
+    const values: FormData = {};
+    props.parameters.forEach((param) => {
+      if (param.dataType === "boolean") {
+        values[param.key] = props.initialValues?.[param.key] ?? false;
+      } else {
+        values[param.key] = props.initialValues?.[param.key] ?? "";
+      }
+    });
+    return values;
+  }, [props.initialValues, props.parameters]);
+
   return (
     <ConfiguratorProvider
-      totalSteps={props.groups.length}
-      initialValues={props.initialValues}
+      initialValues={initialValues}
+      totalSteps={validGroups.length}
     >
       <ConfiguratorFormContent {...props} />
     </ConfiguratorProvider>
@@ -346,8 +375,16 @@ function ConfiguratorModal({
   onSubmit,
   initialValues,
 }: ConfiguratorModalProps) {
+  const validGroups = useMemo(
+    () =>
+      groups.filter((group) =>
+        parameters.some((p) => p.configurationParameterGroupId === group.id)
+      ),
+    [groups, parameters]
+  );
+
   const [currentGroup, setCurrentGroup] = useState<ConfigurationParameterGroup>(
-    groups[0]
+    validGroups[0]
   );
 
   return (

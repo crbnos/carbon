@@ -50,6 +50,7 @@ const baseJobValidator = z.object({
     .string()
     .min(1, { message: "Unit of measure is required" }),
   modelUploadId: zfd.text(z.string().optional()),
+  configuration: z.any().optional(),
 });
 
 export const jobValidator = baseJobValidator.refine(
