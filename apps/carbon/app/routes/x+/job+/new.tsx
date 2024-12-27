@@ -56,9 +56,19 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!jobId) throw new Error("jobId is not defined");
   const { id: _id, ...data } = validation.data;
 
+  let configuration = undefined;
+  if (data.configuration) {
+    try {
+      configuration = JSON.parse(data.configuration);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   const createJob = await upsertJob(serviceRole, {
     ...data,
     jobId,
+    configuration,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

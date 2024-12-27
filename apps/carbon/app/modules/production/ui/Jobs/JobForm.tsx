@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -9,9 +10,12 @@ import {
   CardTitle,
   VStack,
   cn,
+  toast,
+  useDisclosure,
 } from "@carbon/react";
 import { useState } from "react";
 import type { z } from "zod";
+import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
   CustomFormFields,
   Customer,
@@ -27,6 +31,10 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+} from "~/modules/items/types";
 import { type MethodItemType } from "~/modules/shared";
 import type { jobStatus } from "../../production.models";
 import { deadlineTypes, jobValidator } from "../../production.models";
@@ -74,6 +82,17 @@ const JobForm = ({ initialValues }: JobFormProps) => {
     modelUploadId: initialValues.modelUploadId ?? null,
   });
 
+  const configurationDisclosure = useDisclosure();
+  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [configurationParameters, setConfigurationParameters] = useState<{
+    parameters: ConfigurationParameter[];
+    groups: ConfigurationParameterGroup[];
+  } | null>(null);
+  const [configurationValues, setConfigurationValues] = useState<
+    Record<string, any> | ""
+  >("");
+
   const isCustomer = permissions.is("customer");
   const isEditing = initialValues.id !== undefined;
 
@@ -93,7 +112,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
   const onItemChange = async (itemId: string) => {
     if (!itemId) return;
     if (!carbon || !company.id) return;
-    const [item, manufacturing] = await Promise.all([
+    const [item, manufacturing, itemReplenishment] = await Promise.all([
       carbon
         .from("item")
         .select(
@@ -104,9 +123,14 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         .single(),
       carbon
         .from("itemReplenishment")
-        .select("lotSize, scrapPercentage")
+        .select("lotSize, scrapPercentage, requiresConfiguration")
         .eq("itemId", itemId)
         .single(),
+      carbon
+        .from("itemReplenishment")
+        .select("requiresConfiguration")
+        .eq("itemId", itemId)
+        .maybeSingle(),
     ]);
 
     setItemData((current) => ({
@@ -124,141 +148,207 @@ const JobForm = ({ initialValues }: JobFormProps) => {
           ((manufacturing?.data?.scrapPercentage ?? 0) / 100)
       ),
     }));
+
+    if (itemReplenishment.data?.requiresConfiguration) {
+      setRequiresConfiguration(true);
+      const [parameters, groups] = await Promise.all([
+        carbon
+          .from("configurationParameter")
+          .select("*")
+          .eq("itemId", itemId)
+          .eq("companyId", company.id),
+        carbon
+          .from("configurationParameterGroup")
+          .select("*")
+          .eq("itemId", itemId)
+          .eq("companyId", company.id),
+      ]);
+
+      if (parameters.error || groups.error) {
+        toast.error("Failed to load configuration parameters");
+        return;
+      }
+
+      setConfigurationParameters({
+        parameters: parameters.data ?? [],
+        groups: groups.data ?? [],
+      });
+    } else {
+      setRequiresConfiguration(false);
+      setConfigurationParameters(null);
+    }
   };
 
   return (
-    <Card>
-      <ValidatedForm
-        method="post"
-        validator={jobValidator}
-        defaultValues={initialValues}
-      >
-        <CardHeader>
-          <CardTitle>{isEditing ? "Job" : "New Job"}</CardTitle>
-          {!isEditing && (
-            <CardDescription>
-              A job is a set of work to be done to fulfill an order or increase
-              inventory
-            </CardDescription>
-          )}
-        </CardHeader>
-        <CardContent>
-          <Hidden name="id" />
-          <Hidden
-            name="modelUploadId"
-            value={itemData.modelUploadId ?? undefined}
-          />
-          <VStack>
-            <div
-              className={cn(
-                "grid w-full gap-x-8 gap-y-4",
-                isEditing
-                  ? "grid-cols-1 lg:grid-cols-3"
-                  : "grid-cols-1 md:grid-cols-2"
-              )}
-            >
-              {isEditing ? (
-                <Input name="jobId" label="Job ID" isReadOnly />
-              ) : (
-                <SequenceOrCustomId name="jobId" label="Job ID" table="job" />
-              )}
-
-              <Item
-                name="itemId"
-                label={type}
-                type={type}
-                value={itemData.itemId}
-                validItemTypes={["Part", "Tool"]}
-                onChange={(value) => {
-                  onItemChange(value?.value as string);
-                }}
-                onTypeChange={onTypeChange}
+    <>
+      <Card>
+        <ValidatedForm
+          method="post"
+          validator={jobValidator}
+          defaultValues={initialValues}
+        >
+          <CardHeader>
+            <CardTitle>{isEditing ? "Job" : "New Job"}</CardTitle>
+            {!isEditing && (
+              <CardDescription>
+                A job is a set of work to be done to fulfill an order or
+                increase inventory
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            <Hidden name="id" />
+            <Hidden
+              name="modelUploadId"
+              value={itemData.modelUploadId ?? undefined}
+            />
+            {!isEditing && requiresConfiguration && (
+              <Hidden
+                name="configuration"
+                value={JSON.stringify(configurationValues)}
               />
+            )}
+            <VStack>
+              <div
+                className={cn(
+                  "grid w-full gap-x-8 gap-y-4",
+                  isEditing
+                    ? "grid-cols-1 lg:grid-cols-3"
+                    : "grid-cols-1 md:grid-cols-2"
+                )}
+              >
+                {isEditing ? (
+                  <Input name="jobId" label="Job ID" isReadOnly />
+                ) : (
+                  <SequenceOrCustomId name="jobId" label="Job ID" table="job" />
+                )}
 
-              {isEditing && (
-                <InputControlled
-                  name="description"
-                  label="Short Description"
-                  value={itemData.description}
-                  isReadOnly
+                <Item
+                  name="itemId"
+                  label={type}
+                  type={type}
+                  value={itemData.itemId}
+                  validItemTypes={["Part", "Tool"]}
+                  onChange={(value) => {
+                    onItemChange(value?.value as string);
+                  }}
+                  onTypeChange={onTypeChange}
                 />
-              )}
 
-              <NumberControlled
-                name="quantity"
-                label="Quantity"
-                value={itemData.quantity}
-                onChange={(value) =>
-                  setItemData((prev) => ({
-                    ...prev,
-                    quantity: value,
-                    scrapQuantity: Math.ceil(value * prev.scrapPercentage),
-                  }))
-                }
-                minValue={0}
-              />
-              <NumberControlled
-                name="scrapQuantity"
-                label="Scrap Quantity"
-                value={itemData.scrapQuantity}
-                onChange={(value) =>
-                  setItemData((prev) => ({
-                    ...prev,
-                    scrapQuantity: value,
-                    scrapPercentage:
-                      prev.quantity > 0 ? value / prev.quantity : 1,
-                  }))
-                }
-                minValue={0}
-              />
+                {isEditing && (
+                  <InputControlled
+                    name="description"
+                    label="Short Description"
+                    value={itemData.description}
+                    isReadOnly
+                  />
+                )}
 
-              <UnitOfMeasure
-                name="unitOfMeasureCode"
-                value={itemData.uom}
-                onChange={(value) => {
-                  if (value?.value) {
-                    setItemData((prev) => ({ ...prev, uom: value.value }));
+                <NumberControlled
+                  name="quantity"
+                  label="Quantity"
+                  value={itemData.quantity}
+                  onChange={(value) =>
+                    setItemData((prev) => ({
+                      ...prev,
+                      quantity: value,
+                      scrapQuantity: Math.ceil(value * prev.scrapPercentage),
+                    }))
                   }
+                  minValue={0}
+                />
+                <NumberControlled
+                  name="scrapQuantity"
+                  label="Scrap Quantity"
+                  value={itemData.scrapQuantity}
+                  onChange={(value) =>
+                    setItemData((prev) => ({
+                      ...prev,
+                      scrapQuantity: value,
+                      scrapPercentage:
+                        prev.quantity > 0 ? value / prev.quantity : 1,
+                    }))
+                  }
+                  minValue={0}
+                />
+
+                <UnitOfMeasure
+                  name="unitOfMeasureCode"
+                  value={itemData.uom}
+                  onChange={(value) => {
+                    if (value?.value) {
+                      setItemData((prev) => ({ ...prev, uom: value.value }));
+                    }
+                  }}
+                />
+                <Location name="locationId" label="Location" />
+
+                <DatePicker
+                  name="dueDate"
+                  label="Due Date"
+                  isDisabled={isCustomer}
+                />
+                <Select
+                  name="deadlineType"
+                  label="Deadline Type"
+                  options={deadlineTypes.map((d) => ({
+                    value: d,
+                    label: d,
+                  }))}
+                />
+
+                {isEditing && (
+                  <Customer name="customerId" label="Customer" isOptional />
+                )}
+
+                <CustomFormFields table="job" />
+              </div>
+            </VStack>
+          </CardContent>
+          <CardFooter>
+            {!isEditing && requiresConfiguration && (
+              <Button
+                type="button"
+                variant={isConfigured ? "secondary" : "primary"}
+                onClick={() => {
+                  configurationDisclosure.onOpen();
                 }}
-              />
-              <Location name="locationId" label="Location" />
+              >
+                Configure
+              </Button>
+            )}
+            <Submit
+              isDisabled={
+                (requiresConfiguration && !isConfigured) ||
+                isDisabled ||
+                (isEditing
+                  ? !permissions.can("update", "production")
+                  : !permissions.can("create", "production"))
+              }
+            >
+              Save
+            </Submit>
+          </CardFooter>
+        </ValidatedForm>
+      </Card>
 
-              <DatePicker
-                name="dueDate"
-                label="Due Date"
-                isDisabled={isCustomer}
-              />
-              <Select
-                name="deadlineType"
-                label="Deadline Type"
-                options={deadlineTypes.map((d) => ({
-                  value: d,
-                  label: d,
-                }))}
-              />
-
-              {isEditing && (
-                <Customer name="customerId" label="Customer" isOptional />
-              )}
-
-              <CustomFormFields table="job" />
-            </div>
-          </VStack>
-        </CardContent>
-        <CardFooter>
-          <Submit
-            isDisabled={
-              isDisabled ||
-              (isEditing
-                ? !permissions.can("update", "production")
-                : !permissions.can("create", "production"))
-            }
-          >
-            Save
-          </Submit>
-        </CardFooter>
-      </ValidatedForm>
-    </Card>
+      {requiresConfiguration &&
+        configurationDisclosure.isOpen &&
+        configurationParameters && (
+          <ConfiguratorModal
+            open
+            initialValues={configurationValues || {}}
+            groups={configurationParameters.groups ?? []}
+            parameters={configurationParameters.parameters ?? []}
+            onClose={configurationDisclosure.onClose}
+            onSubmit={(config: Record<string, any>) => {
+              setConfigurationValues(config);
+              setIsConfigured(true);
+              configurationDisclosure.onClose();
+            }}
+          />
+        )}
+    </>
   );
 };
 

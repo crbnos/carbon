@@ -2,6 +2,10 @@
 import {
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Modal,
@@ -15,7 +19,13 @@ import Editor from "@monaco-editor/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import type * as Monaco from "monaco-editor";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuFunctionSquare, LuPlay, LuSave, LuTrash2 } from "react-icons/lu";
+import {
+  LuFunctionSquare,
+  LuMoreVertical,
+  LuPlay,
+  LuSave,
+  LuTrash2,
+} from "react-icons/lu";
 import { useMode } from "~/hooks/useMode";
 import type { action } from "~/routes/x+/part+/$itemId.rule";
 import { path } from "~/utils/path";
@@ -313,15 +323,27 @@ export default function Configurator({
                 {isActive ? "Active" : "Inactive"}
                 <LuFunctionSquare className="ml-1" />
               </Badge>
-              {isActive && (
-                <IconButton
-                  icon={<LuTrash2 />}
-                  variant="secondary"
-                  size="sm"
-                  onClick={deleteDialog.onOpen}
-                  aria-label="Delete Rule"
-                />
-              )}
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    icon={<LuMoreVertical />}
+                    variant="secondary"
+                    size="sm"
+                    aria-label="Actions"
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    destructive
+                    disabled={!isActive}
+                    onClick={deleteDialog.onOpen}
+                  >
+                    <LuTrash2 className="mr-2 h-4 w-4" />
+                    Delete Rule
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </HStack>
           </div>
 

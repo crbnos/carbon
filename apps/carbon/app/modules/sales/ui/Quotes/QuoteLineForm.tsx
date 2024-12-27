@@ -1,4 +1,5 @@
 import {
+  Button,
   CardAction,
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +23,7 @@ import {
 
 import { useCarbon } from "@carbon/auth";
 import { TextArea, ValidatedForm } from "@carbon/form";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
@@ -42,8 +43,14 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { Quotation, QuotationLine } from "../../types";
 
 import { MethodItemTypeIcon } from "~/components";
+import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+} from "~/modules/items/types";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { methodType } from "~/modules/shared";
+import type { action } from "~/routes/x+/quote+/$quoteId.new";
 import { path } from "~/utils/path";
 import { quoteLineStatusType, quoteLineValidator } from "../../sales.models";
 import DeleteQuoteLine from "./DeleteQuoteLine";
@@ -59,6 +66,7 @@ const QuoteLineForm = ({
   type,
   onClose,
 }: QuoteLineFormProps) => {
+  const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { company } = useUser();
   const { carbon } = useCarbon();
@@ -96,6 +104,17 @@ const QuoteLineForm = ({
     uom: initialValues.unitOfMeasureCode ?? "",
     modelUploadId: initialValues.modelUploadId ?? null,
   });
+
+  const configurationDisclosure = useDisclosure();
+  const [requiresConfiguration, setRequiresConfiguration] = useState(false);
+  const [isConfigured, setIsConfigured] = useState(false);
+  const [configurationParameters, setConfigurationParameters] = useState<{
+    parameters: ConfigurationParameter[];
+    groups: ConfigurationParameterGroup[];
+  } | null>(null);
+  const [configurationValues, setConfigurationValues] = useState<
+    Record<string, any> | ""
+  >("");
 
   const onCustomerPartChange = async (customerPartId: string) => {
     if (!carbon || !routeData?.quote?.customerId) return;
@@ -143,7 +162,7 @@ const QuoteLineForm = ({
   const onItemChange = async (itemId: string) => {
     if (!carbon) return;
 
-    const [item, customerPart] = await Promise.all([
+    const [item, customerPart, itemReplenishment] = await Promise.all([
       carbon
         .from("item")
         .select(
@@ -157,6 +176,11 @@ const QuoteLineForm = ({
         .select("customerPartId, customerPartRevision")
         .eq("itemId", itemId)
         .eq("customerId", routeData?.quote?.customerId!)
+        .maybeSingle(),
+      carbon
+        .from("itemReplenishment")
+        .select("requiresConfiguration")
+        .eq("itemId", itemId)
         .maybeSingle(),
     ]);
 
@@ -182,6 +206,34 @@ const QuoteLineForm = ({
     }
 
     setItemData(newItemData);
+    if (itemReplenishment.data?.requiresConfiguration) {
+      setRequiresConfiguration(true);
+      const [parameters, groups] = await Promise.all([
+        carbon
+          .from("configurationParameter")
+          .select("*")
+          .eq("itemId", itemId)
+          .eq("companyId", company.id),
+        carbon
+          .from("configurationParameterGroup")
+          .select("*")
+          .eq("itemId", itemId)
+          .eq("companyId", company.id),
+      ]);
+
+      if (parameters.error || groups.error) {
+        toast.error("Failed to load configuration parameters");
+        return;
+      }
+
+      setConfigurationParameters({
+        parameters: parameters.data ?? [],
+        groups: groups.data ?? [],
+      });
+    } else {
+      setRequiresConfiguration(false);
+      setConfigurationParameters(null);
+    }
   };
 
   const deleteDisclosure = useDisclosure();
@@ -192,6 +244,7 @@ const QuoteLineForm = ({
         <ModalCard onClose={onClose}>
           <ModalCardContent size="xxlarge">
             <ValidatedForm
+              fetcher={fetcher}
               defaultValues={initialValues}
               validator={quoteLineValidator}
               method="post"
@@ -263,6 +316,12 @@ const QuoteLineForm = ({
                   name="modelUploadId"
                   value={itemData?.modelUploadId ?? undefined}
                 />
+                {!isEditing && requiresConfiguration && (
+                  <Hidden
+                    name="configuration"
+                    value={JSON.stringify(configurationValues)}
+                  />
+                )}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                     <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
@@ -371,8 +430,34 @@ const QuoteLineForm = ({
                 </VStack>
               </ModalCardBody>
               <ModalCardFooter>
+                {!isEditing && (
+                  <Button variant="secondary" onClick={onClose}>
+                    Cancel
+                  </Button>
+                )}
+                {!isEditing && requiresConfiguration && (
+                  <Button
+                    variant={isConfigured ? "secondary" : "primary"}
+                    isLoading={fetcher.state !== "idle"}
+                    type="button"
+                    isDisabled={
+                      !isEditable ||
+                      (isEditing
+                        ? !permissions.can("update", "sales")
+                        : !permissions.can("create", "sales"))
+                    }
+                    onClick={() => {
+                      configurationDisclosure.onOpen();
+                    }}
+                  >
+                    Configure
+                  </Button>
+                )}
+
                 <Submit
+                  isLoading={fetcher.state !== "idle"}
                   isDisabled={
+                    (requiresConfiguration && !isConfigured) ||
                     !isEditable ||
                     (isEditing
                       ? !permissions.can("update", "sales")
@@ -392,6 +477,22 @@ const QuoteLineForm = ({
           onCancel={deleteDisclosure.onClose}
         />
       )}
+      {requiresConfiguration &&
+        configurationDisclosure.isOpen &&
+        configurationParameters && (
+          <ConfiguratorModal
+            open
+            initialValues={configurationValues || {}}
+            groups={configurationParameters.groups ?? []}
+            parameters={configurationParameters.parameters ?? []}
+            onClose={configurationDisclosure.onClose}
+            onSubmit={(config: Record<string, any>) => {
+              setConfigurationValues(config);
+              setIsConfigured(true);
+              configurationDisclosure.onClose();
+            }}
+          />
+        )}
     </>
   );
 };

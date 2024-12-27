@@ -29,11 +29,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id, ...data } = validation.data;
+  let configuration = undefined;
+  if (data.configuration) {
+    try {
+      configuration = JSON.parse(data.configuration);
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
   const serviceRole = getCarbonServiceRole();
   const createQuotationLine = await upsertQuoteLine(serviceRole, {
     ...data,
     companyId,
+    configuration,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
