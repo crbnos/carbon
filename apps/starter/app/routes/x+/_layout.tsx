@@ -24,7 +24,6 @@ import {
 
 import { AppSidebar } from "~/components/AppSidebar";
 import Breadcrumbs from "~/components/Breadcrumbs";
-import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -41,10 +40,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (user.error || !user.data) {
     await destroyAuthSession(request);
-  }
-
-  if (!user.data?.developer) {
-    throw redirect(path.to.requestAccess);
   }
 
   const company = companies.data?.find((c) => c.companyId === companyId);
