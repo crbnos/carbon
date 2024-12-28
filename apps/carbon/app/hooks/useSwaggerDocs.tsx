@@ -14,7 +14,5 @@ export const useSwaggerDocs = () => {
     docsFetcher.load(path.to.api.docs);
   });
 
-  const swaggerDocs = docsFetcher.data;
-
-  return swaggerDocs;
+  return docsFetcher.data;
 };
