@@ -38,11 +38,27 @@ serve(async (req: Request) => {
     });
 
     let result;
+    // Check for disallowed code patterns
+    const disallowedPatterns = [
+      /\b(for|while|do)\b/, // loops
+      /\bfetch\b/, // fetch calls
+      /setTimeout|setInterval/, // timeouts
+      /\bimport\b/, // dynamic imports
+      /new Promise/, // promise construction
+      /\beval\b/, // eval
+      /Function\(/, // Function constructor
+    ];
+
+    if (disallowedPatterns.some((pattern) => pattern.test(code))) {
+      return new Response(JSON.stringify({ result: null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     try {
       const mod = await ts(code);
-      console.log({ mod });
       result = await mod.configure(parameters);
-      console.log({ result });
     } catch (err) {
       console.error("Execution error:", err);
       throw new Error(`Failed to execute code: ${err.message}`);
@@ -53,7 +69,8 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("Error:", err);
+    return new Response(JSON.stringify({ result: null }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
