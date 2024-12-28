@@ -1,5 +1,5 @@
 {
-  "name": "carbon",
+  "name": "erp",
   "type": "module",
   "dependencies": {
     "@ai-sdk/openai": "~0.0.66",
