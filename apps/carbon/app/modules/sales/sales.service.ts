@@ -257,6 +257,47 @@ export async function deleteSalesRFQLine(
   return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
 }
 
+export async function getConfigurationParametersByQuoteLineId(
+  client: SupabaseClient<Database>,
+  quoteLineId: string,
+  companyId: string
+) {
+  const quoteLine = await client
+    .from("quoteLine")
+    .select("itemId")
+    .eq("id", quoteLineId)
+    .single();
+
+  if (quoteLine.error || !quoteLine.data) {
+    return { groups: [], parameters: [] };
+  }
+
+  const [parameters, groups] = await Promise.all([
+    client
+      .from("configurationParameter")
+      .select("*")
+      .eq("itemId", quoteLine.data.itemId)
+      .eq("companyId", companyId),
+    client
+      .from("configurationParameterGroup")
+      .select("*")
+      .eq("itemId", quoteLine.data.itemId)
+      .eq("companyId", companyId),
+  ]);
+
+  if (parameters.error) {
+    console.error(parameters.error);
+    return { groups: [], parameters: [] };
+  }
+
+  if (groups.error) {
+    console.error(groups.error);
+    return { groups: [], parameters: [] };
+  }
+
+  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
+}
+
 export async function getCustomer(
   client: SupabaseClient<Database>,
   customerId: string

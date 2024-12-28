@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -23,16 +24,18 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useLocation, useParams } from "@remix-run/react";
+import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   LuAlertTriangle,
   LuDownload,
+  LuSettings,
   LuSquareStack,
   LuUpload,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
+import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
   Hidden,
   Item,
@@ -42,6 +45,10 @@ import {
 } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 import { getJobMethodValidator } from "../../production.models";
 import type { Job, JobMethod } from "../../types";
@@ -55,6 +62,10 @@ const JobBreadcrumbs = () => {
   const routeData = useRouteData<{
     job: Job;
     method: Tree<JobMethod>;
+    configurationParameters: Promise<{
+      groups: ConfigurationParameterGroup[];
+      parameters: ConfigurationParameter[];
+    }>;
   }>(path.to.job(jobId));
 
   const isDisabled = ["Completed", "Cancelled", "In Progress"].includes(
@@ -90,6 +101,39 @@ const JobBreadcrumbs = () => {
     materialId &&
     pathname === path.to.jobMakeMethod(jobId, methodId, materialId);
 
+  const { carbon } = useCarbon();
+
+  const configuratorModal = useDisclosure();
+  const [isConfigured, setIsConfigured] = useState(false);
+  const getIsConfigured = async () => {
+    if (isJobMethod && routeData?.job.itemId && carbon) {
+      const { data, error } = await carbon
+        .from("itemReplenishment")
+        .select("requiresConfiguration")
+        .eq("itemId", routeData.job.itemId)
+        .single();
+
+      if (error) {
+        console.error(error);
+      }
+
+      setIsConfigured(data?.requiresConfiguration ?? false);
+    }
+  };
+
+  useMount(() => {
+    getIsConfigured();
+  });
+
+  const saveConfiguration = async (configuration: Record<string, any>) => {
+    configuratorModal.onClose();
+    fetcher.submit(JSON.stringify(configuration), {
+      method: "post",
+      action: path.to.jobConfigure(jobId),
+      encType: "application/json",
+    });
+  };
+
   return (
     <>
       {permissions.can("update", "production") &&
@@ -115,6 +159,23 @@ const JobBreadcrumbs = () => {
                 >
                   Get Method
                 </MenubarItem>
+                {isConfigured && isJobMethod && (
+                  <MenubarItem
+                    leftIcon={<LuSettings />}
+                    isDisabled={
+                      isDisabled || !permissions.can("update", "production")
+                    }
+                    isLoading={
+                      fetcher.state !== "idle" &&
+                      fetcher.formAction === path.to.jobConfigure(jobId)
+                    }
+                    onClick={() => {
+                      configuratorModal.onOpen();
+                    }}
+                  >
+                    Configure
+                  </MenubarItem>
+                )}
               </HStack>
             </HStack>
           </Menubar>
@@ -302,6 +363,27 @@ const JobBreadcrumbs = () => {
             </ValidatedForm>
           </ModalContent>
         </Modal>
+      )}
+
+      {configuratorModal.isOpen && (
+        <Suspense fallback={null}>
+          <Await resolve={routeData?.configurationParameters}>
+            {(configurationParameters) => (
+              <ConfiguratorModal
+                open
+                initialValues={
+                  (routeData?.job.configuration || {}) as Record<string, any>
+                }
+                groups={configurationParameters?.groups ?? []}
+                parameters={configurationParameters?.parameters ?? []}
+                onClose={configuratorModal.onClose}
+                onSubmit={(config: Record<string, any>) => {
+                  saveConfiguration(config);
+                }}
+              />
+            )}
+          </Await>
+        </Suspense>
       )}
     </>
   );

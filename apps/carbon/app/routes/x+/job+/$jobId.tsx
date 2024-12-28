@@ -15,6 +15,7 @@ import { Suspense } from "react";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
+import { getConfigurationParameters } from "~/modules/items";
 import {
   getJob,
   getJobDocuments,
@@ -65,6 +66,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     files: getJobDocuments(serviceRole, companyId, job.data),
     method: getJobMethodTree(serviceRole, jobId), // returns a promise
+    configurationParameters: getConfigurationParameters(
+      serviceRole,
+      job.data.itemId!,
+      companyId
+    ),
   });
 }
 

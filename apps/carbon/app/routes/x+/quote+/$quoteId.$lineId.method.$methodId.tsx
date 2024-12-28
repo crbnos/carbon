@@ -1,8 +1,9 @@
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import { defer, redirect, useLoaderData, useParams } from "@remix-run/react";
 
 import {
+  getConfigurationParametersByQuoteLineId,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
 } from "~/modules/sales";
@@ -19,7 +20,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
@@ -53,7 +54,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     materials:
       materials?.data.map((m) => ({
         ...m,
@@ -72,6 +73,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent,
       })) ?? [],
+    configurationParameters: getConfigurationParametersByQuoteLineId(
+      client,
+      lineId,
+      companyId
+    ),
   });
 }
 

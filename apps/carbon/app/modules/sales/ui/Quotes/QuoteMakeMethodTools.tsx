@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -16,14 +17,25 @@ import {
   ModalTitle,
   toast,
   useDisclosure,
+  useMount,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useLocation, useParams } from "@remix-run/react";
-import { useEffect, useState } from "react";
-import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
+import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
+import { Suspense, useEffect, useState } from "react";
+import {
+  LuAlertTriangle,
+  LuDownload,
+  LuSettings,
+  LuUpload,
+} from "react-icons/lu";
+import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+} from "~/modules/items";
 import { path } from "~/utils/path";
 import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
@@ -39,6 +51,14 @@ const QuoteMakeMethodTools = () => {
     lines: QuotationLine[];
     methods: Promise<Tree<QuoteMethod>[]> | Tree<QuoteMethod>[];
   }>(path.to.quote(quoteId));
+
+  const lineData = useRouteData<{
+    configurationParameters: Promise<{
+      groups: ConfigurationParameterGroup[];
+      parameters: ConfigurationParameter[];
+    }>;
+  }>(path.to.quoteLineMethod(quoteId, lineId!, methodId!));
+
   const line = routeData?.lines.find((line) => line.id === lineId);
   const { pathname } = useLocation();
 
@@ -73,6 +93,39 @@ const QuoteMakeMethodTools = () => {
     pathname ===
       path.to.quoteLineMakeMethod(quoteId, lineId!, methodId, materialId);
 
+  const { carbon } = useCarbon();
+
+  const configuratorModal = useDisclosure();
+  const [isConfigured, setIsConfigured] = useState(false);
+  const getIsConfigured = async () => {
+    if (isQuoteLineMethod && line?.itemId && carbon) {
+      const { data, error } = await carbon
+        .from("itemReplenishment")
+        .select("requiresConfiguration")
+        .eq("itemId", line.itemId)
+        .single();
+
+      if (error) {
+        console.error(error);
+      }
+
+      setIsConfigured(data?.requiresConfiguration ?? false);
+    }
+  };
+
+  useMount(() => {
+    getIsConfigured();
+  });
+
+  const saveConfiguration = async (configuration: Record<string, any>) => {
+    configuratorModal.onClose();
+    fetcher.submit(JSON.stringify(configuration), {
+      method: "post",
+      action: path.to.quoteLineConfigure(quoteId, lineId!),
+      encType: "application/json",
+    });
+  };
+
   return (
     <>
       {line &&
@@ -99,6 +152,22 @@ const QuoteMakeMethodTools = () => {
                 >
                   Save Method
                 </MenubarItem>
+                {isConfigured && isQuoteLineMethod && (
+                  <MenubarItem
+                    leftIcon={<LuSettings />}
+                    isDisabled={!permissions.can("update", "sales")}
+                    isLoading={
+                      fetcher.state !== "idle" &&
+                      fetcher.formAction ===
+                        path.to.quoteLineConfigure(quoteId, lineId!)
+                    }
+                    onClick={() => {
+                      configuratorModal.onOpen();
+                    }}
+                  >
+                    Configure
+                  </MenubarItem>
+                )}
               </HStack>
             </HStack>
           </Menubar>
@@ -273,6 +342,27 @@ const QuoteMakeMethodTools = () => {
             </ValidatedForm>
           </ModalContent>
         </Modal>
+      )}
+
+      {configuratorModal.isOpen && (
+        <Suspense fallback={null}>
+          <Await resolve={lineData?.configurationParameters}>
+            {(configurationParameters) => (
+              <ConfiguratorModal
+                open
+                initialValues={
+                  (line?.configuration || {}) as Record<string, any>
+                }
+                groups={configurationParameters?.groups ?? []}
+                parameters={configurationParameters?.parameters ?? []}
+                onClose={configuratorModal.onClose}
+                onSubmit={(config: Record<string, any>) => {
+                  saveConfiguration(config);
+                }}
+              />
+            )}
+          </Await>
+        </Suspense>
       )}
     </>
   );

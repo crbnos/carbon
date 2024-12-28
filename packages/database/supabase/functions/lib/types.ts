@@ -7603,6 +7603,7 @@ export type Database = {
         Row: {
           assignee: string | null
           companyId: string
+          configuration: Json | null
           createdAt: string
           createdBy: string
           customerId: string | null
@@ -7634,6 +7635,7 @@ export type Database = {
         Insert: {
           assignee?: string | null
           companyId: string
+          configuration?: Json | null
           createdAt?: string
           createdBy: string
           customerId?: string | null
@@ -7665,6 +7667,7 @@ export type Database = {
         Update: {
           assignee?: string | null
           companyId?: string
+          configuration?: Json | null
           createdAt?: string
           createdBy?: string
           customerId?: string | null
@@ -15558,6 +15561,7 @@ export type Database = {
         Row: {
           additionalCharges: Json | null
           companyId: string
+          configuration: Json | null
           createdBy: string
           customerPartId: string | null
           customerPartRevision: string | null
@@ -15588,6 +15592,7 @@ export type Database = {
         Insert: {
           additionalCharges?: Json | null
           companyId: string
+          configuration?: Json | null
           createdBy: string
           customerPartId?: string | null
           customerPartRevision?: string | null
@@ -15618,6 +15623,7 @@ export type Database = {
         Update: {
           additionalCharges?: Json | null
           companyId?: string
+          configuration?: Json | null
           createdBy?: string
           customerPartId?: string | null
           customerPartRevision?: string | null
@@ -26474,6 +26480,7 @@ export type Database = {
           assignee: string | null
           autodeskUrn: string | null
           companyId: string | null
+          configuration: Json | null
           createdAt: string | null
           createdBy: string | null
           customerId: string | null
@@ -28690,6 +28697,7 @@ export type Database = {
           additionalCharges: Json | null
           autodeskUrn: string | null
           companyId: string | null
+          configuration: Json | null
           createdBy: string | null
           customerPartId: string | null
           customerPartRevision: string | null
@@ -32501,6 +32509,7 @@ export type Database = {
     Enums: {
       accountingPeriodStatus: "Inactive" | "Active"
       configurationParameterDataType: "text" | "numeric" | "boolean" | "list"
+      configurationSourceDocument: "Quote Line" | "Job"
       costLedgerType:
         | "Direct Cost"
         | "Revaluation"

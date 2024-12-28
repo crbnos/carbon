@@ -397,6 +397,7 @@ export const path = {
     itemPostingGroups: `${x}/items/groups`,
     job: (id: string) => generatePath(`${x}/job/${id}`),
     jobComplete: (id: string) => generatePath(`${x}/job/${id}/complete`),
+    jobConfigure: (id: string) => generatePath(`${x}/job/${id}/configure`),
     jobDetails: (id: string) => generatePath(`${x}/job/${id}/details`),
     jobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/${id}`),
@@ -680,6 +681,8 @@ export const path = {
       generatePath(`${x}/quote/${id}/internal`),
     quoteLine: (quoteId: string, id: string) =>
       generatePath(`${x}/quote/${quoteId}/${id}/details`),
+    quoteLineConfigure: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/configure`),
     quoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/update`),
     quoteLineMethodMaterial: (
