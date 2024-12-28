@@ -11061,6 +11061,150 @@ export default {
         tags: ["salesOrderLine"],
       },
     },
+    "/configurationRule": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.field",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/configurationRule",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["configurationRule"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.configurationRule",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["configurationRule"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.field",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationRule"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.field",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.code",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.configurationRule.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.configurationRule",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["configurationRule"],
+      },
+    },
     "/salesOrderTransaction": {
       get: {
         parameters: [
@@ -14434,6 +14578,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.job.configuration",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14580,6 +14727,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.job.configuration",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14678,6 +14828,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.configuration",
           },
           {
             $ref: "#/parameters/body.job",
@@ -15494,6 +15647,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLines.configuration",
           },
           {
             $ref: "#/parameters/rowFilter.quoteLines.thumbnailPath",
@@ -22451,6 +22607,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.configuration",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.name",
@@ -35539,6 +35698,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.configuration",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -35682,6 +35844,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLine.configuration",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -35777,6 +35942,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLine.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLine.configuration",
           },
           {
             $ref: "#/parameters/body.quoteLine",
@@ -46265,6 +46433,44 @@ export default {
       },
       type: "object",
     },
+    configurationRule: {
+      required: ["itemId", "field", "code", "companyId", "updatedAt"],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        field: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        code: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrderTransaction: {
       required: ["id", "salesOrderId", "type", "userId", "createdAt"],
       properties: {
@@ -47999,6 +48205,9 @@ export default {
           },
           type: "array",
         },
+        configuration: {
+          format: "jsonb",
+        },
       },
       type: "object",
     },
@@ -48537,6 +48746,9 @@ export default {
           type: "integer",
         },
         externalNotes: {
+          format: "jsonb",
+        },
+        configuration: {
           format: "jsonb",
         },
         thumbnailPath: {
@@ -51648,6 +51860,9 @@ export default {
           },
           type: "array",
         },
+        configuration: {
+          format: "jsonb",
+        },
         name: {
           format: "text",
           type: "string",
@@ -54230,7 +54445,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -54279,7 +54494,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -57704,6 +57919,9 @@ export default {
           type: "integer",
         },
         externalNotes: {
+          format: "jsonb",
+        },
+        configuration: {
           format: "jsonb",
         },
       },
@@ -65730,6 +65948,57 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.configurationRule": {
+      name: "configurationRule",
+      description: "configurationRule",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/configurationRule",
+      },
+    },
+    "rowFilter.configurationRule.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationRule.field": {
+      name: "field",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationRule.code": {
+      name: "code",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationRule.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationRule.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.configurationRule.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderTransaction": {
       name: "salesOrderTransaction",
       description: "salesOrderTransaction",
@@ -67980,6 +68249,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.job.configuration": {
+      name: "configuration",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderFavorite": {
       name: "purchaseOrderFavorite",
       description: "purchaseOrderFavorite",
@@ -68808,6 +69084,13 @@ export default {
     },
     "rowFilter.quoteLines.externalNotes": {
       name: "externalNotes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLines.configuration": {
+      name: "configuration",
       required: false,
       format: "jsonb",
       in: "query",
@@ -72795,6 +73078,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.configuration": {
+      name: "configuration",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
@@ -80733,6 +81023,13 @@ export default {
     },
     "rowFilter.quoteLine.externalNotes": {
       name: "externalNotes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLine.configuration": {
+      name: "configuration",
       required: false,
       format: "jsonb",
       in: "query",
