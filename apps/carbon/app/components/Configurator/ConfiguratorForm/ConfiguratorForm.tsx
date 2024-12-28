@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
   Switch,
+  toast,
 } from "@carbon/react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
@@ -278,18 +279,15 @@ function ConfiguratorFormContent({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({
-      currentStep,
-      totalSteps,
-      formData,
-      isStepValid,
-    });
+
     if (currentStep === totalSteps - 1) {
       const schema = generateConfigurationSchema(parameters);
       const result = schema.safeParse(formData);
-      console.log({ result });
+
       if (result.success) {
         onSubmit(result.data);
+      } else {
+        toast.error("Please fill out all required fields");
       }
     } else {
       nextStep();
