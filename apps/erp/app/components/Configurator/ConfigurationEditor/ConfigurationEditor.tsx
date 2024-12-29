@@ -230,6 +230,13 @@ export default function Configurator({
   }, [fetcher.data]);
 
   const runCode = useCallback(() => {
+    if (isUnsafeCode(code)) {
+      setOutput(
+        "Error: Unsupported code detected. The code you're trying to run contains disallowed patterns."
+      );
+      return;
+    }
+
     try {
       // Create parameters object from the panel
       const parametersObj = parameters.reduce((acc, v) => {
@@ -420,4 +427,19 @@ export default function Configurator({
       )}
     </>
   );
+}
+
+function isUnsafeCode(code: string) {
+  // Check for disallowed code patterns
+  const disallowedPatterns = [
+    /\b(for|while|do)\b/, // loops
+    /\bfetch\b/, // fetch calls
+    /setTimeout|setInterval/, // timeouts
+    /\bimport\b/, // dynamic imports
+    /new Promise/, // promise construction
+    /\beval\b/, // eval
+    /Function\(/, // Function constructor
+  ];
+
+  return disallowedPatterns.some((pattern) => pattern.test(code));
 }
