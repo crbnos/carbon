@@ -2,12 +2,10 @@ import { transpile } from "https://deno.land/x/ts_transpiler@v0.0.2/mod.ts";
 
 // Check for disallowed code patterns
 const disallowedPatterns = [
-  /\b(for|while|do)\b/, // loops
   /\bfetch\b/, // fetch calls
   /setTimeout|setInterval/, // timeouts
   /\bimport\b/, // dynamic imports
   /new Promise/, // promise construction
-  /\beval\b/, // eval
   /Function\(/, // Function constructor
 ];
 

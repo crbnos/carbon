@@ -1876,6 +1876,7 @@ export async function upsertQuoteLineMethod(
     quoteLineId: string;
     companyId: string;
     userId: string;
+    configuration?: Record<string, unknown>;
   }
 ) {
   return client.functions.invoke("get-method", {
@@ -1884,6 +1885,7 @@ export async function upsertQuoteLineMethod(
       sourceId: lineMethod.itemId,
       targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
       companyId: lineMethod.companyId,
+      configuration: lineMethod.configuration,
       userId: lineMethod.userId,
     },
   });

@@ -230,7 +230,8 @@ export default function Configurator({
   }, [fetcher.data]);
 
   const runCode = useCallback(() => {
-    if (isUnsafeCode(code)) {
+    const jsCode = convertTypescriptToJavaScript(code);
+    if (isUnsafeCode(jsCode)) {
       setOutput(
         "Error: Unsupported code detected. The code you're trying to run contains disallowed patterns."
       );
@@ -253,7 +254,7 @@ export default function Configurator({
       const fn = new Function(
         "parameters",
         `
-        ${convertTypescriptToJavaScript(code)}
+        ${jsCode}
         return configure(parameters);
       `
       );
@@ -432,12 +433,10 @@ export default function Configurator({
 function isUnsafeCode(code: string) {
   // Check for disallowed code patterns
   const disallowedPatterns = [
-    /\b(for|while|do)\b/, // loops
     /\bfetch\b/, // fetch calls
     /setTimeout|setInterval/, // timeouts
     /\bimport\b/, // dynamic imports
     /new Promise/, // promise construction
-    /\beval\b/, // eval
     /Function\(/, // Function constructor
   ];
 

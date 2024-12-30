@@ -63,6 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       quoteId,
       quoteLineId,
       itemId: data.itemId,
+      configuration,
       companyId,
       userId,
     });
