@@ -271,6 +271,8 @@ function ConfiguratorFormContent({
 
     return groupedParameters[currentStep].parameters.every((parameter) => {
       if (parameter.dataType === "boolean") return true;
+      if (parameter.dataType === "numeric")
+        return formData[parameter.key] !== undefined;
       return (
         formData[parameter.key] !== undefined && formData[parameter.key] !== ""
       );
@@ -339,6 +341,8 @@ function ConfiguratorForm(props: ConfiguratorFormProps) {
     props.parameters.forEach((param) => {
       if (param.dataType === "boolean") {
         values[param.key] = props.initialValues?.[param.key] ?? false;
+      } else if (param.dataType === "numeric") {
+        values[param.key] = props.initialValues?.[param.key] ?? 0;
       } else {
         values[param.key] = props.initialValues?.[param.key] ?? "";
       }

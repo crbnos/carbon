@@ -1014,23 +1014,6 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={rulesByField.has(key("setupUnitHint"))}
-                onConfigure={
-                  configurable && !isTemporaryId(item.id)
-                    ? () => {
-                        onConfigure({
-                          label: "Setup Unit",
-                          field: key("setupUnitHint"),
-                          code: rulesByField.get(key("setupUnitHint"))?.code,
-                          defaultValue: processData.setupUnitHint,
-                          returnType: {
-                            type: "enum",
-                            listOptions: ["Fixed", "Per Unit"],
-                          },
-                        });
-                      }
-                    : undefined
-                }
               />
               <NumberControlled
                 name="setupTime"
@@ -1140,23 +1123,6 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={rulesByField.has(key("laborUnitHint"))}
-                onConfigure={
-                  configurable && !isTemporaryId(item.id)
-                    ? () => {
-                        onConfigure({
-                          label: "Labor Unit",
-                          field: key("laborUnitHint"),
-                          code: rulesByField.get(key("laborUnitHint"))?.code,
-                          defaultValue: processData.laborUnitHint,
-                          returnType: {
-                            type: "enum",
-                            listOptions: ["Fixed", "Per Unit"],
-                          },
-                        });
-                      }
-                    : undefined
-                }
               />
               <NumberControlled
                 name="laborTime"
@@ -1267,23 +1233,6 @@ function OperationForm({
                       hint === "Fixed" ? "Total Minutes" : "Minutes/Piece",
                   }));
                 }}
-                isConfigured={rulesByField.has(key("machineUnitHint"))}
-                onConfigure={
-                  configurable && !isTemporaryId(item.id)
-                    ? () => {
-                        onConfigure({
-                          label: "Machine Unit",
-                          field: key("machineUnitHint"),
-                          code: rulesByField.get(key("machineUnitHint"))?.code,
-                          defaultValue: processData.machineUnitHint,
-                          returnType: {
-                            type: "enum",
-                            listOptions: ["Fixed", "Per Unit"],
-                          },
-                        });
-                      }
-                    : undefined
-                }
               />
               <NumberControlled
                 name="machineTime"

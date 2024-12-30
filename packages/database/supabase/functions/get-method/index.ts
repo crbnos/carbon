@@ -21,6 +21,7 @@ import {
   traverseJobMethod,
   traverseQuoteMethod,
 } from "../lib/methods.ts";
+import { importTypeScript } from "../lib/sandbox.ts";
 import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
@@ -43,6 +44,7 @@ const payloadValidator = z.object({
   targetId: z.string(),
   companyId: z.string(),
   userId: z.string(),
+  configuration: z.record(z.unknown()).optional(),
 });
 
 serve(async (req: Request) => {
@@ -52,7 +54,7 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { type, sourceId, targetId, companyId, userId } =
+    const { type, sourceId, targetId, companyId, userId, configuration } =
       payloadValidator.parse(payload);
 
     console.log({
@@ -62,6 +64,7 @@ serve(async (req: Request) => {
       targetId,
       companyId,
       userId,
+      configuration,
     });
 
     const client = getSupabaseServiceRoleFromAuthorizationHeader(
@@ -631,22 +634,38 @@ serve(async (req: Request) => {
           throw new Error("Invalid targetId");
         }
         const itemId = sourceId;
+        const isConfigured = !!configuration;
 
-        const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
-          await Promise.all([
-            client.from("makeMethod").select("*").eq("itemId", itemId).single(),
-            client
-              .from("quoteMakeMethod")
-              .select("*")
-              .eq("quoteLineId", quoteLineId)
-              .is("parentMaterialId", null)
-              .single(),
-            client.from("workCenters").select("*").eq("companyId", companyId),
-            client
-              .from("supplierProcess")
-              .select("*")
-              .eq("companyId", companyId),
-          ]);
+        const [
+          makeMethod,
+          quoteMakeMethod,
+          workCenters,
+          supplierProcesses,
+          configurationRules,
+        ] = await Promise.all([
+          client.from("makeMethod").select("*").eq("itemId", itemId).single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("quoteLineId", quoteLineId)
+            .is("parentMaterialId", null)
+            .single(),
+          client.from("workCenters").select("*").eq("companyId", companyId),
+          client.from("supplierProcess").select("*").eq("companyId", companyId),
+          isConfigured
+            ? client
+                .from("configurationRule")
+                .select("field, code")
+                .eq("itemId", itemId)
+            : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        const configurationCodeByField = configurationRules?.data?.reduce<
+          Record<string, string>
+        >((acc, rule) => {
+          acc[rule.field] = rule.code;
+          return acc;
+        }, {});
 
         if (makeMethod.error) {
           throw new Error("Failed to get make method");
@@ -700,6 +719,36 @@ serve(async (req: Request) => {
               .execute(),
           ]);
 
+          async function getConfiguredValue<
+            T extends number | string | boolean | null
+          >({
+            id,
+            field,
+            defaultValue,
+          }: {
+            id: string;
+            field: string;
+            defaultValue: T;
+          }): Promise<T> {
+            if (!configurationCodeByField) return defaultValue;
+
+            const fieldKey = getFieldKey(field, id);
+            if (configurationCodeByField[fieldKey]) {
+              try {
+                const code = configurationCodeByField[fieldKey];
+                const mod = await importTypeScript(code);
+                const result = await mod.configure(configuration);
+
+                return (result ?? defaultValue) as T;
+              } catch (err) {
+                console.error(err);
+                return defaultValue;
+              }
+            }
+
+            return defaultValue;
+          }
+
           // traverse method tree and create:
           // - quoteMakeMethod
           // - quoteMakeMethodOperation
@@ -715,34 +764,101 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            const quoteOperations =
-              relatedOperations?.data?.map((op) => ({
+            const quoteOperations: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+              [];
+            for await (const op of relatedOperations?.data ?? []) {
+              const [
+                processId,
+                description,
+                setupTime,
+                setupUnit,
+                laborTime,
+                laborUnit,
+                machineTime,
+                machineUnit,
+                operationOrder,
+                operationType,
+              ] = await Promise.all([
+                getConfiguredValue({
+                  id: op.id,
+                  field: "processId",
+                  defaultValue: op.processId,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "description",
+                  defaultValue: op.description,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "setupTime",
+                  defaultValue: op.setupTime,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "setupUnit",
+                  defaultValue: op.setupUnit,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "laborTime",
+                  defaultValue: op.laborTime,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "laborUnit",
+                  defaultValue: op.laborUnit,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "machineTime",
+                  defaultValue: op.machineTime,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "machineUnit",
+                  defaultValue: op.machineUnit,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "operationOrder",
+                  defaultValue: op.operationOrder,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "operationType",
+                  defaultValue: op.operationType,
+                }),
+              ]);
+
+              quoteOperations.push({
                 quoteId,
                 quoteLineId,
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
-                processId: op.processId,
+                processId,
                 workCenterId: op.workCenterId,
-                description: op.description,
-                setupTime: op.setupTime,
-                setupUnit: op.setupUnit,
-                laborTime: op.laborTime,
-                laborUnit: op.laborUnit,
-                machineTime: op.machineTime,
-                machineUnit: op.machineUnit,
-                ...getLaborAndOverheadRates(op.processId, op.workCenterId),
+                description,
+                setupTime,
+                setupUnit,
+                laborTime,
+                laborUnit,
+                machineTime,
+                machineUnit,
+                ...getLaborAndOverheadRates(processId, op.workCenterId),
                 order: op.order,
-                operationOrder: op.operationOrder,
-                operationType: op.operationType,
+                operationOrder,
+                operationType,
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
-                  op.processId,
+                  processId,
                   op.operationSupplierProcessId
                 ),
                 workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
                 customFields: {},
-              })) ?? [];
+              });
+            }
 
             let methodOperationsToQuoteOperations: Record<string, string> = {};
             if (quoteOperations?.length > 0) {
@@ -2248,4 +2364,8 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   }
 
   return rootItems.map((item) => traverseAndRenameIds(item));
+}
+
+function getFieldKey(field: string, id: string) {
+  return `${field}:${id}`;
 }

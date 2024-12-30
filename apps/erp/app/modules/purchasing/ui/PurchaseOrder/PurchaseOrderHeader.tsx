@@ -77,7 +77,7 @@ const PurchaseOrderHeader = () => {
             />
             <Link to={path.to.purchaseOrderDetails(orderId)}>
               <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.purchaseOrder?.purchaseOrderId}</span>
+                {routeData?.purchaseOrder?.purchaseOrderId}
               </Heading>
             </Link>
             <PurchasingStatus status={routeData?.purchaseOrder?.status} />

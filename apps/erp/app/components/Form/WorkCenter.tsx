@@ -11,6 +11,8 @@ import { path } from "~/utils/path";
 type WorkCenterSelectProps = Omit<ComboboxProps, "options"> & {
   processId?: string;
   locationId?: string;
+  isConfigured?: boolean;
+  onConfigure?: () => void;
 };
 
 const WorkCenter = (props: WorkCenterSelectProps) => {
