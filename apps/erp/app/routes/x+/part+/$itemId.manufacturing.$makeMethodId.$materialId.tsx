@@ -6,6 +6,14 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useRouteData } from "@carbon/remix";
+import type { z } from "zod";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+  ConfigurationRule,
+  partManufacturingValidator,
+} from "~/modules/items";
 import {
   getItem,
   getMethodMaterial,
@@ -106,6 +114,17 @@ export default function MethodMaterialMakePage() {
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
   if (!materialId) throw new Error("Could not find materialId");
 
+  const routeData = useRouteData<{
+    partManufacturing: z.infer<typeof partManufacturingValidator> & {
+      customFields: Record<string, string>;
+    };
+    configurationParametersAndGroups: {
+      groups: ConfigurationParameterGroup[];
+      parameters: ConfigurationParameter[];
+    };
+    configurationRules: ConfigurationRule[];
+  }>(path.to.partManufacturing(itemId));
+
   return (
     <VStack spacing={2} className="p-2">
       <MakeMethodTools itemId={item.id} type="Part" />
@@ -118,12 +137,18 @@ export default function MethodMaterialMakePage() {
         key={`bop:${itemId}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
+        configurable={routeData?.partManufacturing.requiresConfiguration}
+        configurationRules={routeData?.configurationRules}
+        parameters={routeData?.configurationParametersAndGroups.parameters}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}
+        configurable={routeData?.partManufacturing.requiresConfiguration}
+        configurationRules={routeData?.configurationRules}
+        parameters={routeData?.configurationParametersAndGroups.parameters}
       />
     </VStack>
   );

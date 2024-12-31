@@ -3,15 +3,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { useParams } from "@remix-run/react";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
+import type { z } from "zod";
 import { useRouteData } from "~/hooks";
-import type { MakeMethod, Material, MethodOperation } from "~/modules/items";
+import type {
+  ConfigurationParameter,
+  ConfigurationParameterGroup,
+  ConfigurationRule,
+  MakeMethod,
+  Material,
+  MethodOperation,
+} from "~/modules/items";
 import {
-  getConfigurationParameters,
-  getConfigurationRules,
-  getItemManufacturing,
   partManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
@@ -26,40 +31,6 @@ import {
 } from "~/modules/items/ui/Parts";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  const [partManufacturing] = await Promise.all([
-    getItemManufacturing(client, itemId, companyId),
-  ]);
-
-  if (partManufacturing.error) {
-    throw redirect(
-      path.to.partDetails(itemId),
-      await flash(
-        request,
-        error(partManufacturing.error, "Failed to load part manufacturing")
-      )
-    );
-  }
-
-  return json({
-    partManufacturing: partManufacturing.data,
-    configurationParametersAndGroups: partManufacturing.data
-      .requiresConfiguration
-      ? await getConfigurationParameters(client, itemId, companyId)
-      : { groups: [], parameters: [] },
-    configurationRules: partManufacturing.data.requiresConfiguration
-      ? await getConfigurationRules(client, itemId, companyId)
-      : [],
-  });
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -105,13 +76,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
-  const {
-    partManufacturing,
-    configurationParametersAndGroups,
-    configurationRules,
-  } = useLoaderData<typeof loader>();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+
+  const routeData = useRouteData<{
+    partManufacturing: z.infer<typeof partManufacturingValidator> & {
+      customFields: Record<string, string>;
+    };
+    configurationParametersAndGroups: {
+      groups: ConfigurationParameterGroup[];
+      parameters: ConfigurationParameter[];
+    };
+    configurationRules: ConfigurationRule[];
+  }>(path.to.partManufacturing(itemId));
+
+  if (!routeData) throw new Error("Could not find route data");
 
   const manufacturingRouteData = useRouteData<{
     makeMethod: MakeMethod;
@@ -123,9 +102,9 @@ export default function MakeMethodRoute() {
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const manufacturingInitialValues = {
-    ...partManufacturing,
-    lotSize: partManufacturing.lotSize ?? 0,
-    ...getCustomFields(partManufacturing.customFields),
+    ...routeData?.partManufacturing,
+    lotSize: routeData?.partManufacturing.lotSize ?? 0,
+    ...getCustomFields(routeData?.partManufacturing.customFields),
   };
 
   return (
@@ -133,35 +112,36 @@ export default function MakeMethodRoute() {
       <MakeMethodTools itemId={itemId} type="Part" />
       <PartManufacturingForm
         key={itemId}
+        // @ts-ignore
         initialValues={manufacturingInitialValues}
       />
-      {partManufacturing.requiresConfiguration && (
+      {routeData?.partManufacturing.requiresConfiguration && (
         <ConfigurationParametersForm
           key={`options:${itemId}`}
-          parameters={configurationParametersAndGroups.parameters}
-          groups={configurationParametersAndGroups.groups}
+          parameters={routeData?.configurationParametersAndGroups.parameters}
+          groups={routeData?.configurationParametersAndGroups.groups}
         />
       )}
 
       <BillOfProcess
         key={`bop:${itemId}`}
-        configurable={partManufacturing.requiresConfiguration}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
-        parameters={configurationParametersAndGroups.parameters}
-        configurationRules={configurationRules}
+        configurable={routeData?.partManufacturing.requiresConfiguration}
+        configurationRules={routeData?.configurationRules}
+        parameters={routeData?.configurationParametersAndGroups.parameters}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
-        configurable={partManufacturing.requiresConfiguration}
         makeMethodId={makeMethodId}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
-        parameters={configurationParametersAndGroups.parameters}
-        configurationRules={configurationRules}
+        configurable={routeData?.partManufacturing.requiresConfiguration}
+        configurationRules={routeData?.configurationRules}
+        parameters={routeData?.configurationParametersAndGroups.parameters}
       />
     </VStack>
   );

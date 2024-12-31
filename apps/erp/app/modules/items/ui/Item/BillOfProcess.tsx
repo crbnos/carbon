@@ -29,7 +29,7 @@ import {
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import { formatRelativeTime } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useFetcher, useFetchers } from "@remix-run/react";
+import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
@@ -575,6 +575,8 @@ const BillOfProcess = ({
     configuratorDisclosure.onOpen();
   };
 
+  const { materialId } = useParams();
+
   const rulesByField = new Map(
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
@@ -603,14 +605,17 @@ const BillOfProcess = ({
                 aria-label="Configure"
                 variant="ghost"
                 className={cn(
-                  rulesByField.has("billOfProcess") &&
-                    "text-emerald-500 hover:text-emerald-500"
+                  rulesByField.has(
+                    `billOfProcess:${makeMethodId}:${materialId}`
+                  ) && "text-emerald-500 hover:text-emerald-500"
                 )}
                 onClick={() =>
                   onConfigure({
                     label: "Bill of Process",
-                    field: "billOfProcess",
-                    code: rulesByField.get("billOfProcess")?.code,
+                    field: `billOfProcess:${makeMethodId}:${materialId}`,
+                    code: rulesByField.get(
+                      `billOfProcess:${makeMethodId}:${materialId}`
+                    )?.code,
                     returnType: {
                       type: "list",
                       listOptions: operations.map((op) => op.description),
@@ -732,6 +737,7 @@ function OperationForm({
     operationType: string;
     operationOrder: string;
     processId: string;
+    workCenterId: string;
     setupTime: number;
     setupUnit: string;
     setupUnitHint: string;
@@ -746,6 +752,7 @@ function OperationForm({
     operationOrder: item.data.operationOrder ?? "After Previous",
     operationType: item.data.operationType ?? "Inside",
     processId: item.data.processId ?? "",
+    workCenterId: item.data.workCenterId ?? "",
     setupTime: item.data.setupTime ?? 0,
     setupUnit: item.data.setupUnit ?? "Total Minutes",
     setupUnitHint: getUnitHint(item.data.setupUnit),
@@ -785,6 +792,7 @@ function OperationForm({
 
     setProcessData((p) => ({
       ...p,
+      workCenterId,
       laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
       laborUnitHint: getUnitHint(data?.defaultStandardFactor),
       machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
@@ -858,6 +866,24 @@ function OperationForm({
               label="Work Center"
               isOptional
               processId={processData.processId}
+              isConfigured={rulesByField.has(key("workCenterId"))}
+              onConfigure={
+                configurable && !isTemporaryId(item.id)
+                  ? () => {
+                      onConfigure({
+                        label: "Work Center",
+                        field: key("workCenterId"),
+                        code: rulesByField.get(key("workCenterId"))?.code,
+                        defaultValue: processData.workCenterId,
+                        returnType: {
+                          type: "text",
+                          helperText:
+                            "the unique identifier for the work center. you can get this from the URL when editing a work center",
+                        },
+                      });
+                    }
+                  : undefined
+              }
               onChange={(value) => {
                 if (value) {
                   onWorkCenterChange(value?.value as string);

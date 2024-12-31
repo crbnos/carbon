@@ -764,11 +764,12 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            const quoteOperations: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+            let quoteOperations: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
               [];
             for await (const op of relatedOperations?.data ?? []) {
               const [
                 processId,
+                workCenterId,
                 description,
                 setupTime,
                 setupUnit,
@@ -783,6 +784,11 @@ serve(async (req: Request) => {
                   id: op.id,
                   field: "processId",
                   defaultValue: op.processId,
+                }),
+                getConfiguredValue({
+                  id: op.id,
+                  field: "workCenterId",
+                  defaultValue: op.workCenterId,
                 }),
                 getConfiguredValue({
                   id: op.id,
@@ -836,7 +842,7 @@ serve(async (req: Request) => {
                 quoteLineId,
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
                 processId,
-                workCenterId: op.workCenterId,
+                workCenterId,
                 description,
                 setupTime,
                 setupUnit,
@@ -858,6 +864,37 @@ serve(async (req: Request) => {
                 createdBy: userId,
                 customFields: {},
               });
+            }
+
+            const nodeLevelConfigurationKey = `${
+              node.data.materialMakeMethodId
+            }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
+
+            const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
+            let bopConfiguration: string[] | null = null;
+
+            if (configurationCodeByField?.[bopConfigurationKey]) {
+              const mod = await importTypeScript(
+                configurationCodeByField[bopConfigurationKey]
+              );
+              bopConfiguration = await mod.configure(configuration);
+            }
+
+            if (bopConfiguration) {
+              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+              quoteOperations = bopConfiguration
+                .map((description, index) => {
+                  const operation = quoteOperations.find(
+                    (operation) => operation.description === description
+                  );
+                  if (operation) {
+                    return {
+                      ...operation,
+                      order: index + 1,
+                    };
+                  }
+                })
+                .filter(Boolean);
             }
 
             let methodOperationsToQuoteOperations: Record<string, string> = {};
@@ -907,41 +944,136 @@ serve(async (req: Request) => {
                 ) ?? {};
             }
 
-            const mapMethodMaterialToQuoteMaterial = (
+            const mapMethodMaterialToQuoteMaterial = async (
               child: MethodTreeItem
-            ) => ({
-              quoteId,
-              quoteLineId,
-              quoteMakeMethodId: parentQuoteMakeMethodId!,
-              quoteOperationId:
-                methodOperationsToQuoteOperations[child.data.operationId],
-              itemId: child.data.itemId,
-              itemReadableId: child.data.itemReadableId,
-              itemType: child.data.itemType,
-              methodType: child.data.methodType,
-              order: child.data.order,
-              description: child.data.description,
-              quantity: child.data.quantity,
-              unitOfMeasureCode: child.data.unitOfMeasureCode,
-              unitCost: child.data.unitCost,
-              companyId,
-              createdBy: userId,
-              customFields: {},
+            ) => {
+              let [
+                itemId,
+                description,
+                quantity,
+                methodType,
+                unitOfMeasureCode,
+              ] = await Promise.all([
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "itemId",
+                  defaultValue: child.data.itemId,
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "description",
+                  defaultValue: child.data.description,
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "quantity",
+                  defaultValue: child.data.quantity,
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "methodType",
+                  defaultValue: child.data.methodType,
+                }),
+                getConfiguredValue({
+                  id: child.data.methodMaterialId,
+                  field: "unitOfMeasureCode",
+                  defaultValue: child.data.unitOfMeasureCode,
+                }),
+              ]);
+
+              let itemReadableId = child.data.itemReadableId;
+              let itemType = child.data.itemType;
+              let unitCost = child.data.unitCost;
+
+              // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
+
+              if (itemId !== child.data.itemId) {
+                const item = await client
+                  .from("item")
+                  .select("readableId, type, name, itemCost(unitCost)")
+                  .eq("id", itemId)
+                  .single();
+                if (item.data) {
+                  itemReadableId = item.data.readableId;
+                  itemType = item.data.type;
+                  unitCost =
+                    item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                  if (description === child.data.description) {
+                    description = item.data.name;
+                  }
+                } else {
+                  itemId = child.data.itemId;
+                }
+              }
+
+              return {
+                quoteId,
+                quoteLineId,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                quoteOperationId:
+                  methodOperationsToQuoteOperations[child.data.operationId],
+                order: child.data.order,
+                itemId,
+                itemReadableId,
+                itemType,
+                methodType,
+                description,
+                quantity,
+                unitOfMeasureCode,
+                unitCost,
+                companyId,
+                createdBy: userId,
+                customFields: {},
+              };
+            };
+
+            let materialsWithConfiguredFields = await Promise.all(
+              node.children.map(mapMethodMaterialToQuoteMaterial)
+            );
+
+            const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
+            let bomConfiguration: string[] | null = null;
+
+            if (configurationCodeByField?.[bomConfigurationKey]) {
+              const mod = await importTypeScript(
+                configurationCodeByField[bomConfigurationKey]
+              );
+              bomConfiguration = await mod.configure(configuration);
+            }
+
+            if (bomConfiguration) {
+              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+              materialsWithConfiguredFields = bomConfiguration
+                .map((readableId, index) => {
+                  const material = materialsWithConfiguredFields.find(
+                    (material) => material.itemReadableId === readableId
+                  );
+                  if (material) {
+                    return {
+                      ...material,
+                      order: index + 1,
+                    };
+                  }
+                })
+                .filter(Boolean);
+            }
+
+            const madeMaterials = materialsWithConfiguredFields.filter(
+              (material) => material.methodType === "Make"
+            );
+
+            const pickedOrBoughtMaterials =
+              materialsWithConfiguredFields.filter(
+                (material) => material.methodType !== "Make"
+              );
+
+            const madeChildren = madeMaterials.map((material, index) => {
+              const childIndex = materialsWithConfiguredFields.findIndex(
+                (m) => m.itemReadableId === material.itemReadableId
+              );
+              return node.children[childIndex];
             });
 
-            const madeChildren = node.children.filter(
-              (child) => child.data.methodType === "Make"
-            );
-            const unmadeChildren = node.children.filter(
-              (child) => child.data.methodType !== "Make"
-            );
-
-            const madeMaterials = madeChildren.map(
-              mapMethodMaterialToQuoteMaterial
-            );
-            const pickedOrBoughtMaterials = unmadeChildren.map(
-              mapMethodMaterialToQuoteMaterial
-            );
             if (madeMaterials.length > 0) {
               const madeMaterialIds = await trx
                 .insertInto("quoteMaterial")
