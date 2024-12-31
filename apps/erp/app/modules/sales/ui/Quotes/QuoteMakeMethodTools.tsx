@@ -350,6 +350,7 @@ const QuoteMakeMethodTools = () => {
             {(configurationParameters) => (
               <ConfiguratorModal
                 open
+                destructive
                 initialValues={
                   (line?.configuration || {}) as Record<string, any>
                 }
