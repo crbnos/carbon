@@ -1,4 +1,6 @@
 import {
+  Alert,
+  AlertTitle,
   Button,
   Input,
   Label,
@@ -23,7 +25,7 @@ import {
   toast,
 } from "@carbon/react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { LuAlertTriangle, LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type {
@@ -163,6 +165,7 @@ type ConfiguratorContextType = {
   nextStep: () => void;
   previousStep: () => void;
   goToStep: (step: number) => void;
+  destructive: boolean;
 };
 
 const ConfiguratorContext = createContext<ConfiguratorContextType | undefined>(
@@ -173,12 +176,14 @@ interface ConfiguratorProviderProps {
   children: React.ReactNode;
   totalSteps: number;
   initialValues?: FormData;
+  destructive?: boolean;
 }
 
 function ConfiguratorProvider({
   children,
   totalSteps,
   initialValues = {},
+  destructive = false,
 }: ConfiguratorProviderProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>(initialValues);
@@ -211,6 +216,7 @@ function ConfiguratorProvider({
         nextStep,
         previousStep,
         goToStep,
+        destructive,
       }}
     >
       {children}
@@ -234,6 +240,7 @@ interface ConfiguratorFormProps {
   onSubmit: (data: Record<string, any>) => void;
   onGroupChange: (group: ConfigurationParameterGroup) => void;
   initialValues?: FormData;
+  destructive?: boolean;
 }
 
 function ConfiguratorFormContent({
@@ -242,8 +249,14 @@ function ConfiguratorFormContent({
   onSubmit,
   onGroupChange,
 }: ConfiguratorFormProps) {
-  const { currentStep, totalSteps, formData, nextStep, previousStep } =
-    useConfigurator();
+  const {
+    currentStep,
+    totalSteps,
+    formData,
+    nextStep,
+    previousStep,
+    destructive,
+  } = useConfigurator();
 
   const groupedParameters = useMemo(() => {
     const sortedGroups = [...groups]
@@ -296,6 +309,8 @@ function ConfiguratorFormContent({
     }
   };
 
+  const isLastStep = currentStep === totalSteps - 1;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       <ConfiguratorProgress />
@@ -307,6 +322,14 @@ function ConfiguratorFormContent({
         />
       )}
 
+      {isLastStep && destructive && (
+        <Alert variant="destructive">
+          <LuAlertTriangle className="h-4 w-4" />
+          <AlertTitle>
+            Changing this will overwrite the existing method
+          </AlertTitle>
+        </Alert>
+      )}
       <div className="flex justify-between pt-4">
         <Button
           type="button"
@@ -317,8 +340,12 @@ function ConfiguratorFormContent({
           Previous
         </Button>
 
-        <Button type="submit" disabled={!isStepValid}>
-          {currentStep === totalSteps - 1 ? "Save" : "Next"}
+        <Button
+          type="submit"
+          disabled={!isStepValid}
+          variant={isLastStep && destructive ? "destructive" : "primary"}
+        >
+          {isLastStep ? "Save" : "Next"}
         </Button>
       </div>
     </form>
@@ -354,6 +381,7 @@ function ConfiguratorForm(props: ConfiguratorFormProps) {
     <ConfiguratorProvider
       initialValues={initialValues}
       totalSteps={validGroups.length}
+      destructive={props.destructive}
     >
       <ConfiguratorFormContent {...props} />
     </ConfiguratorProvider>
@@ -364,9 +392,10 @@ type ConfiguratorModalProps = {
   groups: ConfigurationParameterGroup[];
   parameters: ConfigurationParameter[];
   open: boolean;
+  initialValues?: FormData;
+  destructive?: boolean;
   onClose: () => void;
   onSubmit: (data: Record<string, any>) => void;
-  initialValues?: FormData;
 };
 
 function ConfiguratorModal({
@@ -376,6 +405,7 @@ function ConfiguratorModal({
   onClose,
   onSubmit,
   initialValues,
+  destructive,
 }: ConfiguratorModalProps) {
   const validGroups = useMemo(
     () =>
@@ -409,6 +439,7 @@ function ConfiguratorModal({
             onSubmit={onSubmit}
             onGroupChange={setCurrentGroup}
             initialValues={initialValues}
+            destructive={destructive}
           />
         </ModalBody>
       </ModalContent>

@@ -40,10 +40,7 @@ export const shouldRevalidate = ({
   defaultShouldRevalidate,
 }: ShouldRevalidateFunctionArgs) => {
   // Replace '/specific/path' with the path you want to exclude
-  if (
-    formAction &&
-    (formAction.includes("parameter") || formAction.includes("tool"))
-  ) {
+  if (formAction && formAction.includes("tool")) {
     return false;
   }
   return defaultShouldRevalidate;
