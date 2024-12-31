@@ -87,6 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
     targetId: id,
     companyId,
     userId,
+    configuration,
   });
 
   if (upsertMethod.error) {

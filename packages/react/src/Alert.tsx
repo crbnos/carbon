@@ -5,7 +5,7 @@ import { forwardRef } from "react";
 import { cn } from "./utils/cn";
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-5 [&>svg]:text-foreground",
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[19px] [&>svg]:text-foreground",
   {
     variants: {
       variant: {
@@ -14,7 +14,7 @@ const alertVariants = cva(
           "bg-gradient-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-emerald-600/30 from-emerald-600/10 text-emerald-600 [&>svg]:text-emerald-600 dark:text-foreground dark:[&>svg]:text-foreground",
         warning: "",
         destructive:
-          "bg-gradient-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-red-500/30 from-red-500/10 text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-foreground",
+          "bg-gradient-to-tr via-card to-card hover:to-muted/30 hover:via-muted/30 border-red-500/30 from-red-500/10 text-destructive [&>svg]:text-destructive dark:text-foreground  dark:[&>svg]:text-red-500",
       },
     },
     defaultVariants: {
