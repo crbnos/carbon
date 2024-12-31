@@ -412,6 +412,8 @@ const BillOfMaterial = ({
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
 
+  const { materialId } = useParams();
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -436,14 +438,17 @@ const BillOfMaterial = ({
                 aria-label="Configure"
                 variant="ghost"
                 className={cn(
-                  rulesByField.has("billOfMaterial") &&
-                    "text-emerald-500 hover:text-emerald-500"
+                  rulesByField.has(
+                    `billOfMaterial:${makeMethodId}:${materialId}`
+                  ) && "text-emerald-500 hover:text-emerald-500"
                 )}
                 onClick={() =>
                   onConfigure({
                     label: "Bill of Material",
-                    field: "billOfMaterial",
-                    code: rulesByField.get("billOfMaterial")?.code,
+                    field: `billOfMaterial:${makeMethodId}:${materialId}`,
+                    code: rulesByField.get(
+                      `billOfMaterial:${makeMethodId}:${materialId}`
+                    )?.code,
                     returnType: {
                       type: "list",
                       listOptions: materials.map((m) => m.data.itemReadableId!),
