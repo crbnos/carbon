@@ -371,6 +371,7 @@ const JobBreadcrumbs = () => {
             {(configurationParameters) => (
               <ConfiguratorModal
                 open
+                destructive
                 initialValues={
                   (routeData?.job.configuration || {}) as Record<string, any>
                 }

@@ -1,11 +1,12 @@
-import { error, success } from "@carbon/auth";
+import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
+import { upsertJobMethod } from "~/modules/production";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "production",
     role: "employee",
   });
@@ -15,19 +16,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const configuration = await request.json();
 
   if (configuration) {
-    const result = await client
-      .from("job")
-      .update({
-        configuration,
-        updatedAt: new Date().toISOString(),
-        updatedBy: userId,
-      })
-      .eq("id", jobId);
+    const [result, job] = await Promise.all([
+      client
+        .from("job")
+        .update({
+          configuration,
+          updatedAt: new Date().toISOString(),
+          updatedBy: userId,
+        })
+        .eq("id", jobId),
+      client.from("job").select("itemId").eq("id", jobId).single(),
+    ]);
 
     if (result.error) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(jobId),
         await flash(request, error("Failed to update job"))
+      );
+    }
+
+    if (job.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(jobId),
+        await flash(request, error("Failed to get job"))
+      );
+    }
+
+    const serviceRole = await getCarbonServiceRole();
+    const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
+      sourceId: job.data.itemId,
+      targetId: jobId,
+      companyId,
+      userId,
+      configuration,
+    });
+
+    if (upsertMethod.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(jobId),
+        await flash(request, error("Failed to update job method"))
       );
     }
   } else {

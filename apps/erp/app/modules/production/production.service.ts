@@ -832,6 +832,7 @@ export async function upsertJobMethod(
     targetId: string;
     companyId: string;
     userId: string;
+    configuration?: any;
   }
 ) {
   return client.functions.invoke("get-method", {

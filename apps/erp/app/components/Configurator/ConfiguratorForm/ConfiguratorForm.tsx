@@ -345,7 +345,7 @@ function ConfiguratorFormContent({
           disabled={!isStepValid}
           variant={isLastStep && destructive ? "destructive" : "primary"}
         >
-          {isLastStep ? "Save" : "Next"}
+          {isLastStep ? (destructive ? "Save and Overwrite" : "Save") : "Next"}
         </Button>
       </div>
     </form>
