@@ -1332,6 +1332,7 @@ function WorkTypeToggle({
       value={value}
       type="single"
       onValueChange={onChange}
+      disabled={!!value && count <= 1}
       className={cn(
         "grid w-full",
         count <= 1 && "grid-cols-1",
