@@ -226,9 +226,7 @@ const SalesOrderHeader = () => {
                 variant="secondary"
                 leftIcon={<LuRefreshCw />}
                 isDisabled={
-                  !["Cancelled", "Closed", "Completed"].includes(
-                    routeData?.salesOrder?.status ?? ""
-                  ) ||
+                  ["Draft"].includes(routeData?.salesOrder?.status ?? "") ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "sales")
                 }

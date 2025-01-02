@@ -210,7 +210,6 @@ const SalesOrderProperties = () => {
           value={routeData?.salesOrder?.customerReference ?? ""}
           size="sm"
           inline
-          isReadOnly={isDisabled}
           onBlur={(e) => {
             onUpdate("customerReference", e.target.value);
           }}
