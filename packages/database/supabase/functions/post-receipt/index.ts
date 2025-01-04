@@ -4,7 +4,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { credit, debit, journalReference } from "../lib/utils.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
@@ -19,6 +19,7 @@ const db = getDatabaseClient<DB>(pool);
 const payloadValidator = z.object({
   receiptId: z.string(),
   userId: z.string(),
+  companyId: z.string(),
 });
 
 serve(async (req: Request) => {
@@ -30,7 +31,7 @@ serve(async (req: Request) => {
   const today = format(new Date(), "yyyy-MM-dd");
 
   try {
-    const { receiptId, userId } = payloadValidator.parse(payload);
+    const { receiptId, userId, companyId } = payloadValidator.parse(payload);
 
     console.log({
       function: "post-receipt",
@@ -38,8 +39,10 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     const [receipt, receiptLines] = await Promise.all([
@@ -49,8 +52,6 @@ serve(async (req: Request) => {
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
     if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
-
-    const companyId = receipt.data?.companyId;
 
     const itemIds = receiptLines.data.reduce<string[]>((acc, receiptLine) => {
       if (receiptLine.itemId && !acc.includes(receiptLine.itemId)) {
@@ -736,8 +737,10 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error(err);
     if ("receiptId" in payload) {
-      const client = getSupabaseServiceRoleFromAuthorizationHeader(
-        req.headers.get("Authorization")
+      const client = await getSupabaseServiceRole(
+        req.headers.get("Authorization"),
+        req.headers.get("carbon-key") ?? "",
+        payload.companyId
       );
       await client
         .from("receipt")

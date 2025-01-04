@@ -5,7 +5,7 @@ import z from "https://deno.land/x/zod@v3.21.4/index.ts";
 import { sql } from "https://esm.sh/kysely@0.26.3";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -60,9 +60,12 @@ serve(async (req: Request) => {
 
     console.log({ enumMappings });
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
+
     const csvFile = await client.storage.from("private").download(filePath);
     if (!csvFile.data) {
       throw new Error("Failed to download file");

@@ -20,7 +20,7 @@ import {
   supplierStauses,
   unitOfMeasures,
 } from "../lib/seed.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
@@ -43,8 +43,10 @@ serve(async (req: Request) => {
     if (!userId) throw new Error("Payload is missing userId");
 
     const companyId = id as string;
-    const supabaseClient = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     await db.transaction().execute(async (trx) => {
@@ -244,7 +246,7 @@ serve(async (req: Request) => {
         .values([{ ...fiscalYearSettings, companyId }])
         .execute();
 
-      const user = await supabaseClient
+      const user = await client
         .from("userPermission")
         .select("permissions")
         .eq("id", userId)
@@ -283,7 +285,7 @@ serve(async (req: Request) => {
         }
       });
 
-      const { error } = await supabaseClient
+      const { error } = await client
         .from("userPermission")
         .update({ permissions: newPermissions })
         .eq("id", userId);

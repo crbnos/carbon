@@ -6,7 +6,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -35,8 +35,10 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     switch (type) {

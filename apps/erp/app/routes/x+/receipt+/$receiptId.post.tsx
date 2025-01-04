@@ -10,7 +10,7 @@ import { path } from "~/utils/path";
 export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "inventory",
   });
 
@@ -38,6 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     type: "receipt",
     documentId: receiptId,
     userId,
+    companyId,
   });
 
   throw redirect(path.to.receipts);

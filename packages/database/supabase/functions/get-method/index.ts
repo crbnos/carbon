@@ -8,6 +8,7 @@ import type {
 } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
@@ -22,7 +23,6 @@ import {
   traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { importTypeScript } from "../lib/sandbox.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -67,8 +67,10 @@ serve(async (req: Request) => {
       configuration,
     });
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     switch (type) {

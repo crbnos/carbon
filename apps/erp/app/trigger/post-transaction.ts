@@ -10,6 +10,7 @@ const postTransactionSchema = z.object({
   documentId: z.string(),
   type: z.enum(["receipt", "purchase-invoice"]),
   userId: z.string(),
+  companyId: z.string(),
 });
 
 export const postTransactionTask = task({
@@ -28,6 +29,7 @@ export const postTransactionTask = task({
           body: {
             receiptId: payload.documentId,
             userId: payload.userId,
+            companyId: payload.companyId,
           },
         });
 
@@ -45,6 +47,7 @@ export const postTransactionTask = task({
             body: {
               invoiceId: payload.documentId,
               userId: payload.userId,
+              companyId: payload.companyId,
             },
           }
         );
@@ -64,6 +67,7 @@ export const postTransactionTask = task({
             {
               body: {
                 invoiceId: payload.documentId,
+                companyId: payload.companyId,
               },
             }
           );

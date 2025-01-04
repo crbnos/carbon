@@ -10,15 +10,13 @@ import {
   ModalCardTitle,
   cn,
   toast,
-  useMount,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
-  Combobox,
   CustomFormFields,
   DefaultMethodType,
   Hidden,
@@ -30,14 +28,11 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
-import { useNextItemId, usePermissions, useRouteData, useUser } from "~/hooks";
-import type { ListItem } from "~/types";
+import Shape from "~/components/Form/Shape";
+import Substance from "~/components/Form/Substance";
+import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { itemTrackingTypes, materialValidator } from "../../items.models";
-import type {
-  getMaterialFormsList,
-  getMaterialSubstancesList,
-} from "../../items.service";
 
 type MaterialFormProps = {
   initialValues: z.infer<typeof materialValidator> & { tags?: string[] };
@@ -58,8 +53,6 @@ const MaterialForm = ({
   const baseCurrency = company?.baseCurrencyCode;
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
-  const forms = useMaterialForms();
-  const substances = useMaterialSubstances();
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -139,15 +132,11 @@ const MaterialForm = ({
                 )}
 
                 <Input name="name" label="Short Description" />
-                <Combobox
-                  name="materialSubstanceId"
-                  label="Substance"
-                  options={substances}
-                />
+                <Substance name="materialSubstanceId" label="Substance" />
                 {isEditing && (
                   <TextArea name="description" label="Long Description" />
                 )}
-                <Combobox name="materialFormId" label="Form" options={forms} />
+                <Shape name="materialFormId" label="Form" />
                 <Input name="finish" label="Finish" />
                 <Input name="grade" label="Grade" />
                 <Input name="dimensions" label="Dimensions" />
@@ -206,65 +195,3 @@ const MaterialForm = ({
 };
 
 export default MaterialForm;
-
-export const useMaterialForms = () => {
-  const formsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getMaterialFormsList>>>();
-
-  const sharedPartData = useRouteData<{
-    forms: ListItem[];
-  }>(path.to.materialRoot);
-
-  const hasSharedPartData = sharedPartData?.forms?.length;
-
-  useMount(() => {
-    if (!hasSharedPartData) formsFetcher.load(path.to.api.materialForms);
-  });
-
-  const options = useMemo(() => {
-    const dataSource =
-      (hasSharedPartData ? sharedPartData?.forms : formsFetcher.data?.data) ??
-      [];
-
-    return dataSource.map((f) => ({
-      value: f.id,
-      label: f.name,
-    }));
-  }, [hasSharedPartData, sharedPartData?.forms, formsFetcher.data?.data]);
-
-  return options;
-};
-
-export const useMaterialSubstances = () => {
-  const substancesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getMaterialSubstancesList>>>();
-
-  const sharedPartData = useRouteData<{
-    substances: ListItem[];
-  }>(path.to.materialRoot);
-
-  const hasSharedPartData = sharedPartData?.substances?.length;
-
-  useMount(() => {
-    if (!hasSharedPartData)
-      substancesFetcher.load(path.to.api.materialSubstances);
-  });
-
-  const options = useMemo(() => {
-    const dataSource =
-      (hasSharedPartData
-        ? sharedPartData?.substances
-        : substancesFetcher.data?.data) ?? [];
-
-    return dataSource.map((s) => ({
-      value: s.id,
-      label: s.name,
-    }));
-  }, [
-    hasSharedPartData,
-    sharedPartData?.substances,
-    substancesFetcher.data?.data,
-  ]);
-
-  return options;
-};

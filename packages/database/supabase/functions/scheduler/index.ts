@@ -5,7 +5,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { SchedulingEngine } from "../lib/scheduling/scheduling-engine.ts";
 import { SchedulingStrategy } from "../lib/scheduling/types.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -23,7 +23,7 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    // const client = getSupabaseServiceRoleFromAuthorizationHeader(req.headers.get("Authorization"));
+    
     const { jobId, companyId, userId } = payloadValidator.parse(payload);
 
     console.log({
@@ -33,8 +33,10 @@ serve(async (req: Request) => {
       userId,
     });
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     const engine = new SchedulingEngine({ client, db, jobId, companyId });

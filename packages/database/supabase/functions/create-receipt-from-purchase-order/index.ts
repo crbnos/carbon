@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRoleFromAuthorizationHeader } from "../lib/supabase.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 
@@ -40,8 +40,10 @@ serve(async (req: Request) => {
     if (!userId) throw new Error("Payload is missing userId");
     if (!companyId) throw new Error("Payload is missing companyId");
 
-    const client = getSupabaseServiceRoleFromAuthorizationHeader(
-      req.headers.get("Authorization")
+    const client = await getSupabaseServiceRole(
+      req.headers.get("Authorization"),
+      req.headers.get("carbon-key") ?? "",
+      companyId
     );
 
     const [purchaseOrder, purchaseOrderLines, receipt] = await Promise.all([
