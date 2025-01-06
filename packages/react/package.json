@@ -83,6 +83,7 @@
   },
   "exports": {
     ".": "./src/index.tsx",
+    "./Chart": "./src/Chart.tsx",
     "./Editor": "./src/Editor/index.ts",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts"
