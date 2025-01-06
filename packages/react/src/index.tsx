@@ -137,6 +137,7 @@ import {
 } from "./Input";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
+import { Loading } from "./Loading";
 import {
   Menu,
   MenuCheckboxItem,
@@ -407,6 +408,7 @@ export {
   InputRightElement,
   Kbd,
   Label,
+  Loading,
   Menu,
   MenuCheckboxItem,
   MenuGroup,
