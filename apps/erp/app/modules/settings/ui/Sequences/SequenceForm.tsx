@@ -76,7 +76,7 @@ const SequenceForm = ({ initialValues }: SequenceFormProps) => {
               <Number
                 name="next"
                 minValue={0}
-                label="Next"
+                label="Current"
                 onChange={setNext}
               />
               <Number
