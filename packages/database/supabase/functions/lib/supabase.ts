@@ -21,8 +21,8 @@ export const getSupabase = (authorizationHeader: string | null) => {
 
 export const getSupabaseServiceRole = async (
   authorizationHeader: string | null,
-  apiKeyHeader: string | null,
-  companyId: string
+  apiKeyHeader?: string | null,
+  companyId?: string
 ) => {
   if (!authorizationHeader && !apiKeyHeader) {
     throw new Error("Authorization header or API key header is required");
@@ -39,7 +39,7 @@ export const getSupabaseServiceRole = async (
     }
   );
 
-  if (apiKeyHeader) {
+  if (apiKeyHeader && companyId) {
     const { data, error } = await serviceRole
       .from("apiKey")
       .select("companyId")

@@ -22,7 +22,7 @@ export function useModules() {
     {
       permission: "sales",
       name: "Sales",
-      to: path.to.salesOrders,
+      to: path.to.sales,
       icon: LuCrown,
     },
     {
