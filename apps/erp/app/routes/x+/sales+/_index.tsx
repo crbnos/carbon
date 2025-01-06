@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Loading,
 } from "@carbon/react";
 import {
   ChartContainer,
@@ -24,7 +25,7 @@ import {
 } from "@carbon/react/Chart";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import type { DateRange } from "@react-types/datepicker";
-import { Link, useLoaderData } from "@remix-run/react";
+import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { LuArrowUpRight, LuChevronDown, LuMoreVertical } from "react-icons/lu";
@@ -53,22 +54,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
     client
       .from("salesOrder")
-      .select("id", { count: "exact" })
+      .select("id, salesOrderId, customerId, assignee", { count: "exact" })
       .in("status", OPEN_SALES_ORDER_STATUSES),
     client
       .from("quote")
-      .select("id", { count: "exact" })
+      .select("id, quoteId, customerId, assignee", { count: "exact" })
       .in("status", OPEN_QUOTE_STATUSES),
     client
       .from("salesRfq")
-      .select("id", { count: "exact" })
+      .select("id, salesRfqId, customerId, assignee", { count: "exact" })
       .in("status", OPEN_RFQ_STATUSES),
   ]);
 
   return json({
-    openSalesOrders: openSalesOrders.count ?? 0,
-    openQuotes: openQuotes.count ?? 0,
-    openRFQs: openRFQs.count ?? 0,
+    openSalesOrders: openSalesOrders,
+    openQuotes: openQuotes,
+    openRFQs: openRFQs,
   });
 }
 
@@ -131,6 +132,8 @@ export default function SalesDashboard() {
   const { openSalesOrders, openQuotes, openRFQs } =
     useLoaderData<typeof loader>();
 
+  const kpiFetcher = useFetcher<{ data: typeof chartData }>();
+
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
@@ -186,7 +189,9 @@ export default function SalesDashboard() {
             </Button>
           </HStack>
           <div className="flex flex-col gap-2">
-            <h3 className="text-3xl font-medium tracking-tight">{openRFQs}</h3>
+            <h3 className="text-3xl font-medium tracking-tight">
+              {openRFQs.count ?? 0}
+            </h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open RFQs
             </p>
@@ -214,7 +219,7 @@ export default function SalesDashboard() {
           </HStack>
           <div className="flex flex-col gap-2">
             <h3 className="text-3xl font-medium tracking-tight">
-              {openQuotes}
+              {openQuotes.count ?? 0}
             </h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open Quotes
@@ -244,7 +249,7 @@ export default function SalesDashboard() {
           </HStack>
           <div className="flex flex-col gap-2">
             <h3 className="text-3xl font-medium tracking-tight">
-              {openSalesOrders}
+              {openSalesOrders.count ?? 0}
             </h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open Sales Orders
@@ -253,10 +258,10 @@ export default function SalesDashboard() {
         </Card>
       </div>
 
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card className="col-span-2 p-0">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
+        <Card className="p-0">
           <HStack className="justify-between items-start">
-            <CardHeader className="px-4">
+            <CardHeader className="px-4 pb-0">
               <div className="flex w-full justify-start items-center gap-2">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -332,34 +337,48 @@ export default function SalesDashboard() {
             </CardAction>
           </HStack>
           <CardContent className="p-4">
-            <ChartContainer
-              config={chartConfig}
-              className="min-h-[200px] w-full"
+            <Loading
+              isLoading={kpiFetcher.state === "loading"}
+              className="h-[30dvw] md:h-[20dvw] w-full"
             >
-              <BarChart accessibilityLayer data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="month"
-                  tickLine={false}
-                  tickMargin={10}
-                  axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
-                <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
-              </BarChart>
-            </ChartContainer>
+              <ChartContainer
+                config={chartConfig}
+                className="h-[30dvw] md:h-[20dvw] w-full"
+              >
+                <BarChart accessibilityLayer data={chartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="month"
+                    tickLine={false}
+                    tickMargin={10}
+                    axisLine={false}
+                    tickFormatter={(value) => value.slice(0, 3)}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="desktop"
+                    fill="var(--color-desktop)"
+                    radius={4}
+                  />
+                  <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
+                </BarChart>
+              </ChartContainer>
+            </Loading>
           </CardContent>
         </Card>
 
         <Card className="p-0">
-          <CardHeader className="px-4">
+          <CardHeader className="px-4 pb-0">
             <CardTitle>Recent Activity</CardTitle>
             <CardDescription className="text-sm">
               Newly created sales documents
             </CardDescription>
           </CardHeader>
+          <CardContent className="p-4 min-h-[200px]">
+            <Loading isLoading>
+              <p>Hello</p>
+            </Loading>
+          </CardContent>
         </Card>
       </div>
 
