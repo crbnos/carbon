@@ -1,3 +1,4 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Button,
   Card,
@@ -21,7 +22,10 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { DateRange } from "@react-types/datepicker";
+import { Link, useLoaderData } from "@remix-run/react";
+import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
 import { LuArrowUpRight, LuChevronDown, LuMoreVertical } from "react-icons/lu";
 import {
@@ -30,6 +34,43 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { path } from "~/utils/path";
+
+const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"];
+const OPEN_QUOTE_STATUSES = ["Sent", "Draft"];
+const OPEN_SALES_ORDER_STATUSES = [
+  "Confirmed",
+  "Needs Approval",
+  "In Progress",
+  "Draft",
+];
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "sales",
+  });
+
+  const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
+    client
+      .from("salesOrder")
+      .select("id", { count: "exact" })
+      .in("status", OPEN_SALES_ORDER_STATUSES),
+    client
+      .from("quote")
+      .select("id", { count: "exact" })
+      .in("status", OPEN_QUOTE_STATUSES),
+    client
+      .from("salesRfq")
+      .select("id", { count: "exact" })
+      .in("status", OPEN_RFQ_STATUSES),
+  ]);
+
+  return json({
+    openSalesOrders: openSalesOrders.count ?? 0,
+    openQuotes: openQuotes.count ?? 0,
+    openRFQs: openRFQs.count ?? 0,
+  });
+}
 
 const chartData = [
   { month: "January", desktop: 186, mobile: 80 },
@@ -78,22 +119,48 @@ const CHART_INTERVALS = [
 const chartConfig = {
   desktop: {
     label: "Desktop",
-    color: "hsl(var(--primary))", // Primary color
+    color: "hsl(var(--chart-1))", // Primary color
   },
   mobile: {
     label: "Mobile",
-    color: "hsl(var(--chart-1))", // Lighter primary
+    color: "hsl(var(--chart-2))", // Lighter primary
   },
 } satisfies ChartConfig;
 
 export default function SalesDashboard() {
+  const { openSalesOrders, openQuotes, openRFQs } =
+    useLoaderData<typeof loader>();
+
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
-  const [dateRange, setDateRange] = useState<DateRange | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange | null>(() => {
+    const end = today(getLocalTimeZone());
+    const start = end.add({ months: -1 });
+    return { start, end };
+  });
 
   const selectedInterval =
     CHART_INTERVALS.find((i) => i.key === interval) || CHART_INTERVALS[1];
   const selectedKpiData = KPIS.find((k) => k.key === selectedKpi) || KPIS[0];
+
+  const onIntervalChange = (value: string) => {
+    const end = today(getLocalTimeZone());
+    if (value === "week") {
+      const start = end.add({ days: -7 });
+      setDateRange({ start, end });
+    } else if (value === "month") {
+      const start = end.add({ months: -1 });
+      setDateRange({ start, end });
+    } else if (value === "quarter") {
+      const start = end.add({ months: -3 });
+      setDateRange({ start, end });
+    } else if (value === "year") {
+      const start = end.add({ years: -1 });
+      setDateRange({ start, end });
+    }
+
+    setInterval(value);
+  };
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
@@ -107,12 +174,19 @@ export default function SalesDashboard() {
               size="sm"
               rightIcon={<LuArrowUpRight />}
               variant="secondary"
+              asChild
             >
-              View RFQs
+              <Link
+                to={`${
+                  path.to.salesRfqs
+                }?filter=status:in:${OPEN_RFQ_STATUSES.join(",")}`}
+              >
+                View RFQs
+              </Link>
             </Button>
           </HStack>
           <div className="flex flex-col gap-2">
-            <h3 className="text-3xl font-medium tracking-tight">42</h3>
+            <h3 className="text-3xl font-medium tracking-tight">{openRFQs}</h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open RFQs
             </p>
@@ -129,11 +203,19 @@ export default function SalesDashboard() {
               rightIcon={<LuArrowUpRight />}
               variant="secondary"
             >
-              View Quotes
+              <Link
+                to={`${
+                  path.to.quotes
+                }?filter=status:in:${OPEN_QUOTE_STATUSES.join(",")}`}
+              >
+                View Quotes
+              </Link>
             </Button>
           </HStack>
           <div className="flex flex-col gap-2">
-            <h3 className="text-3xl font-medium tracking-tight">12</h3>
+            <h3 className="text-3xl font-medium tracking-tight">
+              {openQuotes}
+            </h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open Quotes
             </p>
@@ -149,12 +231,21 @@ export default function SalesDashboard() {
               size="sm"
               rightIcon={<LuArrowUpRight />}
               variant="secondary"
+              asChild
             >
-              View Orders
+              <Link
+                to={`${
+                  path.to.salesOrders
+                }?filter=status:in:${OPEN_SALES_ORDER_STATUSES.join(",")}`}
+              >
+                View Orders
+              </Link>
             </Button>
           </HStack>
           <div className="flex flex-col gap-2">
-            <h3 className="text-3xl font-medium tracking-tight">3</h3>
+            <h3 className="text-3xl font-medium tracking-tight">
+              {openSalesOrders}
+            </h3>
             <p className="text-sm text-muted-foreground tracking-tight">
               Open Sales Orders
             </p>
@@ -198,17 +289,21 @@ export default function SalesDashboard() {
                       rightIcon={<LuChevronDown />}
                       className="hover:bg-background/80"
                     >
-                      <span>{selectedInterval.label}</span>
+                      <span>
+                        {selectedInterval.key === "custom"
+                          ? selectedInterval.label
+                          : `Last ${selectedInterval.label}`}
+                      </span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="bottom" align="start">
                     <DropdownMenuRadioGroup
                       value={interval}
-                      onValueChange={setInterval}
+                      onValueChange={onIntervalChange}
                     >
                       {CHART_INTERVALS.map((i) => (
                         <DropdownMenuRadioItem key={i.key} value={i.key}>
-                          {i.label}
+                          {i.key === "custom" ? i.label : `Last ${i.label}`}
                         </DropdownMenuRadioItem>
                       ))}
                     </DropdownMenuRadioGroup>
@@ -216,7 +311,7 @@ export default function SalesDashboard() {
                 </DropdownMenu>
                 {interval === "custom" && (
                   <DateRangePicker
-                    size="md"
+                    size="sm"
                     value={dateRange}
                     onChange={setDateRange}
                   />
