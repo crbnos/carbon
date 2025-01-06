@@ -48,7 +48,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
       },
       {
         accessorKey: "next",
-        header: "Next",
+        header: "Current",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuArrowRight />,
