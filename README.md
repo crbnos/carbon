@@ -14,22 +14,6 @@ Technical highlights/roadmap:
 - [ ] Third-party integrations for data
 - [ ] Easy-to-use plugin system
 
-Product highlights/roadmap are:
-
-- [x] Search
-- [x] Customer and supplier access
-- [x] Double-entry accrual accounting
-- [ ] Stochastic scheduling/planning
-- [ ] Graph-based routing for manufacturing
-
-## Project Status
-
-- [x] Pre-Alpha: Developing foundation
-- [x] Alpha: Heavy feature development and refinement
-- [ ] Public Alpha: Ready for use. But go easy on us, there'll be bugs.
-- [ ] Public Beta: Stable enough for most non-enterprise use-cases.
-- [ ] Public: Production-ready
-
 ## Techstack
 
 - [Remix](https://remix.run) – framework
@@ -38,7 +22,7 @@ Product highlights/roadmap are:
 - [Radix UI](https://radix-ui.com) - behavior
 - [Supabase](https://supabase.com) - database
 - [Supabase](https://supabase.com) – auth
-- [Redis](https://redis.io) - cache
+- [Upstash](https://upstash.com) - cache
 - [Trigger](https://trigger.dev) - jobs
 - [Resend](https://resend.com) – email
 - [Novu](https://novu.co) – notifications
@@ -55,10 +39,9 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 | Package Name | Description     | Local Command         |
 | ------------ | --------------- | --------------------- |
-| `carbon`     | ERP Application | `npm run dev`         |
-| `docs`       | Documentation   | `npm run dev:docs`    |
+| `erp`        | ERP Application | `npm run dev`         |
 | `mes`        | MES             | `npm run dev:mes`     |
-| `website`    | Website         | `npm run dev:website` |
+| `starter`    | Starter         | `npm run dev:starter` |
 
 ### `/packages`
 
