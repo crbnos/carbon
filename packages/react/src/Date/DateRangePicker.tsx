@@ -1,17 +1,48 @@
 import { useDateRangePicker } from "@react-aria/datepicker";
 import { useDateRangePickerState } from "@react-stately/datepicker";
 import type { DateRangePickerProps, DateValue } from "@react-types/datepicker";
+import { cva } from "class-variance-authority";
 import { useRef } from "react";
 import { LuBan } from "react-icons/lu";
 import { HStack } from "../HStack";
 import { InputGroup } from "../Input";
-import TimeField from "./TimePicker";
 import { FieldButton } from "./components/Button";
 import DateField from "./components/DateField";
 import { Popover } from "./components/Popover";
 import { RangeCalendar } from "./components/RangeCalendar";
 
-const DateRangePicker = (props: DateRangePickerProps<DateValue>) => {
+const iconVariants = cva("", {
+  variants: {
+    size: {
+      sm: "h-3 w-3",
+      md: "h-4 w-4",
+      lg: "h-5 w-5",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});
+
+const fieldVariants = cva("flex w-full", {
+  variants: {
+    size: {
+      sm: "px-2 py-1",
+      md: "px-4 py-2",
+      lg: "px-6 py-3",
+    },
+  },
+  defaultVariants: {
+    size: "md",
+  },
+});
+
+const DateRangePicker = ({
+  size = "md",
+  ...props
+}: DateRangePickerProps<DateValue> & {
+  size?: "sm" | "md" | "lg";
+}) => {
   const state = useDateRangePickerState({
     ...props,
     shouldCloseOnSelect: false,
@@ -32,21 +63,26 @@ const DateRangePicker = (props: DateRangePickerProps<DateValue>) => {
         <InputGroup
           {...groupProps}
           ref={ref}
+          size={size}
           className="w-full inline-flex rounded-r-none"
         >
-          <div className="flex w-full px-4 py-2">
-            <DateField {...startFieldProps} />
+          <div className={fieldVariants({ size })}>
+            <DateField {...startFieldProps} size={size} />
             <span aria-hidden="true" className="px-2">
               –
             </span>
-            <DateField {...endFieldProps} />
+            <DateField {...endFieldProps} size={size} />
             {state.isInvalid && (
-              <LuBan className="text-destructive-foreground absolute right-[12px]" />
+              <LuBan
+                className={`text-destructive-foreground absolute right-[12px] ${iconVariants(
+                  { size }
+                )}`}
+              />
             )}
           </div>
         </InputGroup>
 
-        <FieldButton {...buttonProps} isPressed={state.isOpen} />
+        <FieldButton {...buttonProps} isPressed={state.isOpen} size={size} />
       </HStack>
       {state.isOpen && (
         <Popover
@@ -55,18 +91,6 @@ const DateRangePicker = (props: DateRangePickerProps<DateValue>) => {
           onClose={() => state.setOpen(false)}
         >
           <RangeCalendar {...calendarProps} />
-          <div className="flex gap-2">
-            <TimeField
-              label="Start time"
-              value={state.timeRange?.start || null}
-              onChange={(v) => state.setTime("start", v)}
-            />
-            <TimeField
-              label="End time"
-              value={state.timeRange?.end || null}
-              onChange={(v) => state.setTime("end", v)}
-            />
-          </div>
         </Popover>
       )}
     </div>

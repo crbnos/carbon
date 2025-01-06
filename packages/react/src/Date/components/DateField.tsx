@@ -7,7 +7,11 @@ import { useDateFieldState } from "@react-stately/datepicker";
 import { useRef } from "react";
 import { DateSegment } from "./DateSegment";
 
-const DateField = (props: AriaDateFieldProps<DateValue>) => {
+interface DateFieldProps extends AriaDateFieldProps<DateValue> {
+  size?: "sm" | "md" | "lg";
+}
+
+const DateField = ({ size, ...props }: DateFieldProps) => {
   const { locale } = useLocale();
   const state = useDateFieldState({
     ...props,
@@ -19,9 +23,9 @@ const DateField = (props: AriaDateFieldProps<DateValue>) => {
   const { fieldProps } = useDateField(props, state, ref);
 
   return (
-    <div className="flex" {...fieldProps} ref={ref}>
+    <div className="flex items-center" {...fieldProps} ref={ref}>
       {state.segments.map((segment, i) => (
-        <DateSegment key={i} segment={segment} state={state} />
+        <DateSegment key={i} segment={segment} state={state} size={size} />
       ))}
     </div>
   );
