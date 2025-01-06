@@ -6,15 +6,17 @@ import type {
   CalendarState,
   RangeCalendarState,
 } from "@react-stately/calendar";
-import { Table, Tbody, Td, Th, Thead, Tr } from "../../Table";
 import { CalendarCell } from "./CalendarCell";
+import { CalendarRangeCell } from "./CalendarRangeCell";
 
 export const CalendarGrid = ({
   state,
   offset = {},
+  isRangeCalendar = false,
 }: {
   state: CalendarState | RangeCalendarState;
   offset?: DateDuration;
+  isRangeCalendar?: boolean;
 }) => {
   const { locale } = useLocale();
   const startDate = state.visibleRange.start.add(offset);
@@ -31,39 +33,53 @@ export const CalendarGrid = ({
   const weeksInMonth = getWeeksInMonth(state.visibleRange.start, locale);
 
   return (
-    <Table {...gridProps}>
-      <Thead {...headerProps}>
-        <Tr>
+    <table
+      {...gridProps}
+      className="w-full border-collapse space-y-1"
+      cellPadding={isRangeCalendar ? "0" : undefined}
+    >
+      <thead {...headerProps}>
+        <tr>
           {weekDays.map((day, index) => (
-            <Th
+            <th
+              className="text-muted-foreground rounded-md w-8 font-normal text-[0.8rem]"
               key={index}
-              className="text-muted-foreground text-sm text-center px-0"
             >
               {day}
-            </Th>
+            </th>
           ))}
-        </Tr>
-      </Thead>
-      <Tbody>
+        </tr>
+      </thead>
+      <tbody>
         {[...new Array(weeksInMonth).keys()].map((weekIndex) => (
-          <Tr key={weekIndex} className="border-none">
+          <tr key={weekIndex} className="h-9">
             {state
               .getDatesInWeek(weekIndex, startDate)
               .map((date, i) =>
                 date ? (
-                  <CalendarCell
-                    key={i}
-                    state={state}
-                    date={date}
-                    currentMonth={startDate}
-                  />
+                  isRangeCalendar ? (
+                    <CalendarRangeCell
+                      key={i}
+                      state={state as RangeCalendarState}
+                      date={date}
+                      currentMonth={startDate}
+                      locale={locale}
+                    />
+                  ) : (
+                    <CalendarCell
+                      key={i}
+                      state={state as CalendarState}
+                      date={date}
+                      currentMonth={startDate}
+                    />
+                  )
                 ) : (
-                  <Td key={i} />
+                  <td key={i} />
                 )
               )}
-          </Tr>
+          </tr>
         ))}
-      </Tbody>
-    </Table>
+      </tbody>
+    </table>
   );
 };

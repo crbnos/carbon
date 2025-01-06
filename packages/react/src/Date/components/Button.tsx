@@ -22,20 +22,28 @@ export const CalendarButton = (props: AriaButtonProps & IconButtonProps) => {
 export interface FieldButtonProps extends AriaButtonProps {
   isPressed: boolean;
   className?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-export const FieldButton = (props: FieldButtonProps) => {
+export const FieldButton = ({ size = "md", ...props }: FieldButtonProps) => {
   const ref = useRef<HTMLButtonElement>(null);
   const { buttonProps } = useButton(props, ref);
+
+  const sizeClasses = {
+    sm: "h-8 w-8 px-2",
+    md: "h-10 w-10 px-3",
+    lg: "h-12 w-12 px-4",
+  };
+
   return (
     <IconButton
       {...buttonProps}
       ref={ref}
       aria-label="Toggle"
-      className="flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
+      className={`flex-shrink-0 ${sizeClasses[size]} rounded-l-none border-l-0 shadow-sm`}
       icon={<LuCalendar />}
       variant="secondary"
-      size="md"
+      size={size}
     />
   );
 };
