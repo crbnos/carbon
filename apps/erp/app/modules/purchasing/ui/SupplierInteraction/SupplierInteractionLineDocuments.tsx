@@ -2,6 +2,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -231,6 +232,9 @@ const SupplierInteractionLineDocuments = ({
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>Files</CardTitle>
+            <CardDescription>
+              Files related to the supplier interaction line.
+            </CardDescription>
           </CardHeader>
           <CardAction>
             <SupplierInteractionLineDocumentForm

@@ -515,6 +515,9 @@ export const JobOperation = ({
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
                 <Heading size="h3">Files</Heading>
+                <p className="text-muted-foreground text-sm -mt-2">
+                  Files related to the job and the opportunity line.
+                </p>
                 <Suspense key={operationId} fallback={<TableSkeleton />}>
                   <Await resolve={files}>
                     {(resolvedFiles) => (

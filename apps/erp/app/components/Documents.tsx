@@ -3,6 +3,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -221,6 +222,9 @@ const Documents = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>Files</CardTitle>
+          <CardDescription>
+            Files related to the {sourceDocument.toLowerCase()}.
+          </CardDescription>
         </CardHeader>
         <CardAction>
           <File
