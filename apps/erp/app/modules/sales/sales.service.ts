@@ -897,6 +897,25 @@ export async function getQuoteShipment(
   return client.from("quoteShipment").select("*").eq("id", quoteId).single();
 }
 
+export async function getSalesDocumentsAssignedToMe(
+  client: SupabaseClient<Database>,
+  userId: string
+) {
+  const [salesOrders, quotes, rfqs] = await Promise.all([
+    client.from("salesOrder").select("*").eq("assignee", userId),
+    client.from("quote").select("*").eq("assignee", userId),
+    client.from("salesRfq").select("*").eq("assignee", userId),
+  ]);
+
+  const merged = [
+    ...(salesOrders.data?.map((doc) => ({ ...doc, type: "salesOrder" })) ?? []),
+    ...(quotes.data?.map((doc) => ({ ...doc, type: "quote" })) ?? []),
+    ...(rfqs.data?.map((doc) => ({ ...doc, type: "rfq" })) ?? []),
+  ].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
+
+  return merged;
+}
+
 export async function getSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string

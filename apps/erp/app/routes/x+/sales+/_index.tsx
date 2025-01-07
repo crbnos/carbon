@@ -18,6 +18,12 @@ import {
   IconButton,
   Loading,
   Skeleton,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
 } from "@carbon/react";
 import {
   ChartContainer,
@@ -28,9 +34,9 @@ import {
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Link, useFetcher, useLoaderData } from "@remix-run/react";
-import { json, type LoaderFunctionArgs } from "@vercel/remix";
-import { useEffect, useState } from "react";
+import { Await, Link, useFetcher, useLoaderData } from "@remix-run/react";
+import { defer, type LoaderFunctionArgs } from "@vercel/remix";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { LuArrowUpRight, LuChevronDown, LuMoreVertical } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -38,9 +44,15 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { CustomerAvatar, Hyperlink } from "~/components";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
+import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
+import type { Quotation, SalesOrder, SalesRFQ } from "~/modules/sales/types";
+import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
+import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
+import { SalesRFQStatus } from "~/modules/sales/ui/SalesRFQ";
 import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
 import { path } from "~/utils/path";
 
@@ -52,33 +64,6 @@ const OPEN_SALES_ORDER_STATUSES = [
   "In Progress",
   "Draft",
 ];
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "sales",
-  });
-
-  const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
-    client
-      .from("salesOrder")
-      .select("id, salesOrderId, customerId, assignee", { count: "exact" })
-      .in("status", OPEN_SALES_ORDER_STATUSES),
-    client
-      .from("quote")
-      .select("id, quoteId, customerId, assignee", { count: "exact" })
-      .in("status", OPEN_QUOTE_STATUSES),
-    client
-      .from("salesRfq")
-      .select("id, salesRfqId, customerId, assignee", { count: "exact" })
-      .in("status", OPEN_RFQ_STATUSES),
-  ]);
-
-  return json({
-    openSalesOrders: openSalesOrders,
-    openQuotes: openQuotes,
-    openRFQs: openRFQs,
-  });
-}
 
 const CHART_INTERVALS = [
   { key: "week", label: "Week" },
@@ -94,9 +79,56 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, userId } = await requirePermissions(request, {
+    view: "sales",
+  });
+
+  const [openSalesOrders, openQuotes, openRFQs] = await Promise.all([
+    client
+      .from("salesOrder")
+      .select("id, salesOrderId, status, customerId, assignee, createdAt", {
+        count: "exact",
+      })
+      .in("status", OPEN_SALES_ORDER_STATUSES),
+    client
+      .from("quote")
+      .select("id, quoteId, status, customerId, assignee, createdAt", {
+        count: "exact",
+      })
+      .in("status", OPEN_QUOTE_STATUSES),
+    client
+      .from("salesRfq")
+      .select("id, rfqId, status, customerId, assignee, createdAt", {
+        count: "exact",
+      })
+      .in("status", OPEN_RFQ_STATUSES),
+  ]);
+
+  return defer({
+    openSalesOrders: openSalesOrders,
+    openQuotes: openQuotes,
+    openRFQs: openRFQs,
+    assignedToMe: getSalesDocumentsAssignedToMe(client, userId),
+  });
+}
+
 export default function SalesDashboard() {
-  const { openSalesOrders, openQuotes, openRFQs } =
+  const { openSalesOrders, openQuotes, openRFQs, assignedToMe } =
     useLoaderData<typeof loader>();
+
+  const mergedOpenDocs = useMemo(() => {
+    const merged = [
+      ...(openSalesOrders.data?.map((doc) => ({
+        ...doc,
+        type: "salesOrder",
+      })) ?? []),
+      ...(openQuotes.data?.map((doc) => ({ ...doc, type: "quote" })) ?? []),
+      ...(openRFQs.data?.map((doc) => ({ ...doc, type: "rfq" })) ?? []),
+    ].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+
+    return merged;
+  }, [openSalesOrders, openQuotes, openRFQs]);
 
   const kpiFetcher = useFetcher<typeof kpiLoader>();
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
@@ -172,7 +204,7 @@ export default function SalesDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card className="p-4 rounded-xl items-start justify-start gap-y-4">
+        <Card className="p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
               <RiProgress2Line className="size-5" />
@@ -202,7 +234,7 @@ export default function SalesDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 items-start justify-start gap-y-4">
+        <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
               <RiProgress4Line className="size-5" />
@@ -231,7 +263,7 @@ export default function SalesDashboard() {
           </div>
         </Card>
 
-        <Card className="p-4 items-start justify-start gap-y-4">
+        <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
               <RiProgress8Line className="size-5" />
@@ -262,184 +294,351 @@ export default function SalesDashboard() {
         </Card>
       </div>
 
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card className="p-0">
-          <HStack className="justify-between items-start">
-            <CardHeader className="px-4 pb-0">
-              <div className="flex w-full justify-start items-center gap-2">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      rightIcon={<LuChevronDown />}
-                      className="hover:bg-background/80"
-                    >
-                      <span>{selectedKpiData.label}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="bottom" align="start">
-                    <DropdownMenuRadioGroup
-                      value={selectedKpi}
-                      onValueChange={setSelectedKpi}
-                    >
-                      {KPIs.map((kpi) => (
-                        <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
-                          {kpi.label}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      rightIcon={<LuChevronDown />}
-                      className="hover:bg-background/80"
-                    >
-                      <span>
-                        {selectedInterval.key === "custom"
-                          ? selectedInterval.label
-                          : `Last ${selectedInterval.label}`}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="bottom" align="start">
-                    <DropdownMenuRadioGroup
-                      value={interval}
-                      onValueChange={onIntervalChange}
-                    >
-                      {CHART_INTERVALS.map((i) => (
-                        <DropdownMenuRadioItem key={i.key} value={i.key}>
-                          {i.key === "custom" ? i.label : `Last ${i.label}`}
-                        </DropdownMenuRadioItem>
-                      ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {interval === "custom" && (
-                  <DateRangePicker
-                    size="sm"
-                    value={dateRange}
-                    onChange={setDateRange}
-                  />
-                )}
-              </div>
-              <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
-                {isFetching ? (
-                  <Skeleton className="h-5 w-1/4" />
-                ) : (
-                  <>
-                    <p>
-                      {["salesOrderRevenue"].includes(selectedKpiData.key)
-                        ? currencyFormatter.format(total)
-                        : numberFormatter.format(total)}
-                    </p>
-                    <Badge
-                      variant="secondary"
-                      className="normal-case font-medium px-2 rounded-full"
-                    >
-                      {percentageChange > 0
-                        ? `+${percentageChange.toFixed(0)}%`
-                        : `${percentageChange.toFixed(0)}%`}
-                    </Badge>
-                  </>
-                )}
-              </HStack>
-            </CardHeader>
-            <CardAction className="py-6 px-4">
+      <Card>
+        <HStack className="justify-between items-start">
+          <CardHeader className="pb-0">
+            <div className="flex w-full justify-start items-center gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <IconButton
+                  <Button
                     variant="secondary"
-                    icon={<LuMoreVertical />}
-                    aria-label="More"
-                  />
+                    rightIcon={<LuChevronDown />}
+                    className="hover:bg-background/80"
+                  >
+                    <span>{selectedKpiData.label}</span>
+                  </Button>
                 </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="start">
+                  <DropdownMenuRadioGroup
+                    value={selectedKpi}
+                    onValueChange={setSelectedKpi}
+                  >
+                    {KPIs.map((kpi) => (
+                      <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
+                        {kpi.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
               </DropdownMenu>
-            </CardAction>
-          </HStack>
-          <CardContent className="p-4">
-            <Loading
-              isLoading={isFetching}
-              className="h-[30dvw] md:h-[23dvw] w-full"
-            >
-              <ChartContainer
-                config={chartConfig}
-                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
-              >
-                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
-                  <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey={
-                      ["week", "month"].includes(interval) ? "date" : "month"
-                    }
-                    tickLine={false}
-                    tickMargin={8}
-                    minTickGap={32}
-                    axisLine={false}
-                    tickFormatter={(value) => {
-                      if (!value) return "";
-                      return ["week", "month"].includes(interval)
-                        ? dateFormatter.format(
-                            parseDate(value).toDate(getLocalTimeZone())
-                          )
-                        : value.slice(0, 3);
-                    }}
-                  />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        labelFormatter={
-                          ["week", "month"].includes(interval)
-                            ? (value) =>
-                                dateFormatter.format(
-                                  parseDate(value).toDate(getLocalTimeZone())
-                                )
-                            : (value) => value
-                        }
-                        formatter={(value) =>
-                          ["salesOrderRevenue"].includes(selectedKpiData.key)
-                            ? currencyFormatter.format(value as number)
-                            : numberFormatter.format(value as number)
-                        }
-                      />
-                    }
-                  />
-                  <Bar dataKey="value" fill="var(--color-now)" radius={2} />
-                </BarChart>
-              </ChartContainer>
-            </Loading>
-          </CardContent>
-        </Card>
 
-        <Card className="p-0">
-          <CardHeader className="px-4 pb-0">
-            <CardTitle>Recent Activity</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    rightIcon={<LuChevronDown />}
+                    className="hover:bg-background/80"
+                  >
+                    <span>
+                      {selectedInterval.key === "custom"
+                        ? selectedInterval.label
+                        : `Last ${selectedInterval.label}`}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="start">
+                  <DropdownMenuRadioGroup
+                    value={interval}
+                    onValueChange={onIntervalChange}
+                  >
+                    {CHART_INTERVALS.map((i) => (
+                      <DropdownMenuRadioItem key={i.key} value={i.key}>
+                        {i.key === "custom" ? i.label : `Last ${i.label}`}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {interval === "custom" && (
+                <DateRangePicker
+                  size="sm"
+                  value={dateRange}
+                  onChange={setDateRange}
+                />
+              )}
+            </div>
+            <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
+              {isFetching ? (
+                <Skeleton className="h-5 w-1/4" />
+              ) : (
+                <>
+                  <p>
+                    {["salesOrderRevenue"].includes(selectedKpiData.key)
+                      ? currencyFormatter.format(total)
+                      : numberFormatter.format(total)}
+                  </p>
+                  <Badge
+                    variant="secondary"
+                    className="normal-case font-medium px-2 rounded-full"
+                  >
+                    {percentageChange > 0
+                      ? `+${percentageChange.toFixed(0)}%`
+                      : `${percentageChange.toFixed(0)}%`}
+                  </Badge>
+                </>
+              )}
+            </HStack>
+          </CardHeader>
+          <CardAction className="py-6 px-6">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  variant="secondary"
+                  icon={<LuMoreVertical />}
+                  aria-label="More"
+                />
+              </DropdownMenuTrigger>
+            </DropdownMenu>
+          </CardAction>
+        </HStack>
+        <CardContent className="p-6">
+          <Loading
+            isLoading={isFetching}
+            className="h-[30dvw] md:h-[23dvw] w-full"
+          >
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+            >
+              <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
+                <CartesianGrid vertical={false} />
+                <XAxis
+                  dataKey={
+                    ["week", "month"].includes(interval) ? "date" : "month"
+                  }
+                  tickLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  axisLine={false}
+                  tickFormatter={(value) => {
+                    if (!value) return "";
+                    return ["week", "month"].includes(interval)
+                      ? dateFormatter.format(
+                          parseDate(value).toDate(getLocalTimeZone())
+                        )
+                      : value.slice(0, 3);
+                  }}
+                />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={
+                        ["week", "month"].includes(interval)
+                          ? (value) =>
+                              dateFormatter.format(
+                                parseDate(value).toDate(getLocalTimeZone())
+                              )
+                          : (value) => value
+                      }
+                      formatter={(value) =>
+                        ["salesOrderRevenue"].includes(selectedKpiData.key)
+                          ? currencyFormatter.format(value as number)
+                          : numberFormatter.format(value as number)
+                      }
+                    />
+                  }
+                />
+                <Bar dataKey="value" fill="var(--color-now)" radius={2} />
+              </BarChart>
+            </ChartContainer>
+          </Loading>
+        </CardContent>
+      </Card>
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="px-6 pb-0">
+            <CardTitle>Recently Created</CardTitle>
             <CardDescription className="text-sm">
               Newly created sales documents
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4">
-            <div className="h-[30dvw] md:h-[23dvw] w-full overflow-y-auto">
-              {/* TODO: Add recent activity */}
+          <CardContent className="p-6">
+            <div className="min-h-[200px] max-h-[360px] w-full overflow-y-auto">
+              {mergedOpenDocs.length > 0 ? (
+                <Table>
+                  <Thead>
+                    <Tr>
+                      <Th>Document</Th>
+                      <Th>Status</Th>
+                      <Th>Customer</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {mergedOpenDocs.map((doc) => {
+                      switch (doc.type) {
+                        case "salesOrder":
+                          return (
+                            <SalesOrderDocumentRow
+                              key={doc.id}
+                              doc={doc as unknown as SalesOrder}
+                            />
+                          );
+                        case "quote":
+                          return (
+                            <QuoteDocumentRow
+                              key={doc.id}
+                              doc={doc as unknown as Quotation}
+                            />
+                          );
+                        case "rfq":
+                          return (
+                            <RfqDocumentRow
+                              key={doc.id}
+                              doc={doc as unknown as SalesRFQ}
+                            />
+                          );
+                        default:
+                          return null;
+                      }
+                    })}
+                  </Tbody>
+                </Table>
+              ) : (
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-sm text-muted-foreground">
+                    No recently created documents
+                  </p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
-      </div>
 
-      <Card className="p-0">
-        <CardHeader className="px-4">
-          <CardTitle>Assigned to Me</CardTitle>
-          <CardDescription className="text-sm">
-            Sales documents currently assigned to me
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 min-h-[200px]">
-          {/* TODO: Add assigned to me */}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader className="px-6 pb-0">
+            <CardTitle>Assigned to Me</CardTitle>
+            <CardDescription className="text-sm">
+              Sales documents currently assigned to me
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 min-h-[200px]">
+            <Suspense fallback={<Loading isLoading />}>
+              <Await
+                resolve={assignedToMe}
+                errorElement={<div>Error loading assigned documents</div>}
+              >
+                {(assignedDocs) =>
+                  assignedDocs.length > 0 ? (
+                    <Table>
+                      <Thead>
+                        <Tr>
+                          <Th>Document</Th>
+                          <Th>Status</Th>
+                          <Th>Customer</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {assignedDocs.map((doc) => {
+                          switch (doc.type) {
+                            case "salesOrder":
+                              return (
+                                <SalesOrderDocumentRow
+                                  key={doc.id}
+                                  doc={doc as unknown as SalesOrder}
+                                />
+                              );
+                            case "quote":
+                              return (
+                                <QuoteDocumentRow
+                                  key={doc.id}
+                                  doc={doc as unknown as Quotation}
+                                />
+                              );
+                            case "rfq":
+                              return (
+                                <RfqDocumentRow
+                                  key={doc.id}
+                                  doc={doc as unknown as SalesRFQ}
+                                />
+                              );
+                            default:
+                              return null;
+                          }
+                        })}
+                      </Tbody>
+                    </Table>
+                  ) : (
+                    <div className="flex justify-center items-center h-full">
+                      <p className="text-sm text-muted-foreground">
+                        No documents assigned to me
+                      </p>
+                    </div>
+                  )
+                }
+              </Await>
+            </Suspense>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  );
+}
+
+function SalesOrderDocumentRow({ doc }: { doc: SalesOrder }) {
+  return (
+    <Tr>
+      <Td>
+        <Hyperlink to={path.to.salesOrder(doc.id!)}>
+          <HStack>
+            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
+              <RiProgress8Line className="size-3" />
+            </div>
+            {doc.salesOrderId}
+          </HStack>
+        </Hyperlink>
+      </Td>
+      <Td>
+        <SalesStatus status={doc.status} />
+      </Td>
+      <Td>
+        <CustomerAvatar customerId={doc.customerId} />
+      </Td>
+    </Tr>
+  );
+}
+
+function QuoteDocumentRow({ doc }: { doc: Quotation }) {
+  return (
+    <Tr>
+      <Td>
+        <Hyperlink to={path.to.quote(doc.id!)}>
+          <HStack>
+            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
+              <RiProgress4Line className="size-3" />
+            </div>
+            {doc.quoteId}
+          </HStack>
+        </Hyperlink>
+      </Td>
+      <Td>
+        <QuoteStatus status={doc.status} />
+      </Td>
+      <Td>
+        <CustomerAvatar customerId={doc.customerId} />
+      </Td>
+    </Tr>
+  );
+}
+
+function RfqDocumentRow({ doc }: { doc: SalesRFQ }) {
+  return (
+    <Tr>
+      <Td>
+        <Hyperlink to={path.to.salesRfq(doc.id!)}>
+          <HStack>
+            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
+              <RiProgress2Line className="size-3" />
+            </div>
+            {doc.rfqId}
+          </HStack>
+        </Hyperlink>
+      </Td>
+      <Td>
+        <SalesRFQStatus status={doc.status} />
+      </Td>
+      <Td>
+        <CustomerAvatar customerId={doc.customerId} />
+      </Td>
+    </Tr>
   );
 }
