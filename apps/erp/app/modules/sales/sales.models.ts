@@ -10,6 +10,29 @@ import {
   standardFactorType,
 } from "../shared";
 
+export const KPIs = [
+  {
+    key: "quoteCount",
+    label: "Quote Count",
+  },
+  {
+    key: "rfqCount",
+    label: "RFQ Count",
+  },
+  {
+    key: "salesOrderCount",
+    label: "Sales Order Count",
+  },
+  {
+    key: "salesOrderRevenue",
+    label: "Sales Order Revenue",
+  },
+  {
+    key: "turnaroundTime",
+    label: "Turnaround Time",
+  },
+] as const;
+
 export const salesRFQStatusType = [
   "Draft",
   "Ready for Quote",
