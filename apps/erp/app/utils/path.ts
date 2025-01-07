@@ -49,6 +49,7 @@ export const path = {
         generatePath(
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
+      salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       services: `${api}/items/services`,

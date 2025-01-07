@@ -23,11 +23,12 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LuArrowUpRight, LuChevronDown, LuMoreVertical } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -35,6 +36,9 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
+import { KPIs } from "~/modules/sales/sales.models";
+import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
 import { path } from "~/utils/path";
 
 const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"];
@@ -73,42 +77,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-const chartData = [
-  { month: "January", desktop: 186, mobile: 80 },
-  { month: "February", desktop: 305, mobile: 200 },
-  { month: "March", desktop: 237, mobile: 120 },
-  { month: "April", desktop: 73, mobile: 190 },
-  { month: "May", desktop: 209, mobile: 130 },
-  { month: "June", desktop: 214, mobile: 140 },
-];
-
-const KPIS = [
-  {
-    key: "salesOrderRevenue",
-    label: "Sales Order Revenue",
-  },
-  {
-    key: "quoteRevenue",
-    label: "Quote Revenue",
-  },
-  {
-    key: "salesOrderCount",
-    label: "Sales Order Count",
-  },
-  {
-    key: "quoteCount",
-    label: "Quote Count",
-  },
-  {
-    key: "rfqCount",
-    label: "RFQ Count",
-  },
-  {
-    key: "turnaroundTime",
-    label: "Turnaround Time",
-  },
-];
-
 const CHART_INTERVALS = [
   { key: "week", label: "Week" },
   { key: "month", label: "Month" },
@@ -118,13 +86,8 @@ const CHART_INTERVALS = [
 ];
 
 const chartConfig = {
-  desktop: {
-    label: "Desktop",
+  now: {
     color: "hsl(var(--chart-1))", // Primary color
-  },
-  mobile: {
-    label: "Mobile",
-    color: "hsl(var(--chart-2))", // Lighter primary
   },
 } satisfies ChartConfig;
 
@@ -132,7 +95,15 @@ export default function SalesDashboard() {
   const { openSalesOrders, openQuotes, openRFQs } =
     useLoaderData<typeof loader>();
 
-  const kpiFetcher = useFetcher<{ data: typeof chartData }>();
+  const kpiFetcher = useFetcher<typeof kpiLoader>();
+
+  const dateFormatter = useDateFormatter({
+    month: "short",
+    day: "numeric",
+  });
+
+  const currencyFormatter = useCurrencyFormatter();
+  const numberFormatter = useNumberFormatter();
 
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
@@ -144,7 +115,16 @@ export default function SalesDashboard() {
 
   const selectedInterval =
     CHART_INTERVALS.find((i) => i.key === interval) || CHART_INTERVALS[1];
-  const selectedKpiData = KPIS.find((k) => k.key === selectedKpi) || KPIS[0];
+  const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
+
+  useEffect(() => {
+    kpiFetcher.load(
+      `${path.to.api.salesKpi(
+        selectedKpiData.key
+      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
 
   const onIntervalChange = (value: string) => {
     const end = today(getLocalTimeZone());
@@ -278,7 +258,7 @@ export default function SalesDashboard() {
                       value={selectedKpi}
                       onValueChange={setSelectedKpi}
                     >
-                      {KPIS.map((kpi) => (
+                      {KPIs.map((kpi) => (
                         <DropdownMenuRadioItem key={kpi.key} value={kpi.key}>
                           {kpi.label}
                         </DropdownMenuRadioItem>
@@ -338,29 +318,52 @@ export default function SalesDashboard() {
           </HStack>
           <CardContent className="p-4">
             <Loading
-              isLoading={kpiFetcher.state === "loading"}
-              className="h-[30dvw] md:h-[20dvw] w-full"
+              isLoading={kpiFetcher.state === "loading" || !kpiFetcher.data}
+              className="h-[30dvw] md:h-[23dvw] w-full"
             >
               <ChartContainer
                 config={chartConfig}
-                className="h-[30dvw] md:h-[20dvw] w-full"
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
               >
-                <BarChart accessibilityLayer data={chartData}>
+                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                   <CartesianGrid vertical={false} />
                   <XAxis
-                    dataKey="month"
+                    dataKey={
+                      ["week", "month"].includes(interval) ? "date" : "month"
+                    }
                     tickLine={false}
-                    tickMargin={10}
+                    tickMargin={8}
+                    minTickGap={32}
                     axisLine={false}
-                    tickFormatter={(value) => value.slice(0, 3)}
+                    tickFormatter={
+                      ["week", "month"].includes(interval)
+                        ? (value) =>
+                            dateFormatter.format(
+                              parseDate(value).toDate(getLocalTimeZone())
+                            )
+                        : (value) => value.slice(0, 3)
+                    }
                   />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="desktop"
-                    fill="var(--color-desktop)"
-                    radius={4}
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={
+                          ["week", "month"].includes(interval)
+                            ? (value) =>
+                                dateFormatter.format(
+                                  parseDate(value).toDate(getLocalTimeZone())
+                                )
+                            : (value) => value
+                        }
+                        formatter={(value) =>
+                          ["salesOrderRevenue"].includes(selectedKpiData.key)
+                            ? currencyFormatter.format(value as number)
+                            : numberFormatter.format(value as number)
+                        }
+                      />
+                    }
                   />
-                  <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
+                  <Bar dataKey="value" fill="var(--color-now)" radius={2} />
                 </BarChart>
               </ChartContainer>
             </Loading>
@@ -374,10 +377,10 @@ export default function SalesDashboard() {
               Newly created sales documents
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-4 min-h-[200px]">
-            <Loading isLoading>
-              <p>Hello</p>
-            </Loading>
+          <CardContent className="p-4">
+            <div className="h-[30dvw] md:h-[23dvw] w-full overflow-y-auto">
+              <pre>{JSON.stringify(kpiFetcher.data?.data, null, 2)}</pre>
+            </div>
           </CardContent>
         </Card>
       </div>
