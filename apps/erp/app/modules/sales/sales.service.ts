@@ -899,12 +899,25 @@ export async function getQuoteShipment(
 
 export async function getSalesDocumentsAssignedToMe(
   client: SupabaseClient<Database>,
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   const [salesOrders, quotes, rfqs] = await Promise.all([
-    client.from("salesOrder").select("*").eq("assignee", userId),
-    client.from("quote").select("*").eq("assignee", userId),
-    client.from("salesRfq").select("*").eq("assignee", userId),
+    client
+      .from("salesOrder")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
+    client
+      .from("quote")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
+    client
+      .from("salesRfq")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
   ]);
 
   const merged = [
