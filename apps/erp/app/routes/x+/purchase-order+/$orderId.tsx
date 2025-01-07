@@ -10,8 +10,8 @@ import {
   getPurchaseOrder,
   getPurchaseOrderLines,
   getSupplier,
-  getSupplierInteraction,
   getSupplierInteractionDocuments,
+  getSupplierQuoteByInteractionId,
 } from "~/modules/purchasing";
 import {
   PurchaseOrderExplorer,
@@ -66,11 +66,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.purchaseOrders);
   }
 
-  const [supplier, interaction] = await Promise.all([
+  const [supplier, supplierQuote] = await Promise.all([
     purchaseOrder.data?.supplierId
       ? getSupplier(client, purchaseOrder.data.supplierId)
       : null,
-    getSupplierInteraction(client, purchaseOrder.data.supplierInteractionId!),
+    purchaseOrder.data?.supplierInteractionId
+      ? getSupplierQuoteByInteractionId(
+          client,
+          purchaseOrder.data.supplierInteractionId
+        )
+      : null,
   ]);
 
   return defer({
@@ -81,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
       purchaseOrder.data.supplierInteractionId!
     ),
-    interaction: interaction.data,
+    supplierQuote: supplierQuote?.data,
     supplier: supplier?.data ?? null,
   });
 }

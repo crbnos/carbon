@@ -1,6 +1,5 @@
 import { useCarbon } from "@carbon/auth";
 import {
-  Badge,
   Card,
   CardAction,
   CardContent,
@@ -31,36 +30,30 @@ import {
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import {
-  LuMoreVertical,
-  LuRadioTower,
-  LuShoppingCart,
-  LuUpload,
-} from "react-icons/lu";
+import { LuMoreVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
-import type { SupplierInteraction } from "../../types";
 
 type SupplierInteractionDocumentsProps = {
   attachments: FileObject[];
-  interaction: SupplierInteraction;
   id: string;
+  interactionId: string;
   type: "Supplier Quote" | "Purchase Order" | "Purchase Invoice";
 };
 
 const SupplierInteractionDocuments = ({
   attachments,
-  interaction,
   id,
+  interactionId,
   type,
 }: SupplierInteractionDocumentsProps) => {
   const { canDelete, download, deleteAttachment, getPath, upload } =
     useSupplierInteractionDocuments({
-      interactionId: interaction.id,
+      interactionId,
       id,
       type,
     });
@@ -81,7 +74,7 @@ const SupplierInteractionDocuments = ({
           </CardHeader>
           <CardAction>
             <SupplierInteractionDocumentForm
-              interactionId={interaction.id}
+              interactionId={interactionId}
               id={id}
               type={type}
             />
@@ -122,18 +115,6 @@ const SupplierInteractionDocuments = ({
                             attachment.name
                           )}
                         </span>
-                        {interaction?.salesOrderDocumentPath ===
-                          getPath(attachment) && (
-                          <Badge variant="secondary">
-                            <LuShoppingCart />
-                          </Badge>
-                        )}
-                        {interaction?.quoteDocumentPath ===
-                          getPath(attachment) && (
-                          <Badge variant="secondary">
-                            <LuRadioTower />
-                          </Badge>
-                        )}
                       </HStack>
                     </Td>
                     <Td className="text-xs font-mono">

@@ -419,6 +419,17 @@ export async function getSupplierQuote(
     .single();
 }
 
+export async function getSupplierQuoteByInteractionId(
+  client: SupabaseClient<Database>,
+  interactionId: string
+) {
+  return client
+    .from("supplierQuotes")
+    .select("*")
+    .eq("supplierInteractionId", interactionId)
+    .single();
+}
+
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
   companyId: string,

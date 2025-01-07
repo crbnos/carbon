@@ -11,9 +11,15 @@ import {
   toast,
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
-import { useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect, useMemo } from "react";
-import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
+import {
+  LuCopy,
+  LuExternalLink,
+  LuInfo,
+  LuLink,
+  LuRefreshCcw,
+} from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { Assignee, useOptimisticAssignment } from "~/components";
@@ -30,7 +36,7 @@ import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/purchase-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import type { PurchaseOrder } from "../../types";
+import type { PurchaseOrder, SupplierQuote } from "../../types";
 
 const PurchaseOrderProperties = () => {
   const { orderId } = useParams();
@@ -38,7 +44,7 @@ const PurchaseOrderProperties = () => {
 
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
-    originatedFromQuote: boolean;
+    supplierQuote: SupplierQuote;
   }>(path.to.purchaseOrder(orderId));
 
   const fetcher = useFetcher<typeof action>();
@@ -193,6 +199,21 @@ const PurchaseOrderProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      {routeData?.supplierQuote && (
+        <VStack spacing={2}>
+          <span className="text-xs text-muted-foreground">Supplier Quote</span>
+
+          <Link
+            className="flex items-center justify-start gap-2"
+            to={path.to.supplierQuote(routeData?.supplierQuote.id!)}
+            target="_blank"
+          >
+            {routeData?.supplierQuote.supplierQuoteId}
+            <LuExternalLink />
+          </Link>
+        </VStack>
+      )}
 
       <ValidatedForm
         defaultValues={{
