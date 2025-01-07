@@ -13,24 +13,24 @@ import {
 export const KPIs = [
   {
     key: "quoteCount",
-    label: "Quote Count",
+    label: "Quotes",
   },
   {
     key: "rfqCount",
-    label: "RFQ Count",
+    label: "RFQs",
   },
   {
     key: "salesOrderCount",
-    label: "Sales Order Count",
+    label: "Sales Orders",
   },
   {
     key: "salesOrderRevenue",
     label: "Sales Order Revenue",
   },
-  {
-    key: "turnaroundTime",
-    label: "Turnaround Time",
-  },
+  // {
+  //   key: "turnaroundTime",
+  //   label: "Turnaround Time",
+  // },
 ] as const;
 
 export const salesRFQStatusType = [
