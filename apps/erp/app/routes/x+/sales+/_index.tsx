@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -16,6 +17,7 @@ import {
   HStack,
   IconButton,
   Loading,
+  Skeleton,
 } from "@carbon/react";
 import {
   ChartContainer,
@@ -36,6 +38,7 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
 import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
@@ -96,14 +99,21 @@ export default function SalesDashboard() {
     useLoaderData<typeof loader>();
 
   const kpiFetcher = useFetcher<typeof kpiLoader>();
+  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
   const dateFormatter = useDateFormatter({
     month: "short",
     day: "numeric",
   });
 
-  const currencyFormatter = useCurrencyFormatter();
-  const numberFormatter = useNumberFormatter();
+  const { company } = useUser();
+
+  const currencyFormatter = useCurrencyFormatter(company.baseCurrencyCode, 0);
+  const numberFormatter = useNumberFormatter({
+    maximumFractionDigits: 0,
+    notation: "compact",
+    compactDisplay: "short",
+  });
 
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
@@ -144,6 +154,20 @@ export default function SalesDashboard() {
 
     setInterval(value);
   };
+
+  const total =
+    kpiFetcher.data?.data.reduce((acc, curr) => acc + curr.value, 0) ?? 0;
+  const previousTotal =
+    kpiFetcher.data?.previousPeriodData.reduce(
+      (acc, curr) => acc + curr.value,
+      0
+    ) ?? 0;
+  const percentageChange =
+    previousTotal === 0
+      ? total > 0
+        ? 100
+        : 0
+      : ((total - previousTotal) / previousTotal) * 100;
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
@@ -302,13 +326,33 @@ export default function SalesDashboard() {
                   />
                 )}
               </div>
+              <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
+                {isFetching ? (
+                  <Skeleton className="h-5 w-1/4" />
+                ) : (
+                  <>
+                    <p>
+                      {["salesOrderRevenue"].includes(selectedKpiData.key)
+                        ? currencyFormatter.format(total)
+                        : numberFormatter.format(total)}
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className="normal-case font-medium px-2 rounded-full"
+                    >
+                      {percentageChange > 0
+                        ? `+${percentageChange.toFixed(0)}%`
+                        : `${percentageChange.toFixed(0)}%`}
+                    </Badge>
+                  </>
+                )}
+              </HStack>
             </CardHeader>
             <CardAction className="py-6 px-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     variant="secondary"
-                    size="sm"
                     icon={<LuMoreVertical />}
                     aria-label="More"
                   />
@@ -318,7 +362,7 @@ export default function SalesDashboard() {
           </HStack>
           <CardContent className="p-4">
             <Loading
-              isLoading={kpiFetcher.state === "loading" || !kpiFetcher.data}
+              isLoading={isFetching}
               className="h-[30dvw] md:h-[23dvw] w-full"
             >
               <ChartContainer
@@ -335,14 +379,14 @@ export default function SalesDashboard() {
                     tickMargin={8}
                     minTickGap={32}
                     axisLine={false}
-                    tickFormatter={
-                      ["week", "month"].includes(interval)
-                        ? (value) =>
-                            dateFormatter.format(
-                              parseDate(value).toDate(getLocalTimeZone())
-                            )
-                        : (value) => value.slice(0, 3)
-                    }
+                    tickFormatter={(value) => {
+                      if (!value) return "";
+                      return ["week", "month"].includes(interval)
+                        ? dateFormatter.format(
+                            parseDate(value).toDate(getLocalTimeZone())
+                          )
+                        : value.slice(0, 3);
+                    }}
                   />
                   <ChartTooltip
                     content={
@@ -379,7 +423,7 @@ export default function SalesDashboard() {
           </CardHeader>
           <CardContent className="p-4">
             <div className="h-[30dvw] md:h-[23dvw] w-full overflow-y-auto">
-              <pre>{JSON.stringify(kpiFetcher.data?.data, null, 2)}</pre>
+              {/* TODO: Add recent activity */}
             </div>
           </CardContent>
         </Card>
@@ -392,7 +436,9 @@ export default function SalesDashboard() {
             Sales documents currently assigned to me
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-4 min-h-[200px]"></CardContent>
+        <CardContent className="p-4 min-h-[200px]">
+          {/* TODO: Add assigned to me */}
+        </CardContent>
       </Card>
     </div>
   );
