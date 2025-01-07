@@ -80,7 +80,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
@@ -90,19 +90,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id, salesOrderId, status, customerId, assignee, createdAt", {
         count: "exact",
       })
-      .in("status", OPEN_SALES_ORDER_STATUSES),
+      .in("status", OPEN_SALES_ORDER_STATUSES)
+      .eq("companyId", companyId),
     client
       .from("quote")
       .select("id, quoteId, status, customerId, assignee, createdAt", {
         count: "exact",
       })
-      .in("status", OPEN_QUOTE_STATUSES),
+      .in("status", OPEN_QUOTE_STATUSES)
+      .eq("companyId", companyId),
     client
       .from("salesRfq")
       .select("id, rfqId, status, customerId, assignee, createdAt", {
         count: "exact",
       })
-      .in("status", OPEN_RFQ_STATUSES),
+      .in("status", OPEN_RFQ_STATUSES)
+      .eq("companyId", companyId),
   ]);
 
   return defer({
