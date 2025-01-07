@@ -10,11 +10,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import type {
-  PurchaseOrder,
-  PurchaseOrderLine,
-  SupplierInteraction,
-} from "~/modules/purchasing";
+import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import {
   getPurchaseOrderDelivery,
   getPurchaseOrderPayment,
@@ -129,7 +125,6 @@ export default function PurchaseOrderBasicRoute() {
   const orderData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
-    interaction: SupplierInteraction;
     files: Promise<FileObject[]>;
   }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
@@ -199,9 +194,9 @@ export default function PurchaseOrderBasicRoute() {
         <Await resolve={orderData.files}>
           {(resolvedFiles) => (
             <SupplierInteractionDocuments
-              interaction={orderData.interaction}
               attachments={resolvedFiles}
               id={orderId}
+              interactionId={orderData.purchaseOrder.supplierInteractionId!}
               type="Purchase Order"
             />
           )}
