@@ -61,7 +61,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Failed to load company or user");
   }
 
-  resend.emails.send({
+  const invitationEmail = await resend.emails.send({
     from: "CarbonOS <no-reply@carbonos.dev>",
     to: result.email,
     subject: `You have been invited to join ${company.data?.name} on CarbonOS`,
@@ -80,6 +80,8 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     ),
   });
+
+  console.log(invitationEmail);
 
   if (supplierRedirect) {
     throw redirect(

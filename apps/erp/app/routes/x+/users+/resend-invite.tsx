@@ -64,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    resend.emails.send({
+    const invitationEmail = await resend.emails.send({
       from: "CarbonOS <no-reply@carbonos.dev>",
       to: user.data.email,
       subject: `You have been invited to join ${company.data?.name} on CarbonOS`,
@@ -83,6 +83,8 @@ export async function action({ request }: ActionFunctionArgs) {
         })
       ),
     });
+
+    console.log(invitationEmail);
 
     return json(
       {},

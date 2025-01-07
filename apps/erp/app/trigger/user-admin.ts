@@ -76,7 +76,7 @@ export const userAdminTask = task({
           };
         }
 
-        resend.emails.send({
+        const invitationEmail = await resend.emails.send({
           from: "CarbonOS <no-reply@carbonos.dev>",
           to: user.data.email,
           subject: `You have been invited to join ${company.data?.name} on CarbonOS`,
@@ -95,6 +95,8 @@ export const userAdminTask = task({
             })
           ),
         });
+
+        console.log(invitationEmail);
 
         result = {
           success: true,
