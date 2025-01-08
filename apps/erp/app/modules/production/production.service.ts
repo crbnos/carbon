@@ -259,7 +259,7 @@ function getJobMethodTreeArrayToTree(items: JobMethod[]): JobMethodTreeItem[] {
 export type JobMethod = NonNullable<
   Awaited<ReturnType<typeof getJobMethodTreeArray>>["data"]
 >[number];
-type JobMethodTreeItem = {
+export type JobMethodTreeItem = {
   id: string;
   data: JobMethod;
   children: JobMethodTreeItem[];

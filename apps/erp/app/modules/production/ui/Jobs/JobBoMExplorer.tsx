@@ -43,6 +43,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
     toggleExpandNode,
     expandAllBelowDepth,
     // toggleExpandLevel,
+    selectNode,
     collapseAllBelowDepth,
     scrollToNode,
     virtualizer,
@@ -108,7 +109,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                     : "bg-transparent hover:bg-muted/90"
                 )}
                 onClick={(e) => {
-                  e.stopPropagation();
+                  selectNode(node.id);
                   navigate(getNodePath(node));
                 }}
               >

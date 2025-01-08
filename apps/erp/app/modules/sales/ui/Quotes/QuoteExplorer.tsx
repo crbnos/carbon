@@ -19,7 +19,7 @@ import {
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useNavigate, useParams } from "@remix-run/react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   LuCheckCircle,
   LuChevronDown,
@@ -209,7 +209,10 @@ function QuoteLineItem({
   });
 
   const methodTree = methods.find((m) => m.data.quoteLineId === line.id);
-  const flattenedMethods = methodTree ? flattenTree(methodTree) : [];
+  const flattenedMethods = useMemo(
+    () => (methodTree ? flattenTree(methodTree) : []),
+    [methodTree]
+  );
 
   const isSelected = lineId === line.id;
   const onLineClick = (line: QuotationLine) => {

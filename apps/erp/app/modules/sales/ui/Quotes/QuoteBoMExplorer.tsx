@@ -48,6 +48,7 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
     expandAllBelowDepth,
     // toggleExpandLevel,
     collapseAllBelowDepth,
+    selectNode,
     scrollToNode,
     virtualizer,
   } = useTree({
@@ -112,8 +113,8 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
                     : "bg-transparent hover:bg-muted/90"
                 )}
                 onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(getNodePath(node));
+                  selectNode(node.id);
+                  navigate(getNodePath(node), { replace: true });
                 }}
               >
                 <div className="flex h-8 items-center">
