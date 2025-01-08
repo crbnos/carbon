@@ -415,9 +415,9 @@ function ConfiguratorModal({
     [groups, parameters]
   );
 
-  const [currentGroup, setCurrentGroup] = useState<ConfigurationParameterGroup>(
-    validGroups[0]
-  );
+  const [currentGroup, setCurrentGroup] = useState<
+    ConfigurationParameterGroup | undefined
+  >(validGroups[0]);
 
   return (
     <Modal
@@ -430,7 +430,7 @@ function ConfiguratorModal({
     >
       <ModalContent size="large">
         <ModalHeader>
-          <ModalTitle>{currentGroup.name}</ModalTitle>
+          <ModalTitle>{currentGroup?.name ?? "Configurator"}</ModalTitle>
         </ModalHeader>
         <ModalBody>
           <ConfiguratorForm

@@ -80,6 +80,45 @@ export function getDocumentType(
   return "Other";
 }
 
+export async function getModelByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  const item = await client
+    .from("item")
+    .select("id, type, modelUploadId")
+    .eq("id", itemId)
+    .single();
+
+  if (!item.data || !item.data.modelUploadId) {
+    return {
+      itemId: item.data?.id ?? null,
+      type: item.data?.type ?? null,
+      modelPath: null,
+    };
+  }
+
+  const model = await client
+    .from("modelUpload")
+    .select("*")
+    .eq("id", item.data.modelUploadId)
+    .maybeSingle();
+
+  if (!model.data) {
+    return {
+      itemId: item.data?.id ?? null,
+      type: item.data?.type ?? null,
+      modelSize: null,
+    };
+  }
+
+  return {
+    itemId: item.data!.id,
+    type: item.data!.type,
+    ...model.data,
+  };
+}
+
 export async function getNotes(
   client: SupabaseClient<Database>,
   documentId: string

@@ -1,9 +1,16 @@
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { defer, redirect, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Await,
+  defer,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 
 import {
   getConfigurationParametersByQuoteLineId,
+  getModelByQuoteLineId,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
 } from "~/modules/sales";
@@ -18,6 +25,9 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { Suspense } from "react";
+import { CadModel } from "~/components";
+import { usePermissions } from "~/hooks";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -78,15 +88,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       lineId,
       companyId
     ),
+    model: getModelByQuoteLineId(client, lineId),
   });
 }
 
 export default function QuoteMakeMethodRoute() {
   const { quoteId, lineId, methodId } = useParams();
+
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
 
+  const permissions = usePermissions();
   const loaderData = useLoaderData<typeof loader>();
   const { materials, operations } = loaderData;
 
@@ -104,6 +117,25 @@ export default function QuoteMakeMethodRoute() {
         materials={materials}
         operations={operations}
       />
+
+      <Suspense fallback={null}>
+        <Await resolve={loaderData.model}>
+          {(model) => (
+            <CadModel
+              key={`cad:${model?.itemId}`}
+              isReadOnly={!permissions.can("update", "sales")}
+              metadata={{
+                quoteLineId: lineId ?? undefined,
+                itemId: model?.itemId ?? undefined,
+              }}
+              modelPath={model?.modelPath ?? null}
+              title="CAD Model"
+              uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+              viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+            />
+          )}
+        </Await>
+      </Suspense>
     </VStack>
   );
 }

@@ -10,6 +10,7 @@ import {
   upsertPurchaseOrderLine,
 } from "~/modules/purchasing";
 import { PurchaseOrderLineForm } from "~/modules/purchasing/ui/PurchaseOrder";
+import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -65,7 +66,7 @@ export default function NewPurchaseOrderLineRoute() {
 
   const initialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Part" as const,
+    purchaseOrderLineType: "Item" as MethodItemType,
     itemId: "",
     purchaseQuantity: 1,
     supplierUnitPrice: 0,

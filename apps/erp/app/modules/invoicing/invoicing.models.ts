@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { methodItemType } from "../shared";
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -45,7 +46,7 @@ export const purchaseInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(20, { message: "Invoice is required" }),
-    invoiceLineType: z.enum(purchaseInvoiceLineType, {
+    invoiceLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
       }),
@@ -89,26 +90,26 @@ export const purchaseInvoiceLineValidator = z
       message: "Location is required",
       path: ["locationId"], // path of error
     }
-  )
-  // .refine(
-  //   (data) =>
-  //     data.invoiceLineType === "G/L Account" ? data.accountNumber : true,
-  //   {
-  //     message: "Account is required",
-  //     path: ["accountNumber"], // path of error
-  //   }
-  // )
-  // .refine(
-  //   (data) => (data.invoiceLineType === "Fixed Asset" ? data.assetId : true),
-  //   {
-  //     message: "Asset is required",
-  //     path: ["assetId"], // path of error
-  //   }
-  // )
-  .refine(
-    (data) => (data.invoiceLineType === "Comment" ? data.description : true),
-    {
-      message: "Comment is required",
-      path: ["description"], // path of error
-    }
   );
+// .refine(
+//   (data) =>
+//     data.invoiceLineType === "G/L Account" ? data.accountNumber : true,
+//   {
+//     message: "Account is required",
+//     path: ["accountNumber"], // path of error
+//   }
+// )
+// .refine(
+//   (data) => (data.invoiceLineType === "Fixed Asset" ? data.assetId : true),
+//   {
+//     message: "Asset is required",
+//     path: ["assetId"], // path of error
+//   }
+// )
+// .refine(
+//   (data) => (data.invoiceLineType === "Comment" ? data.description : true),
+//   {
+//     message: "Comment is required",
+//     path: ["description"], // path of error
+//   }
+// );

@@ -32,7 +32,10 @@ import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { itemTrackingTypes } from "../../items.models";
+import {
+  itemReplenishmentSystems,
+  itemTrackingTypes,
+} from "../../items.models";
 import type { ItemFile, PickMethod, SupplierPart, Tool } from "../../types";
 import { FileBadge } from "../Item";
 
@@ -290,6 +293,27 @@ const ToolProperties = () => {
                   <span>{type}</span>
                 </DropdownMenuItem>
               ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </VStack>
+
+      <VStack spacing={2}>
+        <h3 className="text-xs text-muted-foreground">Replenishment</h3>
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <Enumerable
+              value={routeData?.toolSummary?.replenishmentSystem ?? null}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            {itemReplenishmentSystems.map((system) => (
+              <DropdownMenuItem
+                key={system}
+                onClick={() => onUpdate("replenishmentSystem", system)}
+              >
+                <Enumerable value={system} />
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </VStack>

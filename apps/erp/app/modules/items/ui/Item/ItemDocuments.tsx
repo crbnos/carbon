@@ -91,7 +91,7 @@ const ItemDocuments = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>Files</CardTitle>
-          <CardDescription>Item documents (not shown on jobs)</CardDescription>
+          <CardDescription>Item documents</CardDescription>
         </CardHeader>
         <CardAction>
           <ItemDocumentForm type={type} itemId={itemId} />

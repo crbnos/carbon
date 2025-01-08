@@ -27,20 +27,14 @@ import {
   Location,
   Number,
   NumberControlled,
-  Select,
   Shelf,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type {
-  PurchaseInvoice,
-  PurchaseInvoiceLineType,
-} from "~/modules/invoicing";
-import {
-  purchaseInvoiceLineType,
-  purchaseInvoiceLineValidator,
-} from "~/modules/invoicing";
+import type { PurchaseInvoice } from "~/modules/invoicing";
+import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type PurchaseInvoiceLineFormProps = {
@@ -70,7 +64,9 @@ const PurchaseInvoiceLineForm = ({
     routeData?.purchaseInvoice?.status ?? ""
   );
 
-  const [itemType, setItemType] = useState(initialValues.invoiceLineType);
+  const [itemType, setItemType] = useState<MethodItemType>(
+    initialValues.invoiceLineType as MethodItemType
+  );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
     itemId: string;
@@ -103,15 +99,9 @@ const PurchaseInvoiceLineForm = ({
     ? !permissions.can("update", "purchasing")
     : !permissions.can("create", "purchasing");
 
-  const purchaseInvoiceLineTypeOptions = purchaseInvoiceLineType.map(
-    (type) => ({
-      label: type,
-      value: type,
-    })
-  );
-
-  const onTypeChange = (type: PurchaseInvoiceLineType) => {
-    setItemType(type);
+  const onTypeChange = (t: MethodItemType | "Item") => {
+    if (t === itemType) return;
+    setItemType(t as MethodItemType);
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -129,6 +119,8 @@ const PurchaseInvoiceLineForm = ({
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
     switch (itemType) {
+      // @ts-expect-error
+      case "Item":
       case "Consumable":
       case "Material":
       case "Part":
@@ -137,7 +129,7 @@ const PurchaseInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -181,6 +173,10 @@ const PurchaseInvoiceLineForm = ({
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });
+
+        if (item.data?.type) {
+          setItemType(item.data.type as MethodItemType);
+        }
 
         break;
       default:
@@ -251,6 +247,7 @@ const PurchaseInvoiceLineForm = ({
               <Hidden name="id" />
               <Hidden name="invoiceId" />
               <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+              <Hidden name="invoiceLineType" value={itemType} />
               <Hidden name="description" value={itemData.description} />
               <Hidden
                 name="exchangeRate"
@@ -262,53 +259,18 @@ const PurchaseInvoiceLineForm = ({
               />
               <VStack>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                  <Select
-                    name="invoiceLineType"
-                    label="Type"
-                    options={purchaseInvoiceLineTypeOptions}
+                  <Item
+                    name="itemId"
+                    label={itemType}
+                    // @ts-ignore
+                    type={itemType}
+                    replenishmentSystem="Buy"
                     onChange={(value) => {
-                      onTypeChange(value?.value as PurchaseInvoiceLineType);
+                      onItemChange(value?.value as string);
                     }}
+                    onTypeChange={onTypeChange}
                   />
-                  {["Part", "Material", "Tool", "Consumable"].includes(
-                    itemType
-                  ) && (
-                    <Item
-                      name="itemId"
-                      label={itemType}
-                      // @ts-ignore
-                      type={itemType}
-                      replenishmentSystem="Buy"
-                      onChange={(value) => {
-                        onItemChange(value?.value as string);
-                      }}
-                    />
-                  )}
 
-                  {/* {itemType === "G/L Account" && (
-                    <Account
-                      name="accountNumber"
-                      label="Account"
-                      classes={["Expense", "Asset"]}
-                      onChange={(value) => {
-                        setItemData({
-                          itemId: "",
-                          itemReadableId: "",
-                          description: value?.label ?? "",
-                          quantity: 1,
-                          supplierUnitPrice: 0,
-                          purchaseUom: "EA",
-                          inventoryUom: "EA",
-                          conversionFactor: 1,
-                          shelfId: "",
-                          minimumOrderQuantity: 0,
-                        });
-                      }}
-                    />
-                  )}
-                  {itemType === "Fixed Asset" && (
-                    <Select name="assetId" label="Asset" options={[]} />
-                  )} */}
                   <FormControl>
                     <FormLabel>Description</FormLabel>
                     <Input
@@ -321,7 +283,10 @@ const PurchaseInvoiceLineForm = ({
                       }
                     />
                   </FormControl>
-                  {itemType !== "Comment" && (
+
+                  {["Item", "Part", "Material", "Tool", "Consumable"].includes(
+                    itemType
+                  ) && (
                     <>
                       <NumberControlled
                         minValue={itemData.minimumOrderQuantity}
@@ -336,37 +301,31 @@ const PurchaseInvoiceLineForm = ({
                         }}
                       />
 
-                      {["Part", "Material", "Consumable", "Tool"].includes(
-                        itemType
-                      ) && (
-                        <>
-                          <UnitOfMeasure
-                            name="purchaseUnitOfMeasureCode"
-                            label="Unit of Measure"
-                            value={itemData.purchaseUom}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  purchaseUom: newValue?.value as string,
-                                }));
-                              }
-                            }}
-                          />
-                          <ConversionFactor
-                            name="conversionFactor"
-                            purchasingCode={itemData.purchaseUom}
-                            inventoryCode={itemData.inventoryUom}
-                            value={itemData.conversionFactor}
-                            onChange={(value) => {
-                              setItemData((d) => ({
-                                ...d,
-                                conversionFactor: value,
-                              }));
-                            }}
-                          />
-                        </>
-                      )}
+                      <UnitOfMeasure
+                        name="purchaseUnitOfMeasureCode"
+                        label="Unit of Measure"
+                        value={itemData.purchaseUom}
+                        onChange={(newValue) => {
+                          if (newValue) {
+                            setItemData((d) => ({
+                              ...d,
+                              purchaseUom: newValue?.value as string,
+                            }));
+                          }
+                        }}
+                      />
+                      <ConversionFactor
+                        name="conversionFactor"
+                        purchasingCode={itemData.purchaseUom}
+                        inventoryCode={itemData.inventoryUom}
+                        value={itemData.conversionFactor}
+                        onChange={(value) => {
+                          setItemData((d) => ({
+                            ...d,
+                            conversionFactor: value,
+                          }));
+                        }}
+                      />
 
                       <NumberControlled
                         name="supplierUnitPrice"
@@ -406,44 +365,26 @@ const PurchaseInvoiceLineForm = ({
                         }}
                       />
 
-                      {[
-                        "Part",
-                        "Service",
-                        "Material",
-                        "Tool",
-                        "Consumable",
-                        "Fixed Asset",
-                      ].includes(itemType) && (
-                        <Location
-                          name="locationId"
-                          label="Location"
-                          value={locationId}
-                          onChange={onLocationChange}
-                        />
-                      )}
-                      {[
-                        "Part",
-                        "Service",
-                        "Material",
-                        "Tool",
-                        "Consumable",
-                        "Fixed Asset",
-                      ].includes(itemType) && (
-                        <Shelf
-                          name="shelfId"
-                          label="Shelf"
-                          locationId={locationId}
-                          value={itemData.shelfId ?? undefined}
-                          onChange={(newValue) => {
-                            if (newValue) {
-                              setItemData((d) => ({
-                                ...d,
-                                shelfId: newValue?.id,
-                              }));
-                            }
-                          }}
-                        />
-                      )}
+                      <Location
+                        name="locationId"
+                        label="Location"
+                        value={locationId}
+                        onChange={onLocationChange}
+                      />
+                      <Shelf
+                        name="shelfId"
+                        label="Shelf"
+                        locationId={locationId}
+                        value={itemData.shelfId ?? undefined}
+                        onChange={(newValue) => {
+                          if (newValue) {
+                            setItemData((d) => ({
+                              ...d,
+                              shelfId: newValue?.id,
+                            }));
+                          }
+                        }}
+                      />
                     </>
                   )}
                   <CustomFormFields table="purchaseInvoiceLine" />

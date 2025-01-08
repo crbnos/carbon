@@ -13,6 +13,7 @@ import {
   purchaseInvoiceLineValidator,
   upsertPurchaseInvoiceLine,
 } from "~/modules/invoicing";
+import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -73,7 +74,7 @@ export default function NewPurchaseInvoiceLineRoute() {
 
   const initialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Part" as const,
+    invoiceLineType: "Item" as MethodItemType,
     purchaseQuantity: 1,
     locationId:
       purchaseInvoiceData?.purchaseInvoice?.locationId ??

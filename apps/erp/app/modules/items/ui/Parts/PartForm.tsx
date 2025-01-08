@@ -1,5 +1,8 @@
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import {
+  Button,
+  Loading,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -8,12 +11,19 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  VStack,
   cn,
+  supportedModelTypes,
   toast,
 } from "@carbon/react";
+import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
+import { useDropzone } from "react-dropzone";
+import { LuUploadCloud } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Boolean,
@@ -42,6 +52,8 @@ type PartFormProps = {
   onClose?: () => void;
 };
 
+const fileSizeLimitMb = 50;
+
 function startsWithLetter(value: string) {
   return /^[A-Za-z]/.test(value);
 }
@@ -51,6 +63,87 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
+
+  const [modelUploadId, setModelUploadId] = useState<string | null>(null);
+  const [modelIsUploading, setModelIsUploading] = useState(false);
+  const [modelFile, setModelFile] = useState<File | null>(null);
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const modelUpload = async (file: File) => {
+    if (!carbon) return;
+    flushSync(() => {
+      setModelIsUploading(true);
+    });
+
+    const modelId = nanoid();
+    const fileExtension = file.name.split(".").pop();
+    const fileName = `${companyId}/models/${modelId}.${fileExtension}`;
+
+    const [fileUpload, recordInsert] = await Promise.all([
+      carbon.storage.from("private").upload(fileName, file),
+      carbon.from("modelUpload").insert({
+        id: modelId,
+        modelPath: fileName,
+        size: file.size,
+        name: file.name,
+        companyId: companyId,
+        createdBy: "system",
+      }),
+    ]);
+
+    if (fileUpload.error || recordInsert.error) {
+      toast.error(`Failed to upload model`);
+    } else {
+      setModelUploadId(modelId);
+      setModelFile(file);
+      toast.success(`Uploaded model`);
+    }
+
+    setModelIsUploading(false);
+  };
+
+  const removeModel = () => {
+    setModelUploadId(null);
+    setModelFile(null);
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    multiple: false,
+    maxSize: fileSizeLimitMb * 1024 * 1024, // 50 MB
+    onDropAccepted: async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      const fileSizeLimit = fileSizeLimitMb * 1024 * 1024;
+
+      const fileExtension = file.name.split(".").pop()?.toLowerCase();
+      if (!fileExtension || !supportedModelTypes.includes(fileExtension)) {
+        toast.error("File type not supported");
+
+        return;
+      }
+
+      if (file.size > fileSizeLimit) {
+        toast.error(`File size too big (max. ${fileSizeLimitMb} MB)`);
+        return;
+      }
+
+      await modelUpload(file);
+    },
+    onDropRejected: (fileRejections) => {
+      const { errors } = fileRejections[0];
+      let message;
+      if (errors[0].code === "file-too-large") {
+        message = `File size too big (max. ${fileSizeLimitMb} MB)`;
+      } else if (errors[0].code === "file-invalid-type") {
+        message = "File type not supported";
+      } else {
+        message = errors[0].message;
+      }
+      toast.error(message);
+    },
+  });
 
   useEffect(() => {
     if (type !== "modal") return;
@@ -109,6 +202,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
             </ModalCardHeader>
             <ModalCardBody>
               <Hidden name="type" value={type} />
+              <Hidden name="modelUploadId" value={modelUploadId ?? ""} />
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -176,6 +270,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   <Number
                     name="unitCost"
                     label="Unit Cost"
+                    isReadOnly={replenishmentSystem === "Make"}
                     formatOptions={{
                       style: "currency",
                       currency: baseCurrency,
@@ -186,6 +281,49 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 <Boolean name="active" label="Active" />
                 <CustomFormFields table="part" tags={initialValues.tags} />
               </div>
+              <VStack spacing={2} className="mt-4 w-full">
+                <label
+                  htmlFor="model-upload"
+                  className="text-xs font-medium text-muted-foreground"
+                >
+                  CAD Model
+                </label>
+                <div
+                  {...getRootProps()}
+                  className={`w-full border-2 border-dashed rounded-md p-6 text-center hover:border-primary hover:bg-primary/10 cursor-pointer ${
+                    isDragActive
+                      ? "border-primary bg-primary/10"
+                      : "border-muted"
+                  }`}
+                >
+                  <input id="model-upload" {...getInputProps()} />
+                  {modelFile ? (
+                    <>
+                      <p className="text-sm font-semibold text-card-foreground">
+                        {modelFile.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground group-hover:text-foreground">
+                        {convertKbToString(Math.ceil(modelFile.size / 1024))}
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="mt-2"
+                        onClick={removeModel}
+                      >
+                        Remove
+                      </Button>
+                    </>
+                  ) : (
+                    <Loading isLoading={modelIsUploading}>
+                      <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
+                      <p className="text-xs text-muted-foreground group-hover:text-foreground">
+                        Supports {supportedModelTypes.join(", ")} files
+                      </p>
+                    </Loading>
+                  )}
+                </div>
+              </VStack>
             </ModalCardBody>
             <ModalCardFooter>
               <Submit

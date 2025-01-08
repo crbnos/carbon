@@ -1,24 +1,32 @@
 import type { ComboboxProps } from "@carbon/form";
 import { useControlField, useField } from "@carbon/form";
 import {
+  Button,
   cn,
   CreatableCombobox,
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   FormControl,
   FormErrorMessage,
   FormHelperText,
   FormLabel,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LuFilter } from "react-icons/lu";
 
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
@@ -34,11 +42,11 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   inline?: boolean;
   isConfigured?: boolean;
   replenishmentSystem?: "Buy" | "Make";
-  type: MethodItemType;
+  type: MethodItemType | "Item";
   typeFieldName?: string;
   validItemTypes?: MethodItemType[];
   onConfigure?: () => void;
-  onTypeChange?: (type: MethodItemType) => void;
+  onTypeChange?: (type: MethodItemType | "Item") => void;
 };
 
 const ItemPreview = (
@@ -56,7 +64,7 @@ const Item = ({
   helperText,
   isConfigured = false,
   isOptional = false,
-  type,
+  type = "Part",
   typeFieldName = "itemType",
   validItemTypes,
   onConfigure,
@@ -70,7 +78,11 @@ const Item = ({
       (props?.replenishmentSystem || props?.includeInactive !== true
         ? items.filter(
             (item) =>
-              item.type === type &&
+              (type === item.type ||
+                (type === "Item" &&
+                  (validItemTypes === undefined ||
+                    // @ts-ignore
+                    validItemTypes?.includes(item.type)))) &&
               (props.replenishmentSystem === undefined ||
                 item.replenishmentSystem === props.replenishmentSystem ||
                 item.replenishmentSystem === "Buy and Make" ||
@@ -79,7 +91,14 @@ const Item = ({
           )
         : items
       )
-        .filter((item) => item.type === type)
+        .filter(
+          (item) =>
+            item.type === type ||
+            (type === "Item" &&
+              (validItemTypes === undefined ||
+                // @ts-ignore
+                validItemTypes?.includes(item.type)))
+        )
         .map((item) => ({
           value: item.id,
           label: item.readableId,
@@ -93,6 +112,7 @@ const Item = ({
     }
 
     return results;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     items,
     props?.includeInactive,
@@ -101,6 +121,7 @@ const Item = ({
     type,
   ]);
 
+  const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -133,7 +154,7 @@ const Item = ({
             isOptional={isOptional}
             onConfigure={onConfigure}
           >
-            {type}
+            {type === "Item" ? "Item" : type}
           </FormLabel>
         )}
         <input
@@ -167,11 +188,16 @@ const Item = ({
               onChange(newValue?.replace(/"/g, '\\"') ?? "");
             }}
             isClearable={isOptional && !props.isReadOnly}
-            label={label}
+            label={label === "Item" ? "Item" : label}
             itemHeight={44}
             onCreateOption={(option) => {
-              newItemsModal.onOpen();
-              setCreated(option);
+              if (type === "Item") {
+                selectTypeModal.onOpen();
+                setCreated(option);
+              } else {
+                newItemsModal.onOpen();
+                setCreated(option);
+              }
             }}
           />
           {canSwitchItemType && (
@@ -190,7 +216,13 @@ const Item = ({
                       disabled={props.isReadOnly}
                       variant="secondary"
                       size={props.inline ? "sm" : "lg"}
-                      icon={<MethodItemTypeIcon type={type} />}
+                      icon={
+                        type === "Item" ? (
+                          <LuFilter className="h-4 w-4" />
+                        ) : (
+                          <MethodItemTypeIcon type={type} />
+                        )
+                      }
                     />
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
@@ -199,26 +231,36 @@ const Item = ({
                 </TooltipContent>
               </Tooltip>
               <DropdownMenuContent>
-                {Object.values(methodItemType)
-                  .filter(
-                    (itemType) =>
-                      validItemTypes === undefined ||
-                      (Array.isArray(validItemTypes) &&
-                        validItemTypes.includes(itemType))
-                  )
-                  .map((itemType) => (
-                    <DropdownMenuItem
-                      key={itemType}
-                      onSelect={() => {
-                        if (type !== itemType) onTypeChange?.(itemType);
-                      }}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={itemType} />}
-                      />
-                      <span>{itemType}</span>
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuRadioGroup
+                  value={type}
+                  // @ts-ignore
+                  onValueChange={onTypeChange}
+                >
+                  <DropdownMenuRadioItem
+                    value="Item"
+                    className="flex items-center gap-2"
+                  >
+                    <LuFilter className="h-4 w-4" />
+                    <span>All Items</span>
+                  </DropdownMenuRadioItem>
+                  {Object.values(methodItemType)
+                    .filter(
+                      (itemType) =>
+                        validItemTypes === undefined ||
+                        (Array.isArray(validItemTypes) &&
+                          validItemTypes.includes(itemType))
+                    )
+                    .map((itemType) => (
+                      <DropdownMenuRadioItem
+                        key={itemType}
+                        value={itemType}
+                        className="flex items-center gap-2"
+                      >
+                        <MethodItemTypeIcon type={itemType} />
+                        <span>{itemType}</span>
+                      </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -229,6 +271,76 @@ const Item = ({
           helperText && <FormHelperText>{helperText}</FormHelperText>
         )}
       </FormControl>
+      {selectTypeModal.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              selectTypeModal.onClose();
+            }
+          }}
+        >
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Select Item Type</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.values(methodItemType).map((itemType) => (
+                  <button
+                    key={itemType}
+                    className={cn(
+                      "flex items-center gap-2 p-4 rounded-lg border transition-colors",
+                      type === itemType
+                        ? "border-primary bg-primary/10 ring-2 ring-primary ring-offset-2"
+                        : "border-border hover:bg-accent"
+                    )}
+                    onClick={() => {
+                      onTypeChange?.(itemType);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={cn(
+                          "flex h-10 w-10 items-center justify-center rounded-lg border border-border shadow-sm",
+                          type === itemType
+                            ? "bg-transparent border-primary"
+                            : "bg-background"
+                        )}
+                      >
+                        <MethodItemTypeIcon
+                          type={itemType}
+                          className="h-5 w-5"
+                        />
+                      </div>
+                      <span className="font-medium">{itemType}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  selectTypeModal.onClose();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                isDisabled={type === "Item"}
+                onClick={() => {
+                  selectTypeModal.onClose();
+                  newItemsModal.onOpen();
+                }}
+              >
+                Create
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
       {type === "Part" && newItemsModal.isOpen && (
         <PartForm
           type="modal"

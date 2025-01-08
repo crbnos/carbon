@@ -21,29 +21,20 @@ import { useFetcher, useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Account,
   ConversionFactor,
   CustomFormFields,
   Hidden,
   Item,
   Location,
   NumberControlled,
-  Select,
   Shelf,
   Submit,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type {
-  PurchaseOrder,
-  PurchaseOrderLine,
-  PurchaseOrderLineType,
-} from "~/modules/purchasing";
-import {
-  purchaseOrderLineType,
-  purchaseOrderLineValidator,
-} from "~/modules/purchasing";
-import { methodItemType } from "~/modules/shared";
+import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
+import { purchaseOrderLineValidator } from "~/modules/purchasing";
+import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
@@ -74,8 +65,8 @@ const PurchaseOrderLineForm = ({
 
   const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
-  const [itemType, setItemType] = useState<PurchaseOrderLineType>(
-    initialValues.purchaseOrderLineType
+  const [itemType, setItemType] = useState<MethodItemType>(
+    initialValues.purchaseOrderLineType as MethodItemType
   );
   const [locationId, setLocationId] = useState(initialValues.locationId);
   const [itemData, setItemData] = useState<{
@@ -109,15 +100,11 @@ const PurchaseOrderLineForm = ({
     ? !permissions.can("update", "purchasing")
     : !permissions.can("create", "purchasing");
 
-  const purchaseOrderLineTypeOptions = purchaseOrderLineType.map((t) => ({
-    label: t,
-    value: t,
-  }));
-
   const deleteDisclosure = useDisclosure();
 
-  const onTypeChange = (t: PurchaseOrderLineType) => {
-    setItemType(t);
+  const onTypeChange = (t: MethodItemType | "Item") => {
+    if (t === itemType) return;
+    setItemType(t as MethodItemType);
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -135,6 +122,8 @@ const PurchaseOrderLineForm = ({
   const onItemChange = async (itemId: string) => {
     if (!carbon) throw new Error("Carbon client not found");
     switch (itemType) {
+      // @ts-expect-error
+      case "Item":
       case "Consumable":
       case "Material":
       case "Part":
@@ -143,7 +132,7 @@ const PurchaseOrderLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -187,6 +176,10 @@ const PurchaseOrderLineForm = ({
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
         });
+
+        if (item.data?.type) {
+          setItemType(item.data.type as MethodItemType);
+        }
 
         break;
       // case "Service":
@@ -281,6 +274,7 @@ const PurchaseOrderLineForm = ({
                 <Hidden name="id" />
                 <Hidden name="purchaseOrderId" />
                 <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+                <Hidden name="purchaseOrderLineType" value={itemType} />
                 <Hidden name="description" value={itemData.description} />
                 <Hidden
                   name="exchangeRate"
@@ -292,28 +286,19 @@ const PurchaseOrderLineForm = ({
                 />
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <Select
-                      name="purchaseOrderLineType"
-                      label="Type"
-                      options={purchaseOrderLineTypeOptions}
+                    <Item
+                      name="itemId"
+                      label={itemType}
+                      // @ts-ignore
+                      type={itemType}
+                      replenishmentSystem="Buy"
                       onChange={(value) => {
-                        onTypeChange(value?.value as PurchaseOrderLineType);
+                        onItemChange(value?.value as string);
                       }}
+                      onTypeChange={onTypeChange}
                     />
-                    {/* @ts-ignore */}
-                    {methodItemType.includes(itemType) && (
-                      <Item
-                        name="itemId"
-                        label={itemType}
-                        // @ts-ignore
-                        type={itemType}
-                        replenishmentSystem="Buy"
-                        onChange={(value) => {
-                          onItemChange(value?.value as string);
-                        }}
-                      />
-                    )}
 
+                    {/* 
                     {itemType === "G/L Account" && (
                       <Account
                         name="accountNumber"
@@ -338,8 +323,8 @@ const PurchaseOrderLineForm = ({
                     {itemType === "Fixed Asset" && (
                       // TODO: implement Fixed Asset
                       <Select name="assetId" label="Asset" options={[]} />
-                    )}
-                    <FormControl>
+                    )} */}
+                    <FormControl className="col-span-2">
                       <FormLabel>Description</FormLabel>
                       <Input
                         value={itemData.description}
@@ -351,129 +336,133 @@ const PurchaseOrderLineForm = ({
                         }
                       />
                     </FormControl>
-                    {itemType !== "Comment" && (
+
+                    <NumberControlled
+                      minValue={itemData.minimumOrderQuantity}
+                      name="purchaseQuantity"
+                      label="Quantity"
+                      value={itemData.purchaseQuantity}
+                      onChange={(value) => {
+                        setItemData((d) => ({
+                          ...d,
+                          purchaseQuantity: value,
+                        }));
+                      }}
+                    />
+
+                    {[
+                      "Item",
+                      "Part",
+                      "Material",
+                      "Consumable",
+                      "Tool",
+                    ].includes(itemType) && (
                       <>
-                        <NumberControlled
-                          minValue={itemData.minimumOrderQuantity}
-                          name="purchaseQuantity"
-                          label="Quantity"
-                          value={itemData.purchaseQuantity}
+                        <UnitOfMeasure
+                          name="purchaseUnitOfMeasureCode"
+                          label="Unit of Measure"
+                          value={itemData.purchaseUom}
+                          onChange={(newValue) => {
+                            if (newValue) {
+                              setItemData((d) => ({
+                                ...d,
+                                purchaseUom: newValue?.value as string,
+                              }));
+                            }
+                          }}
+                        />
+                        <ConversionFactor
+                          name="conversionFactor"
+                          purchasingCode={itemData.purchaseUom}
+                          inventoryCode={itemData.inventoryUom}
+                          value={itemData.conversionFactor}
                           onChange={(value) => {
                             setItemData((d) => ({
                               ...d,
-                              purchaseQuantity: value,
+                              conversionFactor: value,
                             }));
                           }}
                         />
-
-                        {["Part", "Material", "Consumable", "Tool"].includes(
-                          itemType
-                        ) && (
-                          <>
-                            <UnitOfMeasure
-                              name="purchaseUnitOfMeasureCode"
-                              label="Unit of Measure"
-                              value={itemData.purchaseUom}
-                              onChange={(newValue) => {
-                                if (newValue) {
-                                  setItemData((d) => ({
-                                    ...d,
-                                    purchaseUom: newValue?.value as string,
-                                  }));
-                                }
-                              }}
-                            />
-                            <ConversionFactor
-                              name="conversionFactor"
-                              purchasingCode={itemData.purchaseUom}
-                              inventoryCode={itemData.inventoryUom}
-                              value={itemData.conversionFactor}
-                              onChange={(value) => {
-                                setItemData((d) => ({
-                                  ...d,
-                                  conversionFactor: value,
-                                }));
-                              }}
-                            />
-                          </>
-                        )}
-                        <NumberControlled
-                          name="supplierUnitPrice"
-                          label="Unit Price"
-                          value={itemData.supplierUnitPrice}
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode,
-                          }}
-                          onChange={(value) =>
-                            setItemData((d) => ({
-                              ...d,
-                              supplierUnitPrice: value,
-                            }))
-                          }
-                        />
-                        <Number
-                          name="supplierShippingCost"
-                          label="Shipping"
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode,
-                          }}
-                        />
-                        <Number
-                          name="supplierTaxAmount"
-                          label="Tax"
-                          formatOptions={{
-                            style: "currency",
-                            currency:
-                              routeData?.purchaseOrder?.currencyCode ??
-                              company.baseCurrencyCode,
-                          }}
-                        />
-                        {[
-                          "Part",
-                          "Service",
-                          "Material",
-                          "Tool",
-                          "Consumable",
-                          "Fixed Asset",
-                        ].includes(itemType) && (
-                          <Location
-                            name="locationId"
-                            label="Location"
-                            value={locationId}
-                            onChange={onLocationChange}
-                          />
-                        )}
-                        {[
-                          "Part",
-                          "Service",
-                          "Material",
-                          "Tool",
-                          "Consumable",
-                          "Fixed Asset",
-                        ].includes(itemType) && (
-                          <Shelf
-                            name="shelfId"
-                            label="Shelf"
-                            locationId={locationId}
-                            value={itemData.shelfId ?? undefined}
-                            onChange={(newValue) => {
-                              if (newValue) {
-                                setItemData((d) => ({
-                                  ...d,
-                                  shelfId: newValue?.id,
-                                }));
-                              }
-                            }}
-                          />
-                        )}
                       </>
                     )}
+                    <NumberControlled
+                      name="supplierUnitPrice"
+                      label="Unit Price"
+                      value={itemData.supplierUnitPrice}
+                      formatOptions={{
+                        style: "currency",
+                        currency:
+                          routeData?.purchaseOrder?.currencyCode ??
+                          company.baseCurrencyCode,
+                      }}
+                      onChange={(value) =>
+                        setItemData((d) => ({
+                          ...d,
+                          supplierUnitPrice: value,
+                        }))
+                      }
+                    />
+                    <Number
+                      name="supplierShippingCost"
+                      label="Shipping"
+                      formatOptions={{
+                        style: "currency",
+                        currency:
+                          routeData?.purchaseOrder?.currencyCode ??
+                          company.baseCurrencyCode,
+                      }}
+                    />
+                    <Number
+                      name="supplierTaxAmount"
+                      label="Tax"
+                      formatOptions={{
+                        style: "currency",
+                        currency:
+                          routeData?.purchaseOrder?.currencyCode ??
+                          company.baseCurrencyCode,
+                      }}
+                    />
+                    {[
+                      "Item",
+                      "Part",
+                      "Service",
+                      "Material",
+                      "Tool",
+                      "Consumable",
+                      "Fixed Asset",
+                    ].includes(itemType) && (
+                      <Location
+                        name="locationId"
+                        label="Location"
+                        value={locationId}
+                        onChange={onLocationChange}
+                      />
+                    )}
+                    {[
+                      "Item",
+                      "Part",
+                      "Service",
+                      "Material",
+                      "Tool",
+                      "Consumable",
+                      "Fixed Asset",
+                    ].includes(itemType) && (
+                      <Shelf
+                        name="shelfId"
+                        label="Shelf"
+                        locationId={locationId}
+                        value={itemData.shelfId ?? undefined}
+                        onChange={(newValue) => {
+                          if (newValue) {
+                            setItemData((d) => ({
+                              ...d,
+                              shelfId: newValue?.id,
+                            }));
+                          }
+                        }}
+                      />
+                    )}
+
                     <CustomFormFields table="purchaseOrderLine" />
                   </div>
                 </VStack>
