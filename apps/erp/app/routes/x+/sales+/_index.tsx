@@ -11,6 +11,8 @@ import {
   DateRangePicker,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -37,7 +39,13 @@ import type { DateRange } from "@react-types/datepicker";
 import { Await, Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { defer, type LoaderFunctionArgs } from "@vercel/remix";
 import { Suspense, useEffect, useMemo, useState } from "react";
-import { LuArrowUpRight, LuChevronDown, LuMoreVertical } from "react-icons/lu";
+import { CSVLink } from "react-csv";
+import {
+  LuArrowUpRight,
+  LuChevronDown,
+  LuFile,
+  LuMoreVertical,
+} from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
@@ -203,6 +211,23 @@ export default function SalesDashboard() {
         ? 100
         : 0
       : ((total - previousTotal) / previousTotal) * 100;
+
+  const csvData = useMemo(() => {
+    if (!kpiFetcher.data?.data) return [];
+    return [
+      ["Date", "Value"],
+      ...kpiFetcher.data.data.map((item) => [
+        "date" in item ? item.date : item.monthKey,
+        item.value,
+      ]),
+    ];
+  }, [kpiFetcher.data?.data]);
+
+  const csvFilename = useMemo(() => {
+    const startDate = dateRange?.start.toString();
+    const endDate = dateRange?.end.toString();
+    return `${selectedKpiData.label}_${startDate}_to_${endDate}.csv`;
+  }, [dateRange, selectedKpiData.label]);
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
@@ -391,6 +416,18 @@ export default function SalesDashboard() {
                   aria-label="More"
                 />
               </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>
+                  <CSVLink
+                    data={csvData}
+                    filename={csvFilename}
+                    className="flex flex-row items-center gap-2"
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    Export CSV
+                  </CSVLink>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
             </DropdownMenu>
           </CardAction>
         </HStack>
