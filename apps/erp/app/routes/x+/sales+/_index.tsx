@@ -75,7 +75,7 @@ const CHART_INTERVALS = [
 
 const chartConfig = {
   now: {
-    color: "hsl(var(--chart-1))", // Primary color
+    color: "hsl(var(--primary))", // Primary color
   },
 } satisfies ChartConfig;
 
@@ -112,7 +112,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     openSalesOrders: openSalesOrders,
     openQuotes: openQuotes,
     openRFQs: openRFQs,
-    assignedToMe: getSalesDocumentsAssignedToMe(client, userId),
+    assignedToMe: getSalesDocumentsAssignedToMe(client, userId, companyId),
   });
 }
 
@@ -582,11 +582,9 @@ function SalesOrderDocumentRow({ doc }: { doc: SalesOrder }) {
     <Tr>
       <Td>
         <Hyperlink to={path.to.salesOrder(doc.id!)}>
-          <HStack>
-            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
-              <RiProgress8Line className="size-3" />
-            </div>
-            {doc.salesOrderId}
+          <HStack spacing={1}>
+            <RiProgress8Line className="size-4" />
+            <span>{doc.salesOrderId}</span>
           </HStack>
         </Hyperlink>
       </Td>
@@ -605,11 +603,9 @@ function QuoteDocumentRow({ doc }: { doc: Quotation }) {
     <Tr>
       <Td>
         <Hyperlink to={path.to.quote(doc.id!)}>
-          <HStack>
-            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
-              <RiProgress4Line className="size-3" />
-            </div>
-            {doc.quoteId}
+          <HStack spacing={1}>
+            <RiProgress4Line className="size-4" />
+            <span>{doc.quoteId}</span>
           </HStack>
         </Hyperlink>
       </Td>
@@ -628,11 +624,9 @@ function RfqDocumentRow({ doc }: { doc: SalesRFQ }) {
     <Tr>
       <Td>
         <Hyperlink to={path.to.salesRfq(doc.id!)}>
-          <HStack>
-            <div className="bg-muted/80 border border-border rounded-md p-1 text-foreground shadow-md">
-              <RiProgress2Line className="size-3" />
-            </div>
-            {doc.rfqId}
+          <HStack spacing={1}>
+            <RiProgress2Line className="size-4" />
+            <span>{doc.rfqId}</span>
           </HStack>
         </Hyperlink>
       </Td>
