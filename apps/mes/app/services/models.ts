@@ -91,6 +91,7 @@ export const finishValidator = z.object({
 
 export const nonScrapQuantityValidator = finishValidator.extend({
   quantity: zfd.numeric(z.number().positive()),
+  notes: zfd.text(z.string().optional()),
 });
 
 export const scrapQuantityValidator = nonScrapQuantityValidator.extend({

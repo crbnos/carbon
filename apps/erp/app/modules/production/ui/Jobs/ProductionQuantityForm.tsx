@@ -78,11 +78,9 @@ const ProductionQuantityForm = ({
                 }
               />
               {type === "Scrap" && (
-                <>
-                  <ScrapReason name="scrapReasonId" label="Scrap Reason" />
-                  <TextArea name="notes" label="Notes" />
-                </>
+                <ScrapReason name="scrapReasonId" label="Scrap Reason" />
               )}
+              <TextArea name="notes" label="Notes" />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

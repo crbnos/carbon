@@ -1535,10 +1535,10 @@ function QuantityModal({
   const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
 
   const titleMap = {
-    scrap: `Log Scrap for ${operation.itemReadableId}`,
-    rework: `Log Rework for ${operation.itemReadableId}`,
-    complete: `Log Completed for ${operation.itemReadableId}`,
-    finish: `Close Out ${operation.itemReadableId}`,
+    scrap: `Log scrap for ${operation.itemReadableId}`,
+    rework: `Log rework for ${operation.itemReadableId}`,
+    complete: `Log completed for ${operation.itemReadableId}`,
+    finish: `Close out ${operation.itemReadableId}`,
   };
 
   const isOperationComplete =
@@ -1637,17 +1637,20 @@ function QuantityModal({
                   <TextArea label="Notes" name="notes" />
                 </>
               ) : (
-                <NumberControlled
-                  name="totalQuantity"
-                  label="Total Quantity"
-                  value={
-                    quantity +
-                    (type === "rework"
-                      ? operation.quantityReworked
-                      : operation.quantityComplete)
-                  }
-                  isReadOnly
-                />
+                <>
+                  <NumberControlled
+                    name="totalQuantity"
+                    label="Total Quantity"
+                    value={
+                      quantity +
+                      (type === "rework"
+                        ? operation.quantityReworked
+                        : operation.quantityComplete)
+                    }
+                    isReadOnly
+                  />
+                  <TextArea label="Notes" name="notes" />
+                </>
               )}
             </VStack>
           </ModalBody>

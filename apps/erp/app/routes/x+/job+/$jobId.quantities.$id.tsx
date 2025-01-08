@@ -53,7 +53,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // If the type is not Scrap, set the scrapReasonId and notes to null
   if (data.type !== "Scrap") {
     data.scrapReasonId = undefined;
-    data.notes = undefined;
   }
 
   const update = await updateProductionQuantity(client, {
