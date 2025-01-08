@@ -35,7 +35,7 @@ import {
   QuoteLinePricing,
   useLineCosts,
 } from "~/modules/sales/ui/Quotes";
-import { setCustomFields } from "~/utils/form";
+import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -160,6 +160,7 @@ export default function QuoteLine() {
     quantity: line.quantity ?? [1],
     unitOfMeasureCode: line.unitOfMeasureCode ?? "",
     taxPercent: line.taxPercent ?? 0,
+    ...getCustomFields(line.customFields),
   };
 
   return (

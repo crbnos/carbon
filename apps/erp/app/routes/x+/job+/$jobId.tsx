@@ -11,11 +11,12 @@ import {
   useParams,
 } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { ExplorerSkeleton } from "~/components/Skeletons";
 import { flattenTree } from "~/components/TreeView";
 import { getConfigurationParameters } from "~/modules/items";
+import type { JobMethodTreeItem } from "~/modules/production";
 import {
   getJob,
   getJobDocuments,
@@ -102,13 +103,8 @@ export default function JobRoute() {
                           }
                         >
                           {(resolvedMethod) => (
-                            <JobBoMExplorer
-                              method={
-                                resolvedMethod.data &&
-                                resolvedMethod.data.length > 0
-                                  ? flattenTree(resolvedMethod.data[0])
-                                  : []
-                              }
+                            <JobBoMExplorerWrapper
+                              method={resolvedMethod.data ?? []}
                             />
                           )}
                         </Await>
@@ -129,4 +125,16 @@ export default function JobRoute() {
       </div>
     </PanelProvider>
   );
+}
+
+function JobBoMExplorerWrapper({
+  method,
+}: {
+  method: JobMethodTreeItem[] | null;
+}) {
+  const memoizedMethod = useMemo(
+    () => (method && method.length > 0 ? flattenTree(method[0]) : []),
+    [method]
+  );
+  return <JobBoMExplorer method={memoizedMethod} />;
 }

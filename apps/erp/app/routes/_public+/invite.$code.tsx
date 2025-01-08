@@ -167,17 +167,11 @@ export default function Invite() {
 
       <p className="text-xs text-muted-foreground absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
         By accepting the invite, you agree to the{" "}
-        <Link
-          to="https://website-carbonos.vercel.app/terms"
-          className="underline"
-        >
+        <Link to="https://carbonos.dev/terms" className="underline">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link
-          to="https://website-carbonos.vercel.app/privacy"
-          className="underline"
-        >
+        <Link to="https://carbonos.dev/privacy" className="underline">
           Privacy Policy
         </Link>
         .
