@@ -127,7 +127,8 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
 } = {
   itemId: "",
   itemReadableId: "",
-  itemType: "Material" as const,
+  // @ts-ignore
+  itemType: "Item" as const,
   methodType: "Buy" as const,
   description: "",
   quantity: 1,
@@ -592,8 +593,10 @@ function MaterialForm({
     quantity: item.data.quantity ?? 1,
   });
 
-  const onTypeChange = (value: MethodItemType) => {
-    setItemType(value);
+  const onTypeChange = (value: MethodItemType | "Item") => {
+    if (value === itemType) return;
+    setItemType(value as MethodItemType);
+
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -615,7 +618,7 @@ function MaterialForm({
     const [item, itemCost] = await await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+        .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -636,6 +639,10 @@ function MaterialForm({
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
     }));
+
+    if (item.data?.type) {
+      setItemType(item.data.type as MethodItemType);
+    }
   };
 
   return (

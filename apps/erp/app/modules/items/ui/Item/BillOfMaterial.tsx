@@ -91,7 +91,8 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
 } = {
   itemId: "",
   itemReadableId: "",
-  itemType: "Material" as const,
+  // @ts-expect-error
+  itemType: "Item" as const,
   methodType: "Buy" as const,
   description: "",
   quantity: 1,
@@ -562,9 +563,10 @@ function MaterialForm({
     quantity: item.data.quantity ?? 1,
   });
 
-  const onTypeChange = (value: MethodItemType) => {
+  const onTypeChange = (value: MethodItemType | "Item") => {
     if (value === itemType) return;
-    setItemType(value);
+    setItemType(value as MethodItemType);
+
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -584,7 +586,7 @@ function MaterialForm({
 
     const item = await carbon
       .from("item")
-      .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+      .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
       .eq("id", itemId)
       .eq("companyId", company.id)
       .single();
@@ -602,6 +604,9 @@ function MaterialForm({
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
     }));
+    if (item.data?.type) {
+      setItemType(item.data.type as MethodItemType);
+    }
   };
 
   const key = (field: string) => getFieldKey(field, item.id);

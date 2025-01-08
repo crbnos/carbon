@@ -1394,6 +1394,7 @@ export async function upsertPart(
         itemTrackingType: part.itemTrackingType,
         unitOfMeasureCode: part.unitOfMeasureCode,
         active: part.active,
+        modelUploadId: part.modelUploadId,
         companyId: part.companyId,
         createdBy: part.createdBy,
       })
@@ -2094,6 +2095,7 @@ export async function upsertTool(
         itemTrackingType: tool.itemTrackingType,
         unitOfMeasureCode: tool.unitOfMeasureCode,
         active: tool.active,
+        modelUploadId: tool.modelUploadId,
         companyId: tool.companyId,
         createdBy: tool.createdBy,
       })

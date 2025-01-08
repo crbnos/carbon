@@ -119,7 +119,7 @@ const SupplierQuoteLineForm = ({
     const [item, supplierPart] = await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, unitOfMeasureCode")
+        .select("name, readableId, type, unitOfMeasureCode")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -154,6 +154,9 @@ const SupplierQuoteLineForm = ({
     }
 
     setItemData(newItemData);
+    if (item.data?.type) {
+      setItemType(item.data.type as MethodItemType);
+    }
   };
 
   const deleteDisclosure = useDisclosure();
@@ -239,7 +242,8 @@ const SupplierQuoteLineForm = ({
                           onItemChange(value?.value as string);
                         }}
                         onTypeChange={(type) => {
-                          setItemType(type);
+                          setItemType(type as MethodItemType);
+
                           setItemData({
                             ...itemData,
                             itemId: "",

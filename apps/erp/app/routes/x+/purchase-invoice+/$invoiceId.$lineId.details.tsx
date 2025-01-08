@@ -68,14 +68,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   data.accountNumber = undefined;
   //   data.itemId = undefined;
   // } else
-  if (data.invoiceLineType === "Comment") {
-    data.accountNumber = undefined;
-    data.assetId = undefined;
-    data.itemId = undefined;
-  } else {
-    data.accountNumber = undefined;
-    data.assetId = undefined;
-  }
+  // if (data.invoiceLineType === "Comment") {
+  //   data.accountNumber = undefined;
+  //   data.assetId = undefined;
+  //   data.itemId = undefined;
+  // } else {
+  //   data.accountNumber = undefined;
+  //   data.assetId = undefined;
+  // }
 
   const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
     id: lineId,

@@ -2,6 +2,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
+import { methodItemType } from "../shared";
 
 export const purchaseOrderLineType = [
   "Part",
@@ -83,7 +84,7 @@ export const purchaseOrderLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     purchaseOrderId: z.string().min(20, { message: "Order is required" }),
-    purchaseOrderLineType: z.enum(purchaseOrderLineType, {
+    purchaseOrderLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
       }),
@@ -115,31 +116,31 @@ export const purchaseOrderLineValidator = z
       message: "Part is required",
       path: ["itemId"], // path of error
     }
-  )
-  // .refine(
-  //   (data) =>
-  //     data.purchaseOrderLineType === "G/L Account" ? data.accountNumber : true,
-  //   {
-  //     message: "Account is required",
-  //     path: ["accountNumber"], // path of error
-  //   }
-  // )
-  // .refine(
-  //   (data) =>
-  //     data.purchaseOrderLineType === "Fixed Asset" ? data.assetId : true,
-  //   {
-  //     message: "Asset is required",
-  //     path: ["assetId"], // path of error
-  //   }
-  // )
-  .refine(
-    (data) =>
-      data.purchaseOrderLineType === "Comment" ? data.description : true,
-    {
-      message: "Comment is required",
-      path: ["description"], // path of error
-    }
   );
+// .refine(
+//   (data) =>
+//     data.purchaseOrderLineType === "G/L Account" ? data.accountNumber : true,
+//   {
+//     message: "Account is required",
+//     path: ["accountNumber"], // path of error
+//   }
+// )
+// .refine(
+//   (data) =>
+//     data.purchaseOrderLineType === "Fixed Asset" ? data.assetId : true,
+//   {
+//     message: "Asset is required",
+//     path: ["assetId"], // path of error
+//   }
+// )
+// .refine(
+//   (data) =>
+//     data.purchaseOrderLineType === "Comment" ? data.description : true,
+//   {
+//     message: "Comment is required",
+//     path: ["description"], // path of error
+//   }
+// );
 
 export const purchaseOrderPaymentValidator = z.object({
   id: z.string(),

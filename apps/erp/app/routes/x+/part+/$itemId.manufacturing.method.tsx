@@ -7,7 +7,8 @@ import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import type { z } from "zod";
-import { useRouteData } from "~/hooks";
+import CadModel from "~/components/CadModel";
+import { usePermissions, useRouteData } from "~/hooks";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
@@ -15,6 +16,7 @@ import type {
   MakeMethod,
   Material,
   MethodOperation,
+  PartSummary,
 } from "~/modules/items";
 import {
   partManufacturingValidator,
@@ -76,10 +78,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MakeMethodRoute() {
+  const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
 
-  const routeData = useRouteData<{
+  const itemRouteData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
+
+  const manufacturingRouteData = useRouteData<{
     partManufacturing: z.infer<typeof partManufacturingValidator> & {
       customFields: Record<string, string>;
     };
@@ -88,23 +95,20 @@ export default function MakeMethodRoute() {
       parameters: ConfigurationParameter[];
     };
     configurationRules: ConfigurationRule[];
-  }>(path.to.partManufacturing(itemId));
-
-  if (!routeData) throw new Error("Could not find route data");
-
-  const manufacturingRouteData = useRouteData<{
     makeMethod: MakeMethod;
     methodMaterials: Material[];
     methodOperations: MethodOperation[];
   }>(path.to.partManufacturing(itemId));
 
+  if (!manufacturingRouteData) throw new Error("Could not find route data");
+
   const makeMethodId = manufacturingRouteData?.makeMethod?.id;
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const manufacturingInitialValues = {
-    ...routeData?.partManufacturing,
-    lotSize: routeData?.partManufacturing.lotSize ?? 0,
-    ...getCustomFields(routeData?.partManufacturing.customFields),
+    ...manufacturingRouteData?.partManufacturing,
+    lotSize: manufacturingRouteData?.partManufacturing.lotSize ?? 0,
+    ...getCustomFields(manufacturingRouteData?.partManufacturing.customFields),
   };
 
   return (
@@ -115,11 +119,15 @@ export default function MakeMethodRoute() {
         // @ts-ignore
         initialValues={manufacturingInitialValues}
       />
-      {routeData?.partManufacturing.requiresConfiguration && (
+      {manufacturingRouteData?.partManufacturing.requiresConfiguration && (
         <ConfigurationParametersForm
           key={`options:${itemId}`}
-          parameters={routeData?.configurationParametersAndGroups.parameters}
-          groups={routeData?.configurationParametersAndGroups.groups}
+          parameters={
+            manufacturingRouteData?.configurationParametersAndGroups.parameters
+          }
+          groups={
+            manufacturingRouteData?.configurationParametersAndGroups.groups
+          }
         />
       )}
 
@@ -128,9 +136,13 @@ export default function MakeMethodRoute() {
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
-        configurable={routeData?.partManufacturing.requiresConfiguration}
-        configurationRules={routeData?.configurationRules}
-        parameters={routeData?.configurationParametersAndGroups.parameters}
+        configurable={
+          manufacturingRouteData?.partManufacturing.requiresConfiguration
+        }
+        configurationRules={manufacturingRouteData?.configurationRules}
+        parameters={
+          manufacturingRouteData?.configurationParametersAndGroups.parameters
+        }
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
@@ -139,9 +151,22 @@ export default function MakeMethodRoute() {
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
-        configurable={routeData?.partManufacturing.requiresConfiguration}
-        configurationRules={routeData?.configurationRules}
-        parameters={routeData?.configurationParametersAndGroups.parameters}
+        configurable={
+          manufacturingRouteData?.partManufacturing.requiresConfiguration
+        }
+        configurationRules={manufacturingRouteData?.configurationRules}
+        parameters={
+          manufacturingRouteData?.configurationParametersAndGroups.parameters
+        }
+      />
+
+      <CadModel
+        isReadOnly={!permissions.can("update", "parts")}
+        metadata={{ itemId }}
+        modelPath={itemRouteData?.partSummary?.modelPath ?? null}
+        title="CAD Model"
+        uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
     </VStack>
   );

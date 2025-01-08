@@ -502,6 +502,53 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
+export async function getModelByQuoteLineId(
+  client: SupabaseClient<Database>,
+  quoteLineId: string
+) {
+  const quoteLine = await client
+    .from("quoteLine")
+    .select("itemId")
+    .eq("id", quoteLineId)
+    .single();
+
+  if (!quoteLine.data) return null;
+
+  const item = await client
+    .from("item")
+    .select("id, type, modelUploadId")
+    .eq("id", quoteLine.data.itemId)
+    .single();
+
+  if (!item.data || !item.data.modelUploadId) {
+    return {
+      itemId: item.data?.id ?? null,
+      type: item.data?.type ?? null,
+      modelPath: null,
+    };
+  }
+
+  const model = await client
+    .from("modelUpload")
+    .select("*")
+    .eq("id", item.data.modelUploadId)
+    .maybeSingle();
+
+  if (!model.data) {
+    return {
+      itemId: item.data?.id ?? null,
+      type: item.data?.type ?? null,
+      modelSize: null,
+    };
+  }
+
+  return {
+    itemId: item.data!.id,
+    type: item.data!.type,
+    ...model.data,
+  };
+}
+
 export async function getOpportunityBySalesRFQ(
   client: SupabaseClient<Database>,
   salesRfqId: string

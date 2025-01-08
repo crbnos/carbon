@@ -450,6 +450,7 @@ export const materialSubstanceValidator = z.object({
 export const partValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Part ID is required" }).max(255),
+    modelUploadId: zfd.text(z.string().optional()),
   })
 );
 
@@ -492,6 +493,7 @@ export const supplierPartValidator = z.object({
 export const toolValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Tool ID is required" }).max(255),
+    modelUploadId: zfd.text(z.string().optional()),
     unitOfMeasureCode: z
       .string()
       .min(1, { message: "Unit of Measure is required" }),

@@ -49,7 +49,7 @@ export default function PurchaseInvoiceExplorer() {
 
   const purchaseInvoiceLineInitialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Part" as const,
+    invoiceLineType: "Item" as MethodItemType,
     purchaseQuantity: 1,
     locationId:
       purchaseInvoiceData?.purchaseInvoice?.locationId ??

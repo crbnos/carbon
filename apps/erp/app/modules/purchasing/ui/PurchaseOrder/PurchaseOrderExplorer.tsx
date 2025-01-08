@@ -49,7 +49,7 @@ export default function PurchaseOrderExplorer() {
 
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Part" as const,
+    purchaseOrderLineType: "Item" as MethodItemType,
     purchaseQuantity: 1,
     supplierUnitPrice: 0,
     locationId:

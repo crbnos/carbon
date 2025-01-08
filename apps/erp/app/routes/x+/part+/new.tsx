@@ -2,13 +2,19 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { partValidator, upsertPart } from "~/modules/items";
 import { PartForm } from "~/modules/items/ui/Parts";
+import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export const handle: Handle = {
   breadcrumb: "Parts",
@@ -47,6 +53,13 @@ export async function action({ request }: ActionFunctionArgs) {
           path.to.parts,
           await flash(request, error(createPart.error, "Failed to insert part"))
         );
+  }
+
+  if (validation.data.modelUploadId) {
+    await tasks.trigger<typeof modelThumbnailTask>("model-thumbnail", {
+      companyId,
+      modelId: validation.data.modelUploadId,
+    });
   }
 
   const itemId = createPart.data?.itemId;

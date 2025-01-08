@@ -54,7 +54,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
   const { company } = useUser();
   const { carbon } = useCarbon();
   const [type, setType] = useState<MethodItemType>(
-    initialValues.itemType ?? "Part"
+    initialValues.itemType ?? "Item"
   );
 
   const isDisabled = ["Completed", "Cancelled"].includes(
@@ -96,8 +96,8 @@ const JobForm = ({ initialValues }: JobFormProps) => {
   const isCustomer = permissions.is("customer");
   const isEditing = initialValues.id !== undefined;
 
-  const onTypeChange = (t: MethodItemType) => {
-    setType(t);
+  const onTypeChange = (t: MethodItemType | "Item") => {
+    setType(t as MethodItemType);
     setItemData({
       itemId: "",
       description: "",
@@ -116,7 +116,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
       carbon
         .from("item")
         .select(
-          "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableId, defaultMethodType, type, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -148,6 +148,10 @@ const JobForm = ({ initialValues }: JobFormProps) => {
           ((manufacturing?.data?.scrapPercentage ?? 0) / 100)
       ),
     }));
+
+    if (item.data?.type) {
+      setType(item.data.type as MethodItemType);
+    }
 
     if (itemReplenishment.data?.requiresConfiguration) {
       setRequiresConfiguration(true);

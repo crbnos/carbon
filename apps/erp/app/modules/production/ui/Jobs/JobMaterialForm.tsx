@@ -81,8 +81,9 @@ const JobMaterialForm = ({
     quantity: initialValues.quantity ?? 1,
   });
 
-  const onTypeChange = (value: MethodItemType) => {
-    setItemType(value);
+  const onTypeChange = (value: MethodItemType | "Item") => {
+    if (value === itemType) return;
+    setItemType(value as MethodItemType);
     setItemData({
       itemId: "",
       itemReadableId: "",
@@ -100,7 +101,7 @@ const JobMaterialForm = ({
     const [item, itemCost] = await await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, unitOfMeasureCode, defaultMethodType")
+        .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
         .eq("id", itemId)
         .single(),
       carbon.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
@@ -120,6 +121,10 @@ const JobMaterialForm = ({
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
     }));
+
+    if (item.data?.type) {
+      setItemType(item.data.type as MethodItemType);
+    }
   };
 
   useEffect(() => {

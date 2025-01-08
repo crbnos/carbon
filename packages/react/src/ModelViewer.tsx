@@ -54,7 +54,7 @@ export function ModelViewer({
   useMount(() => {
     if (file || url) {
       setIsLoading(true);
-      OV.Init3DViewerElements(console.log);
+
       if (viewerRef.current === null) {
         let viewer = new OV.EmbeddedViewer(parentDiv.current, {
           camera: new OV.Camera(

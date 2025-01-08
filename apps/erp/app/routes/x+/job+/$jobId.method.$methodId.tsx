@@ -13,7 +13,8 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Suspense } from "react";
-import { useRouteData } from "~/hooks";
+import { CadModel } from "~/components";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJobMaterialsByMethodId,
@@ -89,6 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobMakeMethodRoute() {
+  const permissions = usePermissions();
   const { methodId, jobId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
   if (!jobId) throw new Error("Could not find jobId");
@@ -132,6 +134,18 @@ export default function JobMakeMethodRoute() {
             )}
           </Await>
         </Suspense>
+
+        <CadModel
+          isReadOnly={!permissions.can("update", "production")}
+          metadata={{
+            jobId: routeData?.job?.id ?? undefined,
+            itemId: routeData?.job?.itemId ?? undefined,
+          }}
+          modelPath={routeData?.job?.modelPath ?? null}
+          title="CAD Model"
+          uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+          viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+        />
       </VStack>
     </div>
   );

@@ -1,11 +1,20 @@
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
+import {
+  Await,
+  defer,
+  redirect,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { Suspense } from "react";
+import { CadModel } from "~/components";
+import { usePermissions } from "~/hooks/usePermissions";
 import {
   getItem,
   getMethodMaterial,
@@ -18,7 +27,11 @@ import {
   ItemForm,
   MakeMethodTools,
 } from "~/modules/items/ui/Item";
-import type { MethodItemType, MethodType } from "~/modules/shared";
+import {
+  getModelByItemId,
+  type MethodItemType,
+  type MethodType,
+} from "~/modules/shared";
 import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -70,7 +83,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     item: {
       ...item.data,
       defaultMethodType: item.data.defaultMethodType ?? "Buy",
@@ -94,10 +107,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           operation.operationSupplierProcessId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
+    model: getModelByItemId(client, material.data.itemId),
   });
 }
 
 export default function MethodMaterialMakePage() {
+  const permissions = usePermissions();
   const loaderData = useLoaderData<typeof loader>();
   const { item, methodMaterials, methodOperations } = loaderData;
 
@@ -125,6 +140,23 @@ export default function MethodMaterialMakePage() {
         materials={methodMaterials}
         operations={methodOperations}
       />
+      <Suspense fallback={null}>
+        <Await resolve={loaderData.model}>
+          {(model) => (
+            <CadModel
+              key={`cad:${model.itemId}`}
+              isReadOnly={!permissions.can("update", "sales")}
+              metadata={{
+                itemId: model?.itemId ?? undefined,
+              }}
+              modelPath={model?.modelPath ?? null}
+              title="CAD Model"
+              uploadClassName="aspect-square min-h-[420px] max-h-[70vh]"
+              viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
+            />
+          )}
+        </Await>
+      </Suspense>
     </VStack>
   );
 }

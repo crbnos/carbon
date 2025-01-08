@@ -9,6 +9,7 @@ import { useUrlParams, useUser } from "~/hooks";
 import { jobValidator, upsertJob, upsertJobMethod } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import { getNextSequence } from "~/modules/settings";
+import type { MethodItemType } from "~/modules/shared";
 import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -121,7 +122,7 @@ export default function JobNewRoute() {
     description: "",
     dueDate: "",
     itemId: "",
-    itemType: "Part" as const,
+    itemType: "Item" as MethodItemType,
     jobId: undefined,
     locationId: defaults?.locationId ?? "",
     quantity: 0,
