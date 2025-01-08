@@ -233,7 +233,7 @@ const SupplierInteractionLineDocuments = ({
           <CardHeader>
             <CardTitle>Files</CardTitle>
             <CardDescription>
-              Files related to the supplier interaction line.
+              Supplier interaction line documents
             </CardDescription>
           </CardHeader>
           <CardAction>

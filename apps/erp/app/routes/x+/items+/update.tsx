@@ -16,9 +16,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   switch (field) {
-    case "replenishmentSystem":
     case "defaultMethodType":
     case "itemTrackingType":
+    case "name":
+    case "replenishmentSystem":
     case "unitOfMeasureCode":
       return json(
         await client

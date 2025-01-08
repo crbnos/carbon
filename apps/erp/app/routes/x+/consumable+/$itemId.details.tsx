@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -10,10 +11,9 @@ import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Consumable, ItemFile } from "~/modules/items";
 import { consumableValidator, upsertConsumable } from "~/modules/items";
-import { ConsumableForm } from "~/modules/items/ui/Consumables";
-import { ItemDocuments } from "~/modules/items/ui/Item";
+import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
 
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -66,29 +66,13 @@ export default function ConsumableDetailsRoute() {
   }>(path.to.consumable(itemId));
   if (!consumableData) throw new Error("Could not find consumable data");
 
-  const consumableInitialValues = {
-    id: consumableData.consumableSummary?.id ?? "",
-    itemId: consumableData.consumableSummary?.itemId ?? "",
-    name: consumableData.consumableSummary?.name ?? "",
-    description: consumableData.consumableSummary?.description ?? "",
-    replenishmentSystem:
-      consumableData.consumableSummary?.replenishmentSystem ?? "Buy",
-    defaultMethodType:
-      consumableData.consumableSummary?.defaultMethodType ?? "Buy",
-    itemTrackingType:
-      consumableData.consumableSummary?.itemTrackingType ?? "Inventory",
-    active: consumableData.consumableSummary?.active ?? true,
-    unitOfMeasureCode:
-      consumableData.consumableSummary?.unitOfMeasureCode ?? "EA",
-    tags: consumableData.consumableSummary?.tags ?? [],
-    ...getCustomFields(consumableData.consumableSummary?.customFields ?? {}),
-  };
-
   return (
     <VStack spacing={2} className="w-full h-full">
-      <ConsumableForm
-        key={JSON.stringify(consumableInitialValues)}
-        initialValues={consumableInitialValues}
+      <ItemNotes
+        id={consumableData.consumableSummary?.itemId ?? null}
+        title={consumableData.consumableSummary?.id ?? ""}
+        subTitle={consumableData.consumableSummary?.name ?? ""}
+        notes={consumableData.consumableSummary?.notes as JSONContent}
       />
       {permissions.is("employee") && (
         <Suspense

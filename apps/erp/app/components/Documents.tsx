@@ -222,9 +222,7 @@ const Documents = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>Files</CardTitle>
-          <CardDescription>
-            Files related to the {sourceDocument.toLowerCase()}.
-          </CardDescription>
+          <CardDescription>{sourceDocument} documents</CardDescription>
         </CardHeader>
         <CardAction>
           <File

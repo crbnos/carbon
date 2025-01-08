@@ -1,5 +1,5 @@
 import type { Json } from "@carbon/database";
-import { ValidatedForm } from "@carbon/form";
+import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -78,6 +78,7 @@ const ConsumableProperties = () => {
   const onUpdate = useCallback(
     (
       field:
+        | "name"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -185,7 +186,36 @@ const ConsumableProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <span className="text-sm">{routeData?.consumableSummary?.name}</span>
+        <VStack spacing={0}>
+          <span className="text-sm tracking-tight">
+            {routeData?.consumableSummary?.id}
+          </span>
+          <ValidatedForm
+            defaultValues={{
+              name: routeData?.consumableSummary?.name ?? undefined,
+            }}
+            validator={z.object({
+              name: z
+                .string()
+                .min(1, { message: "Unit of Measure is required" }),
+            })}
+            className="w-full -mt-2"
+          >
+            <span className="text-xs text-muted-foreground">
+              <InputControlled
+                label=""
+                name="name"
+                inline
+                size="sm"
+                value={routeData?.consumableSummary?.name ?? ""}
+                onBlur={(e) => {
+                  onUpdate("name", e.target.value ?? null);
+                }}
+                className="text-muted-foreground"
+              />
+            </span>
+          </ValidatedForm>
+        </VStack>
         <ItemThumbnailUpload
           path={routeData?.consumableSummary?.thumbnailPath}
           itemId={itemId}

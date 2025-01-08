@@ -91,10 +91,7 @@ const ItemDocuments = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>Files</CardTitle>
-          <CardDescription>
-            Files related to the {type.toLowerCase()}. These are not shown on
-            jobs by default.
-          </CardDescription>
+          <CardDescription>Item documents (not shown on jobs)</CardDescription>
         </CardHeader>
         <CardAction>
           <ItemDocumentForm type={type} itemId={itemId} />

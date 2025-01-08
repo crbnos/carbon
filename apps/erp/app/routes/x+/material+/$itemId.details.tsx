@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -10,11 +11,9 @@ import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, Material } from "~/modules/items";
 import { materialValidator, upsertMaterial } from "~/modules/items";
-import { ItemDocuments } from "~/modules/items/ui/Item";
-import { MaterialForm } from "~/modules/items/ui/Materials";
+import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
 
-import type { ListItem } from "~/types";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -64,38 +63,16 @@ export default function MaterialDetailsRoute() {
   const materialData = useRouteData<{
     materialSummary: Material;
     files: Promise<ItemFile[]>;
-    forms: ListItem[];
-    substances: ListItem[];
   }>(path.to.material(itemId));
   if (!materialData) throw new Error("Could not find material data");
 
-  const materialInitialValues = {
-    id: materialData.materialSummary?.id ?? "",
-    itemId: materialData.materialSummary?.itemId ?? "",
-    name: materialData.materialSummary?.name ?? "",
-    description: materialData.materialSummary?.description ?? "",
-    materialFormId: materialData.materialSummary?.materialFormId ?? "",
-    materialSubstanceId:
-      materialData.materialSummary?.materialSubstanceId ?? "",
-    finish: materialData.materialSummary?.finish ?? "",
-    grade: materialData.materialSummary?.grade ?? "",
-    dimensions: materialData.materialSummary?.dimensions ?? "",
-    replenishmentSystem:
-      materialData.materialSummary?.replenishmentSystem ?? "Buy",
-    defaultMethodType: materialData.materialSummary?.defaultMethodType ?? "Buy",
-    itemTrackingType:
-      materialData.materialSummary?.itemTrackingType ?? "Inventory",
-    active: materialData.materialSummary?.active ?? true,
-    unitOfMeasureCode: materialData.materialSummary?.unitOfMeasureCode ?? "EA",
-    tags: materialData.materialSummary?.tags ?? [],
-    ...getCustomFields(materialData.materialSummary?.customFields ?? {}),
-  };
-
   return (
     <VStack spacing={2} className="w-full h-full">
-      <MaterialForm
-        key={JSON.stringify(materialInitialValues)}
-        initialValues={materialInitialValues}
+      <ItemNotes
+        id={materialData.materialSummary?.itemId ?? null}
+        title={materialData.materialSummary?.id ?? ""}
+        subTitle={materialData.materialSummary?.name ?? ""}
+        notes={materialData.materialSummary?.notes as JSONContent}
       />
       {permissions.is("employee") && (
         <Suspense

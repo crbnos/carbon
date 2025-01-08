@@ -1,5 +1,5 @@
 import type { Json } from "@carbon/database";
-import { ValidatedForm } from "@carbon/form";
+import { InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -74,6 +74,7 @@ const ToolProperties = () => {
   const onUpdate = useCallback(
     (
       field:
+        | "name"
         | "replenishmentSystem"
         | "defaultMethodType"
         | "itemTrackingType"
@@ -197,21 +198,41 @@ const ToolProperties = () => {
             </Tooltip>
           </HStack>
         </HStack>
-        <span className="text-sm">{routeData?.toolSummary?.name}</span>
+        <VStack spacing={0}>
+          <span className="text-sm tracking-tight">
+            {routeData?.toolSummary?.id}
+          </span>
+          <ValidatedForm
+            defaultValues={{
+              name: routeData?.toolSummary?.name ?? undefined,
+            }}
+            validator={z.object({
+              name: z
+                .string()
+                .min(1, { message: "Unit of Measure is required" }),
+            })}
+            className="w-full -mt-2"
+          >
+            <span className="text-xs text-muted-foreground">
+              <InputControlled
+                label=""
+                name="name"
+                inline
+                size="sm"
+                value={routeData?.toolSummary?.name ?? ""}
+                onBlur={(e) => {
+                  onUpdate("name", e.target.value ?? null);
+                }}
+                className="text-muted-foreground"
+              />
+            </span>
+          </ValidatedForm>
+        </VStack>
         <ItemThumbnailUpload
           path={routeData?.toolSummary?.thumbnailPath}
           itemId={itemId}
         />
       </VStack>
-      {/* <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Assignee</h3>
-        <Assignee
-          id={itemId}
-          table="item"
-          value={assignee ?? ""}
-          isReadOnly={!permissions.can("update", "parts")}
-        />
-      </VStack> */}
 
       <VStack spacing={2}>
         <h3 className="text-xs text-muted-foreground">Tracking Type</h3>

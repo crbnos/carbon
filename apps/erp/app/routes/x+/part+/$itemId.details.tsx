@@ -13,9 +13,8 @@ import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import { partValidator, upsertPart } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
-import { PartForm } from "~/modules/items/ui/Parts";
 
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -65,26 +64,8 @@ export default function PartDetailsRoute() {
   if (!partData) throw new Error("Could not find part data");
   const permissions = usePermissions();
 
-  const partInitialValues = {
-    id: partData.partSummary?.id ?? "",
-    itemId: partData.partSummary?.itemId ?? "",
-    name: partData.partSummary?.name ?? "",
-    description: partData.partSummary?.description ?? "",
-    replenishmentSystem: partData.partSummary?.replenishmentSystem ?? "Buy",
-    defaultMethodType: partData.partSummary?.defaultMethodType ?? "Buy",
-    itemTrackingType: partData.partSummary?.itemTrackingType ?? "Inventory",
-    active: partData.partSummary?.active ?? true,
-    unitOfMeasureCode: partData.partSummary?.unitOfMeasureCode ?? "EA",
-    tags: partData.partSummary?.tags ?? [],
-    ...getCustomFields(partData.partSummary?.customFields ?? {}),
-  };
-
   return (
     <VStack spacing={2} className="p-2">
-      <PartForm
-        key={JSON.stringify(partInitialValues)}
-        initialValues={partInitialValues}
-      />
       <ItemNotes
         id={partData.partSummary?.itemId ?? null}
         title={partData.partSummary?.id ?? ""}
