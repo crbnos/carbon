@@ -32256,6 +32256,9 @@ export type Database = {
           itemDescription: string
           itemUnitOfMeasure: string
           itemModelPath: string
+          itemModelId: string
+          itemModelName: string
+          itemModelSize: number
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           operationQuantity: number
           quantityComplete: number

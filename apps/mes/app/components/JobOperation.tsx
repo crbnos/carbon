@@ -124,6 +124,7 @@ import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuAlertTriangle,
+  LuAxis3D,
   LuChevronLeft,
   LuClipboardCheck,
   LuDownload,
@@ -160,7 +161,7 @@ export const JobOperation = ({
 }: JobOperationProps) => {
   const navigate = useNavigate();
 
-  const { downloadFile, getFilePath } = useFiles(job);
+  const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
   const {
     active,
@@ -198,6 +199,16 @@ export const JobOperation = ({
 
   const mode = useMode();
   const { operationId } = useParams();
+
+  const modelUpload =
+    job.modelPath || operation.itemModelPath
+      ? {
+          modelPath: operation.itemModelPath ?? job.modelPath,
+          modelId: operation.itemModelId ?? job.modelId,
+          modelName: operation.itemModelName ?? job.modelName,
+          modelSize: operation.itemModelSize ?? job.modelSize,
+        }
+      : null;
 
   return (
     <>
@@ -530,7 +541,7 @@ export const JobOperation = ({
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {resolvedFiles.length === 0 ? (
+                          {resolvedFiles.length === 0 && !modelUpload ? (
                             <Tr>
                               <Td
                                 colSpan={24}
@@ -540,35 +551,23 @@ export const JobOperation = ({
                               </Td>
                             </Tr>
                           ) : (
-                            resolvedFiles.map((file) => {
-                              const type = getFileType(file.name);
-                              return (
-                                <Tr key={file.id}>
+                            <>
+                              {modelUpload?.modelName && (
+                                <Tr>
                                   <Td>
                                     <HStack>
-                                      <FileIcon type={type} />
-                                      <span className="font-medium">
-                                        {["PDF", "Image"].includes(type) ? (
-                                          <FilePreview
-                                            bucket="private"
-                                            pathToFile={getFilePath(file)}
-                                            // @ts-ignore
-                                            type={getFileType(file.name)}
-                                          >
-                                            {file.name}
-                                          </FilePreview>
-                                        ) : (
-                                          file.name
-                                        )}
-                                      </span>
+                                      <LuAxis3D className="text-emerald-500 w-6 h-6" />
+                                      <span>{modelUpload.modelName}</span>
                                     </HStack>
                                   </Td>
                                   <Td className="text-xs font-mono">
-                                    {convertKbToString(
-                                      Math.floor(
-                                        (file.metadata?.size ?? 0) / 1024
-                                      )
-                                    )}
+                                    {modelUpload.modelSize
+                                      ? convertKbToString(
+                                          Math.floor(
+                                            (modelUpload.modelSize ?? 0) / 1024
+                                          )
+                                        )
+                                      : "--"}
                                   </Td>
                                   <Td>
                                     <div className="flex justify-end w-full">
@@ -580,9 +579,11 @@ export const JobOperation = ({
                                             variant="secondary"
                                           />
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent>
+                                        <DropdownMenuContent align="end">
                                           <DropdownMenuItem
-                                            onClick={() => downloadFile(file)}
+                                            onClick={() =>
+                                              downloadModel(modelUpload)
+                                            }
                                           >
                                             <DropdownMenuIcon
                                               icon={<LuDownload />}
@@ -594,8 +595,64 @@ export const JobOperation = ({
                                     </div>
                                   </Td>
                                 </Tr>
-                              );
-                            })
+                              )}
+                              {resolvedFiles.map((file) => {
+                                const type = getFileType(file.name);
+                                return (
+                                  <Tr key={file.id}>
+                                    <Td>
+                                      <HStack>
+                                        <FileIcon type={type} />
+                                        <span className="font-medium">
+                                          {["PDF", "Image"].includes(type) ? (
+                                            <FilePreview
+                                              bucket="private"
+                                              pathToFile={getFilePath(file)}
+                                              // @ts-ignore
+                                              type={getFileType(file.name)}
+                                            >
+                                              {file.name}
+                                            </FilePreview>
+                                          ) : (
+                                            file.name
+                                          )}
+                                        </span>
+                                      </HStack>
+                                    </Td>
+                                    <Td className="text-xs font-mono">
+                                      {convertKbToString(
+                                        Math.floor(
+                                          (file.metadata?.size ?? 0) / 1024
+                                        )
+                                      )}
+                                    </Td>
+                                    <Td>
+                                      <div className="flex justify-end w-full">
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <IconButton
+                                              aria-label="More"
+                                              icon={<LuMoreVertical />}
+                                              variant="secondary"
+                                            />
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                              onClick={() => downloadFile(file)}
+                                            >
+                                              <DropdownMenuIcon
+                                                icon={<LuDownload />}
+                                              />
+                                              Download
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </Td>
+                                  </Tr>
+                                );
+                              })}
+                            </>
                           )}
                         </Tbody>
                       </Table>
@@ -1193,8 +1250,41 @@ function useFiles(job: Job) {
     [carbon?.storage, getFilePath]
   );
 
+  const downloadModel = useCallback(
+    async (model: { modelPath: string; modelName: string }) => {
+      if (!model.modelPath || !model.modelName) {
+        toast.error("Model data is missing");
+        return;
+      }
+
+      const result = await carbon?.storage
+        .from("private")
+        .download(model.modelPath);
+
+      if (!result || result.error) {
+        toast.error(result?.error?.message || "Error downloading file");
+        return;
+      }
+
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      const url = window.URL.createObjectURL(result.data);
+      a.href = url;
+      a.download = model.modelName;
+      a.click();
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }, 0);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   return {
     downloadFile,
+    downloadModel,
     getFilePath,
   };
 }
