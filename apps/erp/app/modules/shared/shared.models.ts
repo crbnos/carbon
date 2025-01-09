@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const chartIntervals = [
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
+  { key: "quarter", label: "Quarter" },
+  { key: "year", label: "Year" },
+  { key: "custom", label: "Custom" },
+];
+
 export const documentTypes = [
   "Archive",
   "Document",

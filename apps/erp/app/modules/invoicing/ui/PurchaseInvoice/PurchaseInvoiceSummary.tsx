@@ -333,18 +333,19 @@ const PurchaseInvoiceSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>
-              Purchase Invoice {routeData?.purchaseInvoice.invoiceId}
-            </CardTitle>
+            <CardTitle>{routeData?.purchaseInvoice.invoiceId}</CardTitle>
+            <CardDescription>Purchase Invoice</CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <SupplierAvatar
+              supplierId={routeData?.purchaseInvoice.supplierId ?? null}
+            />
             {routeData?.purchaseInvoice?.dateDue && (
-              <CardDescription>
-                Due {formatDate(routeData.purchaseInvoice.dateDue)}
-              </CardDescription>
+              <span className="text-muted-foreground text-sm">
+                Due {formatDate(routeData?.purchaseInvoice.dateDue)}
+              </span>
             )}
           </div>
-          <SupplierAvatar
-            supplierId={routeData?.purchaseInvoice?.supplierId ?? null}
-          />
         </HStack>
       </CardHeader>
       <CardContent>

@@ -1,13 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { parseDate } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
-import { KPIs } from "~/modules/sales/sales.models";
+import { KPIs } from "~/modules/purchasing/purchasing.models";
 import { months } from "~/modules/shared/shared.models";
 import { groupDataByDay, groupDataByMonth } from "~/utils/chart";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "sales",
+    view: "purchasing",
   });
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
@@ -48,37 +48,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
   switch (kpi.key) {
-    case "salesOrderRevenue":
-    case "salesOrderCount": {
-      const [salesOrders, previousSalesOrders] = await Promise.all([
+    case "purchaseOrderCount":
+    case "purchaseOrderAmount": {
+      const [orders, previousOrders] = await Promise.all([
         client
-          .from("salesOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
+          .from("purchaseOrders")
+          .select("orderTotal, orderDate")
           .eq("companyId", companyId)
           .in("status", [
-            "In Progress",
-            "Needs Approval",
-            "Confirmed",
+            "To Review",
+            "To Receive",
+            "To Invoice",
+            "To Receive and Invoice",
             "Completed",
-            "Invoiced",
           ])
           .gt("orderDate", start)
           .lte("orderDate", end)
           .order("orderDate", { ascending: false }),
         client
-          .from("salesOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
+          .from("purchaseOrders")
+          .select("orderTotal, orderDate")
           .eq("companyId", companyId)
           .in("status", [
-            "In Progress",
-            "Needs Approval",
-            "Confirmed",
+            "To Review",
+            "To Receive",
+            "To Invoice",
+            "To Receive and Invoice",
             "Completed",
-            "Invoiced",
           ])
           .gt("orderDate", previousStartDate.toString())
           .lte("orderDate", previousEndDate.toString())
@@ -87,12 +83,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       if (daysBetween < 60) {
         const [groupedData, previousGroupedData] = [
-          groupDataByDay(salesOrders.data ?? [], {
+          groupDataByDay(orders.data ?? [], {
             start,
             end,
             groupBy: "orderDate",
           }),
-          groupDataByDay(previousSalesOrders.data ?? [], {
+          groupDataByDay(previousOrders.data ?? [], {
             start: previousStartDate.toString(),
             end: previousEndDate.toString(),
             groupBy: "orderDate",
@@ -104,10 +100,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .map(([date, d]) => ({
               date,
               value:
-                kpi.key === "salesOrderRevenue"
-                  ? d.reduce((sum, i) => {
-                      return sum + (i.orderTotal ?? 0);
-                    }, 0)
+                kpi.key === "purchaseOrderAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
             .sort((a, b) => a.date.localeCompare(b.date)),
@@ -115,27 +109,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .map(([date, d]) => ({
               date,
               value:
-                kpi.key === "salesOrderRevenue"
-                  ? d.reduce((sum, i) => {
-                      return sum + (i.orderTotal ?? 0);
-                    }, 0)
+                kpi.key === "purchaseOrderAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
             .sort((a, b) => a.date.localeCompare(b.date)),
         ];
 
-        return json({
-          data,
-          previousPeriodData,
-        });
+        return json({ data, previousPeriodData });
       } else {
         const [groupedData, previousGroupedData] = [
-          groupDataByMonth(salesOrders.data ?? [], {
+          groupDataByMonth(orders.data ?? [], {
             start,
             end,
             groupBy: "orderDate",
           }),
-          groupDataByMonth(previousSalesOrders.data ?? [], {
+          groupDataByMonth(previousOrders.data ?? [], {
             start: previousStartDate.toString(),
             end: previousEndDate.toString(),
             groupBy: "orderDate",
@@ -148,7 +137,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               month: months[Number(date.split("-")[1]) - 1],
               monthKey: date,
               value:
-                kpi.key === "salesOrderRevenue"
+                kpi.key === "purchaseOrderAmount"
                   ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
@@ -158,29 +147,136 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               month: months[Number(date.split("-")[1]) - 1],
               monthKey: date,
               value:
-                kpi.key === "salesOrderRevenue"
+                kpi.key === "purchaseOrderAmount"
                   ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
             .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
         ];
 
-        return json({
-          data,
-          previousPeriodData,
-        });
+        return json({ data, previousPeriodData });
       }
     }
 
-    case "quoteCount": {
+    case "purchaseInvoiceCount":
+    case "purchaseInvoiceAmount": {
+      const dateField = "dateIssued";
+      const [invoices, previousInvoices] = await Promise.all([
+        client
+          .from("purchaseInvoices")
+          .select("orderTotal, dateIssued")
+          .eq("companyId", companyId)
+          .in("status", [
+            "Pending",
+            "Partially Paid",
+            "Paid",
+            "Submitted",
+            "Overdue",
+          ])
+          .gt(dateField, start)
+          .lte(dateField, end)
+          .order(dateField, { ascending: false }),
+        client
+          .from("purchaseInvoices")
+          .select("orderTotal, dateIssued")
+          .eq("companyId", companyId)
+          .in("status", [
+            "Pending",
+            "Partially Paid",
+            "Paid",
+            "Submitted",
+            "Overdue",
+          ])
+          .gt(dateField, previousStartDate.toString())
+          .lte(dateField, previousEndDate.toString())
+          .order(dateField, { ascending: false }),
+      ]);
+
+      if (daysBetween < 60) {
+        const [groupedData, previousGroupedData] = [
+          groupDataByDay(invoices.data ?? [], {
+            start,
+            end,
+            groupBy: dateField,
+          }),
+          groupDataByDay(previousInvoices.data ?? [], {
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
+            groupBy: dateField,
+          }),
+        ];
+
+        const [data, previousPeriodData] = [
+          Object.entries(groupedData)
+            .map(([date, d]) => ({
+              date,
+              value:
+                kpi.key === "purchaseInvoiceAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
+                  : d.length,
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
+          Object.entries(previousGroupedData)
+            .map(([date, d]) => ({
+              date,
+              value:
+                kpi.key === "purchaseInvoiceAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
+                  : d.length,
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date)),
+        ];
+
+        return json({ data, previousPeriodData });
+      } else {
+        const [groupedData, previousGroupedData] = [
+          groupDataByMonth(invoices.data ?? [], {
+            start,
+            end,
+            groupBy: dateField,
+          }),
+          groupDataByMonth(previousInvoices.data ?? [], {
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
+            groupBy: dateField,
+          }),
+        ];
+
+        const [data, previousPeriodData] = [
+          Object.entries(groupedData)
+            .map(([date, d]) => ({
+              month: months[Number(date.split("-")[1]) - 1],
+              monthKey: date,
+              value:
+                kpi.key === "purchaseInvoiceAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
+                  : d.length,
+            }))
+            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
+          Object.entries(previousGroupedData)
+            .map(([date, d]) => ({
+              month: months[Number(date.split("-")[1]) - 1],
+              monthKey: date,
+              value:
+                kpi.key === "purchaseInvoiceAmount"
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
+                  : d.length,
+            }))
+            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
+        ];
+
+        return json({ data, previousPeriodData });
+      }
+    }
+
+    case "supplierQuoteCount": {
       const [quotes, previousQuotes] = await Promise.all([
         client
-          .from("quote")
+          .from("supplierQuote")
           .select("createdAt", {
             count: "exact",
           })
           .eq("companyId", companyId)
-          .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
           .gt("createdAt", start)
           .lte("createdAt", end)
           .order("createdAt", { ascending: false }),
@@ -190,7 +286,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             count: "exact",
           })
           .eq("companyId", companyId)
-          .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
           .gt("createdAt", previousStartDate.toString())
           .lte("createdAt", previousEndDate.toString())
           .order("createdAt", { ascending: false }),
@@ -280,116 +375,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         return json({ data, previousPeriodData });
       }
     }
-
-    case "rfqCount": {
-      const [rfqs, previousRfqs] = await Promise.all([
-        client
-          .from("salesRfq")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", start)
-          .lte("createdAt", end)
-          .order("createdAt", { ascending: false }),
-        client
-          .from("salesRfq")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
-          .order("createdAt", { ascending: false }),
-      ]);
-
-      if (daysBetween < 60) {
-        const [groupedData, previousGroupedData] = [
-          groupDataByDay(
-            rfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
-            })) ?? [],
-            {
-              start,
-              end,
-              groupBy: "createdAt",
-            }
-          ),
-          groupDataByDay(
-            previousRfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
-            })) ?? [],
-            {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
-              groupBy: "createdAt",
-            }
-          ),
-        ];
-
-        const [data, previousPeriodData] = [
-          Object.entries(groupedData)
-            .map(([date, d]) => ({
-              date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        ];
-
-        return json({ data, previousPeriodData });
-      } else {
-        const [groupedData, previousGroupedData] = [
-          groupDataByMonth(
-            rfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
-            })) ?? [],
-            {
-              start,
-              end,
-              groupBy: "createdAt",
-            }
-          ),
-          groupDataByMonth(
-            previousRfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
-            })) ?? [],
-            {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
-              groupBy: "createdAt",
-            }
-          ),
-        ];
-
-        const [data, previousPeriodData] = [
-          Object.entries(groupedData)
-            .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
-              monthKey: date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
-              monthKey: date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-        ];
-
-        return json({ data, previousPeriodData });
-      }
-    }
-
     default:
       throw new Error(`Invalid KPI key: ${key}`);
   }

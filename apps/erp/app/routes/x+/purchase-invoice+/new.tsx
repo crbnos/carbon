@@ -20,7 +20,8 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: "Purchasing",
-  to: path.to.purchaseInvoices,
+  to: path.to.purchasing,
+  module: "purchasing",
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {

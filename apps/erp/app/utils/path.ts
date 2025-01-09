@@ -41,6 +41,8 @@ export const path = {
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       modelUpload: `${api}/model/upload`,
+      purchasingKpi: (key: string) =>
+        generatePath(`${api}/purchasing/kpi/${key}`),
       processes: `${api}/resources/processes`,
       quotes: `${api}/sales/quotes`,
       quoteLines: (quoteId: string) =>

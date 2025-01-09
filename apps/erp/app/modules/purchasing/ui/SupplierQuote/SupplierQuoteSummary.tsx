@@ -311,14 +311,17 @@ const SupplierQuoteSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>Quote {routeData?.quote.supplierQuoteId}</CardTitle>
+            <CardTitle>{routeData?.quote.supplierQuoteId}</CardTitle>
+            <CardDescription>Supplier Quote</CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <CardDescription>
+              <span className="text-muted-foreground text-sm">
                 Expires {formatDate(routeData?.quote.expirationDate)}
-              </CardDescription>
+              </span>
             )}
           </div>
-          <SupplierAvatar supplierId={routeData?.quote.supplierId ?? null} />
         </HStack>
       </CardHeader>
       <CardContent>

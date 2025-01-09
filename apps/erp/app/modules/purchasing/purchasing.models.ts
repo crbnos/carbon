@@ -4,6 +4,33 @@ import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
 import { methodItemType } from "../shared";
 
+export const KPIs = [
+  {
+    key: "supplierQuoteCount",
+    label: "Supplier Quotes",
+  },
+  {
+    key: "purchaseOrderCount",
+    label: "Purchase Orders",
+  },
+  {
+    key: "purchaseInvoiceCount",
+    label: "Purchase Invoices",
+  },
+  {
+    key: "purchaseOrderAmount",
+    label: "Purchase Order Amount",
+  },
+  {
+    key: "purchaseInvoiceAmount",
+    label: "Purchase Invoice Amount",
+  },
+  // {
+  //   key: "turnaroundTime",
+  //   label: "Turnaround Time",
+  // },
+] as const;
+
 export const purchaseOrderLineType = [
   "Part",
   // "Service",
