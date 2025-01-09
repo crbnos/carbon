@@ -5,7 +5,7 @@ import type {
   getPurchaseOrders,
   getSupplier,
   getSupplierContacts,
-  getSupplierInteractionByQuote,
+  getSupplierInteraction,
   getSupplierLocations,
   getSupplierProcessesBySupplier,
   getSupplierQuoteLinePricesByQuoteId,
@@ -51,7 +51,7 @@ export type SupplierContact = NonNullable<
 >[number];
 
 export type SupplierInteraction = NonNullable<
-  Awaited<ReturnType<typeof getSupplierInteractionByQuote>>["data"]
+  Awaited<ReturnType<typeof getSupplierInteraction>>["data"]
 >;
 
 export type SupplierLocation = NonNullable<

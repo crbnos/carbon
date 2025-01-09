@@ -121,7 +121,7 @@ export default function PurchaseInvoiceBasicRoute() {
         <Await resolve={invoiceData.files}>
           {(resolvedFiles) => (
             <SupplierInteractionDocuments
-              interaction={invoiceData.interaction}
+              interactionId={invoiceData.interaction.id}
               attachments={resolvedFiles}
               id={invoiceId}
               type="Purchase Invoice"

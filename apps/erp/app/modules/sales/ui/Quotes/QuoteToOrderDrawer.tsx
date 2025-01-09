@@ -722,11 +722,11 @@ const LinePricingOptions = ({
                       ? overridePricing.convertedNetUnitPrice *
                           overridePricing.quantity +
                           (overridePricing.convertedShippingCost ?? 0) +
-                          overridePricing.convertedAddOn
+                          (overridePricing.convertedAddOn ?? 0)
                       : overridePricing.netUnitPrice *
                           overridePricing.quantity +
                           (overridePricing.shippingCost ?? 0) +
-                          overridePricing.addOn
+                          (overridePricing.addOn ?? 0)
                   )}
                 </Td>
               </Tr>

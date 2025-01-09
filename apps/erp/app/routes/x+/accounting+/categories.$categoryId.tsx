@@ -15,7 +15,7 @@ import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee",
   });
@@ -23,7 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { categoryId } = params;
   if (!categoryId) throw notFound("Invalid categoryId");
 
-  const accountCategory = await getAccountCategory(client, categoryId);
+  const accountCategory = await getAccountCategory(
+    client,
+    categoryId,
+    companyId
+  );
   if (accountCategory.error) {
     throw redirect(
       path.to.accountingCategories,

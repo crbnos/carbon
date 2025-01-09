@@ -112,7 +112,7 @@ export default function SupplierQuoteDetailsRoute() {
         <Await resolve={routeData.files}>
           {(resolvedFiles) => (
             <SupplierInteractionDocuments
-              interaction={routeData.interaction}
+              interactionId={routeData.interaction.id}
               attachments={resolvedFiles}
               id={id}
               type="Supplier Quote"

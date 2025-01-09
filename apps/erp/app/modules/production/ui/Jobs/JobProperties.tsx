@@ -240,7 +240,9 @@ const JobProperties = () => {
           onChange={(value) => {
             onUpdate("itemId", value?.value ?? null);
           }}
-          onTypeChange={setType}
+          onTypeChange={(value) => {
+            setType(value as MethodItemType);
+          }}
         />
       </ValidatedForm>
       <ValidatedForm

@@ -79,8 +79,9 @@ const QuoteMaterialForm = ({
     quantity: initialValues.quantity ?? 1,
   });
 
-  const onTypeChange = (value: MethodItemType) => {
-    setItemType(value);
+  const onTypeChange = (value: MethodItemType | "Item") => {
+    if (value === itemType) return;
+    setItemType(value as MethodItemType);
     setItemData({
       itemId: "",
       itemReadableId: "",
