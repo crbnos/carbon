@@ -273,6 +273,47 @@ export async function getPurchaseOrderSuppliers(
     .order("name");
 }
 
+export async function getPurchasingDocumentsAssignedToMe(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  const [purchaseOrders, supplierQuotes, purchaseInvoices] = await Promise.all([
+    client
+      .from("purchaseOrder")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
+    client
+      .from("supplierQuote")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseInvoice")
+      .select("*")
+      .eq("assignee", userId)
+      .eq("companyId", companyId),
+  ]);
+
+  const merged = [
+    ...(purchaseOrders.data?.map((doc) => ({
+      ...doc,
+      type: "purchaseOrder",
+    })) ?? []),
+    ...(supplierQuotes.data?.map((doc) => ({
+      ...doc,
+      type: "supplierQuote",
+    })) ?? []),
+    ...(purchaseInvoices.data?.map((doc) => ({
+      ...doc,
+      type: "purchaseInvoice",
+    })) ?? []),
+  ].sort((a, b) => (a.createdAt ?? "").localeCompare(b.createdAt ?? ""));
+
+  return merged;
+}
+
 export async function getPurchasingTerms(
   client: SupabaseClient<Database>,
   companyId: string

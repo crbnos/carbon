@@ -651,16 +651,20 @@ const QuoteSummary = () => {
   return (
     <Card>
       <CardHeader>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center w-full">
           <div className="flex flex-col gap-1">
-            <CardTitle>Quote {routeData?.quote.quoteId}</CardTitle>
+            <CardTitle>{routeData?.quote.quoteId}</CardTitle>
+
+            <CardDescription>Quote </CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
             {routeData?.quote?.expirationDate && (
-              <CardDescription>
+              <span className="text-muted-foreground text-sm">
                 Expires {formatDate(routeData?.quote.expirationDate)}
-              </CardDescription>
+              </span>
             )}
           </div>
-          <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />
         </HStack>
       </CardHeader>
       <CardContent>

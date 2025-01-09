@@ -305,18 +305,19 @@ const SalesOrderSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>
-              Sales Order {routeData?.salesOrder.salesOrderId}
-            </CardTitle>
+            <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
+            <CardDescription>Sales Order</CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <CustomerAvatar
+              customerId={routeData?.salesOrder.customerId ?? null}
+            />
             {routeData?.salesOrder?.orderDate && (
-              <CardDescription>
-                Ordered {formatDate(routeData.salesOrder.orderDate)}
-              </CardDescription>
+              <span className="text-muted-foreground text-sm">
+                Ordered {formatDate(routeData?.salesOrder.orderDate)}
+              </span>
             )}
           </div>
-          <CustomerAvatar
-            customerId={routeData?.salesOrder?.customerId ?? null}
-          />
         </HStack>
       </CardHeader>
       <CardContent>

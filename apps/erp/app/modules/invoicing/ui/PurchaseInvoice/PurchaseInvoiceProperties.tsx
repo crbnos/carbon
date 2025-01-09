@@ -165,7 +165,7 @@ const PurchaseInvoiceProperties = () => {
 
       <Assignee
         id={invoiceId}
-        table="purchaseOrder"
+        table="purchaseInvoice"
         value={assignee ?? ""}
         variant="inline"
         isReadOnly={!permissions.can("update", "purchasing")}

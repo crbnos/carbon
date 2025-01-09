@@ -43,8 +43,8 @@ import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
   LuChevronDown,
-  LuFile,
   LuEllipsisVertical,
+  LuFile,
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -61,6 +61,7 @@ import type { Quotation, SalesOrder, SalesRFQ } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
 import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { SalesRFQStatus } from "~/modules/sales/ui/SalesRFQ";
+import { chartIntervals } from "~/modules/shared/shared.models";
 import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
 import { path } from "~/utils/path";
 
@@ -71,14 +72,6 @@ const OPEN_SALES_ORDER_STATUSES = [
   "Needs Approval",
   "In Progress",
   "Draft",
-];
-
-const CHART_INTERVALS = [
-  { key: "week", label: "Week" },
-  { key: "month", label: "Month" },
-  { key: "quarter", label: "Quarter" },
-  { key: "year", label: "Year" },
-  { key: "custom", label: "Custom" },
 ];
 
 const chartConfig = {
@@ -167,7 +160,7 @@ export default function SalesDashboard() {
   });
 
   const selectedInterval =
-    CHART_INTERVALS.find((i) => i.key === interval) || CHART_INTERVALS[1];
+    chartIntervals.find((i) => i.key === interval) || chartIntervals[1];
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
 
   useEffect(() => {
@@ -369,7 +362,7 @@ export default function SalesDashboard() {
                     value={interval}
                     onValueChange={onIntervalChange}
                   >
-                    {CHART_INTERVALS.map((i) => (
+                    {chartIntervals.map((i) => (
                       <DropdownMenuRadioItem key={i.key} value={i.key}>
                         {i.key === "custom" ? i.label : `Last ${i.label}`}
                       </DropdownMenuRadioItem>

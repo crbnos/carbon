@@ -335,18 +335,19 @@ const PurchaseOrderSummary = () => {
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>
-              Purchase Order {routeData?.purchaseOrder.purchaseOrderId}
-            </CardTitle>
+            <CardTitle>{routeData?.purchaseOrder.purchaseOrderId}</CardTitle>
+            <CardDescription>Purchase Order</CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <SupplierAvatar
+              supplierId={routeData?.purchaseOrder.supplierId ?? null}
+            />
             {routeData?.purchaseOrder?.orderDate && (
-              <CardDescription>
-                Ordered {formatDate(routeData.purchaseOrder.orderDate)}
-              </CardDescription>
+              <span className="text-muted-foreground text-sm">
+                Ordered {formatDate(routeData?.purchaseOrder.orderDate)}
+              </span>
             )}
           </div>
-          <SupplierAvatar
-            supplierId={routeData?.purchaseOrder?.supplierId ?? null}
-          />
         </HStack>
       </CardHeader>
       <CardContent>
