@@ -58,6 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     inserts
   );
   if (insertLinePrices.error) {
+    console.error(insertLinePrices.error);
     return json(
       { data: null, error: insertLinePrices.error.message },
       { status: 400 }
