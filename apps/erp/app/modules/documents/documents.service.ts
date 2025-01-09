@@ -168,11 +168,14 @@ export async function upsertDocument(
 ) {
   const type = getDocumentType(document.name ?? "");
   if ("createdBy" in document) {
-    return client
-      .from("document")
-      .insert({ ...document, type })
-      .select("*")
-      .single();
+    return (
+      client
+        .from("document")
+        // @ts-ignore
+        .insert({ ...document, type })
+        .select("*")
+        .single()
+    );
   }
 
   const { extension, ...data } = document;

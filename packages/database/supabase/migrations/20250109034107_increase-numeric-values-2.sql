@@ -1,6 +1,10 @@
 DROP VIEW IF EXISTS "quoteLines";
 DROP VIEW IF EXISTS "supplierQuoteLines";
 
+-- Drop trigger function first
+DROP TRIGGER IF EXISTS update_inventory_quantity_on_sales_order_line_trigger ON "salesOrderLine";
+DROP TRIGGER IF EXISTS update_inventory_quantity_on_purchase_order_line_trigger ON "purchaseOrderLine";
+
 ALTER TABLE "quoteLinePrice" 
   DROP COLUMN IF EXISTS "convertedUnitPrice",
   DROP COLUMN IF EXISTS "convertedNetUnitPrice", 
@@ -48,16 +52,33 @@ DROP VIEW IF EXISTS "purchaseOrderLines";
 DROP VIEW IF EXISTS "purchaseOrders";
 
 -- Update purchaseOrderLine columns
+ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "quantityToReceive";
+ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "quantityToInvoice";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "unitPrice";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "extendedPrice";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "shippingCost";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "taxAmount";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "supplierExtendedPrice";
 ALTER TABLE "purchaseOrderLine" DROP COLUMN IF EXISTS "taxPercent";
+
 ALTER TABLE "purchaseOrderLine" ALTER COLUMN "purchaseQuantity" TYPE NUMERIC(16,5);
+ALTER TABLE "purchaseOrderLine" ALTER COLUMN "quantityReceived" TYPE NUMERIC(16,5);
+ALTER TABLE "purchaseOrderLine" ALTER COLUMN "quantityInvoiced" TYPE NUMERIC(16,5);
 ALTER TABLE "purchaseOrderLine" ALTER COLUMN "supplierUnitPrice" TYPE NUMERIC(16,5);
 ALTER TABLE "purchaseOrderLine" ALTER COLUMN "supplierShippingCost" TYPE NUMERIC(16,5);
 ALTER TABLE "purchaseOrderLine" ALTER COLUMN "supplierTaxAmount" TYPE NUMERIC(16,5);
+
+ALTER TABLE "purchaseOrderLine" ADD COLUMN "quantityToReceive" NUMERIC(16,5) GENERATED ALWAYS AS (
+  CASE WHEN "purchaseOrderLineType" = 'Comment' THEN 0 
+  ELSE GREATEST(("purchaseQuantity" - "quantityReceived"), 0) 
+  END
+) STORED;
+
+ALTER TABLE "purchaseOrderLine" ADD COLUMN "quantityToInvoice" NUMERIC(16,5) GENERATED ALWAYS AS (
+  CASE WHEN "purchaseOrderLineType" = 'Comment' THEN 0 
+  ELSE GREATEST(("purchaseQuantity" - "quantityInvoiced"), 0) 
+  END
+) STORED;
 
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "unitPrice" NUMERIC(16,5) GENERATED ALWAYS AS (
   "supplierUnitPrice" * "exchangeRate"
@@ -446,3 +467,16 @@ CREATE OR REPLACE VIEW "supplierQuoteLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
 );
+
+CREATE TRIGGER update_inventory_quantity_on_sales_order_line_trigger
+AFTER UPDATE OF "quantitySent" ON "salesOrderLine"
+FOR EACH ROW
+EXECUTE FUNCTION update_inventory_quantity_on_sales_order_line();
+
+
+CREATE TRIGGER update_inventory_quantity_on_purchase_order_line_trigger
+AFTER UPDATE OF "quantityReceived" ON "purchaseOrderLine"
+FOR EACH ROW
+WHEN (OLD."quantityReceived" IS DISTINCT FROM NEW."quantityReceived")
+EXECUTE FUNCTION update_inventory_quantity_on_purchase_order_line();
+
