@@ -21,6 +21,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import {
   LuBookMarked,
+  LuCircleX,
   LuDownload,
   LuExternalLink,
   LuFileText,
@@ -31,7 +32,6 @@ import {
   LuTrash,
   LuUser,
   LuUsers,
-  LuXCircle,
 } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
@@ -439,7 +439,7 @@ const DocumentsTable = memo(
               deleteDocumentModal.onOpen();
             }}
           >
-            <MenuIcon icon={<LuXCircle />} />
+            <MenuIcon icon={<LuCircleX />} />
             Permanently Delete
           </MenuItem>
         </>

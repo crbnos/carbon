@@ -7,7 +7,7 @@ import {
   IconButton,
 } from "@carbon/react";
 import { Link } from "@remix-run/react";
-import { LuFiles, LuHelpCircle } from "react-icons/lu";
+import { LuCircleHelp, LuFiles } from "react-icons/lu";
 import { path } from "~/utils/path";
 
 const HelpMenu = () => {
@@ -17,7 +17,7 @@ const HelpMenu = () => {
         <IconButton
           className="hidden sm:flex"
           aria-label="Help"
-          icon={<LuHelpCircle />}
+          icon={<LuCircleHelp />}
           variant="ghost"
         />
       </DropdownMenuTrigger>

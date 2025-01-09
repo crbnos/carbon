@@ -19,7 +19,7 @@ import {
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuMoreVertical, LuPlusCircle, LuTrash } from "react-icons/lu";
+import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import {
   useOptimisticLocation,
@@ -107,7 +107,7 @@ export default function PurchaseInvoiceExplorer() {
               {permissions.can("update", "sales") && (
                 <Button
                   isDisabled={isDisabled}
-                  leftIcon={<LuPlusCircle />}
+                  leftIcon={<LuCirclePlus />}
                   variant="secondary"
                   onClick={newPurchaseInvoiceLineDisclosure.onOpen}
                 >
@@ -124,7 +124,7 @@ export default function PurchaseInvoiceExplorer() {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlusCircle />}
+                leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newPurchaseInvoiceLineDisclosure.onOpen}
               >
@@ -206,7 +206,7 @@ function PurchaseInvoiceLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   variant="ghost"
                   onClick={(e) => e.stopPropagation()}
                 />

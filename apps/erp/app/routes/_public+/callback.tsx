@@ -27,7 +27,7 @@ import {
   Button,
   VStack,
 } from "@carbon/react";
-import { LuAlertTriangle } from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { FormActionData } from "~/types";
 import { path } from "~/utils/path";
 
@@ -155,7 +155,7 @@ export default function AuthCallback() {
         <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
             <Alert variant="destructive">
-              <LuAlertTriangle className="h-4 w-4" />
+              <LuTriangleAlert className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>

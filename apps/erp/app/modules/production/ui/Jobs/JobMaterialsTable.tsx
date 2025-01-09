@@ -19,7 +19,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBookMarked,
-  LuCheckCircle,
+  LuCircleCheck,
   LuFlag,
   LuHash,
   LuRefreshCcwDot,
@@ -217,7 +217,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
 
           return (
             <Badge variant="green">
-              <LuCheckCircle className="mr-2" />
+              <LuCircleCheck className="mr-2" />
               <span className="group-hover:hidden">In Stock</span>
               <span className="hidden group-hover:block">{quantityOnHand}</span>
             </Badge>

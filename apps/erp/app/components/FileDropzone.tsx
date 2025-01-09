@@ -1,6 +1,6 @@
 import React from "react";
 import { useDropzone } from "react-dropzone";
-import { LuUploadCloud } from "react-icons/lu";
+import { LuCloudUpload } from "react-icons/lu";
 
 interface FileDropzoneProps {
   onDrop: (acceptedFiles: File[]) => void;
@@ -17,7 +17,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ onDrop }) => {
       }`}
     >
       <input {...getInputProps()} />
-      <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
+      <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground" />
       <p className="mt-2 text-sm text-muted-foreground">
         Drag and drop some files here, or click to select files
       </p>

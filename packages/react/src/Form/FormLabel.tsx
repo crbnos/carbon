@@ -2,7 +2,7 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { useFormControlContext } from "./FormControl";
 
-import { LuFunctionSquare } from "react-icons/lu";
+import { LuSquareFunction } from "react-icons/lu";
 import { cn } from "../utils/cn";
 
 export const FormLabel = forwardRef<
@@ -43,7 +43,7 @@ export const FormLabel = forwardRef<
             <span className="text-muted-foreground text-xxs">Optional</span>
           )}
           {onConfigure && (
-            <LuFunctionSquare
+            <LuSquareFunction
               aria-label="Configure"
               role="button"
               onClick={onConfigure}

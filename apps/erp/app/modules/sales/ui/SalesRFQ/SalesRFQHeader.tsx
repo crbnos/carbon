@@ -22,12 +22,12 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect } from "react";
 import {
-  LuAlertTriangle,
-  LuCheckCircle,
+  LuCircleCheck,
+  LuCircleX,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
-  LuXCircle,
+  LuTriangleAlert,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { usePanels } from "~/components/Layout";
@@ -90,7 +90,7 @@ const SalesRFQHeader = () => {
                   statusFetcher.state !== "idle" &&
                   statusFetcher.formData?.get("status") === "Ready for Quote"
                 }
-                leftIcon={<LuCheckCircle />}
+                leftIcon={<LuCircleCheck />}
                 variant={status === "Draft" ? "primary" : "secondary"}
                 type="submit"
               >
@@ -104,7 +104,7 @@ const SalesRFQHeader = () => {
                 routeData?.lines?.length === 0 ||
                 !permissions.can("update", "sales")
               }
-              leftIcon={<LuCheckCircle />}
+              leftIcon={<LuCircleCheck />}
               variant={status === "Draft" ? "primary" : "secondary"}
               onClick={requiresCustomerAlert.onOpen}
             >
@@ -144,7 +144,7 @@ const SalesRFQHeader = () => {
                 statusFetcher.state !== "idle" &&
                 statusFetcher.formData?.get("status") === "Closed"
               }
-              leftIcon={<LuXCircle />}
+              leftIcon={<LuCircleX />}
               type="submit"
               variant={
                 ["Ready for Quote", "Closed"].includes(status)
@@ -229,7 +229,7 @@ function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
         </ModalHeader>
         <ModalBody>
           <Alert variant="destructive">
-            <LuAlertTriangle className="h-4 w-4" />
+            <LuTriangleAlert className="h-4 w-4" />
             <AlertTitle>RFQ has no customer</AlertTitle>
             <AlertDescription>
               In order to convert this RFQ to a quote, it must be associated
@@ -290,7 +290,7 @@ function ConvertToQuoteModal({
         <ModalBody>
           {requiresCustomer && (
             <Alert variant="destructive">
-              <LuAlertTriangle className="h-4 w-4" />
+              <LuTriangleAlert className="h-4 w-4" />
               <AlertTitle>RFQ has no customer</AlertTitle>
               <AlertDescription>
                 In order to convert this RFQ to a quote, it must have a
@@ -300,7 +300,7 @@ function ConvertToQuoteModal({
           )}
           {requiresPartNumbers && (
             <Alert variant="warning">
-              <LuAlertTriangle className="h-4 w-4" />
+              <LuTriangleAlert className="h-4 w-4" />
               <AlertTitle>Lines need internal part numbers</AlertTitle>
               <AlertDescription>
                 In order to convert this RFQ to a quote, all lines must have an

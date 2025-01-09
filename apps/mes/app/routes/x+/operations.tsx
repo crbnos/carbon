@@ -17,7 +17,7 @@ import {
 import { json, redirect, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
-import { LuAlertTriangle, LuSettings2 } from "react-icons/lu";
+import { LuSettings2, LuTriangleAlert } from "react-icons/lu";
 
 import type { ColumnFilter } from "~/components/Filter";
 import { ActiveFilters, Filter, useFilters } from "~/components/Filter";
@@ -428,7 +428,7 @@ function KanbanSchedule() {
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuAlertTriangle className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No results
@@ -438,7 +438,7 @@ function KanbanSchedule() {
             ) : (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuAlertTriangle className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No work centers exist

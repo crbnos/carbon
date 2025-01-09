@@ -15,7 +15,7 @@ import {
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuFileEdit, LuImport, LuLock, LuZap } from "react-icons/lu";
+import { LuFilePen, LuImport, LuLock, LuZap } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
@@ -167,7 +167,7 @@ const TableHeader = <T extends object>({
               </Button>
             ) : (
               <Button
-                leftIcon={<LuFileEdit />}
+                leftIcon={<LuFilePen />}
                 variant="secondary"
                 onClick={() => setEditMode(true)}
               >

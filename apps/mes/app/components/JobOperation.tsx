@@ -123,16 +123,16 @@ import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
-  LuAlertTriangle,
   LuAxis3D,
   LuChevronLeft,
   LuClipboardCheck,
   LuDownload,
+  LuEllipsisVertical,
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
-  LuMoreVertical,
   LuTimer,
+  LuTriangleAlert,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
 import { getFileType } from "~/services/operations.service";
@@ -575,7 +575,7 @@ export const JobOperation = ({
                                         <DropdownMenuTrigger asChild>
                                           <IconButton
                                             aria-label="More"
-                                            icon={<LuMoreVertical />}
+                                            icon={<LuEllipsisVertical />}
                                             variant="secondary"
                                           />
                                         </DropdownMenuTrigger>
@@ -632,7 +632,7 @@ export const JobOperation = ({
                                           <DropdownMenuTrigger asChild>
                                             <IconButton
                                               aria-label="More"
-                                              icon={<LuMoreVertical />}
+                                              icon={<LuEllipsisVertical />}
                                               variant="secondary"
                                             />
                                           </DropdownMenuTrigger>
@@ -1702,7 +1702,7 @@ function QuantityModal({
             <VStack spacing={2}>
               {type === "finish" && !isOperationComplete && (
                 <Alert variant="destructive">
-                  <LuAlertTriangle className="h-4 w-4" />
+                  <LuTriangleAlert className="h-4 w-4" />
                   <AlertTitle>Insufficient quantity</AlertTitle>
                   <AlertDescription>
                     The completed quantity for this operation is less than the

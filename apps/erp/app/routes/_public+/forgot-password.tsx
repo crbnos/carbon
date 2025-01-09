@@ -24,7 +24,7 @@ import type {
   MetaFunction,
 } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { LuAlertCircle, LuCheckCircle } from "react-icons/lu";
+import { LuCircleAlert, LuCircleCheck } from "react-icons/lu";
 
 import { Input, Submit } from "~/components/Form";
 import type { FormActionData, Result } from "~/types";
@@ -101,7 +101,7 @@ export default function ForgotPasswordRoute() {
           variant="success"
           className="h-[240px] [&>svg]:left-8 [&>svg]:top-8 p-8 w-[380px]"
         >
-          <LuCheckCircle className="w-4 h-4" />
+          <LuCircleCheck className="w-4 h-4" />
           <AlertTitle>Success</AlertTitle>
           <AlertDescription>
             If you have an account, you should receive an email shortly with a
@@ -117,7 +117,7 @@ export default function ForgotPasswordRoute() {
               </p>
               {actionData?.success === false && (
                 <Alert variant="destructive">
-                  <LuAlertCircle className="w-4 h-4" />
+                  <LuCircleAlert className="w-4 h-4" />
                   <AlertTitle>{actionData?.message}</AlertTitle>
                 </Alert>
               )}

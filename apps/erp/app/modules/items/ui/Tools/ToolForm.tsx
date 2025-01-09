@@ -23,7 +23,7 @@ import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
-import { LuUploadCloud } from "react-icons/lu";
+import { LuCloudUpload } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Boolean,
@@ -316,7 +316,7 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
                     </>
                   ) : (
                     <Loading isLoading={modelIsUploading}>
-                      <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
+                      <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
                       <p className="text-xs text-muted-foreground group-hover:text-foreground">
                         Supports {supportedModelTypes.join(", ")} files
                       </p>

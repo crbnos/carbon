@@ -44,7 +44,7 @@ import {
   LuArrowUpRight,
   LuChevronDown,
   LuFile,
-  LuMoreVertical,
+  LuEllipsisVertical,
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -412,7 +412,7 @@ export default function SalesDashboard() {
               <DropdownMenuTrigger asChild>
                 <IconButton
                   variant="secondary"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   aria-label="More"
                 />
               </DropdownMenuTrigger>

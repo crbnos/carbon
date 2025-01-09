@@ -17,7 +17,7 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import { LuMoreVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import {
   Combobox,
@@ -95,7 +95,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
                       <IconButton
                         aria-label="Open menu"
                         variant="secondary"
-                        icon={<LuMoreVertical />}
+                        icon={<LuEllipsisVertical />}
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">

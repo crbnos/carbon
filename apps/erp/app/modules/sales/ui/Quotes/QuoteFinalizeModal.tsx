@@ -18,7 +18,7 @@ import {
 import type { FetcherWithComponents } from "@remix-run/react";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
-import { LuAlertTriangle } from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import { CustomerContact, SelectControlled } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { path } from "~/utils/path";
@@ -130,7 +130,7 @@ const QuotationFinalizeModal = ({
           <ModalBody>
             {warningLineReadableIds.length > 0 && (
               <Alert variant="destructive">
-                <LuAlertTriangle className="h-4 w-4" />
+                <LuTriangleAlert className="h-4 w-4" />
                 <AlertTitle>Lines need prices or lead times</AlertTitle>
                 <AlertDescription>
                   The following line items are missing prices or lead times:

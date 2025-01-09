@@ -34,13 +34,13 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
-  LuAlertTriangle,
   LuChevronDown,
+  LuCirclePlus,
   LuDollarSign,
+  LuEllipsisVertical,
   LuHammer,
-  LuMoreVertical,
-  LuPlusCircle,
   LuSettings2,
+  LuTriangleAlert,
   LuX,
 } from "react-icons/lu";
 import type { z } from "zod";
@@ -1456,7 +1456,7 @@ function ToolsListItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="Open menu"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   variant="ghost"
                 />
               </DropdownMenuTrigger>
@@ -1507,7 +1507,7 @@ function ToolsForm({
   if (isDisabled && isTemporaryId(operationId)) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
-        <LuAlertTriangle />
+        <LuTriangleAlert />
         <AlertTitle>Cannot add tools to unsaved operation</AlertTitle>
         <AlertDescription>
           Please save the operation before adding tools.
@@ -1541,7 +1541,7 @@ function ToolsForm({
             </div>
 
             <Submit
-              leftIcon={<LuPlusCircle />}
+              leftIcon={<LuCirclePlus />}
               isDisabled={isDisabled || fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >

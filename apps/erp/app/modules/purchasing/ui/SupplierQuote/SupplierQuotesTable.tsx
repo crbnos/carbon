@@ -8,10 +8,10 @@ import {
   LuCalendar,
   LuPencil,
   LuQrCode,
+  LuSquareUser,
   LuStar,
   LuTrash,
   LuUser,
-  LuUserSquare,
 } from "react-icons/lu";
 import {
   EmployeeAvatar,
@@ -94,7 +94,7 @@ const SupplierQuotesTable = memo(
                 label: supplier.name,
               })),
             },
-            icon: <LuUserSquare />,
+            icon: <LuSquareUser />,
           },
         },
 

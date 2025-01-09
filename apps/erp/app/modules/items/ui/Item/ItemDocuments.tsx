@@ -22,7 +22,7 @@ import {
   Tr,
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
-import { LuAxis3D, LuMoreVertical, LuUpload } from "react-icons/lu";
+import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import type { MethodItemType, OptimisticFileObject } from "~/modules/shared";
@@ -130,7 +130,7 @@ const ItemDocuments = ({
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           aria-label="More"
-                          icon={<LuMoreVertical />}
+                          icon={<LuEllipsisVertical />}
                           variant="secondary"
                         />
                       </DropdownMenuTrigger>
@@ -193,7 +193,7 @@ const ItemDocuments = ({
                         <DropdownMenuTrigger asChild>
                           <IconButton
                             aria-label="More"
-                            icon={<LuMoreVertical />}
+                            icon={<LuEllipsisVertical />}
                             variant="secondary"
                           />
                         </DropdownMenuTrigger>

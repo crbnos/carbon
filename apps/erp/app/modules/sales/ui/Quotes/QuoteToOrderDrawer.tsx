@@ -37,10 +37,10 @@ import {
   LuChevronDown,
   LuCreditCard,
   LuImage,
+  LuSquareUser,
   LuTrash,
   LuTruck,
   LuUpload,
-  LuUserSquare,
 } from "react-icons/lu";
 import type { z } from "zod";
 import { CustomerAvatar } from "~/components";
@@ -817,7 +817,7 @@ function CustomerDetailsForm() {
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <HStack>
-          <LuUserSquare />
+          <LuSquareUser />
           <Label>Customer Details</Label>
         </HStack>
         <LuChevronDown

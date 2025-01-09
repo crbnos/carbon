@@ -3,14 +3,14 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
-  LuAlertTriangle,
   LuAlignLeft,
   LuBuilding2,
-  LuCheckCircle,
+  LuCircleCheck,
   LuCog,
   LuDollarSign,
   LuPencil,
   LuTrash,
+  LuTriangleAlert,
   LuUser,
   LuWrench,
 } from "react-icons/lu";
@@ -77,13 +77,13 @@ const WorkCentersTable = memo(
                 />
               ) : (
                 <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
-                  <LuAlertTriangle />
+                  <LuTriangleAlert />
                   <span>{row.original.name}</span>
                 </HStack>
               )}
 
               {row.original.requiredAbilityId && (
-                <LuCheckCircle
+                <LuCircleCheck
                   className="text-emerald-500"
                   title="Requires ability"
                 />

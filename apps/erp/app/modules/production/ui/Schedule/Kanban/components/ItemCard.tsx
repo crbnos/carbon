@@ -21,17 +21,17 @@ import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
-  LuCheckCircle,
+  LuCircleCheck,
+  LuCircleX,
   LuClipboardCheck,
   LuExternalLink,
   LuFlashlight,
   LuFlashlightOff,
   LuGripVertical,
+  LuSquareUser,
   LuTimer,
   LuTrash,
   LuUsers,
-  LuUserSquare,
-  LuXCircle,
 } from "react-icons/lu";
 
 import { Link } from "@remix-run/react";
@@ -336,7 +336,7 @@ export function ItemCard({
 
         {showCustomer && item.customerId && (
           <HStack className="justify-start space-x-2">
-            <LuUserSquare className="text-muted-foreground" />
+            <LuSquareUser className="text-muted-foreground" />
             <CustomerAvatar customerId={item.customerId} />
           </HStack>
         )}
@@ -368,9 +368,9 @@ function getStatusIcon(status: Item["status"]) {
       return <TodoStatusIcon className="text-foreground" />;
     case "Waiting":
     case "Canceled":
-      return <LuXCircle className="text-muted-foreground" />;
+      return <LuCircleX className="text-muted-foreground" />;
     case "Done":
-      return <LuCheckCircle className="text-blue-600" />;
+      return <LuCircleCheck className="text-blue-600" />;
     case "In Progress":
       return <AlmostDoneIcon />;
     case "Paused":

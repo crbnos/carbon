@@ -39,11 +39,11 @@ import {
 import { cva } from "class-variance-authority";
 import { useEffect, useRef, useState } from "react";
 import {
+  LuCirclePlus,
+  LuEllipsisVertical,
   LuFolderOpen,
   LuGripVertical,
   LuKeySquare,
-  LuMoreVertical,
-  LuPlusCircle,
 } from "react-icons/lu";
 import { EmployeeAvatar } from "~/components";
 import type { ConfigurationParameter } from "~/modules/items";
@@ -245,7 +245,7 @@ export default function ConfigurationParametersForm({
                   </div>
                   <HStack spacing={2}>
                     <Submit
-                      leftIcon={<LuPlusCircle />}
+                      leftIcon={<LuCirclePlus />}
                       isDisabled={fetcher.state !== "idle"}
                       isLoading={
                         fetcher.state !== "idle" &&
@@ -732,7 +732,7 @@ function ParameterGroup({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label="Open menu"
-                icon={<LuMoreVertical />}
+                icon={<LuEllipsisVertical />}
                 variant="ghost"
               />
             </DropdownMenuTrigger>
@@ -947,7 +947,7 @@ function ConfigurableParameter({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="Open menu"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   variant="ghost"
                 />
               </DropdownMenuTrigger>

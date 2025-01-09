@@ -1,10 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { useMount, VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { usePanels } from "~/components/Layout";
 import { getJob, getJobOperations } from "~/modules/production";
 import { JobOperationsTable } from "~/modules/production/ui/Jobs";
 
@@ -62,6 +63,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function JobOperationsRoute() {
   const { count, operations } = useLoaderData<typeof loader>();
+
+  const { setIsExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    setIsExplorerCollapsed(true);
+  });
 
   return (
     <VStack spacing={0} className="h-[calc(100dvh-99px)]">

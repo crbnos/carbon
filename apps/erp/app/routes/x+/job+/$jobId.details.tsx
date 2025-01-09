@@ -8,12 +8,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { Spinner, VStack } from "@carbon/react";
+import { Spinner, useMount, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel, Documents } from "~/components";
+import { usePanels } from "~/components/Layout";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
@@ -81,6 +82,12 @@ export default function JobDetailsRoute() {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
   const permissions = usePermissions();
+
+  const { setIsExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    setIsExplorerCollapsed(false);
+  });
 
   const jobData = useRouteData<{
     job: Job;

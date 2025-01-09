@@ -14,7 +14,7 @@ import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useDropzone } from "react-dropzone";
-import { LuUploadCloud } from "react-icons/lu";
+import { LuCloudUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -231,7 +231,7 @@ const CadModelUpload = ({
                   title ? "-mt-16" : "-mt-6"
                 )}
               >
-                <LuUploadCloud className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
+                <LuCloudUpload className="mx-auto h-12 w-12 text-muted-foreground group-hover:text-primary-foreground" />
               </div>
               <p className="text-lg text-muted-foreground group-hover:text-foreground mt-8">
                 Choose file to upload or drag and drop

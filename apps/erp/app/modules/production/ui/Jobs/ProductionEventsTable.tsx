@@ -153,6 +153,18 @@ const ProductionEventsTable = memo(
           cell: ({ row }) =>
             row.original.endTime ? formatDateTime(row.original.endTime) : null,
         },
+        {
+          accessorKey: "notes",
+          header: "Notes",
+          cell: ({ row }) => (
+            <div
+              className="max-w-[200px] truncate"
+              title={row.original.notes ?? ""}
+            >
+              {row.original.notes}
+            </div>
+          ),
+        },
       ];
     }, [operations, people, workCenters]);
 

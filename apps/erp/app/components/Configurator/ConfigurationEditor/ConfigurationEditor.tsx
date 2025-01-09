@@ -20,8 +20,8 @@ import { useFetcher, useParams } from "@remix-run/react";
 import type * as Monaco from "monaco-editor";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LuFunctionSquare,
-  LuMoreVertical,
+  LuSquareFunction,
+  LuEllipsisVertical,
   LuPlay,
   LuSave,
   LuTrash2,
@@ -329,13 +329,13 @@ export default function Configurator({
             <HStack>
               <Badge variant={isActive ? "green" : "gray"}>
                 {isActive ? "Active" : "Inactive"}
-                <LuFunctionSquare className="ml-1" />
+                <LuSquareFunction className="ml-1" />
               </Badge>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <IconButton
-                    icon={<LuMoreVertical />}
+                    icon={<LuEllipsisVertical />}
                     variant="secondary"
                     size="sm"
                     aria-label="Actions"

@@ -20,7 +20,7 @@ import {
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { LuAlertTriangle, LuDownload, LuUpload } from "react-icons/lu";
+import { LuDownload, LuTriangleAlert, LuUpload } from "react-icons/lu";
 import { Hidden, Item } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
@@ -132,7 +132,7 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
                   </div>
 
                   <Alert variant="destructive">
-                    <LuAlertTriangle className="h-4 w-4" />
+                    <LuTriangleAlert className="h-4 w-4" />
                     <AlertTitle>
                       This will overwrite the existing manufacturing method
                     </AlertTitle>

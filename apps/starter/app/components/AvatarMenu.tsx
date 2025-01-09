@@ -10,7 +10,7 @@ import {
 } from "@carbon/react";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuHome, LuLogOut, LuMoon, LuSun, LuUser } from "react-icons/lu";
+import { LuHouse, LuLogOut, LuMoon, LuSun, LuUser } from "react-icons/lu";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
@@ -39,7 +39,7 @@ const AvatarMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to={path.to.dashboard}>
-            <DropdownMenuIcon icon={<LuHome />} />
+            <DropdownMenuIcon icon={<LuHouse />} />
             Dashboard
           </Link>
         </DropdownMenuItem>

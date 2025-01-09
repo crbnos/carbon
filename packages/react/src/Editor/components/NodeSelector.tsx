@@ -3,12 +3,12 @@ import { EditorBubbleItem, useEditor } from "novel";
 import type { IconType } from "react-icons";
 import {
   LuCheck,
-  LuCheckSquare,
   LuChevronDown,
   LuHeading1,
   LuHeading2,
   LuHeading3,
   LuListOrdered,
+  LuSquareCheck,
   LuText,
 } from "react-icons/lu";
 
@@ -57,7 +57,7 @@ const items: SelectorItem[] = [
   },
   {
     name: "To-do List",
-    icon: LuCheckSquare,
+    icon: LuSquareCheck,
     command: (editor) =>
       editor.chain().focus().clearNodes().toggleTaskList().run(),
     isActive: (editor) => editor.isActive("taskItem"),

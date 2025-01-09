@@ -3,7 +3,8 @@ import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
-  LuCheckCircle,
+  LuCircleCheck,
+  LuCircleX,
   LuExternalLink,
   LuHammer,
   LuHardHat,
@@ -12,7 +13,6 @@ import {
   LuShoppingCart,
   LuSquare,
   LuTimer,
-  LuXCircle,
 } from "react-icons/lu";
 
 import { RxCodesandboxLogo } from "react-icons/rx";
@@ -132,9 +132,9 @@ export function OperationStatusIcon({
       return <TodoStatusIcon className={cn("text-foreground", className)} />;
     case "Waiting":
     case "Canceled":
-      return <LuXCircle className={cn("text-muted-foreground", className)} />;
+      return <LuCircleX className={cn("text-muted-foreground", className)} />;
     case "Done":
-      return <LuCheckCircle className={cn("text-blue-600", className)} />;
+      return <LuCircleCheck className={cn("text-blue-600", className)} />;
     case "In Progress":
       return <AlmostDoneIcon className={className} />;
     case "Paused":

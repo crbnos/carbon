@@ -18,7 +18,7 @@ import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
 import {
   LuFileText,
-  LuHome,
+  LuHouse,
   LuLogOut,
   LuMoon,
   LuPalette,
@@ -73,7 +73,7 @@ const AvatarMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to={path.to.authenticatedRoot}>
-            <DropdownMenuIcon icon={<LuHome />} />
+            <DropdownMenuIcon icon={<LuHouse />} />
             Dashboard
           </Link>
         </DropdownMenuItem>

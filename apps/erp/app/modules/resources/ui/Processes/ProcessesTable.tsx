@@ -12,13 +12,13 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
-  LuAlertTriangle,
   LuBuilding2,
   LuCog,
   LuFactory,
   LuPencil,
   LuRuler,
   LuTrash,
+  LuTriangleAlert,
   LuUser,
   LuUsers,
 } from "react-icons/lu";
@@ -66,7 +66,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             />
           ) : (
             <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
-              <LuAlertTriangle />
+              <LuTriangleAlert />
               <span>{row.original.name}</span>
             </HStack>
           ),

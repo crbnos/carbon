@@ -25,7 +25,7 @@ import {
   toast,
 } from "@carbon/react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { LuAlertTriangle, LuChevronDown, LuChevronUp } from "react-icons/lu";
+import { LuChevronDown, LuChevronUp, LuTriangleAlert } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import type {
@@ -324,7 +324,7 @@ function ConfiguratorFormContent({
 
       {isLastStep && destructive && (
         <Alert variant="destructive">
-          <LuAlertTriangle className="h-4 w-4" />
+          <LuTriangleAlert className="h-4 w-4" />
           <AlertTitle>
             Changing this will overwrite the existing method
           </AlertTitle>

@@ -3,15 +3,17 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { SidebarProvider, TooltipProvider } from "@carbon/react";
+import { SidebarProvider, TooltipProvider, useMount } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
+import posthog from "posthog-js";
 import { useEffect } from "react";
 import { AppSidebar } from "~/components";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
+import { useUser } from "~/hooks";
 import { getLocation, setLocation } from "~/services/location.server";
 import {
   getActiveJobCount,
@@ -100,6 +102,14 @@ export default function AuthenticatedRoute() {
     useLoaderData<typeof loader>();
 
   const transition = useNavigation();
+
+  const user = useUser();
+  useMount(() => {
+    posthog.identify(user.id, {
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+    });
+  });
 
   /* NProgress */
   useEffect(() => {

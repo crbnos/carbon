@@ -14,7 +14,7 @@ const usersRoutes: RouteGroup[] = [
       // {
       //   name: "Customers",
       //   to: path.to.customerAccounts,
-      //   icon: <LuUserSquare />,
+      //   icon: <LuSquareUser />,
       // },
       // {
       //   name: "Suppliers",

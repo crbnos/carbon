@@ -29,7 +29,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuAlertTriangle, LuPlusCircle, LuSettings2 } from "react-icons/lu";
+import { LuCirclePlus, LuSettings2, LuTriangleAlert } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
@@ -400,7 +400,7 @@ function KanbanSchedule() {
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuAlertTriangle className="h-6 w-6" />
+                <LuTriangleAlert className="h-6 w-6" />
               </div>
               <span className="text-xs font-mono font-light text-foreground uppercase">
                 No results
@@ -410,12 +410,12 @@ function KanbanSchedule() {
           ) : (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuAlertTriangle className="h-6 w-6" />
+                <LuTriangleAlert className="h-6 w-6" />
               </div>
               <span className="text-xs font-mono font-light text-foreground uppercase">
                 No work centers exist
               </span>
-              <Button leftIcon={<LuPlusCircle />} asChild>
+              <Button leftIcon={<LuCirclePlus />} asChild>
                 <Link to={path.to.newWorkCenter}>Create Work Center</Link>
               </Button>
             </div>

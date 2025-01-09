@@ -21,7 +21,7 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useDroppable } from "@dnd-kit/core";
 import { Link, useFetchers, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuMoreVertical, LuPlusCircle, LuTrash } from "react-icons/lu";
+import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import type { z } from "zod";
 import { Empty, ItemThumbnail } from "~/components";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
@@ -141,7 +141,7 @@ export default function SalesRFQExplorer() {
             <Empty>
               {permissions.can("update", "sales") && (
                 <Button
-                  leftIcon={<LuPlusCircle />}
+                  leftIcon={<LuCirclePlus />}
                   isDisabled={isDisabled}
                   variant="secondary"
                   onClick={newSalesRFQLineDisclosure.onOpen}
@@ -159,7 +159,7 @@ export default function SalesRFQExplorer() {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlusCircle />}
+                leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newSalesRFQLineDisclosure.onOpen}
               >
@@ -305,7 +305,7 @@ function SalesRFQLineItem({
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   variant="ghost"
                   onClick={(e) => e.stopPropagation()}
                 />
