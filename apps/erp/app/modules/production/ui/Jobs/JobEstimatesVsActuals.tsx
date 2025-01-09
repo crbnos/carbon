@@ -8,6 +8,9 @@ import {
   cn,
   HStack,
   IconButton,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Switch,
   Table,
   Tabs,
@@ -44,8 +47,8 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { useEffect, useState } from "react";
-import { LuExternalLink } from "react-icons/lu";
-import { EmployeeAvatarGroup } from "~/components";
+import { LuExternalLink, LuNotebook } from "react-icons/lu";
+import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
 import { useCurrencyFormatter, usePercentFormatter } from "~/hooks";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
@@ -203,6 +206,40 @@ const JobEstimatesVsActuals = ({
     return Array.from(employeeIds);
   };
 
+  const getNotes = (
+    operation: Operation,
+    type?: "Setup" | "Labor" | "Machine"
+  ) => {
+    const eventNotes = productionEvents
+      .filter(
+        (pe) =>
+          pe.jobOperationId === operation.id &&
+          (type === undefined || pe.type === type)
+      )
+      .map((pe) => ({
+        employeeId: pe.employeeId,
+        notes: pe.notes,
+        createdAt: pe.createdAt,
+        productionEventId: pe.id,
+      }));
+
+    const quantityNotes = productionQuantities
+      .filter((pq) => pq.jobOperationId === operation.id && type === undefined)
+      .map((pq) => ({
+        employeeId: pq.createdBy,
+        notes: pq.notes,
+        createdAt: pq.createdAt,
+        productionEventId:
+          pq.setupProductionEventId ??
+          pq.laborProductionEventId ??
+          pq.machineProductionEventId,
+      }));
+
+    const notes = [...eventNotes, ...quantityNotes].filter((n) => n.notes);
+    if (notes.length === 0) return null;
+    return notes;
+  };
+
   return (
     <Tabs defaultValue="processes" className="w-full">
       <Card>
@@ -248,6 +285,8 @@ const JobEstimatesVsActuals = ({
                 {operations.map((operation) => {
                   const estimated = getEstimatedTime(operation);
                   const actual = getActualTime(operation);
+                  const notes = getNotes(operation);
+
                   return (
                     <>
                       <Tr key={operation.id} className="border-b border-border">
@@ -298,17 +337,51 @@ const JobEstimatesVsActuals = ({
                         }`}</Td>
                         <Td>{getScrapQuantity(operation)}</Td>
                         <Td>
-                          <Link
-                            to={`${path.to.jobProductionEvents(
-                              jobId
-                            )}?filter=jobOperationId:eq:${operation.id}`}
-                          >
-                            <IconButton
-                              variant="ghost"
-                              icon={<LuExternalLink />}
-                              aria-label="View Production Events"
-                            />
-                          </Link>
+                          <HStack spacing={0} className="justify-end">
+                            {notes && (
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <IconButton
+                                    variant="ghost"
+                                    icon={<LuNotebook />}
+                                    aria-label="Notes"
+                                  />
+                                </PopoverTrigger>
+                                <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
+                                  <div className="flex flex-col gap-3 p-2">
+                                    {notes.map((note, index) => (
+                                      <div
+                                        key={index}
+                                        className="flex gap-2 items-center"
+                                      >
+                                        <div className="flex-shrink-0">
+                                          <EmployeeAvatar
+                                            employeeId={note.employeeId}
+                                            size="sm"
+                                            withName={false}
+                                          />
+                                        </div>
+                                        <div className="flex-1 rounded-lg bg-muted p-2 text-sm">
+                                          {note.notes}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
+                            )}
+                            <Link
+                              to={`${path.to.jobProductionEvents(
+                                jobId
+                              )}?filter=jobOperationId:eq:${operation.id}`}
+                            >
+                              <IconButton
+                                variant="ghost"
+                                icon={<LuExternalLink />}
+                                aria-label="View Production Events"
+                              />
+                            </Link>
+                          </HStack>
                         </Td>
                       </Tr>
                       {detailsDisclosure.isOpen && (
@@ -322,6 +395,7 @@ const JobEstimatesVsActuals = ({
                               return null;
                             }
                             const employeeIds = getEmployeeIds(operation, type);
+                            const notes = getNotes(operation, type);
                             return (
                               <Tr key={type} className="border-b border-border">
                                 <Td className="border-r border-border pl-10">
@@ -366,19 +440,53 @@ const JobEstimatesVsActuals = ({
                                 <Td />
                                 <Td />
                                 <Td>
-                                  <Link
-                                    to={`${path.to.jobProductionEvents(
-                                      jobId
-                                    )}?filter=jobOperationId:eq:${
-                                      operation.id
-                                    }&filter=type:eq:${type}`}
-                                  >
-                                    <IconButton
-                                      variant="ghost"
-                                      icon={<LuExternalLink />}
-                                      aria-label="View Production Events"
-                                    />
-                                  </Link>
+                                  <HStack spacing={0} className="justify-end">
+                                    {notes && (
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <IconButton
+                                            variant="ghost"
+                                            icon={<LuNotebook />}
+                                            aria-label="Notes"
+                                          />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-96 max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-gray-300">
+                                          <div className="flex flex-col gap-3 p-2">
+                                            {notes.map((note, index) => (
+                                              <div
+                                                key={index}
+                                                className="flex gap-2 items-center"
+                                              >
+                                                <div className="flex-shrink-0">
+                                                  <EmployeeAvatar
+                                                    employeeId={note.employeeId}
+                                                    size="sm"
+                                                    withName={false}
+                                                  />
+                                                </div>
+                                                <div className="flex-1 rounded-lg bg-muted p-2 text-sm">
+                                                  {note.notes}
+                                                </div>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
+                                    )}
+                                    <Link
+                                      to={`${path.to.jobProductionEvents(
+                                        jobId
+                                      )}?filter=jobOperationId:eq:${
+                                        operation.id
+                                      }&filter=type:eq:${type}`}
+                                    >
+                                      <IconButton
+                                        variant="ghost"
+                                        icon={<LuExternalLink />}
+                                        aria-label="View Production Events"
+                                      />
+                                    </Link>
+                                  </HStack>
                                 </Td>
                               </Tr>
                             );

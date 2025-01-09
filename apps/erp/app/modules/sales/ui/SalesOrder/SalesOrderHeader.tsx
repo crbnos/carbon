@@ -14,16 +14,16 @@ import {
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
-  LuCheckCircle,
   LuChevronDown,
+  LuCircleCheck,
+  LuCircleStop,
+  LuEllipsisVertical,
   LuEye,
   LuFile,
   LuGitCompare,
-  LuMoreVertical,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
-  LuStopCircle,
 } from "react-icons/lu";
 
 import { usePanels } from "~/components/Layout";
@@ -73,7 +73,7 @@ const SalesOrderHeader = () => {
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More options"
-                  icon={<LuMoreVertical />}
+                  icon={<LuEllipsisVertical />}
                   variant="ghost"
                 />
               </DropdownMenuTrigger>
@@ -170,7 +170,7 @@ const SalesOrderHeader = () => {
                     ? "primary"
                     : "secondary"
                 }
-                leftIcon={<LuCheckCircle />}
+                leftIcon={<LuCircleCheck />}
                 isDisabled={
                   [
                     "Draft",
@@ -199,7 +199,7 @@ const SalesOrderHeader = () => {
               <Button
                 type="submit"
                 variant="secondary"
-                leftIcon={<LuStopCircle />}
+                leftIcon={<LuCircleStop />}
                 isDisabled={
                   ["Cancelled", "Closed", "Completed", "Invoiced"].includes(
                     routeData?.salesOrder?.status ?? ""

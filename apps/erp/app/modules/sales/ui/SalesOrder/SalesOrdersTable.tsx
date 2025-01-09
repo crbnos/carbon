@@ -22,11 +22,11 @@ import {
   LuExternalLink,
   LuPencil,
   LuQrCode,
+  LuSquareUser,
   LuStar,
   LuTrash,
   LuTruck,
   LuUser,
-  LuUserSquare,
 } from "react-icons/lu";
 import {
   CustomerAvatar,
@@ -109,7 +109,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
               label: customer.name,
             })),
           },
-          icon: <LuUserSquare />,
+          icon: <LuSquareUser />,
         },
       },
       {

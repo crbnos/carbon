@@ -10,7 +10,7 @@ import { json, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { LuAlertTriangle, LuSearch } from "react-icons/lu";
+import { LuSearch, LuTriangleAlert } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
 import { getActiveJobOperationsByEmployee } from "~/services/operations.service";
@@ -90,7 +90,7 @@ export default function ActiveRoute() {
         ) : searchTerm ? (
           <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height)*2)] items-center justify-center gap-4">
             <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuAlertTriangle className="h-6 w-6" />
+              <LuTriangleAlert className="h-6 w-6" />
             </div>
             <span className="text-xs font-mono font-light text-foreground uppercase">
               No results exist
@@ -100,7 +100,7 @@ export default function ActiveRoute() {
         ) : (
           <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height)*2)] items-center justify-center gap-4">
             <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuAlertTriangle className="h-6 w-6" />
+              <LuTriangleAlert className="h-6 w-6" />
             </div>
             <span className="text-xs font-mono font-light text-foreground uppercase">
               No active operations

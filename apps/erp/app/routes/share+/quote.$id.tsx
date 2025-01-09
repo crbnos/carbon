@@ -45,11 +45,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
   LuChevronDown,
+  LuCircleX,
   LuCreditCard,
   LuImage,
   LuTruck,
   LuUpload,
-  LuXCircle,
 } from "react-icons/lu";
 import { usePercentFormatter } from "~/hooks";
 import { useMode } from "~/hooks/useMode";
@@ -875,7 +875,7 @@ const LinePricingOptions = ({
         <HStack spacing={2} className="w-full justify-end items-center">
           <Button
             variant="primary"
-            leftIcon={<LuXCircle />}
+            leftIcon={<LuCircleX />}
             onClick={() => {
               setSelectedValue("0");
               setSelectedLines((prev) => ({

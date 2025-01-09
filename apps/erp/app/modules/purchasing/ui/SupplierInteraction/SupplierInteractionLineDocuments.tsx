@@ -22,7 +22,7 @@ import {
 } from "@carbon/react";
 import { convertKbToString } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
-import { LuMoreVertical, LuUpload } from "react-icons/lu";
+import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import type { ItemFile } from "~/modules/items";
@@ -291,7 +291,7 @@ const SupplierInteractionLineDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<LuMoreVertical />}
+                              icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>

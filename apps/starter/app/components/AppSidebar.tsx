@@ -34,17 +34,17 @@ import {
   LuBell,
   LuBookOpen,
   LuBot,
+  LuChartPie,
   LuChevronRight,
   LuChevronsUpDown,
   LuCommand,
   LuCreditCard,
+  LuEllipsis,
   LuFolder,
   LuFrame,
   LuLifeBuoy,
   LuLogOut,
   LuMap,
-  LuMoreHorizontal,
-  LuPieChart,
   LuSend,
   LuSettings2,
   LuShare,
@@ -146,7 +146,7 @@ const data = {
     {
       name: "Sales & Marketing",
       url: "#",
-      icon: LuPieChart,
+      icon: LuChartPie,
     },
     {
       name: "Travel",
@@ -270,7 +270,7 @@ export function NavProjects({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuAction showOnHover>
-                  <LuMoreHorizontal />
+                  <LuEllipsis />
                   <span className="sr-only">More</span>
                 </SidebarMenuAction>
               </DropdownMenuTrigger>
@@ -304,7 +304,7 @@ export function NavProjects({
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton>
-            <LuMoreHorizontal />
+            <LuEllipsis />
             <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

@@ -1,6 +1,6 @@
 import { useParams } from "@remix-run/react";
 
-import { LuFileBarChart, LuFileText } from "react-icons/lu";
+import { LuChartBar, LuFileText } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -21,7 +21,7 @@ export function useInventoryNavigation() {
       name: "Activity",
       to: path.to.inventoryItemActivity(itemId),
       role: ["employee"],
-      icon: LuFileBarChart,
+      icon: LuChartBar,
       shortcut: "Command+Shift+a",
     },
   ];

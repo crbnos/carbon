@@ -17,7 +17,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { json, redirect, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useState } from "react";
-import { LuCheckCircle } from "react-icons/lu";
+import { LuCircleCheck } from "react-icons/lu";
 import { usePermissions, useUser } from "~/hooks";
 import { getTerms } from "~/modules/settings";
 
@@ -129,7 +129,7 @@ export default function Terms() {
             {purchasingTermsStatus === "draft" ? (
               <Badge variant="secondary">Draft</Badge>
             ) : (
-              <LuCheckCircle className="w-4 h-4 text-emerald-500" />
+              <LuCircleCheck className="w-4 h-4 text-emerald-500" />
             )}
           </CardAction>
         </HStack>
@@ -162,7 +162,7 @@ export default function Terms() {
             {salesTermsStatus === "draft" ? (
               <Badge variant="secondary">Draft</Badge>
             ) : (
-              <LuCheckCircle className="w-4 h-4 text-emerald-500" />
+              <LuCircleCheck className="w-4 h-4 text-emerald-500" />
             )}
           </CardAction>
         </HStack>

@@ -3,19 +3,19 @@ import { Link } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
-  LuAlertTriangle,
   LuBookMarked,
   LuBox,
   LuCheck,
+  LuCirclePlus,
   LuFactory,
   LuGlassWater,
   LuMapPin,
   LuPackage,
-  LuPlusCircle,
   LuRuler,
   LuShapes,
   LuShoppingBag,
   LuShoppingCart,
+  LuTriangleAlert,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -250,12 +250,12 @@ const InventoryTable = memo(
         {count === 0 && !hasFilters ? (
           <div className="flex flex-col w-full h-full items-center justify-center gap-4">
             <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuAlertTriangle className="h-6 w-6" />
+              <LuTriangleAlert className="h-6 w-6" />
             </div>
             <span className="text-xs font-mono font-light text-foreground uppercase">
               No inventory items exists
             </span>
-            <Button leftIcon={<LuPlusCircle />} asChild>
+            <Button leftIcon={<LuCirclePlus />} asChild>
               <Link to={path.to.newPart}>New Part</Link>
             </Button>
           </div>

@@ -35,7 +35,7 @@ import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import {
   LuGripVertical,
-  LuMoreVertical,
+  LuEllipsisVertical,
   LuRadioTower,
   LuShoppingCart,
   LuUpload,
@@ -138,7 +138,7 @@ const OpportunityDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<LuMoreVertical />}
+                              icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>

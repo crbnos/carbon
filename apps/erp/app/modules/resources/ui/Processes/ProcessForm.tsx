@@ -23,9 +23,9 @@ import { useFetcher, useNavigate } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import {
-  LuMoreVertical,
+  LuCirclePlus,
+  LuEllipsisVertical,
   LuPencil,
-  LuPlusCircle,
   LuTrash,
 } from "react-icons/lu";
 import type { z } from "zod";
@@ -181,7 +181,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
                   <DropdownMenuTrigger asChild>
                     <IconButton
                       aria-label="Edit supplier process"
-                      icon={<LuMoreVertical />}
+                      icon={<LuEllipsisVertical />}
                       size="md"
                       variant="ghost"
                       onClick={(e) => e.stopPropagation()}
@@ -218,7 +218,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
         )}
         <Button
           isDisabled={!isEditing}
-          leftIcon={<LuPlusCircle />}
+          leftIcon={<LuCirclePlus />}
           variant="secondary"
           onClick={newSupplierProcessModal.onOpen}
         >

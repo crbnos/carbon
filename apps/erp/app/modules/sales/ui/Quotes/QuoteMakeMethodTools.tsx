@@ -23,9 +23,9 @@ import {
 import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
-  LuAlertTriangle,
   LuDownload,
   LuSettings,
+  LuTriangleAlert,
   LuUpload,
 } from "react-icons/lu";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
@@ -234,7 +234,7 @@ const QuoteMakeMethodTools = () => {
                   </div>
                   {hasMethods && (
                     <Alert variant="destructive">
-                      <LuAlertTriangle className="h-4 w-4" />
+                      <LuTriangleAlert className="h-4 w-4" />
                       <AlertTitle>
                         This will overwrite the existing quote method
                       </AlertTitle>
@@ -323,7 +323,7 @@ const QuoteMakeMethodTools = () => {
                   </div>
                   {hasMethods && (
                     <Alert variant="destructive">
-                      <LuAlertTriangle className="h-4 w-4" />
+                      <LuTriangleAlert className="h-4 w-4" />
                       <AlertTitle>
                         This will overwrite the existing manufacturing method
                       </AlertTitle>

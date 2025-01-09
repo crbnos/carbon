@@ -1,4 +1,4 @@
-import { TooltipProvider } from "@carbon/react";
+import { TooltipProvider, useMount } from "@carbon/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -23,6 +23,8 @@ import {
 import { path } from "~/utils/path";
 
 import type { ShouldRevalidateFunction } from "@remix-run/react";
+import posthog from "posthog-js";
+import { useUser } from "~/hooks";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -105,6 +107,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AuthenticatedRoute() {
   const { session } = useLoaderData<typeof loader>();
+  const user = useUser();
+
+  useMount(() => {
+    posthog.identify(user.id, {
+      email: user.email,
+      name: `${user.firstName} ${user.lastName}`,
+    });
+  });
 
   const transition = useNavigation();
 

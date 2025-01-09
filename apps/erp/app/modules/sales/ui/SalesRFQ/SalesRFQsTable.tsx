@@ -9,10 +9,10 @@ import {
   LuMap,
   LuPencil,
   LuQrCode,
+  LuSquareUser,
   LuStar,
   LuTrash,
   LuUser,
-  LuUserSquare,
 } from "react-icons/lu";
 import {
   CustomerAvatar,
@@ -80,7 +80,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
               label: customer.name,
             })),
           },
-          icon: <LuUserSquare />,
+          icon: <LuSquareUser />,
         },
       },
       {

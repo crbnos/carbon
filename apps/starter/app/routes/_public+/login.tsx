@@ -32,7 +32,7 @@ import type {
 } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import posthog from "posthog-js";
-import { LuAlertCircle } from "react-icons/lu";
+import { LuCircleAlert } from "react-icons/lu";
 
 import { path } from "~/utils/path";
 
@@ -116,7 +116,7 @@ export default function LoginRoute() {
           <VStack spacing={4}>
             {result && result?.message && (
               <Alert variant="destructive">
-                <LuAlertCircle className="w-4 h-4" />
+                <LuCircleAlert className="w-4 h-4" />
                 <AlertTitle>Authentication Error</AlertTitle>
                 <AlertDescription>{result?.message}</AlertDescription>
               </Alert>

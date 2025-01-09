@@ -1,7 +1,7 @@
 import { getBrowserEnv, SUPABASE_ANON_PUBLIC } from "@carbon/auth";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { Link } from "@remix-run/react";
-import { LuAlertTriangle } from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import { useUser } from "~/hooks";
 import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
 import { path } from "~/utils/path";
@@ -53,7 +53,7 @@ export default function Route() {
                 environment variables you set up earlier.
               </p>
               <Alert variant="destructive">
-                <LuAlertTriangle className="h-4 w-4 my-1" />
+                <LuTriangleAlert className="h-4 w-4 my-1" />
                 <AlertTitle className="!my-0 font-bold text-base">
                   You should never expose the <code>carbon-key</code> in the
                   client

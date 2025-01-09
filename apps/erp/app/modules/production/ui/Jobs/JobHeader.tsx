@@ -34,22 +34,22 @@ import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  LuAlertTriangle,
-  LuCheckCircle,
   LuChevronDown,
+  LuCircleCheck,
+  LuCirclePause,
+  LuCirclePlay,
+  LuCircleStop,
   LuClock,
   LuHardHat,
   LuList,
   LuPackage,
   LuPanelLeft,
   LuPanelRight,
-  LuPauseCircle,
-  LuPlayCircle,
   LuRefreshCw,
   LuSettings,
-  LuSigmaSquare,
-  LuStopCircle,
+  LuSquareSigma,
   LuTable,
+  LuTriangleAlert,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Location, Shelf } from "~/components/Form";
@@ -179,7 +179,7 @@ const JobHeader = () => {
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "production")
                 }
-                leftIcon={<LuPauseCircle />}
+                leftIcon={<LuCirclePause />}
                 type="submit"
                 variant="secondary"
               >
@@ -198,7 +198,7 @@ const JobHeader = () => {
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "production")
                 }
-                leftIcon={<LuPlayCircle />}
+                leftIcon={<LuCirclePlay />}
                 type="submit"
               >
                 Resume
@@ -219,7 +219,7 @@ const JobHeader = () => {
               (routeData?.job?.quantity === 0 &&
                 routeData?.job?.scrapQuantity === 0)
             }
-            leftIcon={<LuPlayCircle />}
+            leftIcon={<LuCirclePlay />}
             variant={status === "Draft" ? "primary" : "secondary"}
           >
             Release
@@ -236,7 +236,7 @@ const JobHeader = () => {
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "production")
             }
-            leftIcon={<LuCheckCircle />}
+            leftIcon={<LuCircleCheck />}
             variant={status === "Completed" ? "primary" : "secondary"}
           >
             Complete
@@ -252,7 +252,7 @@ const JobHeader = () => {
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "production")
             }
-            leftIcon={<LuStopCircle />}
+            leftIcon={<LuCircleStop />}
             variant="secondary"
           >
             Cancel
@@ -342,7 +342,7 @@ function getExplorerMenuIcon(type: string) {
     case "events":
       return <LuClock />;
     case "quantities":
-      return <LuSigmaSquare />;
+      return <LuSquareSigma />;
     default:
       return <LuHardHat />;
   }
@@ -453,7 +453,7 @@ function JobStartModal({
                 </p>
               ) : (
                 <Alert variant="warning">
-                  <LuAlertTriangle />
+                  <LuTriangleAlert />
                   <AlertTitle>Missing Operations</AlertTitle>
                   <AlertDescription>
                     There are Bills of Processes associated with this job that

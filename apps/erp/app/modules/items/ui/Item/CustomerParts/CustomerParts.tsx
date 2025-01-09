@@ -15,7 +15,7 @@ import {
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { LuMoreVertical, LuPencil, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -45,7 +45,7 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
                 <DropdownMenuTrigger asChild>
                   <IconButton
                     aria-label="Edit purchase order line type"
-                    icon={<LuMoreVertical />}
+                    icon={<LuEllipsisVertical />}
                     size="md"
                     className="absolute right-[-1px] top-[-6px]"
                     variant="ghost"

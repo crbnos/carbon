@@ -31,7 +31,7 @@ import {
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import { LuMoreVertical, LuUpload } from "react-icons/lu";
+import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
@@ -130,7 +130,7 @@ const SupplierInteractionDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<LuMoreVertical />}
+                              icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>

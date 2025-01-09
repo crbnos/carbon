@@ -1,6 +1,6 @@
 "use client";
 
-import { LuStopCircle } from "react-icons/lu";
+import { LuCircleStop } from "react-icons/lu";
 
 import { useCarbon } from "@carbon/auth";
 import {
@@ -71,7 +71,7 @@ export function EndShift() {
         className="text-sidebar-foreground/70"
         onClick={openModal}
       >
-        <LuStopCircle className="text-sidebar-foreground/70" />
+        <LuCircleStop className="text-sidebar-foreground/70" />
         <span>End Shift</span>
       </SidebarMenuButton>
       {confirmModal.isOpen && (

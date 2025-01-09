@@ -16,11 +16,11 @@ import {
   LuClock,
   LuHash,
   LuPencil,
+  LuSquareUser,
   LuTag,
   LuTrash,
   LuUser,
   LuUsers,
-  LuUserSquare,
 } from "react-icons/lu";
 import {
   CustomerAvatar,
@@ -146,7 +146,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
               label: customer.name,
             })),
           },
-          icon: <LuUserSquare />,
+          icon: <LuSquareUser />,
         },
       },
       {

@@ -22,7 +22,7 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuFunctionSquare, LuSettings2, LuX } from "react-icons/lu";
+import { LuSettings2, LuSquareFunction, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { Configuration } from "~/components/Configurator/types";
@@ -435,7 +435,7 @@ const BillOfMaterial = ({
             </Button>
             {configurable && materials.length > 0 && (
               <IconButton
-                icon={<LuFunctionSquare />}
+                icon={<LuSquareFunction />}
                 aria-label="Configure"
                 variant="ghost"
                 className={cn(

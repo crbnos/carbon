@@ -28,10 +28,10 @@ import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuAlertTriangle,
   LuDownload,
   LuSettings,
   LuSquareStack,
+  LuTriangleAlert,
   LuUpload,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
@@ -252,7 +252,7 @@ const JobBreadcrumbs = () => {
                       </div>
                       {hasMethods && (
                         <Alert variant="destructive">
-                          <LuAlertTriangle className="h-4 w-4" />
+                          <LuTriangleAlert className="h-4 w-4" />
                           <AlertTitle>
                             This will overwrite the existing job method
                           </AlertTitle>
@@ -344,7 +344,7 @@ const JobBreadcrumbs = () => {
                   </div>
                   {hasMethods && (
                     <Alert variant="destructive">
-                      <LuAlertTriangle className="h-4 w-4" />
+                      <LuTriangleAlert className="h-4 w-4" />
                       <AlertTitle>
                         This will overwrite the existing manufacturing method
                       </AlertTitle>

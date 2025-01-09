@@ -13,10 +13,10 @@ import {
   LuBan,
   LuMail,
   LuMailCheck,
+  LuSquareUser,
   LuStar,
   LuUser,
   LuUserCheck,
-  LuUserSquare,
 } from "react-icons/lu";
 import { Avatar, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -128,7 +128,7 @@ const CustomerAccountsTable = memo(
           header: "Customer",
           cell: (item) => item.getValue(),
           meta: {
-            icon: <LuUserSquare />,
+            icon: <LuSquareUser />,
             filter: {
               type: "static",
               options: customers.map(({ name }) => ({

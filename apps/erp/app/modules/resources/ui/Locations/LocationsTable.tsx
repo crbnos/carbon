@@ -6,7 +6,7 @@ import {
   LuBuilding2,
   LuClock,
   LuGlobe,
-  LuHome,
+  LuHouse,
   LuMap,
   LuMapPin,
   LuPencil,
@@ -58,7 +58,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: "Address",
         cell: (item) => item.getValue(),
         meta: {
-          icon: <LuHome />,
+          icon: <LuHouse />,
         },
       },
       {

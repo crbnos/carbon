@@ -28,6 +28,8 @@ import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuChevronDown,
+  LuCircleStop,
+  LuCircleX,
   LuExternalLink,
   LuEye,
   LuFile,
@@ -35,9 +37,7 @@ import {
   LuPanelRight,
   LuRefreshCw,
   LuShare,
-  LuStopCircle,
   LuTrophy,
-  LuXCircle,
 } from "react-icons/lu";
 import { Copy } from "~/components";
 import { usePanels } from "~/components/Layout";
@@ -197,7 +197,7 @@ const QuoteHeader = () => {
                   statusFetcher.state !== "idle" &&
                   statusFetcher.formData?.get("status") === "Lost"
                 }
-                leftIcon={<LuXCircle />}
+                leftIcon={<LuCircleX />}
                 type="submit"
                 variant={
                   ["Sent", "Lost"].includes(routeData?.quote?.status ?? "")
@@ -224,7 +224,7 @@ const QuoteHeader = () => {
                     statusFetcher.state !== "idle" &&
                     statusFetcher.formData?.get("status") === "Cancelled"
                   }
-                  leftIcon={<LuStopCircle />}
+                  leftIcon={<LuCircleStop />}
                   type="submit"
                   variant="secondary"
                 >

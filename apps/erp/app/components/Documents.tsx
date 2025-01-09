@@ -25,7 +25,7 @@ import { convertKbToString } from "@carbon/utils";
 import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
-import { LuAxis3D, LuMoreVertical, LuUpload } from "react-icons/lu";
+import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
@@ -311,7 +311,7 @@ const Documents = ({
                       <DropdownMenuTrigger asChild>
                         <IconButton
                           aria-label="More"
-                          icon={<LuMoreVertical />}
+                          icon={<LuEllipsisVertical />}
                           variant="secondary"
                         />
                       </DropdownMenuTrigger>
@@ -383,7 +383,7 @@ const Documents = ({
                         <DropdownMenuTrigger asChild>
                           <IconButton
                             aria-label="More"
-                            icon={<LuMoreVertical />}
+                            icon={<LuEllipsisVertical />}
                             variant="secondary"
                           />
                         </DropdownMenuTrigger>

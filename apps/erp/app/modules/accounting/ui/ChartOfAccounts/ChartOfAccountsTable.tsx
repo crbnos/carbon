@@ -2,7 +2,7 @@ import { Button, Checkbox, HStack, cn } from "@carbon/react";
 import { Link as RemixLink } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
-import { LuMoreVertical } from "react-icons/lu";
+import { LuEllipsisVertical } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import Grid from "~/components/Grid";
@@ -46,7 +46,7 @@ const ChartOfAccountsTable = memo(({ data }: ChartOfAccountsTableProps) => {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <RemixLink to={`${row.original.id}`}>
-                    <LuMoreVertical />
+                    <LuEllipsisVertical />
                   </RemixLink>
                 </Button>
               </div>

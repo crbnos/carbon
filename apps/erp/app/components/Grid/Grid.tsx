@@ -19,7 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuPlusCircle } from "react-icons/lu";
+import { LuCirclePlus } from "react-icons/lu";
 import type {
   EditableTableCellComponent,
   Position,
@@ -421,7 +421,7 @@ const Grid = <T extends object>({
               >
                 <Td colSpan={24}>
                   <HStack className="items-start h-6">
-                    <LuPlusCircle className="text-muted-foreground h-6 w-6" />
+                    <LuCirclePlus className="text-muted-foreground h-6 w-6" />
                   </HStack>
                 </Td>
               </Tr>

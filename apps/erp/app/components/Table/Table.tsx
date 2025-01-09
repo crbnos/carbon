@@ -38,7 +38,7 @@ import {
 } from "@tanstack/react-table";
 import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuAlertTriangle, LuArrowDown, LuArrowUp } from "react-icons/lu";
+import { LuArrowDown, LuArrowUp, LuTriangleAlert } from "react-icons/lu";
 import { useSpinDelay } from "spin-delay";
 import type {
   EditableTableCellComponent,
@@ -627,7 +627,7 @@ const Table = <T extends object>({
             ) : hasFilters ? (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuAlertTriangle className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No results found
@@ -639,7 +639,7 @@ const Table = <T extends object>({
             ) : (
               <div className="flex flex-col w-full h-full items-center justify-center gap-4">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuAlertTriangle className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No data exists

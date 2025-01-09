@@ -24,7 +24,7 @@ import {
   LuChevronDown,
   LuChevronLeft,
   LuChevronUp,
-  LuPenSquare,
+  LuSquarePen,
 } from "react-icons/lu";
 import { Hidden, Input, Submit } from "~/components/Form";
 import type { AbilityDatum } from "~/modules/resources";
@@ -222,7 +222,7 @@ export default function AbilitiesRoute() {
               <IconButton
                 aria-label="Edit"
                 variant="ghost"
-                icon={<LuPenSquare />}
+                icon={<LuSquarePen />}
                 onClick={editingTitle.onOpen}
               />
             </HStack>

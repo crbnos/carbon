@@ -20,12 +20,12 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
-  LuAlertTriangle,
-  LuCheckCircle2,
+  LuCircleCheckBig,
   LuClipboardList,
   LuHash,
   LuRefreshCcwDot,
   LuRotateCcw,
+  LuTriangleAlert,
   LuWrench,
 } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
@@ -166,7 +166,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: "Qty. Complete",
         cell: (item) => item.getValue(),
         meta: {
-          icon: <LuCheckCircle2 />,
+          icon: <LuCircleCheckBig />,
         },
       },
       {
@@ -174,7 +174,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         header: "Qty. Scrapped",
         cell: (item) => item.getValue(),
         meta: {
-          icon: <LuAlertTriangle />,
+          icon: <LuTriangleAlert />,
         },
       },
       {

@@ -21,14 +21,14 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
-  LuCheckCircle,
   LuChevronDown,
   LuCircle,
+  LuCircleCheck,
+  LuCirclePlus,
+  LuCircleX,
   LuClock3,
-  LuMoreVertical,
-  LuPlusCircle,
+  LuEllipsisVertical,
   LuTrash,
-  LuXCircle,
 } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import type { Tree } from "~/components/TreeView";
@@ -135,7 +135,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
               {permissions.can("update", "sales") && (
                 <Button
                   isDisabled={isDisabled}
-                  leftIcon={<LuPlusCircle />}
+                  leftIcon={<LuCirclePlus />}
                   variant="secondary"
                   onClick={newQuoteLineDisclosure.onOpen}
                 >
@@ -152,7 +152,7 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
                 ref={newButtonRef}
                 className="w-full"
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
-                leftIcon={<LuPlusCircle />}
+                leftIcon={<LuCirclePlus />}
                 variant="secondary"
                 onClick={newQuoteLineDisclosure.onOpen}
               >
@@ -277,7 +277,7 @@ function QuoteLineItem({
             <DropdownMenuTrigger asChild>
               <IconButton
                 aria-label="More"
-                icon={<LuMoreVertical />}
+                icon={<LuEllipsisVertical />}
                 size="sm"
                 variant="ghost"
                 onClick={(e) => e.stopPropagation()}
@@ -333,9 +333,9 @@ function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
     case "Not Started":
       return <LuCircle size={12} className="text-blue-600" />;
     case "No Quote":
-      return <LuXCircle size={12} className="text-red-600" />;
+      return <LuCircleX size={12} className="text-red-600" />;
     case "Complete":
-      return <LuCheckCircle size={12} className="text-emerald-600" />;
+      return <LuCircleCheck size={12} className="text-emerald-600" />;
     case "In Progress":
       return <LuClock3 size={12} className="text-yellow-600" />;
     default:

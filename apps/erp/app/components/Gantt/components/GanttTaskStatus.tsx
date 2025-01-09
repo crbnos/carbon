@@ -2,14 +2,14 @@ import { Spinner, cn } from "@carbon/react";
 import assertNever from "assert-never";
 import {
   LuBan,
-  LuCheckCircle,
+  LuCircleCheck,
+  LuCirclePause,
   LuCircleSlash,
+  LuCircleX,
   LuFlame,
   LuLayers,
-  LuPauseCircle,
   LuRefreshCcw,
   LuSnowflake,
-  LuXCircle,
 } from "react-icons/lu";
 
 export type GanttTaskStatus =
@@ -133,7 +133,7 @@ export function GanttTaskStatusIcon({
       );
     case "PAUSED":
       return (
-        <LuPauseCircle
+        <LuCirclePause
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
@@ -149,17 +149,17 @@ export function GanttTaskStatusIcon({
       );
     case "COMPLETED_SUCCESSFULLY":
       return (
-        <LuCheckCircle
+        <LuCircleCheck
           className={cn(runStatusClassNameColor(status), className)}
         />
       );
     case "COMPLETED_WITH_ERRORS":
       return (
-        <LuXCircle className={cn(runStatusClassNameColor(status), className)} />
+        <LuCircleX className={cn(runStatusClassNameColor(status), className)} />
       );
     case "SYSTEM_FAILURE":
       return (
-        <LuXCircle className={cn(runStatusClassNameColor(status), className)} />
+        <LuCircleX className={cn(runStatusClassNameColor(status), className)} />
       );
     case "CRASHED":
       return (

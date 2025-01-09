@@ -15,10 +15,10 @@ import {
   LuMap,
   LuPencil,
   LuQrCode,
+  LuSquareUser,
   LuStar,
   LuTrash,
   LuUser,
-  LuUserSquare,
 } from "react-icons/lu";
 import {
   CustomerAvatar,
@@ -97,7 +97,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               label: customer.name,
             })),
           },
-          icon: <LuUserSquare />,
+          icon: <LuSquareUser />,
         },
       },
 

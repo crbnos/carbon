@@ -1,4 +1,4 @@
-import { LuMinusCircle, LuPlusCircle } from "react-icons/lu";
+import { LuCircleMinus, LuCirclePlus } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import Activity from "~/components/Activity";
 import { path } from "~/utils/path";
@@ -95,10 +95,10 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
 const getActivityIcon = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
-      return <LuPlusCircle className="text-blue-500 w-5 h-5" />;
+      return <LuCirclePlus className="text-blue-500 w-5 h-5" />;
     case "Negative Adjmt.":
     case "Consumption":
-      return <LuMinusCircle className="text-red-500 w-5 h-5" />;
+      return <LuCircleMinus className="text-red-500 w-5 h-5" />;
     default:
       return "";
   }

@@ -29,8 +29,8 @@ import {
   LuHardHat,
   LuSearch,
   LuShoppingCart,
+  LuSquareUser,
   LuUser,
-  LuUserSquare,
   LuWrench,
 } from "react-icons/lu";
 import { PiShareNetworkFill } from "react-icons/pi";
@@ -255,7 +255,7 @@ const SearchModal = ({
 function ResultIcon({ entity }: { entity: SearchResult["entity"] | "Module" }) {
   switch (entity) {
     case "Customer":
-      return <LuUserSquare className="w-4 h-4 flex-shrink-0 mr-2" />;
+      return <LuSquareUser className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Document":
       return <LuFileCheck className="w-4 h-4 flex-shrink-0 mr-2" />;
     case "Job":

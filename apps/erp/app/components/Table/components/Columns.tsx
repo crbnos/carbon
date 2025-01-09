@@ -12,7 +12,7 @@ import {
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { Reorder } from "framer-motion";
 import {
-  LuColumns,
+  LuColumns2,
   LuEye,
   LuEyeOff,
   LuGripVertical,
@@ -40,7 +40,7 @@ const Columns = <T extends object>({
           aria-label="Columns"
           title="Columns"
           variant="ghost"
-          icon={<LuColumns />}
+          icon={<LuColumns2 />}
         />
       </DrawerTrigger>
       <DrawerContent>

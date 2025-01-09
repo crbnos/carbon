@@ -11,10 +11,10 @@ import { Link } from "@remix-run/react";
 import {
   LuContainer,
   LuHardHat,
-  LuPenSquare,
   LuShoppingCart,
+  LuSquarePen,
   LuSquareStack,
-  LuUserSquare,
+  LuSquareUser,
   LuUsers,
 } from "react-icons/lu";
 
@@ -70,7 +70,7 @@ function useCreate(): Route[] {
       links.push({
         name: "Customer",
         to: path.to.newCustomer,
-        icon: <LuUserSquare />,
+        icon: <LuSquareUser />,
       });
       links.push({
         name: "RFQ",
@@ -113,7 +113,7 @@ const CreateMenu = () => {
       <DropdownMenuTrigger asChild>
         <IconButton
           aria-label="Create"
-          icon={<LuPenSquare />}
+          icon={<LuSquarePen />}
           variant="secondary"
         />
       </DropdownMenuTrigger>

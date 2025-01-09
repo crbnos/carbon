@@ -17,12 +17,12 @@ import {
   LuArrowDownToLine,
   LuCheckCheck,
   LuChevronDown,
+  LuCirclePlus,
   LuCreditCard,
   LuEye,
   LuFile,
   LuPanelLeft,
   LuPanelRight,
-  LuPlusCircle,
   LuRefreshCw,
 } from "react-icons/lu";
 
@@ -152,7 +152,7 @@ const PurchaseOrderHeader = () => {
                       receive(routeData?.purchaseOrder);
                     }}
                   >
-                    <DropdownMenuIcon icon={<LuPlusCircle />} />
+                    <DropdownMenuIcon icon={<LuCirclePlus />} />
                     New Receipt
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -220,7 +220,7 @@ const PurchaseOrderHeader = () => {
                       invoice(routeData?.purchaseOrder);
                     }}
                   >
-                    <DropdownMenuIcon icon={<LuPlusCircle />} />
+                    <DropdownMenuIcon icon={<LuCirclePlus />} />
                     New Invoice
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />

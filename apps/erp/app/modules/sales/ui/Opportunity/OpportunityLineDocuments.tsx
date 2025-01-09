@@ -25,7 +25,7 @@ import { convertKbToString } from "@carbon/utils";
 import { Link, useFetchers, useRevalidator, useSubmit } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
-import { LuMoreVertical, LuUpload } from "react-icons/lu";
+import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { DocumentPreview, FileDropzone, Hyperlink } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { usePermissions, useUser } from "~/hooks";
@@ -361,7 +361,7 @@ const OpportunityLineDocuments = ({
                         <DropdownMenuTrigger asChild>
                           <IconButton
                             aria-label="More"
-                            icon={<LuMoreVertical />}
+                            icon={<LuEllipsisVertical />}
                             variant="secondary"
                           />
                         </DropdownMenuTrigger>
@@ -424,7 +424,7 @@ const OpportunityLineDocuments = ({
                           <DropdownMenuTrigger asChild>
                             <IconButton
                               aria-label="More"
-                              icon={<LuMoreVertical />}
+                              icon={<LuEllipsisVertical />}
                               variant="secondary"
                             />
                           </DropdownMenuTrigger>
