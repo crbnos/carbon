@@ -18,6 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const status = formData.get("status") as (typeof salesRFQStatusType)[number];
+  const noQuoteReasonId = formData.get("noQuoteReasonId") as string | null;
 
   if (!status || !salesRFQStatusType.includes(status)) {
     throw redirect(
@@ -30,6 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updateSalesRFQStatus(client, {
       id,
       status,
+      noQuoteReasonId,
       assignee: status === "Closed" ? null : undefined,
       updatedBy: userId,
     }),

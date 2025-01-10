@@ -290,6 +290,8 @@ export const path = {
       generatePath(`${x}/items/methods/material/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
+    deleteNoQuoteReason: (id: string) =>
+      generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -542,6 +544,7 @@ export const path = {
       generatePath(`${x}/material/${id}/purchasing/new`),
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/purchasing/new`),
+    newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,
     newPartner: `${x}/resources/partners/new`,
     newPaymentTerm: `${x}/accounting/payment-terms/new`,
     newProcess: `${x}/resources/processes/new`,
@@ -592,6 +595,9 @@ export const path = {
       generatePath(`${x}/tool/${id}/purchasing/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCenter: `${x}/resources/work-centers/new`,
+    noQuoteReasons: `${x}/sales/no-quote-reasons`,
+    noQuoteReason: (id: string) =>
+      generatePath(`${x}/sales/no-quote-reasons/${id}`),
     notificationSettings: `${x}/account/notifications`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/costing`),

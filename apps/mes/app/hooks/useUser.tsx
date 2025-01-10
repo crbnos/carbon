@@ -1,5 +1,5 @@
+import { useRouteData } from "@carbon/remix";
 import { path } from "~/utils/path";
-import { useRouteData } from "../../../../packages/remix/src/hooks/useRouteData";
 
 type PersonalData = {
   id: string;

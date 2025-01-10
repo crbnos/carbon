@@ -118,6 +118,11 @@ export const getMethodValidator = z.object({
   itemId: z.string().min(1, { message: "Please select a source method" }),
 });
 
+export const noQuoteReasonValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+});
+
 export const quoteLineStatusType = [
   "Not Started",
   "In Progress",

@@ -18,6 +18,7 @@ import type {
   customerTypeValidator,
   customerValidator,
   getMethodValidator,
+  noQuoteReasonValidator,
   quoteLineAdditionalChargesValidator,
   quoteLineValidator,
   quoteMaterialValidator,
@@ -157,6 +158,13 @@ export async function deleteCustomerType(
   customerTypeId: string
 ) {
   return client.from("customerType").delete().eq("id", customerTypeId);
+}
+
+export async function deleteNoQuoteReason(
+  client: SupabaseClient<Database>,
+  noQuoteReasonId: string
+) {
+  return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
 }
 
 export async function deleteQuote(
@@ -547,6 +555,51 @@ export async function getModelByQuoteLineId(
     type: item.data!.type,
     ...model.data,
   };
+}
+
+export async function getNoQuoteReasonsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("noQuoteReason")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+}
+
+export async function getNoQuoteReason(
+  client: SupabaseClient<Database>,
+  noQuoteReasonId: string
+) {
+  return client
+    .from("noQuoteReason")
+    .select("*")
+    .eq("id", noQuoteReasonId)
+    .single();
+}
+
+export async function getNoQuoteReasons(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("noQuoteReason")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getOpportunityBySalesRFQ(
@@ -1466,6 +1519,30 @@ export async function upsertCustomerType(
   }
 }
 
+export async function upsertNoQuoteReason(
+  client: SupabaseClient<Database>,
+  noQuoteReason:
+    | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof noQuoteReasonValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in noQuoteReason) {
+    return client.from("noQuoteReason").insert([noQuoteReason]).select("id");
+  } else {
+    return client
+      .from("noQuoteReason")
+      .update(sanitize(noQuoteReason))
+      .eq("id", noQuoteReason.id);
+  }
+}
+
 export async function updateSalesRFQFavorite(
   client: SupabaseClient<Database>,
   args: {
@@ -1572,11 +1649,17 @@ export async function updateSalesRFQStatus(
   update: {
     id: string;
     status: (typeof salesRFQStatusType)[number];
+    noQuoteReasonId: string | null;
     assignee: null | undefined;
     updatedBy: string;
   }
 ) {
-  return client.from("salesRfq").update(update).eq("id", update.id);
+  const { noQuoteReasonId, ...rest } = update;
+
+  // Only include noQuoteReasonId if it has a value to avoid foreign key constraint error
+  const updateData = noQuoteReasonId ? { ...rest, noQuoteReasonId } : rest;
+
+  return client.from("salesRfq").update(updateData).eq("id", update.id);
 }
 
 export async function updateQuoteMaterialOrder(

@@ -287,6 +287,9 @@ const JobEstimatesVsActuals = ({
                   const actual = getActualTime(operation);
                   const notes = getNotes(operation);
 
+                  const isOutside = operation.operationType === "Outside";
+                  if (isOutside) return null;
+
                   return (
                     <>
                       <Tr key={operation.id} className="border-b border-border">

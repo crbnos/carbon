@@ -16,11 +16,16 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  VStack,
   useDisclosure,
+  useMount,
 } from "@carbon/react";
 
+import { useCarbon } from "@carbon/auth";
+import { Select, Submit, ValidatedForm } from "@carbon/form";
+import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useParams } from "@remix-run/react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   LuCircleCheck,
   LuCircleX,
@@ -30,6 +35,8 @@ import {
   LuTriangleAlert,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
+import { z } from "zod";
+import { zfd } from "zod-form-data";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -42,6 +49,7 @@ const SalesRFQHeader = () => {
 
   const convertToQuoteModal = useDisclosure();
   const requiresCustomerAlert = useDisclosure();
+  const noQuoteReasonModal = useDisclosure();
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const permissions = usePermissions();
@@ -129,7 +137,7 @@ const SalesRFQHeader = () => {
           >
             Quote
           </Button>
-          <statusFetcher.Form
+          {/* <statusFetcher.Form
             method="post"
             action={path.to.salesRfqStatus(rfqId)}
           >
@@ -154,7 +162,27 @@ const SalesRFQHeader = () => {
             >
               No Quote
             </Button>
-          </statusFetcher.Form>
+          </statusFetcher.Form> */}
+          <Button
+            onClick={noQuoteReasonModal.onOpen}
+            isDisabled={
+              status !== "Ready for Quote" ||
+              statusFetcher.state !== "idle" ||
+              !permissions.can("update", "sales")
+            }
+            isLoading={
+              statusFetcher.state !== "idle" &&
+              statusFetcher.formData?.get("status") === "Closed"
+            }
+            leftIcon={<LuCircleX />}
+            variant={
+              ["Ready for Quote", "Closed"].includes(status)
+                ? "destructive"
+                : "secondary"
+            }
+          >
+            No Quote
+          </Button>
 
           <statusFetcher.Form
             method="post"
@@ -214,11 +242,91 @@ const SalesRFQHeader = () => {
       {requiresCustomerAlert.isOpen && (
         <RequiresCustomerAlert onClose={requiresCustomerAlert.onClose} />
       )}
+      {noQuoteReasonModal.isOpen && (
+        <NoQuoteReasonModal
+          fetcher={statusFetcher}
+          rfqId={rfqId}
+          onClose={noQuoteReasonModal.onClose}
+        />
+      )}
     </div>
   );
 };
 
 export default SalesRFQHeader;
+
+const rfqNoQuoteReasonValidator = z.object({
+  status: z.enum(["Closed"]),
+  noQuoteReasonId: zfd.text(z.string().optional()),
+});
+
+function NoQuoteReasonModal({
+  fetcher,
+  rfqId,
+  onClose,
+}: {
+  fetcher: FetcherWithComponents<{}>;
+  rfqId: string;
+  onClose: () => void;
+}) {
+  const [noQuoteReasons, setNoQuoteReasons] = useState<
+    {
+      label: string;
+      value: string;
+    }[]
+  >([]);
+  const { carbon } = useCarbon();
+  const fetchReasons = async () => {
+    if (!carbon) return;
+    const { data } = await carbon.from("noQuoteReason").select("*");
+    setNoQuoteReasons(
+      data?.map((reason) => ({ label: reason.name, value: reason.id })) ?? []
+    );
+  };
+
+  useMount(() => {
+    fetchReasons();
+  });
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalContent>
+        <ValidatedForm
+          method="post"
+          action={path.to.salesRfqStatus(rfqId)}
+          validator={rfqNoQuoteReasonValidator}
+          fetcher={fetcher}
+          onSubmit={() => {
+            onClose();
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>No Quote Reason</ModalTitle>
+            <ModalDescription>
+              Select a reason for why the quote was not created.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <input type="hidden" name="status" value="Closed" />
+            <VStack spacing={2}>
+              <Select
+                name="noQuoteReasonId"
+                label="No Quote Reason"
+                options={noQuoteReasons}
+              />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit withBlocker={false}>Save</Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+}
 
 function RequiresCustomerAlert({ onClose }: { onClose: () => void }) {
   return (
