@@ -7603,6 +7603,7 @@ export type Database = {
         Row: {
           assignee: string | null
           companyId: string
+          completedDate: string | null
           configuration: Json | null
           createdAt: string
           createdBy: string
@@ -7623,6 +7624,7 @@ export type Database = {
           quantityShipped: number
           quoteId: string | null
           quoteLineId: string | null
+          releasedDate: string | null
           salesOrderId: string | null
           salesOrderLineId: string | null
           scrapQuantity: number
@@ -7635,6 +7637,7 @@ export type Database = {
         Insert: {
           assignee?: string | null
           companyId: string
+          completedDate?: string | null
           configuration?: Json | null
           createdAt?: string
           createdBy: string
@@ -7655,6 +7658,7 @@ export type Database = {
           quantityShipped?: number
           quoteId?: string | null
           quoteLineId?: string | null
+          releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           scrapQuantity?: number
@@ -7667,6 +7671,7 @@ export type Database = {
         Update: {
           assignee?: string | null
           companyId?: string
+          completedDate?: string | null
           configuration?: Json | null
           createdAt?: string
           createdBy?: string
@@ -7687,6 +7692,7 @@ export type Database = {
           quantityShipped?: number
           quoteId?: string | null
           quoteLineId?: string | null
+          releasedDate?: string | null
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           scrapQuantity?: number

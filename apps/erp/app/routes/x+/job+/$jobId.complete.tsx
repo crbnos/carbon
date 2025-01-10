@@ -50,6 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("job")
       .update({
         status: "Completed" as const,
+        completedDate: new Date().toISOString(),
         quantityComplete,
         updatedAt: new Date().toISOString(),
         updatedBy: userId,

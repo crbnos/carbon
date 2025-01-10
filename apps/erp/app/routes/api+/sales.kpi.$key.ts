@@ -100,29 +100,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data: Record<string, any[]>) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               date,
               value:
                 kpi.key === "salesOrderRevenue"
-                  ? d.reduce((sum, i) => {
-                      return sum + (i.orderTotal ?? 0);
-                    }, 0)
+                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              date,
-              value:
-                kpi.key === "salesOrderRevenue"
-                  ? d.reduce((sum, i) => {
-                      return sum + (i.orderTotal ?? 0);
-                    }, 0)
-                  : d.length,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        ];
+            .sort((a, b) => a.date.localeCompare(b.date))
+        );
 
         return json({
           data,
@@ -143,7 +133,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               month: months[Number(date.split("-")[1]) - 1],
               monthKey: date,
@@ -152,18 +145,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                   ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
                   : d.length,
             }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
-              monthKey: date,
-              value:
-                kpi.key === "salesOrderRevenue"
-                  ? d.reduce((sum, i) => sum + (i.orderTotal ?? 0), 0)
-                  : d.length,
-            }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-        ];
+            .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+        );
 
         return json({
           data,
@@ -221,19 +204,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               date,
               value: d.length,
             }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        ];
+            .sort((a, b) => a.date.localeCompare(b.date))
+        );
 
         return json({ data, previousPeriodData });
       } else {
@@ -261,21 +241,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               month: months[Number(date.split("-")[1]) - 1],
               monthKey: date,
               value: d.length,
             }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
-              monthKey: date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-        ];
+            .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+        );
 
         return json({ data, previousPeriodData });
       }
@@ -330,19 +306,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               date,
               value: d.length,
             }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.date.localeCompare(b.date)),
-        ];
+            .sort((a, b) => a.date.localeCompare(b.date))
+        );
 
         return json({ data, previousPeriodData });
       } else {
@@ -370,21 +343,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ];
 
         const [data, previousPeriodData] = [
-          Object.entries(groupedData)
+          groupedData,
+          previousGroupedData,
+        ].map((data) =>
+          Object.entries(data)
             .map(([date, d]) => ({
               month: months[Number(date.split("-")[1]) - 1],
               monthKey: date,
               value: d.length,
             }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-          Object.entries(previousGroupedData)
-            .map(([date, d]) => ({
-              month: months[Number(date.split("-")[1]) - 1],
-              monthKey: date,
-              value: d.length,
-            }))
-            .sort((a, b) => a.monthKey.localeCompare(b.monthKey)),
-        ];
+            .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+        );
 
         return json({ data, previousPeriodData });
       }
