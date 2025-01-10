@@ -67,6 +67,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
           await flash(request, error(error, "Failed to schedule job"))
         );
       }
+
+      await client
+        .from("job")
+        .update({
+          releasedDate: new Date().toISOString(),
+        })
+        .eq("id", id);
     } catch (err) {
       console.error(err);
       throw redirect(

@@ -352,6 +352,7 @@ serve(async (req: Request) => {
             .updateTable("job")
             .set({
               status: "Completed" as const,
+              completedDate: new Date().toISOString(),
               quantityComplete,
               quantityReceivedToInventory,
               updatedAt: new Date().toISOString(),
