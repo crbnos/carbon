@@ -1,5 +1,3 @@
-import { parseDate } from "@internationalized/date";
-
 export function groupDataByDay<T extends object>(
   data: T[],
   args: {
@@ -12,20 +10,20 @@ export function groupDataByDay<T extends object>(
 
   const result: Record<string, T[]> = {};
 
-  let d = parseDate(start);
-  let e = parseDate(end);
+  let d = new Date(start);
+  let e = new Date(end);
 
   if (d > e) return {};
 
   while (d <= e) {
-    const date = d.toString();
+    const date = d.toISOString().split("T")[0];
     result[date] = [];
-    d = d.add({ days: 1 });
+    d.setDate(d.getDate() + 1);
   }
 
   data.forEach((d) => {
-    const date = d[groupBy]!.toString();
-    result[date].push(d);
+    const date = new Date(d[groupBy]!.toString()).toISOString().split("T")[0];
+    result[date]?.push(d);
   });
 
   return result;
@@ -43,21 +41,25 @@ export function groupDataByMonth<T extends object>(
 
   const result: Record<string, T[]> = {};
 
-  let d = parseDate(start);
-  let e = parseDate(end);
+  let d = new Date(start);
+  let e = new Date(end);
 
   if (d > e) return {};
 
   while (d <= e) {
-    // Format as YYYY-MM
-    const monthKey = `${d.year}-${String(d.month).padStart(2, "0")}`;
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}`;
     result[monthKey] = [];
-    d = d.add({ months: 1 });
+    d.setMonth(d.getMonth() + 1);
   }
 
   data.forEach((item) => {
-    const date = parseDate(item[groupBy]!.toString());
-    const monthKey = `${date.year}-${String(date.month).padStart(2, "0")}`;
+    const date = new Date(item[groupBy]!.toString());
+    const monthKey = `${date.getFullYear()}-${String(
+      date.getMonth() + 1
+    ).padStart(2, "0")}`;
     if (result[monthKey]) {
       result[monthKey].push(item);
     }

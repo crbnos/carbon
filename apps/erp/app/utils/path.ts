@@ -44,6 +44,8 @@ export const path = {
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
       processes: `${api}/resources/processes`,
+      productionKpi: (key: string) =>
+        generatePath(`${api}/production/kpi/${key}`),
       quotes: `${api}/sales/quotes`,
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),

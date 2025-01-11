@@ -1,5 +1,4 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { parseDate } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/sales/sales.models";
 import { months } from "~/modules/shared/shared.models";
@@ -15,14 +14,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
 
-  const startDate = parseDate(start);
-  const endDate = parseDate(end);
+  const startDate = new Date(start);
+  const endDate = new Date(end);
 
-  const daysBetween = endDate.compare(startDate);
+  const daysBetween = Math.floor(
+    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   // Calculate previous period dates
   const previousEndDate = startDate;
-  const previousStartDate = previousEndDate.subtract({ days: daysBetween });
+  const previousStartDate = new Date(
+    startDate.getTime() - daysBetween * 24 * 60 * 60 * 1000
+  );
 
   const interval = searchParams.get("interval");
 
@@ -80,8 +83,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             "Completed",
             "Invoiced",
           ])
-          .gt("orderDate", previousStartDate.toString())
-          .lte("orderDate", previousEndDate.toString())
+          .gt("orderDate", previousStartDate.toISOString().split("T")[0])
+          .lte("orderDate", previousEndDate.toISOString().split("T")[0])
           .order("orderDate", { ascending: false }),
       ]);
 
@@ -93,8 +96,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByDay(previousSalesOrders.data ?? [], {
-            start: previousStartDate.toString(),
-            end: previousEndDate.toString(),
+            start: previousStartDate.toISOString().split("T")[0],
+            end: previousEndDate.toISOString().split("T")[0],
             groupBy: "orderDate",
           }),
         ];
@@ -126,8 +129,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByMonth(previousSalesOrders.data ?? [], {
-            start: previousStartDate.toString(),
-            end: previousEndDate.toString(),
+            start: previousStartDate.toISOString().split("T")[0],
+            end: previousEndDate.toISOString().split("T")[0],
             groupBy: "orderDate",
           }),
         ];
@@ -174,8 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
           .eq("companyId", companyId)
           .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
+          .gt("createdAt", previousStartDate.toISOString().split("T")[0])
+          .lte("createdAt", previousEndDate.toISOString().split("T")[0])
           .order("createdAt", { ascending: false }),
       ]);
 
@@ -196,8 +199,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: q.createdAt.split("T")[0],
             })) ?? [],
             {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
+              start: previousStartDate.toISOString().split("T")[0],
+              end: previousEndDate.toISOString().split("T")[0],
               groupBy: "createdAt",
             }
           ),
@@ -233,8 +236,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: q.createdAt.split("T")[0],
             })) ?? [],
             {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
+              start: previousStartDate.toISOString().split("T")[0],
+              end: previousEndDate.toISOString().split("T")[0],
               groupBy: "createdAt",
             }
           ),
@@ -276,8 +279,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
           .eq("companyId", companyId)
           .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
+          .gt("createdAt", previousStartDate.toISOString().split("T")[0])
+          .lte("createdAt", previousEndDate.toISOString().split("T")[0])
           .order("createdAt", { ascending: false }),
       ]);
 
@@ -298,8 +301,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: r.createdAt?.split("T")[0],
             })) ?? [],
             {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
+              start: previousStartDate.toISOString().split("T")[0],
+              end: previousEndDate.toISOString().split("T")[0],
               groupBy: "createdAt",
             }
           ),
@@ -335,8 +338,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: r.createdAt?.split("T")[0],
             })) ?? [],
             {
-              start: previousStartDate.toString(),
-              end: previousEndDate.toString(),
+              start: previousStartDate.toISOString().split("T")[0],
+              end: previousEndDate.toISOString().split("T")[0],
               groupBy: "createdAt",
             }
           ),

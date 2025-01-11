@@ -33,7 +33,12 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import {
+  getLocalTimeZone,
+  now,
+  parseDate,
+  toCalendarDateTime,
+} from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { Await, Link, useFetcher, useLoaderData } from "@remix-run/react";
@@ -171,7 +176,7 @@ export default function PurchaseDashboard() {
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("purchaseOrderAmount");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
-    const end = today(getLocalTimeZone());
+    const end = toCalendarDateTime(now("UTC"));
     const start = end.add({ months: -1 });
     return { start, end };
   });
@@ -190,7 +195,7 @@ export default function PurchaseDashboard() {
   }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
 
   const onIntervalChange = (value: string) => {
-    const end = today(getLocalTimeZone());
+    const end = toCalendarDateTime(now("UTC"));
     if (value === "week") {
       const start = end.add({ days: -7 });
       setDateRange({ start, end });
@@ -332,7 +337,7 @@ export default function PurchaseDashboard() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="p-0">
         <HStack className="justify-between items-start">
           <CardHeader className="pb-0">
             <div className="flex w-full justify-start items-center gap-2">
@@ -413,7 +418,7 @@ export default function PurchaseDashboard() {
                   >
                     {percentageChange > 0
                       ? `+${percentageChange.toFixed(0)}%`
-                      : `${percentageChange.toFixed(0)}%`}
+                      : `-${percentageChange.toFixed(0)}%`}
                   </Badge>
                 </>
               )}

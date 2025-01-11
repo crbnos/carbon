@@ -154,7 +154,7 @@ export default function SalesDashboard() {
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
-    const end = today(getLocalTimeZone());
+    const end = today("UTC");
     const start = end.add({ months: -1 });
     return { start, end };
   });
@@ -173,7 +173,7 @@ export default function SalesDashboard() {
   }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
 
   const onIntervalChange = (value: string) => {
-    const end = today(getLocalTimeZone());
+    const end = today("UTC");
     if (value === "week") {
       const start = end.add({ days: -7 });
       setDateRange({ start, end });
@@ -315,7 +315,7 @@ export default function SalesDashboard() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="p-0">
         <HStack className="justify-between items-start">
           <CardHeader className="pb-0">
             <div className="flex w-full justify-start items-center gap-2">
@@ -394,7 +394,7 @@ export default function SalesDashboard() {
                   >
                     {percentageChange > 0
                       ? `+${percentageChange.toFixed(0)}%`
-                      : `${percentageChange.toFixed(0)}%`}
+                      : `-${percentageChange.toFixed(0)}%`}
                   </Badge>
                 </>
               )}
