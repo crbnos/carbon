@@ -61,6 +61,7 @@ import { getAccessorKey, updateNestedProperty } from "./utils";
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
   count?: number;
+  compact?: boolean;
   data: T[];
   defaultColumnOrder?: string[];
   defaultColumnPinning?: ColumnPinningState;
@@ -85,6 +86,7 @@ interface TableProps<T extends object> {
 const Table = <T extends object>({
   data,
   columns,
+  compact = false,
   count = 0,
   defaultColumnOrder,
   defaultColumnPinning,
@@ -557,11 +559,18 @@ const Table = <T extends object>({
   });
 
   return (
-    <VStack spacing={0} className="h-full">
+    <VStack
+      spacing={0}
+      className={cn(
+        "h-full bg-card",
+        !compact && "flex flex-col w-full px-0 md:px-4 lg:px-8 xl:px-12"
+      )}
+    >
       <TableHeader
         columnAccessors={columnAccessors}
         columnOrder={columnOrder}
         columns={table.getAllLeafColumns()}
+        compact={compact}
         editMode={editMode}
         filters={filters}
         importCSV={importCSV}
@@ -580,7 +589,9 @@ const Table = <T extends object>({
 
       <div
         id="table-container"
-        className="w-full h-full bg-background/90 overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        className={cn(
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        )}
         style={{ contain: "strict" }}
         ref={tableContainerRef}
         onKeyDown={editMode ? onKeyDown : undefined}

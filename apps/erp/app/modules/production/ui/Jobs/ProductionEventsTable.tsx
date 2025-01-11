@@ -217,6 +217,7 @@ const ProductionEventsTable = memo(
     return (
       <>
         <Table<ProductionEvent>
+          compact
           count={count}
           columns={columns}
           data={data}

@@ -1,6 +1,7 @@
 import {
   Badge,
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -33,6 +34,7 @@ type HeaderProps<T> = {
   columnAccessors: Record<string, string>;
   columnOrder: ColumnOrderState;
   columns: Column<T, unknown>[];
+  compact?: boolean;
   editMode: boolean;
   filters: ColumnFilter[];
   importCSV?: {
@@ -52,6 +54,7 @@ type HeaderProps<T> = {
 };
 
 const TableHeader = <T extends object>({
+  compact,
   columnAccessors,
   columnOrder,
   columns,
@@ -77,12 +80,19 @@ const TableHeader = <T extends object>({
   >(null);
 
   return (
-    <>
-      <HStack className="px-4 py-2 justify-between bg-card border-b  w-full">
-        <HStack>
+    <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
+      <HStack
+        className={cn(
+          compact
+            ? "px-4 py-2 justify-between bg-card border-b  w-full"
+            : "px-4 md:px-0 py-6 md:py-[3.25rem] justify-between bg-card w-full relative"
+        )}
+      >
+        <HStack spacing={1}>
           <CollapsibleSidebarTrigger />
-          {title && <Heading size="h3">{title}</Heading>}
+          {title && <Heading size={compact ? "h3" : "h2"}>{title}</Heading>}
         </HStack>
+
         <HStack>
           {/* <Button variant="secondary" leftIcon={<LuDownload />}>
             Export
@@ -116,14 +126,18 @@ const TableHeader = <T extends object>({
           )}
         </HStack>
       </HStack>
-      <HStack className="px-4 py-2 justify-between bg-card border-b border-border w-full">
+      <HStack
+        className={cn(
+          compact
+            ? "px-4 py-2 justify-between bg-card border-b border-border w-full"
+            : "px-4 md:px-0 justify-between bg-card w-full"
+        )}
+      >
+        <HStack>{!!filters?.length && <Filter filters={filters} />}</HStack>
         <HStack>
           {withSearch && (
             <SearchFilter param="search" size="sm" placeholder="Search" />
           )}
-          {!!filters?.length && <Filter filters={filters} />}
-        </HStack>
-        <HStack>
           {withSelectableRows &&
             selectedRows.length > 0 &&
             typeof renderActions === "function" && (
@@ -177,10 +191,14 @@ const TableHeader = <T extends object>({
         </HStack>
       </HStack>
       {currentFilters.length > 0 && (
-        <HStack className="px-4 py-1.5 justify-between bg-card border-b border-border w-full">
-          <HStack>
-            <ActiveFilters filters={filters} />
-          </HStack>
+        <HStack
+          className={cn(
+            compact
+              ? "px-4 py-1.5 justify-between bg-card border-b border-border w-full"
+              : "px-4 md:px-0 py-1.5 justify-between bg-card w-full"
+          )}
+        >
+          <ActiveFilters filters={filters} />
         </HStack>
       )}
       {importCSVTable && (
@@ -189,7 +207,7 @@ const TableHeader = <T extends object>({
           onClose={() => setImportCSVTable(null)}
         />
       )}
-    </>
+    </div>
   );
 };
 
