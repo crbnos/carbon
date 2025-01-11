@@ -30,8 +30,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const daysBetween = endDate.compare(startDate);
 
   // Calculate previous period dates
-  const previousEndDate = startDate;
-  const previousStartDate = startDate.add({ days: -daysBetween });
+  const previousEnd = startDate;
+  const previousStart = startDate.add({ days: -daysBetween });
 
   const interval = searchParams.get("interval");
 
@@ -78,8 +78,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .from("productionEvent")
             .select("startTime, endTime, workCenterId")
             .eq("companyId", companyId)
-            .gt("startTime", previousStartDate.toString())
-            .or(`endTime.lte.${previousEndDate.toString()},endTime.is.null`)
+            .gt("startTime", previousStart.toString())
+            .or(`endTime.lte.${previousEnd.toString()},endTime.is.null`)
             .order("startTime", { ascending: false })
             .order("endTime", { ascending: false }),
         ]);
@@ -165,6 +165,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return json({
         data,
         previousPeriodData,
+      });
+    }
+    case "estimatesVsActuals": {
+      const jobs = await client
+        .from("job")
+        .select(
+          "id, jobId, customerId, estimatedTime, actualTime, completedDate"
+        )
+        .eq("companyId", companyId)
+        .gte("completedDate", start)
+        .lte("completedDate", end)
+        .not("completedDate", "is", null);
+
+      const jobOperations = await client
+        .from("jobOperation")
+        .select(
+          "id, jobId, operationId, estimatedTime, actualTime, completedDate"
+        )
+        .eq("companyId", companyId)
+        .gte("completedDate", start)
+        .lte("completedDate", end)
+        .not("completedDate", "is", null);
+
+      return json({
+        data: [],
+        previousPeriodData: [],
       });
     }
 

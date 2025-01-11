@@ -32,7 +32,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import { LuChevronDown, LuEllipsisVertical, LuFile } from "react-icons/lu";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import { KPIs } from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
@@ -270,6 +270,7 @@ export default function ProductionDashboard() {
                   layout="vertical"
                   margin={{
                     left: -20,
+                    right: 30,
                   }}
                 >
                   <YAxis
@@ -303,7 +304,23 @@ export default function ProductionDashboard() {
                       />
                     }
                   />
-                  <Bar dataKey="value" fill="var(--color-actual)" radius={2} />
+                  <Bar dataKey="value" fill="var(--color-actual)" radius={2}>
+                    <LabelList
+                      dataKey="value"
+                      position="right"
+                      formatter={(value: number) => {
+                        const percentage =
+                          totalTimeInInterval === 0
+                            ? "0.00"
+                            : ((value / totalTimeInInterval) * 100).toFixed(2);
+
+                        return `${percentage}%`;
+                      }}
+                      offset={8}
+                      className="fill-foreground"
+                      fontSize={12}
+                    />
+                  </Bar>
                 </BarChart>
               </ChartContainer>
             </Loading>

@@ -30,13 +30,12 @@ const New = ({ label, to }: NewProps) => {
       <TooltipTrigger>
         <Button asChild leftIcon={<LuCirclePlus />} ref={buttonRef}>
           <Link to={to} prefetch="intent">
-            New
+            Add {label}
           </Link>
         </Button>
       </TooltipTrigger>
       <TooltipContent>
         <HStack>
-          <span>New {label}</span>
           <Kbd>N</Kbd>
         </HStack>
       </TooltipContent>
