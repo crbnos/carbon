@@ -24,6 +24,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
+import { formatDurationMilliseconds } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
@@ -39,7 +40,7 @@ import { path } from "~/utils/path";
 
 const chartConfig = {
   actual: {
-    color: "hsl(var(--chart-1))", // Primary color
+    color: "hsl(var(--primary))", // Primary color
   },
   estimate: {
     color: "hsl(var(--chart-2))", // Secondary color
@@ -70,7 +71,7 @@ export default function ProductionDashboard() {
 
   const totalTimeInInterval = useMemo(() => {
     if (!dateRange) return 0;
-    return dateRange.end.compare(dateRange.start);
+    return dateRange.end.compare(dateRange.start) * 24 * 60 * 60 * 1000;
   }, [dateRange]);
 
   useEffect(() => {
@@ -101,8 +102,20 @@ export default function ProductionDashboard() {
     setInterval(value);
   };
 
-  const average = 0;
-  const percentageChange = 0;
+  const total =
+    kpiFetcher.data?.data?.reduce((acc, item) => {
+      return acc + item.value;
+    }, 0) ?? 0;
+  const previousTotal =
+    kpiFetcher.data?.previousPeriodData?.reduce((acc, item) => {
+      return acc + item.value;
+    }, 0) ?? 0;
+  const percentageChange =
+    previousTotal === 0
+      ? total > 0
+        ? 100
+        : 0
+      : ((total - previousTotal) / previousTotal) * 100;
 
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
@@ -206,7 +219,7 @@ export default function ProductionDashboard() {
                   <Skeleton className="h-5 w-1/4" />
                 ) : (
                   <>
-                    <p>Average: {numberFormatter.format(average * 100)}%</p>
+                    <p>{formatDurationMilliseconds(total)}</p>
                     <Badge
                       variant="secondary"
                       className="normal-case font-medium px-2 rounded-full"
@@ -268,8 +281,27 @@ export default function ProductionDashboard() {
                   />
                   <XAxis type="number" dataKey="value" hide />
                   <ChartTooltip
-                    cursor={false}
-                    content={<ChartTooltipContent hideLabel />}
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => {
+                          const percentage =
+                            totalTimeInInterval === 0
+                              ? "0.00"
+                              : (
+                                  ((value as number) / totalTimeInInterval) *
+                                  100
+                                ).toFixed(2);
+                          return (
+                            <div className="flex flex-col gap-1">
+                              <div className="font-medium">{percentage}%</div>
+                              <div>
+                                {formatDurationMilliseconds(value as number)}
+                              </div>
+                            </div>
+                          );
+                        }}
+                      />
+                    }
                   />
                   <Bar dataKey="value" fill="var(--color-actual)" radius={2} />
                 </BarChart>

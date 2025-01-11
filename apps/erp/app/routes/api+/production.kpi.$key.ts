@@ -1,12 +1,17 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   now,
-  parseAbsolute,
   parseDateTime,
   toCalendarDateTime,
 } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/production/production.models";
+
+type ProductionEvent = {
+  startTime: string;
+  endTime: string;
+  workCenterId: string;
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -18,20 +23,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
 
-  console.log({ start, end });
-
   const startDate = toCalendarDateTime(parseDateTime(start));
   const endDate = toCalendarDateTime(parseDateTime(end));
   const currentDate = toCalendarDateTime(now("UTC"));
 
   const daysBetween = endDate.compare(startDate);
-
-  console.log({
-    startDate: startDate.toString(),
-    endDate: endDate.toString(),
-    currentDate: currentDate.toString(),
-    daysBetween,
-  });
 
   // Calculate previous period dates
   const previousEndDate = startDate;
@@ -76,40 +72,95 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .eq("companyId", companyId)
             .gt("startTime", start)
             .or(`endTime.lte.${end},endTime.is.null`)
-            .order("startTime", { ascending: false }),
+            .order("startTime", { ascending: false })
+            .order("endTime", { ascending: false }),
           client
             .from("productionEvent")
             .select("startTime, endTime, workCenterId")
             .eq("companyId", companyId)
             .gt("startTime", previousStartDate.toString())
             .or(`endTime.lte.${previousEndDate.toString()},endTime.is.null`)
-            .order("startTime", { ascending: false }),
+            .order("startTime", { ascending: false })
+            .order("endTime", { ascending: false }),
         ]);
-      const [data, previousPeriodData] = [
+
+      const [groupedEvents, previousGroupedEvents] = [
         productionEvents.data ?? [],
         previousProductionEvents.data ?? [],
-      ].map((events) => {
-        return (
-          workCenters.data?.map((workCenter) => {
-            const workCenterEvents = events.filter(
-              (event) => event.workCenterId === workCenter.id
-            );
+      ].map((events) =>
+        events.reduce<Record<string, ProductionEvent[]>>((acc, event) => {
+          if (!event.workCenterId) return acc;
 
-            const totalDuration = workCenterEvents.reduce((total, event) => {
-              const startTime = parseAbsolute(event.startTime, "UTC");
-              const endTime = event.endTime
-                ? parseAbsolute(event.endTime, "UTC")
-                : currentDate;
-              return total + endTime.compare(startTime);
-            }, 0);
+          if (!acc[event.workCenterId]) {
+            acc[event.workCenterId] = [];
+          }
+
+          acc[event.workCenterId].push({
+            ...event,
+            workCenterId: event.workCenterId!,
+            endTime:
+              event.endTime === null ? currentDate.toString() : event.endTime,
+          });
+          return acc;
+        }, {})
+      );
+
+      const [data, previousPeriodData] = [
+        groupedEvents,
+        previousGroupedEvents,
+      ].map((events) =>
+        Object.entries(events)
+          .map(([workCenterId, events]) => {
+            const workCenter = workCenters.data?.find(
+              (wc) => wc.id === workCenterId
+            );
+            if (!workCenter) return { key: workCenterId, value: 0 };
+
+            // Sort events by start time, then end time if start times are equal
+            const sortedEvents = [...events].sort((a, b) => {
+              const aStart = new Date(a.startTime).getTime();
+              const bStart = new Date(b.startTime).getTime();
+              if (aStart !== bStart) return aStart - bStart;
+              return (
+                new Date(a.endTime).getTime() - new Date(b.endTime).getTime()
+              );
+            });
+
+            let totalTime = 0;
+            let lastEndTime: number | null = null;
+
+            // Calculate non-overlapping time
+            for (const event of sortedEvents) {
+              const startTime = new Date(event.startTime).getTime();
+              const endTime = new Date(event.endTime).getTime();
+
+              if (lastEndTime === null) {
+                totalTime += endTime - startTime;
+              } else {
+                // If this event starts after the last end time, add the full duration
+                if (startTime > lastEndTime) {
+                  totalTime += endTime - startTime;
+                }
+                // If this event overlaps but ends later, add the non-overlapping portion
+                else if (endTime > lastEndTime) {
+                  totalTime += endTime - lastEndTime;
+                }
+                // If this event is completely contained within the last event, skip it
+              }
+
+              // Update lastEndTime if this event ends later
+              if (lastEndTime === null || endTime > lastEndTime) {
+                lastEndTime = endTime;
+              }
+            }
 
             return {
               key: workCenter.name,
-              value: totalDuration,
+              value: totalTime,
             };
-          }) ?? []
-        ).sort((a, b) => b.value - a.value);
-      });
+          })
+          .sort((a, b) => b.value - a.value)
+      );
 
       return json({
         data,
