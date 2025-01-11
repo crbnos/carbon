@@ -16,7 +16,7 @@ import {
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuFilePen, LuImport, LuLock, LuZap } from "react-icons/lu";
+import { LuCheck, LuFilePen, LuImport, LuLock } from "react-icons/lu";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
@@ -133,11 +133,7 @@ const TableHeader = <T extends object>({
             : "px-4 md:px-0 justify-between bg-card w-full"
         )}
       >
-        <HStack>{!!filters?.length && <Filter filters={filters} />}</HStack>
         <HStack>
-          {withSearch && (
-            <SearchFilter param="search" size="sm" placeholder="Search" />
-          )}
           {withSelectableRows &&
             selectedRows.length > 0 &&
             typeof renderActions === "function" && (
@@ -145,7 +141,7 @@ const TableHeader = <T extends object>({
                 <DropdownMenuTrigger asChild>
                   <Button
                     className="pl-2 pr-1"
-                    leftIcon={<LuZap />}
+                    leftIcon={<LuCheck />}
                     variant="secondary"
                   >
                     <Badge variant="secondary">
@@ -156,6 +152,12 @@ const TableHeader = <T extends object>({
                 {renderActions(selectedRows)}
               </DropdownMenu>
             )}
+          {withSearch && (
+            <SearchFilter param="search" size="sm" placeholder="Search" />
+          )}
+          {!!filters?.length && <Filter filters={filters} />}
+        </HStack>
+        <HStack>
           <Sort columnAccessors={columnAccessors} />
 
           <Columns

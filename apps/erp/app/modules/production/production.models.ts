@@ -8,6 +8,21 @@ import {
   standardFactorType,
 } from "../shared";
 
+export const KPIs = [
+  {
+    key: "utilization",
+    label: "Work Center Utilization",
+  },
+  {
+    key: "estimatesVsActuals",
+    label: "Estimates vs Actuals",
+  },
+  {
+    key: "completionTime",
+    label: "Completion Time",
+  },
+] as const;
+
 export const deadlineTypes = [
   "ASAP",
   "Hard Deadline",
