@@ -76,10 +76,12 @@ const sheetVariants = cva(
   {
     variants: {
       position: {
-        top: "animate-in slide-in-from-top w-full duration-300",
-        bottom: "animate-in slide-in-from-bottom w-full duration-300",
-        left: "animate-in slide-in-from-left h-full duration-300",
-        right: "animate-in slide-in-from-right h-full duration-300",
+        top: "animate-in slide-in-from-top w-full duration-300 rounded-b-xl",
+        bottom:
+          "animate-in slide-in-from-bottom w-full duration-300 rounded-t-xl",
+        left: "animate-in slide-in-from-left h-full duration-300 rounded-r-xl",
+        right:
+          "animate-in slide-in-from-right h-full duration-300 rounded-l-xl",
       },
       size: {
         content: "",
@@ -210,7 +212,7 @@ const DrawerHeader = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col flex-0 space-y-1 text-left px-6 py-4 border-b border-border",
+      "flex flex-col flex-0 space-y-1 text-left px-6 py-8 border-b border-border",
       className
     )}
     {...props}

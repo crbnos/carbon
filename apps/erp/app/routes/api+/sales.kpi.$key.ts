@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/sales/sales.models";
 import { months } from "~/modules/shared/shared.models";
@@ -14,18 +15,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
 
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const startDate = toCalendarDateTime(parseDateTime(start));
+  const endDate = toCalendarDateTime(parseDateTime(end));
 
-  const daysBetween = Math.floor(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const daysBetween = endDate.compare(startDate);
 
   // Calculate previous period dates
   const previousEndDate = startDate;
-  const previousStartDate = new Date(
-    startDate.getTime() - daysBetween * 24 * 60 * 60 * 1000
-  );
+  const previousStartDate = startDate.add({ days: -daysBetween });
 
   const interval = searchParams.get("interval");
 
@@ -83,8 +80,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             "Completed",
             "Invoiced",
           ])
-          .gt("orderDate", previousStartDate.toISOString().split("T")[0])
-          .lte("orderDate", previousEndDate.toISOString().split("T")[0])
+          .gt("orderDate", previousStartDate.toString())
+          .lte("orderDate", previousEndDate.toString())
           .order("orderDate", { ascending: false }),
       ]);
 
@@ -96,8 +93,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByDay(previousSalesOrders.data ?? [], {
-            start: previousStartDate.toISOString().split("T")[0],
-            end: previousEndDate.toISOString().split("T")[0],
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: "orderDate",
           }),
         ];
@@ -129,8 +126,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByMonth(previousSalesOrders.data ?? [], {
-            start: previousStartDate.toISOString().split("T")[0],
-            end: previousEndDate.toISOString().split("T")[0],
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: "orderDate",
           }),
         ];
@@ -177,8 +174,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
           .eq("companyId", companyId)
           .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
-          .gt("createdAt", previousStartDate.toISOString().split("T")[0])
-          .lte("createdAt", previousEndDate.toISOString().split("T")[0])
+          .gt("createdAt", previousStartDate.toString())
+          .lte("createdAt", previousEndDate.toString())
           .order("createdAt", { ascending: false }),
       ]);
 
@@ -186,7 +183,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         const [groupedData, previousGroupedData] = [
           groupDataByDay(
             quotes.data?.map((q) => ({
-              createdAt: q.createdAt.split("T")[0],
+              createdAt: q.createdAt,
             })) ?? [],
             {
               start,
@@ -196,11 +193,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           ),
           groupDataByDay(
             previousQuotes.data?.map((q) => ({
-              createdAt: q.createdAt.split("T")[0],
+              createdAt: q.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString().split("T")[0],
-              end: previousEndDate.toISOString().split("T")[0],
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),
@@ -223,7 +220,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         const [groupedData, previousGroupedData] = [
           groupDataByMonth(
             quotes.data?.map((q) => ({
-              createdAt: q.createdAt.split("T")[0],
+              createdAt: q.createdAt,
             })) ?? [],
             {
               start,
@@ -233,11 +230,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           ),
           groupDataByMonth(
             previousQuotes.data?.map((q) => ({
-              createdAt: q.createdAt.split("T")[0],
+              createdAt: q.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString().split("T")[0],
-              end: previousEndDate.toISOString().split("T")[0],
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),
@@ -279,8 +276,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           })
           .eq("companyId", companyId)
           .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", previousStartDate.toISOString().split("T")[0])
-          .lte("createdAt", previousEndDate.toISOString().split("T")[0])
+          .gt("createdAt", previousStartDate.toString())
+          .lte("createdAt", previousEndDate.toString())
           .order("createdAt", { ascending: false }),
       ]);
 
@@ -288,7 +285,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         const [groupedData, previousGroupedData] = [
           groupDataByDay(
             rfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
+              createdAt: r.createdAt,
             })) ?? [],
             {
               start,
@@ -298,11 +295,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           ),
           groupDataByDay(
             previousRfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
+              createdAt: r.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString().split("T")[0],
-              end: previousEndDate.toISOString().split("T")[0],
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),
@@ -325,7 +322,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         const [groupedData, previousGroupedData] = [
           groupDataByMonth(
             rfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
+              createdAt: r.createdAt,
             })) ?? [],
             {
               start,
@@ -335,11 +332,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           ),
           groupDataByMonth(
             previousRfqs.data?.map((r) => ({
-              createdAt: r.createdAt?.split("T")[0],
+              createdAt: r.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString().split("T")[0],
-              end: previousEndDate.toISOString().split("T")[0],
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),

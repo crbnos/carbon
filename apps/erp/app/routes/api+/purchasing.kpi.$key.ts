@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
 import { months } from "~/modules/shared/shared.models";
@@ -14,18 +15,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
 
-  const startDate = new Date(start);
-  const endDate = new Date(end);
+  const startDate = toCalendarDateTime(parseDateTime(start));
+  const endDate = toCalendarDateTime(parseDateTime(end));
 
-  const daysBetween = Math.floor(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const daysBetween = endDate.compare(startDate);
 
   // Calculate previous period dates
   const previousEndDate = startDate;
-  const previousStartDate = new Date(
-    startDate.getTime() - daysBetween * 24 * 60 * 60 * 1000
-  );
+  const previousStartDate = startDate.add({ days: -daysBetween });
 
   const interval = searchParams.get("interval");
 
@@ -83,8 +80,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             "To Receive and Invoice",
             "Completed",
           ])
-          .gt("orderDate", previousStartDate.toISOString())
-          .lte("orderDate", previousEndDate.toISOString())
+          .gt("orderDate", previousStartDate.toString())
+          .lte("orderDate", previousEndDate.toString())
           .order("orderDate", { ascending: false }),
       ]);
 
@@ -96,8 +93,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByDay(previousOrders.data ?? [], {
-            start: previousStartDate.toISOString(),
-            end: previousEndDate.toISOString(),
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: "orderDate",
           }),
         ];
@@ -126,8 +123,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: "orderDate",
           }),
           groupDataByMonth(previousOrders.data ?? [], {
-            start: previousStartDate.toISOString(),
-            end: previousEndDate.toISOString(),
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: "orderDate",
           }),
         ];
@@ -185,8 +182,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             "Submitted",
             "Overdue",
           ])
-          .gt(dateField, previousStartDate.toISOString())
-          .lte(dateField, previousEndDate.toISOString())
+          .gt(dateField, previousStartDate.toString())
+          .lte(dateField, previousEndDate.toString())
           .order(dateField, { ascending: false }),
       ]);
 
@@ -198,8 +195,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: dateField,
           }),
           groupDataByDay(previousInvoices.data ?? [], {
-            start: previousStartDate.toISOString(),
-            end: previousEndDate.toISOString(),
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: dateField,
           }),
         ];
@@ -228,8 +225,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             groupBy: dateField,
           }),
           groupDataByMonth(previousInvoices.data ?? [], {
-            start: previousStartDate.toISOString(),
-            end: previousEndDate.toISOString(),
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
             groupBy: dateField,
           }),
         ];
@@ -271,8 +268,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             count: "exact",
           })
           .eq("companyId", companyId)
-          .gt("createdAt", previousStartDate.toISOString())
-          .lte("createdAt", previousEndDate.toISOString())
+          .gt("createdAt", previousStartDate.toString())
+          .lte("createdAt", previousEndDate.toString())
           .order("createdAt", { ascending: false }),
       ]);
 
@@ -293,8 +290,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: q.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString(),
-              end: previousEndDate.toISOString(),
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),
@@ -330,8 +327,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               createdAt: q.createdAt,
             })) ?? [],
             {
-              start: previousStartDate.toISOString(),
-              end: previousEndDate.toISOString(),
+              start: previousStartDate.toString(),
+              end: previousEndDate.toString(),
               groupBy: "createdAt",
             }
           ),
