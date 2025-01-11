@@ -248,7 +248,7 @@ export default function ProductionDashboard() {
               <ChartContainer
                 config={chartConfig}
                 style={{
-                  height: `${(kpiFetcher.data?.data?.length ?? 5) * 50}px`,
+                  height: `${(kpiFetcher.data?.data?.length ?? 5) * 40}px`,
                 }}
               >
                 <BarChart

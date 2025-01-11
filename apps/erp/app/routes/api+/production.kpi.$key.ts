@@ -1,4 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import {
+  now,
+  parseAbsolute,
+  parseDateTime,
+  toCalendarDateTime,
+} from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/production/production.models";
 
@@ -12,19 +18,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
 
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  const currentDate = new Date();
+  console.log({ start, end });
 
-  const daysBetween = Math.floor(
-    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-  );
+  const startDate = toCalendarDateTime(parseDateTime(start));
+  const endDate = toCalendarDateTime(parseDateTime(end));
+  const currentDate = toCalendarDateTime(now("UTC"));
+
+  const daysBetween = endDate.compare(startDate);
+
+  console.log({
+    startDate: startDate.toString(),
+    endDate: endDate.toString(),
+    currentDate: currentDate.toString(),
+    daysBetween,
+  });
 
   // Calculate previous period dates
   const previousEndDate = startDate;
-  const previousStartDate = new Date(
-    startDate.getTime() - daysBetween * 24 * 60 * 60 * 1000
-  );
+  const previousStartDate = startDate.add({ days: -daysBetween });
 
   const interval = searchParams.get("interval");
 
@@ -74,7 +85,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .or(`endTime.lte.${previousEndDate.toString()},endTime.is.null`)
             .order("startTime", { ascending: false }),
         ]);
-
       const [data, previousPeriodData] = [
         productionEvents.data ?? [],
         previousProductionEvents.data ?? [],
@@ -86,11 +96,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             );
 
             const totalDuration = workCenterEvents.reduce((total, event) => {
-              const startTime = new Date(event.startTime);
+              const startTime = parseAbsolute(event.startTime, "UTC");
               const endTime = event.endTime
-                ? new Date(event.endTime)
+                ? parseAbsolute(event.endTime, "UTC")
                 : currentDate;
-              return total + (endTime.getTime() - startTime.getTime());
+              return total + endTime.compare(startTime);
             }, 0);
 
             return {
@@ -98,7 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               value: totalDuration,
             };
           }) ?? []
-        );
+        ).sort((a, b) => b.value - a.value);
       });
 
       return json({

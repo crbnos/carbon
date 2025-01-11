@@ -46,7 +46,7 @@ const Pagination = (props: PaginationProps) => {
   return (
     <HStack
       className={cn(
-        "text-center bg-card border-t border-border justify-between py-2 w-full z-[1]",
+        "text-center bg-card border-t border-border justify-between py-4 w-full z-[1]",
         compact ? "px-4" : "px-4 md:px-0"
       )}
       spacing={6}
