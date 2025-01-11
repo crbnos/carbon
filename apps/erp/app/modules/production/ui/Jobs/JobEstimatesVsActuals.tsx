@@ -98,6 +98,8 @@ const JobEstimatesVsActuals = ({
   const percentFormatter = usePercentFormatter();
   const detailsDisclosure = useDisclosure();
 
+  console.log({ operations });
+
   const [currentUnitCosts, setCurrentUnitCosts] = useState<
     Record<string, number>
   >({});
@@ -272,13 +274,13 @@ const JobEstimatesVsActuals = ({
             <Table>
               <Thead>
                 <Tr>
-                  <Th />
-                  <Th>Estimated</Th>
-                  <Th>Actual</Th>
-                  <Th>%</Th>
-                  <Th>Complete</Th>
-                  <Th>Scrap</Th>
-                  <Th />
+                  <Th className="px-2" />
+                  <Th className="px-2">Estimated</Th>
+                  <Th className="px-2">Actual</Th>
+                  <Th className="px-2">%</Th>
+                  <Th className="px-2">Complete</Th>
+                  <Th className="px-2">Scrap</Th>
+                  <Th className="px-2" />
                 </Tr>
               </Thead>
               <Tbody>
@@ -293,7 +295,7 @@ const JobEstimatesVsActuals = ({
                   return (
                     <>
                       <Tr key={operation.id} className="border-b border-border">
-                        <Td className="border-r border-border min-w-[200px]">
+                        <Td className="border-r border-border min-w-[200px] px-2">
                           <HStack className="w-full justify-between ">
                             <span>{operation.description}</span>
                             <Tooltip>
@@ -308,22 +310,22 @@ const JobEstimatesVsActuals = ({
                             </Tooltip>
                           </HStack>
                         </Td>
-                        <Td>
-                          <span className="line-clamp-1">
+                        <Td className="px-2">
+                          <span className="flex-shrink-0">
                             {formatDurationMilliseconds(estimated.total)}
                           </span>
                         </Td>
-                        <Td>
+                        <Td className="px-2">
                           <span
                             className={cn(
-                              "line-clamp-1",
+                              "flex-shrink-0",
                               actual.total > estimated.total && "text-red-500"
                             )}
                           >
                             {formatDurationMilliseconds(actual.total)}
                           </span>
                         </Td>
-                        <Td>
+                        <Td className="px-2">
                           <span
                             className={cn(
                               "line-clamp-1",
@@ -335,11 +337,13 @@ const JobEstimatesVsActuals = ({
                             )}
                           </span>
                         </Td>
-                        <Td>{`${getCompleteQuantity(operation)}/${
-                          operation.operationQuantity
-                        }`}</Td>
-                        <Td>{getScrapQuantity(operation)}</Td>
-                        <Td>
+                        <Td className="px-2">
+                          {`${getCompleteQuantity(operation)}/${
+                            operation.operationQuantity
+                          }`}
+                        </Td>
+                        <Td className="px-2">{getScrapQuantity(operation)}</Td>
+                        <Td className="px-2">
                           <HStack spacing={0} className="justify-end">
                             {notes && (
                               <Popover>
@@ -416,21 +420,21 @@ const JobEstimatesVsActuals = ({
                                     )}
                                   </HStack>
                                 </Td>
-                                <Td>
+                                <Td className="px-2">
                                   {formatDurationMilliseconds(
                                     estimated[
                                       type.toLowerCase() as keyof typeof estimated
                                     ]
                                   )}
                                 </Td>
-                                <Td>
+                                <Td className="px-2">
                                   {formatDurationMilliseconds(
                                     actual[
                                       type.toLowerCase() as keyof typeof actual
                                     ]
                                   )}
                                 </Td>
-                                <Td>
+                                <Td className="px-2">
                                   {percentFormatter.format(
                                     actual[
                                       type.toLowerCase() as keyof typeof actual
@@ -440,9 +444,9 @@ const JobEstimatesVsActuals = ({
                                       ]
                                   )}
                                 </Td>
-                                <Td />
-                                <Td />
-                                <Td>
+                                <Td className="px-2" />
+                                <Td className="px-2" />
+                                <Td className="px-2">
                                   <HStack spacing={0} className="justify-end">
                                     {notes && (
                                       <Popover>

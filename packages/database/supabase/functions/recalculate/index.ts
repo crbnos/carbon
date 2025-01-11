@@ -200,6 +200,7 @@ const updateJobQuantities = async (
   parentQuantity: number = 1
 ) => {
   const currentQuantity = tree.data.quantity * parentQuantity;
+  console.log({ tree });
 
   // Update jobMaterial
   await trx
@@ -208,12 +209,14 @@ const updateJobQuantities = async (
     .where("id", "=", tree.id)
     .execute();
 
-  // Update jobOperation
-  await trx
-    .updateTable("jobOperation")
-    .set({ operationQuantity: parentQuantity })
-    .where("jobMakeMethodId", "=", tree.data.jobMakeMethodId)
-    .execute();
+  if (tree.data.jobMaterialMakeMethodId) {
+    // Update jobOperation
+    await trx
+      .updateTable("jobOperation")
+      .set({ operationQuantity: currentQuantity })
+      .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
+      .execute();
+  }
 
   // Recursively update children
   if (tree.children) {
