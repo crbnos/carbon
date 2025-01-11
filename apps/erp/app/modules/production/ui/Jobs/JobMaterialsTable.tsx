@@ -254,6 +254,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
 
   return (
     <Table<JobMaterial>
+      compact
       count={count}
       columns={columns}
       data={data}

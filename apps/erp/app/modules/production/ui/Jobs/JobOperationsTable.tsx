@@ -234,6 +234,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
 
   return (
     <Table<JobOperation>
+      compact
       count={count}
       columns={columns}
       data={optimisticData}

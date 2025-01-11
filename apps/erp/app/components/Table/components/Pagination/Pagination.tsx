@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
@@ -19,6 +20,7 @@ import { useCallback, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
 
 export type PaginationProps = {
+  compact?: boolean;
   count: number;
   offset: number;
   pageIndex: number;
@@ -33,7 +35,7 @@ export type PaginationProps = {
 };
 
 const Pagination = (props: PaginationProps) => {
-  const { pageSize, setPageSize } = props;
+  const { compact, pageSize, setPageSize } = props;
 
   const pageSizes = [20, 100, 500, 1000];
   if (!pageSizes.includes(pageSize)) {
@@ -43,7 +45,10 @@ const Pagination = (props: PaginationProps) => {
 
   return (
     <HStack
-      className="text-center bg-background border-t border-border justify-between px-4 py-2 w-full z-[1]"
+      className={cn(
+        "text-center bg-card border-t border-border justify-between py-2 w-full z-[1]",
+        compact ? "px-4" : "px-4 md:px-0"
+      )}
       spacing={6}
     >
       <DropdownMenu>
