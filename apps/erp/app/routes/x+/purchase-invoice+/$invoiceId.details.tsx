@@ -4,15 +4,16 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner } from "@carbon/react";
-import { Await, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { useRouteData } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import {
+  getPurchaseInvoice,
   PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
   upsertPurchaseInvoice,
@@ -24,6 +25,34 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+type LoaderData = {
+  internalNotes: JSONContent;
+};
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "invoicing",
+  });
+
+  const { invoiceId } = params;
+  if (!invoiceId) throw new Error("Could not find invoiceId");
+
+  const invoice = await getPurchaseInvoice(client, invoiceId);
+  if (invoice.error) {
+    throw redirect(
+      path.to.purchaseInvoices,
+      await flash(
+        request,
+        error(invoice.error, "Failed to load purchase invoice")
+      )
+    );
+  }
+
+  return json<LoaderData>({
+    internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -70,6 +99,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseInvoiceBasicRoute() {
+  const { internalNotes } = useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
@@ -108,7 +138,7 @@ export default function PurchaseInvoiceBasicRoute() {
         id={invoiceId}
         title="Notes"
         table="purchaseInvoice"
-        internalNotes={purchaseInvoice.internalNotes as JSONContent}
+        internalNotes={internalNotes}
       />
       <Suspense
         key={`documents-${invoiceId}`}

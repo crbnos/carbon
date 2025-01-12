@@ -1,15 +1,19 @@
+import { assertIsPost, error, success } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
+import { Spinner } from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
+import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import { getPaymentTermsList } from "~/modules/accounting";
-import { getShippingMethodsList } from "~/modules/inventory";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
 import {
-  getOpportunityBySalesOrder,
-  getQuote,
+  getSalesOrder,
   getSalesOrderPayment,
   getSalesOrderShipment,
   salesOrderValidator,
@@ -25,70 +29,59 @@ import {
   SalesOrderShipmentForm,
   SalesOrderSummary,
 } from "~/modules/sales/ui/SalesOrder";
-
-import { assertIsPost, error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { Spinner, type JSONContent } from "@carbon/react";
-import { Suspense } from "react";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
+type LoaderData = {
+  internalNotes: JSONContent;
+  externalNotes: JSONContent;
+  payment: Database["public"]["Tables"]["salesOrderPayment"]["Row"];
+  shipment: Database["public"]["Tables"]["salesOrderShipment"]["Row"];
+};
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "sales",
   });
 
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [
-    salesOrderShipment,
-    salesOrderPayment,
-
-    // shippingTerms,
-  ] = await Promise.all([
-    getSalesOrderShipment(client, orderId),
+  const [order, payment, shipment] = await Promise.all([
+    getSalesOrder(client, orderId),
     getSalesOrderPayment(client, orderId),
-    getPaymentTermsList(client, companyId),
-    getShippingMethodsList(client, companyId),
-    // getShippingTermsList(client, companyId),
+    getSalesOrderShipment(client, orderId),
   ]);
 
-  if (salesOrderShipment.error) {
-    // TODO: insert a salesOrderShipment record
+  if (order.error) {
+    throw redirect(
+      path.to.salesOrders,
+      await flash(request, error(order.error, "Failed to load order"))
+    );
+  }
+
+  if (payment.error) {
+    throw redirect(
+      path.to.salesOrders,
+      await flash(request, error(payment.error, "Failed to load order payment"))
+    );
+  }
+
+  if (shipment.error) {
     throw redirect(
       path.to.salesOrders,
       await flash(
         request,
-        error(salesOrderShipment.error, "Failed to load sales order shipment")
+        error(shipment.error, "Failed to load order shipment")
       )
     );
   }
 
-  if (salesOrderPayment.error) {
-    // TODO: insert a salesOrderPayment record
-    throw redirect(
-      path.to.salesOrders,
-      await flash(
-        request,
-        error(salesOrderPayment.error, "Failed to load sales order payment")
-      )
-    );
-  }
-
-  const opportunity = await getOpportunityBySalesOrder(client, orderId);
-  const originatedFromQuote = opportunity.data?.quoteId !== null;
-  const quote = opportunity.data?.quoteId
-    ? await getQuote(client, opportunity.data.quoteId)
-    : null;
-
-  return json({
-    salesOrderShipment: salesOrderShipment.data,
-    salesOrderPayment: salesOrderPayment.data,
-    originatedFromQuote,
-    quote,
-    // shippingTerms: shippingTerms.data ?? [],
+  return json<LoaderData>({
+    internalNotes: (order.data?.internalNotes ?? {}) as JSONContent,
+    externalNotes: (order.data?.externalNotes ?? {}) as JSONContent,
+    payment: payment.data || null,
+    shipment: shipment.data || null,
   });
 }
 
@@ -98,8 +91,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "sales",
   });
 
-  const { orderId } = params;
-  if (!orderId) throw new Error("Could not find orderId");
+  const { orderId: id } = params;
+  if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
   const validation = await validator(salesOrderValidator).validate(formData);
@@ -111,33 +104,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { salesOrderId, ...data } = validation.data;
   if (!salesOrderId) throw new Error("Could not find salesOrderId");
 
-  const updateSalesOrder = await upsertSalesOrder(client, {
-    id: orderId,
+  const update = await upsertSalesOrder(client, {
+    id,
     salesOrderId,
     ...data,
-    updatedBy: userId,
     customFields: setCustomFields(formData),
+    updatedBy: userId,
   });
-  if (updateSalesOrder.error) {
+  if (update.error) {
     throw redirect(
-      path.to.salesOrder(orderId),
-      await flash(
-        request,
-        error(updateSalesOrder.error, "Failed to update sales order")
-      )
+      path.to.salesOrder(id),
+      await flash(request, error(update.error, "Failed to update order"))
     );
   }
 
   throw redirect(
-    path.to.salesOrder(orderId),
-    await flash(request, success("Updated sales order"))
+    path.to.salesOrder(id),
+    await flash(request, success("Updated order"))
   );
 }
 
-export default function SalesOrderRoute() {
-  const { salesOrderShipment, salesOrderPayment } =
+export default function SalesOrderDetailsRoute() {
+  const { internalNotes, externalNotes, payment, shipment } =
     useLoaderData<typeof loader>();
-
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -147,52 +136,55 @@ export default function SalesOrderRoute() {
     opportunity: Opportunity;
     files: Promise<FileObject[]>;
   }>(path.to.salesOrder(orderId));
+
   if (!orderData) throw new Error("Could not find order data");
 
   const shipmentInitialValues = {
-    id: salesOrderShipment.id,
-    locationId: salesOrderShipment.locationId ?? "",
-    shippingMethodId: salesOrderShipment.shippingMethodId ?? "",
-    shippingTermId: salesOrderShipment.shippingTermId ?? "",
-    trackingNumber: salesOrderShipment.trackingNumber ?? "",
-    receiptRequestedDate: salesOrderShipment.receiptRequestedDate ?? "",
-    receiptPromisedDate: salesOrderShipment.receiptPromisedDate ?? "",
-    deliveryDate: salesOrderShipment.deliveryDate ?? "",
-    notes: salesOrderShipment.notes ?? "",
-    dropShipment: salesOrderShipment.dropShipment ?? false,
-    customerId: salesOrderShipment.customerId ?? "",
-    customerLocationId: salesOrderShipment.customerLocationId ?? "",
-    shippingCost: salesOrderShipment.shippingCost ?? 0,
-    ...getCustomFields(salesOrderShipment.customFields),
+    id: shipment.id,
+    locationId: shipment?.locationId ?? "",
+    shippingMethodId: shipment?.shippingMethodId ?? "",
+    shippingTermId: shipment?.shippingTermId ?? "",
+    trackingNumber: shipment?.trackingNumber ?? "",
+    receiptRequestedDate: shipment?.receiptRequestedDate ?? "",
+    receiptPromisedDate: shipment?.receiptPromisedDate ?? "",
+    deliveryDate: shipment?.deliveryDate ?? "",
+    notes: shipment?.notes ?? "",
+    dropShipment: shipment?.dropShipment ?? false,
+    customerId: shipment?.customerId ?? "",
+    customerLocationId: shipment?.customerLocationId ?? "",
+    shippingCost: shipment?.shippingCost ?? 0,
+    ...getCustomFields(shipment?.customFields),
   };
 
   const paymentInitialValues = {
-    ...salesOrderPayment,
-    invoiceCustomerId: salesOrderPayment.invoiceCustomerId ?? "",
-    invoiceCustomerLocationId:
-      salesOrderPayment.invoiceCustomerLocationId ?? "",
-    invoiceCustomerContactId: salesOrderPayment.invoiceCustomerContactId ?? "",
-    paymentTermId: salesOrderPayment.paymentTermId ?? "",
-    ...getCustomFields(salesOrderPayment.customFields),
+    id: payment.id,
+    invoiceCustomerId: payment?.invoiceCustomerId ?? "",
+    invoiceCustomerLocationId: payment?.invoiceCustomerLocationId ?? "",
+    invoiceCustomerContactId: payment?.invoiceCustomerContactId ?? "",
+    paymentTermId: payment?.paymentTermId ?? "",
+    paymentComplete: payment?.paymentComplete ?? undefined,
+    ...getCustomFields(payment?.customFields),
   };
 
   return (
     <>
-      <OpportunityState opportunity={orderData.opportunity} />
+      <OpportunityState
+        key={`state-${orderId}`}
+        opportunity={orderData?.opportunity!}
+      />
       <SalesOrderSummary />
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
         table="salesOrder"
         title="Notes"
-        internalNotes={orderData.salesOrder.internalNotes as JSONContent}
-        externalNotes={orderData.salesOrder.externalNotes as JSONContent}
+        internalNotes={internalNotes}
+        externalNotes={externalNotes}
       />
-
       <Suspense
         key={`documents-${orderId}`}
         fallback={
-          <div className="flex w-full min-h-[480px]  h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+          <div className="flex w-full min-h-[480px] h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
             <Spinner className="h-10 w-10" />
           </div>
         }

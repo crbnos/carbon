@@ -12,6 +12,7 @@ import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
 import {
+  getPurchaseOrder,
   getPurchaseOrderDelivery,
   getPurchaseOrderPayment,
   purchaseOrderValidator,
@@ -37,10 +38,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrderDelivery, purchaseOrderPayment] = await Promise.all([
-    getPurchaseOrderDelivery(client, orderId),
-    getPurchaseOrderPayment(client, orderId),
-  ]);
+  const [purchaseOrder, purchaseOrderDelivery, purchaseOrderPayment] =
+    await Promise.all([
+      getPurchaseOrder(client, orderId),
+      getPurchaseOrderDelivery(client, orderId),
+      getPurchaseOrderPayment(client, orderId),
+    ]);
 
   if (purchaseOrderDelivery.error) {
     throw redirect(
@@ -71,6 +74,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     purchaseOrderDelivery: purchaseOrderDelivery.data,
     purchaseOrderPayment: purchaseOrderPayment.data,
+    internalNotes: (purchaseOrder.data?.internalNotes ?? {}) as JSONContent,
+    externalNotes: (purchaseOrder.data?.externalNotes ?? {}) as JSONContent,
   });
 }
 
@@ -117,8 +122,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderBasicRoute() {
-  const { purchaseOrderDelivery, purchaseOrderPayment } =
-    useLoaderData<typeof loader>();
+  const {
+    purchaseOrderDelivery,
+    purchaseOrderPayment,
+    internalNotes,
+    externalNotes,
+  } = useLoaderData<typeof loader>();
 
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -180,8 +189,8 @@ export default function PurchaseOrderBasicRoute() {
         id={orderData.purchaseOrder.id}
         title="Notes"
         table="purchaseOrder"
-        internalNotes={orderData.purchaseOrder.internalNotes as JSONContent}
-        externalNotes={orderData.purchaseOrder.externalNotes as JSONContent}
+        internalNotes={internalNotes}
+        externalNotes={externalNotes}
       />
       <Suspense
         key={`documents-${orderId}`}

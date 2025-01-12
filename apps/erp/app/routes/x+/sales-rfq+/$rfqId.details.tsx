@@ -4,14 +4,18 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
-import { Await, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "~/modules/sales";
-import { salesRfqValidator, upsertSalesRFQ } from "~/modules/sales";
+import {
+  getSalesRFQ,
+  salesRfqValidator,
+  upsertSalesRFQ,
+} from "~/modules/sales";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -19,6 +23,33 @@ import {
 } from "~/modules/sales/ui/Opportunity";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+type LoaderData = {
+  internalNotes: JSONContent;
+  externalNotes: JSONContent;
+};
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "sales",
+  });
+
+  const { rfqId } = params;
+  if (!rfqId) throw new Error("Could not find rfqId");
+
+  const rfq = await getSalesRFQ(client, rfqId);
+  if (rfq.error) {
+    throw redirect(
+      path.to.salesRfqs,
+      await flash(request, error(rfq.error, "Failed to load RFQ"))
+    );
+  }
+
+  return json<LoaderData>({
+    internalNotes: (rfq.data?.internalNotes ?? {}) as JSONContent,
+    externalNotes: (rfq.data?.externalNotes ?? {}) as JSONContent,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -60,6 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function SalesRFQDetailsRoute() {
+  const { internalNotes, externalNotes } = useLoaderData<typeof loader>();
   const { rfqId } = useParams();
   if (!rfqId) throw new Error("Could not find rfqId");
 
@@ -83,8 +115,8 @@ export default function SalesRFQDetailsRoute() {
         id={rfqData.rfqSummary.id}
         table="salesRfq"
         title="Notes"
-        internalNotes={rfqData.rfqSummary.internalNotes as JSONContent}
-        externalNotes={rfqData.rfqSummary.externalNotes as JSONContent}
+        internalNotes={internalNotes}
+        externalNotes={externalNotes}
       />
       <Suspense
         key={`documents-${rfqId}`}

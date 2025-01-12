@@ -9,15 +9,16 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, useMount, VStack } from "@carbon/react";
-import { Await, useParams } from "@remix-run/react";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel, Documents } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
+  getJob,
   jobValidator,
   recalculateJobRequirements,
   upsertJob,
@@ -26,6 +27,31 @@ import { JobNotes } from "~/modules/production/ui/Jobs";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+type LoaderData = {
+  notes: JSONContent;
+};
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "production",
+  });
+
+  const { jobId } = params;
+  if (!jobId) throw new Error("Could not find jobId");
+
+  const job = await getJob(client, jobId);
+  if (job.error) {
+    throw redirect(
+      path.to.jobs,
+      await flash(request, error(job.error, "Failed to load job"))
+    );
+  }
+
+  return json<LoaderData>({
+    notes: (job.data?.notes ?? {}) as JSONContent,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -79,6 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function JobDetailsRoute() {
+  const { notes } = useLoaderData<typeof loader>();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
   const permissions = usePermissions();
@@ -104,7 +131,7 @@ export default function JobDetailsRoute() {
         id={jobId}
         title={jobData?.job.jobId ?? ""}
         subTitle={jobData?.job.itemReadableId ?? ""}
-        notes={jobData?.job.notes as JSONContent}
+        notes={notes}
       />
 
       <Suspense

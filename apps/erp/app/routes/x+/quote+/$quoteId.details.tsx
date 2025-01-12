@@ -2,11 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { Spinner, type JSONContent } from "@carbon/react";
-import { Await, useParams } from "@remix-run/react";
+import type { JSONContent } from "@carbon/react";
+import { Spinner } from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import type {
@@ -15,7 +16,7 @@ import type {
   QuotationPayment,
   QuotationShipment,
 } from "~/modules/sales";
-import { quoteValidator, upsertQuote } from "~/modules/sales";
+import { getQuote, quoteValidator, upsertQuote } from "~/modules/sales";
 import {
   OpportunityDocuments,
   OpportunityNotes,
@@ -28,6 +29,33 @@ import {
 } from "~/modules/sales/ui/Quotes";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+type LoaderData = {
+  internalNotes: JSONContent;
+  externalNotes: JSONContent;
+};
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client } = await requirePermissions(request, {
+    view: "sales",
+  });
+
+  const { quoteId } = params;
+  if (!quoteId) throw new Error("Could not find quoteId");
+
+  const quote = await getQuote(client, quoteId);
+  if (quote.error) {
+    throw redirect(
+      path.to.quotes,
+      await flash(request, error(quote.error, "Failed to load quote"))
+    );
+  }
+
+  return json<LoaderData>({
+    internalNotes: (quote.data?.internalNotes ?? {}) as JSONContent,
+    externalNotes: (quote.data?.externalNotes ?? {}) as JSONContent,
+  });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -69,12 +97,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteDetailsRoute() {
+  const { internalNotes, externalNotes } = useLoaderData<typeof loader>();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
 
   const quoteData = useRouteData<{
     quote: Quotation;
-    files: Promise<(FileObject & { quoteLineId: string | null })[]>;
+    files: Promise<FileObject[]>;
     shipment: QuotationShipment;
     payment: QuotationPayment;
     opportunity: Opportunity;
@@ -129,8 +158,8 @@ export default function QuoteDetailsRoute() {
         id={quoteData.quote.id}
         title="Notes"
         table="quote"
-        internalNotes={quoteData.quote.internalNotes as JSONContent}
-        externalNotes={quoteData.quote.externalNotes as JSONContent}
+        internalNotes={internalNotes}
+        externalNotes={externalNotes}
       />
       <Suspense
         key={`documents-${quoteId}`}
