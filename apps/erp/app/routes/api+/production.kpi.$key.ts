@@ -178,15 +178,38 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .lte("completedDate", end)
         .not("completedDate", "is", null);
 
-      const jobOperations = await client
-        .from("jobOperation")
-        .select(
-          "id, jobId, operationId, estimatedTime, actualTime, completedDate"
-        )
-        .eq("companyId", companyId)
-        .gte("completedDate", start)
-        .lte("completedDate", end)
-        .not("completedDate", "is", null);
+      if (jobs.error || !jobs.data || jobs.data.length === 0) {
+        return json({
+          data: [],
+          previousPeriodData: [],
+        });
+      }
+
+      const [jobOperations, productionEvents] = await Promise.all([
+        client
+          .from("jobOperation")
+          .select("*")
+          .in("jobId", jobs.data?.map((job) => job.id) ?? []),
+        client
+          .from("productionEvent")
+          .select("*, ...jobOperation(jobId)")
+          .eq("companyId", companyId)
+          .in("jobOperation.jobId", jobs.data?.map((job) => job.id) ?? [])
+          .not("jobOperation.jobId", "is", null),
+      ]);
+
+      console.log({ productionEvents: productionEvents.data });
+
+      const jobOperationsByJobId = jobOperations.data?.reduce(
+        (acc, operation) => {
+          if (!acc[operation.jobId]) {
+            acc[operation.jobId] = [];
+          }
+          acc[operation.jobId].push(operation);
+          return acc;
+        },
+        {} as Record<string, typeof jobOperations.data>
+      );
 
       return json({
         data: [],
