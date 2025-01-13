@@ -88,6 +88,40 @@ const QuotePDF = ({
     (method) => method.id === shipment.shippingMethodId
   );
 
+  const hasSinglePricePerLine = quoteLines.every((line) => {
+    return line.quantity.length === 1;
+  });
+
+  const getTotal = () => {
+    return quoteLines.reduce((total, line) => {
+      if (line.status === "No Quote") return total;
+
+      const prices = pricesByLine[line.id] ?? [];
+      const price = prices.find((price) => price.quantity === line.quantity[0]);
+
+      const netExtendedPrice = price?.convertedNetExtendedPrice ?? 0;
+      const additionalCharges = line.additionalCharges ?? {};
+      const additionalChargesByQuantity = line.quantity.map((quantity) => {
+        const charges = Object.values(additionalCharges).reduce(
+          (acc, charge) => {
+            let amount = charge.amounts?.[quantity] ?? 0;
+            if (shouldConvertCurrency) {
+              amount *= exchangeRate;
+            }
+            return acc + amount;
+          },
+          0
+        );
+        return charges;
+      });
+      const additionalChargePlusShipping =
+        additionalChargesByQuantity[0] + (price?.convertedShippingCost ?? 0);
+      const totalPrice = netExtendedPrice + additionalChargePlusShipping;
+
+      return total + totalPrice;
+    }, (shipment?.shippingCost ?? 0) * (exchangeRate ?? 1));
+  };
+
   return (
     <Template
       title={title}
@@ -356,8 +390,21 @@ const QuotePDF = ({
               </Text>
             </View>
           )}
+          {hasSinglePricePerLine && (
+            <View
+              style={tw(
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"
+              )}
+            >
+              <Text>Total</Text>
+              <Text style={tw("font-bold text-black")}>
+                {formatter.format(getTotal())}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
+
       <View style={tw("flex flex-col gap-4 w-full")}>
         {Object.keys(quote.externalNotes ?? {}).length > 0 && (
           <Note
