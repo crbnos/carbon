@@ -25,6 +25,7 @@ export const postTransactionTask = task({
     switch (payload.type) {
       case "receipt":
         console.info(`📫 Posting receipt ${payload.documentId}`);
+        console.info(payload);
         const postReceipt = await serviceRole.functions.invoke("post-receipt", {
           body: {
             receiptId: payload.documentId,
@@ -41,6 +42,7 @@ export const postTransactionTask = task({
         break;
       case "purchase-invoice":
         console.info(`📫 Posting purchase invoice ${payload.documentId}`);
+        console.info(payload);
         const postPurchaseInvoice = await serviceRole.functions.invoke(
           "post-purchase-invoice",
           {
