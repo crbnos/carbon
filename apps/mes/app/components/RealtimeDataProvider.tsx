@@ -138,32 +138,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           }
         }
       )
-
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "employee",
-          filter: `companyId=eq.${companyId}`,
-        },
-        async (payload) => {
-          if ("companyId" in payload.new && payload.new.companyId !== companyId)
-            return;
-          // TODO: there's a cleaner way of doing this, but since customers and suppliers
-          // are also in the users table, we can't automatically add/update/delete them
-          // from our list of employees. So for now we just refetch.
-          const { data } = await carbon
-            .from("employees")
-            .select("id, name, avatarUrl")
-            .eq("companyId", companyId)
-            .order("name");
-          if (data) {
-            // @ts-ignore
-            setPeople(data);
-          }
-        }
-      )
       .subscribe();
 
     return () => {

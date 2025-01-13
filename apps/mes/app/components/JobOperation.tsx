@@ -2,6 +2,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Avatar,
   Badge,
   Button,
   cn,
@@ -13,6 +14,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -131,14 +133,51 @@ import {
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
+  LuSend,
   LuTimer,
   LuTriangleAlert,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
 import { getFileType } from "~/services/operations.service";
-import { useItems } from "~/stores";
+import { useItems, usePeople } from "~/stores";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
+
+const MOCK_NOTES = [
+  {
+    id: "c8j2m4k9n1",
+    jobOperationId: "op123",
+    note: "Setup completed successfully. All tooling verified.",
+    companyId: "comp789",
+    createdAt: "2024-01-15T14:30:00Z",
+    createdBy: "user456",
+    updatedBy: null,
+    updatedAt: null,
+    productionQuantityId: "pq123",
+  },
+  {
+    id: "d9k3n5m2p4",
+    jobOperationId: "op123",
+    note: "Quality check performed - dimensions within spec",
+    companyId: "comp789",
+    createdAt: "2024-01-15T16:45:00Z",
+    createdBy: "16c54d5a-fc00-4c54-ac34-25e43f85e366",
+    updatedBy: "user456",
+    updatedAt: "2024-01-15T17:00:00Z",
+    productionQuantityId: "pq124",
+  },
+  {
+    id: "e1m4n7p3q5",
+    jobOperationId: "op123",
+    note: "Machine maintenance required - coolant levels low",
+    companyId: "comp789",
+    createdAt: "2024-01-16T09:15:00Z",
+    createdBy: "user123",
+    updatedBy: null,
+    updatedAt: null,
+    productionQuantityId: null,
+  },
+];
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -160,6 +199,8 @@ export const JobOperation = ({
   workCenter,
 }: JobOperationProps) => {
   const navigate = useNavigate();
+  const user = useUser();
+  const [employees] = usePeople();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
@@ -256,6 +297,9 @@ export const JobOperation = ({
                   value="instructions"
                 >
                   Instructions
+                </TabsTrigger>
+                <TabsTrigger variant="primary" value="notes">
+                  Notes
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -688,7 +732,66 @@ export const JobOperation = ({
             />
           </ScrollArea>
         </TabsContent>
-        {activeTab !== "instructions" && (
+        <TabsContent value="notes">
+          <div className="flex flex-col h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)]">
+            <ScrollArea className="flex-1 p-4">
+              <div className="flex flex-col-reverse gap-3">
+                {MOCK_NOTES.map((note) => {
+                  const createdBy = employees.find(
+                    (employee) => employee.id === note.createdBy
+                  );
+                  return (
+                    <div
+                      key={note.id}
+                      className={cn(
+                        "flex gap-2",
+                        note.createdBy === user.id && "flex-row-reverse"
+                      )}
+                    >
+                      <Avatar name={createdBy?.name} />
+
+                      <div
+                        className={cn(
+                          "max-w-[80%] rounded-2xl p-3",
+                          note.createdBy === user.id
+                            ? "bg-blue-500 text-blue-white"
+                            : "bg-muted"
+                        )}
+                      >
+                        <p className="text-sm">{note.note}</p>
+                        <span className="text-xs opacity-70">
+                          {new Date(note.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+
+            <div className="border-t p-4">
+              <form className="flex gap-2">
+                <Input
+                  className="flex-1"
+                  placeholder="Type a message..."
+                  name="message"
+                />
+                <Button
+                  className="h-10"
+                  aria-label="Send"
+                  type="submit"
+                  leftIcon={<LuSend />}
+                >
+                  Send
+                </Button>
+              </form>
+            </div>
+          </div>
+        </TabsContent>
+        {!["instructions", "notes"].includes(activeTab) && (
           <Controls>
             <div className="flex flex-col items-center gap-2 p-4">
               <VStack spacing={2}>
@@ -823,100 +926,105 @@ export const JobOperation = ({
             </div>
           </Controls>
         )}
-        <Times>
-          <div className="flex items-start p-4">
-            <div className="flex flex-col w-full gap-2">
-              {operation.setupDuration > 0 && (
+        {!["notes"].includes(activeTab) && (
+          <Times>
+            <div className="flex items-start p-4">
+              <div className="flex flex-col w-full gap-2">
+                {operation.setupDuration > 0 && (
+                  <HStack>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuTimer className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Setup</TooltipContent>
+                    </Tooltip>
+                    <Progress
+                      numerator={formatDurationMilliseconds(progress.setup)}
+                      denominator={formatDurationMilliseconds(
+                        operation.setupDuration
+                      )}
+                      value={(progress.setup / operation.setupDuration) * 100}
+                      indicatorClassName={
+                        progress.setup > operation.setupDuration
+                          ? "bg-red-500"
+                          : ""
+                      }
+                    />
+                  </HStack>
+                )}
+                {operation.laborDuration > 0 && (
+                  <HStack>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuHardHat className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Labor</TooltipContent>
+                    </Tooltip>
+                    <Progress
+                      numerator={formatDurationMilliseconds(progress.labor)}
+                      denominator={formatDurationMilliseconds(
+                        operation.laborDuration
+                      )}
+                      value={(progress.labor / operation.laborDuration) * 100}
+                      indicatorClassName={
+                        progress.labor > operation.laborDuration
+                          ? "bg-red-500"
+                          : ""
+                      }
+                    />
+                  </HStack>
+                )}
+                {operation.machineDuration > 0 && (
+                  <HStack>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuHammer className="h-4 w-4 mr-1" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">Machine</TooltipContent>
+                    </Tooltip>
+                    <Progress
+                      numerator={formatDurationMilliseconds(progress.machine)}
+                      denominator={formatDurationMilliseconds(
+                        operation.machineDuration
+                      )}
+                      value={
+                        (progress.machine / operation.machineDuration) * 100
+                      }
+                      indicatorClassName={
+                        progress.machine > operation.machineDuration
+                          ? "bg-red-500"
+                          : ""
+                      }
+                    />
+                  </HStack>
+                )}
                 <HStack>
                   <Tooltip>
                     <TooltipTrigger>
-                      <LuTimer className="h-4 w-4 mr-1" />
+                      <FaTasks className="h-4 w-4 mr-1" />
                     </TooltipTrigger>
-                    <TooltipContent side="right">Setup</TooltipContent>
+                    <TooltipContent side="right">Quantity</TooltipContent>
                   </Tooltip>
                   <Progress
-                    numerator={formatDurationMilliseconds(progress.setup)}
-                    denominator={formatDurationMilliseconds(
-                      operation.setupDuration
-                    )}
-                    value={(progress.setup / operation.setupDuration) * 100}
                     indicatorClassName={
-                      progress.setup > operation.setupDuration
-                        ? "bg-red-500"
+                      operation.operationStatus === "Paused" &&
+                      operation.quantityComplete < operation.operationQuantity
+                        ? "bg-yellow-500"
                         : ""
+                    }
+                    numerator={operation.quantityComplete.toString()}
+                    denominator={operation.operationQuantity.toString()}
+                    value={
+                      (operation.quantityComplete /
+                        operation.operationQuantity) *
+                      100
                     }
                   />
                 </HStack>
-              )}
-              {operation.laborDuration > 0 && (
-                <HStack>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <LuHardHat className="h-4 w-4 mr-1" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Labor</TooltipContent>
-                  </Tooltip>
-                  <Progress
-                    numerator={formatDurationMilliseconds(progress.labor)}
-                    denominator={formatDurationMilliseconds(
-                      operation.laborDuration
-                    )}
-                    value={(progress.labor / operation.laborDuration) * 100}
-                    indicatorClassName={
-                      progress.labor > operation.laborDuration
-                        ? "bg-red-500"
-                        : ""
-                    }
-                  />
-                </HStack>
-              )}
-              {operation.machineDuration > 0 && (
-                <HStack>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <LuHammer className="h-4 w-4 mr-1" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">Machine</TooltipContent>
-                  </Tooltip>
-                  <Progress
-                    numerator={formatDurationMilliseconds(progress.machine)}
-                    denominator={formatDurationMilliseconds(
-                      operation.machineDuration
-                    )}
-                    value={(progress.machine / operation.machineDuration) * 100}
-                    indicatorClassName={
-                      progress.machine > operation.machineDuration
-                        ? "bg-red-500"
-                        : ""
-                    }
-                  />
-                </HStack>
-              )}
-              <HStack>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <FaTasks className="h-4 w-4 mr-1" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right">Quantity</TooltipContent>
-                </Tooltip>
-                <Progress
-                  indicatorClassName={
-                    operation.operationStatus === "Paused" &&
-                    operation.quantityComplete < operation.operationQuantity
-                      ? "bg-yellow-500"
-                      : ""
-                  }
-                  numerator={operation.quantityComplete.toString()}
-                  denominator={operation.operationQuantity.toString()}
-                  value={
-                    (operation.quantityComplete / operation.operationQuantity) *
-                    100
-                  }
-                />
-              </HStack>
+              </div>
             </div>
-          </div>
-        </Times>
+          </Times>
+        )}
       </Tabs>
       {reworkModal.isOpen && (
         <QuantityModal
@@ -1174,9 +1282,12 @@ function useOperation(
     };
   }, [activeEvents]);
 
-  useInterval(() => {
-    setProgress(getProgress());
-  }, 1000);
+  useInterval(
+    () => {
+      setProgress(getProgress());
+    },
+    active.setup || active.labor || active.machine ? 1000 : null
+  );
 
   return {
     active,
@@ -1204,6 +1315,7 @@ function useOperation(
 
 function useFiles(job: Job) {
   const user = useUser();
+
   const { carbon } = useCarbon();
 
   const getFilePath = useCallback(

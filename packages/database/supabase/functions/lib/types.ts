@@ -7601,6 +7601,7 @@ export type Database = {
       }
       job: {
         Row: {
+          actualTime: number | null
           assignee: string | null
           companyId: string
           completedDate: string | null
@@ -7611,6 +7612,7 @@ export type Database = {
           customFields: Json | null
           deadlineType: Database["public"]["Enums"]["deadlineType"]
           dueDate: string | null
+          estimatedTime: number | null
           id: string
           itemId: string
           jobId: string
@@ -7635,6 +7637,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          actualTime?: number | null
           assignee?: string | null
           companyId: string
           completedDate?: string | null
@@ -7645,6 +7648,7 @@ export type Database = {
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
           dueDate?: string | null
+          estimatedTime?: number | null
           id?: string
           itemId: string
           jobId: string
@@ -7669,6 +7673,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          actualTime?: number | null
           assignee?: string | null
           companyId?: string
           completedDate?: string | null
@@ -7679,6 +7684,7 @@ export type Database = {
           customFields?: Json | null
           deadlineType?: Database["public"]["Enums"]["deadlineType"]
           dueDate?: string | null
+          estimatedTime?: number | null
           id?: string
           itemId?: string
           jobId?: string
@@ -8710,6 +8716,138 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCenters"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobOperationNote: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          jobOperationId: string
+          note: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          jobOperationId: string
+          note: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          jobOperationId?: string
+          note?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationNote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -18975,6 +19113,7 @@ export type Database = {
           id: string
           internalNotes: Json | null
           locationId: string | null
+          noQuoteReasonId: string | null
           revisionId: number
           rfqDate: string
           rfqId: string
@@ -19000,6 +19139,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
+          noQuoteReasonId?: string | null
           revisionId?: number
           rfqDate?: string
           rfqId: string
@@ -19025,6 +19165,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
+          noQuoteReasonId?: string | null
           revisionId?: number
           rfqDate?: string
           rfqId?: string
@@ -19216,6 +19357,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "purchaseOrders"
             referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "salesRfq_noQuoteReasonId_fkey"
+            columns: ["noQuoteReasonId"]
+            isOneToOne: false
+            referencedRelation: "noQuoteReason"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "salesRfq_updatedBy_fkey"
