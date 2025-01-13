@@ -24,11 +24,18 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
+import {
+  Await,
+  Link,
+  useFetcher,
+  useLocation,
+  useParams,
+} from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   LuDownload,
+  LuExternalLink,
   LuSettings,
   LuSquareStack,
   LuTriangleAlert,
@@ -49,9 +56,11 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getJobMethodValidator } from "../../production.models";
-import type { Job, JobMethod } from "../../types";
+import type { Job, JobMaterial, JobMethod } from "../../types";
 
 const JobBreadcrumbs = () => {
   const permissions = usePermissions();
@@ -67,6 +76,19 @@ const JobBreadcrumbs = () => {
       parameters: ConfigurationParameter[];
     }>;
   }>(path.to.job(jobId));
+
+  const materialRouteData = useRouteData<{
+    material: JobMaterial;
+  }>(path.to.jobMakeMethod(jobId, methodId!, materialId!));
+
+  const itemId = materialRouteData?.material?.itemId ?? routeData?.job?.itemId;
+  const itemType =
+    materialRouteData?.material?.itemType ?? routeData?.job?.itemType;
+
+  const itemLink =
+    itemType && itemId
+      ? getLinkToItemDetails(itemType as MethodItemType, itemId)
+      : null;
 
   const isDisabled = ["Completed", "Cancelled", "In Progress"].includes(
     routeData?.job?.status ?? ""
@@ -174,6 +196,13 @@ const JobBreadcrumbs = () => {
                     }}
                   >
                     Configure
+                  </MenubarItem>
+                )}
+                {itemLink && (
+                  <MenubarItem leftIcon={<LuExternalLink />} asChild>
+                    <Link prefetch="intent" to={itemLink}>
+                      Item Master
+                    </Link>
                   </MenubarItem>
                 )}
               </HStack>

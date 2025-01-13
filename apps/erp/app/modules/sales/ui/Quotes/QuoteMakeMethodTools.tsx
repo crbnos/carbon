@@ -20,10 +20,17 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { Await, useFetcher, useLocation, useParams } from "@remix-run/react";
+import {
+  Await,
+  Link,
+  useFetcher,
+  useLocation,
+  useParams,
+} from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
   LuDownload,
+  LuExternalLink,
   LuSettings,
   LuTriangleAlert,
   LuUpload,
@@ -36,6 +43,8 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
@@ -51,6 +60,22 @@ const QuoteMakeMethodTools = () => {
     lines: QuotationLine[];
     methods: Promise<Tree<QuoteMethod>[]> | Tree<QuoteMethod>[];
   }>(path.to.quote(quoteId));
+
+  const materialRouteData = useRouteData<{
+    material: { itemId: string; itemType: MethodItemType | null };
+  }>(path.to.quoteLineMakeMethod(quoteId, lineId!, methodId!, materialId!));
+
+  const itemId =
+    materialRouteData?.material?.itemId ??
+    routeData?.lines.find((line) => line.id === lineId)?.itemId;
+  const itemType =
+    materialRouteData?.material?.itemType ??
+    routeData?.lines.find((line) => line.id === lineId)?.itemType;
+
+  const itemLink =
+    itemType && itemId
+      ? getLinkToItemDetails(itemType as MethodItemType, itemId)
+      : null;
 
   const lineData = useRouteData<{
     configurationParameters: Promise<{
@@ -166,6 +191,13 @@ const QuoteMakeMethodTools = () => {
                     }}
                   >
                     Configure
+                  </MenubarItem>
+                )}
+                {itemLink && (
+                  <MenubarItem leftIcon={<LuExternalLink />} asChild>
+                    <Link prefetch="intent" to={itemLink}>
+                      Item Master
+                    </Link>
                   </MenubarItem>
                 )}
               </HStack>
