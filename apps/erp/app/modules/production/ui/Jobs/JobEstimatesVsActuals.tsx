@@ -98,8 +98,6 @@ const JobEstimatesVsActuals = ({
   const percentFormatter = usePercentFormatter();
   const detailsDisclosure = useDisclosure();
 
-  console.log({ operations });
-
   const [currentUnitCosts, setCurrentUnitCosts] = useState<
     Record<string, number>
   >({});
