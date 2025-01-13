@@ -44,39 +44,42 @@ const Pagination = (props: PaginationProps) => {
   }
 
   return (
-    <HStack
-      className={cn(
-        "text-center bg-card border-t border-border justify-between py-4 w-full z-[1]",
-        compact ? "px-4" : "px-4 md:px-0"
-      )}
-      spacing={6}
-    >
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="secondary">{pageSize} rows</Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuLabel>Results per page</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuRadioGroup value={`${pageSize}`}>
-            {pageSizes.map((size) => (
-              <DropdownMenuRadioItem
-                key={`${size}`}
-                value={`${size}`}
-                onClick={() => {
-                  setPageSize(size);
-                }}
-              >
-                {size}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <HStack>
-        <PaginationButtons {...props} />
+    <>
+      <hr className="m-0 h-px w-full border-none bg-gradient-to-r from-zinc-200/0 via-zinc-500/30 to-zinc-200/0" />
+      <HStack
+        className={cn(
+          "text-center bg-card justify-between py-4 w-full z-[1]",
+          compact ? "px-4" : "px-4 md:px-0"
+        )}
+        spacing={6}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary">{pageSize} rows</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuLabel>Results per page</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={`${pageSize}`}>
+              {pageSizes.map((size) => (
+                <DropdownMenuRadioItem
+                  key={`${size}`}
+                  value={`${size}`}
+                  onClick={() => {
+                    setPageSize(size);
+                  }}
+                >
+                  {size}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <HStack>
+          <PaginationButtons {...props} />
+        </HStack>
       </HStack>
-    </HStack>
+    </>
   );
 };
 
