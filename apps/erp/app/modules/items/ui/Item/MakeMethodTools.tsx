@@ -20,7 +20,7 @@ import {
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
-import { LuDownload, LuTriangleAlert, LuUpload } from "react-icons/lu";
+import { LuGitBranch, LuGitMerge, LuTriangleAlert } from "react-icons/lu";
 import { Hidden, Item } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
@@ -62,7 +62,7 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
               isDisabled={
                 !permissions.can("update", "parts") || isGetMethodLoading
               }
-              leftIcon={<LuDownload />}
+              leftIcon={<LuGitBranch />}
               onClick={getMethodModal.onOpen}
             >
               Get Method
@@ -72,7 +72,7 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
                 !permissions.can("update", "parts") || isSaveMethodLoading
               }
               isLoading={isSaveMethodLoading}
-              leftIcon={<LuUpload />}
+              leftIcon={<LuGitMerge />}
               onClick={saveMethodModal.onOpen}
             >
               Save Method

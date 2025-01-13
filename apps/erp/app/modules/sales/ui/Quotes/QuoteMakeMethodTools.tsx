@@ -29,11 +29,11 @@ import {
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
-  LuDownload,
-  LuExternalLink,
+  LuGitBranch,
+  LuGitFork,
+  LuGitMerge,
   LuSettings,
   LuTriangleAlert,
-  LuUpload,
 } from "react-icons/lu";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit } from "~/components/Form";
@@ -162,7 +162,7 @@ const QuoteMakeMethodTools = () => {
                 <MenubarItem
                   isLoading={isGetMethodLoading}
                   isDisabled={isGetMethodLoading}
-                  leftIcon={<LuDownload />}
+                  leftIcon={<LuGitBranch />}
                   onClick={getMethodModal.onOpen}
                 >
                   Get Method
@@ -172,7 +172,7 @@ const QuoteMakeMethodTools = () => {
                     !permissions.can("update", "parts") || isSaveMethodLoading
                   }
                   isLoading={isSaveMethodLoading}
-                  leftIcon={<LuUpload />}
+                  leftIcon={<LuGitMerge />}
                   onClick={saveMethodModal.onOpen}
                 >
                   Save Method
@@ -194,7 +194,7 @@ const QuoteMakeMethodTools = () => {
                   </MenubarItem>
                 )}
                 {itemLink && (
-                  <MenubarItem leftIcon={<LuExternalLink />} asChild>
+                  <MenubarItem leftIcon={<LuGitFork />} asChild>
                     <Link prefetch="intent" to={itemLink}>
                       Item Master
                     </Link>

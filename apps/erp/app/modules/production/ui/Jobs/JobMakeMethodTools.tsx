@@ -34,9 +34,9 @@ import {
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
-  LuDownload,
-  LuExternalLink,
-  LuSettings,
+  LuGitBranch,
+  LuGitFork,
+  LuGitMerge,
   LuSquareStack,
   LuTriangleAlert,
   LuUpload,
@@ -176,14 +176,14 @@ const JobBreadcrumbs = () => {
                 <MenubarItem
                   isLoading={isGetMethodLoading}
                   isDisabled={isDisabled || isGetMethodLoading}
-                  leftIcon={<LuDownload />}
+                  leftIcon={<LuGitBranch />}
                   onClick={getMethodModal.onOpen}
                 >
                   Get Method
                 </MenubarItem>
                 {isConfigured && isJobMethod && (
                   <MenubarItem
-                    leftIcon={<LuSettings />}
+                    leftIcon={<LuGitMerge />}
                     isDisabled={
                       isDisabled || !permissions.can("update", "production")
                     }
@@ -199,7 +199,7 @@ const JobBreadcrumbs = () => {
                   </MenubarItem>
                 )}
                 {itemLink && (
-                  <MenubarItem leftIcon={<LuExternalLink />} asChild>
+                  <MenubarItem leftIcon={<LuGitFork />} asChild>
                     <Link prefetch="intent" to={itemLink}>
                       Item Master
                     </Link>
