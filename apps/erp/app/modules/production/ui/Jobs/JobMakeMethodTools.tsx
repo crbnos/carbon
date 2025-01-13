@@ -39,7 +39,6 @@ import {
   LuGitMerge,
   LuSquareStack,
   LuTriangleAlert,
-  LuUpload,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
@@ -168,7 +167,7 @@ const JobBreadcrumbs = () => {
                     !permissions.can("update", "parts") || isSaveMethodLoading
                   }
                   isLoading={isSaveMethodLoading}
-                  leftIcon={<LuUpload />}
+                  leftIcon={<LuGitMerge />}
                   onClick={saveMethodModal.onOpen}
                 >
                   Save Method
