@@ -394,7 +394,7 @@ export default function SalesDashboard() {
                   >
                     {percentageChange > 0
                       ? `+${percentageChange.toFixed(0)}%`
-                      : `-${percentageChange.toFixed(0)}%`}
+                      : `${percentageChange.toFixed(0)}%`}
                   </Badge>
                 </>
               )}

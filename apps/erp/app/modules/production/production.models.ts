@@ -12,14 +12,17 @@ export const KPIs = [
   {
     key: "utilization",
     label: "Work Center Utilization",
+    emptyMessage: "No work center utilization data within range",
   },
   {
     key: "estimatesVsActuals",
     label: "Estimates vs Actuals",
+    emptyMessage: "No completed jobs within range",
   },
   {
     key: "completionTime",
     label: "Completion Time",
+    emptyMessage: "No completed jobs within range",
   },
 ] as const;
 
