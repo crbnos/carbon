@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Card,
   CardAction,
@@ -273,14 +272,16 @@ export default function ProductionDashboard() {
                 ) : (
                   <>
                     <p>{formatDurationMilliseconds(total)}</p>
-                    <Badge
-                      variant="secondary"
-                      className="normal-case font-medium px-2 rounded-full"
-                    >
-                      {percentageChange > 0
-                        ? `+${percentageChange.toFixed(0)}%`
-                        : `${percentageChange.toFixed(0)}%`}
-                    </Badge>
+
+                    {percentageChange > 0 ? (
+                      <span className="text-emerald-500">
+                        +{percentageChange.toFixed(0)}%
+                      </span>
+                    ) : (
+                      <span className="text-red-500">
+                        {percentageChange.toFixed(0)}%
+                      </span>
+                    )}
                   </>
                 )}
               </HStack>
