@@ -30,6 +30,9 @@ serve(async (req: Request) => {
   const payload = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
 
+  console.log(payload);
+  console.log(payloadValidator.safeParse(payload));
+
   try {
     const { receiptId, userId, companyId } = payloadValidator.parse(payload);
 
@@ -37,6 +40,7 @@ serve(async (req: Request) => {
       function: "post-receipt",
       receiptId,
       userId,
+      companyId,
     });
 
     const client = await getSupabaseServiceRole(
