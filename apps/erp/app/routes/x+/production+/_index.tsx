@@ -20,6 +20,8 @@ import {
 } from "@carbon/react";
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
@@ -33,17 +35,21 @@ import { useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import { LuChevronDown, LuEllipsisVertical, LuFile } from "react-icons/lu";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
+import { Empty } from "~/components";
 import { KPIs } from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
+import { capitalize } from "~/utils/string";
 
 const chartConfig = {
   actual: {
-    color: "hsl(var(--primary))", // Primary color
+    color: "hsl(var(--primary))",
+    label: "Actual",
   },
   estimate: {
-    color: "hsl(var(--chart-2))", // Secondary color
+    color: "hsl(var(--destructive))",
+    label: "Estimate",
   },
 } satisfies ChartConfig;
 
@@ -58,7 +64,9 @@ export default function ProductionDashboard() {
   });
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("utilization");
+  const [selectedKpi, setSelectedKpi] = useState<
+    "utilization" | "completionTime" | "estimatesVsActuals"
+  >("utilization");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = toCalendarDateTime(now("UTC"));
     const start = end.add({ months: -1 });
@@ -102,14 +110,46 @@ export default function ProductionDashboard() {
     setInterval(value);
   };
 
-  const total =
-    kpiFetcher.data?.data?.reduce((acc, item) => {
-      return acc + item.value;
-    }, 0) ?? 0;
-  const previousTotal =
-    kpiFetcher.data?.previousPeriodData?.reduce((acc, item) => {
-      return acc + item.value;
-    }, 0) ?? 0;
+  const getTotal = (
+    key: string,
+    data?: { value: number }[] | { actual: number; estimate: number }[]
+  ) => {
+    if (!data) return 0;
+    switch (key) {
+      case "utilization":
+        return data.reduce((acc, item) => {
+          // @ts-expect-error
+          return acc + item.value;
+        }, 0);
+      case "estimate":
+        return data.reduce((acc, item) => {
+          // @ts-expect-error
+          return acc + item.estimate;
+        }, 0);
+      case "actual":
+        return data.reduce((acc, item) => {
+          // @ts-expect-error
+          return acc + item.actual;
+        }, 0);
+      default:
+        return 0;
+    }
+  };
+
+  const total = getTotal(
+    selectedKpi === "estimatesVsActuals" ? "actual" : selectedKpi,
+    kpiFetcher.data?.data
+  );
+
+  const previousTotal = getTotal(
+    selectedKpi === "estimatesVsActuals" ? "estimate" : selectedKpi,
+    selectedKpi === "estimatesVsActuals"
+      ? kpiFetcher.data?.data
+      : (kpiFetcher.data?.previousPeriodData as {
+          value: number;
+        }[])
+  );
+
   const percentageChange =
     previousTotal === 0
       ? total > 0
@@ -123,10 +163,22 @@ export default function ProductionDashboard() {
     switch (selectedKpiData.key) {
       case "utilization":
         return [
-          ["Work Center", "Utilization"],
+          ["Work Center", "Utilization (%)"],
           ...kpiFetcher.data.data.map((item) => [
             item.key,
-            item.value / totalTimeInInterval,
+            // @ts-expect-error
+            (item.value / totalTimeInInterval) * 100,
+          ]),
+        ];
+      case "estimatesVsActuals":
+        return [
+          ["Job", "Actual (ms)", "Estimate (ms)"],
+          ...kpiFetcher.data.data.map((item) => [
+            item.key,
+            // @ts-expect-error
+            item.actual,
+            // @ts-expect-error
+            item.estimate,
           ]),
         ];
       default:
@@ -168,6 +220,7 @@ export default function ProductionDashboard() {
                   <DropdownMenuContent side="bottom" align="start">
                     <DropdownMenuRadioGroup
                       value={selectedKpi}
+                      // @ts-expect-error
                       onValueChange={setSelectedKpi}
                     >
                       {KPIs.map((kpi) => (
@@ -226,7 +279,7 @@ export default function ProductionDashboard() {
                     >
                       {percentageChange > 0
                         ? `+${percentageChange.toFixed(0)}%`
-                        : `-${percentageChange.toFixed(0)}%`}
+                        : `${percentageChange.toFixed(0)}%`}
                     </Badge>
                   </>
                 )}
@@ -257,73 +310,140 @@ export default function ProductionDashboard() {
             </CardAction>
           </HStack>
           <CardContent className="p-6 pb-12">
-            <Loading isLoading={isFetching} className="w-full">
-              <ChartContainer
-                config={chartConfig}
-                style={{
-                  height: `${(kpiFetcher.data?.data?.length ?? 5) * 40}px`,
-                }}
-              >
-                <BarChart
-                  accessibilityLayer
-                  data={kpiFetcher.data?.data ?? []}
-                  layout="vertical"
-                  margin={{
-                    left: -20,
-                    right: 30,
+            {kpiFetcher.state === "idle" &&
+            kpiFetcher.data?.data?.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full">
+                <Empty className="py-8">
+                  <p className="text-sm text-muted-foreground">
+                    {selectedKpiData.emptyMessage}
+                  </p>
+                </Empty>
+              </div>
+            ) : (
+              <Loading isLoading={isFetching} className="w-full">
+                <ChartContainer
+                  config={chartConfig}
+                  style={{
+                    height: `${
+                      (kpiFetcher.data?.data?.length ?? 5) *
+                      (selectedKpi === "utilization" ? 40 : 80)
+                    }px`,
                   }}
                 >
-                  <YAxis
-                    dataKey="key"
-                    type="category"
-                    tickLine={false}
-                    axisLine={false}
-                    width={yAxisWidth}
-                  />
-                  <XAxis type="number" dataKey="value" hide />
-                  <ChartTooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) => {
-                          const percentage =
-                            totalTimeInInterval === 0
-                              ? "0.00"
-                              : (
-                                  ((value as number) / totalTimeInInterval) *
-                                  100
-                                ).toFixed(2);
-                          return (
-                            <div className="flex flex-col gap-1">
-                              <div className="font-medium">{percentage}%</div>
-                              <div>
-                                {formatDurationMilliseconds(value as number)}
-                              </div>
-                            </div>
-                          );
-                        }}
-                      />
-                    }
-                  />
-                  <Bar dataKey="value" fill="var(--color-actual)" radius={2}>
-                    <LabelList
-                      dataKey="value"
-                      position="right"
-                      formatter={(value: number) => {
-                        const percentage =
-                          totalTimeInInterval === 0
-                            ? "0.00"
-                            : ((value / totalTimeInInterval) * 100).toFixed(2);
-
-                        return `${percentage}%`;
-                      }}
-                      offset={8}
-                      className="fill-foreground"
-                      fontSize={12}
+                  <BarChart
+                    accessibilityLayer
+                    data={kpiFetcher.data?.data ?? []}
+                    layout="vertical"
+                    margin={{
+                      right: 30,
+                    }}
+                  >
+                    <YAxis
+                      dataKey="key"
+                      type="category"
+                      tickLine={false}
+                      axisLine={false}
+                      width={yAxisWidth}
                     />
-                  </Bar>
-                </BarChart>
-              </ChartContainer>
-            </Loading>
+                    <XAxis type="number" hide />
+
+                    {selectedKpi === "utilization" && (
+                      <>
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value) => {
+                                const percentage =
+                                  totalTimeInInterval === 0
+                                    ? "0.00"
+                                    : (
+                                        ((value as number) /
+                                          totalTimeInInterval) *
+                                        100
+                                      ).toFixed(2);
+                                return (
+                                  <div className="flex flex-col gap-1">
+                                    <div className="font-medium font-mono">
+                                      {percentage}%
+                                    </div>
+                                    <div className="font-mono">
+                                      {formatDurationMilliseconds(
+                                        value as number
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }}
+                            />
+                          }
+                        />
+
+                        <Bar
+                          dataKey="value"
+                          fill="var(--color-actual)"
+                          radius={2}
+                        >
+                          <LabelList
+                            dataKey="value"
+                            position="right"
+                            formatter={(value: number) => {
+                              const percentage =
+                                totalTimeInInterval === 0
+                                  ? "0.00"
+                                  : (
+                                      (value / totalTimeInInterval) *
+                                      100
+                                    ).toFixed(2);
+
+                              return `${percentage}%`;
+                            }}
+                            offset={8}
+                            className="fill-foreground"
+                            fontSize={12}
+                          />
+                        </Bar>
+                      </>
+                    )}
+                    {selectedKpi === "estimatesVsActuals" && (
+                      <>
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              formatter={(value, name) => {
+                                return (
+                                  <div className="min-w-64 flex justify-between gap-1">
+                                    <div className="font-medium">
+                                      {capitalize(name as string)}
+                                    </div>
+                                    <div className="font-mono">
+                                      {formatDurationMilliseconds(
+                                        value as number
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }}
+                            />
+                          }
+                        />
+
+                        <ChartLegend content={<ChartLegendContent />} />
+                        <Bar
+                          dataKey="actual"
+                          fill="var(--color-actual)"
+                          radius={2}
+                        />
+                        <Bar
+                          dataKey="estimate"
+                          fill="var(--color-estimate)"
+                          radius={2}
+                        />
+                      </>
+                    )}
+                  </BarChart>
+                </ChartContainer>
+              </Loading>
+            )}
           </CardContent>
         </Card>
       </div>

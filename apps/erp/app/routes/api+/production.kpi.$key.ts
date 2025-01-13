@@ -6,6 +6,7 @@ import {
 } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/production/production.models";
+import { makeDurations } from "~/utils/duration";
 
 type ProductionEvent = {
   startTime: string;
@@ -194,11 +195,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .from("productionEvent")
           .select("*, ...jobOperation(jobId)")
           .eq("companyId", companyId)
-          .in("jobOperation.jobId", jobs.data?.map((job) => job.id) ?? [])
-          .not("jobOperation.jobId", "is", null),
+          .in("jobOperation.jobId", jobs.data?.map((job) => job.id) ?? []),
       ]);
-
-      console.log({ productionEvents: productionEvents.data });
 
       const jobOperationsByJobId = jobOperations.data?.reduce(
         (acc, operation) => {
@@ -211,8 +209,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         {} as Record<string, typeof jobOperations.data>
       );
 
+      const productionEventsByJobId = productionEvents.data?.reduce(
+        (acc, event) => {
+          if (!acc[event.jobId]) {
+            acc[event.jobId] = [];
+          }
+          acc[event.jobId].push(event);
+          return acc;
+        },
+        {} as Record<string, typeof productionEvents.data>
+      );
+
+      const data: { key: string; actual: number; estimate: number }[] = [];
+
+      // Calculate totals for each job
+      for (const job of jobs.data) {
+        const jobId = job.id;
+
+        // Calculate estimated time from job operations
+        const operations = jobOperationsByJobId?.[jobId] || [];
+        const estimatedTime = operations.reduce((total, operation) => {
+          const withDurations = makeDurations(operation);
+          return total + withDurations.duration;
+        }, 0);
+
+        // Calculate actual time from production events
+        const events = productionEventsByJobId?.[jobId] || [];
+        const actualTime = events.reduce((total, event) => {
+          const startTime = new Date(event.startTime).getTime();
+          const endTime = event.endTime
+            ? new Date(event.endTime).getTime()
+            : new Date().getTime();
+          return total + (endTime - startTime);
+        }, 0);
+
+        data.push({
+          key: job.jobId,
+          actual: actualTime,
+          estimate: estimatedTime,
+        });
+      }
+
       return json({
-        data: [],
+        data,
         previousPeriodData: [],
       });
     }

@@ -418,7 +418,7 @@ export default function PurchaseDashboard() {
                   >
                     {percentageChange > 0
                       ? `+${percentageChange.toFixed(0)}%`
-                      : `-${percentageChange.toFixed(0)}%`}
+                      : `${percentageChange.toFixed(0)}%`}
                   </Badge>
                 </>
               )}
