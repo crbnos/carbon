@@ -19,6 +19,6 @@ vite.config.ts.timestamp*
 .env.test.local
 .env.production
 .env.production.local
-!packages/apps/carbon/.env
-!packages/carbon-database/.env
+!packages/apps/**/.env
+
 .vercel

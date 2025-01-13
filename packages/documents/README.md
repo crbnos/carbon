@@ -6,4 +6,4 @@ This package contains PDF definitions for different reports and documents used b
 
 The package does not publish the fonts. Each app that uses this package is responsible for providing the Satoshi fonts at `/fonts/Satoshi-*.ttf`
 
-See `/apps/carbon/public/fonts` for example.
+See `/apps/erp/public/fonts` for example.
