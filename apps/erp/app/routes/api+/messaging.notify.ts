@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { DOMAIN, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { NotificationEvent } from "@carbon/notifications";
@@ -19,7 +19,19 @@ export const messagingNotifySchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": `https://mes.${DOMAIN}`,
+  "Access-Control-Allow-Methods": "POST",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Credentials": "true",
+};
+
 export async function action({ request }: ActionFunctionArgs) {
+  // Handle CORS preflight requests
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   const { client, companyId, userId } = await requirePermissions(request, {});
 
   const payload = messagingNotifySchema.safeParse(await request.json());
@@ -67,17 +79,37 @@ export async function action({ request }: ActionFunctionArgs) {
 
         break;
       default:
+        const flashedResponse = await flash(
+          request,
+          error(null, "Invalid payload")
+        );
         return json(
           { success: false },
-          await flash(request, error(null, "Invalid payload"))
+          {
+            ...flashedResponse,
+            headers: {
+              ...corsHeaders,
+              ...flashedResponse.headers,
+            },
+          }
         );
     }
 
-    return json({ success: true });
+    return json({ success: true }, { headers: corsHeaders });
   } else {
+    const flashedResponse = await flash(
+      request,
+      error(null, "Failed to notify user")
+    );
     return json(
       { success: false },
-      await flash(request, error(null, "Failed to notify user"))
+      {
+        ...flashedResponse,
+        headers: {
+          ...corsHeaders,
+          ...flashedResponse.headers,
+        },
+      }
     );
   }
 }
