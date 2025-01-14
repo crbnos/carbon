@@ -160,6 +160,7 @@ export default function JobMakeMethodRoute() {
               operations={operations}
               productionEvents={resolvedProductionData.events}
               productionQuantities={resolvedProductionData.quantities}
+              notes={resolvedProductionData.notes}
             />
           )}
         </Await>

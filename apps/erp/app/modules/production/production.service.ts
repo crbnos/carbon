@@ -478,7 +478,7 @@ export async function getProductionDataByOperations(
   client: SupabaseClient<Database>,
   jobOperationIds: string[]
 ) {
-  const [quantities, events] = await Promise.all([
+  const [quantities, events, notes] = await Promise.all([
     client
       .from("productionQuantity")
       .select(
@@ -491,11 +491,16 @@ export async function getProductionDataByOperations(
         "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
       )
       .in("jobOperationId", jobOperationIds),
+    client
+      .from("jobOperationNote")
+      .select("*")
+      .in("jobOperationId", jobOperationIds),
   ]);
 
   return {
     quantities: quantities.data ?? [],
     events: events.data ?? [],
+    notes: notes.data ?? [],
   };
 }
 

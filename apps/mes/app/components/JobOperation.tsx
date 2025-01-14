@@ -15,6 +15,7 @@ import {
   HStack,
   IconButton,
   Input,
+  Loading,
   Modal,
   ModalBody,
   ModalContent,
@@ -121,6 +122,7 @@ import type {
   PostgrestSingleResponse,
   RealtimeChannel,
 } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
@@ -143,42 +145,6 @@ import { useItems, usePeople } from "~/stores";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 
-const MOCK_NOTES = [
-  {
-    id: "c8j2m4k9n1",
-    jobOperationId: "op123",
-    note: "Setup completed successfully. All tooling verified.",
-    companyId: "comp789",
-    createdAt: "2024-01-15T14:30:00Z",
-    createdBy: "user456",
-    updatedBy: null,
-    updatedAt: null,
-    productionQuantityId: "pq123",
-  },
-  {
-    id: "d9k3n5m2p4",
-    jobOperationId: "op123",
-    note: "Quality check performed - dimensions within spec",
-    companyId: "comp789",
-    createdAt: "2024-01-15T16:45:00Z",
-    createdBy: "16c54d5a-fc00-4c54-ac34-25e43f85e366",
-    updatedBy: "user456",
-    updatedAt: "2024-01-15T17:00:00Z",
-    productionQuantityId: "pq124",
-  },
-  {
-    id: "e1m4n7p3q5",
-    jobOperationId: "op123",
-    note: "Machine maintenance required - coolant levels low",
-    companyId: "comp789",
-    createdAt: "2024-01-16T09:15:00Z",
-    createdBy: "user123",
-    updatedBy: null,
-    updatedAt: null,
-    productionQuantityId: null,
-  },
-];
-
 type JobOperationProps = {
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
@@ -199,8 +165,6 @@ export const JobOperation = ({
   workCenter,
 }: JobOperationProps) => {
   const navigate = useNavigate();
-  const user = useUser();
-  const [employees] = usePeople();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
@@ -733,63 +697,7 @@ export const JobOperation = ({
           </ScrollArea>
         </TabsContent>
         <TabsContent value="notes">
-          <div className="flex flex-col h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)]">
-            <ScrollArea className="flex-1 p-4">
-              <div className="flex flex-col-reverse gap-3">
-                {MOCK_NOTES.map((note) => {
-                  const createdBy = employees.find(
-                    (employee) => employee.id === note.createdBy
-                  );
-                  return (
-                    <div
-                      key={note.id}
-                      className={cn(
-                        "flex gap-2",
-                        note.createdBy === user.id && "flex-row-reverse"
-                      )}
-                    >
-                      <Avatar name={createdBy?.name} />
-
-                      <div
-                        className={cn(
-                          "max-w-[80%] rounded-2xl p-3",
-                          note.createdBy === user.id
-                            ? "bg-blue-500 text-blue-white"
-                            : "bg-muted"
-                        )}
-                      >
-                        <p className="text-sm">{note.note}</p>
-                        <span className="text-xs opacity-70">
-                          {new Date(note.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-
-            <div className="border-t p-4">
-              <form className="flex gap-2">
-                <Input
-                  className="flex-1"
-                  placeholder="Type a message..."
-                  name="message"
-                />
-                <Button
-                  className="h-10"
-                  aria-label="Send"
-                  type="submit"
-                  leftIcon={<LuSend />}
-                >
-                  Send
-                </Button>
-              </form>
-            </div>
-          </div>
+          <Notes operation={operation} />
         </TabsContent>
         {!["instructions", "notes"].includes(activeTab) && (
           <Controls>
@@ -1080,6 +988,197 @@ export const JobOperation = ({
     </>
   );
 };
+
+type Note = {
+  id: string;
+  createdBy: string;
+  createdAt: string;
+  note: string;
+};
+
+function Notes({ operation }: { operation: OperationWithDetails }) {
+  const user = useUser();
+  const [employees] = usePeople();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { carbon, accessToken } = useCarbon();
+
+  const fetchNotes = async () => {
+    if (!carbon) return;
+    flushSync(() => {
+      setIsLoading(true);
+    });
+
+    const { data, error } = await carbon
+      ?.from("jobOperationNote")
+      .select("*")
+      .eq("jobOperationId", operation.id)
+      .order("createdAt", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setNotes(data);
+    setIsLoading(false);
+  };
+
+  useMount(() => {
+    fetchNotes();
+  });
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+      channelRef.current = carbon
+        .channel(`job-operation-notes-${operation.id}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "jobOperationNote",
+            filter: `jobOperationId=eq.${operation.id}`,
+          },
+          (payload) => {
+            setNotes((prev) => {
+              if (prev.some((note) => note.id === payload.new.id)) {
+                return prev;
+              }
+              return [...prev, payload.new as Note];
+            });
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  });
+
+  useEffect(() => {
+    if (carbon && accessToken && channelRef.current)
+      carbon.realtime.setAuth(accessToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      block: "start",
+      behavior: notes.length > 0 ? "smooth" : "auto",
+    });
+  }, [notes]);
+
+  const [note, setNote] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!note.trim()) return;
+
+    const newNote = {
+      id: nanoid(),
+      jobOperationId: operation.id,
+      createdBy: user.id,
+      note,
+      createdAt: new Date().toISOString(),
+      companyId: user.company.id,
+    };
+
+    flushSync(() => {
+      setNotes((prev) => [...prev, newNote]);
+      setNote("");
+    });
+
+    await carbon?.from("jobOperationNote").insert(newNote);
+  };
+
+  return (
+    <div className="flex flex-col h-[calc(100dvh-var(--header-height)*2)]">
+      <ScrollArea className="flex-1 p-4">
+        <Loading isLoading={isLoading}>
+          <div className="flex flex-col gap-3">
+            {notes.map((note) => {
+              const createdBy = employees.find(
+                (employee) => employee.id === note.createdBy
+              );
+              const isUser = note.createdBy === user.id;
+              return (
+                <div
+                  key={note.id}
+                  className={cn(
+                    "flex gap-2 items-end",
+                    isUser && "flex-row-reverse"
+                  )}
+                >
+                  <Avatar
+                    src={createdBy?.avatarUrl ?? undefined}
+                    name={createdBy?.name}
+                  />
+
+                  <div className="flex flex-col gap-1 max-w-[80%] ">
+                    <div className="flex flex-col gap-1">
+                      {!isUser && (
+                        <span className="text-xs opacity-70">
+                          {createdBy?.name}
+                        </span>
+                      )}
+                      <div
+                        className={cn(
+                          "rounded-2xl p-3 w-full flex flex-col gap-1",
+                          isUser ? "bg-blue-500 text-white" : "bg-muted"
+                        )}
+                      >
+                        <p className="text-sm">{note.note}</p>
+
+                        <span className="text-xs opacity-70">
+                          {new Date(note.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} style={{ height: 0 }} />
+          </div>
+        </Loading>
+      </ScrollArea>
+
+      <div className="border-t p-4">
+        <form className="flex gap-2" onSubmit={handleSubmit}>
+          <Input
+            className="flex-1"
+            placeholder="Type a message..."
+            name="message"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <Button
+            className="h-10"
+            aria-label="Send"
+            type="submit"
+            leftIcon={<LuSend />}
+          >
+            Send
+          </Button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 function useOperation(
   operation: OperationWithDetails,
@@ -1851,7 +1950,6 @@ function QuantityModal({
                     }
                     isReadOnly
                   />
-                  <TextArea label="Notes" name="notes" />
                 </>
               )}
             </VStack>

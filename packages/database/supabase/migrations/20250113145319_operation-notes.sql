@@ -49,3 +49,5 @@ ALTER TABLE "jobOperationNote" ADD COLUMN "productionQuantityId" TEXT;
 ALTER TABLE "jobOperationNote" ADD CONSTRAINT "jobOperationNote_productionQuantityId_fkey" FOREIGN KEY ("productionQuantityId") REFERENCES "productionQuantity"("id") ON UPDATE CASCADE ON DELETE CASCADE;
 
 CREATE INDEX "jobOperationNote_productionQuantityId_fkey" ON "jobOperationNote"("productionQuantityId");
+
+ALTER PUBLICATION supabase_realtime ADD TABLE "jobOperationNote";
