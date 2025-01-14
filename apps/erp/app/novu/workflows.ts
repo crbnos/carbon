@@ -19,6 +19,7 @@ const payloadSchema = z.object({
     NotificationEvent.SalesOrderAssignment,
     NotificationEvent.SalesRfqAssignment,
     NotificationEvent.SupplierQuoteAssignment,
+    NotificationEvent.JobOperationMessage,
   ]),
   from: z.string().optional(),
 });
@@ -54,6 +55,17 @@ export const expirationWorkflow = workflow(
   async ({ payload, step }) => {
     await step.inApp(NotificationType.ExpirationInApp, () => ({
       body: "Expired",
+      payload,
+    }));
+  },
+  { payloadSchema }
+);
+
+export const messageWorkflow = workflow(
+  NotificationWorkflow.Message,
+  async ({ payload, step }) => {
+    await step.inApp(NotificationType.MessageInApp, () => ({
+      body: "New Message",
       payload,
     }));
   },

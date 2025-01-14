@@ -6,11 +6,13 @@ export enum NotificationWorkflow {
   Assignment = "assignment",
   DigitalQuoteResponse = "digital-quote-response",
   Expiration = "expiration",
+  Message = "message",
 }
 
 export enum NotificationEvent {
   DigitalQuoteResponse = "digital-quote-response",
   JobAssignment = "job-assignment",
+  JobOperationMessage = "job-operation-message",
   PurchaseInvoiceAssignment = "purchase-invoice-assignment",
   PurchaseOrderAssignment = "purchase-order-assignment",
   QuoteAssignment = "quote-assignment",
@@ -24,6 +26,7 @@ export enum NotificationType {
   AssignmentInApp = "assignment-in-app",
   DigitalQuoteResponseInApp = "digital-quote-response-in-app",
   ExpirationInApp = "expiration-in-app",
+  MessageInApp = "message-in-app",
 }
 
 export type TriggerUser = {

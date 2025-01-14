@@ -23,6 +23,7 @@ import {
   LuHammer,
   LuInbox,
   LuMailCheck,
+  LuMessageSquare,
   LuShoppingCart,
 } from "react-icons/lu";
 import {
@@ -138,7 +139,19 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.JobOperationMessage:
+      const [jobId, operationId, makeMethodId, materialId] = id.split(":");
+      const link = materialId
+        ? path.to.jobMakeMethod(jobId, makeMethodId, materialId)
+        : path.to.jobMethod(jobId, makeMethodId);
 
+      return (
+        <Notification
+          icon={<LuMessageSquare />}
+          to={`${link}?selectedOperation=${operationId}`}
+          {...props}
+        />
+      );
     case NotificationEvent.QuoteExpired:
       return (
         <Notification
