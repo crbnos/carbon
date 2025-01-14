@@ -86,6 +86,10 @@ export const path = {
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },
+    legal: {
+      termsAndConditions: "https://carbonos.dev/terms",
+      privacyPolicy: "https://carbonos.dev/privacy",
+    },
     onboarding: {
       company: `${onboarding}/company`,
       location: `${onboarding}/location`,
