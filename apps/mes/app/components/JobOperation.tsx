@@ -1090,14 +1090,13 @@ function Notes({ operation }: { operation: OperationWithDetails }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Cookie: document.cookie, // Include cookie header for cross-origin requests
         },
         body: JSON.stringify({
           type: "jobOperationNote",
           source: "mes",
           operationId: operation.id,
         }),
-        credentials: "include", // Keep credentials: include for cookies
+        credentials: "include", // This is sufficient for CORS with cookies
       });
 
       if (!response.ok) {
