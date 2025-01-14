@@ -33,6 +33,7 @@ const ModalOverlay = forwardRef<
       // 'bg-alternative/90 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       "bg-alternative/90 backdrop-blur-sm",
       "z-50 fixed inset-0 grid place-items-center overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent data-open:animate-overlay-show data-closed:animate-overlay-hide",
+
       className
     )}
     {...props}
@@ -49,7 +50,8 @@ const ModalContentVariants = cva(
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
     "data-[state=open]:slide-in-from-left-[0%] data-[state=open]:slide-in-from-top-[0%]",
     "sm:rounded-lg md:w-full",
-    "bg-background focus-visible:outline-none focus-visible:ring-0"
+    "bg-background focus-visible:outline-none focus-visible:ring-0",
+    "dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08),_0px_0px_10px_rgba(0,_0,_0,_0.12),_0px_0px_24px_rgba(0,_0,_0,_0.16),_0px_0px_80px_rgba(0,_0,_0,_0.2)]"
   ),
   {
     variants: {
