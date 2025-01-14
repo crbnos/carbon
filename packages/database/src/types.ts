@@ -32493,6 +32493,7 @@ export type Database = {
           jobMaterialMakeMethodId: string
           itemId: string
           itemReadableId: string
+          description: string
           itemType: string
           quantity: number
           unitCost: number
@@ -32653,6 +32654,7 @@ export type Database = {
           quoteMaterialMakeMethodId: string
           itemId: string
           itemReadableId: string
+          description: string
           itemType: string
           quantity: number
           unitCost: number
