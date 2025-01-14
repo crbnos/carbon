@@ -28,6 +28,7 @@ export const path = {
     forgotPassword: `${ERP_URL}/forgot-password`,
     healthcheck: "/healthcheck",
     issue: `${x}/issue`,
+    messagingNotify: `${ERP_URL}/api/messaging/notify`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
     location: `${x}/location`,

@@ -53,6 +53,8 @@ export const notifyTask = task({
           return NotificationWorkflow.Assignment;
         case NotificationEvent.DigitalQuoteResponse:
           return NotificationWorkflow.DigitalQuoteResponse;
+        case NotificationEvent.JobOperationMessage:
+          return NotificationWorkflow.Message;
         default:
           return null;
       }
@@ -113,6 +115,21 @@ export const notifyTask = task({
           }
 
           return `Job ${job?.data?.jobId} assigned to you`;
+
+        case NotificationEvent.JobOperationMessage:
+          const [, operationId] = documentId.split(":");
+          const jobOperation = await client
+            .from("jobOperation")
+            .select("*, job(id, jobId)")
+            .eq("id", operationId)
+            .single();
+
+          if (jobOperation.error) {
+            console.error("Failed to get jobOperation", jobOperation.error);
+            throw jobOperation.error;
+          }
+
+          return `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`;
 
         case NotificationEvent.DigitalQuoteResponse:
           const digitalQuote = await client

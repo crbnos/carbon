@@ -46,6 +46,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
   Tr,
+  useDebounce,
   useDisclosure,
   useInterval,
   useMount,
@@ -1000,6 +1001,7 @@ function Notes({ operation }: { operation: OperationWithDetails }) {
   const user = useUser();
   const [employees] = usePeople();
   const [notes, setNotes] = useState<Note[]>([]);
+
   const [isLoading, setIsLoading] = useState(false);
   const { carbon, accessToken } = useCarbon();
 
@@ -1080,6 +1082,32 @@ function Notes({ operation }: { operation: OperationWithDetails }) {
 
   const [note, setNote] = useState("");
 
+  const notify = useDebounce(
+    async () => {
+      if (!carbon) return;
+
+      const response = await fetch(path.to.messagingNotify, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Cookie: document.cookie, // Include cookie header for cross-origin requests
+        },
+        body: JSON.stringify({
+          type: "jobOperationNote",
+          source: "mes",
+          operationId: operation.id,
+        }),
+        credentials: "include", // Keep credentials: include for cookies
+      });
+
+      if (!response.ok) {
+        console.error("Failed to notify user");
+      }
+    },
+    5000,
+    true
+  );
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -1099,7 +1127,10 @@ function Notes({ operation }: { operation: OperationWithDetails }) {
       setNote("");
     });
 
-    await carbon?.from("jobOperationNote").insert(newNote);
+    await Promise.all([
+      carbon?.from("jobOperationNote").insert(newNote),
+      notify(),
+    ]);
   };
 
   return (
