@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import {
   Card,
   CardAction,
@@ -47,9 +48,9 @@ import {
   toZoned,
 } from "@internationalized/date";
 import { useEffect, useState } from "react";
-import { LuExternalLink, LuNotebook } from "react-icons/lu";
+import { LuCircleChevronRight, LuNotebook } from "react-icons/lu";
 import { EmployeeAvatar, EmployeeAvatarGroup } from "~/components";
-import { useCurrencyFormatter, usePercentFormatter } from "~/hooks";
+import { useCurrencyFormatter, usePercentFormatter, useUser } from "~/hooks";
 import { makeDurations } from "~/utils/duration";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
@@ -84,14 +85,17 @@ const JobEstimatesVsActuals = ({
   materials,
   productionEvents,
   productionQuantities,
+  notes,
 }: {
   operations: Operation[];
   materials: Material[];
   productionEvents: ProductionEvent[];
   productionQuantities: ProductionQuantity[];
+  notes: Database["public"]["Tables"]["jobOperationNote"]["Row"][];
 }) => {
   const { carbon } = useCarbon();
   const { jobId } = useParams();
+  const user = useUser();
   if (!jobId) throw new Error("Could not find jobId");
 
   const currencyFormatter = useCurrencyFormatter();
@@ -206,6 +210,10 @@ const JobEstimatesVsActuals = ({
     return Array.from(employeeIds);
   };
 
+  const getJobOperationNotes = (operation: Operation) => {
+    return notes.filter((n) => n.jobOperationId === operation.id);
+  };
+
   const getNotes = (
     operation: Operation,
     type?: "Setup" | "Labor" | "Machine"
@@ -285,7 +293,7 @@ const JobEstimatesVsActuals = ({
                 {operations.map((operation) => {
                   const estimated = getEstimatedTime(operation);
                   const actual = getActualTime(operation);
-                  const notes = getNotes(operation);
+                  const notes = getJobOperationNotes(operation);
 
                   const isOutside = operation.operationType === "Outside";
                   if (isOutside) return null;
@@ -361,13 +369,20 @@ const JobEstimatesVsActuals = ({
                                       >
                                         <div className="flex-shrink-0">
                                           <EmployeeAvatar
-                                            employeeId={note.employeeId}
+                                            employeeId={note.createdBy}
                                             size="sm"
                                             withName={false}
                                           />
                                         </div>
-                                        <div className="flex-1 rounded-lg bg-muted p-2 text-sm">
-                                          {note.notes}
+                                        <div
+                                          className={cn(
+                                            "flex-1 rounded-lg p-2 text-sm",
+                                            note.createdBy === user.id
+                                              ? "bg-blue-500 text-white"
+                                              : "bg-muted"
+                                          )}
+                                        >
+                                          {note.note}
                                         </div>
                                       </div>
                                     ))}
@@ -382,7 +397,7 @@ const JobEstimatesVsActuals = ({
                             >
                               <IconButton
                                 variant="ghost"
-                                icon={<LuExternalLink />}
+                                icon={<LuCircleChevronRight />}
                                 aria-label="View Production Events"
                               />
                             </Link>
@@ -487,7 +502,7 @@ const JobEstimatesVsActuals = ({
                                     >
                                       <IconButton
                                         variant="ghost"
-                                        icon={<LuExternalLink />}
+                                        icon={<LuCircleChevronRight />}
                                         aria-label="View Production Events"
                                       />
                                     </Link>

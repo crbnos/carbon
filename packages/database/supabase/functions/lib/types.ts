@@ -8727,6 +8727,7 @@ export type Database = {
           id: string
           jobOperationId: string
           note: string
+          productionQuantityId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -8737,6 +8738,7 @@ export type Database = {
           id?: string
           jobOperationId: string
           note: string
+          productionQuantityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8747,6 +8749,7 @@ export type Database = {
           id?: string
           jobOperationId?: string
           note?: string
+          productionQuantityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -8813,6 +8816,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobOperationNote_productionQuantityId_fkey"
+            columns: ["productionQuantityId"]
+            isOneToOne: false
+            referencedRelation: "productionQuantity"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperationNote_updatedBy_fkey"

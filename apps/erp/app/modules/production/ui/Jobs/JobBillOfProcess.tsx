@@ -7,6 +7,7 @@ import {
   Alert,
   AlertDescription,
   AlertTitle,
+  Avatar,
   Badge,
   Button,
   Card,
@@ -20,11 +21,15 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Input,
   Label,
+  Loading,
+  ScrollArea,
   VStack,
   cn,
   useDebounce,
   useDisclosure,
+  useMount,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import {
@@ -39,17 +44,19 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   LuChevronDown,
   LuCirclePlus,
   LuDollarSign,
   LuEllipsisVertical,
   LuHammer,
+  LuSend,
   LuSettings2,
   LuTriangleAlert,
   LuX,
 } from "react-icons/lu";
-import type { z } from "zod";
+import { type z } from "zod";
 import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
 import Activity from "~/components/Activity";
 import {
@@ -82,7 +89,7 @@ import {
 } from "~/modules/shared";
 import type { action as editJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.$id";
 import type { action as newJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.new";
-import { useTools } from "~/stores";
+import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { jobOperationValidator } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
@@ -661,6 +668,11 @@ const JobBillOfProcess = ({
             </motion.div>
           </div>
         ),
+      },
+      {
+        id: 4,
+        label: "Notes",
+        content: <Notes jobOperationId={item.id} />,
       },
     ];
 
@@ -1770,6 +1782,198 @@ function ToolsForm({
             ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type Note = {
+  id: string;
+  createdBy: string;
+  createdAt: string;
+  note: string;
+};
+
+function Notes({ jobOperationId }: { jobOperationId: string }) {
+  const user = useUser();
+  const [employees] = usePeople();
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { carbon, accessToken } = useCarbon();
+
+  const fetchNotes = async () => {
+    if (!carbon) return;
+    flushSync(() => {
+      setIsLoading(true);
+    });
+
+    const { data, error } = await carbon
+      ?.from("jobOperationNote")
+      .select("*")
+      .eq("jobOperationId", jobOperationId)
+      .order("createdAt", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+    setNotes(data);
+    setIsLoading(false);
+  };
+
+  useMount(() => {
+    fetchNotes();
+  });
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+      channelRef.current = carbon
+        .channel(`job-operation-notes-${jobOperationId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "jobOperationNote",
+            filter: `jobOperationId=eq.${jobOperationId}`,
+          },
+          (payload) => {
+            setNotes((prev) => {
+              if (prev.some((note) => note.id === payload.new.id)) {
+                return prev;
+              }
+              return [...prev, payload.new as Note];
+            });
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  });
+
+  useEffect(() => {
+    if (carbon && accessToken && channelRef.current)
+      carbon.realtime.setAuth(accessToken);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      block: "nearest",
+      inline: "start",
+      behavior: notes.length > 0 ? "smooth" : "auto",
+    });
+  }, [notes]);
+
+  const [note, setNote] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!note.trim()) return;
+
+    const newNote = {
+      id: nanoid(),
+      jobOperationId,
+      createdBy: user.id,
+      note,
+      createdAt: new Date().toISOString(),
+      companyId: user.company.id,
+    };
+
+    flushSync(() => {
+      setNotes((prev) => [...prev, newNote]);
+      setNote("");
+    });
+
+    await carbon?.from("jobOperationNote").insert(newNote);
+  };
+
+  return (
+    <div className="flex flex-col h-[50dvh]">
+      <ScrollArea className="flex-1 p-4">
+        <Loading isLoading={isLoading}>
+          <div className="flex flex-col gap-3">
+            {notes.map((note) => {
+              const createdBy = employees.find(
+                (employee) => employee.id === note.createdBy
+              );
+              const isUser = note.createdBy === user.id;
+              return (
+                <div
+                  key={note.id}
+                  className={cn(
+                    "flex gap-2 items-end",
+                    isUser && "flex-row-reverse"
+                  )}
+                >
+                  <Avatar
+                    src={createdBy?.avatarUrl ?? undefined}
+                    name={createdBy?.name}
+                  />
+
+                  <div className="flex flex-col gap-1 max-w-[80%] ">
+                    <div className="flex flex-col gap-1">
+                      {!isUser && (
+                        <span className="text-xs opacity-70">
+                          {createdBy?.name}
+                        </span>
+                      )}
+                      <div
+                        className={cn(
+                          "rounded-2xl p-3 w-full flex flex-col gap-1",
+                          isUser ? "bg-blue-500 text-white" : "bg-muted"
+                        )}
+                      >
+                        <p className="text-sm">{note.note}</p>
+
+                        <span className="text-xs opacity-70">
+                          {new Date(note.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} style={{ height: 0 }} />
+          </div>
+        </Loading>
+      </ScrollArea>
+
+      <div className="border-t p-4">
+        <form className="flex gap-2" onSubmit={handleSubmit}>
+          <Input
+            className="flex-1"
+            placeholder="Type a message..."
+            name="message"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <Button
+            className="h-10"
+            aria-label="Send"
+            type="submit"
+            leftIcon={<LuSend />}
+          >
+            Send
+          </Button>
+        </form>
+      </div>
     </div>
   );
 }
