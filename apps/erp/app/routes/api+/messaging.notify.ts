@@ -1,4 +1,4 @@
-import { DOMAIN, error } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { NotificationEvent } from "@carbon/notifications";
@@ -19,19 +19,7 @@ export const messagingNotifySchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": `https://mes.${DOMAIN}`,
-  "Access-Control-Allow-Methods": "POST",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Credentials": "true",
-};
-
 export async function action({ request }: ActionFunctionArgs) {
-  // Handle CORS preflight requests
-  if (request.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
   const { client, companyId, userId } = await requirePermissions(request, {});
 
   const payload = messagingNotifySchema.safeParse(await request.json());
@@ -52,12 +40,6 @@ export async function action({ request }: ActionFunctionArgs) {
           const makeMethodId = data.data?.jobMakeMethod?.id;
           const materialId = data.data?.jobMakeMethod?.parentMaterialId;
 
-          console.log({
-            assignee,
-            jobId,
-            makeMethodId,
-            materialId,
-          });
           if (assignee) {
             const notificationEvent = getNotificationEvent("jobOperationNote");
             if (notificationEvent) {
@@ -79,37 +61,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
         break;
       default:
-        const flashedResponse = await flash(
-          request,
-          error(null, "Invalid payload")
-        );
         return json(
           { success: false },
-          {
-            ...flashedResponse,
-            headers: {
-              ...corsHeaders,
-              ...flashedResponse.headers,
-            },
-          }
+          await flash(request, error(null, "Invalid payload"))
         );
     }
 
-    return json({ success: true }, { headers: corsHeaders });
+    return json({ success: true });
   } else {
-    const flashedResponse = await flash(
-      request,
-      error(null, "Failed to notify user")
-    );
     return json(
       { success: false },
-      {
-        ...flashedResponse,
-        headers: {
-          ...corsHeaders,
-          ...flashedResponse.headers,
-        },
-      }
+      await flash(request, error(null, "Failed to notify user"))
     );
   }
 }
