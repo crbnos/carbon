@@ -1,4 +1,4 @@
-import { Button } from "@carbon/react";
+import { Button, ClientOnly } from "@carbon/react";
 import { Outlet, useLocation, useNavigate } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
 import { LuEye, LuTable2 } from "react-icons/lu";
@@ -77,7 +77,7 @@ export default function ApiDocsRoute() {
         <GroupedContentSidebar groups={groups} width={270} exactMatch />
         <div className="Docs Docs--api-page w-full h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           <div className="Docs--inner-wrapper pt-4">
-            <Outlet />
+            <ClientOnly>{() => <Outlet />}</ClientOnly>
           </div>
         </div>
       </div>
