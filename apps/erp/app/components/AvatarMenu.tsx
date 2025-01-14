@@ -22,6 +22,7 @@ import {
   LuLogOut,
   LuMoon,
   LuPalette,
+  LuShieldCheck,
   LuSun,
   LuUser,
 } from "react-icons/lu";
@@ -78,10 +79,11 @@ const AvatarMenu = () => {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
+
         <DropdownMenuItem asChild>
-          <Link to={path.to.profile}>
-            <DropdownMenuIcon icon={<LuUser />} />
-            Account Settings
+          <Link to={path.to.apiIntroduction}>
+            <DropdownMenuIcon icon={<LuFileText />} />
+            API Documentation
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -144,13 +146,36 @@ const AvatarMenu = () => {
             </DropdownMenuRadioGroup>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link to={path.to.apiIntroduction}>
-            <DropdownMenuIcon icon={<LuFileText />} />
-            API Documentation
+          <Link to={path.to.profile}>
+            <DropdownMenuIcon icon={<LuUser />} />
+            Account Settings
           </Link>
         </DropdownMenuItem>
+
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <DropdownMenuIcon icon={<LuFileText />} />
+            Terms and Privacy
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            <DropdownMenuItem asChild>
+              <a href={path.to.legal.termsAndConditions}>
+                <DropdownMenuIcon icon={<LuFileText />} />
+                Terms of Service
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a href={path.to.legal.privacyPolicy}>
+                <DropdownMenuIcon icon={<LuShieldCheck />} />
+                Privacy Policy
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Form method="post" action={path.to.logout}>
