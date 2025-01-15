@@ -220,7 +220,7 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
             <MethodItemTypeIcon type={node.data.itemType} />
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="left">
           <span>{node.data.itemType}</span>
         </TooltipContent>
       </Tooltip>
