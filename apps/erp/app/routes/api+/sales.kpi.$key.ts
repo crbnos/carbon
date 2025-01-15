@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/sales/sales.models";
 import { months } from "~/modules/shared/shared.models";
@@ -14,6 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
+  const customerId = searchParams.get("customerId");
 
   const startDate = toCalendarDateTime(parseDateTime(start));
   const endDate = toCalendarDateTime(parseDateTime(end));
@@ -51,38 +53,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "salesOrderRevenue":
     case "salesOrderCount": {
       const [salesOrders, previousSalesOrders] = await Promise.all([
-        client
-          .from("salesOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "In Progress",
-            "Needs Approval",
-            "Confirmed",
-            "Completed",
-            "Invoiced",
-          ])
-          .gt("orderDate", start)
-          .lte("orderDate", end)
-          .order("orderDate", { ascending: false }),
-        client
-          .from("salesOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "In Progress",
-            "Needs Approval",
-            "Confirmed",
-            "Completed",
-            "Invoiced",
-          ])
-          .gt("orderDate", previousStartDate.toString())
-          .lte("orderDate", previousEndDate.toString())
-          .order("orderDate", { ascending: false }),
+        getSalesOrdersQuery(client, {
+          companyId,
+          customerId,
+          start,
+          end,
+        }),
+        getSalesOrdersQuery(client, {
+          companyId,
+          customerId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -157,26 +139,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     case "quoteCount": {
       const [quotes, previousQuotes] = await Promise.all([
-        client
-          .from("quote")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
-          .gt("createdAt", start)
-          .lte("createdAt", end)
-          .order("createdAt", { ascending: false }),
-        client
-          .from("quote")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
-          .order("createdAt", { ascending: false }),
+        getQuotesQuery(client, {
+          companyId,
+          customerId,
+          start,
+          end,
+        }),
+        getQuotesQuery(client, {
+          companyId,
+          customerId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -259,26 +233,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     case "rfqCount": {
       const [rfqs, previousRfqs] = await Promise.all([
-        client
-          .from("salesRfq")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", start)
-          .lte("createdAt", end)
-          .order("createdAt", { ascending: false }),
-        client
-          .from("salesRfq")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", ["Ready for Quote", "Quoted", "Closed"])
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
-          .order("createdAt", { ascending: false }),
+        getRfqQuery(client, {
+          companyId,
+          customerId,
+          start,
+          end,
+        }),
+        getRfqQuery(client, {
+          companyId,
+          customerId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -362,4 +328,109 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     default:
       throw new Error(`Invalid KPI key: ${key}`);
   }
+}
+
+async function getSalesOrdersQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    customerId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    customerId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("salesOrders")
+    .select("orderTotal, orderDate", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .in("status", [
+      "In Progress",
+      "Needs Approval",
+      "Confirmed",
+      "Completed",
+      "Invoiced",
+    ])
+    .gt("orderDate", start)
+    .lte("orderDate", end);
+
+  if (customerId) {
+    query = query.eq("customerId", customerId);
+  }
+
+  query = query.order("orderDate", { ascending: false });
+
+  return query;
+}
+
+async function getQuotesQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    customerId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    customerId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("quote")
+    .select("createdAt", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
+    .gt("createdAt", start)
+    .lte("createdAt", end);
+
+  if (customerId) {
+    query = query.eq("customerId", customerId);
+  }
+
+  query = query.order("createdAt", { ascending: false });
+
+  return query;
+}
+
+async function getRfqQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    customerId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    customerId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("salesRfq")
+    .select("createdAt", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .in("status", ["Ready for Quote", "Quoted", "Closed"])
+    .gt("createdAt", start)
+    .lte("createdAt", end);
+
+  if (customerId) {
+    query = query.eq("customerId", customerId);
+  }
+
+  query = query.order("createdAt", { ascending: false });
+
+  return query;
 }

@@ -27,7 +27,6 @@ import {
 } from "@carbon/react/Chart";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
-import { useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
 import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
@@ -55,12 +54,6 @@ const chartConfig = {
 export default function ProductionDashboard() {
   const kpiFetcher = useFetcher<typeof kpiLoader>();
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
-
-  const numberFormatter = useNumberFormatter({
-    maximumFractionDigits: 0,
-    notation: "compact",
-    compactDisplay: "short",
-  });
 
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState<
@@ -120,6 +113,13 @@ export default function ProductionDashboard() {
           // @ts-expect-error
           return acc + item.value;
         }, 0);
+      case "completionTime":
+        return data.length === 0
+          ? 0
+          : data.reduce((acc, item) => {
+              // @ts-expect-error
+              return acc + item.value;
+            }, 0) / data.length;
       case "estimate":
         return data.reduce((acc, item) => {
           // @ts-expect-error
@@ -327,7 +327,7 @@ export default function ProductionDashboard() {
                   style={{
                     height: `${
                       (kpiFetcher.data?.data?.length ?? 5) *
-                      (selectedKpi === "utilization" ? 40 : 80)
+                      (selectedKpi === "estimatesVsActuals" ? 80 : 40)
                     }px`,
                   }}
                 >
@@ -437,6 +437,25 @@ export default function ProductionDashboard() {
                         <Bar
                           dataKey="estimate"
                           fill="var(--color-estimate)"
+                          radius={2}
+                        />
+                      </>
+                    )}
+                    {selectedKpi === "completionTime" && (
+                      <>
+                        <ChartTooltip
+                          content={
+                            <ChartTooltipContent
+                              labelFormatter={(value) => value}
+                              formatter={(value) =>
+                                formatDurationMilliseconds(value as number)
+                              }
+                            />
+                          }
+                        />
+                        <Bar
+                          dataKey="value"
+                          fill="var(--color-actual)"
                           radius={2}
                         />
                       </>

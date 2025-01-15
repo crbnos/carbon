@@ -7630,6 +7630,7 @@ export type Database = {
           salesOrderId: string | null
           salesOrderLineId: string | null
           scrapQuantity: number
+          secondsToComplete: number | null
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[] | null
           unitOfMeasureCode: string
@@ -7666,6 +7667,7 @@ export type Database = {
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           scrapQuantity?: number
+          secondsToComplete?: number | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
           unitOfMeasureCode: string
@@ -7702,6 +7704,7 @@ export type Database = {
           salesOrderId?: string | null
           salesOrderLineId?: string | null
           scrapQuantity?: number
+          secondsToComplete?: number | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
           unitOfMeasureCode?: string

@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Combobox,
   DateRangePicker,
   DropdownMenu,
   DropdownMenuContent,
@@ -66,17 +67,23 @@ import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
 import { chartIntervals } from "~/modules/shared/shared.models";
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
+import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 
-const OPEN_SUPPLIER_QUOTE_STATUSES = ["Active"];
-const OPEN_INVOICE_STATUSES = ["Draft", "Return", "Pending", "Partially Paid"];
+const OPEN_SUPPLIER_QUOTE_STATUSES = ["Active"] as const;
+const OPEN_INVOICE_STATUSES = [
+  "Draft",
+  "Return",
+  "Pending",
+  "Partially Paid",
+] as const;
 const OPEN_PURCHASE_ORDER_STATUSES = [
   "Draft",
   "To Review",
   "To Receive",
   "To Receive and Invoice",
   "To Invoice",
-];
+] as const;
 
 const chartConfig = {
   now: {
@@ -172,6 +179,18 @@ export default function PurchaseDashboard() {
     compactDisplay: "short",
   });
 
+  const [supplierId, setSupplierId] = useState<string>("all");
+  const [suppliers] = useSuppliers();
+  const supplierOptions = useMemo(() => {
+    return [
+      { label: "All Suppliers", value: "all" },
+      ...suppliers.map((supplier) => ({
+        label: supplier.name,
+        value: supplier.id,
+      })),
+    ];
+  }, [suppliers]);
+
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("purchaseOrderAmount");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
@@ -188,10 +207,12 @@ export default function PurchaseDashboard() {
     kpiFetcher.load(
       `${path.to.api.purchasingKpi(
         selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+        supplierId === "all" ? "" : `&supplierId=${supplierId}`
+      }`
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
+  }, [selectedKpi, dateRange, interval, selectedKpiData.key, supplierId]);
 
   const onIntervalChange = (value: string) => {
     const end = toCalendarDateTime(now("UTC"));
@@ -398,6 +419,13 @@ export default function PurchaseDashboard() {
                   onChange={setDateRange}
                 />
               )}
+              <Combobox
+                value={supplierId}
+                onChange={setSupplierId}
+                options={supplierOptions}
+                size="sm"
+                className="font-medium text-sm min-w-[160px] gap-4"
+              />
             </div>
             <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
               {isFetching ? (

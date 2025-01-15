@@ -180,10 +180,12 @@ export default function SalesDashboard() {
     kpiFetcher.load(
       `${path.to.api.salesKpi(
         selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}`
+      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+        customerId === "all" ? "" : `&customerId=${customerId}`
+      }`
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key]);
+  }, [selectedKpi, dateRange, interval, selectedKpiData.key, customerId]);
 
   const onIntervalChange = (value: string) => {
     const end = today("UTC");

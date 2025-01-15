@@ -85,7 +85,7 @@ const TableHeader = <T extends object>({
         className={cn(
           compact
             ? "px-4 py-2 justify-between bg-card border-b  w-full"
-            : "px-4 md:px-0 py-6 md:py-8 justify-between bg-card w-full relative"
+            : "px-4 md:px-0 py-6 md:py-10 justify-between bg-card w-full relative"
         )}
       >
         <HStack spacing={1}>
