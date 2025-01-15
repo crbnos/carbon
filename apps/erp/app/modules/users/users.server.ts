@@ -1313,17 +1313,18 @@ export async function updatePermissions(
 
     // add any missing claims to the current claims
     Object.keys(permissions).forEach((name) => {
-      if (!(`${name}_view` in updatedPermissions)) {
-        updatedPermissions[`${name}_view`] = [];
+      const module = name.toLowerCase();
+      if (!(`${module}_view` in updatedPermissions)) {
+        updatedPermissions[`${module}_view`] = [];
       }
-      if (!(`${name}_create` in updatedPermissions)) {
-        updatedPermissions[`${name}_create`] = [];
+      if (!(`${module}_create` in updatedPermissions)) {
+        updatedPermissions[`${module}_create`] = [];
       }
-      if (!(`${name}_update` in updatedPermissions)) {
-        updatedPermissions[`${name}_update`] = [];
+      if (!(`${module}_update` in updatedPermissions)) {
+        updatedPermissions[`${module}_update`] = [];
       }
-      if (!(`${name}_delete` in updatedPermissions)) {
-        updatedPermissions[`${name}_delete`] = [];
+      if (!(`${module}_delete` in updatedPermissions)) {
+        updatedPermissions[`${module}_delete`] = [];
       }
     });
 
