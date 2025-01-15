@@ -22,7 +22,7 @@ export const handle: Handle = {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "inventory",
   });
 
   const [unitOfMeasures, locations, shelves] = await Promise.all([
