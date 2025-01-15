@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
 import { KPIs } from "~/modules/purchasing/purchasing.models";
 import { months } from "~/modules/shared/shared.models";
@@ -14,6 +15,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const start = String(searchParams.get("start"));
   const end = String(searchParams.get("end"));
+  const supplierId = searchParams.get("supplierId");
 
   const startDate = toCalendarDateTime(parseDateTime(start));
   const endDate = toCalendarDateTime(parseDateTime(end));
@@ -51,38 +53,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "purchaseOrderCount":
     case "purchaseOrderAmount": {
       const [orders, previousOrders] = await Promise.all([
-        client
-          .from("purchaseOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "To Review",
-            "To Receive",
-            "To Invoice",
-            "To Receive and Invoice",
-            "Completed",
-          ])
-          .gt("orderDate", start)
-          .lte("orderDate", end)
-          .order("orderDate", { ascending: false }),
-        client
-          .from("purchaseOrders")
-          .select("orderTotal, orderDate", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "To Review",
-            "To Receive",
-            "To Invoice",
-            "To Receive and Invoice",
-            "Completed",
-          ])
-          .gt("orderDate", previousStartDate.toString())
-          .lte("orderDate", previousEndDate.toString())
-          .order("orderDate", { ascending: false }),
+        getPurchaseOrdersQuery(client, {
+          companyId,
+          supplierId,
+          start,
+          end,
+        }),
+        getPurchaseOrdersQuery(client, {
+          companyId,
+          supplierId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -151,40 +133,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     case "purchaseInvoiceCount":
     case "purchaseInvoiceAmount": {
-      const dateField = "dateIssued";
       const [invoices, previousInvoices] = await Promise.all([
-        client
-          .from("purchaseInvoices")
-          .select("orderTotal, dateIssued", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "Pending",
-            "Partially Paid",
-            "Paid",
-            "Submitted",
-            "Overdue",
-          ])
-          .gt(dateField, start)
-          .lte(dateField, end)
-          .order(dateField, { ascending: false }),
-        client
-          .from("purchaseInvoices")
-          .select("orderTotal, dateIssued", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .in("status", [
-            "Pending",
-            "Partially Paid",
-            "Paid",
-            "Submitted",
-            "Overdue",
-          ])
-          .gt(dateField, previousStartDate.toString())
-          .lte(dateField, previousEndDate.toString())
-          .order(dateField, { ascending: false }),
+        getPurchaseInvoicesQuery(client, {
+          companyId,
+          supplierId,
+          start,
+          end,
+        }),
+        getPurchaseInvoicesQuery(client, {
+          companyId,
+          supplierId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -192,12 +153,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           groupDataByDay(invoices.data ?? [], {
             start,
             end,
-            groupBy: dateField,
+            groupBy: "dateIssued",
           }),
           groupDataByDay(previousInvoices.data ?? [], {
             start: previousStartDate.toString(),
             end: previousEndDate.toString(),
-            groupBy: dateField,
+            groupBy: "dateIssued",
           }),
         ];
 
@@ -222,12 +183,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           groupDataByMonth(invoices.data ?? [], {
             start,
             end,
-            groupBy: dateField,
+            groupBy: "dateIssued",
           }),
           groupDataByMonth(previousInvoices.data ?? [], {
             start: previousStartDate.toString(),
             end: previousEndDate.toString(),
-            groupBy: dateField,
+            groupBy: "dateIssued",
           }),
         ];
 
@@ -253,24 +214,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     case "supplierQuoteCount": {
       const [quotes, previousQuotes] = await Promise.all([
-        client
-          .from("supplierQuote")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .gt("createdAt", start)
-          .lte("createdAt", end)
-          .order("createdAt", { ascending: false }),
-        client
-          .from("supplierQuote")
-          .select("createdAt", {
-            count: "exact",
-          })
-          .eq("companyId", companyId)
-          .gt("createdAt", previousStartDate.toString())
-          .lte("createdAt", previousEndDate.toString())
-          .order("createdAt", { ascending: false }),
+        getSupplierQuotesQuery(client, {
+          companyId,
+          supplierId,
+          start,
+          end,
+        }),
+        getSupplierQuotesQuery(client, {
+          companyId,
+          supplierId,
+          start: previousStartDate.toString(),
+          end: previousEndDate.toString(),
+        }),
       ]);
 
       if (daysBetween < 60) {
@@ -354,4 +309,108 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     default:
       throw new Error(`Invalid KPI key: ${key}`);
   }
+}
+
+async function getPurchaseOrdersQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    supplierId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    supplierId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("purchaseOrders")
+    .select("orderTotal, orderDate", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .in("status", [
+      "To Review",
+      "To Receive",
+      "To Invoice",
+      "To Receive and Invoice",
+      "Completed",
+    ])
+    .gt("orderDate", start)
+    .lte("orderDate", end);
+
+  if (supplierId) {
+    query = query.eq("supplierId", supplierId);
+  }
+
+  query = query.order("orderDate", { ascending: false });
+
+  return query;
+}
+
+async function getPurchaseInvoicesQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    supplierId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    supplierId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("purchaseInvoices")
+    .select("orderTotal, dateIssued", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .in("status", ["Pending", "Partially Paid", "Paid", "Submitted", "Overdue"])
+    .gt("dateIssued", start)
+    .lte("dateIssued", end);
+
+  if (supplierId) {
+    query = query.eq("supplierId", supplierId);
+  }
+
+  query = query.order("dateIssued", { ascending: false });
+
+  return query;
+}
+
+async function getSupplierQuotesQuery(
+  client: SupabaseClient,
+  {
+    companyId,
+    supplierId,
+    start,
+    end,
+  }: {
+    companyId: string;
+    supplierId: string | null;
+    start: string;
+    end: string;
+  }
+) {
+  let query = client
+    .from("supplierQuote")
+    .select("createdAt", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .gt("createdAt", start)
+    .lte("createdAt", end);
+
+  if (supplierId) {
+    query = query.eq("supplierId", supplierId);
+  }
+
+  query = query.order("createdAt", { ascending: false });
+
+  return query;
 }

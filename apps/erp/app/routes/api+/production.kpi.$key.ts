@@ -220,7 +220,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         {} as Record<string, typeof productionEvents.data>
       );
 
-      const data: { key: string; actual: number; estimate: number }[] = [];
+      const data: {
+        key: string;
+        actual: number;
+        estimate: number;
+        difference: number;
+      }[] = [];
 
       // Calculate totals for each job
       for (const job of jobs.data) {
@@ -247,15 +252,56 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           key: job.jobId,
           actual: actualTime,
           estimate: estimatedTime,
+          difference:
+            estimatedTime === 0
+              ? 0
+              : (actualTime - estimatedTime) / estimatedTime,
         });
       }
 
       return json({
-        data,
+        data: data.sort((a, b) => a.difference - b.difference),
         previousPeriodData: [],
       });
     }
 
+    case "completionTime": {
+      const [jobs, previousJobs] = await Promise.all([
+        client
+          .from("job")
+          .select("id, jobId, secondsToComplete")
+          .eq("companyId", companyId)
+          .gte("completedDate", start)
+          .lte("completedDate", end)
+          .not("completedDate", "is", null)
+          .not("releasedDate", "is", null),
+        client
+          .from("job")
+          .select("id, jobId, secondsToComplete")
+          .eq("companyId", companyId)
+          .gte("completedDate", previousStart.toString())
+          .lte("completedDate", previousEnd.toString())
+          .not("completedDate", "is", null)
+          .not("releasedDate", "is", null),
+      ]);
+
+      const [data, previousPeriodData] = [
+        jobs.data ?? [],
+        previousJobs.data ?? [],
+      ].map((jobs) =>
+        jobs
+          .map((job) => ({
+            key: job.jobId,
+            value: (job.secondsToComplete ?? 0) * 1000,
+          }))
+          .sort((a, b) => b.value - a.value)
+      );
+
+      return json({
+        data,
+        previousPeriodData,
+      });
+    }
     default:
       throw new Error(`Invalid KPI key: ${key}`);
   }
