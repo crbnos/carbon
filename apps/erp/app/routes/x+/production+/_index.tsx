@@ -28,17 +28,31 @@ import {
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import type { DateRange } from "@react-types/datepicker";
-import { useFetcher } from "@remix-run/react";
+import { json, Link, useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
-import { LuChevronDown, LuEllipsisVertical, LuFile } from "react-icons/lu";
+import {
+  LuArrowUpRight,
+  LuChevronDown,
+  LuEllipsisVertical,
+  LuFile,
+  LuHardHat,
+  LuLayoutList,
+  LuUserRoundCheck,
+} from "react-icons/lu";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import { Empty } from "~/components";
+import { useUser } from "~/hooks/useUser";
 import { KPIs } from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
+
+import { requirePermissions } from "@carbon/auth/auth.server";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+
+const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
 const chartConfig = {
   actual: {
@@ -51,7 +65,34 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    view: "production",
+  });
+
+  const [activeJobs, assignedJobs] = await Promise.all([
+    client
+      .from("job")
+      .select("id,status,assignee")
+      .eq("companyId", companyId)
+      .in("status", OPEN_JOB_STATUSES),
+    client
+      .from("job")
+      .select("id,status,assignee")
+      .eq("companyId", companyId)
+      .eq("assignee", userId),
+  ]);
+
+  return json({
+    activeJobs: activeJobs.data?.length ?? 0,
+    assignedJobs: assignedJobs.data?.length ?? 0,
+  });
+}
+
 export default function ProductionDashboard() {
+  const { activeJobs, assignedJobs } = useLoaderData<typeof loader>();
+
+  const user = useUser();
   const kpiFetcher = useFetcher<typeof kpiLoader>();
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
@@ -201,8 +242,63 @@ export default function ProductionDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
-        <Card className="col-span-3 p-0">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
+        <Card className="p-6 rounded-xl items-start justify-start gap-y-4">
+          <HStack className="justify-between w-full items-start mb-4">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+              <LuLayoutList className="size-5" />
+            </div>
+            <Button
+              size="sm"
+              rightIcon={<LuHardHat />}
+              variant="secondary"
+              asChild
+            >
+              <Link
+                to={`${path.to.jobs}?filter=status:in:${OPEN_JOB_STATUSES.join(
+                  ","
+                )}`}
+              >
+                View Active Jobs
+              </Link>
+            </Button>
+          </HStack>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-3xl font-medium tracking-tight">
+              {activeJobs}
+            </h3>
+            <p className="text-sm text-muted-foreground tracking-tight">
+              Active Jobs
+            </p>
+          </div>
+        </Card>
+
+        <Card className="p-6 items-start justify-start gap-y-4">
+          <HStack className="justify-between w-full items-start mb-4">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+              <LuUserRoundCheck className="size-5" />
+            </div>
+            <Button
+              size="sm"
+              rightIcon={<LuArrowUpRight />}
+              variant="secondary"
+            >
+              <Link to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}>
+                View Assigned Jobs
+              </Link>
+            </Button>
+          </HStack>
+          <div className="flex flex-col gap-2">
+            <h3 className="text-3xl font-medium tracking-tight">
+              {assignedJobs}
+            </h3>
+            <p className="text-sm text-muted-foreground tracking-tight">
+              Jobs Assigned to Me
+            </p>
+          </div>
+        </Card>
+
+        <Card className="col-span-2 p-0">
           <HStack className="justify-between items-start">
             <CardHeader className="pb-0">
               <div className="flex w-full justify-start items-center gap-2">

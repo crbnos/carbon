@@ -42,3 +42,13 @@ UPDATE job
 SET "completedDate" = NOW()
 WHERE "status" = 'Completed'
   AND "completedDate" IS NULL;
+
+
+ALTER TABLE job
+ADD COLUMN "secondsToComplete" DECIMAL GENERATED ALWAYS AS (
+  CASE 
+    WHEN "releasedDate" IS NOT NULL AND "completedDate" IS NOT NULL 
+    THEN EXTRACT(EPOCH FROM ("completedDate" - "releasedDate"))
+    ELSE 0
+  END
+) STORED;
