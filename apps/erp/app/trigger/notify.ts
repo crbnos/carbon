@@ -31,6 +31,10 @@ export const notifyTask = task({
       | {
           type: "group";
           groupIds: string[];
+        }
+      | {
+          type: "users";
+          userIds: string[];
         };
     from?: string;
   }) => {
@@ -194,13 +198,20 @@ export const notifyTask = task({
         console.error("Error triggering notifications");
         console.error(error);
       }
-    } else if (payload.recipient.type === "group") {
+    } else if (["group", "users"].includes(payload.recipient.type)) {
       console.log(
-        `triggering notification for group ${payload.recipient.groupIds}`
+        `triggering notification for group ${payload.recipient.type}`
       );
-      const userIds = await client.rpc("users_for_groups", {
-        groups: payload.recipient.groupIds,
-      });
+
+      const userIds =
+        payload.recipient.type === "group"
+          ? await client.rpc("users_for_groups", {
+              groups: payload.recipient.groupIds,
+            })
+          : {
+              data: payload.recipient.userIds,
+              error: null,
+            };
 
       if (userIds.error) {
         console.error("Failed to get userIds", userIds.error);
@@ -213,7 +224,7 @@ export const notifyTask = task({
         userIds.data.length === 0
       ) {
         console.error(
-          `No userIds found for group ${payload.recipient.groupIds}`
+          `No userIds found for payload ${JSON.stringify(payload.recipient)}`
         );
         return;
       }

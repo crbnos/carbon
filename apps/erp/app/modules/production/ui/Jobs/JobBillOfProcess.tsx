@@ -1878,6 +1878,30 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
 
   const [note, setNote] = useState("");
 
+  const notify = useDebounce(
+    async () => {
+      if (!carbon) return;
+
+      const response = await fetch(path.to.api.messagingNotify, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          type: "jobOperationNote",
+          operationId: jobOperationId,
+        }),
+        credentials: "include", // This is sufficient for CORS with cookies
+      });
+
+      if (!response.ok) {
+        console.error("Failed to notify user");
+      }
+    },
+    5000,
+    true
+  );
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -1897,7 +1921,10 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
       setNote("");
     });
 
-    await carbon?.from("jobOperationNote").insert(newNote);
+    await Promise.all([
+      carbon?.from("jobOperationNote").insert(newNote),
+      notify(),
+    ]);
   };
 
   return (

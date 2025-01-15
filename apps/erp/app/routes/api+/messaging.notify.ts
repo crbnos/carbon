@@ -14,7 +14,6 @@ export const config = {
 export const messagingNotifySchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("jobOperationNote"),
-    source: z.enum(["erp", "mes"]).optional(),
     operationId: z.string(),
   }),
 ]);
@@ -27,35 +26,52 @@ export async function action({ request }: ActionFunctionArgs) {
   if (payload.success) {
     switch (payload.data.type) {
       case "jobOperationNote":
-        const { source, operationId } = payload.data;
+        const { operationId } = payload.data;
 
-        if (source === "mes") {
-          const data = await client
+        const [job, previousMessages] = await Promise.all([
+          client
             .from("jobOperation")
             .select("*, job(id, assignee), jobMakeMethod(id, parentMaterialId)")
             .eq("id", operationId)
-            .single();
-          const assignee = data.data?.job?.assignee;
-          const jobId = data.data?.job?.id;
-          const makeMethodId = data.data?.jobMakeMethod?.id;
-          const materialId = data.data?.jobMakeMethod?.parentMaterialId;
+            .single(),
+          client
+            .from("jobOperationNote")
+            .select("*")
+            .eq("jobOperationId", operationId),
+        ]);
 
-          if (assignee) {
-            const notificationEvent = getNotificationEvent("jobOperationNote");
-            if (notificationEvent) {
-              await tasks.trigger<typeof notifyTask>("notify", {
-                companyId,
-                documentId: `${jobId}:${operationId}:${makeMethodId}:${
-                  materialId ?? ""
-                }`,
-                event: notificationEvent,
-                recipient: {
-                  type: "user",
-                  userId: assignee,
-                },
-                from: userId,
-              });
-            }
+        const assignee = job.data?.job?.assignee;
+        const jobId = job.data?.job?.id;
+        const makeMethodId = job.data?.jobMakeMethod?.id;
+        const materialId = job.data?.jobMakeMethod?.parentMaterialId;
+
+        const usersToNotify = [
+          ...new Set([
+            ...(previousMessages.data?.map((m) => m.createdBy) ?? []).filter(
+              (id) => id !== userId
+            ),
+          ]),
+        ];
+
+        if (assignee && assignee !== userId) {
+          usersToNotify.push(assignee);
+        }
+
+        if (usersToNotify.length > 0) {
+          const notificationEvent = getNotificationEvent("jobOperationNote");
+          if (notificationEvent) {
+            await tasks.trigger<typeof notifyTask>("notify", {
+              companyId,
+              documentId: `${jobId}:${operationId}:${makeMethodId}:${
+                materialId ?? ""
+              }`,
+              event: notificationEvent,
+              recipient: {
+                type: "users",
+                userIds: usersToNotify,
+              },
+              from: userId,
+            });
           }
         }
 
