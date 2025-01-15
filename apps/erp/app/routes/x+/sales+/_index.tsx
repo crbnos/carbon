@@ -494,7 +494,9 @@ export default function SalesDashboard() {
                               dateFormatter.format(
                                 parseDate(value).toDate(getLocalTimeZone())
                               )
-                          : (value) => value
+                          : (value) => (
+                              <span className="font-mono">{value}</span>
+                            )
                       }
                       formatter={(value) =>
                         ["salesOrderRevenue"].includes(selectedKpiData.key)

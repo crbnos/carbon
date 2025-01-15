@@ -513,7 +513,9 @@ export default function PurchaseDashboard() {
                               dateFormatter.format(
                                 parseDate(value).toDate(getLocalTimeZone())
                               )
-                          : (value) => value
+                          : (value) => (
+                              <span className="font-mono">{value}</span>
+                            )
                       }
                       formatter={(value) =>
                         [
