@@ -5,6 +5,9 @@ import {
   InputGroup,
   InputLeftElement,
   Spinner,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
   cn,
 } from "@carbon/react";
@@ -203,9 +206,16 @@ function NodeData({ node }: { node: FlatTreeItem<QuoteMethod> }) {
       <Badge className="text-xs" variant="outline">
         {node.data.quantity}
       </Badge>
-      <Badge variant="secondary">
-        <MethodItemTypeIcon type={node.data.itemType} />
-      </Badge>
+      <Tooltip>
+        <TooltipTrigger>
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type={node.data.itemType} />
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>{node.data.itemType}</span>
+        </TooltipContent>
+      </Tooltip>
     </HStack>
   );
 }

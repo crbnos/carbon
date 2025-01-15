@@ -1,11 +1,4 @@
-import {
-  Badge,
-  cn,
-  HStack,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@carbon/react";
+import { Badge, cn, HStack } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
@@ -52,50 +45,15 @@ export const MethodItemTypeIcon = ({
 }) => {
   switch (type) {
     case "Part":
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <AiOutlinePartition className={className} />
-          </TooltipTrigger>
-          <TooltipContent className="normal-case">Part</TooltipContent>
-        </Tooltip>
-      );
+      return <AiOutlinePartition className={className} />;
     case "Material":
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <LuAtom className={className} />
-          </TooltipTrigger>
-          <TooltipContent className="normal-case">Material</TooltipContent>
-        </Tooltip>
-      );
+      return <LuAtom className={className} />;
     case "Tool":
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <LuHammer className={className} />
-          </TooltipTrigger>
-          <TooltipContent className="normal-case">Tool</TooltipContent>
-        </Tooltip>
-      );
+      return <LuHammer className={className} />;
     case "Consumable":
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <LuPizza className={className} />
-          </TooltipTrigger>
-          <TooltipContent className="normal-case">Consumable</TooltipContent>
-        </Tooltip>
-      );
+      return <LuPizza className={className} />;
     case "Service":
-      return (
-        <Tooltip>
-          <TooltipTrigger>
-            <LuHeadphones className={className} />
-          </TooltipTrigger>
-          <TooltipContent className="normal-case">Service</TooltipContent>
-        </Tooltip>
-      );
+      return <LuHeadphones className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;

@@ -4,6 +4,9 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
   cn,
   useMount,
@@ -211,9 +214,16 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
       <Badge className="text-xs" variant="outline">
         {node.data.quantity}
       </Badge>
-      <Badge variant="secondary">
-        <MethodItemTypeIcon type={node.data.itemType} />
-      </Badge>
+      <Tooltip>
+        <TooltipTrigger>
+          <Badge variant="secondary">
+            <MethodItemTypeIcon type={node.data.itemType} />
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>{node.data.itemType}</span>
+        </TooltipContent>
+      </Tooltip>
     </HStack>
   );
 }
