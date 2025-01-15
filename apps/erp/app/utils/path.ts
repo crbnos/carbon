@@ -40,6 +40,7 @@ export const path = {
       itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
+      messagingNotify: `${api}/messaging/notify`,
       modelUpload: `${api}/model/upload`,
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),

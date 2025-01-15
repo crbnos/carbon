@@ -1093,7 +1093,6 @@ function Notes({ operation }: { operation: OperationWithDetails }) {
         },
         body: JSON.stringify({
           type: "jobOperationNote",
-          source: "mes",
           operationId: operation.id,
         }),
         credentials: "include", // This is sufficient for CORS with cookies
