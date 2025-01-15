@@ -543,9 +543,11 @@ export default function ProductionDashboard() {
                           content={
                             <ChartTooltipContent
                               labelFormatter={(value) => value}
-                              formatter={(value) =>
-                                formatDurationMilliseconds(value as number)
-                              }
+                              formatter={(value) => (
+                                <span className="font-mono">
+                                  {formatDurationMilliseconds(value as number)}
+                                </span>
+                              )}
                             />
                           }
                         />
