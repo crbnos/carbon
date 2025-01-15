@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Combobox,
   DateRangePicker,
   DropdownMenu,
   DropdownMenuContent,
@@ -62,16 +63,17 @@ import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { SalesRFQStatus } from "~/modules/sales/ui/SalesRFQ";
 import { chartIntervals } from "~/modules/shared/shared.models";
 import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
+import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 
-const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"];
-const OPEN_QUOTE_STATUSES = ["Sent", "Draft"];
+const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"] as const;
+const OPEN_QUOTE_STATUSES = ["Sent", "Draft"] as const;
 const OPEN_SALES_ORDER_STATUSES = [
   "Confirmed",
   "Needs Approval",
   "In Progress",
   "Draft",
-];
+] as const;
 
 const chartConfig = {
   now: {
@@ -150,6 +152,18 @@ export default function SalesDashboard() {
     compactDisplay: "short",
   });
 
+  const [customerId, setCustomerId] = useState<string>("all");
+  const [customers] = useCustomers();
+  const customerOptions = useMemo(() => {
+    return [
+      { label: "All Customers", value: "all" },
+      ...customers.map((customer) => ({
+        label: customer.name,
+        value: customer.id,
+      })),
+    ];
+  }, [customers]);
+
   const [interval, setInterval] = useState("month");
   const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
@@ -218,8 +232,18 @@ export default function SalesDashboard() {
   const csvFilename = useMemo(() => {
     const startDate = dateRange?.start.toString();
     const endDate = dateRange?.end.toString();
-    return `${selectedKpiData.label}_${startDate}_to_${endDate}.csv`;
-  }, [dateRange, selectedKpiData.label]);
+    return `${selectedKpiData.label}_${startDate}_to_${endDate}${
+      customerId === "all"
+        ? ""
+        : `_${customers.find((c) => c.id === customerId)?.name}`
+    }.csv`;
+  }, [
+    dateRange?.start,
+    dateRange?.end,
+    selectedKpiData.label,
+    customerId,
+    customers,
+  ]);
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
@@ -376,6 +400,13 @@ export default function SalesDashboard() {
                   onChange={setDateRange}
                 />
               )}
+              <Combobox
+                value={customerId}
+                onChange={setCustomerId}
+                options={customerOptions}
+                size="sm"
+                className="font-medium text-sm min-w-[160px] gap-4"
+              />
             </div>
             <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
               {isFetching ? (
