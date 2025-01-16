@@ -351,7 +351,7 @@ const JobEstimatesVsActuals = ({
                         <Td className="px-2">{getScrapQuantity(operation)}</Td>
                         <Td className="px-2">
                           <HStack spacing={0} className="justify-end">
-                            {notes && (
+                            {notes && notes.length > 0 && (
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <IconButton
@@ -461,7 +461,7 @@ const JobEstimatesVsActuals = ({
                                 <Td className="px-2" />
                                 <Td className="px-2">
                                   <HStack spacing={0} className="justify-end">
-                                    {notes && (
+                                    {notes && notes.length > 0 && (
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <IconButton
