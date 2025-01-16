@@ -170,12 +170,7 @@ export default function PartManufacturing() {
               </ScrollArea>
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel
-              order={2}
-              minSize={40}
-              defaultSize={60}
-              className="border-t border-border"
-            >
+            <ResizablePanel order={2} minSize={40} defaultSize={60}>
               <ScrollArea className="h-[calc(100dvh-99px)]">
                 <Outlet key={JSON.stringify(params)} />
               </ScrollArea>

@@ -35,7 +35,7 @@ const Copy = ({
           aria-label="Copy"
           size="sm"
           className={cn(
-            "p-1",
+            "p-1 w-6 h-6",
             isCopied && "text-emerald-500 hover:text-emerald-500",
             className
           )}

@@ -122,19 +122,23 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
     <HStack spacing={0}>
       <Button
         leftIcon={filter.icon ?? undefined}
-        className="rounded-r-none"
+        className="rounded-r-none before:rounded-r-none"
         size="sm"
         variant="secondary"
       >
         {filter.header}
       </Button>
-      <Button className="rounded-none border-l-0" size="sm" variant="secondary">
+      <Button
+        className="rounded-none before:rounded-none border-l-0"
+        size="sm"
+        variant="secondary"
+      >
         {operator === "eq" ? "is" : operator === "in" ? "is any of" : "matches"}
       </Button>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
-            className="rounded-none"
+            className="rounded-none before:rounded-none"
             role="combobox"
             variant="secondary"
             onClick={() => {
@@ -188,7 +192,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
       </Popover>
       <Button
         aria-label="Remove filter"
-        className="rounded-l-none border-l-0 px-1 w-6"
+        className="rounded-l-none before:rounded-l-none border-l-0 px-1 w-6"
         size="sm"
         variant="secondary"
         onClick={() => {

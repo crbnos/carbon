@@ -71,6 +71,27 @@ export default {
         md: `calc(var(--radius) - 2px)`,
         sm: "calc(var(--radius) - 4px)",
       },
+      boxShadow: {
+        DEFAULT: `
+          0px 3px 6px -3px var(--base-shadow-color, --tw-shadow-color),
+          0px 2px 4px -2px var(--base-shadow-color, --tw-shadow-color),
+          0px 1px 2px -1px var(--base-shadow-color, --tw-shadow-color),
+          0px 1px 1px -1px var(--base-shadow-color, --tw-shadow-color),
+          0px 1px 0px -1px var(--base-shadow-color, --tw-shadow-color)
+        `,
+        button: "var(--button-shadow)",
+        popover: "var(--popover-shadow)",
+        "dropdown-item": "var(--dropdown-item-shadow)",
+        "button-base": "var(--button-base-shadow)",
+        "button-primary": "var(--button-primary-shadow)",
+        "button-danger": "var(--button-danger-shadow)",
+        "inset-image-border": "inset 0px 0px 0px 1px var(--border-primary)",
+        "select-item":
+          "var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), inset 0px 1px 0px rgb(255 255 255 / 0.02), inset 0px 0px 0px 1px rgb(255 255 255 / 0.02), 0px 1px 2px rgb(0 0 0 / 0.12), 0px 2px 4px rgb(0 0 0 / 0.08), 0px 0px 0px 0.5px rgb(0 0 0 / 0.24);",
+      },
+      boxShadowColor: {
+        DEFAULT: "var(--base-shadow-color)",
+      },
       fontSize: {
         xxs: "0.675rem",
       },

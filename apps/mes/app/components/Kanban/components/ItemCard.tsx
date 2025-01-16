@@ -105,7 +105,7 @@ export function ItemCard({
     <Link to={path.to.operation(item.id)}>
       <Card
         className={cn(
-          "max-w-[330px]",
+          "max-w-[330px] shadow-sm dark:shadow-sm",
           cardVariants({
             status: item.status,
           })
@@ -126,7 +126,7 @@ export function ItemCard({
                   {item.subtitle}
                 </span>
               )}
-              <span>{item.title}</span>
+              <span className="font-semibold truncate">{item.title}</span>
             </div>
           </div>
 

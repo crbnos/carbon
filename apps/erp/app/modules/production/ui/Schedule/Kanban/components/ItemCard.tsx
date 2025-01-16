@@ -151,7 +151,7 @@ export function ItemCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "max-w-[330px]",
+        "max-w-[330px] shadow-sm dark:shadow-sm",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
           status: item.status,

@@ -252,7 +252,7 @@ export default function SalesDashboard() {
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <RiProgress2Line className="size-5" />
             </div>
             <Button
@@ -282,7 +282,7 @@ export default function SalesDashboard() {
 
         <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <RiProgress4Line className="size-5" />
             </div>
             <Button
@@ -311,7 +311,7 @@ export default function SalesDashboard() {
 
         <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <RiProgress8Line className="size-5" />
             </div>
             <Button
@@ -403,11 +403,12 @@ export default function SalesDashboard() {
                 />
               )}
               <Combobox
+                asButton
                 value={customerId}
                 onChange={setCustomerId}
                 options={customerOptions}
                 size="sm"
-                className="font-medium text-sm min-w-[160px] gap-4"
+                className="min-w-[160px] gap-4"
               />
             </div>
             <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">

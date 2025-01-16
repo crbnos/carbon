@@ -44,7 +44,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const ModalContentVariants = cva(
   cn(
     "p-10",
-    "relative z-50 grid w-full gap-4 border shadow-md dark:shadow-sm duration-200",
+    "relative z-50 grid w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
@@ -74,8 +74,10 @@ const ModalContentVariants = cva(
 const ModalContent = forwardRef<
   ElementRef<typeof DialogPrimitive.Content>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Content> &
-    VariantProps<typeof ModalContentVariants>
->(({ className, children, size, ...props }, ref) => (
+    VariantProps<typeof ModalContentVariants> & {
+      withCloseButton?: boolean;
+    }
+>(({ className, children, size, withCloseButton = true, ...props }, ref) => (
   <ClientOnly fallback={null}>
     {() => (
       <ModalPortal>
@@ -86,10 +88,12 @@ const ModalContent = forwardRef<
             {...props}
           >
             {children}
-            <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-2 hover:bg-accent/80">
-              <LuX className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </DialogPrimitive.Close>
+            {withCloseButton && (
+              <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-foreground-muted p-2 hover:bg-accent/80">
+                <LuX className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </DialogPrimitive.Close>
+            )}
           </DialogPrimitive.Content>
         </ModalOverlay>
       </ModalPortal>

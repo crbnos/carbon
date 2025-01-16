@@ -19,6 +19,7 @@ export type ComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
   "onChange"
 > & {
+  asButton?: boolean;
   size?: "sm" | "md" | "lg";
   value?: string;
   options: {
@@ -41,6 +42,7 @@ export type ComboboxProps = Omit<
 const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
   (
     {
+      asButton,
       size,
       value,
       options,
@@ -86,6 +88,7 @@ const Combobox = forwardRef<HTMLButtonElement, ComboboxProps>(
               />
             ) : (
               <CommandTrigger
+                asButton={asButton}
                 size={size}
                 role="combobox"
                 className={cn(

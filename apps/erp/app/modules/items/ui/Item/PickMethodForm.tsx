@@ -59,6 +59,7 @@ const PickMethodForm = ({
 
           <CardAction>
             <Combobox
+              asButton
               size="sm"
               value={initialValues.locationId}
               options={locationOptions}

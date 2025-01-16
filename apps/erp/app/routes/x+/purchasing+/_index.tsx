@@ -269,7 +269,7 @@ export default function PurchaseDashboard() {
       <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
         <Card className="p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <LuPackageSearch className="size-5" />
             </div>
             <Button
@@ -299,7 +299,7 @@ export default function PurchaseDashboard() {
 
         <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <LuLayoutList className="size-5" />
             </div>
             <Button
@@ -328,7 +328,7 @@ export default function PurchaseDashboard() {
 
         <Card className="p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
-            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground shadow-md">
+            <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <LuCreditCard className="size-5" />
             </div>
             <Button

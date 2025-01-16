@@ -59,7 +59,7 @@ const SequenceOrCustomId = forwardRef<
             )}
             <IconButton
               aria-label="Toggle"
-              className="bg-transparent flex-shrink-0 h-10 rounded-l-none border-l-0 shadow-sm"
+              className="bg-transparent flex-shrink-0 h-10 rounded-l-none border border-l-0"
               icon={isCustom ? <LuToggleLeft /> : <LuToggleRight />}
               variant="secondary"
               size="lg"

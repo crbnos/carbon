@@ -201,7 +201,7 @@ export default BoMExplorer;
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex flex-col items-start gap-0">
-      <span className="text-sm truncate">
+      <span className="text-sm truncate font-medium">
         {node.data.description ?? node.data.itemReadableId}
       </span>
     </div>

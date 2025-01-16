@@ -269,6 +269,7 @@ const InventoryTable = memo(
               defaultColumnPinning={defaultColumnPinning}
               primaryAction={
                 <Combobox
+                  asButton
                   size="sm"
                   value={locationId}
                   options={locationOptions}

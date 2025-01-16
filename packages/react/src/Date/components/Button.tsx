@@ -40,7 +40,7 @@ export const FieldButton = ({ size = "md", ...props }: FieldButtonProps) => {
       {...buttonProps}
       ref={ref}
       aria-label="Toggle"
-      className={`flex-shrink-0 ${sizeClasses[size]} rounded-l-none border-l-0 shadow-sm`}
+      className={`flex-shrink-0 ${sizeClasses[size]} rounded-l-none border border-l-0 before:rounded-l-none shadow-sm`}
       icon={<LuCalendar />}
       variant="secondary"
       size={size}

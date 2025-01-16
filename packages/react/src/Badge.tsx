@@ -10,16 +10,16 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded px-2.5 py-0.5 h-6 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 truncate uppercase font-bold text-xs tracking-tight",
+  "inline-flex items-center rounded-md px-2.5 py-0.5 h-6 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 truncate uppercase font-bold text-xs tracking-tight",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "bg-primary text-primary-foreground shadow:sm dark:shadow hover:bg-primary/80",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
-          "bg-destructive text-destructive-foreground shadow hover:bg-destructive/80",
+          "bg-destructive text-destructive-foreground shadow:sm dark:shadow hover:bg-destructive/80",
         outline: "text-foreground",
         green:
           "bg-emerald-600 text-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400",

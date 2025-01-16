@@ -16,7 +16,7 @@ const inputGroupVariants = cva(
       size: {
         lg: "h-12 rounded-lg",
         md: "h-10 rounded-md",
-        sm: "h-8 rounded",
+        sm: "h-8 rounded-md",
         xs: "h-6 rounded",
       },
       isDisabled: {
@@ -107,7 +107,7 @@ export const inputVariants = cva(
       size: {
         lg: "h-12 rounded-lg px-4 text-base",
         md: "h-10 rounded-md px-4 text-sm",
-        sm: "h-8 rounded px-3 text-sm",
+        sm: "h-8 rounded-md px-3 text-sm",
         xs: "h-6 rounded px-2 text-sm",
       },
       isInputGroup: {

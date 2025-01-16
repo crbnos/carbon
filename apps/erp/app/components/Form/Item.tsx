@@ -211,7 +211,7 @@ const Item = ({
                       className={cn(
                         props.inline === true
                           ? "ml-1"
-                          : "bg-transparent flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
+                          : "bg-transparent flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none !border-l-0 border -ml-px shadow-none hover:shadow-button-base"
                       )}
                       disabled={props.isReadOnly}
                       variant="secondary"

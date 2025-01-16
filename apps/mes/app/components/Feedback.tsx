@@ -84,8 +84,8 @@ const Feedback = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <SidebarMenuButton className="text-sidebar-foreground/70">
-          <LuMessageCircle className="text-sidebar-foreground/70" />
+        <SidebarMenuButton>
+          <LuMessageCircle />
           <span>Feedback</span>
         </SidebarMenuButton>
       </PopoverTrigger>

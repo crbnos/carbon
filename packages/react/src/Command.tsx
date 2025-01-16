@@ -182,17 +182,23 @@ const CommandShortcut = ({
 CommandShortcut.displayName = "CommandShortcut";
 
 const commandTriggerVariants = cva(
-  "text-foreground flex w-full items-center justify-between whitespace-nowrap rounded-md border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 overflow-hidden",
+  "items-center justify-between [&>span]:line-clamp-1 overflow-hidden",
   {
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
         md: "h-10 px-3 py-2 rounded-md text-sm space-x-3",
-        sm: "h-8  px-3 py-2 rounded text-xs space-x-2",
+        sm: "h-8 px-3 py-2 rounded-md text-sm space-x-2",
+      },
+      asButton: {
+        false:
+          "text-foreground flex w-full whitespace-nowrap rounded-md border border-input shadow-sm ring-offset-background data-[placeholder]:text-muted-foreground ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 overflow-hidden",
+        true: "relative font-medium shrink-0 group inline-flex select-none transform-gpu initial:border-none disabled:opacity-50 focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0 after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0 before:pointer-events-none before:bg-gradient-to-b before:transition-opacity before:from-white/[0.12] before:absolute before:inset-0 before:z-[1] before:rounded before:opacity-0 shadow-button-base bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shadow-button-base hover:before:opacity-100 dark:hover:before:opacity-50",
       },
     },
     defaultVariants: {
       size: "md",
+      asButton: false,
     },
   }
 );
@@ -254,16 +260,18 @@ interface CommandTriggerProps
   extends ComponentPropsWithoutRef<"button">,
     VariantProps<typeof commandTriggerVariants> {
   icon?: React.ReactNode;
+  asButton?: boolean;
 }
 
 const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
-  ({ size, className, children, icon, ...props }, ref) => (
+  ({ asButton = false, size, className, children, icon, ...props }, ref) => (
     <button
       ref={ref}
       type="button"
       className={cn(
         commandTriggerVariants({
           size,
+          asButton,
         }),
         className
       )}

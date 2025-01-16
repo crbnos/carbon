@@ -11,43 +11,40 @@ interface ItemThumbnailProps {
   size?: "sm" | "md" | "lg";
 }
 
-const itemVariants = cva(
-  "bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
-  {
-    variants: {
-      size: {
-        sm: "w-7 h-7",
-        md: "w-9 h-9",
-        lg: "w-11 h-11",
-      },
-      withPadding: {
-        true: "",
-        false: "p-0",
-      },
+const itemVariants = cva("bg-muted rounded-lg border-2 border-transparent", {
+  variants: {
+    size: {
+      sm: "w-7 h-7",
+      md: "w-9 h-9",
+      lg: "w-11 h-11 bg-gradient-to-bl from-muted to-muted/40 ",
     },
-    compoundVariants: [
-      {
-        withPadding: true,
-        size: "sm",
-        class: "p-1",
-      },
-      {
-        withPadding: true,
-        size: "md",
-        class: "p-1.5",
-      },
-      {
-        withPadding: true,
-        size: "lg",
-        class: "p-2",
-      },
-    ],
-    defaultVariants: {
-      size: "md",
+    withPadding: {
+      true: "",
+      false: "p-0",
+    },
+  },
+  compoundVariants: [
+    {
       withPadding: true,
+      size: "sm",
+      class: "p-1",
     },
-  }
-);
+    {
+      withPadding: true,
+      size: "md",
+      class: "p-1.5",
+    },
+    {
+      withPadding: true,
+      size: "lg",
+      class: "p-2",
+    },
+  ],
+  defaultVariants: {
+    size: "md",
+    withPadding: true,
+  },
+});
 
 const iconVariants = cva("text-muted-foreground", {
   variants: {

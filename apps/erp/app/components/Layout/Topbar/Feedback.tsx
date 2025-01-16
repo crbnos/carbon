@@ -83,9 +83,7 @@ const Feedback = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <Button variant="secondary" className="text-muted-foreground">
-          Feedback
-        </Button>
+        <Button variant="secondary">Feedback</Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[380px] ">
         <ValidatedForm

@@ -76,7 +76,7 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/50 via-card/50 to-card flex flex-col p-[1px] pt-0",
+    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/50 via-card/50 to-card/50 flex flex-col p-[1px] pt-0",
     {
       variants: {
         dragging: {

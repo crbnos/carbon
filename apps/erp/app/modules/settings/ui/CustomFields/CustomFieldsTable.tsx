@@ -114,6 +114,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         data={data}
         columns={columns}
         count={count ?? 0}
+        title="Custom Fields"
         renderContextMenu={renderContextMenu}
       />
     </>

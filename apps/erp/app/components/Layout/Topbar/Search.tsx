@@ -169,7 +169,10 @@ const SearchModal = ({
         if (!open) onClose();
       }}
     >
-      <ModalContent className="rounded-lg translate-y-0 p-0 h-[343px]">
+      <ModalContent
+        className="rounded-lg translate-y-0 p-0 h-[343px]"
+        withCloseButton={false}
+      >
         <Command className="rounded-lg border shadow-md">
           <CommandInput
             placeholder="Type a command or search..."
@@ -304,7 +307,7 @@ const SearchButton = () => {
       <Button
         leftIcon={<LuSearch />}
         variant="secondary"
-        className="w-[200px] px-2 text-muted-foreground "
+        className="w-[200px] px-2"
         onClick={searchModal.onOpen}
       >
         <HStack className="w-full">
