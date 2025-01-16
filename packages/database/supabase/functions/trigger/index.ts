@@ -13,7 +13,7 @@ const recipientValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("group"),
-    groupId: z.string(),
+    groupIds: z.array(z.string()),
   }),
   z.object({
     type: z.literal("users"),
@@ -32,6 +32,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     documentId: z.string(),
     companyId: z.string(),
     recipient: recipientValidator,
+    from: z.string().optional(),
   }),
 ]);
 
@@ -65,7 +66,7 @@ serve(async (req: Request) => {
           documentId: data.documentId,
           event: data.event,
           recipient: data.recipient,
-          from: "sytem",
+          from: data.from ?? "system",
         });
         break;
       }
