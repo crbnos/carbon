@@ -420,6 +420,7 @@ export default function PurchaseDashboard() {
                 />
               )}
               <Combobox
+                asButton
                 value={supplierId}
                 onChange={setSupplierId}
                 options={supplierOptions}
