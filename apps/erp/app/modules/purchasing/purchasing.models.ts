@@ -80,6 +80,7 @@ export const purchaseOrderDeliveryValidator = z
     dropShipment: zfd.checkbox(),
     customerId: zfd.text(z.string().optional()),
     customerLocationId: zfd.text(z.string().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional()),
     notes: zfd.text(z.string().optional()),
   })
   .refine(

@@ -191,18 +191,18 @@ function SalesOrderLineItem({
       >
         <HStack
           className={cn(
-            "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
+            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
             !disclosure.isOpen && "border-b border-border",
             isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
           )}
         >
-          <HStack spacing={2}>
+          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
             <ItemThumbnail
               thumbnailPath={line.thumbnailPath}
               type="Part" // TODO
             />
 
-            <VStack spacing={0}>
+            <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
                 {line.itemReadableId}
               </span>
@@ -211,13 +211,14 @@ function SalesOrderLineItem({
               </span>
             </VStack>
           </HStack>
-          <HStack spacing={0}>
+          <div className="absolute right-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
+                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
-                  variant="ghost"
+                  variant="solid"
                   onClick={(e) => e.stopPropagation()}
                 />
               </DropdownMenuTrigger>
@@ -251,7 +252,7 @@ function SalesOrderLineItem({
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </HStack>
+          </div>
         </HStack>
       </Link>
     </VStack>

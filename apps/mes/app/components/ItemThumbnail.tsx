@@ -7,7 +7,7 @@ interface ItemThumbnailProps {
 }
 
 const itemVariants = cva(
-  "bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent",
+  "bg-gradient-to-bl from-muted to-muted/40 rounded-lg",
   {
     variants: {
       size: {

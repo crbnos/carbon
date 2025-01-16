@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
 import type {
+  getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getPurchaseOrders,
   getSupplier,
@@ -21,6 +22,10 @@ export type PurchaseOrderAttachment = FileObject; // TODO: remove
 export type PurchaseOrder = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrders>>["data"]
 >[number];
+
+export type PurchaseOrderDelivery = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseOrderDelivery>>["data"]
+>;
 
 export type PurchaseOrderLine = NonNullable<
   Awaited<ReturnType<typeof getPurchaseOrderLines>>["data"]

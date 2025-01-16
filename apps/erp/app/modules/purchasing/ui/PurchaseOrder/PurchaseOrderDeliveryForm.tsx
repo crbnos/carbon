@@ -18,6 +18,7 @@ import {
   Hidden,
   Input,
   Location,
+  Number,
   ShippingMethod,
   Submit,
 } from "~/components/Form";
@@ -28,11 +29,12 @@ import { path } from "~/utils/path";
 
 type PurchaseOrderDeliveryFormProps = {
   initialValues: z.infer<typeof purchaseOrderDeliveryValidator>;
-  // shippingTerms: ListItem[];
+  currencyCode: string;
 };
 
 const PurchaseOrderDeliveryForm = ({
   initialValues,
+  currencyCode,
 }: // shippingTerms,
 PurchaseOrderDeliveryFormProps) => {
   const { orderId } = useParams();
@@ -66,6 +68,14 @@ PurchaseOrderDeliveryFormProps) => {
         <CardContent>
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
+            <Number
+              name="supplierShippingCost"
+              label="Shipping Cost"
+              formatOptions={{
+                style: "currency",
+                currency: currencyCode,
+              }}
+            />
             <Location
               name="locationId"
               label="Delivery Location"

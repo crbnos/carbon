@@ -8,6 +8,7 @@ import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getPurchaseOrder,
+  getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getSupplier,
   getSupplierInteractionDocuments,
@@ -37,9 +38,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrder, lines] = await Promise.all([
+  const [purchaseOrder, lines, purchaseOrderDelivery] = await Promise.all([
     getPurchaseOrder(client, orderId),
     getPurchaseOrderLines(client, orderId),
+    getPurchaseOrderDelivery(client, orderId),
   ]);
 
   if (purchaseOrder.data?.companyId !== companyId) {
@@ -80,6 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     purchaseOrder: purchaseOrder.data,
+    purchaseOrderDelivery: purchaseOrderDelivery.data,
     lines: lines.data ?? [],
     files: getSupplierInteractionDocuments(
       client,

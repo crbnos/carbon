@@ -10,10 +10,13 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import type { PurchaseOrder, PurchaseOrderLine } from "~/modules/purchasing";
+import type {
+  PurchaseOrder,
+  PurchaseOrderDelivery,
+  PurchaseOrderLine,
+} from "~/modules/purchasing";
 import {
   getPurchaseOrder,
-  getPurchaseOrderDelivery,
   getPurchaseOrderPayment,
   purchaseOrderValidator,
   upsertPurchaseOrder,
@@ -38,25 +41,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [purchaseOrder, purchaseOrderDelivery, purchaseOrderPayment] =
-    await Promise.all([
-      getPurchaseOrder(client, orderId),
-      getPurchaseOrderDelivery(client, orderId),
-      getPurchaseOrderPayment(client, orderId),
-    ]);
-
-  if (purchaseOrderDelivery.error) {
-    throw redirect(
-      path.to.purchaseOrders,
-      await flash(
-        request,
-        error(
-          purchaseOrderDelivery.error,
-          "Failed to load purchase order delivery"
-        )
-      )
-    );
-  }
+  const [purchaseOrder, purchaseOrderPayment] = await Promise.all([
+    getPurchaseOrder(client, orderId),
+    getPurchaseOrderPayment(client, orderId),
+  ]);
 
   if (purchaseOrderPayment.error) {
     throw redirect(
@@ -72,7 +60,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return json({
-    purchaseOrderDelivery: purchaseOrderDelivery.data,
     purchaseOrderPayment: purchaseOrderPayment.data,
     internalNotes: (purchaseOrder.data?.internalNotes ?? {}) as JSONContent,
     externalNotes: (purchaseOrder.data?.externalNotes ?? {}) as JSONContent,
@@ -122,17 +109,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PurchaseOrderBasicRoute() {
-  const {
-    purchaseOrderDelivery,
-    purchaseOrderPayment,
-    internalNotes,
-    externalNotes,
-  } = useLoaderData<typeof loader>();
+  const { purchaseOrderPayment, internalNotes, externalNotes } =
+    useLoaderData<typeof loader>();
 
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
   const orderData = useRouteData<{
     purchaseOrder: PurchaseOrder;
+    purchaseOrderDelivery: PurchaseOrderDelivery;
     lines: PurchaseOrderLine[];
     files: Promise<FileObject[]>;
   }>(path.to.purchaseOrder(orderId));
@@ -155,19 +139,24 @@ export default function PurchaseOrderBasicRoute() {
   };
 
   const deliveryInitialValues = {
-    id: purchaseOrderDelivery.id,
-    locationId: purchaseOrderDelivery.locationId ?? "",
-    shippingMethodId: purchaseOrderDelivery.shippingMethodId ?? "",
-    shippingTermId: purchaseOrderDelivery.shippingTermId ?? "",
-    trackingNumber: purchaseOrderDelivery.trackingNumber ?? "",
-    receiptRequestedDate: purchaseOrderDelivery.receiptRequestedDate ?? "",
-    receiptPromisedDate: purchaseOrderDelivery.receiptPromisedDate ?? "",
-    deliveryDate: purchaseOrderDelivery.deliveryDate ?? "",
-    notes: purchaseOrderDelivery.notes ?? "",
-    dropShipment: purchaseOrderDelivery.dropShipment ?? false,
-    customerId: purchaseOrderDelivery.customerId ?? "",
-    customerLocationId: purchaseOrderDelivery.customerLocationId ?? "",
-    ...getCustomFields(purchaseOrderDelivery.customFields),
+    id: orderData?.purchaseOrderDelivery.id,
+    locationId: orderData?.purchaseOrderDelivery.locationId ?? "",
+    supplierShippingCost:
+      orderData?.purchaseOrderDelivery.supplierShippingCost ?? 0,
+    shippingMethodId: orderData?.purchaseOrderDelivery.shippingMethodId ?? "",
+    shippingTermId: orderData?.purchaseOrderDelivery.shippingTermId ?? "",
+    trackingNumber: orderData?.purchaseOrderDelivery.trackingNumber ?? "",
+    receiptRequestedDate:
+      orderData?.purchaseOrderDelivery.receiptRequestedDate ?? "",
+    receiptPromisedDate:
+      orderData?.purchaseOrderDelivery.receiptPromisedDate ?? "",
+    deliveryDate: orderData?.purchaseOrderDelivery.deliveryDate ?? "",
+    notes: orderData?.purchaseOrderDelivery.notes ?? "",
+    dropShipment: orderData?.purchaseOrderDelivery.dropShipment ?? false,
+    customerId: orderData?.purchaseOrderDelivery.customerId ?? "",
+    customerLocationId:
+      orderData?.purchaseOrderDelivery.customerLocationId ?? "",
+    ...getCustomFields(orderData?.purchaseOrderDelivery.customFields),
   };
   const paymentInitialValues = {
     id: purchaseOrderPayment.id,
@@ -214,6 +203,7 @@ export default function PurchaseOrderBasicRoute() {
       <PurchaseOrderDeliveryForm
         key={`delivery-${orderId}`}
         initialValues={deliveryInitialValues}
+        currencyCode={initialValues.currencyCode}
       />
 
       <PurchaseOrderPaymentForm

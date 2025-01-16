@@ -230,19 +230,19 @@ function QuoteLineItem({
     <VStack spacing={0}>
       <HStack
         className={cn(
-          "w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer",
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
           !disclosure.isOpen && "border-b border-border",
           isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
         )}
         onClick={() => onLineClick(line)}
       >
-        <HStack spacing={2}>
+        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
           <ItemThumbnail
             thumbnailPath={line.thumbnailPath}
             type={line.itemType as MethodItemType}
           />
 
-          <VStack spacing={0}>
+          <VStack spacing={0} className="min-w-0">
             <HStack>
               <span className="font-semibold line-clamp-1">
                 {line.itemReadableId}
@@ -257,64 +257,70 @@ function QuoteLineItem({
             </span>
           </VStack>
         </HStack>
-        <HStack spacing={0}>
-          {line.methodType === "Make" &&
-            permissions.can("update", "sales") &&
-            line.status !== "No Quote" && (
-              <IconButton
-                aria-label={disclosure.isOpen ? "Hide" : "Show"}
-                className={cn("animate", disclosure.isOpen && "-rotate-180")}
-                icon={<LuChevronDown />}
-                size="sm"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  disclosure.onToggle();
-                }}
-              />
-            )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label="More"
-                icon={<LuEllipsisVertical />}
-                size="sm"
-                variant="ghost"
-                onClick={(e) => e.stopPropagation()}
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem
-                destructive
-                disabled={isDisabled || !permissions.can("update", "sales")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(line);
-                }}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Line
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  to={getLinkToItemDetails(
-                    line.itemType as MethodItemType,
-                    line.itemId!
+        <div className="absolute right-2">
+          <HStack spacing={1}>
+            {line.methodType === "Make" &&
+              permissions.can("update", "sales") &&
+              line.status !== "No Quote" && (
+                <IconButton
+                  aria-label={disclosure.isOpen ? "Hide" : "Show"}
+                  className={cn(
+                    "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                    disclosure.isOpen && "-rotate-180"
                   )}
+                  icon={<LuChevronDown />}
+                  size="md"
+                  variant="solid"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    disclosure.onToggle();
+                  }}
+                />
+              )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More"
+                  className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
+                  icon={<LuEllipsisVertical />}
+                  size="md"
+                  variant="solid"
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  destructive
+                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(line);
+                  }}
                 >
-                  <DropdownMenuIcon
-                    icon={
-                      <MethodItemTypeIcon
-                        type={line.itemType as MethodItemType}
-                      />
-                    }
-                  />
-                  View Item Master
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </HStack>
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  Delete Line
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.itemType as MethodItemType,
+                      line.itemId!
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={
+                        <MethodItemTypeIcon
+                          type={line.itemType as MethodItemType}
+                        />
+                      }
+                    />
+                    View Item Master
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
+        </div>
       </HStack>
       {disclosure.isOpen &&
         line.methodType === "Make" &&
