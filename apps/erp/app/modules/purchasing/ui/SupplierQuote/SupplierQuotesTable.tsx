@@ -253,7 +253,7 @@ const SupplierQuotesTable = memo(
           }}
           primaryAction={
             permissions.can("create", "purchasing") && (
-              <New label="SupplierQuote" to={path.to.newSupplierQuote} />
+              <New label="Supplier Quote" to={path.to.newSupplierQuote} />
             )
           }
           renderContextMenu={renderContextMenu}

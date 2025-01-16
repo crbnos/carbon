@@ -54,12 +54,15 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
 const chartConfig = {
-  actual: {
+  value: {
     color: "hsl(var(--primary))",
+  },
+  actual: {
+    color: "hsl(var(--chart-1))",
     label: "Actual",
   },
   estimate: {
-    color: "hsl(var(--destructive))",
+    color: "hsl(var(--chart-2))",
     label: "Estimate",
   },
 } satisfies ChartConfig;
@@ -476,7 +479,7 @@ export default function ProductionDashboard() {
 
                         <Bar
                           dataKey="value"
-                          fill="var(--color-actual)"
+                          fill="var(--color-value)"
                           radius={2}
                         >
                           <LabelList
@@ -552,7 +555,7 @@ export default function ProductionDashboard() {
                         />
                         <Bar
                           dataKey="value"
-                          fill="var(--color-actual)"
+                          fill="var(--color-value)"
                           radius={2}
                         />
                       </>
