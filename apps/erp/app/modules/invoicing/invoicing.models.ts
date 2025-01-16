@@ -38,6 +38,7 @@ export const purchaseInvoiceValidator = z.object({
   invoiceSupplierLocationId: zfd.text(z.string().optional()),
   dateIssued: zfd.text(z.string().optional()),
   dateDue: zfd.text(z.string().optional()),
+  supplierShippingCost: zfd.numeric(z.number().optional()),
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });

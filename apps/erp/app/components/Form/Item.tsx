@@ -172,12 +172,9 @@ const Item = ({
           id={typeFieldName}
           value={type}
         />
-        <div className="flex flex-grow items-start min-w-0">
+        <div className="flex flex-grow items-start min-w-0 relative">
           <CreatableCombobox
-            className={cn(
-              "flex-grow min-w-0",
-              canSwitchItemType && "rounded-r-none"
-            )}
+            className={cn("flex-grow min-w-0")}
             ref={triggerRef}
             options={options}
             {...props}
@@ -209,6 +206,7 @@ const Item = ({
                       type="button"
                       aria-label="Change Type"
                       className={cn(
+                        "absolute right-0 top-0",
                         props.inline === true
                           ? "ml-1"
                           : "bg-transparent flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none !border-l-0 border -ml-px shadow-none hover:shadow-button-base"

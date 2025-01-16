@@ -60,7 +60,7 @@ const DatePicker = (
               <InputGroup
                 {...groupProps}
                 ref={ref}
-                className="w-full inline-flex rounded-r-none"
+                className="w-full inline-flex"
               >
                 <div className="flex w-full px-4 py-2">
                   <DateField {...fieldProps} />
@@ -68,10 +68,12 @@ const DatePicker = (
                     <LuBan className="!text-destructive-foreground absolute right-[12px] top-[12px]" />
                   )}
                 </div>
+                <div className="flex-shrink-0 -mt-px">
+                  <PopoverTrigger>
+                    <FieldButton {...buttonProps} isPressed={state.isOpen} />
+                  </PopoverTrigger>
+                </div>
               </InputGroup>
-              <PopoverTrigger>
-                <FieldButton {...buttonProps} isPressed={state.isOpen} />
-              </PopoverTrigger>
             </>
           )}
         </HStack>

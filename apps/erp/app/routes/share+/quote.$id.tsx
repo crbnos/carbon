@@ -483,11 +483,11 @@ const LineItems = ({
               {thumbnails[line.id!] ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
+                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={thumbnails[line.id!] ?? undefined}
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}

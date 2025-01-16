@@ -28,7 +28,12 @@ import {
   useUser,
 } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
-import type { PurchaseOrder, PurchaseOrderLine, Supplier } from "../../types";
+import type {
+  PurchaseOrder,
+  PurchaseOrderDelivery,
+  PurchaseOrderLine,
+  Supplier,
+} from "../../types";
 
 const LineItems = ({
   currencyCode,
@@ -85,11 +90,11 @@ const LineItems = ({
               {line.thumbnailPath ? (
                 <img
                   alt={line.itemReadableId!}
-                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent"
+                  className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg border-2 border-transparent p-2">
+                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
@@ -289,6 +294,7 @@ const PurchaseOrderSummary = () => {
   const routeData = useRouteData<{
     purchaseOrder: PurchaseOrder;
     lines: PurchaseOrderLine[];
+    purchaseOrderDelivery: PurchaseOrderDelivery;
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
 
@@ -305,16 +311,28 @@ const PurchaseOrderSummary = () => {
   const subtotal =
     routeData?.lines?.reduce((acc, line) => {
       const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
-      const addOns = line.shippingCost ?? 0;
-      return acc + lineTotal + addOns;
+
+      return acc + lineTotal;
     }, 0) ?? 0;
+
+  const supplierShippingCost =
+    (routeData?.lines?.reduce((acc, line) => {
+      return acc + (line.supplierShippingCost ?? 0);
+    }, 0) ?? 0) + (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0);
+
+  const shippingCost =
+    (routeData?.lines?.reduce((acc, line) => {
+      return acc + (line.shippingCost ?? 0);
+    }, 0) ?? 0) +
+    (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0) *
+      (routeData?.purchaseOrder?.exchangeRate ?? 1);
 
   const supplierSubtotal =
     routeData?.lines?.reduce((acc, line) => {
       const lineTotal =
         (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
-      const addOns = line.supplierShippingCost ?? 0;
-      return acc + lineTotal + addOns;
+
+      return acc + lineTotal;
     }, 0) ?? 0;
 
   const tax =
@@ -327,8 +345,8 @@ const PurchaseOrderSummary = () => {
       return acc + (line.supplierTaxAmount ?? 0);
     }, 0) ?? 0;
 
-  const total = subtotal + tax;
-  const supplierTotal = supplierSubtotal + supplierTax;
+  const total = subtotal + tax + shippingCost;
+  const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
 
   return (
     <Card>
@@ -379,6 +397,18 @@ const PurchaseOrderSummary = () => {
               {shouldConvertCurrency && (
                 <span className="text-sm">
                   {presentationCurrencyFormatter.format(supplierTax)}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            <span>Shipping:</span>
+            <VStack spacing={0} className="items-end">
+              <span>{formatter.format(shippingCost)}</span>
+              {shouldConvertCurrency && (
+                <span className="text-sm">
+                  {presentationCurrencyFormatter.format(supplierShippingCost)}
                 </span>
               )}
             </VStack>

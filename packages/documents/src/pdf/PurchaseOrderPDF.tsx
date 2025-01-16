@@ -78,6 +78,8 @@ const PurchaseOrderPDF = ({
     0
   );
 
+  const shippingCost = purchaseOrder?.supplierShippingCost ?? 0;
+
   return (
     <Template
       title={title}
@@ -241,8 +243,20 @@ const PurchaseOrderPDF = ({
               )}
             >
               <Text>Tax</Text>
-              <Text style={tw(" text-gray-500")}>
+              <Text style={tw("font-normal text-gray-500")}>
                 {formatter.format(taxAmount)}
+              </Text>
+            </View>
+          )}
+          {shippingCost > 0 && (
+            <View
+              style={tw(
+                "flex flex-row justify-between items-center py-3 px-[6px] border-b border-gray-300 font-bold uppercase"
+              )}
+            >
+              <Text>Shipping</Text>
+              <Text style={tw("font-normal text-gray-500")}>
+                {formatter.format(shippingCost)}
               </Text>
             </View>
           )}
