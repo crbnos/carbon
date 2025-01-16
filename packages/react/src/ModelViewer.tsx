@@ -27,9 +27,6 @@ export const supportedModelTypes = [
   "stp",
 ];
 
-const darkColor = "#9797a5";
-const lightColor = "#8c8a8a";
-
 export function ModelViewer({
   file,
   url,
@@ -70,7 +67,12 @@ export function ModelViewer({
           onModelLoaded: (model) => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
-              updateColor(color ?? (isDarkMode ? darkColor : lightColor));
+              updateColor(
+                color ??
+                  getComputedStyle(document.documentElement)
+                    .getPropertyValue("--card")
+                    .trim()
+              );
 
               viewer3D.Resize(
                 parentDiv.current?.clientWidth,
@@ -238,7 +240,11 @@ export function ModelViewer({
       );
 
       if (!color) {
-        updateColor(isDarkMode ? darkColor : lightColor);
+        updateColor(
+          getComputedStyle(document.documentElement)
+            .getPropertyValue("--card")
+            .trim()
+        );
       }
     }
   }, [isDarkMode, color]);
@@ -250,7 +256,7 @@ export function ModelViewer({
         role={"img"}
         aria-label="Canvas showing the model in the 3D Viewer"
         className={cn(
-          "h-full w-full items-center justify-center rounded-lg relative border border-border dark:border-0 dark:shadow-[0px_1px_0px_0px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_hsla(0,0%,100%,.03)_inset,0px_0px_0px_1px_rgba(0,0,0,.1),0px_2px_2px_0px_rgba(0,0,0,.1),0px_4px_4px_0px_rgba(0,0,0,.1),0px_8px_8px_0px_rgba(0,0,0,.1)] bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08),_0px_0px_10px_rgba(0,_0,_0,_0.12),_0px_0px_24px_rgba(0,_0,_0,_0.16),_0px_0px_80px_rgba(0,_0,_0,_0.2)]",
+          "h-full w-full items-center justify-center rounded-lg relative border border-border bg-gradient-to-bl from-card from-50% via-card to-background min-h-[400px] shadow-md dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08),_0px_0px_10px_rgba(0,_0,_0,_0.12),_0px_0px_24px_rgba(0,_0,_0,_0.16),_0px_0px_80px_rgba(0,_0,_0,_0.2)]",
           className
         )}
       >
