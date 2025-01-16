@@ -28,7 +28,6 @@ export default function AppIndexRoute() {
       <Heading size="h3">Hello, {user.firstName}</Heading>
       <Subheading>{formatter.format(date)}</Subheading>
       <Hr />
-      <Subheading className="mb-8">Modules</Subheading>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,300px),1fr))] gap-6 mb-8">
         {/* {permissions.can("view", "production") && (
           <ModuleCard
