@@ -6,6 +6,8 @@ import { cn } from "./utils/cn";
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   isCollapsible?: boolean;
   defaultCollapsed?: boolean;
+  isCollapsed?: boolean;
+  onCollapsedChange?: (isCollapsed: boolean) => void;
 }
 
 const CardContext = createContext<
@@ -18,13 +20,25 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
       className,
       isCollapsible = false,
       defaultCollapsed = false,
+      isCollapsed: controlledIsCollapsed,
+      onCollapsedChange,
       children,
       ...props
     },
     ref
   ) => {
-    const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
-    const toggle = () => setIsCollapsed(!isCollapsed);
+    const [uncontrolledIsCollapsed, setUncontrolledIsCollapsed] =
+      useState(defaultCollapsed);
+
+    const isCollapsed = controlledIsCollapsed ?? uncontrolledIsCollapsed;
+
+    const toggle = () => {
+      if (onCollapsedChange) {
+        onCollapsedChange(!isCollapsed);
+      } else {
+        setUncontrolledIsCollapsed(!isCollapsed);
+      }
+    };
 
     return (
       <CardContext.Provider value={{ isCollapsed, toggle }}>

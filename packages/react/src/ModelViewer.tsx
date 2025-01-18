@@ -61,18 +61,18 @@ export function ModelViewer({
             45.0
           ),
           backgroundColor: isDarkMode
-            ? new OV.RGBAColor(20, 22, 25, 0)
+            ? new OV.RGBAColor(21, 22, 25, 0)
             : new OV.RGBAColor(255, 255, 255, 0),
           defaultColor: new OV.RGBColor(0, 125, 125),
           onModelLoaded: (model) => {
             if (viewerRef.current) {
               const viewer3D = viewerRef.current.GetViewer();
-              updateColor(
-                color ??
-                  getComputedStyle(document.documentElement)
-                    .getPropertyValue("--card")
-                    .trim()
-              );
+              // updateColor(
+              //   color ??
+              //     getComputedStyle(document.documentElement)
+              //       .getPropertyValue("--card")
+              //       .trim()
+              // );
 
               viewer3D.Resize(
                 parentDiv.current?.clientWidth,
@@ -196,26 +196,26 @@ export function ModelViewer({
     viewer.LoadModelFromUrlList([url]);
   }
 
-  function updateColor(color: string) {
-    if (!viewerRef.current) return;
+  // function updateColor(color: string) {
+  //   if (!viewerRef.current) return;
 
-    const viewer3D = viewerRef.current.GetViewer();
-    viewer3D.mainModel.EnumerateMeshes((mesh) => {
-      if (Array.isArray(mesh.material)) {
-        mesh.material.forEach((material) => {
-          if (material) {
-            (material as THREE.MeshStandardMaterial).color.set(color);
-          }
-        });
-      }
-    });
-  }
+  //   const viewer3D = viewerRef.current.GetViewer();
+  //   viewer3D.mainModel.EnumerateMeshes((mesh) => {
+  //     if (Array.isArray(mesh.material)) {
+  //       mesh.material.forEach((material) => {
+  //         if (material) {
+  //           (material as THREE.MeshStandardMaterial).color.set(color);
+  //         }
+  //       });
+  //     }
+  //   });
+  // }
 
-  useEffect(() => {
-    if (color) {
-      updateColor(color);
-    }
-  }, [color]);
+  // useEffect(() => {
+  //   if (color) {
+  //     updateColor(color);
+  //   }
+  // }, [color]);
 
   useEffect(() => {
     if (!file || !viewerRef.current) return;
@@ -239,13 +239,13 @@ export function ModelViewer({
           : new OV.RGBAColor(255, 255, 255, 255)
       );
 
-      if (!color) {
-        updateColor(
-          getComputedStyle(document.documentElement)
-            .getPropertyValue("--card")
-            .trim()
-        );
-      }
+      // if (!color) {
+      //   updateColor(
+      //     getComputedStyle(document.documentElement)
+      //       .getPropertyValue("--card")
+      //       .trim()
+      //   );
+      // }
     }
   }, [isDarkMode, color]);
 

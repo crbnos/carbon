@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   Heading,
   HStack,
-  IconButton,
   Table,
   Tbody,
   Td,
@@ -19,7 +19,7 @@ import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import { useMemo, useState } from "react";
-import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage } from "react-icons/lu";
 import { CustomerAvatar } from "~/components";
 import { usePercentFormatter, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -79,21 +79,20 @@ const LineItems = ({
                   onClick={() => toggleOpen(line.id!)}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
-                    <HStack spacing={0} className="min-w-0 flex-shrink ">
+                    <HStack spacing={2} className="min-w-0 flex-shrink">
                       <Heading className="truncate">
                         {line.itemReadableId}
                       </Heading>
-
-                      <Link
-                        to={path.to.salesOrderLine(orderId, line.id!)}
+                      <Button
+                        asChild
+                        variant="link"
+                        size="sm"
                         className="text-muted-foreground flex-shrink-0"
                       >
-                        <IconButton
-                          aria-label="View Line Item"
-                          icon={<LuExternalLink />}
-                          variant="ghost"
-                        />
-                      </Link>
+                        <Link to={path.to.salesOrderLine(orderId, line.id!)}>
+                          Edit
+                        </Link>
+                      </Button>
                     </HStack>
                     <HStack spacing={4} className="flex-shrink-0 ml-4">
                       <MotionNumber
@@ -255,8 +254,11 @@ const LineItems = ({
     </VStack>
   );
 };
-
-const SalesOrderSummary = () => {
+const SalesOrderSummary = ({
+  onEditShippingCost,
+}: {
+  onEditShippingCost: () => void;
+}) => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -274,6 +276,10 @@ const SalesOrderSummary = () => {
         currency: routeData?.salesOrder?.currencyCode ?? "USD",
       }),
     [locale, routeData?.salesOrder?.currencyCode]
+  );
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.salesOrder?.status ?? ""
   );
 
   // Calculate totals
@@ -295,10 +301,10 @@ const SalesOrderSummary = () => {
       return acc + (lineTotal + addOns) * (line.taxPercent ?? 0);
     }, 0) ?? 0;
 
-  const shippingCost =
-    (routeData?.salesOrder?.shippingCost ?? 0) *
-    (routeData?.salesOrder?.exchangeRate ?? 1);
-  const total = subtotal + tax + shippingCost;
+  const convertedShippingCost =
+    (routeData?.salesOrder?.exchangeRate ?? 1) *
+    (routeData?.salesOrder?.shippingCost ?? 0);
+  const total = subtotal + tax + convertedShippingCost;
 
   return (
     <Card>
@@ -351,19 +357,40 @@ const SalesOrderSummary = () => {
               locales={locale}
             />
           </HStack>
-          {shippingCost > 0 && (
-            <HStack className="justify-between text-base text-muted-foreground w-full">
-              <span>Shipping:</span>
-              <MotionNumber
-                value={shippingCost}
-                format={{
-                  style: "currency",
-                  currency: routeData?.salesOrder?.currencyCode ?? "USD",
-                }}
-                locales={locale}
-              />
-            </HStack>
-          )}
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            {convertedShippingCost > 0 ? (
+              <>
+                <VStack spacing={0}>
+                  <span>Shipping:</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={onEditShippingCost}
+                  >
+                    Edit Shipping
+                  </Button>
+                </VStack>
+                <MotionNumber
+                  value={convertedShippingCost}
+                  format={{
+                    style: "currency",
+                    currency: routeData?.salesOrder.currencyCode ?? "USD",
+                  }}
+                  locales={locale}
+                />
+              </>
+            ) : isEditable ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={onEditShippingCost}
+              >
+                Add Shipping
+              </Button>
+            ) : null}
+          </HStack>
           <HStack className="justify-between text-xl font-bold w-full">
             <span>Total:</span>
             <MotionNumber

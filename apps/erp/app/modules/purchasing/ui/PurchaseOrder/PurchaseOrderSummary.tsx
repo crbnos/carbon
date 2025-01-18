@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   Heading,
   HStack,
-  IconButton,
   Table,
   Tbody,
   Td,
@@ -18,7 +18,7 @@ import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -105,21 +105,21 @@ const LineItems = ({
                   onClick={() => toggleOpen(line.id!)}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
-                    <HStack spacing={0} className="min-w-0 flex-shrink ">
+                    <HStack spacing={2} className="min-w-0 flex-shrink ">
                       <Heading className="truncate">
                         {line.itemReadableId}
                       </Heading>
 
-                      <Link
-                        to={path.to.purchaseOrderLine(orderId, line.id!)}
+                      <Button
+                        asChild
+                        variant="link"
+                        size="sm"
                         className="text-muted-foreground flex-shrink-0"
                       >
-                        <IconButton
-                          aria-label="View Line Item"
-                          icon={<LuExternalLink />}
-                          variant="ghost"
-                        />
-                      </Link>
+                        <Link to={path.to.purchaseOrderLine(orderId, line.id!)}>
+                          Edit
+                        </Link>
+                      </Button>
                     </HStack>
                     <HStack spacing={4} className="flex-shrink-0 ml-4">
                       <VStack spacing={0}>
@@ -286,7 +286,13 @@ const LineItems = ({
   );
 };
 
-const PurchaseOrderSummary = () => {
+type PurchaseOrderSummaryProps = {
+  onEditShippingCost: () => void;
+};
+
+const PurchaseOrderSummary = ({
+  onEditShippingCost,
+}: PurchaseOrderSummaryProps) => {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -297,6 +303,10 @@ const PurchaseOrderSummary = () => {
     purchaseOrderDelivery: PurchaseOrderDelivery;
     supplier: Supplier;
   }>(path.to.purchaseOrder(orderId));
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.purchaseOrder?.status ?? ""
+  );
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();
@@ -310,27 +320,18 @@ const PurchaseOrderSummary = () => {
   // Calculate totals
   const subtotal =
     routeData?.lines?.reduce((acc, line) => {
-      const lineTotal = (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0);
+      const lineTotal =
+        (line.unitPrice ?? 0) * (line.purchaseQuantity ?? 0) +
+        (line.shippingCost ?? 0);
 
       return acc + lineTotal;
     }, 0) ?? 0;
 
-  const supplierShippingCost =
-    (routeData?.lines?.reduce((acc, line) => {
-      return acc + (line.supplierShippingCost ?? 0);
-    }, 0) ?? 0) + (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0);
-
-  const shippingCost =
-    (routeData?.lines?.reduce((acc, line) => {
-      return acc + (line.shippingCost ?? 0);
-    }, 0) ?? 0) +
-    (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0) *
-      (routeData?.purchaseOrder?.exchangeRate ?? 1);
-
   const supplierSubtotal =
     routeData?.lines?.reduce((acc, line) => {
       const lineTotal =
-        (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0);
+        (line.supplierUnitPrice ?? 0) * (line.purchaseQuantity ?? 0) +
+        (line.supplierShippingCost ?? 0);
 
       return acc + lineTotal;
     }, 0) ?? 0;
@@ -344,6 +345,13 @@ const PurchaseOrderSummary = () => {
     routeData?.lines?.reduce((acc, line) => {
       return acc + (line.supplierTaxAmount ?? 0);
     }, 0) ?? 0;
+
+  const shippingCost =
+    (routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0) *
+    (routeData?.purchaseOrder?.exchangeRate ?? 1);
+
+  const supplierShippingCost =
+    routeData?.purchaseOrderDelivery?.supplierShippingCost ?? 0;
 
   const total = subtotal + tax + shippingCost;
   const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
@@ -403,15 +411,42 @@ const PurchaseOrderSummary = () => {
           </HStack>
 
           <HStack className="justify-between text-base text-muted-foreground w-full">
-            <span>Shipping:</span>
-            <VStack spacing={0} className="items-end">
-              <span>{formatter.format(shippingCost)}</span>
-              {shouldConvertCurrency && (
-                <span className="text-sm">
-                  {presentationCurrencyFormatter.format(supplierShippingCost)}
-                </span>
-              )}
-            </VStack>
+            {shippingCost > 0 ? (
+              <>
+                <VStack spacing={0}>
+                  <span>Shipping:</span>
+                  {isEditable && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-muted-foreground"
+                      onClick={onEditShippingCost}
+                    >
+                      Edit Shipping
+                    </Button>
+                  )}
+                </VStack>
+                <VStack spacing={0} className="items-end">
+                  <span>{formatter.format(shippingCost)}</span>
+                  {shouldConvertCurrency && (
+                    <span className="text-sm">
+                      {presentationCurrencyFormatter.format(
+                        supplierShippingCost
+                      )}
+                    </span>
+                  )}
+                </VStack>
+              </>
+            ) : isEditable ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={onEditShippingCost}
+              >
+                Add Shipping
+              </Button>
+            ) : null}
           </HStack>
 
           <HStack className="justify-between text-xl font-bold w-full">

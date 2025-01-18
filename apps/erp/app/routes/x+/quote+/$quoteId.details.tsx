@@ -8,7 +8,7 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { useRouteData } from "~/hooks";
 import type {
   Opportunity,
@@ -27,6 +27,7 @@ import {
   QuoteShipmentForm,
   QuoteSummary,
 } from "~/modules/sales/ui/Quotes";
+import type { QuoteShipmentFormRef } from "~/modules/sales/ui/Quotes/QuoteShipmentForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -110,6 +111,13 @@ export default function QuoteDetailsRoute() {
   }>(path.to.quote(quoteId));
 
   if (!quoteData) throw new Error("Could not find quote data");
+
+  const shipmentFormRef = useRef<QuoteShipmentFormRef>(null);
+
+  const handleEditShippingCost = () => {
+    shipmentFormRef.current?.focusShippingCost();
+  };
+
   const initialValues = {
     id: quoteData?.quote?.id ?? "",
     customerId: quoteData?.quote?.customerId ?? "",
@@ -152,7 +160,7 @@ export default function QuoteDetailsRoute() {
         key={`state-${initialValues.id}`}
         opportunity={quoteData?.opportunity!}
       />
-      <QuoteSummary key={quoteId} />
+      <QuoteSummary key={quoteId} onEditShippingCost={handleEditShippingCost} />
       <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={quoteData.quote.id}
@@ -186,6 +194,7 @@ export default function QuoteDetailsRoute() {
       />
       <QuoteShipmentForm
         key={`shipment-${initialValues.id}`}
+        ref={shipmentFormRef}
         initialValues={shipmentInitialValues}
       />
     </>

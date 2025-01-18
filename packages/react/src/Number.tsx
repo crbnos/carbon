@@ -1,6 +1,7 @@
 import * as ReactAria from "react-aria-components";
 import { Input, type InputProps } from "./Input";
 
+import { forwardRef } from "react";
 import { cn } from "./utils/cn";
 
 export type NumberFieldProps = ReactAria.NumberFieldProps;
@@ -30,31 +31,42 @@ const NumberInputStepper = ({
   );
 };
 
-const NumberInput = ({ className, ...props }: InputProps) => {
-  return (
-    <Input
-      ref={(input) => {
-        if (input) {
-          const handleFocus = () => input.select();
+const NumberInput = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, ...props }, ref) => {
+    const handleFocus = (input: HTMLInputElement) => {
+      input.select();
+    };
 
-          // Check if the event listener is already added
-          if (!input.hasAttribute("data-focus-listener")) {
-            input.addEventListener("focus", handleFocus);
-            input.setAttribute("data-focus-listener", "true");
+    const internalRef = (input: HTMLInputElement | null) => {
+      if (input && !input.hasAttribute("data-focus-listener")) {
+        input.addEventListener("focus", () => handleFocus(input));
+        input.setAttribute("data-focus-listener", "true");
 
-            // Remove the event listener when the component unmounts
-            return () => {
-              input.removeEventListener("focus", handleFocus);
-              input.removeAttribute("data-focus-listener");
-            };
+        return () => {
+          input.removeEventListener("focus", () => handleFocus(input));
+          input.removeAttribute("data-focus-listener");
+        };
+      }
+    };
+
+    return (
+      <Input
+        ref={(input) => {
+          if (typeof ref === "function") {
+            ref(input);
+          } else if (ref) {
+            ref.current = input;
           }
-        }
-      }}
-      className={cn("pr-6", className)}
-      {...props}
-    />
-  );
-};
+          internalRef(input);
+        }}
+        className={cn("pr-6", className)}
+        {...props}
+      />
+    );
+  }
+);
+
+NumberInput.displayName = "NumberInput";
 
 const NumberIncrementStepper = ({
   className,

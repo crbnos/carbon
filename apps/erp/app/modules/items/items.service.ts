@@ -300,6 +300,23 @@ export async function getItemCost(
     .single();
 }
 
+export async function getItemCostHistory(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const dateOneYearAgo = today(getLocalTimeZone())
+    .subtract({ years: 1 })
+    .toString();
+
+  return client
+    .from("costLedger")
+    .select("quantity, cost, postingDate")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .gte("postingDate", dateOneYearAgo);
+}
+
 export async function getItemCustomerPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -910,7 +927,10 @@ export async function getServices(
   }
 
   if (args.type) {
-    query = query.eq("serviceType", args.type);
+    query = query.eq(
+      "serviceType",
+      args.type as NonNullable<"Internal" | "External">
+    );
   }
 
   if (args.group) {

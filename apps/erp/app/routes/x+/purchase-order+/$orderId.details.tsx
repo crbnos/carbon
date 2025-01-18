@@ -8,7 +8,7 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { useRouteData } from "~/hooks";
 import type {
   PurchaseOrder,
@@ -26,6 +26,7 @@ import {
   PurchaseOrderPaymentForm,
   PurchaseOrderSummary,
 } from "~/modules/purchasing/ui/PurchaseOrder";
+import type { PurchaseOrderDeliveryFormRef } from "~/modules/purchasing/ui/PurchaseOrder/PurchaseOrderDeliveryForm";
 import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes,
@@ -122,6 +123,12 @@ export default function PurchaseOrderBasicRoute() {
   }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 
+  const deliveryFormRef = useRef<PurchaseOrderDeliveryFormRef>(null);
+
+  const handleEditShippingCost = () => {
+    deliveryFormRef.current?.focusShippingCost();
+  };
+
   const initialValues = {
     id: orderData?.purchaseOrder?.id ?? "",
     purchaseOrderId: orderData?.purchaseOrder?.purchaseOrderId ?? "",
@@ -172,7 +179,7 @@ export default function PurchaseOrderBasicRoute() {
 
   return (
     <>
-      <PurchaseOrderSummary />
+      <PurchaseOrderSummary onEditShippingCost={handleEditShippingCost} />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={orderData.purchaseOrder.id}
@@ -202,8 +209,10 @@ export default function PurchaseOrderBasicRoute() {
       </Suspense>
       <PurchaseOrderDeliveryForm
         key={`delivery-${orderId}`}
+        ref={deliveryFormRef}
         initialValues={deliveryInitialValues}
         currencyCode={initialValues.currencyCode}
+        defaultCollapsed={true}
       />
 
       <PurchaseOrderPaymentForm

@@ -187,7 +187,7 @@ const PurchaseOrderPDF = ({
           >
             <Text style={tw("w-[35%]")}>Description</Text>
             <Text style={tw("w-[15%] text-right")}>Qty</Text>
-            <Text style={tw("w-[15%] text-right")}>UnitPrice</Text>
+            <Text style={tw("w-[15%] text-right")}>Unit Price</Text>
             <Text style={tw("w-[15%] text-right")}>Shipping</Text>
             <Text style={tw("w-[20%] text-right")}>Total</Text>
           </View>
@@ -267,7 +267,7 @@ const PurchaseOrderPDF = ({
           >
             <Text>Total</Text>
             <Text style={tw("font-bold text-black")}>
-              {formatter.format(getTotal(purchaseOrderLines))}
+              {formatter.format(getTotal(purchaseOrderLines) + shippingCost)}
             </Text>
           </View>
         </View>

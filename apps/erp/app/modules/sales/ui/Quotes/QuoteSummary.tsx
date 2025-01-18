@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   HStack,
   Heading,
-  IconButton,
   RadioGroup,
   RadioGroupItem,
   Table,
@@ -24,7 +24,7 @@ import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage } from "react-icons/lu";
 import { CustomerAvatar } from "~/components";
 import { usePercentFormatter, useRouteData, useUser } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -154,20 +154,20 @@ const LineItems = ({
                   onClick={() => toggleOpen(line.id!)}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow">
-                    <HStack spacing={0} className="min-w-0 flex-shrink">
+                    <HStack spacing={2} className="min-w-0 flex-shrink">
                       <Heading className="truncate">
                         {line.itemReadableId}
                       </Heading>
-                      <Link
-                        to={path.to.quoteLine(quoteId, line.id!)}
-                        className="text-muted-foreground"
+                      <Button
+                        asChild
+                        variant="link"
+                        size="sm"
+                        className="text-muted-foreground flex-shrink-0"
                       >
-                        <IconButton
-                          aria-label="View Line Item"
-                          icon={<LuExternalLink />}
-                          variant="ghost"
-                        />
-                      </Link>
+                        <Link to={path.to.quoteLine(quoteId, line.id!)}>
+                          Edit
+                        </Link>
+                      </Button>
                     </HStack>
                     <HStack spacing={4}>
                       {/* <span className="font-medium text-xl">
@@ -532,7 +532,11 @@ const LinePricingOptions = ({
   );
 };
 
-const QuoteSummary = () => {
+const QuoteSummary = ({
+  onEditShippingCost,
+}: {
+  onEditShippingCost: () => void;
+}) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quote id");
   const routeData = useRouteData<{
@@ -542,6 +546,10 @@ const QuoteSummary = () => {
     shipment: QuotationShipment;
     salesOrderLines: SalesOrderLine[];
   }>(path.to.quote(quoteId));
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.quote?.status ?? ""
+  );
 
   const { locale } = useLocale();
   const formatter = useMemo(
@@ -699,19 +707,40 @@ const QuoteSummary = () => {
               locales={locale}
             />
           </HStack>
-          {convertedShippingCost > 0 && (
-            <HStack className="justify-between text-base text-muted-foreground w-full">
-              <span>Shipping:</span>
-              <MotionNumber
-                value={convertedShippingCost}
-                format={{
-                  style: "currency",
-                  currency: routeData?.quote.currencyCode ?? "USD",
-                }}
-                locales={locale}
-              />
-            </HStack>
-          )}
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            {convertedShippingCost > 0 ? (
+              <>
+                <VStack spacing={0}>
+                  <span>Shipping:</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={onEditShippingCost}
+                  >
+                    Edit Shipping
+                  </Button>
+                </VStack>
+                <MotionNumber
+                  value={convertedShippingCost}
+                  format={{
+                    style: "currency",
+                    currency: routeData?.quote.currencyCode ?? "USD",
+                  }}
+                  locales={locale}
+                />
+              </>
+            ) : isEditable ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={onEditShippingCost}
+              >
+                Add Shipping
+              </Button>
+            ) : null}
+          </HStack>
           <HStack className="justify-between text-xl font-bold w-full">
             <span>Total:</span>
             <MotionNumber

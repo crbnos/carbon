@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type { z } from "zod";
 import {
   Boolean,
@@ -30,13 +30,17 @@ import type { SalesOrder } from "../../types";
 
 type SalesOrderShipmentFormProps = {
   initialValues: z.infer<typeof salesOrderShipmentValidator>;
-  // shippingTerms: ListItem[];
+  defaultCollapsed?: boolean;
 };
 
-const SalesOrderShipmentForm = ({
-  initialValues,
-}: // shippingTerms,
-SalesOrderShipmentFormProps) => {
+export type SalesOrderShipmentFormRef = {
+  focusShippingCost: () => void;
+};
+
+const SalesOrderShipmentForm = forwardRef<
+  SalesOrderShipmentFormRef,
+  SalesOrderShipmentFormProps
+>(({ initialValues, defaultCollapsed = true }, ref) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<typeof action>();
   const [dropShip, setDropShip] = useState<boolean>(
@@ -45,6 +49,20 @@ SalesOrderShipmentFormProps) => {
   const [customer, setCustomer] = useState<string | undefined>(
     initialValues.customerId
   );
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+
+  const shippingCostRef = useRef<HTMLInputElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    focusShippingCost: () => {
+      setIsCollapsed(false);
+      setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        shippingCostRef.current?.focus();
+      }, 100);
+    },
+  }));
 
   const { orderId } = useParams();
   if (!orderId) throw new Error("orderId not found");
@@ -57,7 +75,13 @@ SalesOrderShipmentFormProps) => {
   const isCustomer = permissions.is("customer");
 
   return (
-    <Card isCollapsible defaultCollapsed>
+    <Card
+      ref={cardRef}
+      isCollapsible
+      defaultCollapsed={defaultCollapsed}
+      isCollapsed={isCollapsed}
+      onCollapsedChange={setIsCollapsed}
+    >
       <ValidatedForm
         action={path.to.salesOrderShipment(initialValues.id)}
         method="post"
@@ -80,6 +104,7 @@ SalesOrderShipmentFormProps) => {
                   routeData?.salesOrder?.currencyCode ??
                   company?.baseCurrencyCode,
               }}
+              ref={shippingCostRef}
             />
             <Location
               name="locationId"
@@ -88,19 +113,12 @@ SalesOrderShipmentFormProps) => {
               isClearable
             />
             <ShippingMethod name="shippingMethodId" label="Shipping Method" />
-            {/* <Select
-              name="shippingTermId"
-              label="Shipping Terms"
-              isReadOnly={isCustomer}
-              options={shippingTermOptions}
-            /> */}
 
             <DatePicker name="receiptRequestedDate" label="Requested Date" />
             <DatePicker name="receiptPromisedDate" label="Promised Date" />
             <DatePicker name="shipmentDate" label="Shipment Date" />
 
             <Input name="trackingNumber" label="Tracking Number" />
-            {/* <TextArea name="notes" label="Shipping Notes" /> */}
             <Boolean
               name="dropShipment"
               label="Drop Shipment"
@@ -129,6 +147,8 @@ SalesOrderShipmentFormProps) => {
       </ValidatedForm>
     </Card>
   );
-};
+});
+
+SalesOrderShipmentForm.displayName = "SalesOrderShipmentForm";
 
 export default SalesOrderShipmentForm;

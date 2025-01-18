@@ -10,33 +10,48 @@ import { useFetcher, useParams } from "@remix-run/react";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import type { z } from "zod";
 import {
-  DatePicker,
+  CustomFormFields,
   Hidden,
   Location,
   Number,
   ShippingMethod,
   Submit,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
+import type { PurchaseInvoice } from "~/modules/invoicing";
+import { purchaseInvoiceDeliveryValidator } from "~/modules/invoicing";
+import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.delivery";
 import { path } from "~/utils/path";
-import { quoteShipmentValidator } from "../../sales.models";
-import type { Quotation } from "../../types";
 
-type QuoteShipmentFormProps = {
-  initialValues: z.infer<typeof quoteShipmentValidator>;
+type PurchaseInvoiceDeliveryFormProps = {
+  initialValues: z.infer<typeof purchaseInvoiceDeliveryValidator>;
+  currencyCode: string;
   defaultCollapsed?: boolean;
 };
 
-export type QuoteShipmentFormRef = {
+export type PurchaseInvoiceDeliveryFormRef = {
   focusShippingCost: () => void;
 };
 
-const QuoteShipmentForm = forwardRef<
-  QuoteShipmentFormRef,
-  QuoteShipmentFormProps
->(({ initialValues, defaultCollapsed = true }, ref) => {
+const PurchaseInvoiceDeliveryForm = forwardRef<
+  PurchaseInvoiceDeliveryFormRef,
+  PurchaseInvoiceDeliveryFormProps
+>(({ initialValues, currencyCode, defaultCollapsed = true }, ref) => {
+  const { invoiceId } = useParams();
+  if (!invoiceId) {
+    throw new Error("invoiceId not found");
+  }
+
+  const routeData = useRouteData<{
+    purchaseInvoice: PurchaseInvoice;
+  }>(path.to.purchaseInvoice(invoiceId));
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.purchaseInvoice?.status ?? ""
+  );
+
   const permissions = usePermissions();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useFetcher<typeof action>();
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
   const shippingCostRef = useRef<HTMLInputElement>(null);
@@ -52,19 +67,7 @@ const QuoteShipmentForm = forwardRef<
     },
   }));
 
-  const isCustomer = permissions.is("customer");
-
-  const { quoteId } = useParams();
-  if (!quoteId) throw new Error("quoteId not found");
-  const routeData = useRouteData<{
-    quote: Quotation;
-  }>(path.to.quote(quoteId));
-
-  const isEditable = ["Draft", "To Review"].includes(
-    routeData?.quote?.status ?? ""
-  );
-
-  const { company } = useUser();
+  const isSupplier = permissions.is("supplier");
 
   return (
     <Card
@@ -75,9 +78,9 @@ const QuoteShipmentForm = forwardRef<
       onCollapsedChange={setIsCollapsed}
     >
       <ValidatedForm
-        action={path.to.quoteShipment(initialValues.id)}
         method="post"
-        validator={quoteShipmentValidator}
+        action={path.to.purchaseInvoiceDelivery(invoiceId)}
+        validator={purchaseInvoiceDeliveryValidator}
         defaultValues={initialValues}
         fetcher={fetcher}
       >
@@ -88,28 +91,27 @@ const QuoteShipmentForm = forwardRef<
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Number
-              name="shippingCost"
+              name="supplierShippingCost"
               label="Shipping Cost"
               formatOptions={{
                 style: "currency",
-                currency: company?.baseCurrencyCode,
+                currency: currencyCode,
               }}
               ref={shippingCostRef}
             />
             <Location
               name="locationId"
-              label="Shipment Location"
-              isReadOnly={isCustomer}
+              label="Delivery Location"
+              isReadOnly={isSupplier}
               isClearable
             />
             <ShippingMethod name="shippingMethodId" label="Shipping Method" />
-
-            <DatePicker name="receiptRequestedDate" label="Requested Date" />
+            <CustomFormFields table="purchaseInvoiceDelivery" />
           </div>
         </CardContent>
         <CardFooter>
           <Submit
-            isDisabled={!permissions.can("update", "sales") || !isEditable}
+            isDisabled={!permissions.can("update", "invoicing") || !isEditable}
           >
             Save
           </Submit>
@@ -119,6 +121,6 @@ const QuoteShipmentForm = forwardRef<
   );
 });
 
-QuoteShipmentForm.displayName = "QuoteShipmentForm";
+PurchaseInvoiceDeliveryForm.displayName = "PurchaseInvoiceDeliveryForm";
 
-export default QuoteShipmentForm;
+export default PurchaseInvoiceDeliveryForm;

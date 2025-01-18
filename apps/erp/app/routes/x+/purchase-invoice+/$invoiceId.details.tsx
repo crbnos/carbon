@@ -8,16 +8,22 @@ import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { useRouteData } from "~/hooks";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
+import type {
+  PurchaseInvoice,
+  PurchaseInvoiceDelivery,
+  PurchaseInvoiceLine,
+} from "~/modules/invoicing";
 import {
   getPurchaseInvoice,
   PurchaseInvoiceSummary,
   purchaseInvoiceValidator,
   upsertPurchaseInvoice,
 } from "~/modules/invoicing";
+import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
+import type { PurchaseInvoiceDeliveryFormRef } from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm";
 import type { SupplierInteraction } from "~/modules/purchasing";
 import {
   SupplierInteractionDocuments,
@@ -25,10 +31,6 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-type LoaderData = {
-  internalNotes: JSONContent;
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -49,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json<LoaderData>({
+  return json({
     internalNotes: (invoice.data?.internalNotes ?? {}) as JSONContent,
   });
 }
@@ -106,15 +108,22 @@ export default function PurchaseInvoiceBasicRoute() {
   const invoiceData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
+    purchaseInvoiceDelivery: PurchaseInvoiceDelivery;
     interaction: SupplierInteraction;
     files: Promise<FileObject[]>;
   }>(path.to.purchaseInvoice(invoiceId));
 
   if (!invoiceData?.purchaseInvoice)
     throw new Error("purchaseInvoice not found");
-  const { purchaseInvoice } = invoiceData;
+  const { purchaseInvoice, purchaseInvoiceDelivery } = invoiceData;
 
   if (!invoiceData) throw new Error("Could not find invoice data");
+
+  const deliveryFormRef = useRef<PurchaseInvoiceDeliveryFormRef>(null);
+
+  const handleEditShippingCost = () => {
+    deliveryFormRef.current?.focusShippingCost();
+  };
 
   const initialValues = {
     id: purchaseInvoice.id ?? "",
@@ -130,9 +139,18 @@ export default function PurchaseInvoiceBasicRoute() {
     ...getCustomFields(purchaseInvoice.customFields),
   };
 
+  const deliveryInitialValues = {
+    id: purchaseInvoiceDelivery.id,
+    locationId: purchaseInvoiceDelivery.locationId ?? "",
+    supplierShippingCost: purchaseInvoiceDelivery.supplierShippingCost ?? 0,
+    shippingMethodId: purchaseInvoiceDelivery.shippingMethodId ?? "",
+    shippingTermId: purchaseInvoiceDelivery.shippingTermId ?? "",
+    ...getCustomFields(purchaseInvoiceDelivery.customFields),
+  };
+
   return (
     <Fragment key={invoiceId}>
-      <PurchaseInvoiceSummary />
+      <PurchaseInvoiceSummary onEditShippingCost={handleEditShippingCost} />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}
         id={invoiceId}
@@ -159,6 +177,13 @@ export default function PurchaseInvoiceBasicRoute() {
           )}
         </Await>
       </Suspense>
+      <PurchaseInvoiceDeliveryForm
+        key={`delivery-${invoiceId}`}
+        ref={deliveryFormRef}
+        initialValues={deliveryInitialValues}
+        currencyCode={initialValues.currencyCode}
+        defaultCollapsed={true}
+      />
     </Fragment>
   );
 }

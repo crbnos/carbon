@@ -21,7 +21,6 @@ import {
   Hidden,
   Input,
   Location,
-  Number,
   Submit,
   Supplier,
   SupplierContact,
@@ -209,14 +208,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
 
               <DatePicker name="dateDue" label="Due Date" />
               <DatePicker name="dateIssued" label="Date Issued" />
-              <Number
-                name="supplierShippingCost"
-                label="Shipping Cost"
-                formatOptions={{
-                  style: "currency",
-                  currency: invoiceSupplier?.currencyCode,
-                }}
-              />
+
               <PaymentTerm
                 name="paymentTermId"
                 label="Payment Terms"
