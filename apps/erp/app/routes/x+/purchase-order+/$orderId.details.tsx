@@ -9,7 +9,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense, useRef } from "react";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
@@ -177,6 +177,8 @@ export default function PurchaseOrderBasicRoute() {
     ...getCustomFields(purchaseOrderPayment.customFields),
   };
 
+  const { company } = useUser();
+
   return (
     <>
       <PurchaseOrderSummary onEditShippingCost={handleEditShippingCost} />
@@ -211,7 +213,7 @@ export default function PurchaseOrderBasicRoute() {
         key={`delivery-${orderId}`}
         ref={deliveryFormRef}
         initialValues={deliveryInitialValues}
-        currencyCode={initialValues.currencyCode}
+        currencyCode={initialValues.currencyCode ?? company.baseCurrencyCode}
         defaultCollapsed={true}
       />
 

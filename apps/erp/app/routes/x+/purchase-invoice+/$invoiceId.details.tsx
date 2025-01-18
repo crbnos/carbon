@@ -10,7 +10,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense, useRef } from "react";
 import { Fragment } from "react/jsx-runtime";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import type {
   PurchaseInvoice,
   PurchaseInvoiceDelivery,
@@ -148,6 +148,8 @@ export default function PurchaseInvoiceBasicRoute() {
     ...getCustomFields(purchaseInvoiceDelivery.customFields),
   };
 
+  const { company } = useUser();
+
   return (
     <Fragment key={invoiceId}>
       <PurchaseInvoiceSummary onEditShippingCost={handleEditShippingCost} />
@@ -181,7 +183,7 @@ export default function PurchaseInvoiceBasicRoute() {
         key={`delivery-${invoiceId}`}
         ref={deliveryFormRef}
         initialValues={deliveryInitialValues}
-        currencyCode={initialValues.currencyCode}
+        currencyCode={initialValues.currencyCode ?? company.baseCurrencyCode}
         defaultCollapsed={true}
       />
     </Fragment>
