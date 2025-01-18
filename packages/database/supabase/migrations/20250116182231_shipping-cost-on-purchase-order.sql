@@ -1,12 +1,12 @@
 ALTER TABLE "purchaseOrderDelivery" 
 ADD COLUMN IF NOT EXISTS "supplierShippingCost" NUMERIC NOT NULL DEFAULT 0;
 
-ALTER TABLE "costLedger" RENAME COLUMN "costPostedToGL" TO "nominalCost";
-ALTER TABLE "costLedger" ADD COLUMN "supplierId" TEXT REFERENCES "supplier" ("id");
-ALTER TABLE "costLedger" DROP COLUMN "itemReadableId";
+ALTER TABLE "costLedger" RENAME COLUMN IF EXISTS "costPostedToGL" TO "nominalCost";
+ALTER TABLE "costLedger" ADD COLUMN IF NOT EXISTS "supplierId" TEXT REFERENCES "supplier" ("id");
+ALTER TABLE "costLedger" DROP COLUMN IF EXISTS "itemReadableId";
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
-VALUES ('purchaseInvoiceDelivery', 'Purchase Invoice Delivery', 'Purchase Orders');
+VALUES ('purchaseInvoiceDelivery', 'Purchase Invoice Delivery', 'Invoicing');
 
 CREATE TABLE "purchaseInvoiceDelivery" (
   "id" TEXT NOT NULL,
