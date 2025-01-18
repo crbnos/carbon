@@ -422,10 +422,10 @@ serve(async (req: Request) => {
               externalDocumentId:
                 purchaseInvoice.data?.supplierReference ?? undefined,
               itemId: invoiceLine.itemId,
-              itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
+              nominalCost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
               cost: totalLineCostWithWeightedShipping,
-              costPostedToGL: totalLineCostWithWeightedShipping,
+              supplierId: purchaseInvoice.data?.supplierId,
               companyId,
             });
 
@@ -532,10 +532,10 @@ serve(async (req: Request) => {
               externalDocumentId:
                 purchaseInvoice.data?.supplierReference ?? undefined,
               itemId: invoiceLine.itemId,
-              itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
+              nominalCost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
               cost: totalLineCostWithWeightedShipping,
-              costPostedToGL: totalLineCostWithWeightedShipping,
+              supplierId: purchaseInvoice.data?.supplierId,
               companyId,
             });
 

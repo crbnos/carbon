@@ -2,16 +2,18 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { getAccountsList } from "~/modules/accounting";
 import {
   getItemCost,
+  getItemCostHistory,
   itemCostValidator,
   upsertItemCost,
 } from "~/modules/items";
 import { ItemCostingForm } from "~/modules/items/ui/Item";
+import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -23,9 +25,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [itemCost, accounts] = await Promise.all([
+  const [itemCost, itemCostHistory] = await Promise.all([
     getItemCost(client, itemId, companyId),
-    getAccountsList(client, companyId),
+    getItemCostHistory(client, itemId, companyId),
   ]);
 
   if (itemCost.error) {
@@ -37,16 +39,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
     );
   }
-  if (accounts.error) {
-    throw redirect(
-      path.to.items,
-      await flash(request, error(accounts.error, "Failed to load accounts"))
-    );
-  }
 
   return json({
     itemCost: itemCost.data,
-    accounts: accounts.data,
+    itemCostHistory: itemCostHistory.data ?? [],
   });
 }
 
@@ -89,15 +85,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialCostingRoute() {
-  const { itemCost } = useLoaderData<typeof loader>();
+  const { itemCost, itemCostHistory } = useLoaderData<typeof loader>();
+
   return (
-    <ItemCostingForm
-      key={itemCost.itemId}
-      initialValues={{
-        ...itemCost,
-        // itemPostingGroupId: itemCost?.itemPostingGroupId ?? undefined,
-        ...getCustomFields(itemCost.customFields),
-      }}
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemCostingForm
+        key={itemCost.itemId}
+        initialValues={{
+          ...itemCost,
+          ...getCustomFields(itemCost.customFields),
+        }}
+      />
+      <ItemCostHistoryChart
+        readableId={itemCost.readableId}
+        itemCostHistory={itemCostHistory}
+      />
+    </VStack>
   );
 }

@@ -285,35 +285,18 @@ const Item = ({
             <ModalBody>
               <div className="grid grid-cols-2 gap-4">
                 {Object.values(methodItemType).map((itemType) => (
-                  <button
+                  <Button
                     key={itemType}
-                    className={cn(
-                      "flex items-center gap-2 p-4 rounded-lg border transition-colors",
-                      type === itemType
-                        ? "border-primary bg-primary/10 ring-2 ring-primary ring-offset-2"
-                        : "border-border hover:bg-accent"
-                    )}
+                    leftIcon={<MethodItemTypeIcon type={itemType} />}
+                    className="flex w-full"
+                    variant={type === itemType ? "primary" : "secondary"}
+                    size="lg"
                     onClick={() => {
                       onTypeChange?.(itemType);
                     }}
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-lg border border-border shadow-sm",
-                          type === itemType
-                            ? "bg-transparent border-primary"
-                            : "bg-background"
-                        )}
-                      >
-                        <MethodItemTypeIcon
-                          type={itemType}
-                          className="h-5 w-5"
-                        />
-                      </div>
-                      <span className="font-medium">{itemType}</span>
-                    </div>
-                  </button>
+                    {itemType}
+                  </Button>
                 ))}
               </div>
             </ModalBody>
