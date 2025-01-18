@@ -213,7 +213,7 @@ export default function PurchaseOrderBasicRoute() {
         key={`delivery-${orderId}`}
         ref={deliveryFormRef}
         initialValues={deliveryInitialValues}
-        currencyCode={initialValues.currencyCode ?? company.baseCurrencyCode}
+        currencyCode={initialValues.currencyCode || company.baseCurrencyCode}
         defaultCollapsed={true}
       />
 
