@@ -238,7 +238,7 @@ export function ItemCostHistoryChart({
                 />
                 <Line
                   dataKey="cost"
-                  type="natural"
+                  type="linear"
                   stroke="var(--color-cost)"
                   strokeWidth={2}
                   dot={{
