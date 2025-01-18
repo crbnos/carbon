@@ -90,13 +90,28 @@ export function ItemCostHistoryChart({
       let entries = itemCostHistory?.filter(
         (h) => h.postingDate === dateString
       );
-      if (index === 0 && entries?.length === 0 && itemCostHistory?.[0]) {
+      // If the first date is empty, fill it with the first item cost history entry
+      if (
+        index === 0 &&
+        (entries === undefined || entries.length === 0) &&
+        itemCostHistory?.[0]
+      ) {
         entries = [
           itemCostHistory.find(
             (h) => new Date(h.postingDate) <= new Date(dateString)
           ) ?? itemCostHistory[0],
         ];
       }
+
+      // If the last date is empty, fill it with the last item cost history entry
+      if (
+        index === allDates.length - 1 &&
+        (entries === undefined || entries.length === 0) &&
+        itemCostHistory?.[itemCostHistory.length - 1]
+      ) {
+        entries = [itemCostHistory[itemCostHistory.length - 1]];
+      }
+
       const totalCost =
         entries?.reduce((sum, entry) => sum + entry.cost, 0) ?? 0;
       const totalQuantity =
