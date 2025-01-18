@@ -71,6 +71,7 @@ const ItemCostingForm = ({ initialValues }: ItemCostingFormProps) => {
                 style: "currency",
                 currency: baseCurrency,
               }}
+              helperText="Weighted average cost over last year calculated when the invoice is posted"
             />
 
             {/* <Number

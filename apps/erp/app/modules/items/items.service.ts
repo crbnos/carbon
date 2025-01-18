@@ -294,7 +294,7 @@ export async function getItemCost(
 ) {
   return client
     .from("itemCost")
-    .select("*")
+    .select("*, ...item(readableId)")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
@@ -311,10 +311,11 @@ export async function getItemCostHistory(
 
   return client
     .from("costLedger")
-    .select("quantity, cost, postingDate")
+    .select("*")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
-    .gte("postingDate", dateOneYearAgo);
+    .gte("postingDate", dateOneYearAgo)
+    .order("postingDate", { ascending: false });
 }
 
 export async function getItemCustomerPart(

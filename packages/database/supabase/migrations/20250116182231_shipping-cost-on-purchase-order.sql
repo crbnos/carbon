@@ -1,7 +1,10 @@
 ALTER TABLE "purchaseOrderDelivery" 
 ADD COLUMN "supplierShippingCost" NUMERIC NOT NULL DEFAULT 0;
 
-
+ALTER TABLE "costLedger" 
+  RENAME COLUMN "costPostedToGL" TO "nominalCost",
+  ADD COLUMN "supplierId" TEXT REFERENCES "supplier" ("id"),
+  DROP COLUMN "itemReadableId";
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('purchaseInvoiceDelivery', 'Purchase Invoice Delivery', 'Purchase Orders');
@@ -89,6 +92,8 @@ SELECT
   pi."companyId"
 FROM purchase_invoices pi
 LEFT JOIN supplier_shipping ss ON pi."supplierId" = ss."supplierId";
+
+
 
 DROP VIEW IF EXISTS "purchaseOrders";
 CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
