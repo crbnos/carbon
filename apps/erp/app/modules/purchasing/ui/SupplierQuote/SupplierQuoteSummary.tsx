@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   HStack,
   Heading,
-  IconButton,
   Table,
   Tbody,
   Td,
@@ -20,7 +20,7 @@ import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import { useMemo, useState } from "react";
-import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useCurrencyFormatter, useRouteData, useUser } from "~/hooks";
@@ -118,20 +118,20 @@ const LineItems = ({
                   onClick={() => toggleOpen(line.id!)}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow">
-                    <HStack spacing={0} className="min-w-0 flex-shrink">
+                    <HStack spacing={2} className="min-w-0 flex-shrink">
                       <Heading className="truncate">
                         {line.itemReadableId}
                       </Heading>
-                      <Link
-                        to={path.to.supplierQuoteLine(id, line.id!)}
-                        className="text-muted-foreground"
+                      <Button
+                        asChild
+                        variant="link"
+                        size="sm"
+                        className="text-muted-foreground flex-shrink-0"
                       >
-                        <IconButton
-                          aria-label="View Line Item"
-                          icon={<LuExternalLink />}
-                          variant="ghost"
-                        />
-                      </Link>
+                        <Link to={path.to.supplierQuoteLine(id, line.id!)}>
+                          Edit
+                        </Link>
+                      </Button>
                     </HStack>
                     <HStack spacing={4}>
                       <motion.div

@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
   getSupplierPayment,
+  getSupplierShipping,
   insertSupplierInteraction,
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -12,6 +13,7 @@ import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import type {
+  purchaseInvoiceDeliveryValidator,
   purchaseInvoiceLineValidator,
   purchaseInvoiceValidator,
 } from "./invoicing.models";
@@ -74,6 +76,17 @@ export async function getPurchaseInvoices(
   return query;
 }
 
+export async function getPurchaseInvoiceDelivery(
+  client: SupabaseClient<Database>,
+  purchaseInvoiceId: string
+) {
+  return client
+    .from("purchaseInvoiceDelivery")
+    .select("*")
+    .eq("id", purchaseInvoiceId)
+    .single();
+}
+
 export async function getPurchaseInvoiceLines(
   client: SupabaseClient<Database>,
   purchaseInvoiceId: string
@@ -123,18 +136,25 @@ export async function upsertPurchaseInvoice(
       .select("id, invoiceId");
   }
 
-  const [supplierInteraction, supplierPayment, purchaser] = await Promise.all([
-    insertSupplierInteraction(client, purchaseInvoice.companyId),
-    getSupplierPayment(client, purchaseInvoice.supplierId),
-    getEmployeeJob(
-      client,
-      purchaseInvoice.createdBy,
-      purchaseInvoice.companyId
-    ),
-  ]);
+  const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
+    await Promise.all([
+      insertSupplierInteraction(client, purchaseInvoice.companyId),
+      getSupplierPayment(client, purchaseInvoice.supplierId),
+      getSupplierShipping(client, purchaseInvoice.supplierId),
+      getEmployeeJob(
+        client,
+        purchaseInvoice.createdBy,
+        purchaseInvoice.companyId
+      ),
+    ]);
 
   if (supplierInteraction.error) return supplierInteraction;
   if (supplierPayment.error) return supplierPayment;
+  if (supplierShipping.error) return supplierShipping;
+
+  const { paymentTermId, invoiceSupplierId } = supplierPayment.data;
+
+  const { shippingMethodId, shippingTermId } = supplierShipping.data;
 
   if (purchaseInvoice.currencyCode) {
     const currency = await getCurrencyByCode(
@@ -154,24 +174,68 @@ export async function upsertPurchaseInvoice(
   const locationId =
     purchaseInvoice.locationId ?? purchaser?.data?.locationId ?? null;
 
-  const { paymentTermId } = supplierPayment.data;
-
   const invoice = await client
     .from("purchaseInvoice")
     .insert([
       {
         ...purchaseInvoice,
-        invoiceSupplierId:
-          purchaseInvoice.invoiceSupplierId ?? purchaseInvoice.supplierId ?? "",
-        supplierInteractionId: supplierInteraction.data.id,
+        invoiceSupplierId: invoiceSupplierId ?? purchaseInvoice.supplierId,
+        supplierInteractionId: supplierInteraction.data?.id,
         currencyCode: purchaseInvoice.currencyCode ?? "USD",
         paymentTermId: purchaseInvoice.paymentTermId ?? paymentTermId,
-        locationId,
       },
     ])
     .select("id, invoiceId");
 
+  if (invoice.error) return invoice;
+
+  const invoiceId = invoice.data[0].id;
+
+  const delivery = await client.from("purchaseInvoiceDelivery").insert([
+    {
+      id: invoiceId,
+      locationId: locationId,
+      shippingMethodId: shippingMethodId,
+      shippingTermId: shippingTermId,
+      companyId: purchaseInvoice.companyId,
+    },
+  ]);
+
+  if (delivery.error) {
+    await client.from("purchaseInvoice").delete().eq("id", invoiceId);
+    return delivery;
+  }
+
   return invoice;
+}
+
+export async function upsertPurchaseInvoiceDelivery(
+  client: SupabaseClient<Database>,
+  purchaseInvoiceDelivery:
+    | (z.infer<typeof purchaseInvoiceDeliveryValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof purchaseInvoiceDeliveryValidator> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in purchaseInvoiceDelivery) {
+    return client
+      .from("purchaseInvoiceDelivery")
+      .update(sanitize(purchaseInvoiceDelivery))
+      .eq("id", purchaseInvoiceDelivery.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("purchaseInvoiceDelivery")
+    .insert([purchaseInvoiceDelivery])
+    .select("id")
+    .single();
 }
 
 export async function upsertPurchaseInvoiceLine(

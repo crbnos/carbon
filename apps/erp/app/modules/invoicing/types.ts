@@ -3,6 +3,7 @@ import type {
   purchaseInvoiceStatusType,
 } from "./invoicing.models";
 import type {
+  getPurchaseInvoiceDelivery,
   getPurchaseInvoiceLines,
   getPurchaseInvoices,
 } from "./invoicing.service";
@@ -10,6 +11,10 @@ import type {
 export type PurchaseInvoice = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoices>>["data"]
 >[number];
+
+export type PurchaseInvoiceDelivery = NonNullable<
+  Awaited<ReturnType<typeof getPurchaseInvoiceDelivery>>["data"]
+>;
 
 export type PurchaseInvoiceLine = NonNullable<
   Awaited<ReturnType<typeof getPurchaseInvoiceLines>>["data"]

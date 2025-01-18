@@ -9,6 +9,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   PurchaseInvoiceHeader,
   getPurchaseInvoice,
+  getPurchaseInvoiceDelivery,
   getPurchaseInvoiceLines,
 } from "~/modules/invoicing";
 import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
@@ -34,10 +35,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
-    getPurchaseInvoice(client, invoiceId),
-    getPurchaseInvoiceLines(client, invoiceId),
-  ]);
+  const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
+    await Promise.all([
+      getPurchaseInvoice(client, invoiceId),
+      getPurchaseInvoiceLines(client, invoiceId),
+      getPurchaseInvoiceDelivery(client, invoiceId),
+    ]);
 
   if (purchaseInvoice.error) {
     throw redirect(
@@ -59,6 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     purchaseInvoice: purchaseInvoice.data,
     purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
+    purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
     files: getSupplierInteractionDocuments(
       client,
       companyId,

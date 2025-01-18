@@ -5,6 +5,7 @@ import type {
   getConsumable,
   getConsumables,
   getItemCost,
+  getItemCostHistory,
   getItemCustomerParts,
   getItemFiles,
   getItemPostingGroups,
@@ -62,6 +63,10 @@ export type InventoryItemType = Database["public"]["Enums"]["itemTrackingType"];
 
 export type ItemCost = NonNullable<
   Awaited<ReturnType<typeof getItemCost>>
+>["data"];
+
+export type ItemCostHistory = NonNullable<
+  Awaited<ReturnType<typeof getItemCostHistory>>
 >["data"];
 
 export type ItemCostingMethod =

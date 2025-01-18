@@ -196,6 +196,20 @@ serve(async (req: Request) => {
             throw new Error("Purchase invoice not created");
           purchaseInvoiceId = purchaseInvoice.id;
 
+          await trx
+            .insertInto("purchaseInvoiceDelivery")
+            .values({
+              id: purchaseInvoiceId,
+              locationId: purchaseOrderDelivery.data.locationId,
+              supplierShippingCost:
+                purchaseOrderDelivery.data.supplierShippingCost ?? 0,
+              shippingMethodId: purchaseOrderDelivery.data.shippingMethodId,
+              shippingTermId: purchaseOrderDelivery.data.shippingTermId,
+              companyId,
+              updatedBy: userId,
+            })
+            .execute();
+
           const purchaseInvoiceLines = uninvoicedLines?.reduce<
             Database["public"]["Tables"]["purchaseInvoiceLine"]["Insert"][]
           >((acc, line) => {

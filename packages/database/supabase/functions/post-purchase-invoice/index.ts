@@ -46,15 +46,41 @@ serve(async (req: Request) => {
       companyId
     );
 
-    const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
-      client.from("purchaseInvoice").select("*").eq("id", invoiceId).single(),
-      client.from("purchaseInvoiceLine").select("*").eq("invoiceId", invoiceId),
-    ]);
+    const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
+      await Promise.all([
+        client.from("purchaseInvoice").select("*").eq("id", invoiceId).single(),
+        client
+          .from("purchaseInvoiceLine")
+          .select("*")
+          .eq("invoiceId", invoiceId),
+        client
+          .from("purchaseInvoiceDelivery")
+          .select("supplierShippingCost")
+          .eq("id", invoiceId)
+          .single(),
+      ]);
 
     if (purchaseInvoice.error)
       throw new Error("Failed to fetch purchaseInvoice");
     if (purchaseInvoiceLines.error)
       throw new Error("Failed to fetch receipt lines");
+    if (purchaseInvoiceDelivery.error)
+      throw new Error("Failed to fetch purchase invoice delivery");
+
+    const shippingCost =
+      (purchaseInvoiceDelivery.data?.supplierShippingCost ?? 0) *
+      (purchaseInvoice.data?.exchangeRate ?? 1);
+
+    const totalLinesCost = purchaseInvoiceLines.data.reduce(
+      (acc, invoiceLine) => {
+        const lineCost =
+          (invoiceLine.quantity ?? 0) * (invoiceLine.unitPrice ?? 0) +
+          (invoiceLine.shippingCost ?? 0) +
+          (invoiceLine.taxAmount ?? 0);
+        return acc + lineCost;
+      },
+      0
+    );
 
     const itemIds = purchaseInvoiceLines.data.reduce<string[]>(
       (acc, invoiceLine) => {
@@ -238,8 +264,21 @@ serve(async (req: Request) => {
       const invoiceLineQuantityInInventoryUnit =
         invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
 
-      const invoiceLineUnitPriceInInventoryUnit =
-        (invoiceLine.unitPrice ?? 0) / (invoiceLine.conversionFactor ?? 1);
+      const totalLineCost =
+        invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
+        (invoiceLine.shippingCost ?? 0) +
+        (invoiceLine.taxAmount ?? 0);
+
+      const lineCostPercentageOfTotalCost =
+        totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
+      const lineWeightedShippingCost =
+        shippingCost * lineCostPercentageOfTotalCost;
+      const totalLineCostWithWeightedShipping =
+        totalLineCost + lineWeightedShippingCost;
+
+      const invoiceLineUnitCostInInventoryUnit =
+        totalLineCostWithWeightedShipping /
+        (invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1));
 
       // declaring shared variables between part and service cases
       // outside of the switch case to avoid redeclaring them
@@ -385,9 +424,8 @@ serve(async (req: Request) => {
               itemId: invoiceLine.itemId,
               itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
-              cost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
-              costPostedToGL:
-                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
+              cost: totalLineCostWithWeightedShipping,
+              costPostedToGL: totalLineCostWithWeightedShipping,
               companyId,
             });
 
@@ -400,10 +438,7 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.inventoryAccount,
                 description: "Inventory Account",
-                amount: debit(
-                  "asset",
-                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-                ),
+                amount: debit("asset", totalLineCostWithWeightedShipping),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
@@ -416,10 +451,7 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.directCostAppliedAccount,
                 description: "Direct Cost Applied",
-                amount: credit(
-                  "expense",
-                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-                ),
+                amount: credit("expense", totalLineCostWithWeightedShipping),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
@@ -432,10 +464,7 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.overheadAccount,
                 description: "Overhead Account",
-                amount: debit(
-                  "asset",
-                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-                ),
+                amount: debit("asset", totalLineCostWithWeightedShipping),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
@@ -448,10 +477,7 @@ serve(async (req: Request) => {
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.overheadCostAppliedAccount,
                 description: "Overhead Cost Applied",
-                amount: credit(
-                  "expense",
-                  invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-                ),
+                amount: credit("expense", totalLineCostWithWeightedShipping),
                 quantity: invoiceLineQuantityInInventoryUnit,
                 documentType: "Invoice",
                 documentId: purchaseInvoice.data?.id,
@@ -467,10 +493,7 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountNumber: postingGroupPurchasing.purchaseAccount,
               description: "Purchase Account",
-              amount: debit(
-                "expense",
-                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-              ),
+              amount: debit("expense", totalLineCostWithWeightedShipping),
               quantity: invoiceLineQuantityInInventoryUnit,
               documentType: "Invoice",
               documentId: purchaseInvoice.data?.id,
@@ -486,10 +509,7 @@ serve(async (req: Request) => {
             journalLineInserts.push({
               accountNumber: postingGroupPurchasing.payablesAccount,
               description: "Accounts Payable",
-              amount: credit(
-                "liability",
-                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-              ),
+              amount: credit("liability", totalLineCostWithWeightedShipping),
               quantity: invoiceLineQuantityInInventoryUnit,
               documentType: "Invoice",
               documentId: purchaseInvoice.data?.id,
@@ -514,9 +534,8 @@ serve(async (req: Request) => {
               itemId: invoiceLine.itemId,
               itemReadableId: invoiceLine.itemReadableId,
               quantity: invoiceLineQuantityInInventoryUnit,
-              cost: invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
-              costPostedToGL:
-                invoiceLine.quantity * (invoiceLine.unitPrice ?? 0),
+              cost: totalLineCostWithWeightedShipping,
+              costPostedToGL: totalLineCostWithWeightedShipping,
               companyId,
             });
 
@@ -680,7 +699,7 @@ serve(async (req: Request) => {
                   description: "Inventory Account",
                   amount: debit(
                     "asset",
-                    quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                    quantityToReverse * invoiceLineUnitCostInInventoryUnit
                   ),
                   quantity: quantityToReverse,
                   documentType: "Invoice",
@@ -699,7 +718,7 @@ serve(async (req: Request) => {
                   description: "Direct Cost Applied",
                   amount: credit(
                     "expense",
-                    quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                    quantityToReverse * invoiceLineUnitCostInInventoryUnit
                   ),
                   quantity: quantityToReverse,
                   documentType: "Invoice",
@@ -718,7 +737,7 @@ serve(async (req: Request) => {
                   description: "Overhead Account",
                   amount: debit(
                     "asset",
-                    quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                    quantityToReverse * invoiceLineUnitCostInInventoryUnit
                   ),
                   quantity: quantityToReverse,
                   documentType: "Invoice",
@@ -738,7 +757,7 @@ serve(async (req: Request) => {
                   description: "Overhead Cost Applied",
                   amount: credit(
                     "expense",
-                    quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                    quantityToReverse * invoiceLineUnitCostInInventoryUnit
                   ),
                   quantity: quantityToReverse,
                   documentType: "Invoice",
@@ -760,7 +779,7 @@ serve(async (req: Request) => {
                 description: "Purchase Account",
                 amount: debit(
                   "expense",
-                  quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                  quantityToReverse * invoiceLineUnitCostInInventoryUnit
                 ),
                 quantity: quantityToReverse,
                 documentType: "Invoice",
@@ -779,7 +798,7 @@ serve(async (req: Request) => {
                 description: "Accounts Payable",
                 amount: credit(
                   "liability",
-                  quantityToReverse * invoiceLineUnitPriceInInventoryUnit
+                  quantityToReverse * invoiceLineUnitCostInInventoryUnit
                 ),
                 quantity: quantityToReverse,
                 documentType: "Invoice",
@@ -808,7 +827,7 @@ serve(async (req: Request) => {
                 accrual: true,
                 amount: debit(
                   "asset",
-                  quantityToAccrue * invoiceLineUnitPriceInInventoryUnit
+                  quantityToAccrue * invoiceLineUnitCostInInventoryUnit
                 ),
                 quantity: quantityToAccrue,
                 documentType: "Invoice",
@@ -831,7 +850,7 @@ serve(async (req: Request) => {
                 description: "Interim Inventory Accrual",
                 amount: credit(
                   "asset",
-                  quantityToAccrue * invoiceLineUnitPriceInInventoryUnit
+                  quantityToAccrue * invoiceLineUnitCostInInventoryUnit
                 ),
                 quantity: quantityToAccrue,
                 documentType: "Invoice",
@@ -885,10 +904,7 @@ serve(async (req: Request) => {
             accountNumber: account.data.number!,
             description: account.data.name!,
             // we limit the account to assets and expenses in the UI, so we don't need to check here
-            amount: debit(
-              "asset",
-              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-            ),
+            amount: debit("asset", totalLineCostWithWeightedShipping),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
             documentId: purchaseInvoice.data?.id,
@@ -904,10 +920,7 @@ serve(async (req: Request) => {
           journalLineInserts.push({
             accountNumber: accountDefaults.data.overheadCostAppliedAccount!,
             description: "Overhead Cost Applied",
-            amount: credit(
-              "expense",
-              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-            ),
+            amount: credit("expense", totalLineCostWithWeightedShipping),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
             documentId: purchaseInvoice.data?.id,
@@ -925,10 +938,7 @@ serve(async (req: Request) => {
           journalLineInserts.push({
             accountNumber: accountDefaults.data.purchaseAccount!,
             description: "Purchase Account",
-            amount: debit(
-              "expense",
-              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-            ),
+            amount: debit("expense", totalLineCostWithWeightedShipping),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
             documentId: purchaseInvoice.data?.id,
@@ -944,10 +954,7 @@ serve(async (req: Request) => {
           journalLineInserts.push({
             accountNumber: accountDefaults.data.payablesAccount!,
             description: "Accounts Payable",
-            amount: credit(
-              "liability",
-              invoiceLine.quantity * (invoiceLine.unitPrice ?? 0)
-            ),
+            amount: credit("liability", totalLineCostWithWeightedShipping),
             quantity: invoiceLineQuantityInInventoryUnit,
             documentType: "Invoice",
             documentId: purchaseInvoice.data?.id,

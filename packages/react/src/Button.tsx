@@ -28,7 +28,7 @@ export const buttonVariants = cva(
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-button-danger",
         ghost:
           "bg-transparent hover:bg-primary/10 text-accent-foreground hover:text-accent-foreground/90",
-        link: "text-foreground hover:text-foreground underline-offset-4 hover:underline",
+        link: "text-foreground hover:text-foreground underline-offset-4 hover:underline px-0 py-0",
       },
       size: {
         sm: "h-6 rounded-sm text-xs",
@@ -80,6 +80,21 @@ export const buttonVariants = cva(
         size: "lg",
         isIcon: false,
         class: "px-6",
+      },
+      {
+        variant: "link",
+        size: "sm",
+        class: "px-0 py-0",
+      },
+      {
+        variant: "link",
+        size: "md",
+        class: "px-0 py-0",
+      },
+      {
+        variant: "link",
+        size: "lg",
+        class: "px-0 py-0",
       },
     ],
     defaultVariants: {

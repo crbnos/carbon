@@ -43,6 +43,15 @@ export const purchaseInvoiceValidator = z.object({
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });
 
+export const purchaseInvoiceDeliveryValidator = z.object({
+  id: z.string(),
+  locationId: zfd.text(z.string().optional()),
+  shippingMethodId: zfd.text(z.string().optional()),
+  shippingTermId: zfd.text(z.string().optional()),
+  supplierShippingCost: zfd.numeric(z.number().optional().default(0)),
+  customFields: z.any().optional(),
+});
+
 export const purchaseInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),

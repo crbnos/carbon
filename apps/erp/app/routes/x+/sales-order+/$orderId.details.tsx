@@ -9,7 +9,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { Suspense, useRef } from "react";
 import { useRouteData } from "~/hooks";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "~/modules/sales";
 import {
@@ -29,6 +29,7 @@ import {
   SalesOrderShipmentForm,
   SalesOrderSummary,
 } from "~/modules/sales/ui/SalesOrder";
+import type { SalesOrderShipmentFormRef } from "~/modules/sales/ui/SalesOrder/SalesOrderShipmentForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -139,6 +140,12 @@ export default function SalesOrderDetailsRoute() {
 
   if (!orderData) throw new Error("Could not find order data");
 
+  const shipmentFormRef = useRef<SalesOrderShipmentFormRef>(null);
+
+  const handleEditShippingCost = () => {
+    shipmentFormRef.current?.focusShippingCost();
+  };
+
   const shipmentInitialValues = {
     id: shipment.id,
     locationId: shipment?.locationId ?? "",
@@ -172,7 +179,7 @@ export default function SalesOrderDetailsRoute() {
         key={`state-${orderId}`}
         opportunity={orderData?.opportunity!}
       />
-      <SalesOrderSummary />
+      <SalesOrderSummary onEditShippingCost={handleEditShippingCost} />
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
@@ -203,6 +210,7 @@ export default function SalesOrderDetailsRoute() {
 
       <SalesOrderShipmentForm
         key={`shipment-${orderId}`}
+        ref={shipmentFormRef}
         initialValues={shipmentInitialValues}
       />
 

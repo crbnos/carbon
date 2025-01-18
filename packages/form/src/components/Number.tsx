@@ -59,7 +59,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           })}
         >
           <NumberInputGroup className="relative">
-            <NumberInput isReadOnly={isReadOnly} />
+            <NumberInput isReadOnly={isReadOnly} ref={ref} />
             {!isReadOnly && (
               <NumberInputStepper>
                 <NumberIncrementStepper>

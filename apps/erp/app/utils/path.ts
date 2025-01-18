@@ -650,6 +650,8 @@ export const path = {
     profile: `${x}/account/profile`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
+    purchaseInvoiceDelivery: (id: string) =>
+      generatePath(`${x}/purchase-invoice/${id}/delivery`),
     purchaseInvoiceDetails: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/details`),
     purchaseInvoiceExchangeRate: (id: string) =>

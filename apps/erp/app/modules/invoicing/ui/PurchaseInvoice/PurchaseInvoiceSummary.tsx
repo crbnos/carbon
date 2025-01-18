@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   CardDescription,
@@ -6,7 +7,6 @@ import {
   CardTitle,
   Heading,
   HStack,
-  IconButton,
   Table,
   Tbody,
   Td,
@@ -18,7 +18,7 @@ import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { LuChevronDown, LuExternalLink, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -28,7 +28,11 @@ import {
   useUser,
 } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../types";
+import type {
+  PurchaseInvoice,
+  PurchaseInvoiceDelivery,
+  PurchaseInvoiceLine,
+} from "../../types";
 
 const LineItems = ({
   currencyCode,
@@ -100,21 +104,23 @@ const LineItems = ({
                   onClick={() => toggleOpen(line.id!)}
                 >
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
-                    <HStack spacing={0} className="min-w-0 flex-shrink ">
+                    <HStack spacing={2} className="min-w-0 flex-shrink">
                       <Heading className="truncate">
                         {line.itemReadableId}
                       </Heading>
 
-                      <Link
-                        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+                      <Button
+                        asChild
+                        variant="link"
+                        size="sm"
                         className="text-muted-foreground flex-shrink-0"
                       >
-                        <IconButton
-                          aria-label="View Line Item"
-                          icon={<LuExternalLink />}
-                          variant="ghost"
-                        />
-                      </Link>
+                        <Link
+                          to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+                        >
+                          Edit
+                        </Link>
+                      </Button>
                     </HStack>
                     <HStack spacing={4} className="flex-shrink-0 ml-4">
                       <VStack spacing={0}>
@@ -279,14 +285,20 @@ const LineItems = ({
     </VStack>
   );
 };
+type PurchaseInvoiceSummaryProps = {
+  onEditShippingCost: () => void;
+};
 
-const PurchaseInvoiceSummary = () => {
+const PurchaseInvoiceSummary = ({
+  onEditShippingCost,
+}: PurchaseInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const routeData = useRouteData<{
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
+    purchaseInvoiceDelivery: PurchaseInvoiceDelivery;
   }>(path.to.purchaseInvoice(invoiceId));
 
   const { locale } = useLocale();
@@ -300,19 +312,24 @@ const PurchaseInvoiceSummary = () => {
     routeData?.purchaseInvoice?.currencyCode ?? "USD"
   );
 
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.purchaseInvoice?.status ?? ""
+  );
+
   // Calculate totals
   const subtotal =
     routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
-      const shippingCost = line.shippingCost ?? 0;
-      return acc + lineTotal + shippingCost;
+      const lineTotal =
+        (line.unitPrice ?? 0) * (line.quantity ?? 0) + (line.shippingCost ?? 0);
+      return acc + lineTotal;
     }, 0) ?? 0;
 
   const supplierSubtotal =
     routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      const lineTotal = (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
-      const shippingCost = line.supplierShippingCost ?? 0;
-      return acc + lineTotal + shippingCost;
+      const lineTotal =
+        (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.supplierShippingCost ?? 0);
+      return acc + lineTotal;
     }, 0) ?? 0;
 
   const tax =
@@ -325,8 +342,15 @@ const PurchaseInvoiceSummary = () => {
       return acc + (line.supplierTaxAmount ?? 0);
     }, 0) ?? 0;
 
-  const total = subtotal + tax;
-  const supplierTotal = supplierSubtotal + supplierTax;
+  const shippingCost =
+    (routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0) *
+    (routeData?.purchaseInvoice?.exchangeRate ?? 1);
+
+  const supplierShippingCost =
+    routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0;
+
+  const total = subtotal + tax + shippingCost;
+  const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
 
   return (
     <Card>
@@ -370,6 +394,7 @@ const PurchaseInvoiceSummary = () => {
               )}
             </VStack>
           </HStack>
+
           <HStack className="justify-between text-base text-muted-foreground w-full">
             <span>Tax:</span>
             <VStack spacing={0} className="items-end">
@@ -380,6 +405,45 @@ const PurchaseInvoiceSummary = () => {
                 </span>
               )}
             </VStack>
+          </HStack>
+
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            {shippingCost > 0 ? (
+              <>
+                <VStack spacing={0}>
+                  <span>Shipping:</span>
+                  {isEditable && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="text-muted-foreground"
+                      onClick={onEditShippingCost}
+                    >
+                      Edit Shipping
+                    </Button>
+                  )}
+                </VStack>
+                <VStack spacing={0} className="items-end">
+                  <span>{formatter.format(shippingCost)}</span>
+                  {shouldConvertCurrency && (
+                    <span className="text-sm">
+                      {presentationCurrencyFormatter.format(
+                        supplierShippingCost
+                      )}
+                    </span>
+                  )}
+                </VStack>
+              </>
+            ) : isEditable ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={onEditShippingCost}
+              >
+                Add Shipping
+              </Button>
+            ) : null}
           </HStack>
 
           <HStack className="justify-between text-xl font-bold w-full">

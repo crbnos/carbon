@@ -13550,6 +13550,120 @@ export type Database = {
           },
         ]
       }
+      purchaseInvoiceDelivery: {
+        Row: {
+          companyId: string
+          customFields: Json | null
+          id: string
+          locationId: string | null
+          shippingMethodId: string | null
+          shippingTermId: string | null
+          supplierShippingCost: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          customFields?: Json | null
+          id: string
+          locationId?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          supplierShippingCost?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          customFields?: Json | null
+          id?: string
+          locationId?: string | null
+          shippingMethodId?: string | null
+          shippingTermId?: string | null
+          supplierShippingCost?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "purchaseInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "purchaseInvoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["locationId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_shippingTermId_fkey"
+            columns: ["shippingTermId"]
+            isOneToOne: false
+            referencedRelation: "shippingTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceDelivery_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       purchaseInvoiceLine: {
         Row: {
           accountNumber: string | null
@@ -30301,7 +30415,6 @@ export type Database = {
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobs: Json[] | null
           locationId: string | null
-          locationName: string | null
           orderDate: string | null
           orderTotal: number | null
           paymentTermId: string | null

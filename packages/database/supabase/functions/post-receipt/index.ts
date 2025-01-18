@@ -86,21 +86,39 @@ serve(async (req: Request) => {
         if (!receipt.data.sourceDocumentId)
           throw new Error("Receipt has no sourceDocumentId");
 
-        const [purchaseOrder, purchaseOrderLines] = await Promise.all([
-          client
-            .from("purchaseOrder")
-            .select("*")
-            .eq("id", receipt.data.sourceDocumentId)
-            .single(),
-          client
-            .from("purchaseOrderLine")
-            .select("*")
-            .eq("purchaseOrderId", receipt.data.sourceDocumentId),
-        ]);
+        const [purchaseOrder, purchaseOrderLines, purchaseOrderDelivery] =
+          await Promise.all([
+            client
+              .from("purchaseOrder")
+              .select("*")
+              .eq("id", receipt.data.sourceDocumentId)
+              .single(),
+            client
+              .from("purchaseOrderLine")
+              .select("*")
+              .eq("purchaseOrderId", receipt.data.sourceDocumentId),
+            client
+              .from("purchaseOrderDelivery")
+              .select("supplierShippingCost")
+              .eq("id", receipt.data.sourceDocumentId)
+              .single(),
+          ]);
         if (purchaseOrder.error)
           throw new Error("Failed to fetch purchase order");
         if (purchaseOrderLines.error)
           throw new Error("Failed to fetch purchase order lines");
+        if (purchaseOrderDelivery.error)
+          throw new Error("Failed to fetch purchase order delivery");
+
+        const shippingCost =
+          (purchaseOrderDelivery.data?.supplierShippingCost ?? 0) *
+          (purchaseOrder.data?.exchangeRate ?? 1);
+
+        const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
+          const lineCost =
+            (receiptLine.receivedQuantity ?? 0) * (receiptLine.unitPrice ?? 0);
+          return acc + lineCost;
+        }, 0);
 
         const supplier = await client
           .from("supplier")
@@ -418,6 +436,7 @@ serve(async (req: Request) => {
                     journalLineReference,
                     companyId,
                   });
+
                   journalLineInserts.push({
                     accountNumber: entry[1].accountNumber!,
                     description: entry[1].description,
@@ -563,6 +582,13 @@ serve(async (req: Request) => {
               (receiptLine.receivedQuantity - quantityToReverse) *
               receiptLine.unitPrice;
 
+            // Add proportional shipping cost to the expected value based on line value percentage
+            const lineValuePercentage =
+              totalLinesCost === 0 ? 0 : expectedValue / totalLinesCost;
+            const lineWeightedShippingCost = shippingCost * lineValuePercentage;
+            const expectedValueWithShipping =
+              expectedValue + lineWeightedShippingCost;
+
             const journalLineReference = nanoid();
 
             journalLineInserts.push({
@@ -570,7 +596,7 @@ serve(async (req: Request) => {
                 postingGroupInventory.inventoryInterimAccrualAccount,
               description: "Interim Inventory Accrual",
               accrual: true,
-              amount: debit("asset", expectedValue),
+              amount: debit("asset", expectedValueWithShipping),
               quantity: quantityToAccrue,
               documentType: "Receipt",
               documentId: receipt.data?.id ?? undefined,
@@ -586,7 +612,7 @@ serve(async (req: Request) => {
                 postingGroupInventory.inventoryReceivedNotInvoicedAccount,
               description: "Inventory Received Not Invoiced",
               accrual: true,
-              amount: credit("liability", expectedValue),
+              amount: credit("liability", expectedValueWithShipping),
               quantity: quantityToAccrue,
               documentType: "Receipt",
               documentId: receipt.data?.id ?? undefined,

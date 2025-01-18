@@ -99,6 +99,10 @@ serve(async (req: Request) => {
         const outstandingQuantity =
           d.purchaseQuantity - (previouslyReceivedQuantitiesByLine[d.id!] ?? 0);
 
+        const shippingAndTaxUnitCost =
+          ((d.taxAmount ?? 0) + (d.shippingCost ?? 0)) /
+          (d.purchaseQuantity * (d.conversionFactor ?? 1));
+
         acc.push({
           lineId: d.id,
           companyId: companyId,
@@ -108,7 +112,8 @@ serve(async (req: Request) => {
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
-          unitPrice: d.unitPrice / (d.conversionFactor ?? 1),
+          unitPrice:
+            d.unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
           locationId: d.locationId,
           shelfId: d.shelfId,
