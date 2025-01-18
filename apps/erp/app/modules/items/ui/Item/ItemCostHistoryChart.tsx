@@ -200,7 +200,7 @@ export function ItemCostHistoryChart({
           <TabsContent value="chart">
             <ChartContainer
               config={chartConfig}
-              className="min-h-[40vh] h-[calc(100dvh-570px)]"
+              className="min-h-[40vh] h-[calc(100dvh-570px)] w-full"
             >
               <LineChart accessibilityLayer data={chartData}>
                 <CartesianGrid vertical={false} />
