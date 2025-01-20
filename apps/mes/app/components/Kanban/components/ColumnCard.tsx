@@ -1,12 +1,4 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  cn,
-  IconButton,
-  ScrollArea,
-  ScrollBar,
-} from "@carbon/react";
+import { cn, IconButton, ScrollArea, ScrollBar } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
@@ -64,11 +56,11 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/20 via-card/20",
+    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r",
     {
       variants: {
         dragging: {
-          default: "border-2 border-transparent",
+          default: "",
           over: "ring-2 opacity-30",
           overlay: "ring-2 ring-primary",
         },
@@ -77,7 +69,7 @@ export function ColumnCard({
   );
 
   return (
-    <Card
+    <div
       ref={setNodeRef}
       style={style}
       className={cn(
@@ -89,7 +81,7 @@ export function ColumnCard({
           : `h-[calc(100dvh-var(--header-height)*2)]`
       )}
     >
-      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
+      <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
           {column.active ? (
             <PulsingDot />
@@ -122,17 +114,18 @@ export function ColumnCard({
           {...listeners}
           className="cursor-grab relative"
         />
-      </CardHeader>
+      </div>
       <ScrollArea className="flex-grow">
-        <CardContent className="flex flex-col gap-2 p-2">
+        <div className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
               <ItemCard key={item.id!} item={item} {...displaySettings} />
             ))}
           </SortableContext>
-        </CardContent>
+        </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
-    </Card>
+    </div>
   );
 }
 

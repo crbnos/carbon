@@ -36,6 +36,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
+  const companySettings = await getCompanySettings(
+    serviceRole,
+    quote.data.companyId
+  );
+
   switch (type) {
     case "accept":
       const digitalQuoteAcceptedBy = String(
@@ -62,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       const selectedLines = parseResult.data;
 
-      const [convert, companySettings, opportunity] = await Promise.all([
+      const [convert, opportunity] = await Promise.all([
         convertQuoteToOrder(serviceRole, {
           id: quote.data.id,
           companyId: quote.data.companyId,
@@ -71,7 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           digitalQuoteAcceptedBy,
           digitalQuoteAcceptedByEmail,
         }),
-        getCompanySettings(serviceRole, quote.data.companyId),
         getOpportunityByQuote(serviceRole, quote.data.id),
       ]);
 
@@ -178,6 +182,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
           success: false,
           message: "Failed to reject quote",
         });
+      }
+
+      if (companySettings.data?.digitalQuoteNotificationGroup?.length) {
+        try {
+          await tasks.trigger<typeof notifyTask>("notify", {
+            companyId: companySettings.data.id,
+            documentId: quote.data.id,
+            event: NotificationEvent.DigitalQuoteResponse,
+            recipient: {
+              type: "group",
+              groupIds:
+                companySettings.data?.digitalQuoteNotificationGroup ?? [],
+            },
+          });
+        } catch (err) {
+          console.error("Failed to trigger notification", err);
+          return json({
+            success: false,
+            message: "Failed to send notification",
+          });
+        }
       }
 
       return json({

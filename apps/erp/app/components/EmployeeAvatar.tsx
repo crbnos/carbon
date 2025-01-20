@@ -31,14 +31,6 @@ const EmployeeAvatar = ({
   const person = people.find((p) => p.id === employeeId);
 
   if (!person) {
-    return (
-      <HStack className="no-underline">
-        <Avatar size={"xs"} {...props} />
-      </HStack>
-    );
-  }
-
-  if (!person) {
     return null;
   }
 

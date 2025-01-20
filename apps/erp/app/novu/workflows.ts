@@ -12,6 +12,8 @@ const payloadSchema = z.object({
   event: z.enum([
     NotificationEvent.DigitalQuoteResponse,
     NotificationEvent.JobAssignment,
+    NotificationEvent.JobOperationAssignment,
+    NotificationEvent.JobOperationMessage,
     NotificationEvent.PurchaseInvoiceAssignment,
     NotificationEvent.PurchaseOrderAssignment,
     NotificationEvent.QuoteAssignment,
@@ -19,7 +21,6 @@ const payloadSchema = z.object({
     NotificationEvent.SalesOrderAssignment,
     NotificationEvent.SalesRfqAssignment,
     NotificationEvent.SupplierQuoteAssignment,
-    NotificationEvent.JobOperationMessage,
   ]),
   from: z.string().optional(),
 });

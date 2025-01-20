@@ -32396,6 +32396,8 @@ export type Database = {
           machineUnit: Database["public"]["Enums"]["factor"]
           operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
           jobMakeMethodId: string
+          assignee: string
+          tags: string[]
           jobReadableId: string
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           jobDueDate: string
@@ -32406,6 +32408,7 @@ export type Database = {
           salesOrderLineId: string
           parentMaterialId: string
           itemReadableId: string
+          itemDescription: string
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           operationQuantity: number
           quantityComplete: number

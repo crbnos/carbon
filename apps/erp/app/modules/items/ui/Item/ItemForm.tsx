@@ -1,7 +1,6 @@
 import type { Database } from "@carbon/database";
 import { ValidatedForm } from "@carbon/form";
 import {
-  Button,
   Card,
   CardAction,
   CardContent,
@@ -9,11 +8,16 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
 } from "@carbon/react";
 import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
-import { LuExternalLink } from "react-icons/lu";
+import { LuEllipsisVertical } from "react-icons/lu";
 import type { z } from "zod";
 import { Copy } from "~/components";
 import {
@@ -85,12 +89,23 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
             <CardDescription>{initialValues.name}</CardDescription>
           </CardHeader>
           <CardAction>
-            <Button isIcon asChild variant="ghost" size="lg">
-              {/* @ts-ignore */}
-              <Link to={getLinkToItemDetails(type, initialValues.id)}>
-                <LuExternalLink />
-              </Link>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  variant="secondary"
+                  icon={<LuEllipsisVertical />}
+                  aria-label="Open menu"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  {/* @ts-ignore */}
+                  <Link to={getLinkToItemDetails(type, initialValues.id)}>
+                    View Item Master
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardAction>
         </HStack>
         <CardContent>

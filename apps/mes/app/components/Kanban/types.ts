@@ -31,6 +31,7 @@ export type DraggableData = ColumnDragData | ItemDragData;
 
 const itemValidator = z.object({
   id: z.string(),
+  assignee: z.string().optional(),
   columnId: z.string(),
   columnType: z.string(),
   title: z.string(),
@@ -43,11 +44,15 @@ const itemValidator = z.object({
   dueDate: z.string().optional(), // 2024-05-28
   duration: z.number().optional(), // miliseconds
   deadlineType: z.enum(deadlineTypes).optional(),
+  itemDescription: z.string().optional(),
+  itemReadableId: z.string().optional(),
+  jobReadableId: z.string().optional(),
   progress: z.number().optional(), // miliseconds
   status: z.enum(jobOperationStatus).optional(),
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
+  tags: z.array(z.string()).optional(),
   thumbnailPath: z.string().optional(),
 });
 

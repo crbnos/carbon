@@ -18,15 +18,29 @@ type TagsSelectProps = Omit<
 
 const TagsPreview = (
   value: string[],
-  options: { value: string; label: string; helper?: string }[]
+  options: { value: string; label: string; helper?: string }[],
+  maxPreview?: number
 ) => {
   return (
     <HStack className="space-x-0 flex-grow gap-1 items-start">
-      {value.map((label: string) => (
-        <Badge key={label} variant="secondary">
-          {label}
+      {maxPreview && value.length > maxPreview ? (
+        <Badge
+          variant="secondary"
+          className="border dark:border-none dark:shadow-button-base"
+        >
+          {value.length} tags
         </Badge>
-      ))}
+      ) : (
+        value.map((label: string) => (
+          <Badge
+            className="max-w-[160px] truncate border dark:border-none dark:shadow-button-base"
+            key={label}
+            variant="secondary"
+          >
+            {label}
+          </Badge>
+        ))
+      )}
     </HStack>
   );
 };

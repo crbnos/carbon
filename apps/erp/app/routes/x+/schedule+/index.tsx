@@ -50,6 +50,7 @@ import {
   getProcessesList,
   getWorkCentersByLocation,
 } from "~/modules/resources";
+import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { makeDurations } from "~/utils/duration";
 
@@ -129,10 +130,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [workCenters, processes, operations] = await Promise.all([
+  const [workCenters, processes, operations, tags] = await Promise.all([
     getWorkCentersByLocation(client, locationId),
     getProcessesList(client, companyId),
     getActiveJobOperationsByLocation(client, locationId, selectedWorkCenterIds),
+    getTagsList(client, companyId, "operation"),
   ]);
 
   const activeWorkCenters = new Set();
@@ -210,13 +212,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
             )
           : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
         subtitle: op.itemReadableId,
+        assignee: op.assignee,
+        tags: op.tags,
         description: op.description,
         dueDate: op.jobDueDate,
         duration:
           operation.setupDuration +
           operation.laborDuration +
-          operation.machineDuration, // set in the client
-        progress: 0, // set in the client
+          operation.machineDuration,
+        jobReadableId: op.jobReadableId,
+        itemReadableId: op.itemReadableId,
+        itemDescription: op.itemDescription,
+        progress: 0,
         deadlineType: op.jobDeadlineType,
         customerId: op.jobCustomerId,
         quantity: op.operationQuantity,
@@ -241,6 +248,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         return acc;
       }, {} as Record<string, string>) ?? {}
     ).map(([id, readableId]) => ({ id, readableId })),
+    tags: tags.data ?? [],
   });
 }
 
@@ -264,6 +272,7 @@ function KanbanSchedule() {
     items: initialItems,
     processes,
     salesOrders,
+    tags,
   } = useLoaderData<typeof loader>();
 
   const [items, setItems] = useState<Item[]>(initialItems);
@@ -348,7 +357,7 @@ function KanbanSchedule() {
               variant="secondary"
               className="border-dashed border-border"
             >
-              Settings
+              Display
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-48">
@@ -395,7 +404,17 @@ function KanbanSchedule() {
               columns={columns}
               items={items}
               progressByItemId={progressByOperation}
-              {...displaySettings}
+              tags={tags}
+              showCustomer={displaySettings.showCustomer}
+              showDescription={displaySettings.showDescription}
+              showDueDate={displaySettings.showDueDate}
+              showDuration={displaySettings.showDuration}
+              showEmployee={displaySettings.showEmployee}
+              showProgress={displaySettings.showProgress}
+              showQuantity={displaySettings.showQuantity}
+              showStatus={displaySettings.showStatus}
+              showSalesOrder={displaySettings.showSalesOrder}
+              showThumbnail={displaySettings.showThumbnail}
             />
           ) : hasFilters ? (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
