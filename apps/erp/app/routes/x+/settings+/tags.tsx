@@ -36,6 +36,9 @@ function getIdField(table: string) {
     case "fixture":
       return "itemId";
     case "job":
+    case "jobOperation":
+    case "methodOperation":
+    case "quoteOperation":
     default:
       return "id";
   }

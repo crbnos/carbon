@@ -41,6 +41,7 @@ export type CreatableMultiSelectProps = Omit<
     value: string[],
     options: { value: string; label: string; helper?: string }[]
   ) => React.ReactNode;
+  inlineIcon?: React.ReactElement;
   onChange: (selected: string[]) => void;
   onCreateOption?: (inputValue: string) => void;
 };
@@ -63,6 +64,7 @@ const CreatableMultiSelect = forwardRef<
       itemHeight = 40,
       showCreateOptionOnEmpty = true,
       inline,
+      inlineIcon,
       onChange,
       onCreateOption,
       ...props
@@ -99,7 +101,15 @@ const CreatableMultiSelect = forwardRef<
                 size={size ?? "sm"}
                 variant="secondary"
                 aria-label={hasSelections ? "Edit" : "Add"}
-                icon={hasSelections ? <LuSettings2 /> : <LuCirclePlus />}
+                icon={
+                  inlineIcon ? (
+                    inlineIcon
+                  ) : hasSelections ? (
+                    <LuSettings2 />
+                  ) : (
+                    <LuCirclePlus />
+                  )
+                }
                 ref={ref}
                 isDisabled={isReadOnly}
                 onClick={() => setOpen(true)}

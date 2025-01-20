@@ -10,6 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   VStack,
+  buttonVariants,
   cn,
 } from "@carbon/react";
 import { useFetcher, useFetchers } from "@remix-run/react";
@@ -30,7 +31,7 @@ export type AssigneeProps = Omit<
 > & {
   id: string;
   table: string;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md";
   value?: string;
   isReadOnly?: boolean;
   placeholder?: string;
@@ -43,8 +44,8 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
     {
       id,
       table,
-      size,
       value,
+      size = "md",
       isReadOnly,
       placeholder,
       variant = "button",
@@ -95,7 +96,10 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
         <HStack className="w-full justify-between">
           {variant === "inline" &&
             (value ? (
-              <EmployeeAvatar size={size ?? "xs"} employeeId={value ?? null} />
+              <EmployeeAvatar
+                size={size === "sm" ? "xxs" : "xs"}
+                employeeId={value ?? null}
+              />
             ) : (
               <span className="text-sm">Unassigned</span>
             ))}
@@ -105,9 +109,14 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
               {variant === "button" ? (
                 <button
                   className={cn(
-                    "rounded-md px-2.5 py-0.5 text-sm transition-colors cursor-pointer hover:bg-accent hover:text-accent-foreground border border-input bg-card font-normal",
-
-                    className
+                    buttonVariants({
+                      variant: "secondary",
+                      size: size,
+                      isDisabled: isReadOnly,
+                      isLoading: fetcher.state !== "idle",
+                      isIcon: false,
+                      className,
+                    })
                   )}
                   role="combobox"
                   aria-expanded={open}
@@ -119,13 +128,15 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                 >
                   {value ? (
                     <EmployeeAvatar
-                      size={size ?? "xs"}
+                      size={size === "sm" ? "xxs" : "xs"}
                       employeeId={value ?? null}
                     />
                   ) : (
                     <div className="flex items-center justify-start gap-2">
-                      <LuUser className="w-4 h-4" />
-                      <span className="text-sm">Unassigned</span>
+                      <LuUser
+                        className={size === "sm" ? "w-3 h-3" : "w-4 h-4"}
+                      />
+                      <span>Unassigned</span>
                     </div>
                   )}
                 </button>

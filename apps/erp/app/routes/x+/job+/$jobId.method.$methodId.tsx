@@ -27,10 +27,11 @@ import {
   JobEstimatesVsActuals,
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
+import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
   });
 
@@ -38,9 +39,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw new Error("Could not find jobId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const [materials, operations] = await Promise.all([
+  const [materials, operations, tags] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
+    getTagsList(client, companyId, "operation"),
   ]);
 
   if (materials.error) {
@@ -86,6 +88,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       client,
       operations?.data?.map((o) => o.id)
     ),
+    tags: tags.data ?? [],
   });
 }
 
@@ -97,7 +100,7 @@ export default function JobMakeMethodRoute() {
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
 
   const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations, productionData } = loaderData;
+  const { materials, operations, productionData, tags } = loaderData;
 
   return (
     <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
@@ -108,6 +111,7 @@ export default function JobMakeMethodRoute() {
           jobMakeMethodId={methodId}
           operations={operations}
           locationId={routeData?.job?.locationId ?? ""}
+          tags={tags}
         />
         <JobBillOfMaterial
           key={`bom:${methodId}`}

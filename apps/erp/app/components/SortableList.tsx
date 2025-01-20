@@ -11,6 +11,7 @@ import { LuTrash } from "react-icons/lu";
 export interface Item {
   checked: boolean;
   details?: ReactNode;
+  footer?: ReactNode;
   id: string;
   isTemporary?: boolean;
   order?: "With Previous" | "After Previous";
@@ -98,58 +99,62 @@ function SortableListItem<T>({
               layout="position"
             >
               {!isExpanded ? (
-                <div className="flex w-full items-center gap-x-2 truncate">
-                  {/* List Remove Actions */}
-                  <Checkbox
-                    checked={item.checked}
-                    id={`checkbox-${item.id}`}
-                    aria-label="Mark to delete"
-                    onCheckedChange={() => onToggleItem(item.id)}
-                    className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
-                  />
-                  {/* List Order */}
-                  <p className="font-medium text-xs pl-1 text-foreground/50 flex flex-shrink-0">
-                    {getParallelizedOrder(order, item, items)}
-                  </p>
+                <div className="flex flex-col w-full">
+                  <div className="flex w-full items-center gap-x-2 truncate">
+                    {/* List Remove Actions */}
+                    <Checkbox
+                      checked={item.checked}
+                      id={`checkbox-${item.id}`}
+                      aria-label="Mark to delete"
+                      onCheckedChange={() => onToggleItem(item.id)}
+                      className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
+                    />
+                    {/* List Order */}
+                    <p className="font-medium text-xs pl-1 text-foreground/50 flex flex-shrink-0">
+                      {getParallelizedOrder(order, item, items)}
+                    </p>
 
-                  {/* List Title */}
-                  <div
-                    key={`${item.checked}`}
-                    className="px-1 flex flex-grow truncate cursor-pointer"
-                    role="button"
-                  >
-                    <HStack className="w-full justify-between">
-                      {typeof item.title === "string" ? (
-                        <span
-                          className={cn(
-                            "flex font-medium text-sm md:text-base truncate hover:underline",
-                            item.checked ? "text-red-400" : "text-foreground"
-                          )}
-                          onClick={(e) => {
-                            if (!isDragging) {
-                              onSelectItem(item.id);
-                            }
-                          }}
-                        >
-                          {item.title}
-                        </span>
-                      ) : (
-                        <div
-                          onClick={(e) => {
-                            if (!isDragging) {
-                              onSelectItem(item.id);
-                            }
-                          }}
-                          className={item.checked ? "text-red-400" : ""}
-                        >
-                          {item.title}
-                        </div>
-                      )}
+                    {/* List Title */}
+                    <div
+                      key={`${item.checked}`}
+                      className="px-1 flex flex-grow truncate cursor-pointer"
+                      role="button"
+                    >
+                      <HStack className="w-full justify-between">
+                        {typeof item.title === "string" ? (
+                          <span
+                            className={cn(
+                              "flex font-medium text-sm md:text-base truncate hover:underline",
+                              item.checked ? "text-red-400" : "text-foreground"
+                            )}
+                            onClick={(e) => {
+                              if (!isDragging) {
+                                onSelectItem(item.id);
+                              }
+                            }}
+                          >
+                            {item.title}
+                          </span>
+                        ) : (
+                          <div
+                            onClick={(e) => {
+                              if (!isDragging) {
+                                onSelectItem(item.id);
+                              }
+                            }}
+                            className={item.checked ? "text-red-400" : ""}
+                          >
+                            {item.title}
+                          </div>
+                        )}
 
-                      {item.details && (
-                        <div className="flex flex-shrink-0">{item.details}</div>
-                      )}
-                    </HStack>
+                        {item.details && (
+                          <div className="flex flex-shrink-0">
+                            {item.details}
+                          </div>
+                        )}
+                      </HStack>
+                    </div>
                   </div>
                 </div>
               ) : null}
@@ -157,6 +162,11 @@ function SortableListItem<T>({
               {/* List Item Children */}
               {renderExtra && renderExtra(item)}
             </motion.div>
+            {item.footer && (
+              <div className="flex w-full items-center  border-t border-border px-3 pt-3 pb-1">
+                {item.footer}
+              </div>
+            )}
           </div>
           <div
             onPointerDown={isDraggable ? handleDragStart : undefined}
