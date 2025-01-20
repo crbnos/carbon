@@ -183,11 +183,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
         const operation = makeDurations(op);
         return {
           id: op.id,
+          assignee: op.assignee,
+          tags: op.tags,
           columnId: op.workCenterId,
           columnType: op.processId,
           priority: op.priority,
           title: op.jobReadableId,
-
           subtitle: op.itemReadableId,
           description: op.description,
           dueDate: op.jobDueDate,
@@ -196,6 +197,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
             Math.max(operation.laborDuration, operation.machineDuration),
           deadlineType: op.jobDeadlineType,
           customerId: op.jobCustomerId,
+          jobReadableId: op.jobReadableId,
+          itemReadableId: op.itemReadableId,
+          itemDescription: op.itemDescription,
           salesOrderReadableId: op.salesOrderReadableId,
           salesOrderId: op.salesOrderId,
           salesOrderLineId: op.salesOrderLineId,
@@ -291,13 +295,13 @@ function KanbanSchedule() {
           <Heading size="h4">Schedule</Heading>
         </div>
       </header>
-      <div className="flex flex-col h-full max-h-full  overflow-auto relative">
+      <div className="flex flex-col h-full max-h-full overflow-auto relative">
         <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
           <HStack>
             <SearchFilter param="search" size="sm" placeholder="Search" />
-
             <Filter filters={filters} />
           </HStack>
+
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -305,105 +309,34 @@ function KanbanSchedule() {
                 variant="secondary"
                 className="border-dashed border-border"
               >
-                Settings
+                Display
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-48">
               <VStack>
-                <Switch
-                  variant="small"
-                  label="Customer"
-                  checked={displaySettings.showCustomer}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showCustomer: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Description"
-                  checked={displaySettings.showDescription}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showDescription: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Due Date"
-                  checked={displaySettings.showDueDate}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showDueDate: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Duration"
-                  checked={displaySettings.showDuration}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showDuration: checked,
-                    }))
-                  }
-                />
-                {/* <Switch 
-                variant="small" 
-                label="Employee"
-                checked={displaySettings.showEmployee}
-                onCheckedChange={(checked) => setDisplaySettings(prev => ({...prev, showEmployee: checked}))}
-              /> */}
-                <Switch
-                  variant="small"
-                  label="Progress"
-                  checked={displaySettings.showProgress}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showProgress: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Status"
-                  checked={displaySettings.showStatus}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showStatus: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Sales Order"
-                  checked={displaySettings.showSalesOrder}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showSalesOrder: checked,
-                    }))
-                  }
-                />
-                <Switch
-                  variant="small"
-                  label="Thumbnail"
-                  checked={displaySettings.showThumbnail}
-                  onCheckedChange={(checked) =>
-                    setDisplaySettings((prev) => ({
-                      ...prev,
-                      showThumbnail: checked,
-                    }))
-                  }
-                />
+                {[
+                  { key: "showCustomer", label: "Customer" },
+                  { key: "showDescription", label: "Description" },
+                  { key: "showDueDate", label: "Due Date" },
+                  { key: "showDuration", label: "Duration" },
+                  { key: "showProgress", label: "Progress" },
+                  { key: "showStatus", label: "Status" },
+                  { key: "showSalesOrder", label: "Sales Order" },
+                  { key: "showThumbnail", label: "Thumbnail" },
+                ].map(({ key, label }) => (
+                  <Switch
+                    key={key}
+                    variant="small"
+                    label={label}
+                    checked={displaySettings[key as keyof DisplaySettings]}
+                    onCheckedChange={(checked) =>
+                      setDisplaySettings((prev) => ({
+                        ...prev,
+                        [key]: checked,
+                      }))
+                    }
+                  />
+                ))}
               </VStack>
             </PopoverContent>
           </Popover>

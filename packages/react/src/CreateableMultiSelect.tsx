@@ -35,11 +35,13 @@ export type CreatableMultiSelectProps = Omit<
   isReadOnly?: boolean;
   label?: string;
   placeholder?: string;
+  maxPreview?: number;
   itemHeight?: number;
   showCreateOptionOnEmpty?: boolean;
   inline?: (
     value: string[],
-    options: { value: string; label: string; helper?: string }[]
+    options: { value: string; label: string; helper?: string }[],
+    maxPreview?: number
   ) => React.ReactNode;
   inlineIcon?: React.ReactElement;
   onChange: (selected: string[]) => void;
@@ -62,6 +64,7 @@ const CreatableMultiSelect = forwardRef<
       label,
       className,
       itemHeight = 40,
+      maxPreview,
       showCreateOptionOnEmpty = true,
       inline,
       inlineIcon,
@@ -89,8 +92,11 @@ const CreatableMultiSelect = forwardRef<
         spacing={1}
       >
         {isInlinePreview && Array.isArray(value) && value.length > 0 && (
-          <span className="flex-grow line-clamp-1">
-            {inline(value, options)}
+          <span
+            className="flex-grow line-clamp-1 cursor-pointer"
+            onClick={() => setOpen(true)}
+          >
+            {inline(value, options, maxPreview)}
           </span>
         )}
 
@@ -161,7 +167,7 @@ const CreatableMultiSelect = forwardRef<
             )}
           </PopoverTrigger>
           <PopoverContent
-            align="start"
+            align="end"
             className="min-w-[260px] w-[--radix-popover-trigger-width] p-1"
           >
             <VirtualizedCommand

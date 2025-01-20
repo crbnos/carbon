@@ -21,6 +21,28 @@
     --header-height: 50px;
     --filters-height: 38px;
     --controls-width: 240px;
+
+    --base-shadow-color: rgb(0 0 0 / 0.16);
+
+    --button-drop-shadow: rgb(0 0 0 / 0.4);
+    --danger-drop-shadow: rgb(127 29 29 / 0.8);
+    --button-shadow: 0px -1px 0px 0px rgb(255 255 255 / 0.04),
+      0px 0px 0px 1px rgb(255 255 255 / 0.12), 0px 0px 1px 0px rgb(0 0 0 / 0.04),
+      0px 2px 2px 0px rgb(0 0 0 / 0.04), 0px 4px 2px 0px rgb(0 0 0 / 0.04),
+      0px 6px 3px 0px rgb(0 0 0 / 0.04);
+    --popover-shadow: 0px 0px 4px rgba(0, 0, 0, 0.08),
+      0px 0px 10px rgba(0, 0, 0, 0.12), 0px 0px 24px rgba(0, 0, 0, 0.16),
+      0px 0px 80px rgba(0, 0, 0, 0.2);
+    --button-base-shadow: 0px 0px 0px 0.5px rgb(0 0 0 / 0.2),
+      0px 1px 1px -1px rgb(0 0 0 / 0.08), 0px 2px 2px -1px rgb(0 0 0 / 0.08),
+      inset 0px 0.5px 0px rgb(255 255 255 / 0.04),
+      inset 0px 0px 1px 0px rgb(255 255 255 / 0.12),
+      inset 0px -4px 8px -4px rgb(0 0 0 / 0.12);
+    --button-primary-shadow: 0px 1px 1px -1px rgb(0 0 0 / 0.08),
+      0px 2px 2px -1px rgb(0 0 0 / 0.08), 0px 0px 0px 1px rgb(0 0 0 / 0.06),
+      inset 0px 1px 0px #fff, inset 0px 0px 2px 1px #fff,
+      inset 0px 1px 2px rgb(0 0 0 / 0.06),
+      inset 0px -4px 8px -4px rgb(0 0 0 / 0.06);
   }
 
   .dark {
@@ -32,6 +54,26 @@
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --button-drop-shadow: rgb(0 0 0 / 0.4);
+    --danger-drop-shadow: rgb(127 29 29 / 0.8);
+    --button-shadow: 0px -1px 0px 0px rgb(255 255 255 / 0.04),
+      0px 0px 0px 1px rgb(255 255 255 / 0.12), 0px 0px 1px 0px rgb(0 0 0 / 0.04),
+      0px 2px 2px 0px rgb(0 0 0 / 0.04), 0px 4px 2px 0px rgb(0 0 0 / 0.04),
+      0px 6px 3px 0px rgb(0 0 0 / 0.04);
+    --popover-shadow: 0px 0px 4px rgba(0, 0, 0, 0.08),
+      0px 0px 10px rgba(0, 0, 0, 0.12), 0px 0px 24px rgba(0, 0, 0, 0.16),
+      0px 0px 80px rgba(0, 0, 0, 0.2);
+    --button-base-shadow: 0px 0px 0px 0.5px rgb(0 0 0 / 0.4),
+      0px 1px 1px -1px rgb(0 0 0 / 0.12), 0px 2px 2px -1px rgb(0 0 0 / 0.12),
+      inset 0px 0.5px 0px rgb(255 255 255 / 0.06),
+      inset 0px 0px 1px 0px rgb(255 255 255 / 0.16),
+      inset 0px -6px 12px -4px rgb(0 0 0 / 0.16);
+    --button-primary-shadow: 0px 1px 1px -1px rgb(0 0 0 / 0.08),
+      0px 2px 2px -1px rgb(0 0 0 / 0.08), 0px 0px 0px 1px rgb(0 0 0 / 0.06),
+      inset 0px 1px 0px #fff, inset 0px 0px 2px 1px #fff,
+      inset 0px 1px 2px rgb(0 0 0 / 0.06),
+      inset 0px -4px 8px -4px rgb(0 0 0 / 0.06);
   }
 }
 

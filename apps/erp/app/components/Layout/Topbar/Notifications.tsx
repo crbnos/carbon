@@ -21,6 +21,7 @@ import {
   LuCalendarX,
   LuDollarSign,
   LuHammer,
+  LuHardHat,
   LuInbox,
   LuMailCheck,
   LuMessageSquare,
@@ -139,6 +140,7 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.JobOperationAssignment:
     case NotificationEvent.JobOperationMessage:
       const [jobId, operationId, makeMethodId, materialId] = id.split(":");
       const link = materialId
@@ -147,7 +149,13 @@ function GenericNotification({
 
       return (
         <Notification
-          icon={<LuMessageSquare />}
+          icon={
+            event === NotificationEvent.JobOperationMessage ? (
+              <LuMessageSquare />
+            ) : (
+              <LuHardHat />
+            )
+          }
           to={`${link}?selectedOperation=${operationId}`}
           {...props}
         />

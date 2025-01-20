@@ -112,7 +112,6 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
           ref={ref}
           variant="secondary"
           onClick={clearFilters}
-          className={"!border-dashed border-border"}
           {...props}
         >
           Clear Filters

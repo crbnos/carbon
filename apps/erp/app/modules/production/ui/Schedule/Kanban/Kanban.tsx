@@ -22,6 +22,7 @@ import { createPortal } from "react-dom";
 import { path } from "~/utils/path";
 import { BoardContainer, ColumnCard } from "./components/ColumnCard";
 import { ItemCard } from "./components/ItemCard";
+import { KanbanProvider } from "./context/KanbanContext";
 import type { Column, DisplaySettings, Item, Progress } from "./types";
 import { coordinateGetter, hasDraggableData } from "./utils";
 
@@ -29,6 +30,7 @@ type KanbanProps = {
   columns: Column[];
   items: Item[];
   progressByItemId: Record<string, Progress>;
+  tags: { name: string }[];
 } & DisplaySettings;
 
 const COLUMN_ORDER_KEY = "kanban-column-order";
@@ -37,6 +39,7 @@ const Kanban = ({
   columns,
   items: initialItems,
   progressByItemId,
+  tags,
   ...displaySettings
 }: KanbanProps) => {
   const submit = useSubmit();
@@ -199,76 +202,75 @@ const Kanban = ({
   };
 
   return (
-    <DndContext
-      accessibility={{
-        announcements,
-      }}
-      sensors={sensors}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragOver={onDragOver}
+    <KanbanProvider
+      displaySettings={displaySettings}
+      selectedGroup={selectedGroup}
+      setSelectedGroup={setSelectedGroup}
+      tags={tags}
     >
-      <BoardContainer>
-        <SortableContext items={columnOrder}>
-          {columnOrder.map((colId) => {
-            const col = columns.find((c) => c.id === colId);
-            if (!col) return null;
-            return (
-              <ColumnCard
-                key={col.id}
-                column={col}
-                items={items.filter((item) => item.columnId === col.id)}
-                progressByItemId={progressByItemId}
-                {...displaySettings}
-                selectedGroup={selectedGroup}
-                setSelectedGroup={setSelectedGroup}
-              />
-            );
-          })}
-        </SortableContext>
-      </BoardContainer>
-
-      <ClientOnly fallback={null}>
-        {() =>
-          createPortal(
-            <DragOverlay>
-              {activeColumn && (
+      <DndContext
+        accessibility={{
+          announcements,
+        }}
+        sensors={sensors}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragOver={onDragOver}
+      >
+        <BoardContainer>
+          <SortableContext items={columnOrder}>
+            {columnOrder.map((colId) => {
+              const col = columns.find((c) => c.id === colId);
+              if (!col) return null;
+              return (
                 <ColumnCard
-                  isOverlay
-                  column={activeColumn}
-                  selectedGroup={selectedGroup}
-                  items={items.filter(
-                    (item) => item.columnId === activeColumn.id
-                  )}
+                  key={col.id}
+                  column={col}
+                  items={items.filter((item) => item.columnId === col.id)}
                   progressByItemId={progressByItemId}
-                  {...displaySettings}
-                  setSelectedGroup={setSelectedGroup}
                 />
-              )}
-              {activeItem && (
-                <ItemCard
-                  selectedGroup={selectedGroup}
-                  item={{
-                    ...activeItem,
-                    status: progressByItemId[activeItem.id]?.active
-                      ? "In Progress"
-                      : activeItem.status,
-                    employeeIds: progressByItemId[activeItem.id]?.employees
-                      ? Array.from(progressByItemId[activeItem.id].employees!)
-                      : undefined,
-                    progress: progressByItemId[activeItem.id]?.progress ?? 0,
-                  }}
-                  isOverlay
-                  {...displaySettings}
-                  setSelectedGroup={setSelectedGroup}
-                />
-              )}
-            </DragOverlay>,
-            document.body
-          )
-        }
-      </ClientOnly>
-    </DndContext>
+              );
+            })}
+          </SortableContext>
+        </BoardContainer>
+
+        <ClientOnly fallback={null}>
+          {() =>
+            createPortal(
+              <DragOverlay>
+                {activeColumn && (
+                  <ColumnCard
+                    isOverlay
+                    column={activeColumn}
+                    items={items.filter(
+                      (item) => item.columnId === activeColumn.id
+                    )}
+                    progressByItemId={progressByItemId}
+                  />
+                )}
+                {activeItem && (
+                  <ItemCard
+                    item={{
+                      ...activeItem,
+                      status: progressByItemId[activeItem.id]?.active
+                        ? "In Progress"
+                        : activeItem.status,
+                      employeeIds: progressByItemId[activeItem.id]?.employees
+                        ? Array.from(progressByItemId[activeItem.id].employees!)
+                        : undefined,
+                      progress: progressByItemId[activeItem.id]?.progress ?? 0,
+                    }}
+                    isOverlay
+                    progressByItemId={progressByItemId}
+                  />
+                )}
+              </DragOverlay>,
+              document.body
+            )
+          }
+        </ClientOnly>
+      </DndContext>
+    </KanbanProvider>
   );
 
   function onDragStart(event: DragStartEvent) {

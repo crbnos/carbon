@@ -151,6 +151,10 @@ export const notifyTask = task({
             return `Digital Quote ${digitalQuote?.data?.quoteId} was completed by ${digitalQuote.data.digitalQuoteAcceptedBy}`;
           }
 
+          if (digitalQuote.data.digitalQuoteRejectedBy) {
+            return `Digital Quote ${digitalQuote?.data?.quoteId} was rejected by ${digitalQuote.data.digitalQuoteRejectedBy}`;
+          }
+
           return `Digital Quote ${digitalQuote?.data?.quoteId} was accepted`;
         default:
           return null;

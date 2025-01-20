@@ -1,26 +1,12 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  cn,
-  IconButton,
-  ScrollArea,
-  ScrollBar,
-} from "@carbon/react";
+import { cn, IconButton, ScrollArea, ScrollBar } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
+import { useMemo } from "react";
 import { LuGripVertical } from "react-icons/lu";
-import { useUrlParams } from "~/hooks";
-import type {
-  Column,
-  ColumnDragData,
-  DisplaySettings,
-  Item,
-  Progress,
-} from "../types";
+import type { Column, Item, Progress } from "../types";
 import { ItemCard } from "./ItemCard";
 
 type ColumnCardProps = {
@@ -28,28 +14,20 @@ type ColumnCardProps = {
   items: Item[];
   isOverlay?: boolean;
   progressByItemId: Record<string, Progress>;
-  selectedGroup: string | null;
-  setSelectedGroup: (jobId: string | null) => void;
-} & DisplaySettings;
+};
 
 export function ColumnCard({
   column,
   items,
   isOverlay,
   progressByItemId,
-  selectedGroup,
-  setSelectedGroup,
-  ...displaySettings
 }: ColumnCardProps) {
-  const [params] = useUrlParams();
-  const currentFilters = params.getAll("filter");
-  const itemsIds = items.map((item) => item.id);
+  const itemsIds = useMemo(() => {
+    return items.map((item) => item.id);
+  }, [items]);
 
   const totalDuration = items.reduce((acc, item) => {
-    const progress = progressByItemId[item.id]?.progress ?? 0;
-    const duration = item.duration ?? 0;
-    const effectiveDuration = Math.max(duration - progress, 0);
-    return acc + effectiveDuration;
+    return acc + Math.max((item.duration ?? 0) - (item.progress ?? 0), 0);
   }, 0);
 
   const {
@@ -64,7 +42,7 @@ export function ColumnCard({
     data: {
       type: "column",
       column,
-    } satisfies ColumnDragData,
+    },
     attributes: {
       roleDescription: `Column: ${column.title}`,
     },
@@ -76,40 +54,32 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none from-card/50 via-card/50 to-card/50 flex flex-col p-[1px] pt-0",
+    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r",
     {
       variants: {
         dragging: {
-          default: "border-2 border-transparent",
+          default: "",
           over: "ring-2 opacity-30",
           overlay: "ring-2 ring-primary",
         },
-        height: {
-          filtered: "h-[calc(100dvh-135px)]",
-          default: "h-[calc(100dvh-98px)]",
-        },
-      },
-      defaultVariants: {
-        dragging: "default",
-        height: "default",
       },
     }
   );
 
-  const isActive = items.some((item) => progressByItemId[item.id]?.active);
-
   return (
-    <Card
+    <div
       ref={setNodeRef}
       style={style}
-      className={variants({
-        dragging: isOverlay ? "overlay" : isDragging ? "over" : "default",
-        height: currentFilters.length > 0 ? "filtered" : "default",
-      })}
+      className={cn(
+        `${variants({
+          dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+        })} flex flex-col p-[1px] pt-0`,
+        `h-[calc(100dvh-var(--header-height)*2)]`
+      )}
     >
-      <CardHeader className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-10 border-b">
+      <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          {isActive ? (
+          {column.active ? (
             <PulsingDot />
           ) : (
             <div
@@ -140,39 +110,29 @@ export function ColumnCard({
           {...listeners}
           className="cursor-grab relative"
         />
-      </CardHeader>
+      </div>
       <ScrollArea className="flex-grow">
-        <CardContent className="flex flex-col gap-2 p-2">
+        <div className="flex flex-col gap-2 p-2">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
               <ItemCard
-                key={item.id}
-                item={{
-                  ...item,
-                  status: progressByItemId[item.id]?.active
-                    ? "In Progress"
-                    : item.status,
-                  employeeIds: progressByItemId[item.id]?.employees
-                    ? Array.from(progressByItemId[item.id].employees!)
-                    : undefined,
-                  progress: progressByItemId[item.id]?.progress ?? 0,
-                }}
-                selectedGroup={selectedGroup}
-                setSelectedGroup={setSelectedGroup}
-                {...displaySettings}
+                key={item.id!}
+                item={item}
+                progressByItemId={progressByItemId}
               />
             ))}
           </SortableContext>
-        </CardContent>
+        </div>
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
-    </Card>
+    </div>
   );
 }
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
 
-  const variations = cva("px-0 flex lg:justify-center", {
+  const variations = cva("relative px-0 flex lg:justify-center", {
     variants: {
       dragging: {
         default: "snap-x snap-mandatory",

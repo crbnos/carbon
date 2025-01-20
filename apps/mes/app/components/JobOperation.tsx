@@ -342,9 +342,11 @@ export const JobOperation = ({
                   <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
                 )}
                 <div className="flex flex-col flex-grow">
-                  <Heading size="h3">{operation.itemReadableId}</Heading>
-                  <p className="text-muted-foreground line-clamp-1">
+                  <Heading size="h3" className="line-clamp-1">
                     {operation.itemDescription}
+                  </Heading>
+                  <p className="text-muted-foreground line-clamp-1">
+                    {operation.itemReadableId}
                   </p>
                 </div>
               </HStack>

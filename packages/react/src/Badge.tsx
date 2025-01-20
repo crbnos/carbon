@@ -10,7 +10,7 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-2.5 py-0.5 h-6 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 truncate uppercase font-bold text-xs tracking-tight",
+  "inline-flex items-center rounded-md px-2.5 py-0.5 h-6 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 uppercase font-bold text-xs truncate tracking-tight",
   {
     variants: {
       variant: {
@@ -44,7 +44,10 @@ export interface BadgeProps
 
 function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      className={cn(badgeVariants({ variant }), "min-w-0", className)}
+      {...props}
+    />
   );
 }
 
@@ -54,7 +57,7 @@ const BadgeCloseButton = forwardRef<
 >(({ className, ...props }, ref) => (
   <button
     className={cn(
-      "ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground",
+      "ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 text-muted-foreground hover:text-foreground flex-shrink-0",
       className
     )}
     {...props}

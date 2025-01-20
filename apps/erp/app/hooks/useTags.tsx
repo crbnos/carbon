@@ -12,7 +12,7 @@ export function useTags({ id, table }: { id?: string; table: string }) {
       formData.append("ids", id);
       formData.append("table", table);
       value.forEach((v) => {
-        formData.append("value", v.replace(/\\\\"/g, '"'));
+        formData.append("value", v);
       });
 
       fetcher.submit(formData, {
