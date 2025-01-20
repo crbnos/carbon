@@ -8455,6 +8455,7 @@ export type Database = {
       }
       jobOperation: {
         Row: {
+          assignee: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -8486,12 +8487,14 @@ export type Database = {
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
           status: Database["public"]["Enums"]["jobOperationStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
           workInstruction: Json
         }
         Insert: {
+          assignee?: string | null
           companyId: string
           createdAt?: string
           createdBy: string
@@ -8523,12 +8526,14 @@ export type Database = {
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           status?: Database["public"]["Enums"]["jobOperationStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
           workInstruction?: Json
         }
         Update: {
+          assignee?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -8560,12 +8565,48 @@ export type Database = {
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
           status?: Database["public"]["Enums"]["jobOperationStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string | null
           workInstruction?: Json
         }
         Relationships: [
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "jobOperation_companyId_fkey"
             columns: ["companyId"]

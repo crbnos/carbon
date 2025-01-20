@@ -56,8 +56,13 @@ import {
   LuTriangleAlert,
   LuX,
 } from "react-icons/lu";
-import { type z } from "zod";
-import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
+import { z } from "zod";
+import {
+  Assignee,
+  DirectionAwareTabs,
+  EmployeeAvatar,
+  TimeTypeIcon,
+} from "~/components";
 import Activity from "~/components/Activity";
 import {
   Hidden,
@@ -70,6 +75,7 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
+  Tags,
   Tool,
   UnitHint,
   WorkCenter,
@@ -81,6 +87,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
+import { useTags } from "~/hooks/useTags";
 import type { OperationTool } from "~/modules/shared";
 import {
   methodOperationOrders,
@@ -96,7 +103,9 @@ import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
 
 type Operation = z.infer<typeof jobOperationValidator> & {
+  assignee: string | null;
   status: JobOperation["status"];
+  tags: string[] | null;
   workInstruction: JSONContent | null;
 };
 
@@ -110,13 +119,20 @@ type JobBillOfProcessProps = {
   operations: (Operation & {
     jobOperationTool: OperationTool[];
   })[];
+  tags: { name: string }[];
 };
 
-function makeItems(operations: Operation[]): ItemWithData[] {
-  return operations.map(makeItem);
+function makeItems(
+  operations: Operation[],
+  tags: { name: string }[]
+): ItemWithData[] {
+  return operations.map((operation) => makeItem(operation, tags));
 }
 
-function makeItem(operation: Operation): ItemWithData {
+function makeItem(
+  operation: Operation,
+  tags: { name: string }[]
+): ItemWithData {
   return {
     id: operation.id!,
     title: (
@@ -156,6 +172,17 @@ function makeItem(operation: Operation): ItemWithData {
         )}
       </HStack>
     ),
+    footer: isTemporaryId(operation.id ?? "") ? null : (
+      <HStack>
+        <Assignee
+          table="jobOperation"
+          id={operation.id!}
+          size="sm"
+          value={operation.assignee ?? undefined}
+        />
+        <JobOperationTags operation={operation} availableTags={tags} />
+      </HStack>
+    ),
     data: operation,
   };
 }
@@ -164,6 +191,7 @@ const initialOperation: Omit<
   Operation,
   "jobMakeMethodId" | "order" | "jobOperationTool"
 > = {
+  assignee: null,
   description: "",
   laborRate: 0,
   laborTime: 0,
@@ -180,6 +208,7 @@ const initialOperation: Omit<
   setupTime: 0,
   setupUnit: "Total Minutes",
   status: "Todo",
+  tags: [],
   workCenterId: "",
   workInstruction: {},
 };
@@ -232,6 +261,7 @@ const JobBillOfProcess = ({
   jobMakeMethodId,
   locationId,
   operations: initialOperations,
+  tags,
 }: JobBillOfProcessProps) => {
   const { carbon, accessToken } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
@@ -287,9 +317,11 @@ const JobBillOfProcess = ({
     if (!pendingOperation.id) {
       operationsById.set("temporary", {
         ...pendingOperation,
+        assignee: null,
         status: "Todo",
         workInstruction: {},
         jobOperationTool: [],
+        tags: [],
       });
     } else {
       operationsById.set(pendingOperation.id, {
@@ -311,7 +343,7 @@ const JobBillOfProcess = ({
     (a, b) => (orderState[a.id!] ?? a.order) - (orderState[b.id!] ?? b.order)
   );
 
-  const items = makeItems(operations).map((item) => ({
+  const items = makeItems(operations, tags).map((item) => ({
     ...item,
     checked: checkedState[item.id] ?? false,
   }));
@@ -2002,5 +2034,36 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
         </form>
       </div>
     </div>
+  );
+}
+
+function JobOperationTags({
+  operation,
+  availableTags,
+}: {
+  operation: Operation;
+  availableTags: { name: string }[];
+}) {
+  const { onUpdateTags } = useTags({ id: operation.id, table: "jobOperation" });
+
+  return (
+    <ValidatedForm
+      defaultValues={{
+        tags: operation.tags ?? [],
+      }}
+      validator={z.object({
+        tags: z.array(z.string()).optional(),
+      })}
+      className="w-full"
+    >
+      <Tags
+        availableTags={availableTags}
+        label=""
+        name="tags"
+        table="operation"
+        inline
+        onChange={onUpdateTags}
+      />
+    </ValidatedForm>
   );
 }

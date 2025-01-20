@@ -3,6 +3,7 @@ import { CreatableMultiSelect } from "@carbon/form";
 import { Badge, HStack } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo } from "react";
+import { LuTags } from "react-icons/lu";
 import type { action } from "~/routes/x+/settings+/tags.new";
 import { path } from "~/utils/path";
 
@@ -20,7 +21,7 @@ const TagsPreview = (
   options: { value: string; label: string; helper?: string }[]
 ) => {
   return (
-    <HStack className="space-x-0 flex-wrap gap-1 items-start">
+    <HStack className="space-x-0 flex-grow gap-1 items-start">
       {value.map((label: string) => (
         <Badge key={label} variant="secondary">
           {label}
@@ -49,6 +50,7 @@ const Tags = ({ table, availableTags, ...props }: TagsSelectProps) => {
       {...props}
       showCreateOptionOnEmpty={false}
       inline={props.inline ? TagsPreview : undefined}
+      inlineIcon={<LuTags />}
       onCreateOption={(option) => {
         if (!option) return;
 

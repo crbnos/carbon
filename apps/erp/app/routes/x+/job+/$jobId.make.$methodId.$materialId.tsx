@@ -29,11 +29,11 @@ import {
   JobMaterialForm,
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
-import { getModelByItemId } from "~/modules/shared";
+import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
   });
 
@@ -42,10 +42,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
   if (!materialId) throw new Error("Could not find materialId");
 
-  const [material, materials, operations] = await Promise.all([
+  const [material, materials, operations, tags] = await Promise.all([
     getJobMaterial(client, materialId),
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
+    getTagsList(client, companyId, "operation"),
   ]);
   if (material.error) {
     throw redirect(
@@ -114,6 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       operations?.data?.map((o) => o.id)
     ),
     model: getModelByItemId(client, material.data.itemId!),
+    tags: tags.data ?? [],
   });
 }
 
@@ -124,7 +126,7 @@ export default function JobMakeMethodRoute() {
   if (!jobId) throw new Error("Could not find jobId");
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
-  const { material, materials, operations, productionData } = loaderData;
+  const { material, materials, operations, productionData, tags } = loaderData;
 
   return (
     <VStack spacing={2} className="p-2">
@@ -139,6 +141,7 @@ export default function JobMakeMethodRoute() {
         jobMakeMethodId={methodId}
         operations={operations}
         locationId={routeData?.job?.locationId ?? ""}
+        tags={tags}
       />
       <JobBillOfMaterial
         key={`bom:${methodId}`}
