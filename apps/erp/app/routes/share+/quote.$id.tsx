@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -92,11 +93,16 @@ const translations = {
   en: {
     "Accept Quote": "Accept Quote",
     "Add-Ons": "Add-Ons",
+    "Are you sure you want to accept this quote?": (
+      id: string,
+      amount: string
+    ) => `Are you sure you want to accept quote ${id} for ${amount}?`,
+    "Are you sure you want to reject this quote?":
+      "Are you sure you want to reject this quote?",
     Cancel: "Cancel",
     Change: "Change",
     days: "days",
     "Digital Quote": "Digital Quote",
-    "Don't Buy": "Don't Buy",
     "Drag and drop a Purchase Order PDF here, or click to select a file":
       "Drag and drop a Purchase Order PDF here, or click to select a file",
     Expires: "Expires",
@@ -113,6 +119,8 @@ const translations = {
     Quantity: "Quantity",
     "Quote expired": "Quote expired",
     "Quote not found": "Quote not found",
+    "Reject Quote": "Reject Quote",
+    Remove: "Remove",
     "Shipping Method": "Shipping Method",
     Shipping: "Shipping",
     Subtotal: "Subtotal",
@@ -120,15 +128,23 @@ const translations = {
     Total: "Total",
     "Unit Price": "Unit Price",
     "Yes, Accept": "Yes, Accept",
+    "Yes, Reject": "Yes, Reject",
   },
   es: {
     "Accept Quote": "Aceptar Cotización",
     "Add-Ons": "Complementos",
+    "Are you sure you want to accept this quote?": (
+      id: string,
+      amount: string
+    ) =>
+      `¿Estás seguro de que quieres aceptar la cotización ${id} por ${amount}?`,
+    "Are you sure you want to reject this quote?":
+      "¿Estás seguro de que quieres rechazar esta cotización?",
     Cancel: "Cancelar",
     Change: "Cambiar",
     days: "días",
     "Digital Quote": "Cotización Digital",
-    "Don't Buy": "No Comprar",
+
     "Drag and drop a Purchase Order PDF here, or click to select a file":
       "Arrastre y suelte un PDF de Orden de Compra aquí, o haga clic para seleccionar un archivo",
     Expires: "Expira",
@@ -146,6 +162,8 @@ const translations = {
     Quantity: "Cantidad",
     "Quote expired": "Cotización expirada",
     "Quote not found": "Cotización no encontrada",
+    "Reject Quote": "Rechazar Cotización",
+    Remove: "Eliminar",
     "Shipping Method": "Método de Envío",
     Shipping: "Envío",
     Subtotal: "Subtotal",
@@ -153,15 +171,22 @@ const translations = {
     Total: "Total",
     "Unit Price": "Precio Unitario",
     "Yes, Accept": "Sí, Aceptar",
+    "Yes, Reject": "Sí, Rechazar",
   },
   de: {
     "Accept Quote": "Angebot Annehmen",
     "Add-Ons": "Zusätze",
+    "Are you sure you want to accept this quote?": (
+      id: string,
+      amount: string
+    ) =>
+      `Sind Sie sicher, dass Sie das Angebot ${id} für ${amount} annehmen möchten?`,
+    "Are you sure you want to reject this quote?":
+      "Sind Sie sicher, dass Sie dieses Angebot ablehnen möchten?",
     Cancel: "Abbrechen",
     Change: "Ändern",
     days: "Tage",
     "Digital Quote": "Digitales Angebot",
-    "Don't Buy": "Nicht Kaufen",
     "Drag and drop a Purchase Order PDF here, or click to select a file":
       "Ziehen Sie eine Bestellung als PDF hierher oder klicken Sie zum Auswählen",
     Expires: "Läuft ab",
@@ -179,6 +204,8 @@ const translations = {
     Quantity: "Menge",
     "Quote expired": "Angebot abgelaufen",
     "Quote not found": "Angebot nicht gefunden",
+    "Reject Quote": "Angebot ablehnen",
+    Remove: "Entfernen",
     "Shipping Method": "Versandart",
     Shipping: "Versand",
     Subtotal: "Zwischensumme",
@@ -186,6 +213,7 @@ const translations = {
     Total: "Gesamt",
     "Unit Price": "Stückpreis",
     "Yes, Accept": "Ja, Annehmen",
+    "Yes, Reject": "Ja, Ablehnen",
   },
 };
 
@@ -874,7 +902,7 @@ const LinePricingOptions = ({
       {selectedLine.quantity !== 0 && !hasSalesOrder && (
         <HStack spacing={2} className="w-full justify-end items-center">
           <Button
-            variant="primary"
+            variant="secondary"
             leftIcon={<LuCircleX />}
             onClick={() => {
               setSelectedValue("0");
@@ -884,7 +912,7 @@ const LinePricingOptions = ({
               }));
             }}
           >
-            {strings["Don't Buy"]}
+            {strings.Remove}
           </Button>
         </HStack>
       )}
@@ -924,7 +952,10 @@ const Quote = ({
 
   const { id } = useParams();
   if (!id) throw new Error("Could not find external quote id");
+
   const confirmQuoteModal = useDisclosure();
+  const rejectQuoteModal = useDisclosure();
+
   const fetcher = useFetcher<typeof action>();
   const submitted = useRef<boolean>(false);
   const mode = useMode();
@@ -1060,7 +1091,10 @@ const Quote = ({
       )}
       <Card className="w-full max-w-5xl mx-auto">
         <div className="w-full text-center">
-          {quote?.status !== "Sent" && <QuoteStatus status={quote.status} />}
+          {!["Sent", "Lost"].includes(quote.status) && (
+            <QuoteStatus status={quote.status} />
+          )}
+          {quote?.status === "Lost" && <Badge variant="red">Rejected</Badge>}
         </div>
         <Header
           company={company}
@@ -1125,16 +1159,29 @@ const Quote = ({
               />
             </HStack>
           </VStack>
-          {companySettings?.digitalQuoteEnabled && quote?.status === "Sent" && (
-            <Button
-              onClick={confirmQuoteModal.onOpen}
-              size="lg"
-              isDisabled={total === 0}
-              className="w-full mt-8 text-lg"
-            >
-              {strings["Accept Quote"]}
-            </Button>
-          )}
+          <div className="flex flex-col gap-2">
+            {companySettings?.digitalQuoteEnabled &&
+              quote?.status === "Sent" && (
+                <>
+                  <Button
+                    onClick={confirmQuoteModal.onOpen}
+                    size="lg"
+                    variant="primary"
+                    isDisabled={total === 0}
+                    className="w-full mt-8 text-lg"
+                  >
+                    {strings["Accept Quote"]}
+                  </Button>
+                  <Button
+                    onClick={rejectQuoteModal.onOpen}
+                    size="lg"
+                    variant="link"
+                  >
+                    {strings["Reject Quote"]}
+                  </Button>
+                </>
+              )}
+          </div>
         </CardContent>
       </Card>
       {termsHTML && (
@@ -1174,6 +1221,7 @@ const Quote = ({
                 {!companySettings?.digitalQuoteIncludesPurchaseOrders && (
                   <input type="hidden" name="file" />
                 )}
+                <input type="hidden" name="type" value="accept" />
                 <div className="space-y-4 py-4">
                   <Input
                     name="digitalQuoteAcceptedBy"
@@ -1235,6 +1283,62 @@ const Quote = ({
                   type="submit"
                 >
                   {strings["Yes, Accept"]}
+                </Button>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {rejectQuoteModal.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) rejectQuoteModal.onClose();
+          }}
+        >
+          <ModalOverlay />
+          <ModalContent>
+            <ValidatedForm
+              action={path.to.api.digitalQuote(id)}
+              validator={externalQuoteValidator}
+              method="post"
+              fetcher={fetcher}
+              onSubmit={() => {
+                submitted.current = true;
+              }}
+            >
+              <ModalHeader>
+                <ModalTitle>{strings["Reject Quote"]}</ModalTitle>
+                <ModalDescription>
+                  {strings["Are you sure you want to reject this quote?"]}
+                </ModalDescription>
+              </ModalHeader>
+              <ModalBody>
+                <input type="hidden" name="type" value="reject" />
+                <div className="space-y-4 py-4">
+                  <Input
+                    name="digitalQuoteRejectedBy"
+                    label="Please enter your name"
+                  />
+                  <Input
+                    name="digitalQuoteRejectedByEmail"
+                    label="Please enter your email address"
+                  />
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button variant="secondary" onClick={rejectQuoteModal.onClose}>
+                  {strings.Cancel}
+                </Button>
+
+                <Button
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle"}
+                  variant="destructive"
+                  type="submit"
+                >
+                  {strings["Yes, Reject"]}
                 </Button>
               </ModalFooter>
             </ValidatedForm>
@@ -1357,6 +1461,7 @@ export default function ExternalQuote() {
   switch (state) {
     case QuoteState.Valid:
       if (data) {
+        // @ts-ignore
         return <Quote data={data as QuoteData} strings={strings} />;
       }
       return (
