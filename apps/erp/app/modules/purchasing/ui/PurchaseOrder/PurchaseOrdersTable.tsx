@@ -128,22 +128,34 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "receiptPromisedDate",
           header: "Promised Date",
-          cell: ({ row }) => (
-            <span
-              className={
-                ["To Receive", "To Receive and Invoice", "Draft"].includes(
-                  row.original.status ?? ""
-                ) &&
-                row.original.receiptPromisedDate &&
-                row.original.receiptPromisedDate <
-                  today(getLocalTimeZone()).toString()
-                  ? "text-red-500"
-                  : ""
-              }
-            >
-              {formatDate(row.original.receiptPromisedDate)}
-            </span>
-          ),
+          cell: ({ row }) => {
+            const isReceivedOnTime =
+              row.original.deliveryDate &&
+              row.original.receiptPromisedDate &&
+              row.original.deliveryDate <= row.original.receiptPromisedDate;
+
+            const isOverdue =
+              ["To Receive", "To Receive and Invoice", "Draft"].includes(
+                row.original.status ?? ""
+              ) &&
+              row.original.receiptPromisedDate &&
+              row.original.receiptPromisedDate <
+                today(getLocalTimeZone()).toString();
+
+            return (
+              <span
+                className={
+                  isReceivedOnTime
+                    ? "text-emerald-500"
+                    : isOverdue
+                    ? "text-red-500"
+                    : ""
+                }
+              >
+                {formatDate(row.original.receiptPromisedDate)}
+              </span>
+            );
+          },
           meta: {
             icon: <LuCalendar />,
           },
