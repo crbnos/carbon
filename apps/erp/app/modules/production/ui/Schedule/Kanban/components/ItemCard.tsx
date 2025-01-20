@@ -241,20 +241,22 @@ export function ItemCard({
               <LuTimer className="text-muted-foreground w-4 h-4" />
             </HStack>
           )}
-        {showProgress && item.quantity && (
-          <HStack>
-            <Progress
-              numerator={(item.quantityCompleted ?? 0).toString()}
-              denominator={(item.quantity ?? 0).toString()}
-              value={
-                item.quantityCompleted && item.quantity
-                  ? (item.quantityCompleted / item.quantity) * 100
-                  : 0
-              }
-            />
-            <FaTasks className="text-muted-foreground w-4 h-4" />
-          </HStack>
-        )}
+        {showProgress &&
+          Number.isFinite(item.quantity) &&
+          Number(item.quantity) > 0 && (
+            <HStack>
+              <Progress
+                numerator={(item.quantityCompleted ?? 0).toString()}
+                denominator={(item.quantity ?? 0).toString()}
+                value={
+                  item.quantityCompleted && item.quantity
+                    ? (item.quantityCompleted / item.quantity) * 100
+                    : 0
+                }
+              />
+              <FaTasks className="text-muted-foreground w-4 h-4" />
+            </HStack>
+          )}
       </CardHeader>
       <CardContent className="p-3 space-y-2 text-left whitespace-pre-wrap text-sm">
         {showThumbnail && item.thumbnailPath && (
