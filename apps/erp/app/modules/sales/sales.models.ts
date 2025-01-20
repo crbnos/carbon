@@ -99,12 +99,22 @@ export const customerTypeValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
-export const externalQuoteValidator = z.object({
-  digitalQuoteAcceptedBy: z.string().min(1, { message: "Name is required" }),
-  digitalQuoteAcceptedByEmail: z
-    .string()
-    .email({ message: "Email is invalid" }),
-});
+export const externalQuoteValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("accept"),
+    digitalQuoteAcceptedBy: z.string().min(1, { message: "Name is required" }),
+    digitalQuoteAcceptedByEmail: z
+      .string()
+      .email({ message: "Email is invalid" }),
+  }),
+  z.object({
+    type: z.literal("reject"),
+    digitalQuoteRejectedBy: z.string().min(1, { message: "Name is required" }),
+    digitalQuoteRejectedByEmail: z
+      .string()
+      .email({ message: "Email is invalid" }),
+  }),
+]);
 
 export const getLineMethodValidator = z.object({
   type: z.enum(["line"]),

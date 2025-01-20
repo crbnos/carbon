@@ -25,7 +25,7 @@ export const buttonVariants = cva(
         solid:
           "bg-accent text-accent-foreground hover:bg-accent/90 shadow-button-base",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-button-danger",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)]",
         ghost:
           "bg-transparent hover:bg-primary/10 text-accent-foreground hover:text-accent-foreground/90",
         link: "text-foreground hover:text-foreground underline-offset-4 hover:underline px-0 py-0",

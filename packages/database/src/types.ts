@@ -15514,6 +15514,8 @@ export type Database = {
           customFields: Json | null
           digitalQuoteAcceptedBy: string | null
           digitalQuoteAcceptedByEmail: string | null
+          digitalQuoteRejectedBy: string | null
+          digitalQuoteRejectedByEmail: string | null
           dueDate: string | null
           estimatorId: string | null
           exchangeRate: number | null
@@ -15545,6 +15547,8 @@ export type Database = {
           customFields?: Json | null
           digitalQuoteAcceptedBy?: string | null
           digitalQuoteAcceptedByEmail?: string | null
+          digitalQuoteRejectedBy?: string | null
+          digitalQuoteRejectedByEmail?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
@@ -15576,6 +15580,8 @@ export type Database = {
           customFields?: Json | null
           digitalQuoteAcceptedBy?: string | null
           digitalQuoteAcceptedByEmail?: string | null
+          digitalQuoteRejectedBy?: string | null
+          digitalQuoteRejectedByEmail?: string | null
           dueDate?: string | null
           estimatorId?: string | null
           exchangeRate?: number | null
