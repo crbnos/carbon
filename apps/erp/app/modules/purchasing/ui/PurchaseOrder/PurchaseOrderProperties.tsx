@@ -317,7 +317,6 @@ const PurchaseOrderProperties = () => {
           name="receiptPromisedDate"
           label="Receipt Promised Date"
           inline
-          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("receiptPromisedDate", date);
           }}
@@ -337,7 +336,6 @@ const PurchaseOrderProperties = () => {
           name="deliveryDate"
           label="Delivery Date"
           inline
-          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("deliveryDate", date);
           }}

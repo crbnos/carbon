@@ -6,6 +6,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
@@ -127,7 +128,22 @@ const PurchaseOrdersTable = memo(
         {
           accessorKey: "receiptPromisedDate",
           header: "Promised Date",
-          cell: (item) => formatDate(item.getValue<string>()),
+          cell: ({ row }) => (
+            <span
+              className={
+                ["To Receive", "To Receive and Invoice", "Draft"].includes(
+                  row.original.status ?? ""
+                ) &&
+                row.original.receiptPromisedDate &&
+                row.original.receiptPromisedDate <
+                  today(getLocalTimeZone()).toString()
+                  ? "text-red-500"
+                  : ""
+              }
+            >
+              {formatDate(row.original.receiptPromisedDate)}
+            </span>
+          ),
           meta: {
             icon: <LuCalendar />,
           },
