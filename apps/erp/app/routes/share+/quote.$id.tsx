@@ -964,9 +964,11 @@ const Quote = ({
   useEffect(() => {
     if (fetcher.state === "idle" && submitted.current) {
       confirmQuoteModal.onClose();
+      rejectQuoteModal.onClose();
       submitted.current = false;
     }
-  }, [confirmQuoteModal, fetcher.state]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
