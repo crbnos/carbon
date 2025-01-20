@@ -193,6 +193,14 @@ const PurchaseInvoicesTable = memo(
           },
         },
         {
+          accessorKey: "postingDate",
+          header: "Posting Date",
+          cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
           accessorKey: "paymentTermName",
           header: "Payment Method",
           cell: (item) => <Enumerable value={item.getValue<string>()} />,
@@ -297,6 +305,7 @@ const PurchaseInvoicesTable = memo(
             paymentTermName: false,
             dateIssued: false,
             datePaid: false,
+            postingDate: false,
             createdAt: false,
             createdBy: false,
             updatedAt: false,
