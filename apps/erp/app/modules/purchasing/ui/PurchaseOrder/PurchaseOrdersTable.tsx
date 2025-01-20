@@ -125,6 +125,14 @@ const PurchaseOrdersTable = memo(
           },
         },
         {
+          accessorKey: "receiptPromisedDate",
+          header: "Promised Date",
+          cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
           accessorKey: "status",
           header: "Status",
           cell: (item) => {
@@ -169,14 +177,7 @@ const PurchaseOrdersTable = memo(
             icon: <LuUser />,
           },
         },
-        {
-          accessorKey: "receiptPromisedDate",
-          header: "Promised Date",
-          cell: (item) => formatDate(item.getValue<string>()),
-          meta: {
-            icon: <LuCalendar />,
-          },
-        },
+
         {
           accessorKey: "shippingMethodId",
           header: "Shipping Method",
@@ -339,7 +340,6 @@ const PurchaseOrdersTable = memo(
             left: ["purchaseOrderId"],
           }}
           defaultColumnVisibility={{
-            receiptPromisedDate: false,
             shippingMethodName: false,
             // shippingTermName: false,
             paymentTermName: false,
