@@ -120,6 +120,7 @@ export const notifyTask = task({
 
           return `Job ${job?.data?.jobId} assigned to you`;
 
+        case NotificationEvent.JobOperationAssignment:
         case NotificationEvent.JobOperationMessage:
           const [, operationId] = documentId.split(":");
           const jobOperation = await client
@@ -133,7 +134,11 @@ export const notifyTask = task({
             throw jobOperation.error;
           }
 
-          return `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`;
+          if (type === NotificationEvent.JobOperationAssignment) {
+            return `New job operation assigned to you on ${jobOperation?.data?.job?.jobId}`;
+          } else if (type === NotificationEvent.JobOperationMessage) {
+            return `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`;
+          }
 
         case NotificationEvent.DigitalQuoteResponse:
           const digitalQuote = await client
