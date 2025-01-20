@@ -36,6 +36,7 @@ import {
   LuGripVertical,
   LuHardHat,
   LuPencil,
+  LuPlay,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -213,6 +214,14 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                {item.link && (
+                  <DropdownMenuItem asChild>
+                    <Link to={`${item.link}?selectedOperation=${item.id}`}>
+                      <DropdownMenuIcon icon={<LuPencil />} />
+                      Edit Operation
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() =>
                     setSelectedGroup?.(
@@ -228,14 +237,12 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                   />
                   {isHighlighted ? "Remove Highlight" : "Highlight Job"}
                 </DropdownMenuItem>
-                {item.link && (
-                  <DropdownMenuItem asChild>
-                    <Link to={`${item.link}?selectedOperation=${item.id}`}>
-                      <DropdownMenuIcon icon={<LuPencil />} />
-                      Edit Operation
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem asChild>
+                  <a href={path.to.external.mesJobOperation(item.id)}>
+                    <DropdownMenuIcon icon={<LuPlay />} />
+                    Open in MES
+                  </a>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

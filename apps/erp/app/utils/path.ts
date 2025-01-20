@@ -79,6 +79,10 @@ export const path = {
       paymentTerms: `${api}/accounting/payment-terms`,
       shippingMethods: `${api}/inventory/shipping-methods`,
     },
+    external: {
+      mesJobOperation: (id: string) =>
+        generatePath(`https://mes.carbonos.dev/x/operation//${id}`),
+    },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
       previewImage: (bucket: string, path: string) =>

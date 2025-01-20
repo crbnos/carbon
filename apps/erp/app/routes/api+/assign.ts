@@ -15,7 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
-  const id = formData.get("id") as string;
+  let id = formData.get("id") as string;
   const assignee = formData.get("assignee") as string;
   const table = formData.get("table") as string;
 
@@ -27,6 +27,20 @@ export async function action({ request }: ActionFunctionArgs) {
         { success: false },
         await flash(request, error(result.error, "Failed to assign"))
       );
+    }
+
+    if (table === "jobOperation") {
+      const job = await client
+        .from("jobOperation")
+        .select("*, job(id, assignee), jobMakeMethod(id, parentMaterialId)")
+        .eq("id", id)
+        .single();
+
+      const jobId = job.data?.job?.id;
+      const makeMethodId = job.data?.jobMakeMethod?.id;
+      const materialId = job.data?.jobMakeMethod?.parentMaterialId;
+
+      id = `${jobId}:${id}:${makeMethodId}:${materialId ?? ""}`;
     }
 
     if (assignee) {

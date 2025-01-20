@@ -48,6 +48,7 @@ export const notifyTask = task({
     function getWorkflow(type: NotificationEvent) {
       switch (type) {
         case NotificationEvent.JobAssignment:
+        case NotificationEvent.JobOperationAssignment:
         case NotificationEvent.PurchaseInvoiceAssignment:
         case NotificationEvent.PurchaseOrderAssignment:
         case NotificationEvent.QuoteAssignment:
