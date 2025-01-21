@@ -116,7 +116,9 @@ const QuotePDF = ({
       });
       const additionalChargePlusShipping =
         additionalChargesByQuantity[0] + (price?.convertedShippingCost ?? 0);
-      const totalPrice = netExtendedPrice + additionalChargePlusShipping;
+      const totalPrice =
+        (netExtendedPrice + additionalChargePlusShipping) *
+        (1 + line.taxPercent);
 
       return total + totalPrice;
     }, (shipment?.shippingCost ?? 0) * (exchangeRate ?? 1));

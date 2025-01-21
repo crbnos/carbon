@@ -81,7 +81,7 @@ export const path = {
     },
     external: {
       mesJobOperation: (id: string) =>
-        generatePath(`https://mes.carbonos.dev/x/operation//${id}`),
+        `https://mes.carbonos.dev/x/operation/${id}`,
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
