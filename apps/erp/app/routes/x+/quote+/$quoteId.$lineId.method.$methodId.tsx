@@ -28,6 +28,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks";
+import { getTagsList } from "~/modules/shared";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -39,9 +40,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const [materials, operations] = await Promise.all([
+  const [materials, operations, tags] = await Promise.all([
     getQuoteMaterialsByMethodId(client, methodId),
     getQuoteOperationsByMethodId(client, methodId),
+    getTagsList(client, companyId, "operation"),
   ]);
 
   if (materials.error) {
@@ -82,6 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent,
+        tags: o.tags ?? [],
       })) ?? [],
     configurationParameters: getConfigurationParametersByQuoteLineId(
       client,
@@ -89,6 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId
     ),
     model: getModelByQuoteLineId(client, lineId),
+    tags: tags.data ?? [],
   });
 }
 
@@ -101,7 +105,7 @@ export default function QuoteMakeMethodRoute() {
 
   const permissions = usePermissions();
   const loaderData = useLoaderData<typeof loader>();
-  const { materials, operations } = loaderData;
+  const { materials, operations, tags } = loaderData;
 
   return (
     <VStack spacing={2}>
@@ -110,6 +114,7 @@ export default function QuoteMakeMethodRoute() {
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
         operations={operations}
+        tags={tags ?? []}
       />
       <QuoteBillOfMaterial
         key={`bom:${methodId}`}

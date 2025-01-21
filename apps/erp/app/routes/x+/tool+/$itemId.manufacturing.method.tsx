@@ -1,7 +1,11 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useLoaderData, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
+import { getTagsList } from "~/modules/shared";
 
 import type {
   MakeMethod,
@@ -17,10 +21,22 @@ import {
 
 import { path } from "~/utils/path";
 
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+  });
+
+  const tags = await getTagsList(client, companyId, "operation");
+
+  return json({ tags: tags.data ?? [] });
+}
+
 export default function MakeMethodRoute() {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+
+  const { tags } = useLoaderData<typeof loader>();
 
   const manufacturingRouteData = useRouteData<{
     makeMethod: MakeMethod;
@@ -43,6 +59,7 @@ export default function MakeMethodRoute() {
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
+        tags={tags}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
@@ -53,7 +70,7 @@ export default function MakeMethodRoute() {
         operations={manufacturingRouteData?.methodOperations}
       />
       <CadModel
-        isReadOnly={!permissions.can("update", "parts")}
+        isReadOnly={!permissions.can("update", "tools")}
         metadata={{ itemId }}
         modelPath={itemRouteData?.toolSummary?.modelPath ?? null}
         title="CAD Model"

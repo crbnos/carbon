@@ -26,11 +26,11 @@ import {
   QuoteMakeMethodTools,
   QuoteMaterialForm,
 } from "~/modules/sales/ui/Quotes";
-import { getModelByItemId } from "~/modules/shared";
+import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "sales",
   });
 
@@ -40,10 +40,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
   if (!materialId) throw new Error("Could not find materialId");
 
-  const [material, materials, operations] = await Promise.all([
+  const [material, materials, operations, tags] = await Promise.all([
     getQuoteMaterial(client, materialId),
     getQuoteMaterialsByMethodId(client, methodId),
     getQuoteOperationsByMethodId(client, methodId),
+    getTagsList(client, companyId, "operation"),
   ]);
 
   if (material.error) {
@@ -110,7 +111,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         operationSupplierProcessId: o.operationSupplierProcessId ?? undefined,
         quoteMakeMethodId: o.quoteMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent | null,
+        tags: o.tags ?? [],
       })) ?? [],
+    tags: tags.data ?? [],
     model: getModelByItemId(client, material.data.itemId!),
   });
 }
@@ -121,7 +124,7 @@ export default function QuoteMakeMethodRoute() {
   if (!methodId) throw new Error("Could not find methodId");
 
   const loaderData = useLoaderData<typeof loader>();
-  const { material, materials, operations } = loaderData;
+  const { material, materials, operations, tags } = loaderData;
 
   return (
     <VStack spacing={2}>
@@ -135,6 +138,7 @@ export default function QuoteMakeMethodRoute() {
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
         operations={operations}
+        tags={tags}
       />
       <QuoteBillOfMaterial
         key={`bom:${methodId}`}

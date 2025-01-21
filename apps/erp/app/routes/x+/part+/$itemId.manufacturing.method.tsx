@@ -3,9 +3,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useParams } from "@remix-run/react";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import type { z } from "zod";
 import CadModel from "~/components/CadModel";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -31,8 +31,23 @@ import {
   ConfigurationParametersForm,
   PartManufacturingForm,
 } from "~/modules/items/ui/Parts";
+import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+// loader
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+  });
+
+  const tags = await getTagsList(client, companyId, "operation");
+
+  return json({ tags: tags.data ?? [] });
+}
+
+// action
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -81,6 +96,8 @@ export default function MakeMethodRoute() {
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+
+  const { tags } = useLoaderData<typeof loader>();
 
   const itemRouteData = useRouteData<{
     partSummary: PartSummary;
@@ -143,6 +160,7 @@ export default function MakeMethodRoute() {
         parameters={
           manufacturingRouteData?.configurationParametersAndGroups.parameters
         }
+        tags={tags}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}

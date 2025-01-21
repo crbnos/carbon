@@ -68,7 +68,7 @@ function SortableListItem<T>({
           value={item}
           className={cn(
             "relative z-auto grow",
-            "h-full rounded-md bg-muted/30 py-2",
+            "h-full rounded-md bg-muted/30",
             "border border-border rounded-lg",
             item.checked ? "cursor-not-allowed" : "cursor-grab",
             item.checked && !isDragging ? "w-7/10" : "w-full"
@@ -163,7 +163,7 @@ function SortableListItem<T>({
               {renderExtra && renderExtra(item)}
             </motion.div>
             {item.footer && (
-              <div className="flex w-full items-center  border-t border-border px-3 pt-3 pb-1">
+              <div className="flex w-full items-center border-t border-border px-3 py-2">
                 {item.footer}
               </div>
             )}

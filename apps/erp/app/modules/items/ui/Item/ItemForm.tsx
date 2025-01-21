@@ -180,3 +180,14 @@ export function getLinkToItemDetails(type: MethodItemType, id: string) {
       throw new Error("Invalid type");
   }
 }
+
+export function getLinkToItemManufacturing(type: MethodItemType, id: string) {
+  switch (type) {
+    case "Part":
+      return path.to.partManufacturing(id);
+    case "Tool":
+      return path.to.toolManufacturing(id);
+    default:
+      return getLinkToItemDetails(type, id);
+  }
+}

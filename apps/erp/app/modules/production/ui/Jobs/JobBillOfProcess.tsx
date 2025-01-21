@@ -102,7 +102,7 @@ import { jobOperationValidator } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
 
-type Operation = z.infer<typeof jobOperationValidator> & {
+export type Operation = z.infer<typeof jobOperationValidator> & {
   assignee: string | null;
   status: JobOperation["status"];
   tags: string[] | null;
@@ -173,7 +173,7 @@ function makeItem(
       </HStack>
     ),
     footer: isTemporaryId(operation.id ?? "") ? null : (
-      <HStack>
+      <HStack className="w-full justify-between">
         <Assignee
           table="jobOperation"
           id={operation.id!}
@@ -2054,13 +2054,13 @@ function JobOperationTags({
       validator={z.object({
         tags: z.array(z.string()).optional(),
       })}
-      className="w-full"
     >
       <Tags
         availableTags={availableTags}
         label=""
         name="tags"
         table="operation"
+        maxPreview={3}
         inline
         onChange={onUpdateTags}
       />

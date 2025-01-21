@@ -29,12 +29,14 @@ import {
 } from "~/modules/items/ui/Item";
 import {
   getModelByItemId,
+  getTagsList,
   type MethodItemType,
   type MethodType,
 } from "~/modules/shared";
 import { path } from "~/utils/path";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
   });
 
@@ -43,11 +45,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!materialId) throw new Error("Could not find materialId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
-  const [material, methodMaterials, methodOperations] = await Promise.all([
-    getMethodMaterial(client, materialId),
-    getMethodMaterialsByMakeMethod(client, makeMethodId),
-    getMethodOperationsByMakeMethodId(client, makeMethodId),
-  ]);
+  const [material, methodMaterials, methodOperations, tags] = await Promise.all(
+    [
+      getMethodMaterial(client, materialId),
+      getMethodMaterialsByMakeMethod(client, makeMethodId),
+      getMethodOperationsByMakeMethodId(client, makeMethodId),
+      getTagsList(client, companyId, "operation"),
+    ]
+  );
 
   if (material.error) {
     throw redirect(
@@ -105,16 +110,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         operationSupplierProcessId:
           operation.operationSupplierProcessId ?? undefined,
+        tags: operation.tags ?? [],
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
     model: getModelByItemId(client, material.data.itemId),
+    tags: tags.data ?? [],
   });
 }
 
 export default function MethodMaterialMakePage() {
   const permissions = usePermissions();
   const loaderData = useLoaderData<typeof loader>();
-  const { item, methodMaterials, methodOperations } = loaderData;
+  const { item, methodMaterials, methodOperations, tags } = loaderData;
 
   const { itemId, makeMethodId, materialId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -133,6 +140,7 @@ export default function MethodMaterialMakePage() {
         key={`bop:${itemId}`}
         makeMethodId={makeMethodId}
         operations={methodOperations}
+        tags={tags}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}

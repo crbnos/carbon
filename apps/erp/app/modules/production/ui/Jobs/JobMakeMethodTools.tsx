@@ -55,7 +55,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { getLinkToItemManufacturing } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getJobMethodValidator } from "../../production.models";
@@ -86,7 +86,7 @@ const JobBreadcrumbs = () => {
 
   const itemLink =
     itemType && itemId
-      ? getLinkToItemDetails(itemType as MethodItemType, itemId)
+      ? getLinkToItemManufacturing(itemType as MethodItemType, itemId)
       : null;
 
   const isDisabled = ["Completed", "Cancelled", "In Progress"].includes(

@@ -44,7 +44,7 @@ import {
   LuTriangleAlert,
   LuX,
 } from "react-icons/lu";
-import type { z } from "zod";
+import { z } from "zod";
 import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
 import {
   Hidden,
@@ -57,6 +57,7 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
+  Tags,
   Tool,
   UnitHint,
   WorkCenter,
@@ -65,11 +66,14 @@ import {
 import { flushSync } from "react-dom";
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import type { Configuration } from "~/components/Configurator/types";
+
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
+import { useTags } from "~/hooks/useTags";
+
 import type { OperationTool } from "~/modules/shared";
 import {
   methodOperationOrders,
@@ -86,6 +90,7 @@ import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
+  tags: string[];
 };
 
 type OperationWithTools = Operation & {
@@ -102,6 +107,7 @@ type BillOfProcessProps = {
   makeMethodId: string;
   operations: OperationWithTools[];
   parameters?: ConfigurationParameter[];
+  tags: { name: string }[];
 };
 
 type PendingWorkInstructions = {
@@ -131,6 +137,7 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   processId: "",
   setupTime: 0,
   setupUnit: "Total Minutes",
+  tags: [],
   workCenterId: "",
   workInstruction: {},
 };
@@ -141,6 +148,7 @@ const BillOfProcess = ({
   makeMethodId,
   operations: initialOperations,
   parameters,
+  tags,
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
@@ -187,6 +195,7 @@ const BillOfProcess = ({
         ...pendingOperation,
         workInstruction: {},
         methodOperationTool: [],
+        tags: [],
       });
       return;
     }
@@ -200,6 +209,7 @@ const BillOfProcess = ({
       workInstruction: workInstructions[pendingOperation.id] || null,
       order: orderState[pendingOperation.id] ?? pendingOperation.order,
       methodOperationTool: [],
+      tags: [],
     });
   });
 
@@ -217,7 +227,7 @@ const BillOfProcess = ({
     (a, b) => (orderState[a.id!] ?? a.order) - (orderState[b.id!] ?? b.order)
   );
 
-  const items = makeItems(operations).map((item) => ({
+  const items = makeItems(operations, tags).map((item) => ({
     ...item,
     checked: checkedState[item.id] ?? false,
   }));
@@ -1552,11 +1562,17 @@ function ToolsForm({
   );
 }
 
-function makeItems(operations: Operation[]): ItemWithData[] {
-  return operations.map(makeItem);
+function makeItems(
+  operations: Operation[],
+  tags: { name: string }[]
+): ItemWithData[] {
+  return operations.map((operation) => makeItem(operation, tags));
 }
 
-function makeItem(operation: Operation): ItemWithData {
+function makeItem(
+  operation: Operation,
+  tags: { name: string }[]
+): ItemWithData {
   return {
     id: operation.id!,
     title: <h3 className="font-semibold truncate">{operation.description}</h3>,
@@ -1588,6 +1604,11 @@ function makeItem(operation: Operation): ItemWithData {
             )}
           </>
         )}
+      </HStack>
+    ),
+    footer: isTemporaryId(operation.id ?? "") ? null : (
+      <HStack className="w-full justify-end">
+        <MethodOperationTags operation={operation} availableTags={tags} />
       </HStack>
     ),
     data: operation,
@@ -1622,4 +1643,37 @@ function usePendingOperations() {
 
 function getFieldKey(field: string, operationId: string) {
   return `${field}:${operationId}`;
+}
+export function MethodOperationTags({
+  operation,
+  availableTags,
+}: {
+  operation: Operation;
+  availableTags: { name: string }[];
+}) {
+  const { onUpdateTags } = useTags({
+    id: operation.id,
+    table: "methodOperation",
+  });
+
+  return (
+    <ValidatedForm
+      defaultValues={{
+        tags: operation.tags ?? [],
+      }}
+      validator={z.object({
+        tags: z.array(z.string()).optional(),
+      })}
+    >
+      <Tags
+        availableTags={availableTags}
+        label=""
+        name="tags"
+        table="operation"
+        inline
+        maxPreview={3}
+        onChange={onUpdateTags}
+      />
+    </ValidatedForm>
+  );
 }
