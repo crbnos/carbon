@@ -26630,6 +26630,7 @@ export type Database = {
       }
       jobOperationsWithMakeMethods: {
         Row: {
+          assignee: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -26656,6 +26657,7 @@ export type Database = {
           operationUnitCost: number | null
           order: number | null
           overheadRate: number | null
+          priority: number | null
           processId: string | null
           quantityComplete: number | null
           quantityReworked: number | null
@@ -26663,12 +26665,48 @@ export type Database = {
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
           status: Database["public"]["Enums"]["jobOperationStatus"] | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null
           workInstruction: Json | null
         }
         Relationships: [
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "jobOperation_companyId_fkey"
             columns: ["companyId"]
@@ -29493,6 +29531,7 @@ export type Database = {
           quoteMakeMethodId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string | null

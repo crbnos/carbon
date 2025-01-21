@@ -309,7 +309,7 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            let jobOperations: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+            let jobOperationsInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
               [];
             for await (const op of relatedOperations?.data ?? []) {
               const [
@@ -382,7 +382,7 @@ serve(async (req: Request) => {
                 }),
               ]);
 
-              jobOperations.push({
+              jobOperationsInserts.push({
                 jobId,
                 jobMakeMethodId: parentJobMakeMethodId!,
                 processId,
@@ -422,9 +422,9 @@ serve(async (req: Request) => {
 
             if (bopConfiguration) {
               // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              jobOperations = bopConfiguration
+              jobOperationsInserts = bopConfiguration
                 .map((description, index) => {
-                  const operation = jobOperations.find(
+                  const operation = jobOperationsInserts.find(
                     (operation) => operation.description === description
                   );
                   if (operation) {
@@ -438,10 +438,10 @@ serve(async (req: Request) => {
             }
 
             let methodOperationsToJobOperations: Record<string, string> = {};
-            if (jobOperations?.length > 0) {
+            if (jobOperationsInserts?.length > 0) {
               const operationIds = await trx
                 .insertInto("jobOperation")
-                .values(jobOperations)
+                .values(jobOperationsInserts)
                 .returning(["id"])
                 .execute();
 
@@ -727,7 +727,7 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            const jobOperations =
+            const jobOperationsInserts =
               relatedOperations?.data?.map((op) => ({
                 jobId: jobMakeMethod.data?.jobId!,
                 jobMakeMethodId: parentJobMakeMethodId!,
@@ -749,6 +749,7 @@ serve(async (req: Request) => {
                   op.processId,
                   op.operationSupplierProcessId
                 ),
+                tags: op.tags ?? [],
                 workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
@@ -756,10 +757,10 @@ serve(async (req: Request) => {
               })) ?? [];
 
             let methodOperationsToJobOperations: Record<string, string> = {};
-            if (jobOperations?.length > 0) {
+            if (jobOperationsInserts?.length > 0) {
               const operationIds = await trx
                 .insertInto("jobOperation")
-                .values(jobOperations)
+                .values(jobOperationsInserts)
                 .returning(["id"])
                 .execute();
 
@@ -1008,7 +1009,7 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            let quoteOperations: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+            let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
               [];
             for await (const op of relatedOperations?.data ?? []) {
               const [
@@ -1081,7 +1082,7 @@ serve(async (req: Request) => {
                 }),
               ]);
 
-              quoteOperations.push({
+              quoteOperationsInserts.push({
                 quoteId,
                 quoteLineId,
                 quoteMakeMethodId: parentQuoteMakeMethodId!,
@@ -1103,6 +1104,7 @@ serve(async (req: Request) => {
                   processId,
                   op.operationSupplierProcessId
                 ),
+                tags: op.tags ?? [],
                 workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
@@ -1126,9 +1128,9 @@ serve(async (req: Request) => {
 
             if (bopConfiguration) {
               // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              quoteOperations = bopConfiguration
+              quoteOperationsInserts = bopConfiguration
                 .map((description, index) => {
-                  const operation = quoteOperations.find(
+                  const operation = quoteOperationsInserts.find(
                     (operation) => operation.description === description
                   );
                   if (operation) {
@@ -1142,10 +1144,10 @@ serve(async (req: Request) => {
             }
 
             let methodOperationsToQuoteOperations: Record<string, string> = {};
-            if (quoteOperations?.length > 0) {
+            if (quoteOperationsInserts?.length > 0) {
               const operationIds = await trx
                 .insertInto("quoteOperation")
-                .values(quoteOperations)
+                .values(quoteOperationsInserts)
                 .returning(["id"])
                 .execute();
 
@@ -1434,7 +1436,7 @@ serve(async (req: Request) => {
               )
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
-            const quoteOperations =
+            const quoteOperationInserts =
               relatedOperations?.data?.map((op) => ({
                 quoteId: quoteMakeMethod.data?.quoteId!,
                 quoteLineId: quoteMakeMethod.data?.quoteLineId!,
@@ -1457,6 +1459,7 @@ serve(async (req: Request) => {
                   op.processId,
                   op.operationSupplierProcessId
                 ),
+                tags: op.tags ?? [],
                 workInstruction: op.workInstruction,
                 companyId,
                 createdBy: userId,
@@ -1464,10 +1467,10 @@ serve(async (req: Request) => {
               })) ?? [];
 
             let methodOperationsToQuoteOperations: Record<string, string> = {};
-            if (quoteOperations?.length > 0) {
+            if (quoteOperationInserts?.length > 0) {
               const operationIds = await trx
                 .insertInto("quoteOperation")
-                .values(quoteOperations)
+                .values(quoteOperationInserts)
                 .returning(["id"])
                 .execute();
 
@@ -1741,6 +1744,7 @@ serve(async (req: Request) => {
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
+              tags: op.tags ?? [],
               workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
@@ -1946,6 +1950,7 @@ serve(async (req: Request) => {
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
               operationSupplierProcessId: op.operationSupplierProcessId,
+              tags: op.tags ?? [],
               workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
@@ -2159,6 +2164,7 @@ serve(async (req: Request) => {
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
               operationSupplierProcessId: op.operationSupplierProcessId,
+              tags: op.tags ?? [],
               workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
@@ -2390,6 +2396,7 @@ serve(async (req: Request) => {
               operationOrder: op.operationOrder,
               operationType: op.operationType,
               operationSupplierProcessId: op.operationSupplierProcessId,
+              tags: op.tags ?? [],
               workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
@@ -2595,6 +2602,7 @@ serve(async (req: Request) => {
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
+              tags: op.tags ?? [],
               workInstruction: op.workInstruction,
               companyId,
               createdBy: userId,
