@@ -6,9 +6,9 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  HStack,
   IconButton,
   Input,
+  cn,
 } from "@carbon/react";
 import { forwardRef, useState } from "react";
 import { LuToggleLeft, LuToggleRight } from "react-icons/lu";
@@ -29,49 +29,48 @@ const SequenceOrCustomId = forwardRef<
   const { getInputProps, error } = useField(name);
 
   return (
-    <div>
-      <HStack className="justify-between mb-2">
-        <FormControl isInvalid={!!error}>
-          {label && (
-            <FormLabel htmlFor={name} isOptional={isOptional}>
-              {label}
-            </FormLabel>
+    <FormControl isInvalid={!!error}>
+      {label && (
+        <FormLabel htmlFor={name} isOptional={isOptional}>
+          {label}
+        </FormLabel>
+      )}
+      <div className="flex flex-grow items-start min-w-0 relative">
+        {isCustom ? (
+          <Input
+            ref={ref}
+            {...getInputProps({
+              id: name,
+              placeholder: `Custom ${label}`,
+              ...rest,
+            })}
+            className="w-full"
+          />
+        ) : (
+          <Button
+            size="md"
+            variant="secondary"
+            className="flex-grow bg-muted text-muted-foreground justify-start pr-4 h-10 w-full"
+          >
+            Next Sequence
+          </Button>
+        )}
+        <IconButton
+          aria-label="Toggle"
+          className={cn(
+            "absolute right-0 top-0",
+            "bg-card flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border -ml-px shadow-none hover:shadow-button-base"
           )}
-          <HStack className="w-full" spacing={0}>
-            {isCustom ? (
-              <Input
-                ref={ref}
-                {...getInputProps({
-                  id: name,
-                  placeholder: `Custom ${label}`,
-                  ...rest,
-                })}
-                className="rounded-r-none"
-              />
-            ) : (
-              <Button
-                size="md"
-                variant="secondary"
-                className="flex-grow bg-muted text-muted-foreground justify-start pl-4 h-10 rounded-r-none"
-              >
-                Next Sequence
-              </Button>
-            )}
-            <IconButton
-              aria-label="Toggle"
-              className="bg-transparent flex-shrink-0 h-10 rounded-l-none border border-l-0"
-              icon={isCustom ? <LuToggleLeft /> : <LuToggleRight />}
-              variant="secondary"
-              size="lg"
-              onClick={() => setIsCustom(!isCustom)}
-            />
-          </HStack>
+          icon={isCustom ? <LuToggleLeft /> : <LuToggleRight />}
+          variant="secondary"
+          size="lg"
+          onClick={() => setIsCustom(!isCustom)}
+        />
+      </div>
 
-          {helperText && <FormHelperText>{helperText}</FormHelperText>}
-          {error && <FormErrorMessage>{error}</FormErrorMessage>}
-        </FormControl>
-      </HStack>
-    </div>
+      {helperText && <FormHelperText>{helperText}</FormHelperText>}
+      {error && <FormErrorMessage>{error}</FormErrorMessage>}
+    </FormControl>
   );
 });
 

@@ -1,12 +1,12 @@
 import {
   Badge,
   HStack,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   Input,
   InputGroup,
   InputLeftElement,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   VStack,
   cn,
   useMount,
@@ -14,7 +14,7 @@ import {
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
-import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { Copy, MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import type { MethodItemType } from "~/modules/shared";
@@ -103,93 +103,100 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
         getNodeProps={getNodeProps}
         getTreeProps={getTreeProps}
         renderNode={({ node, state }) => (
-          <div
-            key={node.id}
-            className={cn(
-              "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-              state.selected
-                ? "bg-muted hover:bg-muted/90"
-                : "bg-transparent hover:bg-muted/90"
-            )}
-            onClick={() => {
-              selectNode(node.id);
-              if (node.data.isRoot) {
-                navigate(getRootLink(itemType, itemId));
-              } else {
-                navigate(
-                  getMaterialLink(
-                    itemType,
-                    itemId,
-                    node.data.materialMakeMethodId ??
-                      node.data.methodType.toLowerCase(),
-                    node.data.methodMaterialId
-                  )
-                );
-              }
-            }}
-          >
-            <div className="flex h-8 items-center">
-              {Array.from({ length: node.level }).map((_, index) => (
-                <LevelLine key={index} isSelected={state.selected} />
-              ))}
+          <HoverCard>
+            <HoverCardTrigger asChild>
               <div
+                key={node.id}
                 className={cn(
-                  "flex h-8 w-4 items-center",
-                  node.hasChildren && "hover:bg-accent"
+                  "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                  state.selected
+                    ? "bg-muted hover:bg-muted/90"
+                    : "bg-transparent hover:bg-muted/90"
                 )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (e.altKey) {
-                    if (state.expanded) {
-                      collapseAllBelowDepth(node.level);
-                    } else {
-                      expandAllBelowDepth(node.level);
-                    }
+                onClick={() => {
+                  selectNode(node.id);
+                  if (node.data.isRoot) {
+                    navigate(getRootLink(itemType, itemId));
                   } else {
-                    toggleExpandNode(node.id);
+                    navigate(
+                      getMaterialLink(
+                        itemType,
+                        itemId,
+                        node.data.materialMakeMethodId ??
+                          node.data.methodType.toLowerCase(),
+                        node.data.methodMaterialId
+                      )
+                    );
                   }
-                  scrollToNode(node.id);
                 }}
               >
-                {node.hasChildren ? (
-                  state.expanded ? (
-                    <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                  ) : (
-                    <LuChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                  )
-                ) : (
-                  <div className="h-8 w-4" />
-                )}
-              </div>
-            </div>
+                <div className="flex h-8 items-center">
+                  {Array.from({ length: node.level }).map((_, index) => (
+                    <LevelLine key={index} isSelected={state.selected} />
+                  ))}
+                  <div
+                    className={cn(
+                      "flex h-8 w-4 items-center",
+                      node.hasChildren && "hover:bg-accent"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (e.altKey) {
+                        if (state.expanded) {
+                          collapseAllBelowDepth(node.level);
+                        } else {
+                          expandAllBelowDepth(node.level);
+                        }
+                      } else {
+                        toggleExpandNode(node.id);
+                      }
+                      scrollToNode(node.id);
+                    }}
+                  >
+                    {node.hasChildren ? (
+                      state.expanded ? (
+                        <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                      ) : (
+                        <LuChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                      )
+                    ) : (
+                      <div className="h-8 w-4" />
+                    )}
+                  </div>
+                </div>
 
-            <div className="flex w-full items-center justify-between gap-2">
-              <div
-                className={cn(
-                  "flex items-center gap-2 overflow-x-hidden",
-                  node.level > 1 && "opacity-50"
-                )}
-              >
-                <MethodIcon
-                  type={
-                    // node.data.isRoot ? "Method" :
-                    node.data.methodType
-                  }
-                  className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                />
-                <NodeText node={node} />
+                <div className="flex w-full items-center justify-between gap-2">
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 overflow-x-hidden",
+                      node.level > 1 && "opacity-50"
+                    )}
+                  >
+                    <MethodIcon
+                      type={
+                        // node.data.isRoot ? "Method" :
+                        node.data.methodType
+                      }
+                      className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
+                    />
+                    <NodeText node={node} />
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {node.data.isRoot ? (
+                      <Badge variant="outline" className="text-xs">
+                        Method
+                      </Badge>
+                    ) : (
+                      <NodeData node={node} />
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                {node.data.isRoot ? (
-                  <Badge variant="outline" className="text-xs">
-                    Method
-                  </Badge>
-                ) : (
-                  <NodeData node={node} />
-                )}
-              </div>
-            </div>
-          </div>
+            </HoverCardTrigger>
+            <HoverCardContent side="right">
+              <NodePreview node={node} />
+            </HoverCardContent>
+          </HoverCard>
         )}
       />
     </VStack>
@@ -214,17 +221,64 @@ function NodeData({ node }: { node: FlatTreeItem<Method> }) {
       <Badge className="text-xs" variant="outline">
         {node.data.quantity}
       </Badge>
-      <Tooltip>
-        <TooltipTrigger>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type={node.data.itemType} />
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <span>{node.data.itemType}</span>
-        </TooltipContent>
-      </Tooltip>
+
+      <Badge variant="secondary">
+        <MethodItemTypeIcon type={node.data.itemType} />
+      </Badge>
     </HStack>
+  );
+}
+
+function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
+  return (
+    <VStack className="w-full text-sm">
+      <VStack spacing={1}>
+        <span className="text-xs text-muted-foreground font-medium">
+          Item ID
+        </span>
+        <HStack className="w-full justify-between">
+          <span>{node.data.itemReadableId}</span>
+          <Copy text={node.data.itemReadableId} />
+        </HStack>
+      </VStack>
+      <VStack spacing={1}>
+        <span className="text-xs text-muted-foreground font-medium">
+          Description
+        </span>
+        <HStack className="w-full justify-between">
+          <span>{node.data.description}</span>
+          <Copy text={node.data.description} />
+        </HStack>
+      </VStack>
+      <VStack spacing={1}>
+        <span className="text-xs text-muted-foreground font-medium">
+          Quantity
+        </span>
+        <HStack className="w-full justify-between">
+          <span>
+            {node.data.quantity} {node.data.unitOfMeasureCode}
+          </span>
+        </HStack>
+      </VStack>
+      <VStack spacing={1}>
+        <span className="text-xs text-muted-foreground font-medium">
+          Method
+        </span>
+        <HStack className="w-full">
+          <MethodIcon type={node.data.methodType} />
+          <span>{node.data.methodType}</span>
+        </HStack>
+      </VStack>
+      <VStack spacing={1}>
+        <span className="text-xs text-muted-foreground font-medium">
+          Item Type
+        </span>
+        <HStack className="w-full">
+          <MethodItemTypeIcon type={node.data.itemType} />
+          <span>{node.data.itemType}</span>
+        </HStack>
+      </VStack>
+    </VStack>
   );
 }
 
