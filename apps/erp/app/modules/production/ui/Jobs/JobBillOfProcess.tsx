@@ -703,8 +703,8 @@ const JobBillOfProcess = ({
       },
       {
         id: 4,
-        label: "Notes",
-        content: <Notes jobOperationId={item.id} />,
+        label: "Chat",
+        content: <OperationChat jobOperationId={item.id} />,
       },
     ];
 
@@ -1818,21 +1818,21 @@ function ToolsForm({
   );
 }
 
-type Note = {
+type Message = {
   id: string;
   createdBy: string;
   createdAt: string;
   note: string;
 };
 
-function Notes({ jobOperationId }: { jobOperationId: string }) {
+function OperationChat({ jobOperationId }: { jobOperationId: string }) {
   const user = useUser();
   const [employees] = usePeople();
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { carbon, accessToken } = useCarbon();
 
-  const fetchNotes = async () => {
+  const fetchChat = async () => {
     if (!carbon) return;
     flushSync(() => {
       setIsLoading(true);
@@ -1848,12 +1848,12 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
       console.error(error);
       return;
     }
-    setNotes(data);
+    setMessages(data);
     setIsLoading(false);
   };
 
   useMount(() => {
-    fetchNotes();
+    fetchChat();
   });
 
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -1872,11 +1872,11 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
             filter: `jobOperationId=eq.${jobOperationId}`,
           },
           (payload) => {
-            setNotes((prev) => {
-              if (prev.some((note) => note.id === payload.new.id)) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === payload.new.id)) {
                 return prev;
               }
-              return [...prev, payload.new as Note];
+              return [...prev, payload.new as Message];
             });
           }
         )
@@ -1904,11 +1904,11 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
     messagesEndRef.current?.scrollIntoView({
       block: "nearest",
       inline: "start",
-      behavior: notes.length > 0 ? "smooth" : "auto",
+      behavior: messages.length > 0 ? "smooth" : "auto",
     });
-  }, [notes]);
+  }, [messages]);
 
-  const [note, setNote] = useState("");
+  const [message, setMessage] = useState("");
 
   const notify = useDebounce(
     async () => {
@@ -1937,24 +1937,24 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!note.trim()) return;
+    if (!message.trim()) return;
 
-    const newNote = {
+    const newMessage = {
       id: nanoid(),
       jobOperationId,
       createdBy: user.id,
-      note,
+      note: message,
       createdAt: new Date().toISOString(),
       companyId: user.company.id,
     };
 
     flushSync(() => {
-      setNotes((prev) => [...prev, newNote]);
-      setNote("");
+      setMessages((prev) => [...prev, newMessage]);
+      setMessage("");
     });
 
     await Promise.all([
-      carbon?.from("jobOperationNote").insert(newNote),
+      carbon?.from("jobOperationNote").insert(newMessage),
       notify(),
     ]);
   };
@@ -1964,14 +1964,14 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
       <ScrollArea className="flex-1 p-4">
         <Loading isLoading={isLoading}>
           <div className="flex flex-col gap-3">
-            {notes.map((note) => {
+            {messages.map((m) => {
               const createdBy = employees.find(
-                (employee) => employee.id === note.createdBy
+                (employee) => employee.id === m.createdBy
               );
-              const isUser = note.createdBy === user.id;
+              const isUser = m.createdBy === user.id;
               return (
                 <div
-                  key={note.id}
+                  key={m.id}
                   className={cn(
                     "flex gap-2 items-end",
                     isUser && "flex-row-reverse"
@@ -1995,10 +1995,10 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
                           isUser ? "bg-blue-500 text-white" : "bg-muted"
                         )}
                       >
-                        <p className="text-sm">{note.note}</p>
+                        <p className="text-sm">{m.note}</p>
 
                         <span className="text-xs opacity-70">
-                          {new Date(note.createdAt).toLocaleTimeString([], {
+                          {new Date(m.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
@@ -2020,8 +2020,8 @@ function Notes({ jobOperationId }: { jobOperationId: string }) {
             className="flex-1"
             placeholder="Type a message..."
             name="message"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
           />
           <Button
             className="h-10"

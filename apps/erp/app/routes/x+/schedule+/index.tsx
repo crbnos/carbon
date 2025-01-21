@@ -52,6 +52,7 @@ import {
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 
 export const handle: Handle = {
@@ -74,6 +75,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let selectedWorkCenterIds: string[] = [];
   let selectedProcessIds: string[] = [];
   let selectedSalesOrderIds: string[] = [];
+  let selectedTags: string[] = [];
+  let selectedAssignee: string[] = [];
+
   if (filterParam) {
     for (const filter of filterParam) {
       const [key, operator, value] = filter.split(":");
@@ -94,6 +98,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
           selectedSalesOrderIds = value.split(",");
         } else if (operator === "eq") {
           selectedSalesOrderIds = [value];
+        }
+      } else if (key === "tag") {
+        if (operator === "in") {
+          selectedTags = value.split(",");
+        } else if (operator === "eq") {
+          selectedTags = [value];
+        }
+      } else if (key === "assignee") {
+        if (operator === "in") {
+          selectedAssignee = value.split(",");
+        } else if (operator === "eq") {
+          selectedAssignee = [value];
         }
       }
     }
@@ -138,6 +154,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   const activeWorkCenters = new Set();
+
   operations.data?.forEach((op) => {
     if (op.operationStatus === "In Progress") {
       activeWorkCenters.add(op.workCenterId);
@@ -153,6 +170,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (selectedSalesOrderIds.length) {
     filteredOperations = filteredOperations.filter((op) =>
       selectedSalesOrderIds.includes(op.salesOrderId)
+    );
+  }
+
+  if (selectedTags.length) {
+    filteredOperations = filteredOperations.filter((op) => {
+      if (op.tags) {
+        return selectedTags.some((tag) => op.tags.includes(tag));
+      }
+      return false;
+    });
+  }
+
+  if (selectedAssignee.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      selectedAssignee.includes(op.assignee)
     );
   }
 
@@ -248,6 +280,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         return acc;
       }, {} as Record<string, string>) ?? {}
     ).map(([id, readableId]) => ({ id, readableId })),
+    availableTags: Object.entries(
+      filteredOperations.reduce((acc, op) => {
+        if (op.tags) {
+          op.tags.forEach((tag) => (acc[tag] = true));
+        }
+        return acc;
+      }, {} as Record<string, boolean>)
+    ).map(([tag]) => tag),
     tags: tags.data ?? [],
   });
 }
@@ -272,6 +312,7 @@ function KanbanSchedule() {
     items: initialItems,
     processes,
     salesOrders,
+    availableTags,
     tags,
   } = useLoaderData<typeof loader>();
 
@@ -299,6 +340,7 @@ function KanbanSchedule() {
     sortItems
   );
 
+  const [people] = usePeople();
   const [params] = useUrlParams();
 
   const { hasFilters, clearFilters } = useFilters();
@@ -339,8 +381,30 @@ function KanbanSchedule() {
           })),
         },
       },
+      {
+        accessorKey: "assignee",
+        header: "Assignee",
+        filter: {
+          type: "static",
+          options: people.map((p) => ({
+            label: p.name,
+            value: p.id,
+          })),
+        },
+      },
+      {
+        accessorKey: "tag",
+        header: "Tag",
+        filter: {
+          type: "static",
+          options: availableTags.map((tag) => ({
+            label: tag,
+            value: tag,
+          })),
+        },
+      },
     ];
-  }, [columns, processes, salesOrders]);
+  }, [columns, processes, salesOrders, people, availableTags]);
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">

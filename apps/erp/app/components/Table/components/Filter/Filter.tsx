@@ -171,7 +171,10 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                   .map((option) => (
                     <CommandItem
                       key={option.value}
-                      value={`${option.label}:${option.value}`}
+                      value={`${option.label}:${option.value}`.replace(
+                        /"/g,
+                        '\\"'
+                      )}
                       onSelect={updateActiveOptions}
                       className="flex items-center gap-2"
                     >
@@ -190,7 +193,10 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                     );
                     return (
                       <CommandItem
-                        value={reactNodeToString(option.label)}
+                        value={reactNodeToString(option.label).replace(
+                          /"/g,
+                          '\\"'
+                        )}
                         key={option.value}
                         onSelect={() => {
                           toggleFilter(

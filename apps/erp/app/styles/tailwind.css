@@ -16,7 +16,8 @@
 
 @layer base {
   :root {
-    --header-height: 52px;
+    --header-height: 50px;
+    --filters-height: 38px;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;

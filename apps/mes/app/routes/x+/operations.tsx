@@ -33,6 +33,7 @@ import {
   getProcessesList,
   getWorkCentersByLocation,
 } from "~/services/operations.service";
+import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/durations";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -76,6 +77,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let selectedWorkCenterIds: string[] = [];
   let selectedProcessIds: string[] = [];
   let selectedSalesOrderIds: string[] = [];
+  let selectedTags: string[] = [];
+  let selectedAssignee: string[] = [];
+
   if (filterParam) {
     for (const filter of filterParam) {
       const [key, operator, value] = filter.split(":");
@@ -96,6 +100,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
           selectedSalesOrderIds = value.split(",");
         } else if (operator === "eq") {
           selectedSalesOrderIds = [value];
+        }
+      } else if (key === "tag") {
+        if (operator === "in") {
+          selectedTags = value.split(",");
+        } else if (operator === "eq") {
+          selectedTags = [value];
+        }
+      } else if (key === "assignee") {
+        if (operator === "in") {
+          selectedAssignee = value.split(",");
+        } else if (operator === "eq") {
+          selectedAssignee = [value];
         }
       }
     }
@@ -135,6 +151,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (selectedTags.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      op.tags?.some((tag) => selectedTags.includes(tag))
+    );
+  }
+
+  if (selectedAssignee.length) {
+    filteredOperations = filteredOperations.filter((op) =>
+      selectedAssignee.includes(op.assignee)
+    );
+  }
+
   if (search) {
     filteredOperations = filteredOperations.filter(
       (op) =>
@@ -165,6 +193,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const customerIds = filteredOperations.map((op) => op.jobCustomerId);
   const customers = await getCustomers(serviceRole, companyId, customerIds);
+
+  // Get unique tags and assignees for filters
+  const availableTags = Array.from(
+    new Set(filteredOperations.flatMap((op) => op.tags || []))
+  ).sort();
 
   return json(
     {
@@ -210,6 +243,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
       customers: customers.data ?? [],
+      availableTags,
     },
     { headers }
   );
@@ -244,13 +278,14 @@ const defaultDisplaySettings: DisplaySettings = {
 const DISPLAY_SETTINGS_KEY = "kanban-schedule-display-settings";
 
 function KanbanSchedule() {
-  const { columns, items, processes, workCenters } =
+  const { columns, items, processes, workCenters, availableTags } =
     useLoaderData<typeof loader>();
   const [displaySettings, setDisplaySettings] = useLocalStorage(
     DISPLAY_SETTINGS_KEY,
     defaultDisplaySettings
   );
 
+  const [people] = usePeople();
   const [params] = useUrlParams();
   const { hasFilters, clearFilters } = useFilters();
   const currentFilters = params.getAll("filter").filter(Boolean);
@@ -284,8 +319,30 @@ function KanbanSchedule() {
             })),
         },
       },
+      {
+        accessorKey: "tag",
+        header: "Tag",
+        filter: {
+          type: "static",
+          options: availableTags.map((tag) => ({
+            label: tag,
+            value: tag,
+          })),
+        },
+      },
+      {
+        accessorKey: "assignee",
+        header: "Assignee",
+        filter: {
+          type: "static",
+          options: people.map((person) => ({
+            label: person.name,
+            value: person.id,
+          })),
+        },
+      },
     ];
-  }, [processes, workCenters]);
+  }, [processes, workCenters, availableTags, people]);
 
   return (
     <div className="flex flex-col h-screen w-[calc(100dvw-var(--sidebar-width-icon))]">

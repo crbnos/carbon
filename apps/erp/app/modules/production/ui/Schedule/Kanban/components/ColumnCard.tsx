@@ -1,4 +1,5 @@
 import { cn, IconButton, ScrollArea, ScrollBar } from "@carbon/react";
+import { useUrlParams } from "@carbon/remix";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
@@ -22,6 +23,8 @@ export function ColumnCard({
   isOverlay,
   progressByItemId,
 }: ColumnCardProps) {
+  const [params] = useUrlParams();
+  const currentFilters = params.getAll("filter").filter(Boolean);
   const itemsIds = useMemo(() => {
     return items.map((item) => item.id);
   }, [items]);
@@ -74,7 +77,9 @@ export function ColumnCard({
         `${variants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
         })} flex flex-col p-[1px] pt-0`,
-        `h-[calc(100dvh-var(--header-height)*2)]`
+        currentFilters.length > 0
+          ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height))]`
+          : `h-[calc(100dvh-var(--header-height)*2)]`
       )}
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
