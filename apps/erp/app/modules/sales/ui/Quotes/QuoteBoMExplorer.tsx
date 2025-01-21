@@ -26,9 +26,13 @@ import type { QuoteMethod } from "../../types";
 
 type QuoteBoMExplorerProps = {
   methods: FlatTree<QuoteMethod>;
+  isSearchExpanded?: boolean;
 };
 
-const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
+const QuoteBoMExplorer = ({
+  methods,
+  isSearchExpanded = false,
+}: QuoteBoMExplorerProps) => {
   const parentRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useOptimisticLocation();
@@ -89,18 +93,20 @@ const QuoteBoMExplorer = ({ methods }: QuoteBoMExplorerProps) => {
         </div>
       ) : (
         <>
-          <HStack className="w-full">
-            <InputGroup size="sm" className="flex flex-grow">
-              <InputLeftElement>
-                <LuSearch className="h-4 w-4" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search..."
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-              />
-            </InputGroup>
-          </HStack>
+          {isSearchExpanded && (
+            <HStack className="w-full">
+              <InputGroup size="sm" className="flex flex-grow">
+                <InputLeftElement>
+                  <LuSearch className="h-4 w-4" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
+                />
+              </InputGroup>
+            </HStack>
+          )}
           <TreeView
             parentRef={parentRef}
             virtualizer={virtualizer}

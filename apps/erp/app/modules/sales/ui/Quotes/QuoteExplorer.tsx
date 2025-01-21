@@ -28,6 +28,7 @@ import {
   LuCircleX,
   LuClock3,
   LuEllipsisVertical,
+  LuSearch,
   LuTrash,
 } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
@@ -198,9 +199,12 @@ function QuoteLineItem({
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
   const permissions = usePermissions();
+
   const navigate = useNavigate();
-  const disclosure = useDisclosure();
   const location = useOptimisticLocation();
+
+  const disclosure = useDisclosure();
+  const searchDisclosure = useDisclosure();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -317,6 +321,10 @@ function QuoteLineItem({
                     View Item Master
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={searchDisclosure.onOpen}>
+                  <DropdownMenuIcon icon={<LuSearch />} />
+                  Search
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
@@ -327,7 +335,10 @@ function QuoteLineItem({
         permissions.can("update", "sales") &&
         line.status !== "No Quote" && (
           <VStack className="border-b border-border p-1">
-            <QuoteBoMExplorer methods={flattenedMethods} />
+            <QuoteBoMExplorer
+              methods={flattenedMethods}
+              isSearchExpanded={searchDisclosure.isOpen}
+            />
           </VStack>
         )}
     </VStack>
