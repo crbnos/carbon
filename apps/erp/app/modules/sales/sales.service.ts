@@ -1210,6 +1210,7 @@ export async function insertCustomerContact(
     .insert([
       {
         ...customerContact.contact,
+        isCustomer: true,
         companyId: customerContact.companyId,
       },
     ])

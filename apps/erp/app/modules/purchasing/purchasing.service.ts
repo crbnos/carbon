@@ -718,7 +718,11 @@ export async function insertSupplierContact(
   const insertContact = await client
     .from("contact")
     .insert([
-      { ...supplierContact.contact, companyId: supplierContact.companyId },
+      {
+        ...supplierContact.contact,
+        companyId: supplierContact.companyId,
+        isCustomer: false,
+      },
     ])
     .select("id")
     .single();
