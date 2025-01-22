@@ -244,8 +244,13 @@ export const notifyTask = task({
         return;
       }
 
+      // Filter out the sender from recipients if they exist in the userIds
+      const filteredUserIds = payload.from
+        ? (userIds.data as string[]).filter((id) => id !== payload.from)
+        : (userIds.data as string[]);
+
       const notificationPayloads: TriggerPayload[] =
-        [...new Set(userIds.data as string[])].map((userId) => ({
+        [...new Set(filteredUserIds)].map((userId) => ({
           workflow,
           payload: {
             recordId: payload.documentId,
