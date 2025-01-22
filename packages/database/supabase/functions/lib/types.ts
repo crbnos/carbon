@@ -1907,18 +1907,21 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           id: string
+          rfqReadyNotificationGroup: string[]
         }
         Insert: {
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id: string
+          rfqReadyNotificationGroup?: string[]
         }
         Update: {
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id?: string
+          rfqReadyNotificationGroup?: string[]
         }
         Relationships: [
           {

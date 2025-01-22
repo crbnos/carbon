@@ -23,7 +23,9 @@ import { Users } from "~/components/Form";
 import {
   digitalQuoteValidator,
   getCompanySettings,
+  rfqReadyValidator,
   updateDigitalQuoteSetting,
+  updateRfqReadySetting,
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -68,14 +70,33 @@ export async function action({ request }: ActionFunctionArgs) {
         return json({ success: false, message: "Invalid form data" });
       }
 
-      const { error } = await updateDigitalQuoteSetting(
+      const digitalQuote = await updateDigitalQuoteSetting(
         client,
         companyId,
         validation.data.digitalQuoteEnabled,
         validation.data.digitalQuoteNotificationGroup ?? [],
         validation.data.digitalQuoteIncludesPurchaseOrders
       );
-      if (error) return json({ success: false, message: error.message });
+      if (digitalQuote.error)
+        return json({ success: false, message: digitalQuote.error.message });
+
+    case "rfq":
+      const rfqValidation = await validator(rfqReadyValidator).validate(
+        formData
+      );
+
+      if (rfqValidation.error) {
+        return json({ success: false, message: "Invalid form data" });
+      }
+
+      const rfqSettings = await updateRfqReadySetting(
+        client,
+        companyId,
+        rfqValidation.data.rfqReadyNotificationGroup ?? []
+      );
+
+      if (rfqSettings.error)
+        return json({ success: false, message: rfqSettings.error.message });
   }
 
   return json({ success: true, message: "Digital quote setting updated" });
@@ -147,6 +168,39 @@ export default function SalesSettingsRoute() {
                   <Users
                     name="digitalQuoteNotificationGroup"
                     label="Who should receive notifications when a digital quote is accepted or expired?"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit>Save</Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={rfqReadyValidator}
+            defaultValues={{
+              rfqReadyNotificationGroup:
+                companySettings.rfqReadyNotificationGroup ?? [],
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="rfq" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">RFQ</CardTitle>
+              <CardDescription>
+                Enable notifications when an RFQ is marked as ready for quote.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>Notifications</Label>
+                  <Users
+                    name="rfqReadyNotificationGroup"
+                    label="Who should receive notifications when a RFQ is marked ready for quote?"
                   />
                 </div>
               </div>

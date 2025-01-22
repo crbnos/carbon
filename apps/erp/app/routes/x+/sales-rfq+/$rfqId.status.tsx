@@ -1,15 +1,19 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { NotificationEvent } from "@carbon/notifications";
 import { getLocalTimeZone, now } from "@internationalized/date";
+import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
+import { getCompanySettings } from "~/modules/settings/settings.service";
+import type { notifyTask } from "~/trigger/notify";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "sales",
   });
 
@@ -25,6 +29,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.salesRfq(id),
       await flash(request, error(null, "Invalid status"))
     );
+  }
+
+  const companySettings = await getCompanySettings(client, companyId);
+  if (
+    status === "Ready for Quote" &&
+    companySettings.data &&
+    Array.isArray(companySettings.data.rfqReadyNotificationGroup) &&
+    companySettings.data.rfqReadyNotificationGroup.length > 0
+  ) {
+    const rfqReadyNotificationGroup =
+      companySettings.data.rfqReadyNotificationGroup;
+    try {
+      await tasks.trigger<typeof notifyTask>("notify", {
+        companyId: companySettings.data.id,
+        documentId: id,
+        event: NotificationEvent.SalesRfqReady,
+        recipient: {
+          type: "group",
+          groupIds: rfqReadyNotificationGroup,
+        },
+      });
+    } catch (err) {
+      console.error("Failed to trigger notification", err);
+      return json({
+        success: false,
+        message: "Failed to send notification",
+      });
+    }
   }
 
   const [update] = await Promise.all([

@@ -75,6 +75,12 @@ export const digitalQuoteValidator = z.object({
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox(),
 });
 
+export const rfqReadyValidator = z.object({
+  rfqReadyNotificationGroup: z
+    .array(z.string().min(36, { message: "Invalid selection" }))
+    .optional(),
+});
+
 export const sequenceValidator = z.object({
   table: z.string().min(1, { message: "Table is required" }),
   prefix: zfd.text(z.string().optional()),

@@ -67,6 +67,7 @@ export const notifyTask = task({
 
     async function getDescription(type: NotificationEvent, documentId: string) {
       switch (type) {
+        case NotificationEvent.SalesRfqReady:
         case NotificationEvent.SalesRfqAssignment:
           const salesRfq = await client
             .from("salesRfq")
@@ -79,7 +80,11 @@ export const notifyTask = task({
             throw salesRfq.error;
           }
 
-          return `RFQ ${salesRfq?.data?.rfqId} assigned to you`;
+          if (type === NotificationEvent.SalesRfqReady) {
+            return `RFQ ${salesRfq?.data?.rfqId} is ready for quote`;
+          } else if (type === NotificationEvent.SalesRfqAssignment) {
+            return `RFQ ${salesRfq?.data?.rfqId} assigned to you`;
+          }
 
         case NotificationEvent.QuoteAssignment:
           const quote = await client

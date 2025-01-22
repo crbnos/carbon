@@ -192,6 +192,7 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.SalesRfqReady:
     case NotificationEvent.SalesRfqAssignment:
       return (
         <Notification

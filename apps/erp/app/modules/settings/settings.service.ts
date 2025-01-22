@@ -433,6 +433,17 @@ export async function updateLogoLightIcon(
     .eq("id", companyId);
 }
 
+export async function updateRfqReadySetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  rfqReadyNotificationGroup: string[]
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ rfqReadyNotificationGroup }))
+    .eq("id", companyId);
+}
+
 export async function updateSequence(
   client: SupabaseClient<Database>,
   table: string,
