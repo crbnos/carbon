@@ -18,6 +18,13 @@ import {
   Skeleton,
 } from "@carbon/react";
 import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@carbon/react/Carousel";
+import {
   ChartContainer,
   ChartLegend,
   ChartLegendContent,
@@ -299,8 +306,28 @@ export default function ProductionDashboard() {
             </p>
           </div>
         </Card>
+      </div>
 
-        <Card className="col-span-2 p-0">
+      <div className="w-full">
+        <Carousel className="w-full">
+          <CarouselContent>
+            {Array.from({ length: 5 }).map((_, index) => (
+              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
+                <Card className="dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)]">
+                  <CardContent className="flex aspect-square items-center justify-center p-6">
+                    <span className="text-2xl font-semibold">{index + 1}</span>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-3" />
+          <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-3" />
+        </Carousel>
+      </div>
+
+      <div className="w-full">
+        <Card className="p-0">
           <HStack className="justify-between items-start">
             <CardHeader className="pb-0">
               <div className="flex w-full justify-start items-center gap-2">
