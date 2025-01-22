@@ -2472,6 +2472,7 @@ export type Database = {
           fullName: string | null
           homePhone: string | null
           id: string
+          isCustomer: boolean
           lastName: string | null
           mobilePhone: string | null
           notes: string | null
@@ -2487,6 +2488,7 @@ export type Database = {
           fullName?: string | null
           homePhone?: string | null
           id?: string
+          isCustomer?: boolean
           lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null
@@ -2502,6 +2504,7 @@ export type Database = {
           fullName?: string | null
           homePhone?: string | null
           id?: string
+          isCustomer?: boolean
           lastName?: string | null
           mobilePhone?: string | null
           notes?: string | null

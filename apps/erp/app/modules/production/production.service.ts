@@ -81,7 +81,7 @@ export async function getActiveProductionEvents(
   return client
     .from("productionEvent")
     .select(
-      "*, ...jobOperation(description, ...job(jobId, customerId, dueDate, deadlineType, ...salesOrderLine(...salesOrder(salesOrderId))))"
+      "*, ...jobOperation(description, ...job(jobId:id, jobReadbleId:jobId, customerId, dueDate, deadlineType, ...salesOrderLine(...salesOrder(salesOrderId:id, salesOrderReadbleId:salesOrderId))))"
     )
     .eq("companyId", companyId)
     .is("endTime", null);

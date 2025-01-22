@@ -3,8 +3,10 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
+  cn,
   DateRangePicker,
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +20,9 @@ import {
   Loading,
   PulsingDot,
   Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@carbon/react";
 import {
   Carousel,
@@ -34,7 +39,11 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import {
+  convertDateStringToIsoString,
+  formatDurationMilliseconds,
+  formatRelativeTime,
+} from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import type { DateRange } from "@react-types/datepicker";
 import {
@@ -49,13 +58,13 @@ import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
   LuChevronDown,
+  LuClipboardCheck,
   LuEllipsisVertical,
   LuFile,
   LuHardHat,
   LuLayoutList,
   LuSquareUser,
   LuUserRoundCheck,
-  LuUsers,
 } from "react-icons/lu";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
@@ -75,6 +84,7 @@ import { capitalize } from "~/utils/string";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { RiProgress8Line } from "react-icons/ri";
+import { getDeadlineIcon, getDeadlineText } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersList } from "~/modules/resources";
 
@@ -600,6 +610,7 @@ export default function ProductionDashboard() {
           </CardContent>
         </Card>
       </div>
+
       <div className="w-full">
         <Suspense fallback={null}>
           <Await resolve={events}>
@@ -631,7 +642,18 @@ function WorkCenterCards({
         customerId?: string | null;
         employeeIds?: (string | null)[];
         salesOrderId?: string | null;
+        salesOrderReadableId?: string | null;
         jobId?: string | null;
+        jobReadableId?: string | null;
+        dueDate?: string | null;
+        deadlineType?:
+          | "No Deadline"
+          | "ASAP"
+          | "Soft Deadline"
+          | "Hard Deadline";
+        descriptionCount?: number;
+        jobCount?: number;
+        description?: string | null;
       }
     >
   >((acc, workCenter) => {
@@ -648,18 +670,45 @@ function WorkCenterCards({
 
     const firstEvent = wcEvents[0];
     const jobId = firstEvent.jobId;
+    const jobReadableId = firstEvent.jobReadbleId;
     const salesOrderId = firstEvent.salesOrderId;
+    const salesOrderReadableId = firstEvent.salesOrderReadbleId;
     const customerId = firstEvent.customerId;
+    const dueDate = firstEvent.dueDate;
+    const deadlineType = firstEvent.deadlineType;
+    const description = firstEvent.description;
     const employeeIds =
       Array.from(new Set(wcEvents.map((event) => event.employeeId))) ?? [];
+
+    // Count unique jobs and descriptions
+    const uniqueJobs = new Set(
+      wcEvents
+        .filter((event) => event.jobId && event.workCenterId === workCenter.id)
+        .map((event) => event.jobId)
+    ).size;
+
+    const uniqueDescriptions = new Set(
+      wcEvents
+        .filter(
+          (event) => event.description && event.workCenterId === workCenter.id
+        )
+        .map((event) => event.description)
+    ).size;
 
     if (workCenter.id) {
       acc[workCenter.id!] = {
         hasEvents: true,
         customerId,
         employeeIds,
+        dueDate,
+        deadlineType,
         jobId,
+        jobReadableId,
         salesOrderId,
+        salesOrderReadableId,
+        descriptionCount: uniqueDescriptions,
+        jobCount: uniqueJobs,
+        description,
       };
     }
 
@@ -670,28 +719,45 @@ function WorkCenterCards({
     <Carousel className="w-full">
       <CarouselContent>
         {workCenters.map((workCenter) => {
-          const { hasEvents, customerId, employeeIds, jobId, salesOrderId } =
-            eventsByWorkCenterId[workCenter?.id ?? ""];
+          const {
+            hasEvents,
+            customerId,
+            deadlineType,
+            description,
+            descriptionCount,
+            dueDate,
+            employeeIds,
+            jobCount,
+            jobId,
+            jobReadableId,
+            salesOrderId,
+            salesOrderReadableId,
+          } = eventsByWorkCenterId[workCenter?.id ?? ""];
+
+          const isOverdue =
+            deadlineType !== "No Deadline" && dueDate
+              ? new Date(dueDate) < new Date()
+              : false;
 
           return (
             <CarouselItem
               key={workCenter.id}
               className="md:basis-1/2 lg:basis-1/4"
             >
-              <Card className="p-0 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)] h-[280px]">
-                <HStack className="justify-between items-start w-full relative">
+              <Card className="p-0 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)] h-[300px]">
+                <HStack className="justify-between w-full relative">
                   <CardHeader>
                     <CardTitle className="line-clamp-2 text-base">
                       {workCenter.name}
                     </CardTitle>
                   </CardHeader>
-                  <CardAction>
+                  <CardAction className="pt-2">
                     <PulsingDot inactive={!hasEvents} />
                   </CardAction>
                 </HStack>
                 <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
                   {!hasEvents ? (
-                    <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center">
+                    <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center font-medium">
                       Inactive
                     </p>
                   ) : (
@@ -699,20 +765,30 @@ function WorkCenterCards({
                       {jobId && (
                         <HStack className="justify-start space-x-2">
                           <LuHardHat className="text-muted-foreground" />
-                          <Hyperlink to={path.to.job(jobId)}>{jobId}</Hyperlink>
+                          <Hyperlink to={path.to.job(jobId)}>
+                            {jobReadableId}
+                          </Hyperlink>
+                          {jobCount && jobCount > 1 && (
+                            <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center">
+                              {`+${jobCount - 1}`}
+                            </div>
+                          )}
                         </HStack>
                       )}
 
-                      {employeeIds?.length ? (
+                      {description && (
                         <HStack className="justify-start space-x-2">
-                          <LuUsers className="text-muted-foreground" />
-                          <EmployeeAvatarGroup
-                            employeeIds={employeeIds.filter(
-                              (id) => id !== null
-                            )}
-                          />
+                          <LuClipboardCheck className="text-muted-foreground" />
+                          <span className="text-sm line-clamp-1">
+                            {description}
+                          </span>
+                          {descriptionCount && descriptionCount > 1 && (
+                            <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center">
+                              {`+${descriptionCount - 1}`}
+                            </div>
+                          )}
                         </HStack>
-                      ) : null}
+                      )}
 
                       {salesOrderId && (
                         <HStack className="justify-start space-x-2">
@@ -720,7 +796,7 @@ function WorkCenterCards({
                           <Hyperlink
                             to={path.to.salesOrderDetails(salesOrderId)}
                           >
-                            {salesOrderId}
+                            {salesOrderReadableId}
                           </Hyperlink>
                         </HStack>
                       )}
@@ -731,10 +807,45 @@ function WorkCenterCards({
                           <CustomerAvatar customerId={customerId} />
                         </HStack>
                       )}
+
+                      {deadlineType && (
+                        <HStack className="justify-start space-x-2">
+                          {getDeadlineIcon(deadlineType, isOverdue)}
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span
+                                className={cn(
+                                  "text-sm",
+                                  isOverdue ? "text-red-500" : ""
+                                )}
+                              >
+                                {["ASAP", "No Deadline"].includes(deadlineType)
+                                  ? getDeadlineText(deadlineType)
+                                  : dueDate
+                                  ? `Due ${formatRelativeTime(
+                                      convertDateStringToIsoString(dueDate)
+                                    )}`
+                                  : "–"}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">
+                              {getDeadlineText(deadlineType)}
+                            </TooltipContent>
+                          </Tooltip>
+                        </HStack>
+                      )}
                     </div>
                   )}
                 </CardContent>
-                <div className="h-[72px]" />
+                {employeeIds?.length ? (
+                  <CardFooter className="border-t py-3 bg-muted/30">
+                    <EmployeeAvatarGroup
+                      employeeIds={employeeIds.filter((id) => id !== null)}
+                    />
+                  </CardFooter>
+                ) : (
+                  <CardFooter className="h-[49px]" />
+                )}
               </Card>
             </CarouselItem>
           );
