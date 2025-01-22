@@ -9,6 +9,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PulsingDot,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -660,17 +661,6 @@ function LiveReloadingStatus({
         Live reloading
       </Paragraph>
     </div>
-  );
-}
-
-function PulsingDot() {
-  return (
-    <span className="relative flex h-2 w-2">
-      <span
-        className={`absolute h-full w-full animate-ping rounded-full border border-emerald-500 opacity-100 duration-1000`}
-      />
-      <span className={`h-2 w-2 rounded-full bg-emerald-500`} />
-    </span>
   );
 }
 

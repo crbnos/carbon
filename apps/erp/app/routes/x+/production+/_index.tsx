@@ -4,6 +4,7 @@ import {
   CardAction,
   CardContent,
   CardHeader,
+  CardTitle,
   DateRangePicker,
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,7 @@ import {
   HStack,
   IconButton,
   Loading,
+  PulsingDot,
   Skeleton,
 } from "@carbon/react";
 import {
@@ -35,21 +37,36 @@ import {
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { now, toCalendarDateTime } from "@internationalized/date";
 import type { DateRange } from "@react-types/datepicker";
-import { json, Link, useFetcher, useLoaderData } from "@remix-run/react";
-import { useEffect, useMemo, useState } from "react";
+import {
+  Await,
+  defer,
+  Link,
+  useFetcher,
+  useLoaderData,
+} from "@remix-run/react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
   LuChevronDown,
   LuEllipsisVertical,
   LuFile,
+  LuHardHat,
   LuLayoutList,
+  LuSquareUser,
   LuUserRoundCheck,
+  LuUsers,
 } from "react-icons/lu";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
-import { Empty } from "~/components";
+import {
+  CustomerAvatar,
+  EmployeeAvatarGroup,
+  Empty,
+  Hyperlink,
+} from "~/components";
 import { useUser } from "~/hooks/useUser";
-import { KPIs } from "~/modules/production";
+import type { ActiveProductionEvent } from "~/modules/production";
+import { getActiveProductionEvents, KPIs } from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
@@ -57,6 +74,9 @@ import { capitalize } from "~/utils/string";
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { RiProgress8Line } from "react-icons/ri";
+import type { WorkCenter } from "~/modules/resources";
+import { getWorkCentersList } from "~/modules/resources";
 
 const OPEN_JOB_STATUSES = ["Ready", "In Progress", "Paused"] as const;
 
@@ -79,7 +99,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "production",
   });
 
-  const [activeJobs, assignedJobs] = await Promise.all([
+  const [activeJobs, assignedJobs, workCenters] = await Promise.all([
     client
       .from("job")
       .select("id,status,assignee")
@@ -90,16 +110,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .select("id,status,assignee")
       .eq("companyId", companyId)
       .eq("assignee", userId),
+    getWorkCentersList(client, companyId),
   ]);
 
-  return json({
+  return defer({
     activeJobs: activeJobs.data?.length ?? 0,
     assignedJobs: assignedJobs.data?.length ?? 0,
+    workCenters: workCenters.data ?? [],
+    events: getActiveProductionEvents(client, companyId),
   });
 }
 
 export default function ProductionDashboard() {
-  const { activeJobs, assignedJobs } = useLoaderData<typeof loader>();
+  const { activeJobs, assignedJobs, events, workCenters } =
+    useLoaderData<typeof loader>();
 
   const user = useUser();
   const kpiFetcher = useFetcher<typeof kpiLoader>();
@@ -306,24 +330,6 @@ export default function ProductionDashboard() {
             </p>
           </div>
         </Card>
-      </div>
-
-      <div className="w-full">
-        <Carousel className="w-full">
-          <CarouselContent>
-            {Array.from({ length: 5 }).map((_, index) => (
-              <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
-                <Card className="dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)]">
-                  <CardContent className="flex aspect-square items-center justify-center p-6">
-                    <span className="text-2xl font-semibold">{index + 1}</span>
-                  </CardContent>
-                </Card>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-3" />
-          <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-3" />
-        </Carousel>
       </div>
 
       <div className="w-full">
@@ -594,6 +600,148 @@ export default function ProductionDashboard() {
           </CardContent>
         </Card>
       </div>
+      <div className="w-full">
+        <Suspense fallback={null}>
+          <Await resolve={events}>
+            {(resolvedEvents) => (
+              <WorkCenterCards
+                events={resolvedEvents.data ?? []}
+                workCenters={workCenters}
+              />
+            )}
+          </Await>
+        </Suspense>
+      </div>
     </div>
+  );
+}
+
+function WorkCenterCards({
+  events,
+  workCenters,
+}: {
+  events: ActiveProductionEvent[];
+  workCenters: WorkCenter[];
+}) {
+  const eventsByWorkCenterId = workCenters.reduce<
+    Record<
+      string,
+      {
+        hasEvents: boolean;
+        customerId?: string | null;
+        employeeIds?: (string | null)[];
+        salesOrderId?: string | null;
+        jobId?: string | null;
+      }
+    >
+  >((acc, workCenter) => {
+    const wcEvents = events.filter(
+      (event) => event.workCenterId === workCenter.id
+    );
+
+    if (wcEvents.length === 0) {
+      acc[workCenter.id!] = {
+        hasEvents: false,
+      };
+      return acc;
+    }
+
+    const firstEvent = wcEvents[0];
+    const jobId = firstEvent.jobId;
+    const salesOrderId = firstEvent.salesOrderId;
+    const customerId = firstEvent.customerId;
+    const employeeIds =
+      Array.from(new Set(wcEvents.map((event) => event.employeeId))) ?? [];
+
+    if (workCenter.id) {
+      acc[workCenter.id!] = {
+        hasEvents: true,
+        customerId,
+        employeeIds,
+        jobId,
+        salesOrderId,
+      };
+    }
+
+    return acc;
+  }, {});
+
+  return (
+    <Carousel className="w-full">
+      <CarouselContent>
+        {workCenters.map((workCenter) => {
+          const { hasEvents, customerId, employeeIds, jobId, salesOrderId } =
+            eventsByWorkCenterId[workCenter?.id ?? ""];
+
+          return (
+            <CarouselItem
+              key={workCenter.id}
+              className="md:basis-1/2 lg:basis-1/4"
+            >
+              <Card className="p-0 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)] h-[280px]">
+                <HStack className="justify-between items-start w-full relative">
+                  <CardHeader>
+                    <CardTitle className="line-clamp-2 text-base">
+                      {workCenter.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardAction>
+                    <PulsingDot inactive={!hasEvents} />
+                  </CardAction>
+                </HStack>
+                <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
+                  {!hasEvents ? (
+                    <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center">
+                      Inactive
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2 items-start justify-start text-sm">
+                      {jobId && (
+                        <HStack className="justify-start space-x-2">
+                          <LuHardHat className="text-muted-foreground" />
+                          <Hyperlink to={path.to.job(jobId)}>{jobId}</Hyperlink>
+                        </HStack>
+                      )}
+
+                      {employeeIds?.length ? (
+                        <HStack className="justify-start space-x-2">
+                          <LuUsers className="text-muted-foreground" />
+                          <EmployeeAvatarGroup
+                            employeeIds={employeeIds.filter(
+                              (id) => id !== null
+                            )}
+                          />
+                        </HStack>
+                      ) : null}
+
+                      {salesOrderId && (
+                        <HStack className="justify-start space-x-2">
+                          <RiProgress8Line className="text-muted-foreground" />
+                          <Hyperlink
+                            to={path.to.salesOrderDetails(salesOrderId)}
+                          >
+                            {salesOrderId}
+                          </Hyperlink>
+                        </HStack>
+                      )}
+
+                      {customerId && (
+                        <HStack className="justify-start space-x-2">
+                          <LuSquareUser className="text-muted-foreground" />
+                          <CustomerAvatar customerId={customerId} />
+                        </HStack>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+                <div className="h-[72px]" />
+              </Card>
+            </CarouselItem>
+          );
+        })}
+      </CarouselContent>
+      <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-3" />
+      <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-3" />
+    </Carousel>
   );
 }

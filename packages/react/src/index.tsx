@@ -219,6 +219,7 @@ import {
   PopoverTrigger,
 } from "./Popover";
 import { Progress } from "./Progress";
+import { PulsingDot } from "./PulsingDot";
 import { RadioGroup, RadioGroupItem } from "./Radio";
 import {
   ResizableHandle,
@@ -471,6 +472,7 @@ export {
   PopoverHeader,
   PopoverTrigger,
   Progress,
+  PulsingDot,
   RadioGroup,
   RadioGroupItem,
   ResizableHandle,

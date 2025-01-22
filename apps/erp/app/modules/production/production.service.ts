@@ -25,10 +25,6 @@ export async function deleteJob(
   return client.from("job").delete().eq("id", jobId);
 }
 
-export async function getJob(client: SupabaseClient<Database>, id: string) {
-  return client.from("jobs").select("*").eq("id", id).single();
-}
-
 export async function deleteJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterialId: string
@@ -78,6 +74,19 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+export async function getActiveProductionEvents(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "*, ...jobOperation(description, ...job(jobId, customerId, dueDate, deadlineType, ...salesOrderLine(...salesOrder(salesOrderId))))"
+    )
+    .eq("companyId", companyId)
+    .is("endTime", null);
+}
+
 export async function deleteScrapReason(
   client: SupabaseClient<Database>,
   scrapReasonId: string
@@ -114,6 +123,10 @@ export async function getJobDocuments(
       .list(`${companyId}/job/${job.id}`);
     return jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || [];
   }
+}
+
+export async function getJob(client: SupabaseClient<Database>, id: string) {
+  return client.from("jobs").select("*").eq("id", id).single();
 }
 
 export async function getJobs(
