@@ -1,4 +1,10 @@
-import { cn, IconButton, ScrollArea, ScrollBar } from "@carbon/react";
+import {
+  cn,
+  IconButton,
+  PulsingDot,
+  ScrollArea,
+  ScrollBar,
+} from "@carbon/react";
 import { useUrlParams } from "@carbon/remix";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
@@ -84,16 +90,7 @@ export function ColumnCard({
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          {column.active ? (
-            <PulsingDot />
-          ) : (
-            <div
-              className={cn(
-                "w-2 h-2 bg-muted rounded-full mt-2",
-                totalDuration > 0 && "bg-red-500"
-              )}
-            />
-          )}
+          <PulsingDot inactive={!column.active} />
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
             {totalDuration > 0 ? (
@@ -157,16 +154,5 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
       </div>
       <ScrollBar orientation="horizontal" />
     </ScrollArea>
-  );
-}
-
-function PulsingDot() {
-  return (
-    <span className="relative flex h-2 w-2 mt-2">
-      <span
-        className={`absolute h-full w-full animate-ping rounded-full border border-emerald-500 opacity-100 duration-1000`}
-      />
-      <span className={`h-2 w-2 rounded-full bg-emerald-500`} />
-    </span>
   );
 }
