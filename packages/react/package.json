@@ -49,6 +49,7 @@
     "clsx": "^2.1.0",
     "cmdk": "^0.2.0",
     "dompurify": "3.0.5",
+    "embla-carousel-react": "~8.5.2",
     "intl-parse-accept-language": "^1.0.0",
     "is-hotkey": "^0.2.0",
     "online-3d-viewer": "0.15.0",
@@ -84,6 +85,7 @@
   "exports": {
     ".": "./src/index.tsx",
     "./Chart": "./src/Chart.tsx",
+    "./Carousel": "./src/Carousel.tsx",
     "./Editor": "./src/Editor/index.ts",
     "./HTML": "./src/HTML.tsx",
     "./RichText": "./src/RichText/index.ts"

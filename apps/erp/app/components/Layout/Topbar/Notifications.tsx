@@ -101,7 +101,7 @@ function Notification({
             aria-label="Mark as read"
             icon={<LuMailCheck />}
             variant="secondary"
-            className="rounded-full bg-transparent"
+            className="rounded-full before:rounded-full"
             onClick={markMessageAsRead}
           />
         </div>
@@ -260,7 +260,7 @@ const Notifications = () => {
         <Button
           variant="secondary"
           isIcon
-          className="rounded-full w-8 h-8 flex items-center relative"
+          className="rounded-full before:rounded-full w-8 h-8 flex items-center relative"
         >
           {hasUnseenNotifications && (
             <div className="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-0" />
