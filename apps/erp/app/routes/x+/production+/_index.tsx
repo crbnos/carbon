@@ -3,6 +3,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -24,13 +25,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@carbon/react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@carbon/react/Carousel";
 import {
   ChartContainer,
   ChartLegend,
@@ -285,8 +279,8 @@ export default function ProductionDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-2">
-        <Card className="p-6 rounded-xl items-start justify-start gap-y-4">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-6">
+        <Card className="col-span-3 p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <LuLayoutList className="size-5" />
@@ -316,7 +310,7 @@ export default function ProductionDashboard() {
           </div>
         </Card>
 
-        <Card className="p-6 items-start justify-start gap-y-4">
+        <Card className="col-span-3 p-6 items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
               <LuUserRoundCheck className="size-5" />
@@ -340,10 +334,8 @@ export default function ProductionDashboard() {
             </p>
           </div>
         </Card>
-      </div>
 
-      <div className="w-full">
-        <Card className="p-0">
+        <Card className="col-span-4 p-0">
           <HStack className="justify-between items-start">
             <CardHeader className="pb-0">
               <div className="flex w-full justify-start items-center gap-2">
@@ -609,6 +601,13 @@ export default function ProductionDashboard() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="col-span-2 p-0 min-h-[400px]">
+          <CardHeader>
+            <CardTitle>Assigned to Me</CardTitle>
+            <CardDescription>Job operations assigned to me</CardDescription>
+          </CardHeader>
+        </Card>
       </div>
 
       <div className="w-full">
@@ -714,145 +713,139 @@ function WorkCenterCards({
 
     return acc;
   }, {});
-
   return (
-    <Carousel className="w-full">
-      <CarouselContent>
-        {workCenters.map((workCenter) => {
-          const {
-            hasEvents,
-            customerId,
-            deadlineType,
-            description,
-            descriptionCount,
-            dueDate,
-            employeeIds,
-            jobCount,
-            jobId,
-            jobReadableId,
-            salesOrderId,
-            salesOrderReadableId,
-          } = eventsByWorkCenterId[workCenter?.id ?? ""];
+    <div className="w-full grid grid-cols-6 gap-4">
+      {workCenters.map((workCenter) => {
+        const {
+          hasEvents,
+          customerId,
+          deadlineType,
+          description,
+          descriptionCount,
+          dueDate,
+          employeeIds,
+          jobCount,
+          jobId,
+          jobReadableId,
+          salesOrderId,
+          salesOrderReadableId,
+        } = eventsByWorkCenterId[workCenter?.id ?? ""];
 
-          const isOverdue =
-            deadlineType !== "No Deadline" && dueDate
-              ? new Date(dueDate) < new Date()
-              : false;
+        const isOverdue =
+          deadlineType !== "No Deadline" && dueDate
+            ? new Date(dueDate) < new Date()
+            : false;
 
-          return (
-            <CarouselItem
-              key={workCenter.id}
-              className="md:basis-1/2 lg:basis-1/4"
-            >
-              <Card className="p-0 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)] h-[300px]">
-                <HStack className="justify-between w-full relative">
-                  <CardHeader>
-                    <CardTitle className="line-clamp-2 text-base">
-                      {workCenter.name}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardAction className="pt-2">
-                    <PulsingDot inactive={!hasEvents} />
-                  </CardAction>
-                </HStack>
-                <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
-                  {!hasEvents ? (
-                    <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center font-medium">
-                      Inactive
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-2 items-start justify-start text-sm">
-                      {jobId && (
-                        <HStack className="justify-start space-x-2">
-                          <LuHardHat className="text-muted-foreground" />
-                          <Hyperlink to={path.to.job(jobId)}>
-                            {jobReadableId}
-                          </Hyperlink>
-                          {jobCount && jobCount > 1 && (
-                            <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center">
-                              {`+${jobCount - 1}`}
-                            </div>
-                          )}
-                        </HStack>
+        return (
+          <Card
+            key={workCenter.id}
+            className="p-0 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)] h-[300px] cols-span-6 lg:col-span-3 xl:col-span-2"
+          >
+            <HStack className="justify-between w-full relative">
+              <CardHeader>
+                <CardTitle className="line-clamp-2 text-base">
+                  {workCenter.name}
+                </CardTitle>
+              </CardHeader>
+              <CardAction className="pt-2">
+                <PulsingDot inactive={!hasEvents} />
+              </CardAction>
+            </HStack>
+            <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
+              {!hasEvents ? (
+                <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center font-medium">
+                  Inactive
+                </p>
+              ) : (
+                <div className="flex flex-col gap-2 items-start justify-start text-sm">
+                  {jobId && (
+                    <HStack className="justify-start space-x-2">
+                      <LuHardHat className="text-muted-foreground flex-shrink-0" />
+                      <Hyperlink to={path.to.job(jobId)} className="truncate">
+                        {jobReadableId}
+                      </Hyperlink>
+                      {jobCount && jobCount > 1 && (
+                        <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                          {`+${jobCount - 1}`}
+                        </div>
                       )}
-
-                      {description && (
-                        <HStack className="justify-start space-x-2">
-                          <LuClipboardCheck className="text-muted-foreground" />
-                          <span className="text-sm line-clamp-1">
-                            {description}
-                          </span>
-                          {descriptionCount && descriptionCount > 1 && (
-                            <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center">
-                              {`+${descriptionCount - 1}`}
-                            </div>
-                          )}
-                        </HStack>
-                      )}
-
-                      {salesOrderId && (
-                        <HStack className="justify-start space-x-2">
-                          <RiProgress8Line className="text-muted-foreground" />
-                          <Hyperlink
-                            to={path.to.salesOrderDetails(salesOrderId)}
-                          >
-                            {salesOrderReadableId}
-                          </Hyperlink>
-                        </HStack>
-                      )}
-
-                      {customerId && (
-                        <HStack className="justify-start space-x-2">
-                          <LuSquareUser className="text-muted-foreground" />
-                          <CustomerAvatar customerId={customerId} />
-                        </HStack>
-                      )}
-
-                      {deadlineType && (
-                        <HStack className="justify-start space-x-2">
-                          {getDeadlineIcon(deadlineType, isOverdue)}
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className={cn(
-                                  "text-sm",
-                                  isOverdue ? "text-red-500" : ""
-                                )}
-                              >
-                                {["ASAP", "No Deadline"].includes(deadlineType)
-                                  ? getDeadlineText(deadlineType)
-                                  : dueDate
-                                  ? `Due ${formatRelativeTime(
-                                      convertDateStringToIsoString(dueDate)
-                                    )}`
-                                  : "–"}
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                              {getDeadlineText(deadlineType)}
-                            </TooltipContent>
-                          </Tooltip>
-                        </HStack>
-                      )}
-                    </div>
+                    </HStack>
                   )}
-                </CardContent>
-                {employeeIds?.length ? (
-                  <CardFooter className="border-t py-3 bg-muted/30">
-                    <EmployeeAvatarGroup
-                      employeeIds={employeeIds.filter((id) => id !== null)}
-                    />
-                  </CardFooter>
-                ) : (
-                  <CardFooter className="h-[49px]" />
-                )}
-              </Card>
-            </CarouselItem>
-          );
-        })}
-      </CarouselContent>
-      <CarouselPrevious className="absolute top-1/2 -translate-y-1/2 left-3" />
-      <CarouselNext className="absolute top-1/2 -translate-y-1/2 right-3" />
-    </Carousel>
+
+                  {description && (
+                    <HStack className="justify-start space-x-2">
+                      <LuClipboardCheck className="text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm line-clamp-1 truncate">
+                        {description}
+                      </span>
+                      {descriptionCount && descriptionCount > 1 && (
+                        <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                          {`+${descriptionCount - 1}`}
+                        </div>
+                      )}
+                    </HStack>
+                  )}
+
+                  {salesOrderId && (
+                    <HStack className="justify-start space-x-2">
+                      <RiProgress8Line className="text-muted-foreground flex-shrink-0" />
+                      <Hyperlink
+                        to={path.to.salesOrderDetails(salesOrderId)}
+                        className="truncate"
+                      >
+                        {salesOrderReadableId}
+                      </Hyperlink>
+                    </HStack>
+                  )}
+
+                  {customerId && (
+                    <HStack className="justify-start space-x-2">
+                      <LuSquareUser className="text-muted-foreground flex-shrink-0" />
+                      <CustomerAvatar customerId={customerId} />
+                    </HStack>
+                  )}
+
+                  {deadlineType && (
+                    <HStack className="justify-start space-x-2">
+                      {getDeadlineIcon(deadlineType, isOverdue)}
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <span
+                            className={cn(
+                              "text-sm truncate",
+                              isOverdue ? "text-red-500" : ""
+                            )}
+                          >
+                            {["ASAP", "No Deadline"].includes(deadlineType)
+                              ? getDeadlineText(deadlineType)
+                              : dueDate
+                              ? `Due ${formatRelativeTime(
+                                  convertDateStringToIsoString(dueDate)
+                                )}`
+                              : "–"}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          {getDeadlineText(deadlineType)}
+                        </TooltipContent>
+                      </Tooltip>
+                    </HStack>
+                  )}
+                </div>
+              )}
+            </CardContent>
+            {employeeIds?.length ? (
+              <CardFooter className="border-t py-3 bg-muted/30">
+                <EmployeeAvatarGroup
+                  employeeIds={employeeIds.filter((id) => id !== null)}
+                />
+              </CardFooter>
+            ) : (
+              <CardFooter className="h-[49px]" />
+            )}
+          </Card>
+        );
+      })}
+    </div>
   );
 }
