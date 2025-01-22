@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ClientOnly, VStack } from "@carbon/react";
@@ -10,6 +10,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode } from "~/modules/accounting";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
+  getCustomer,
   getOpportunityByQuote,
   getOpportunityDocuments,
   getQuote,
@@ -43,28 +44,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
 
-  const [quote, shipment, payment, lines, prices, opportunity, methods] =
-    await Promise.all([
-      getQuote(client, quoteId),
-      getQuoteShipment(client, quoteId),
-      getQuotePayment(client, quoteId),
-      getQuoteLines(client, quoteId),
-      getQuoteLinePricesByQuoteId(client, quoteId),
-      getOpportunityByQuote(client, quoteId),
-      getQuoteMethodTrees(client, quoteId),
-    ]);
-
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
-
-  if (companyId !== quote.data?.companyId) {
-    throw redirect(path.to.quotes);
-  }
+  const quote = await getQuote(client, quoteId);
 
   if (quote.error) {
     throw redirect(
       path.to.quotes,
       await flash(request, error(quote.error, "Failed to load quote"))
     );
+  }
+
+  if (companyId !== quote.data?.companyId) {
+    throw redirect(path.to.quotes);
+  }
+
+  const serviceRole = getCarbonServiceRole();
+
+  const [customer, shipment, payment, lines, prices, opportunity, methods] =
+    await Promise.all([
+      getCustomer(serviceRole, quote.data?.customerId ?? ""),
+      getQuoteShipment(serviceRole, quoteId),
+      getQuotePayment(serviceRole, quoteId),
+      getQuoteLines(serviceRole, quoteId),
+      getQuoteLinePricesByQuoteId(serviceRole, quoteId),
+      getOpportunityByQuote(serviceRole, quoteId),
+      getQuoteMethodTrees(serviceRole, quoteId),
+    ]);
+
+  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+
+  if (companyId !== quote.data?.companyId) {
+    throw redirect(path.to.quotes);
   }
 
   if (shipment.error) {
@@ -87,7 +96,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      client,
+      serviceRole,
       companyId,
       quote.data.currencyCode
     );
@@ -99,13 +108,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
   if (opportunity.data?.salesOrderId) {
     salesOrderLines = await getSalesOrderLines(
-      client,
+      serviceRole,
       opportunity.data.salesOrderId
     );
   }
 
   return defer({
     quote: quote.data,
+    customer: customer.data,
     lines: lines.data ?? [],
     methods: methods.data ?? [],
     files: getOpportunityDocuments(client, companyId, opportunity.data.id),
