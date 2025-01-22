@@ -168,6 +168,10 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
               </Badge>
             );
 
+          if (row.original.methodType === "Make") {
+            return null;
+          }
+
           const quantityOnHand =
             row.original.item?.itemInventory?.reduce<number>((acc, curr) => {
               if (curr.locationId === routeData?.job.locationId)
