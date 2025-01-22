@@ -54,6 +54,7 @@ export const notifyTask = task({
         case NotificationEvent.QuoteAssignment:
         case NotificationEvent.SalesOrderAssignment:
         case NotificationEvent.SalesRfqAssignment:
+        case NotificationEvent.SalesRfqReady:
         case NotificationEvent.SupplierQuoteAssignment:
           return NotificationWorkflow.Assignment;
         case NotificationEvent.DigitalQuoteResponse:
