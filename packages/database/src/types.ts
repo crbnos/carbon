@@ -32412,12 +32412,20 @@ export type Database = {
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           jobDueDate: string
           jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
           parentMaterialId: string
           itemReadableId: string
+          itemDescription: string
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           operationQuantity: number
           quantityComplete: number
           quantityScrapped: number
+          thumbnailPath: string
+          assignee: string
+          tags: string[]
         }[]
       }
       get_active_job_operations_by_location: {
@@ -32743,12 +32751,20 @@ export type Database = {
           jobStatus: Database["public"]["Enums"]["jobStatus"]
           jobDueDate: string
           jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
           parentMaterialId: string
           itemReadableId: string
+          itemDescription: string
           operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
           operationQuantity: number
           quantityComplete: number
           quantityScrapped: number
+          thumbnailPath: string
+          assignee: string
+          tags: string[]
         }[]
       }
       groups_for_user: {

@@ -7,10 +7,11 @@ import type {
   getLocationsByCompany,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
+  getRecentJobOperationsByEmployee,
 } from "./operations.service";
 
 export type BaseOperation = NonNullable<
-  Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]
+  Awaited<ReturnType<typeof getRecentJobOperationsByEmployee>>["data"]
 >[number];
 
 export type BaseOperationWithDetails = NonNullable<
@@ -47,6 +48,7 @@ export type OperationSettings = {
   showEmployee: boolean;
   showProgress: boolean;
   showStatus: boolean;
+  showThumbnail: boolean;
 };
 
 export type ProductionEvent = NonNullable<

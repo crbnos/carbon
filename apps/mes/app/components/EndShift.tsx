@@ -67,11 +67,8 @@ export function EndShift() {
 
   return (
     <>
-      <SidebarMenuButton
-        className="text-sidebar-foreground/70"
-        onClick={openModal}
-      >
-        <LuCircleStop className="text-sidebar-foreground/70" />
+      <SidebarMenuButton onClick={openModal}>
+        <LuCircleStop />
         <span>End Shift</span>
       </SidebarMenuButton>
       {confirmModal.isOpen && (

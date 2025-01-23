@@ -84,7 +84,7 @@ export default function ActiveRoute() {
           </div>
         </div>
         {filteredOperations.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,420px),1fr))] p-4 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
             <OperationsList key="active" operations={filteredOperations} />
           </div>
         ) : searchTerm ? (
