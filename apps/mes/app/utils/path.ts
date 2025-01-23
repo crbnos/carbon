@@ -19,6 +19,7 @@ export const path = {
     },
     accountSettings: `${ERP_URL}/x/account`,
     active: `${x}/active`,
+    assigned: `${x}/assigned`,
     authenticatedRoot: x,
     callback: "/callback",
     complete: `${x}/complete`,

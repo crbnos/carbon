@@ -41,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.operations,
+    path.to.assigned,
     await flash(request, success("Operation finished successfully"))
   );
 }

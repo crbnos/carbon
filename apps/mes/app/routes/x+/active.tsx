@@ -54,7 +54,8 @@ export default function ActiveRoute() {
       (operation) =>
         operation.description?.toLowerCase().includes(lowercasedTerm) ||
         operation.jobReadableId?.toLowerCase().includes(lowercasedTerm) ||
-        operation.itemReadableId?.toLowerCase().includes(lowercasedTerm)
+        operation.itemReadableId?.toLowerCase().includes(lowercasedTerm) ||
+        operation.itemDescription?.toLowerCase().includes(lowercasedTerm)
     );
   }, [operations, searchTerm]);
 

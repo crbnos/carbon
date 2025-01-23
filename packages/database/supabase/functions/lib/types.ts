@@ -32469,6 +32469,45 @@ export type Database = {
           thumbnailPath: string
         }[]
       }
+      get_assigned_job_operations: {
+        Args: {
+          user_id: string
+          company_id: string
+        }
+        Returns: {
+          id: string
+          jobId: string
+          operationOrder: number
+          processId: string
+          workCenterId: string
+          description: string
+          setupTime: number
+          setupUnit: Database["public"]["Enums"]["factor"]
+          laborTime: number
+          laborUnit: Database["public"]["Enums"]["factor"]
+          machineTime: number
+          machineUnit: Database["public"]["Enums"]["factor"]
+          operationOrderType: Database["public"]["Enums"]["methodOperationOrder"]
+          jobReadableId: string
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+          jobDueDate: string
+          jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
+          jobCustomerId: string
+          salesOrderReadableId: string
+          salesOrderId: string
+          salesOrderLineId: string
+          parentMaterialId: string
+          itemReadableId: string
+          itemDescription: string
+          operationStatus: Database["public"]["Enums"]["jobOperationStatus"]
+          operationQuantity: number
+          quantityComplete: number
+          quantityScrapped: number
+          thumbnailPath: string
+          assignee: string
+          tags: string[]
+        }[]
+      }
       get_claims: {
         Args: {
           uid: string

@@ -6,6 +6,7 @@ import {
   LuCalendarDays,
   LuChevronDown,
   LuChevronsUpDown,
+  LuClipboardList,
   LuClock,
   LuLogOut,
   LuMapPin,
@@ -164,6 +165,11 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
       to: path.to.operations,
     },
     {
+      title: "Assigned",
+      icon: LuClipboardList,
+      to: path.to.assigned,
+    },
+    {
       title: "Active",
       icon: LuActivity,
       label: (activeEvents ?? 0).toString(),
@@ -183,7 +189,9 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
       <SidebarGroupLabel>Operations</SidebarGroupLabel>
       <SidebarMenu>
         {links.map((item) => {
-          const isActive = pathname.includes(item.to);
+          const isActive =
+            pathname.includes(item.to) ||
+            (pathname.includes("operations") && item.title === "Schedule");
           return (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton

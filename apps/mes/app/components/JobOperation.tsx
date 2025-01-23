@@ -1332,7 +1332,7 @@ function useOperation(
               }));
             } else if (payload.eventType === "DELETE") {
               toast.error("This operation has been deleted");
-              window.location.href = path.to.operations;
+              window.location.href = path.to.assigned;
             }
           }
         )
@@ -1452,12 +1452,23 @@ function useFiles(job: Job) {
     (file: StorageItem) => {
       const companyId = user.company.id;
       const { bucket } = file;
-      const folder =
-        bucket === "job" ? job.id : job.salesOrderLineId ?? job.quoteLineId;
-      const path = `${companyId}/${bucket}/${folder}/${file.name}`;
-      return path;
+      let id: string | null = "";
+
+      switch (bucket) {
+        case "job":
+          id = job.id;
+          break;
+        case "opportunity-line":
+          id = job.salesOrderLineId ?? job.quoteLineId;
+          break;
+        case "parts":
+          id = job.itemId;
+          break;
+      }
+
+      return `${companyId}/${bucket}/${id}/${file.name}`;
     },
-    [job.id, job.quoteLineId, job.salesOrderLineId, user.company.id]
+    [job.id, job.itemId, job.quoteLineId, job.salesOrderLineId, user.company.id]
   );
 
   const downloadFile = useCallback(

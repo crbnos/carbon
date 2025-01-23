@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Button,
@@ -12,26 +13,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuSearch, LuTriangleAlert } from "react-icons/lu";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { OperationsList } from "~/components";
-import { getRecentJobOperationsByEmployee } from "~/services/operations.service";
+import { getLocation } from "~/services/location.server";
+import {
+  getJobOperationsAssignedToEmployee,
+  getWorkCentersByLocation,
+} from "~/services/operations.service";
+import type { Operation } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
-  const [operations] = await Promise.all([
-    getRecentJobOperationsByEmployee(client, {
-      employeeId: userId,
-      companyId,
-    }),
+  const serviceRole = await getCarbonServiceRole();
+
+  const { location } = await getLocation(request, serviceRole, {
+    companyId,
+    userId,
+  });
+
+  const [operations, workCenters] = await Promise.all([
+    getJobOperationsAssignedToEmployee(serviceRole, userId, companyId),
+    getWorkCentersByLocation(serviceRole, location),
   ]);
 
   return json({
     operations: operations?.data?.map(makeDurations) ?? [],
+    workCenters: workCenters?.data ?? [],
   });
 }
 
-export default function ActiveRoute() {
-  const { operations } = useLoaderData<typeof loader>();
+export default function AssignedRoute() {
+  const { operations, workCenters } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
 
   const panelRef = useRef<ImperativePanelHandle>(null);
@@ -58,12 +70,24 @@ export default function ActiveRoute() {
     );
   }, [operations, searchTerm]);
 
+  const filteredOperationsByWorkCenter = useMemo(() => {
+    return filteredOperations.reduce<Record<string, Operation[]>>(
+      (acc, operation) => {
+        const workCenter = operation.workCenterId;
+        if (!workCenter) return acc;
+        acc[workCenter] = [...(acc[workCenter] || []), operation];
+        return acc;
+      },
+      {}
+    );
+  }, [filteredOperations]);
+
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] overflow-y-scroll scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-background">
         <div className="flex items-center gap-2 px-2">
           <SidebarTrigger />
-          <Heading size="h4">Recent</Heading>
+          <Heading size="h4">Assigned to Me</Heading>
         </div>
       </header>
 
@@ -83,9 +107,23 @@ export default function ActiveRoute() {
             </div>
           </div>
         </div>
-        {filteredOperations.length > 0 ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
-            <OperationsList key="active" operations={filteredOperations} />
+
+        {Object.keys(filteredOperationsByWorkCenter).length > 0 ? (
+          <div className="flex flex-col flex-1 mt-4">
+            {Object.entries(filteredOperationsByWorkCenter).map(
+              ([workCenterId, operations]) => (
+                <div key={workCenterId} className="flex flex-col">
+                  <div className="bg-muted px-4 py-2 border-y">
+                    <h3 className="font-medium">
+                      {workCenters.find((wc) => wc.id === workCenterId)?.name}
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))] p-4 gap-4">
+                    <OperationsList operations={operations} />
+                  </div>
+                </div>
+              )
+            )}
           </div>
         ) : searchTerm ? (
           <div className="flex flex-col flex-1 w-full h-[calc(100%-var(--header-height)*2)] items-center justify-center gap-4">
@@ -103,7 +141,7 @@ export default function ActiveRoute() {
               <LuTriangleAlert className="h-6 w-6" />
             </div>
             <span className="text-xs font-mono font-light text-foreground uppercase">
-              No recent operations
+              No assigned operations
             </span>
           </div>
         )}

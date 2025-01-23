@@ -150,7 +150,7 @@ export async function getJobFiles(
 
     return [
       ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "item" })) || []),
+      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "parts" })) || []),
     ];
   }
 }
@@ -174,14 +174,10 @@ export async function getJobOperationsAssignedToEmployee(
   employeeId: string,
   companyId: string
 ) {
-  return client
-    .from("jobOperation")
-    .select(
-      "id, operationStatus:status, description, workCenterId, ...job(jobId:id, jobStatus:status, jobReadableId:jobId)"
-    )
-    .in("jobStatus", ["In Progress", "Ready", "Paused"])
-    .eq("assignee", employeeId)
-    .eq("companyId", companyId);
+  return client.rpc("get_assigned_job_operations", {
+    user_id: employeeId,
+    company_id: companyId,
+  });
 }
 
 export async function getJobOperationById(
