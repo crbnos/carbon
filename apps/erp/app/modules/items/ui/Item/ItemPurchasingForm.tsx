@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { Select, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -15,10 +15,10 @@ import {
   Hidden,
   Number,
   Submit,
-  Supplier,
   UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import { itemPurchasingValidator } from "../../items.models";
 import type { PartSummary } from "../../types";
@@ -35,6 +35,17 @@ const ItemPurchasingForm = ({
   const permissions = usePermissions();
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
+
+  const [suppliers] = useSuppliers();
+  const allowedSuppliersOptions = suppliers?.reduce((acc, supplier) => {
+    if (allowedSuppliers?.includes(supplier.id)) {
+      acc.push({
+        label: supplier.name,
+        value: supplier.id,
+      });
+    }
+    return acc;
+  }, [] as { label: string; value: string }[]);
 
   const routeData = useRouteData<{ partSummary: PartSummary }>(
     path.to.part(itemId)
@@ -58,10 +69,10 @@ const ItemPurchasingForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Supplier
+            <Select
               name="preferredSupplierId"
               label="Preferred Supplier"
-              allowedSuppliers={allowedSuppliers}
+              options={allowedSuppliersOptions}
             />
             <Number name="purchasingLeadTime" label="Lead Time (Days)" />
             <UnitOfMeasure
