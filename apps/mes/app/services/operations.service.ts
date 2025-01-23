@@ -119,16 +119,18 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
 export async function getJobFiles(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: Job
+  job: Job,
+  itemId: string
 ): Promise<StorageItem[]> {
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
-    const [opportunityLineFiles, jobFiles] = await Promise.all([
+    const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
       client.storage
         .from("private")
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
       client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      client.storage.from("private").list(`${companyId}/parts/${itemId}`),
     ]);
 
     // Combine and return both sets of files
@@ -138,12 +140,18 @@ export async function getJobFiles(
         bucket: "opportunity-line",
       })) || []),
       ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "item" })) || []),
     ];
   } else {
-    const jobFiles = await client.storage
-      .from("private")
-      .list(`${companyId}/job/${job.id}`);
-    return jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || [];
+    const [jobFiles, itemFiles] = await Promise.all([
+      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      client.storage.from("private").list(`${companyId}/parts/${itemId}`),
+    ]);
+
+    return [
+      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "item" })) || []),
+    ];
   }
 }
 
@@ -159,6 +167,21 @@ export async function getJobMaterialsByOperationId(
     .eq("jobMakeMethodId", operation.jobMakeMethodId)
     .order("itemReadableId", { ascending: true })
     .order("id", { ascending: true });
+}
+
+export async function getJobOperationsAssignedToEmployee(
+  client: SupabaseClient<Database>,
+  employeeId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "id, operationStatus:status, description, workCenterId, ...job(jobId:id, jobStatus:status, jobReadableId:jobId)"
+    )
+    .in("jobStatus", ["In Progress", "Ready", "Paused"])
+    .eq("assignee", employeeId)
+    .eq("companyId", companyId);
 }
 
 export async function getJobOperationById(

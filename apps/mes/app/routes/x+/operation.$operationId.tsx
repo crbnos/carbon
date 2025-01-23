@@ -81,7 +81,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       { scrap: 0, production: 0, rework: 0 }
     ),
     job: job.data,
-    files: getJobFiles(serviceRole, companyId, job.data),
+    files: getJobFiles(
+      serviceRole,
+      companyId,
+      job.data,
+      operation.data?.[0].itemId
+    ),
     materials: getJobMaterialsByOperationId(serviceRole, operation.data?.[0]),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     workCenter: getWorkCenter(serviceRole, operation.data?.[0].workCenterId),

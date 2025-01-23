@@ -32574,6 +32574,7 @@ export type Database = {
           jobDueDate: string
           jobDeadlineType: Database["public"]["Enums"]["deadlineType"]
           parentMaterialId: string
+          itemId: string
           itemReadableId: string
           itemDescription: string
           itemUnitOfMeasure: string
@@ -32653,6 +32654,13 @@ export type Database = {
           claim: string
         }
         Returns: Json
+      }
+      get_next_numeric_sequence: {
+        Args: {
+          company_id: string
+          item_type: Database["public"]["Enums"]["itemType"]
+        }
+        Returns: string
       }
       get_next_sequence: {
         Args: {
