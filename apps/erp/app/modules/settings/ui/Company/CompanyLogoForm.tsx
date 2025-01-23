@@ -57,6 +57,7 @@ const CompanyLogoForm = ({
       const formData = new FormData();
       formData.append("file", logo);
       formData.append("height", "128");
+      formData.append("contained", "true");
 
       try {
         const response = await fetch(

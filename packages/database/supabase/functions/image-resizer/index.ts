@@ -1,7 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
+  Gravity,
   ImageMagick,
   initializeImageMagick,
+  MagickColor,
   MagickFormat,
   MagickGeometry,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
@@ -29,6 +31,7 @@ serve(async (req: Request) => {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const targetHeight = formData.get("height") as string | null;
+    const contained = !!(formData.get("contained") as string | null);
 
     if (!file) {
       throw new Error("No file provided");
@@ -37,14 +40,44 @@ serve(async (req: Request) => {
     const arrayBuffer = await file.arrayBuffer();
     const bytes = new Uint8Array(arrayBuffer);
 
-    const result = await ImageMagick.read(bytes, (img) => {
+    const result = ImageMagick.read(bytes, (img) => {
       // First convert to PNG to ensure consistent handling
       img.format = MagickFormat.Png;
 
       const width = img.width;
       const height = img.height;
 
-      if (targetHeight) {
+      if (contained) {
+        console.log("contained");
+        // Calculate size with 10% padding
+        const padding = 0.1; // 10% padding
+        const maxDimension = Math.max(width, height);
+        const sizeWithPadding = Math.ceil(maxDimension * (1 + 2 * padding));
+
+        // Calculate offsets to center the image with padding
+        const x = Math.floor((sizeWithPadding - width) / 2);
+        const y = Math.floor((sizeWithPadding - height) / 2);
+
+        // Create geometry for the centered image with padding
+        const containedGeometry = new MagickGeometry(
+          0,
+          0,
+          sizeWithPadding,
+          sizeWithPadding
+        );
+        containedGeometry.ignoreAspectRatio = true;
+        img.extent(
+          containedGeometry,
+          Gravity.Center,
+          new MagickColor("transparent")
+        );
+
+        const resizeGeometry = new MagickGeometry(300, 300);
+        resizeGeometry.ignoreAspectRatio = true;
+        img.resize(resizeGeometry);
+        img.quality = 90;
+      } else if (targetHeight) {
+        console.log("targetHeight");
         const targetHeightInt = parseInt(targetHeight, 10);
 
         // Ensure we have valid dimensions
@@ -59,6 +92,7 @@ serve(async (req: Request) => {
         img.resize(targetWidthInt, targetHeightInt);
         img.quality = 90;
       } else {
+        console.log("default");
         // Calculate the size for cropping
         const size = Math.min(width, height);
 
