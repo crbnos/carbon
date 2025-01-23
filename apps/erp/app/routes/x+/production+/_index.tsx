@@ -3,7 +3,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -21,15 +20,9 @@ import {
   Loading,
   PulsingDot,
   Skeleton,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Tr,
   useMount,
 } from "@carbon/react";
 import {
@@ -53,7 +46,6 @@ import {
   Link,
   useFetcher,
   useLoaderData,
-  useRevalidator,
 } from "@remix-run/react";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { CSVLink } from "react-csv";
@@ -65,9 +57,6 @@ import {
   LuFile,
   LuHardHat,
   LuLayoutList,
-  LuMapPin,
-  LuPlay,
-  LuRefreshCcw,
   LuSquareUser,
   LuUserRoundCheck,
 } from "react-icons/lu";
@@ -81,11 +70,7 @@ import {
 } from "~/components";
 import { useUser } from "~/hooks/useUser";
 import type { ActiveProductionEvent } from "~/modules/production";
-import {
-  getActiveProductionEvents,
-  getJobOperationsAssignedToEmployee,
-  KPIs,
-} from "~/modules/production";
+import { getActiveProductionEvents, KPIs } from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
@@ -141,16 +126,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignedJobs: assignedJobs.data?.length ?? 0,
     workCenters: workCenters.data ?? [],
     events: getActiveProductionEvents(client, companyId),
-    assignedOperations: getJobOperationsAssignedToEmployee(
-      client,
-      userId,
-      companyId
-    ),
   });
 }
 
 export default function ProductionDashboard() {
-  const { activeJobs, assignedJobs, events, workCenters, assignedOperations } =
+  const { activeJobs, assignedJobs, events, workCenters } =
     useLoaderData<typeof loader>();
 
   const user = useUser();
@@ -301,8 +281,6 @@ export default function ProductionDashboard() {
     );
   }, [kpiFetcher.data?.data]);
 
-  const revalidator = useRevalidator();
-
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
@@ -361,7 +339,7 @@ export default function ProductionDashboard() {
           </div>
         </Card>
 
-        <Card className="col-span-4 p-0">
+        <Card className="col-span-6 p-0">
           <HStack className="justify-between items-start">
             <CardHeader className="pb-0">
               <div className="flex w-full justify-start items-center gap-2">
@@ -469,7 +447,7 @@ export default function ProductionDashboard() {
               </DropdownMenu>
             </CardAction>
           </HStack>
-          <CardContent className="max-h-[600px] p-6 pb-12">
+          <CardContent className="max-h-[600px] min-h-[320px] p-6 pb-12">
             {kpiFetcher.state === "idle" &&
             kpiFetcher.data?.data?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
@@ -625,107 +603,6 @@ export default function ProductionDashboard() {
                 </ChartContainer>
               </Loading>
             )}
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-2 p-0">
-          <HStack className="justify-between w-full">
-            <CardHeader className="px-6 pb-0">
-              <CardTitle>Assigned to Me</CardTitle>
-              <CardDescription>Operations assigned to me</CardDescription>
-            </CardHeader>
-            <CardAction className="py-6 px-6">
-              <IconButton
-                variant="secondary"
-                icon={<LuRefreshCcw />}
-                aria-label="Refresh"
-                onClick={() => {
-                  revalidator.revalidate();
-                }}
-              />
-            </CardAction>
-          </HStack>
-          <CardContent className="p-6">
-            <Suspense fallback={null}>
-              <Await resolve={assignedOperations}>
-                {(resolvedOperations) => {
-                  if (!resolvedOperations.data?.length) {
-                    return <Empty />;
-                  }
-
-                  return (
-                    <div className="min-h-[200px] max-h-[612px] w-full overflow-y-auto">
-                      <Table>
-                        <Thead>
-                          <Tr>
-                            <Th>
-                              <div className="flex flex-row items-center gap-2">
-                                <LuClipboardCheck className="size-4" />
-                                Operation
-                              </div>
-                            </Th>
-                            <Th>
-                              <div className="flex flex-row items-center gap-2">
-                                <LuHardHat className="size-4" />
-                                Job
-                              </div>
-                            </Th>
-                            <Th />
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {resolvedOperations.data.map((operation) => (
-                            <Tr key={operation.id}>
-                              <Td>
-                                <div className="flex flex-col gap-0 py-2">
-                                  <span className="line-clamp-1 text-foreground">
-                                    {operation.description}
-                                  </span>
-                                  <span className="flex flex-row items-center gap-1 text-muted-foreground text-xs line-clamp-1">
-                                    <LuMapPin className="size-3" />
-                                    {
-                                      workCenters.find(
-                                        (wc) => wc.id === operation.workCenterId
-                                      )?.name
-                                    }
-                                  </span>
-                                </div>
-                              </Td>
-                              <Td>
-                                <Hyperlink
-                                  className="text-muted-foreground"
-                                  to={path.to.job(operation.jobId)}
-                                >
-                                  {operation.jobReadableId}
-                                </Hyperlink>
-                              </Td>
-                              <Td className="px-0">
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <a
-                                      href={path.to.external.mesJobOperation(
-                                        operation.id
-                                      )}
-                                    >
-                                      <IconButton
-                                        variant="ghost"
-                                        icon={<LuPlay />}
-                                        aria-label="Go to operation"
-                                      />
-                                    </a>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Open in MES</TooltipContent>
-                                </Tooltip>
-                              </Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </div>
-                  );
-                }}
-              </Await>
-            </Suspense>
           </CardContent>
         </Card>
       </div>
