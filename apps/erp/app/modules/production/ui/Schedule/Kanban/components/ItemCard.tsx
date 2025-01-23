@@ -257,7 +257,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
               <ProgressComponent
                 indicatorClassName={
                   (progress ?? 0) > (item.duration ?? 0)
-                    ? "bg-destructive"
+                    ? "bg-red-500"
                     : status === "Paused"
                     ? "bg-yellow-500"
                     : ""

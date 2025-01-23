@@ -31,7 +31,7 @@ const EmployeeAvatar = ({
   const person = people.find((p) => p.id === employeeId);
 
   if (!person) {
-    return null;
+    return <Avatar size={size ?? "xs"} path={undefined} name="System" />;
   }
 
   return (

@@ -55,7 +55,7 @@ import {
   LuPackageSearch,
 } from "react-icons/lu";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
-import { Hyperlink, SupplierAvatar } from "~/components";
+import { Empty, Hyperlink, SupplierAvatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import type { PurchaseInvoice } from "~/modules/invoicing";
@@ -650,9 +650,7 @@ export default function PurchaseDashboard() {
                     </Table>
                   ) : (
                     <div className="flex justify-center items-center h-full">
-                      <p className="text-sm text-muted-foreground">
-                        No documents assigned to me
-                      </p>
+                      <Empty />
                     </div>
                   )
                 }

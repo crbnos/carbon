@@ -1,4 +1,4 @@
-import { LuGroup, LuHammer, LuMapPin } from "react-icons/lu";
+import { LuHammer, LuMapPin } from "react-icons/lu";
 import { TbRoute } from "react-icons/tb";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -25,7 +25,7 @@ const resourcesRoutes: RouteGroup[] = [
       {
         name: "Work Centers",
         to: path.to.workCenters,
-        icon: <LuGroup />,
+        icon: <LuMapPin />,
       },
     ],
   },

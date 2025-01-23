@@ -52,7 +52,7 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
-import { CustomerAvatar, Hyperlink } from "~/components";
+import { CustomerAvatar, Empty, Hyperlink } from "~/components";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
@@ -628,9 +628,7 @@ export default function SalesDashboard() {
                     </Table>
                   ) : (
                     <div className="flex justify-center items-center h-full">
-                      <p className="text-sm text-muted-foreground">
-                        No documents assigned to me
-                      </p>
+                      <Empty />
                     </div>
                   )
                 }
