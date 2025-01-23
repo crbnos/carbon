@@ -140,7 +140,7 @@ export async function getJobFiles(
         bucket: "opportunity-line",
       })) || []),
       ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "item" })) || []),
+      ...(itemFiles.data?.map((f) => ({ ...f, bucket: "parts" })) || []),
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
