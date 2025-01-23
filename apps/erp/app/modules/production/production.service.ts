@@ -81,7 +81,7 @@ export async function getActiveProductionEvents(
   return client
     .from("productionEvent")
     .select(
-      "*, ...jobOperation(description, ...job(jobId:id, jobReadbleId:jobId, customerId, dueDate, deadlineType, ...salesOrderLine(...salesOrder(salesOrderId:id, salesOrderReadbleId:salesOrderId))))"
+      "*, ...jobOperation(description, ...job(jobId:id, jobReadableId:jobId, customerId, dueDate, deadlineType, salesOrderLineId, ...salesOrderLine(...salesOrder(salesOrderId:id, salesOrderReadableId:salesOrderId))))"
     )
     .eq("companyId", companyId)
     .is("endTime", null);
@@ -336,6 +336,20 @@ export async function getJobOperations(
   }
 
   return query;
+}
+
+export async function getJobOperationsAssignedToEmployee(
+  client: SupabaseClient<Database>,
+  employeeId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "id, description, workCenterId, ...job(jobId:id, jobReadableId:jobId)"
+    )
+    .eq("assignee", employeeId)
+    .eq("companyId", companyId);
 }
 
 export async function getJobOperationsList(

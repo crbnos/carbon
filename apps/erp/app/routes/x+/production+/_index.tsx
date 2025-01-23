@@ -21,9 +21,16 @@ import {
   Loading,
   PulsingDot,
   Skeleton,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  Tr,
+  useMount,
 } from "@carbon/react";
 import {
   ChartContainer,
@@ -46,8 +53,9 @@ import {
   Link,
   useFetcher,
   useLoaderData,
+  useRevalidator,
 } from "@remix-run/react";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { CSVLink } from "react-csv";
 import {
   LuArrowUpRight,
@@ -57,26 +65,37 @@ import {
   LuFile,
   LuHardHat,
   LuLayoutList,
+  LuMapPin,
+  LuPlay,
+  LuRefreshCcw,
   LuSquareUser,
   LuUserRoundCheck,
 } from "react-icons/lu";
 import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 import {
   CustomerAvatar,
+  EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,
   Hyperlink,
 } from "~/components";
 import { useUser } from "~/hooks/useUser";
 import type { ActiveProductionEvent } from "~/modules/production";
-import { getActiveProductionEvents, KPIs } from "~/modules/production";
+import {
+  getActiveProductionEvents,
+  getJobOperationsAssignedToEmployee,
+  KPIs,
+} from "~/modules/production";
 import { chartIntervals } from "~/modules/shared";
 import type { loader as kpiLoader } from "~/routes/api+/production.kpi.$key";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
 
+import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
+import { flushSync } from "react-dom";
 import { RiProgress8Line } from "react-icons/ri";
 import { getDeadlineIcon, getDeadlineText } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
@@ -122,11 +141,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignedJobs: assignedJobs.data?.length ?? 0,
     workCenters: workCenters.data ?? [],
     events: getActiveProductionEvents(client, companyId),
+    assignedOperations: getJobOperationsAssignedToEmployee(
+      client,
+      userId,
+      companyId
+    ),
   });
 }
 
 export default function ProductionDashboard() {
-  const { activeJobs, assignedJobs, events, workCenters } =
+  const { activeJobs, assignedJobs, events, workCenters, assignedOperations } =
     useLoaderData<typeof loader>();
 
   const user = useUser();
@@ -277,9 +301,11 @@ export default function ProductionDashboard() {
     );
   }, [kpiFetcher.data?.data]);
 
+  const revalidator = useRevalidator();
+
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-6">
+      <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
         <Card className="col-span-3 p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
@@ -443,7 +469,7 @@ export default function ProductionDashboard() {
               </DropdownMenu>
             </CardAction>
           </HStack>
-          <CardContent className="p-6 pb-12">
+          <CardContent className="max-h-[600px] p-6 pb-12">
             {kpiFetcher.state === "idle" &&
             kpiFetcher.data?.data?.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full">
@@ -602,11 +628,105 @@ export default function ProductionDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-2 p-0 min-h-[400px]">
-          <CardHeader>
-            <CardTitle>Assigned to Me</CardTitle>
-            <CardDescription>Job operations assigned to me</CardDescription>
-          </CardHeader>
+        <Card className="col-span-2 p-0">
+          <HStack className="justify-between w-full">
+            <CardHeader className="px-6 pb-0">
+              <CardTitle>Assigned to Me</CardTitle>
+              <CardDescription>Operations assigned to me</CardDescription>
+            </CardHeader>
+            <CardAction className="py-6 px-6">
+              <IconButton
+                variant="secondary"
+                icon={<LuRefreshCcw />}
+                aria-label="Refresh"
+                onClick={() => {
+                  revalidator.revalidate();
+                }}
+              />
+            </CardAction>
+          </HStack>
+          <CardContent className="p-6">
+            <Suspense fallback={null}>
+              <Await resolve={assignedOperations}>
+                {(resolvedOperations) => {
+                  if (!resolvedOperations.data?.length) {
+                    return <Empty />;
+                  }
+
+                  return (
+                    <div className="min-h-[200px] max-h-[612px] w-full overflow-y-auto">
+                      <Table>
+                        <Thead>
+                          <Tr>
+                            <Th>
+                              <div className="flex flex-row items-center gap-2">
+                                <LuClipboardCheck className="size-4" />
+                                Operation
+                              </div>
+                            </Th>
+                            <Th>
+                              <div className="flex flex-row items-center gap-2">
+                                <LuHardHat className="size-4" />
+                                Job
+                              </div>
+                            </Th>
+                            <Th />
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {resolvedOperations.data.map((operation) => (
+                            <Tr key={operation.id}>
+                              <Td>
+                                <div className="flex flex-col gap-0 py-2">
+                                  <span className="line-clamp-1 text-foreground">
+                                    {operation.description}
+                                  </span>
+                                  <span className="flex flex-row items-center gap-1 text-muted-foreground text-xs line-clamp-1">
+                                    <LuMapPin className="size-3" />
+                                    {
+                                      workCenters.find(
+                                        (wc) => wc.id === operation.workCenterId
+                                      )?.name
+                                    }
+                                  </span>
+                                </div>
+                              </Td>
+                              <Td>
+                                <Hyperlink
+                                  className="text-muted-foreground"
+                                  to={path.to.job(operation.jobId)}
+                                >
+                                  {operation.jobReadableId}
+                                </Hyperlink>
+                              </Td>
+                              <Td className="px-0">
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <a
+                                      href={path.to.external.mesJobOperation(
+                                        operation.id
+                                      )}
+                                    >
+                                      <IconButton
+                                        variant="ghost"
+                                        icon={<LuPlay />}
+                                        aria-label="Go to operation"
+                                      />
+                                    </a>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Open in MES</TooltipContent>
+                                </Tooltip>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </div>
+                  );
+                }}
+              </Await>
+            </Suspense>
+          </CardContent>
         </Card>
       </div>
 
@@ -626,33 +746,55 @@ export default function ProductionDashboard() {
   );
 }
 
+type JobOperationMetaData = {
+  customerId?: string | null;
+  deadlineType?: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline";
+  description?: string | null;
+  dueDate?: string | null;
+  jobId?: string | null;
+  jobReadableId?: string | null;
+  salesOrderId?: string | null;
+  salesOrderLineId?: string | null;
+  salesOrderReadableId?: string | null;
+};
+
 function WorkCenterCards({
-  events,
+  events: initialEvents,
   workCenters,
 }: {
   events: ActiveProductionEvent[];
   workCenters: WorkCenter[];
 }) {
+  const [events, setEvents] = useState<ActiveProductionEvent[]>(initialEvents);
+  const [jobOperationMetaData, setJobOperationMetaData] = useState<
+    Record<string, JobOperationMetaData>
+  >(
+    initialEvents.reduce<Record<string, JobOperationMetaData>>((acc, event) => {
+      if (event.id) {
+        acc[event.jobOperationId] = {
+          jobId: event.jobId,
+          jobReadableId: event.jobReadableId,
+          salesOrderId: event.salesOrderId,
+          salesOrderReadableId: event.salesOrderReadableId,
+          salesOrderLineId: event.salesOrderLineId,
+          customerId: event.customerId,
+          description: event.description,
+          dueDate: event.dueDate,
+          deadlineType: event.deadlineType,
+        };
+      }
+      return acc;
+    }, {})
+  );
+
   const eventsByWorkCenterId = workCenters.reduce<
     Record<
       string,
-      {
+      JobOperationMetaData & {
         hasEvents: boolean;
-        customerId?: string | null;
         employeeIds?: (string | null)[];
-        salesOrderId?: string | null;
-        salesOrderReadableId?: string | null;
-        jobId?: string | null;
-        jobReadableId?: string | null;
-        dueDate?: string | null;
-        deadlineType?:
-          | "No Deadline"
-          | "ASAP"
-          | "Soft Deadline"
-          | "Hard Deadline";
         descriptionCount?: number;
         jobCount?: number;
-        description?: string | null;
       }
     >
   >((acc, workCenter) => {
@@ -667,15 +809,16 @@ function WorkCenterCards({
       return acc;
     }
 
-    const firstEvent = wcEvents[0];
-    const jobId = firstEvent.jobId;
-    const jobReadableId = firstEvent.jobReadbleId;
-    const salesOrderId = firstEvent.salesOrderId;
-    const salesOrderReadableId = firstEvent.salesOrderReadbleId;
-    const customerId = firstEvent.customerId;
-    const dueDate = firstEvent.dueDate;
-    const deadlineType = firstEvent.deadlineType;
-    const description = firstEvent.description;
+    const firstEvent = wcEvents?.[0];
+    if (!firstEvent) {
+      acc[workCenter.id!] = {
+        hasEvents: false,
+      };
+      return acc;
+    }
+
+    const jobOperationId = firstEvent.jobOperationId;
+
     const employeeIds =
       Array.from(new Set(wcEvents.map((event) => event.employeeId))) ?? [];
 
@@ -697,22 +840,108 @@ function WorkCenterCards({
     if (workCenter.id) {
       acc[workCenter.id!] = {
         hasEvents: true,
-        customerId,
         employeeIds,
-        dueDate,
-        deadlineType,
-        jobId,
-        jobReadableId,
-        salesOrderId,
-        salesOrderReadableId,
+        ...jobOperationMetaData[jobOperationId],
         descriptionCount: uniqueDescriptions,
         jobCount: uniqueJobs,
-        description,
       };
     }
 
     return acc;
   }, {});
+
+  const { carbon, accessToken } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const ensureMetaData = async (event: { jobOperationId: string }) => {
+    if (jobOperationMetaData[event.jobOperationId]) {
+      return;
+    }
+
+    const jobOperation = await carbon
+      ?.from("jobOperation")
+      .select(
+        "description, ...job(jobId:id, jobReadableId:jobId, customerId, dueDate, deadlineType, salesOrderLineId, ...salesOrderLine(...salesOrder(salesOrderId:id, salesOrderReadableId:salesOrderId)))"
+      )
+      .eq("id", event.jobOperationId)
+      .single();
+
+    if (jobOperation?.data) {
+      flushSync(() => {
+        setJobOperationMetaData((prev) => ({
+          ...prev,
+          [event.jobOperationId]: jobOperation.data,
+        }));
+      });
+    }
+  };
+
+  useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
+  const channelRef = useRef<RealtimeChannel | null>(null);
+
+  useMount(() => {
+    if (!channelRef.current && carbon && accessToken) {
+      carbon.realtime.setAuth(accessToken);
+      channelRef.current = carbon
+        .channel(`production-dashboard-work-centers:${companyId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "productionEvent",
+            filter: `companyId=eq.${companyId}`,
+          },
+          (payload) => {
+            if (payload.eventType === "INSERT") {
+              const { new: inserted } = payload;
+              setEvents((prev) => [...prev, inserted as ActiveProductionEvent]);
+              ensureMetaData({ jobOperationId: inserted.jobOperationId });
+            } else if (payload.eventType === "UPDATE") {
+              const { new: updated } = payload;
+              setEvents((prev) => {
+                if (updated.endTime) {
+                  return prev.filter((event) => event.id !== updated.id);
+                }
+                const exists = prev.some((event) => event.id === updated.id);
+                if (exists) {
+                  return prev.map((event) =>
+                    event.id === updated.id ? { ...event, ...updated } : event
+                  );
+                }
+                return [...prev, updated as ActiveProductionEvent];
+              });
+            } else if (payload.eventType === "DELETE") {
+              const { old: deleted } = payload;
+              setEvents((prev) =>
+                prev.filter((event) => event.id !== deleted.id)
+              );
+            }
+          }
+        )
+        .subscribe();
+    }
+
+    return () => {
+      if (channelRef.current) {
+        channelRef.current.unsubscribe();
+        carbon?.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+    };
+  });
+
+  useEffect(() => {
+    if (carbon && accessToken && channelRef.current) {
+      carbon.realtime.setAuth(accessToken);
+    }
+  }, [accessToken, carbon]);
+
   return (
     <div className="w-full grid grid-cols-6 gap-4">
       {workCenters.map((workCenter) => {
@@ -729,6 +958,7 @@ function WorkCenterCards({
           jobReadableId,
           salesOrderId,
           salesOrderReadableId,
+          salesOrderLineId,
         } = eventsByWorkCenterId[workCenter?.id ?? ""];
 
         const isOverdue =
@@ -739,7 +969,7 @@ function WorkCenterCards({
         return (
           <Card
             key={workCenter.id}
-            className="p-0 h-[300px] cols-span-6 lg:col-span-3 xl:col-span-2"
+            className="p-0 h-[300px] col-span-6 lg:col-span-3 xl:col-span-2"
           >
             <HStack className="justify-between w-full relative">
               <CardHeader>
@@ -753,22 +983,24 @@ function WorkCenterCards({
             </HStack>
             <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
               {!hasEvents ? (
-                <p className="text-muted-foreground text-center w-full h-full flex items-center justify-center font-medium">
+                <p className="text-muted-foreground text-center w-full h-full flex flex-col gap-2 items-center justify-center text-sm">
                   Inactive
                 </p>
               ) : (
                 <div className="flex flex-col gap-2 items-start justify-start text-sm">
-                  {jobId && (
+                  {jobId && jobReadableId && (
                     <HStack className="justify-start space-x-2">
                       <LuHardHat className="text-muted-foreground flex-shrink-0" />
                       <Hyperlink to={path.to.job(jobId)} className="truncate">
                         {jobReadableId}
                       </Hyperlink>
-                      {jobCount && jobCount > 1 && (
-                        <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
-                          {`+${jobCount - 1}`}
-                        </div>
-                      )}
+                      {jobCount !== undefined &&
+                        Number.isInteger(jobCount) &&
+                        jobCount > 1 && (
+                          <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                            {`+${jobCount - 1}`}
+                          </div>
+                        )}
                     </HStack>
                   )}
 
@@ -778,19 +1010,24 @@ function WorkCenterCards({
                       <span className="text-sm line-clamp-1 truncate">
                         {description}
                       </span>
-                      {descriptionCount && descriptionCount > 1 && (
-                        <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
-                          {`+${descriptionCount - 1}`}
-                        </div>
-                      )}
+                      {descriptionCount !== undefined &&
+                        Number.isInteger(descriptionCount) &&
+                        descriptionCount > 1 && (
+                          <div className="text-muted-foreground font-mono font-semibold flex items-center justify-center flex-shrink-0">
+                            {`+${descriptionCount - 1}`}
+                          </div>
+                        )}
                     </HStack>
                   )}
 
-                  {salesOrderId && (
+                  {salesOrderId && salesOrderLineId && salesOrderReadableId && (
                     <HStack className="justify-start space-x-2">
                       <RiProgress8Line className="text-muted-foreground flex-shrink-0" />
                       <Hyperlink
-                        to={path.to.salesOrderDetails(salesOrderId)}
+                        to={path.to.salesOrderLine(
+                          salesOrderId,
+                          salesOrderLineId
+                        )}
                         className="truncate"
                       >
                         {salesOrderReadableId}
@@ -835,10 +1072,14 @@ function WorkCenterCards({
               )}
             </CardContent>
             {employeeIds?.length ? (
-              <CardFooter className="border-t py-3 bg-muted/30">
-                <EmployeeAvatarGroup
-                  employeeIds={employeeIds.filter((id) => id !== null)}
-                />
+              <CardFooter className="border-t py-3 bg-muted/30 text-sm">
+                {employeeIds.length > 1 ? (
+                  <EmployeeAvatarGroup
+                    employeeIds={employeeIds.filter((id) => id !== null)}
+                  />
+                ) : (
+                  <EmployeeAvatar employeeId={employeeIds[0]} />
+                )}
               </CardFooter>
             ) : (
               <CardFooter className="h-[49px]" />
