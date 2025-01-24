@@ -22,7 +22,7 @@ const supportedFileTypes: Record<string, string> = {
   flac: "audio/flac",
 };
 
-export let loader = async ({ params }: LoaderFunctionArgs) => {
+export async function loader({ params }: LoaderFunctionArgs) {
   const client = getCarbonServiceRole();
 
   const path = params["*"];
@@ -70,4 +70,4 @@ export let loader = async ({ params }: LoaderFunctionArgs) => {
     "Access-Control-Allow-Headers": "Content-Type", // Allow Content-Type header
   });
   return new Response(fileData, { status: 200, headers });
-};
+}

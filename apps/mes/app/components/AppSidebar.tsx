@@ -51,6 +51,7 @@ import { useMode, useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import { path } from "~/utils/path";
+import { AdjustInventory } from "./AdjustInventory";
 import { EndShift } from "./EndShift";
 import Feedback from "./Feedback";
 
@@ -225,18 +226,31 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
 
 export function ToolsNav() {
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Tools</SidebarGroupLabel>
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <EndShift />
-        </SidebarMenuItem>
+    <>
+      <SidebarGroup>
+        <SidebarGroupLabel>Inventory Adjustments</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <AdjustInventory add={true} />
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <AdjustInventory add={false} />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+      <SidebarGroup>
+        <SidebarGroupLabel>Tools</SidebarGroupLabel>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <EndShift />
+          </SidebarMenuItem>
 
-        <SidebarMenuItem>
-          <Feedback />
-        </SidebarMenuItem>
-      </SidebarMenu>
-    </SidebarGroup>
+          <SidebarMenuItem>
+            <Feedback />
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarGroup>
+    </>
   );
 }
 
