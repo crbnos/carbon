@@ -230,6 +230,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             Math.max(operation.laborDuration, operation.machineDuration),
           deadlineType: op.jobDeadlineType,
           customerId: op.jobCustomerId,
+          operationQuantity: op.operationQuantity,
           jobReadableId: op.jobReadableId,
           itemReadableId: op.itemReadableId,
           itemDescription: op.itemDescription,

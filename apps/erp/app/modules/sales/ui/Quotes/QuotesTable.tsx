@@ -69,7 +69,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         cell: ({ row }) => (
           <HStack>
             <ItemThumbnail
-              size="sm"
+              size="md"
               thumbnailPath={row.original.thumbnailPath}
               // @ts-ignore
               type={row.original.itemType}

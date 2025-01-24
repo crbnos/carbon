@@ -82,7 +82,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         cell: ({ row }) => (
           <HStack className="py-1 min-w-[200px] truncate" spacing={2}>
             <ItemThumbnail
-              size="sm"
+              size="md"
               thumbnailPath={row.original.thumbnailPath}
               type="Part"
             />

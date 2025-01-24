@@ -62,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const thumbnailPath = await getThumbnailPathByItemId(
     serviceRole,
-    job.data.itemId
+    operation.data?.[0].itemId
   );
 
   return defer({

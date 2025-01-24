@@ -45,7 +45,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import {
-  LuChevronDown,
+  LuChevronRight,
   LuCircleX,
   LuCreditCard,
   LuImage,
@@ -515,7 +515,7 @@ const LineItems = ({
                   src={thumbnails[line.id!] ?? undefined}
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
+                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
@@ -546,11 +546,11 @@ const LineItems = ({
                       />
                       <motion.div
                         animate={{
-                          rotate: openItems.includes(line.id) ? 180 : 0,
+                          rotate: openItems.includes(line.id) ? 90 : 0,
                         }}
                         transition={{ duration: 0.3 }}
                       >
-                        <LuChevronDown size={24} />
+                        <LuChevronRight size={24} />
                       </motion.div>
                     </HStack>
                   </div>

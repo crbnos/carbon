@@ -7880,20 +7880,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_quoteLineId_fkey"
-            columns: ["quoteLineId"]
-            isOneToOne: false
-            referencedRelation: "quoteLine"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_quoteLineId_fkey"
-            columns: ["quoteLineId"]
-            isOneToOne: false
-            referencedRelation: "quoteLines"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "job_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
@@ -27077,20 +27063,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "job_quoteLineId_fkey"
-            columns: ["quoteLineId"]
-            isOneToOne: false
-            referencedRelation: "quoteLine"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_quoteLineId_fkey"
-            columns: ["quoteLineId"]
-            isOneToOne: false
-            referencedRelation: "quoteLines"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "job_salesOrderId_fkey"
             columns: ["salesOrderId"]
             isOneToOne: false
@@ -30351,6 +30323,7 @@ export type Database = {
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobs: Json[] | null
+          lines: Json[] | null
           locationId: string | null
           orderDate: string | null
           orderTotal: number | null

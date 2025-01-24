@@ -18,7 +18,7 @@ import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { LuChevronDown, LuImage } from "react-icons/lu";
+import { LuChevronRight, LuImage } from "react-icons/lu";
 import { SupplierAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -93,7 +93,7 @@ const LineItems = ({
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
+                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
@@ -137,11 +137,11 @@ const LineItems = ({
                       </VStack>
                       <motion.div
                         animate={{
-                          rotate: openItems.includes(line.id) ? 180 : 0,
+                          rotate: openItems.includes(line.id) ? 90 : 0,
                         }}
                         transition={{ duration: 0.3 }}
                       >
-                        <LuChevronDown size={24} />
+                        <LuChevronRight size={24} />
                       </motion.div>
                     </HStack>
                   </div>

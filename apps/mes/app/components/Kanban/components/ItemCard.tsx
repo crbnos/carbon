@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   cn,
+  Heading,
   HStack,
   Tooltip,
   TooltipContent,
@@ -99,8 +100,8 @@ export function ItemCard({
           })
         )}
       >
-        <CardHeader className="-mx-4  relative border-b py-3 px-4 rounded-t-lg">
-          <div className="flex w-full max-w-full justify-between items-start gap-0">
+        <CardHeader className="-mx-4 flex flex-row justify-between relative border-b py-3 px-4 rounded-t-lg">
+          <div className="flex w-full max-w-full justify-between items-start gap-2">
             <div className="flex flex-col space-y-0 min-w-0">
               {item.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
@@ -111,6 +112,9 @@ export function ItemCard({
                 {item.itemDescription || item.itemReadableId}
               </span>
             </div>
+            <Heading size="h4" className="text-muted-foreground/70">
+              {item.operationQuantity}
+            </Heading>
           </div>
         </CardHeader>
 

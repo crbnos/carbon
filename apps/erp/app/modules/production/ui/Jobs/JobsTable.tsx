@@ -95,7 +95,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         cell: ({ row }) => (
           <HStack>
             <ItemThumbnail
-              size="sm"
+              size="md"
               thumbnailPath={row.original.thumbnailPath}
               // @ts-ignore
               type={row.original.itemType}

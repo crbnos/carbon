@@ -10,7 +10,7 @@ import { LuX } from "react-icons/lu";
 import { cn } from "./utils/cn";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-md px-2.5 py-0.5 h-6 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 uppercase font-bold text-xs truncate tracking-tight",
+  "inline-flex items-center rounded-md px-2 py-0.5 pb-px min-h-5.5 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 uppercase font-bold text-[11px] truncate tracking-tight",
   {
     variants: {
       variant: {
@@ -22,13 +22,13 @@ const badgeVariants = cva(
           "bg-destructive text-destructive-foreground shadow:sm dark:shadow hover:bg-destructive/80",
         outline: "text-foreground",
         green:
-          "bg-emerald-600 text-emerald-100 dark:bg-emerald-900/50 dark:text-emerald-400",
+          "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400",
         yellow:
-          "bg-yellow-600 text-yellow-100 dark:bg-yellow-900/50 dark:text-yellow-300",
+          "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300",
         orange:
-          "bg-orange-600 text-orange-100 dark:bg-orange-900/50 dark:text-orange-300",
-        red: "bg-red-600 text-red-100 dark:bg-red-900/50 dark:text-red-400",
-        blue: "bg-blue-600 text-blue-100 dark:bg-blue-900/50 dark:text-blue-400",
+          "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300",
+        red: "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-400",
+        blue: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-400",
         gray: "bg-[#e3e2e080] text-[#32302c] dark:bg-[#373737] dark:text-white hover:bg-[#e3e2e0] dark:hover:bg-[#5a5a5a]",
       },
     },

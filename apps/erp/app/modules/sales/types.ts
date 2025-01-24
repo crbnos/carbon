@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
 import type {
   getCustomer,
@@ -127,6 +128,16 @@ export type QuotationShipment = NonNullable<
 export type SalesOrder = NonNullable<
   Awaited<ReturnType<typeof getSalesOrders>>["data"]
 >[number];
+
+export type SalesOrderJob = {
+  id: string;
+  jobId: string;
+  status: (typeof jobStatus)[number];
+  salesOrderLineId: string;
+  productionQuantity: number;
+  quantityComplete: number;
+  assignee: string;
+};
 
 export type SalesOrderLine = NonNullable<
   Awaited<ReturnType<typeof getSalesOrderLines>>["data"]

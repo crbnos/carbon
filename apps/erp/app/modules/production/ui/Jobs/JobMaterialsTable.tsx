@@ -66,7 +66,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         cell: ({ row }) => (
           <HStack className="py-1">
             <ItemThumbnail
-              size="sm"
+              size="md"
               // @ts-ignore
               type={row.original.itemType}
             />

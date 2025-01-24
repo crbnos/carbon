@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   CardContent,
@@ -6,10 +7,15 @@ import {
   CardHeader,
   CardTitle,
   Heading,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   HStack,
   Table,
   Tbody,
   Td,
+  Th,
+  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -22,14 +28,21 @@ import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import { useMemo, useState } from "react";
-import { LuChevronDown, LuImage, LuInfo } from "react-icons/lu";
-import { CustomerAvatar } from "~/components";
-import { usePercentFormatter, useRouteData } from "~/hooks";
+import {
+  LuChevronRight,
+  LuEllipsisVertical,
+  LuImage,
+  LuInfo,
+} from "react-icons/lu";
+import { Assignee, CustomerAvatar, Empty, Hyperlink } from "~/components";
+import { usePercentFormatter, usePermissions, useRouteData } from "~/hooks";
+import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
   Customer,
   Quotation,
   SalesOrder,
+  SalesOrderJob,
   SalesOrderLine,
 } from "../../types";
 
@@ -126,6 +139,7 @@ const SalesOrderSummary = ({
       </CardHeader>
       <CardContent>
         <LineItems
+          salesOrder={routeData?.salesOrder}
           currencyCode={routeData?.salesOrder?.currencyCode ?? "USD"}
           locale={locale}
           formatter={formatter}
@@ -211,14 +225,17 @@ function LineItems({
   formatter,
   locale,
   lines,
+  salesOrder,
 }: {
   currencyCode: string;
   formatter: Intl.NumberFormat;
   locale: string;
   lines: SalesOrderLine[];
+  salesOrder?: SalesOrder;
 }) {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
+  const permissions = usePermissions();
 
   const percentFormatter = usePercentFormatter();
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -233,6 +250,35 @@ function LineItems({
     <VStack spacing={8} className="w-full overflow-hidden">
       {lines.map((line) => {
         if (!line.id) return null;
+
+        const jobs = (salesOrder?.jobs?.filter(
+          (j) => (j as unknown as SalesOrderJob).salesOrderLineId === line.id
+        ) ?? []) as SalesOrderJob[];
+
+        const isMade = line.methodType === "Make";
+
+        const hasEnoughJobsToCoverQuantity =
+          jobs.reduce((acc, job) => acc + job.productionQuantity, 0) >=
+          (line.saleQuantity ?? 0);
+
+        const hasEnoughCompletedToCoverQuantity =
+          jobs.reduce((acc, job) => acc + job.quantityComplete, 0) >=
+          (line.saleQuantity ?? 0);
+
+        const jobVariant: "red" | "orange" | "green" =
+          hasEnoughJobsToCoverQuantity && hasEnoughCompletedToCoverQuantity
+            ? "green"
+            : hasEnoughJobsToCoverQuantity
+            ? "orange"
+            : "red";
+
+        const jobLabel: "Requires Jobs" | "In Progress" | "Complete" =
+          hasEnoughJobsToCoverQuantity && hasEnoughCompletedToCoverQuantity
+            ? "Complete"
+            : hasEnoughJobsToCoverQuantity
+            ? "In Progress"
+            : "Requires Jobs";
+
         return (
           <motion.div
             key={line.id}
@@ -249,7 +295,7 @@ function LineItems({
                   src={getPrivateUrl(line.thumbnailPath)}
                 />
               ) : (
-                <div className="w-20 h-20 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
+                <div className="w-24 h-24 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-4">
                   <LuImage className="w-16 h-16 text-muted-foreground" />
                 </div>
               )}
@@ -293,17 +339,52 @@ function LineItems({
                       />
                       <motion.div
                         animate={{
-                          rotate: openItems.includes(line.id) ? 180 : 0,
+                          rotate: openItems.includes(line.id) ? 90 : 0,
                         }}
                         transition={{ duration: 0.3 }}
                       >
-                        <LuChevronDown size={24} />
+                        <LuChevronRight size={24} />
                       </motion.div>
                     </HStack>
                   </div>
                   <span className="text-muted-foreground text-base truncate">
                     {line.description}
                   </span>
+                  {isMade && (
+                    <div className="mt-2 flex flex-row items-center gap-x-2">
+                      <Badge variant={jobVariant}>{jobLabel}</Badge>
+                      {jobs.length > 0 && (
+                        <HoverCard>
+                          <HoverCardTrigger>
+                            <Badge variant="secondary">
+                              {jobs.length} Jobs
+                              <LuEllipsisVertical className="w-3 h-3 ml-2" />
+                            </Badge>
+                          </HoverCardTrigger>
+                          <HoverCardContent>
+                            <div className="flex flex-col w-full gap-4 text-sm">
+                              {jobs.map((job) => (
+                                <div
+                                  key={job.id}
+                                  className="flex items-center justify-between gap-2"
+                                >
+                                  <Hyperlink
+                                    to={path.to.jobDetails(job.id)}
+                                    className="flex items-center justify-start gap-1"
+                                  >
+                                    {job.jobId}
+                                  </Hyperlink>
+                                  <div className="flex items-center justify-end">
+                                    <JobStatus status={job.status} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </HoverCardContent>
+                        </HoverCard>
+                      )}
+                    </div>
+                  )}
                 </div>
               </VStack>
             </HStack>
@@ -318,7 +399,7 @@ function LineItems({
               transition={{ duration: 0.3 }}
               className="w-full overflow-hidden"
             >
-              <div className="w-full">
+              <div className="flex flex-col gap-y-4 w-full">
                 <Table>
                   <Tbody>
                     <Tr>
@@ -427,6 +508,54 @@ function LineItems({
                     </Tr>
                   </Tbody>
                 </Table>
+
+                {isMade && (
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>Job ID</Th>
+                        <Th>Status</Th>
+                        <Th>Quantity</Th>
+                        <Th>Assignee</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {jobs.length > 0 ? (
+                        jobs.map((job) => (
+                          <Tr key={job.id}>
+                            <Td>
+                              <Hyperlink to={path.to.job(job.id!)}>
+                                {job.jobId}
+                              </Hyperlink>
+                            </Td>
+                            <Td>
+                              <JobStatus status={job.status} />
+                            </Td>
+                            <Td>
+                              {job.quantityComplete}/{job.productionQuantity}
+                            </Td>
+                            <Td>
+                              <Assignee
+                                id={job.id!}
+                                table="job"
+                                value={job.assignee ?? ""}
+                                isReadOnly={
+                                  !permissions.can("update", "production")
+                                }
+                              />
+                            </Td>
+                          </Tr>
+                        ))
+                      ) : (
+                        <Tr>
+                          <Td colSpan={4} className="py-8">
+                            <Empty />
+                          </Td>
+                        </Tr>
+                      )}
+                    </Tbody>
+                  </Table>
+                )}
               </div>
             </motion.div>
           </motion.div>

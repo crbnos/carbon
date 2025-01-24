@@ -58,8 +58,8 @@ const SequenceOrCustomId = forwardRef<
         <IconButton
           aria-label="Toggle"
           className={cn(
-            "absolute right-0 top-0",
-            "bg-card flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border -ml-px shadow-none hover:shadow-button-base"
+            "bg-card absolute right-0 top-0",
+            "flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border-none -ml-px shadow-button-base"
           )}
           icon={isCustom ? <LuToggleLeft /> : <LuToggleRight />}
           variant="secondary"

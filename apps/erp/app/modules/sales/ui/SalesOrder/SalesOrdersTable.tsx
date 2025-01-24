@@ -1,13 +1,15 @@
 import {
   Badge,
   Checkbox,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
   HStack,
   MenuIcon,
   MenuItem,
-  Popover,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -17,14 +19,18 @@ import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
+  LuCheck,
   LuCreditCard,
   LuDollarSign,
-  LuExternalLink,
+  LuEllipsisVertical,
+  LuFactory,
+  LuLoader,
   LuPencil,
   LuQrCode,
   LuSquareUser,
   LuStar,
   LuTrash,
+  LuTriangleAlert,
   LuTruck,
   LuUser,
 } from "react-icons/lu";
@@ -47,7 +53,7 @@ import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { salesOrderStatusType } from "../../sales.models";
-import type { SalesOrder } from "../../types";
+import type { SalesOrder, SalesOrderJob } from "../../types";
 import SalesStatus from "./SalesStatus";
 
 type SalesOrdersTableProps = {
@@ -81,7 +87,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         cell: ({ row }) => (
           <HStack>
             <ItemThumbnail
-              size="sm"
+              size="md"
               thumbnailPath={row.original.thumbnailPath}
               // @ts-ignore
               type={row.original.itemType}
@@ -135,46 +141,107 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         id: "jobs",
         header: "Jobs",
         cell: ({ row }) => {
-          if (row.original.jobs === null || !Array.isArray(row.original.jobs))
+          const jobs = (row.original.jobs ?? []) as SalesOrderJob[];
+          const lines =
+            (row.original.lines as {
+              id: string;
+              saleQuantity: number;
+              methodType: "Buy" | "Make" | "Pick";
+            }[]) ?? [];
+
+          if (
+            lines.length === 0 ||
+            lines.every((line) => line.methodType !== "Make")
+          ) {
             return null;
-          return (
-            <Popover>
-              <PopoverTrigger>
-                <Badge variant="secondary">
-                  {row.original.jobs.length} Jobs
-                  <LuExternalLink className="w-3 h-3 ml-2" />
-                </Badge>
-              </PopoverTrigger>
-              <PopoverContent>
-                <PopoverHeader>Jobs</PopoverHeader>
-                <div className="flex flex-col w-full gap-4 text-sm">
-                  {(
-                    row.original.jobs as {
-                      id: string;
-                      jobId: string;
-                      status: "Draft";
-                    }[]
-                  ).map((job) => (
-                    <div
-                      key={job.id}
-                      className="flex items-center justify-between gap-2"
-                    >
-                      <Hyperlink
-                        to={path.to.jobDetails(job.id)}
-                        className="flex items-center justify-start gap-1"
-                      >
-                        {job.jobId}
-                        <LuExternalLink className="w-4 h-4" />
-                      </Hyperlink>
-                      <div className="flex items-center justify-end">
-                        <JobStatus status={job.status} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </PopoverContent>
-            </Popover>
+          }
+
+          const everyMadeLineHasSufficientJobs = lines.every((line) => {
+            if (line.methodType !== "Make") return true;
+            const relevantJobs =
+              jobs.filter((job) => job.salesOrderLineId === line.id) ?? [];
+            const totalJobQuantity = relevantJobs.reduce(
+              (acc, job) => acc + job.productionQuantity,
+              0
+            );
+
+            return totalJobQuantity >= line.saleQuantity;
+          });
+
+          const everyMadeLineIsCompleted = lines.every((line) => {
+            if (line.methodType !== "Make") return true;
+            const relevantJobs =
+              jobs.filter((job) => job.salesOrderLineId === line.id) ?? [];
+            const totalJobQuantity = relevantJobs.reduce(
+              (acc, job) => acc + job.quantityComplete,
+              0
+            );
+            return totalJobQuantity >= line.saleQuantity;
+          });
+
+          const statusIcon = everyMadeLineIsCompleted ? (
+            <LuCheck className="w-3 h-3 mr-2 text-emerald-500" />
+          ) : everyMadeLineHasSufficientJobs ? (
+            <LuLoader className="w-3 h-3 mr-2 text-orange-500" />
+          ) : (
+            <LuTriangleAlert className="w-3 h-3 mr-2 text-red-500" />
           );
+
+          return (
+            <div className="flex flex-row items-center justify-center gap-2">
+              {!everyMadeLineHasSufficientJobs && jobs.length === 0 && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuTriangleAlert className="w-3 h-3 mr-2 text-red-500" />
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Not enough jobs to cover quantity</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {jobs.length > 0 && (
+                <HoverCard>
+                  <HoverCardTrigger>
+                    <Badge variant="secondary" className="cursor-pointer">
+                      {statusIcon}
+                      {jobs.length} Job
+                      {jobs.length > 1 ? "s" : ""}
+                      <LuEllipsisVertical className="w-3 h-3 ml-2" />
+                    </Badge>
+                  </HoverCardTrigger>
+                  <HoverCardContent>
+                    <div className="flex flex-col w-full gap-4 text-sm">
+                      {(
+                        jobs as {
+                          id: string;
+                          jobId: string;
+                          status: "Draft";
+                        }[]
+                      ).map((job) => (
+                        <div
+                          key={job.id}
+                          className="flex items-center justify-between gap-2"
+                        >
+                          <Hyperlink
+                            to={path.to.jobDetails(job.id)}
+                            className="flex items-center justify-start gap-1"
+                          >
+                            {job.jobId}
+                          </Hyperlink>
+                          <div className="flex items-center justify-end">
+                            <JobStatus status={job.status} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+            </div>
+          );
+        },
+        meta: {
+          icon: <LuFactory />,
         },
       },
       {

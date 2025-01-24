@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   cn,
+  Heading,
   HStack,
   Tooltip,
   TooltipContent,
@@ -109,7 +110,7 @@ function OperationCard({
         className="flex flex-col flex-1"
       >
         <CardHeader className="-mx-4 relative border-b py-3 px-4 rounded-t-lg">
-          <div className="flex w-full max-w-full justify-between items-start gap-0">
+          <div className="flex w-full max-w-full justify-between items-start gap-2">
             <div className="flex flex-col space-y-0 min-w-0">
               {operation.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
@@ -117,9 +118,12 @@ function OperationCard({
                 </span>
               )}
               <span className="mr-auto font-semibold line-clamp-2 leading-tight">
-                {operation.itemDescription}
+                {operation.itemDescription || operation.itemReadableId}
               </span>
             </div>
+            <Heading size="h4" className="text-muted-foreground/70">
+              {operation.operationQuantity}
+            </Heading>
           </div>
         </CardHeader>
         <CardContent className="pt-3 px-1 gap-2 text-left whitespace-pre-wrap text-sm flex-grow">

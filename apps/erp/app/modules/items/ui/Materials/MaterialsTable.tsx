@@ -83,7 +83,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         cell: ({ row }) => (
           <HStack className="py-1 min-w-[200px] truncate">
             <ItemThumbnail
-              size="sm"
+              size="md"
               thumbnailPath={row.original.thumbnailPath}
               type="Material"
             />

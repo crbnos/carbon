@@ -16,8 +16,8 @@ const itemVariants = cva(
   {
     variants: {
       size: {
-        sm: "w-7 h-7",
-        md: "w-9 h-9",
+        sm: "w-8 h-8",
+        md: "w-10 h-10",
         lg: "w-11 h-11 bg-gradient-to-bl from-muted to-muted/40",
       },
       withPadding: {
@@ -49,7 +49,7 @@ const itemVariants = cva(
   }
 );
 
-const iconVariants = cva("text-muted-foreground", {
+const iconVariants = cva("text-[#AAAAAA] dark:text-[#444]", {
   variants: {
     size: {
       sm: "w-4 h-4",
