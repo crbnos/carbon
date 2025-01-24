@@ -143,12 +143,22 @@ export function TeamSwitcher({
             {companies.map((c, index) => {
               const logo = mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
               return (
-                <DropdownMenuItem key={c.name} className="gap-2 p-2">
-                  <div className="flex size-6 items-center justify-center rounded-sm border">
-                    <Avatar src={logo ?? undefined} name={c.name ?? ""} />
-                  </div>
-                  {c.name}
-                </DropdownMenuItem>
+                <Form
+                  key={c.companyId}
+                  method="post"
+                  action={path.to.companySwitch(c.companyId!)}
+                >
+                  <DropdownMenuItem key={c.name} className="gap-2 p-2" asChild>
+                    <button type="submit">
+                      <Avatar
+                        src={logo ?? undefined}
+                        name={c.name ?? ""}
+                        className="rounded-md"
+                      />
+                      {c.name}
+                    </button>
+                  </DropdownMenuItem>
+                </Form>
               );
             })}
           </DropdownMenuContent>

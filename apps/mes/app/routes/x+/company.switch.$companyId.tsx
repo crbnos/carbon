@@ -11,8 +11,11 @@ import { getLocation, setLocation } from "~/services/location.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
+  console.log("company switch");
   const { client, userId } = await requirePermissions(request, {});
   const companies = await getCompanies(client, userId);
+
+  console.log("companies", companies);
 
   if (companies.error) {
     throw redirect(
@@ -33,12 +36,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await destroyAuthSession(request);
   }
 
+  console.log("companyId", companyId);
+
   const sessionCookie = await updateCompanySession(request, companyId!);
   const companyIdCookie = setCompanyId(companyId!);
   const storedLocations = await getLocation(request, client, {
     userId,
     companyId: companyId!,
   });
+
+  console.log("storedLocations", storedLocations);
 
   if (storedLocations.updated) {
     const locationCookie = await setLocation(

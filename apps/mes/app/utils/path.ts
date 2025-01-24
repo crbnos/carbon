@@ -22,6 +22,8 @@ export const path = {
     assigned: `${x}/assigned`,
     authenticatedRoot: x,
     callback: "/callback",
+    companySwitch: (companyId: string) =>
+      generatePath(`${x}/company/switch/${companyId}`),
     complete: `${x}/complete`,
     endShift: `${x}/end-shift`,
     feedback: `${x}/feedback`,
