@@ -3,7 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { Spinner } from "@carbon/react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Spinner,
+} from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { FileObject } from "@supabase/storage-js";
 import type { JSONContent } from "@tiptap/react";
@@ -180,6 +186,7 @@ export default function SalesOrderDetailsRoute() {
         opportunity={orderData?.opportunity!}
       />
       <SalesOrderSummary onEditShippingCost={handleEditShippingCost} />
+      <SalesOrderJobsSummary />
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
@@ -219,5 +226,20 @@ export default function SalesOrderDetailsRoute() {
         initialValues={paymentInitialValues}
       />
     </>
+  );
+}
+
+function SalesOrderJobsSummary() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Jobs</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div>
+          <p>Jobs</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

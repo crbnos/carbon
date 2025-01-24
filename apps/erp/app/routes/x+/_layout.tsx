@@ -108,6 +108,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AuthenticatedRoute() {
   const { session } = useLoaderData<typeof loader>();
   const user = useUser();
+  const transition = useNavigation();
 
   useMount(() => {
     posthog.identify(user.id, {
@@ -115,8 +116,6 @@ export default function AuthenticatedRoute() {
       name: `${user.firstName} ${user.lastName}`,
     });
   });
-
-  const transition = useNavigation();
 
   /* NProgress */
   useEffect(() => {
@@ -131,10 +130,10 @@ export default function AuthenticatedRoute() {
   }, [transition.state]);
 
   return (
-    <CarbonProvider session={session}>
-      <RealtimeDataProvider>
-        <TooltipProvider>
-          <div className="h-[100dvh] flex flex-col">
+    <div className="h-[100dvh] flex flex-col">
+      <CarbonProvider session={session}>
+        <RealtimeDataProvider>
+          <TooltipProvider>
             <div className="flex-none" />
             <div className="h-screen min-h-[0px] basis-0 flex-1">
               <div className="flex h-full">
@@ -151,9 +150,9 @@ export default function AuthenticatedRoute() {
                 </div>
               </div>
             </div>
-          </div>
-        </TooltipProvider>
-      </RealtimeDataProvider>
-    </CarbonProvider>
+          </TooltipProvider>
+        </RealtimeDataProvider>
+      </CarbonProvider>
+    </div>
   );
 }
