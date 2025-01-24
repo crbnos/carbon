@@ -1,6 +1,7 @@
 import {
   Badge,
   Checkbox,
+  cn,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
@@ -188,7 +189,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
           );
 
           return (
-            <div className="flex flex-row items-center justify-center gap-2">
+            <div
+              className={cn(
+                "flex flex-row items-center justify-center gap-2",
+                !everyMadeLineHasSufficientJobs && jobs.length === 0
+                  ? "justify-center"
+                  : "justify-start"
+              )}
+            >
               {!everyMadeLineHasSufficientJobs && jobs.length === 0 && (
                 <Tooltip>
                   <TooltipTrigger>
