@@ -14,6 +14,7 @@ import type { notifyTask } from "~/trigger/notify";
 
 export const config = {
   runtime: "nodejs",
+  maxDuration: 20,
 };
 
 export async function action({ request, params }: ActionFunctionArgs) {

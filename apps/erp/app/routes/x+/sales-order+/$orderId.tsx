@@ -10,6 +10,7 @@ import {
   getCustomer,
   getOpportunityBySalesOrder,
   getOpportunityDocuments,
+  getQuote,
   getSalesOrder,
   getSalesOrderLines,
 } from "~/modules/sales";
@@ -55,9 +56,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const customer = salesOrder.data?.customerId
-    ? await getCustomer(client, salesOrder.data.customerId)
-    : null;
+  const [quote, customer] = await Promise.all([
+    opportunity.data.quoteId
+      ? getQuote(client, opportunity.data.quoteId)
+      : Promise.resolve(null),
+    salesOrder.data?.customerId
+      ? getCustomer(client, salesOrder.data.customerId)
+      : Promise.resolve(null),
+  ]);
 
   return defer({
     salesOrder: salesOrder.data,
@@ -65,6 +71,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getOpportunityDocuments(client, companyId, opportunity.data.id),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
+    quote: quote?.data ?? null,
+    originatedFromQuote: !!opportunity.data.quoteId,
   });
 }
 

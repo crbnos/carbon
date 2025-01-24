@@ -31,7 +31,7 @@ import type { action } from "~/routes/x+/items+/update";
 import type { action as exchangeRateAction } from "~/routes/x+/sales-order+/$orderId.exchange-rate";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import type { Quotation, SalesOrder } from "../../types";
+import type { SalesOrder } from "../../types";
 
 const SalesOrderProperties = () => {
   const { orderId } = useParams();
@@ -39,8 +39,6 @@ const SalesOrderProperties = () => {
 
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
-    quote: Quotation;
-    originatedFromQuote: boolean;
   }>(path.to.salesOrder(orderId));
 
   const fetcher = useFetcher<typeof action>();
@@ -259,28 +257,6 @@ const SalesOrderProperties = () => {
           }}
         />
       </ValidatedForm>
-
-      {routeData?.originatedFromQuote && (
-        <>
-          <VStack spacing={2}>
-            <span className="text-xs text-muted-foreground">
-              Quote Accepted By
-            </span>
-            <span className="text-sm">
-              {routeData?.quote?.digitalQuoteAcceptedBy}
-            </span>
-          </VStack>
-
-          <VStack spacing={2}>
-            <span className="text-xs text-muted-foreground">
-              Quote Accepted By Email
-            </span>
-            <span className="text-sm">
-              {routeData?.quote?.digitalQuoteAcceptedByEmail}
-            </span>
-          </VStack>
-        </>
-      )}
 
       <ValidatedForm
         defaultValues={{

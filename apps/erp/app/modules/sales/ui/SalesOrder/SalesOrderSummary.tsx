@@ -10,6 +10,9 @@ import {
   Table,
   Tbody,
   Td,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   VStack,
 } from "@carbon/react";
@@ -19,13 +22,191 @@ import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import MotionNumber from "motion-number";
 import { useMemo, useState } from "react";
-import { LuChevronDown, LuImage } from "react-icons/lu";
+import { LuChevronDown, LuImage, LuInfo } from "react-icons/lu";
 import { CustomerAvatar } from "~/components";
 import { usePercentFormatter, useRouteData } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
-import type { SalesOrderLine } from "../../types";
+import type {
+  Customer,
+  Quotation,
+  SalesOrder,
+  SalesOrderLine,
+} from "../../types";
 
-const LineItems = ({
+const SalesOrderSummary = ({
+  onEditShippingCost,
+}: {
+  onEditShippingCost: () => void;
+}) => {
+  const { orderId } = useParams();
+  if (!orderId) throw new Error("Could not find orderId");
+
+  const routeData = useRouteData<{
+    salesOrder: SalesOrder;
+    lines: SalesOrderLine[];
+    customer: Customer;
+    quote: Quotation;
+  }>(path.to.salesOrder(orderId));
+
+  const { locale } = useLocale();
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency: routeData?.salesOrder?.currencyCode ?? "USD",
+      }),
+    [locale, routeData?.salesOrder?.currencyCode]
+  );
+
+  const isEditable = ["Draft", "To Review"].includes(
+    routeData?.salesOrder?.status ?? ""
+  );
+
+  // Calculate totals
+  const subtotal =
+    routeData?.lines?.reduce((acc, line) => {
+      const lineTotal =
+        (line.convertedUnitPrice ?? 0) * (line.saleQuantity ?? 0);
+      const addOns =
+        (line.convertedAddOnCost ?? 0) + (line.convertedShippingCost ?? 0);
+      return acc + lineTotal + addOns;
+    }, 0) ?? 0;
+
+  const tax =
+    routeData?.lines?.reduce((acc, line) => {
+      const lineTotal =
+        (line.convertedUnitPrice ?? 0) * (line.saleQuantity ?? 0);
+      const addOns =
+        (line.convertedAddOnCost ?? 0) + (line.convertedShippingCost ?? 0);
+      return acc + (lineTotal + addOns) * (line.taxPercent ?? 0);
+    }, 0) ?? 0;
+
+  const convertedShippingCost =
+    (routeData?.salesOrder?.exchangeRate ?? 1) *
+    (routeData?.salesOrder?.shippingCost ?? 0);
+  const total = subtotal + tax + convertedShippingCost;
+
+  return (
+    <Card>
+      <CardHeader>
+        <HStack className="justify-between items-center">
+          <div className="flex flex-col gap-1">
+            <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
+            <CardDescription>Sales Order</CardDescription>
+          </div>
+          <div className="flex flex-col gap-1 items-end">
+            <CustomerAvatar
+              customerId={routeData?.salesOrder.customerId ?? null}
+            />
+            {routeData?.salesOrder?.orderDate && (
+              <span className="text-muted-foreground text-sm">
+                Ordered {formatDate(routeData?.salesOrder.orderDate)}
+              </span>
+            )}
+            {routeData?.quote?.digitalQuoteAcceptedBy && (
+              <span className="text-muted-foreground text-sm flex flex-row items-center gap-x-1">
+                via Digital Quote
+                <Tooltip>
+                  <TooltipTrigger>
+                    <LuInfo className="size-4" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <div className="flex flex-col gap-y-0">
+                      <span>{routeData?.quote?.digitalQuoteAcceptedBy}</span>
+                      <span>
+                        {routeData?.quote?.digitalQuoteAcceptedByEmail}
+                      </span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </span>
+            )}
+          </div>
+        </HStack>
+      </CardHeader>
+      <CardContent>
+        <LineItems
+          currencyCode={routeData?.salesOrder?.currencyCode ?? "USD"}
+          locale={locale}
+          formatter={formatter}
+          lines={routeData?.lines ?? []}
+        />
+
+        <VStack spacing={2} className="mt-8">
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            <span>Subtotal:</span>
+            <MotionNumber
+              value={subtotal}
+              format={{
+                style: "currency",
+                currency: routeData?.salesOrder?.currencyCode ?? "USD",
+              }}
+              locales={locale}
+            />
+          </HStack>
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            <span>Tax:</span>
+            <MotionNumber
+              value={tax}
+              format={{
+                style: "currency",
+                currency: routeData?.salesOrder?.currencyCode ?? "USD",
+              }}
+              locales={locale}
+            />
+          </HStack>
+          <HStack className="justify-between text-base text-muted-foreground w-full">
+            {convertedShippingCost > 0 ? (
+              <>
+                <VStack spacing={0}>
+                  <span>Shipping:</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={onEditShippingCost}
+                  >
+                    Edit Shipping
+                  </Button>
+                </VStack>
+                <MotionNumber
+                  value={convertedShippingCost}
+                  format={{
+                    style: "currency",
+                    currency: routeData?.salesOrder.currencyCode ?? "USD",
+                  }}
+                  locales={locale}
+                />
+              </>
+            ) : isEditable ? (
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={onEditShippingCost}
+              >
+                Add Shipping
+              </Button>
+            ) : null}
+          </HStack>
+          <HStack className="justify-between text-xl font-bold w-full">
+            <span>Total:</span>
+            <MotionNumber
+              value={total}
+              format={{
+                style: "currency",
+                currency: routeData?.salesOrder?.currencyCode ?? "USD",
+              }}
+              locales={locale}
+            />
+          </HStack>
+        </VStack>
+      </CardContent>
+    </Card>
+  );
+};
+
+function LineItems({
   currencyCode,
   formatter,
   locale,
@@ -35,7 +216,7 @@ const LineItems = ({
   formatter: Intl.NumberFormat;
   locale: string;
   lines: SalesOrderLine[];
-}) => {
+}) {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
 
@@ -253,159 +434,6 @@ const LineItems = ({
       })}
     </VStack>
   );
-};
-const SalesOrderSummary = ({
-  onEditShippingCost,
-}: {
-  onEditShippingCost: () => void;
-}) => {
-  const { orderId } = useParams();
-  if (!orderId) throw new Error("Could not find orderId");
-
-  const routeData = useRouteData<{
-    salesOrder: any;
-    lines: any[];
-    customer: any;
-  }>(path.to.salesOrder(orderId));
-
-  const { locale } = useLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: routeData?.salesOrder?.currencyCode ?? "USD",
-      }),
-    [locale, routeData?.salesOrder?.currencyCode]
-  );
-
-  const isEditable = ["Draft", "To Review"].includes(
-    routeData?.salesOrder?.status ?? ""
-  );
-
-  // Calculate totals
-  const subtotal =
-    routeData?.lines?.reduce((acc, line) => {
-      const lineTotal =
-        (line.convertedUnitPrice ?? 0) * (line.saleQuantity ?? 0);
-      const addOns =
-        (line.convertedAddOnCost ?? 0) + (line.convertedShippingCost ?? 0);
-      return acc + lineTotal + addOns;
-    }, 0) ?? 0;
-
-  const tax =
-    routeData?.lines?.reduce((acc, line) => {
-      const lineTotal =
-        (line.convertedUnitPrice ?? 0) * (line.saleQuantity ?? 0);
-      const addOns =
-        (line.convertedAddOnCost ?? 0) + (line.convertedShippingCost ?? 0);
-      return acc + (lineTotal + addOns) * (line.taxPercent ?? 0);
-    }, 0) ?? 0;
-
-  const convertedShippingCost =
-    (routeData?.salesOrder?.exchangeRate ?? 1) *
-    (routeData?.salesOrder?.shippingCost ?? 0);
-  const total = subtotal + tax + convertedShippingCost;
-
-  return (
-    <Card>
-      <CardHeader>
-        <HStack className="justify-between items-center">
-          <div className="flex flex-col gap-1">
-            <CardTitle>{routeData?.salesOrder.salesOrderId}</CardTitle>
-            <CardDescription>Sales Order</CardDescription>
-          </div>
-          <div className="flex flex-col gap-1 items-end">
-            <CustomerAvatar
-              customerId={routeData?.salesOrder.customerId ?? null}
-            />
-            {routeData?.salesOrder?.orderDate && (
-              <span className="text-muted-foreground text-sm">
-                Ordered {formatDate(routeData?.salesOrder.orderDate)}
-              </span>
-            )}
-          </div>
-        </HStack>
-      </CardHeader>
-      <CardContent>
-        <LineItems
-          currencyCode={routeData?.salesOrder?.currencyCode ?? "USD"}
-          locale={locale}
-          formatter={formatter}
-          lines={routeData?.lines ?? []}
-        />
-
-        <VStack spacing={2} className="mt-8">
-          <HStack className="justify-between text-base text-muted-foreground w-full">
-            <span>Subtotal:</span>
-            <MotionNumber
-              value={subtotal}
-              format={{
-                style: "currency",
-                currency: routeData?.salesOrder?.currencyCode ?? "USD",
-              }}
-              locales={locale}
-            />
-          </HStack>
-          <HStack className="justify-between text-base text-muted-foreground w-full">
-            <span>Tax:</span>
-            <MotionNumber
-              value={tax}
-              format={{
-                style: "currency",
-                currency: routeData?.salesOrder?.currencyCode ?? "USD",
-              }}
-              locales={locale}
-            />
-          </HStack>
-          <HStack className="justify-between text-base text-muted-foreground w-full">
-            {convertedShippingCost > 0 ? (
-              <>
-                <VStack spacing={0}>
-                  <span>Shipping:</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="text-muted-foreground"
-                    onClick={onEditShippingCost}
-                  >
-                    Edit Shipping
-                  </Button>
-                </VStack>
-                <MotionNumber
-                  value={convertedShippingCost}
-                  format={{
-                    style: "currency",
-                    currency: routeData?.salesOrder.currencyCode ?? "USD",
-                  }}
-                  locales={locale}
-                />
-              </>
-            ) : isEditable ? (
-              <Button
-                variant="link"
-                size="sm"
-                className="text-muted-foreground"
-                onClick={onEditShippingCost}
-              >
-                Add Shipping
-              </Button>
-            ) : null}
-          </HStack>
-          <HStack className="justify-between text-xl font-bold w-full">
-            <span>Total:</span>
-            <MotionNumber
-              value={total}
-              format={{
-                style: "currency",
-                currency: routeData?.salesOrder?.currencyCode ?? "USD",
-              }}
-              locales={locale}
-            />
-          </HStack>
-        </VStack>
-      </CardContent>
-    </Card>
-  );
-};
+}
 
 export default SalesOrderSummary;
