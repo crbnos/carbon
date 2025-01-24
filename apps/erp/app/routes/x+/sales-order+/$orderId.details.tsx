@@ -186,7 +186,7 @@ export default function SalesOrderDetailsRoute() {
         opportunity={orderData?.opportunity!}
       />
       <SalesOrderSummary onEditShippingCost={handleEditShippingCost} />
-      <SalesOrderJobsSummary />
+      {/* <SalesOrderJobsSummary /> */}
       <OpportunityNotes
         key={`notes-${orderId}`}
         id={orderData.salesOrder.id}
