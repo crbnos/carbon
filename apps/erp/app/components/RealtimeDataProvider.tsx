@@ -51,7 +51,9 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     const [items, suppliers, customers, people] = await Promise.all([
       carbon
         .from("item")
-        .select("id, readableId, name, type, replenishmentSystem, active")
+        .select(
+          "id, readableId, name, type, replenishmentSystem, active, itemTrackingType"
+        )
         .eq("companyId", companyId)
         .order("readableId"),
       carbon
@@ -138,6 +140,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       readableId: inserted.readableId,
                       description: inserted.description,
                       replenishmentSystem: inserted.replenishmentSystem,
+                      itemTrackingType: inserted.itemTrackingType,
                       type: inserted.type,
                       active: inserted.active,
                     },

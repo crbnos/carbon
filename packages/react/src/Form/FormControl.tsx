@@ -259,7 +259,7 @@ export const FormHelperText = forwardRef<HTMLDivElement, FormHelperTextProps>(
       <div
         {...field?.getHelpTextProps(props, ref)}
         className={cn(
-          "font-normal text-sm text-muted-foreground",
+          "font-normal text-xs text-muted-foreground",
           props.className
         )}
       />

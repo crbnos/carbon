@@ -23,7 +23,7 @@ export type ComboboxProps = Omit<
   size?: "sm" | "md" | "lg";
   value?: string;
   options: {
-    label: string;
+    label: string | JSX.Element;
     value: string;
     helper?: string;
   }[];
@@ -34,7 +34,7 @@ export type ComboboxProps = Omit<
   onChange?: (selected: string) => void;
   inline?: (
     value: string,
-    options: { value: string; label: string; helper?: string }[]
+    options: { value: string; label: string | JSX.Element; helper?: string }[]
   ) => React.ReactNode;
   itemHeight?: number;
 };

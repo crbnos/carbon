@@ -42,8 +42,9 @@ import {
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { Quotation, QuotationLine } from "../../types";
 
-import { MethodItemTypeIcon } from "~/components";
+import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
+import { QuoteLineStatusIcon } from "~/components/Icons";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
@@ -348,7 +349,12 @@ const QuoteLineForm = ({
                         label="Method"
                         options={
                           methodType.map((m) => ({
-                            label: m,
+                            label: (
+                              <span className="flex items-center gap-2">
+                                <MethodIcon type={m} />
+                                {m}
+                              </span>
+                            ),
                             value: m,
                           })) ?? []
                         }
@@ -366,7 +372,12 @@ const QuoteLineForm = ({
                         name="status"
                         label="Line Status"
                         options={quoteLineStatusType.map((s) => ({
-                          label: s,
+                          label: (
+                            <span className="flex items-center gap-2">
+                              <QuoteLineStatusIcon status={s} />
+                              {s}
+                            </span>
+                          ),
                           value: s,
                         }))}
                       />

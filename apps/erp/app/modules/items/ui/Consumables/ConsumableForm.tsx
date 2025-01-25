@@ -28,6 +28,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
+import { TrackingTypeIcon } from "~/components/Icons";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { consumableValidator, itemTrackingTypes } from "../../items.models";
@@ -73,7 +74,12 @@ const ConsumableForm = ({
 
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({
-      label: itemTrackingType,
+      label: (
+        <span className="flex items-center gap-2">
+          <TrackingTypeIcon type={itemTrackingType} />
+          {itemTrackingType}
+        </span>
+      ),
       value: itemTrackingType,
     })) ?? [];
 

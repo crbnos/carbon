@@ -22,16 +22,13 @@ import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
-  LuCircle,
-  LuCircleCheck,
   LuCirclePlus,
-  LuCircleX,
-  LuClock3,
   LuEllipsisVertical,
   LuSearch,
   LuTrash,
 } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
+import { QuoteLineStatusIcon } from "~/components/Icons";
 import type { Tree } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import {
@@ -44,7 +41,6 @@ import {
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { quoteLineStatusType } from "../../sales.models";
 import type {
   Customer,
   Quotation,
@@ -251,7 +247,7 @@ function QuoteLineItem({
                 {line.itemReadableId}
               </span>
               <div className="ml-auto">
-                {getStatusIcon(line.status ?? "Not Started")}
+                <QuoteLineStatusIcon status={line.status ?? "Not Started"} />
               </div>
             </HStack>
             <span className="font-medium text-muted-foreground text-xs line-clamp-1">
@@ -344,19 +340,4 @@ function QuoteLineItem({
         )}
     </VStack>
   );
-}
-
-function getStatusIcon(status: (typeof quoteLineStatusType)[number]) {
-  switch (status) {
-    case "Not Started":
-      return <LuCircle size={12} className="text-blue-600" />;
-    case "No Quote":
-      return <LuCircleX size={12} className="text-red-600" />;
-    case "Complete":
-      return <LuCircleCheck size={12} className="text-emerald-600" />;
-    case "In Progress":
-      return <LuClock3 size={12} className="text-yellow-600" />;
-    default:
-      return null;
-  }
 }

@@ -75,6 +75,22 @@ serve(async (req: Request) => {
     if (purchaseOrderLines.error)
       throw new Error(purchaseOrderLines.error.message);
 
+    const items = await client
+      .from("item")
+      .select("id, itemTrackingType")
+      .in(
+        "id",
+        purchaseOrderLines.data.map((d) => d.itemId)
+      );
+    const serializedItems = new Set(
+      items.data
+        ?.filter((d) => d.itemTrackingType === "Serial")
+        .map((d) => d.id)
+    );
+    const batchItems = new Set(
+      items.data?.filter((d) => d.itemTrackingType === "Lot").map((d) => d.id)
+    );
+
     const hasReceipt = !!receipt.data?.id;
 
     const previouslyReceivedQuantitiesByLine = (
@@ -112,6 +128,8 @@ serve(async (req: Request) => {
           outstandingQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
+          requiresSerialTracking: serializedItems.has(d.itemId),
+          requiresLotTracking: batchItems.has(d.itemId),
           unitPrice:
             d.unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",

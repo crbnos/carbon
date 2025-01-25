@@ -26,6 +26,7 @@ import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
 import type { z } from "zod";
+import { MethodIcon } from "~/components";
 import {
   CustomFormFields,
   DatePicker,
@@ -295,7 +296,12 @@ const SalesOrderLineForm = ({
                           label="Method"
                           options={
                             methodType.map((m) => ({
-                              label: m,
+                              label: (
+                                <span className="flex items-center gap-2">
+                                  <MethodIcon type={m} />
+                                  {m}
+                                </span>
+                              ),
                               value: m,
                             })) ?? []
                           }

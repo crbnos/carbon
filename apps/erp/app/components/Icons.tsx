@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import { Badge, cn, HStack } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
@@ -5,8 +6,10 @@ import {
   LuAtom,
   LuBarcode,
   LuBox,
+  LuCircle,
   LuCircleCheck,
   LuCircleX,
+  LuClock3,
   LuExternalLink,
   LuGroup,
   LuHammer,
@@ -15,6 +18,7 @@ import {
   LuPizza,
   LuShoppingCart,
   LuSquare,
+  LuSwords,
   LuTimer,
 } from "react-icons/lu";
 
@@ -146,6 +150,46 @@ export function OperationStatusIcon({
       return null;
   }
 }
+
+export const QuoteLineStatusIcon = ({
+  status,
+}: {
+  status: Database["public"]["Enums"]["quoteLineStatus"];
+}) => {
+  switch (status) {
+    case "Not Started":
+      return <LuCircle size={12} className="text-blue-600" />;
+    case "No Quote":
+      return <LuCircleX size={12} className="text-red-600" />;
+    case "Complete":
+      return <LuCircleCheck size={12} className="text-emerald-600" />;
+    case "In Progress":
+      return <LuClock3 size={12} className="text-yellow-600" />;
+    default:
+      return null;
+  }
+};
+
+export const ReplenishmentSystemIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Buy":
+      return <LuShoppingCart className={cn("text-blue-500", className)} />;
+    case "Make":
+      return (
+        <RxCodesandboxLogo className={cn("text-emerald-500", className)} />
+      );
+    case "Buy and Make":
+      return <LuSwords className={cn("text-yellow-500", className)} />;
+  }
+
+  return <LuSquare className={cn("text-muted-foreground", className)} />;
+};
 
 export const TrackingTypeIcon = ({
   type,
