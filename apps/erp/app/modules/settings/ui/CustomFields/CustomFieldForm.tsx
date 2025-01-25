@@ -16,8 +16,10 @@ import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import {
   LuCalendar,
+  LuContainer,
   LuHash,
   LuList,
+  LuSquareUser,
   LuToggleLeft,
   LuType,
   LuUser,
@@ -170,6 +172,14 @@ function CustomFieldDataTypeIcon({
       return <LuCalendar className={cn("w-4 h-4 text-red-600", className)} />;
     case DataType.User:
       return <LuUser className={cn("w-4 h-4 text-yellow-600", className)} />;
+    case DataType.Customer:
+      return (
+        <LuSquareUser className={cn("w-4 h-4 text-foreground", className)} />
+      );
+    case DataType.Supplier:
+      return (
+        <LuContainer className={cn("w-4 h-4 text-emerald-600", className)} />
+      );
     default:
       return null;
   }

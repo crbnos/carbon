@@ -34,6 +34,8 @@ export enum DataType {
   Numeric = 4,
   Text = 5,
   User = 6,
+  Customer = 7,
+  Supplier = 8,
 }
 
 export type MethodItemType = (typeof methodItemType)[number];

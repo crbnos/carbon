@@ -22,7 +22,13 @@ import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
 import { BsCalendarDate, BsToggleOn } from "react-icons/bs";
 import { CgProfile } from "react-icons/cg";
-import { LuGripVertical, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuContainer,
+  LuGripVertical,
+  LuPencil,
+  LuSquareUser,
+  LuTrash,
+} from "react-icons/lu";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useUrlParams } from "~/hooks";
@@ -232,12 +238,22 @@ const CustomFieldCategoryDetail = ({
 
 function getIcon(props: AttributeDataType) {
   if (!props) return null;
-  const { isBoolean, isDate, isNumeric, isText, isUser } = props;
+  const {
+    isBoolean,
+    isDate,
+    isNumeric,
+    isText,
+    isUser,
+    isCustomer,
+    isSupplier,
+  } = props;
   if (isBoolean) return <BsToggleOn />;
   if (isDate) return <BsCalendarDate />;
   if (isNumeric) return <AiOutlineNumber />;
   if (isText) return <BiText />;
   if (isUser) return <CgProfile />;
+  if (isCustomer) return <LuSquareUser />;
+  if (isSupplier) return <LuContainer />;
 }
 
 export default CustomFieldCategoryDetail;

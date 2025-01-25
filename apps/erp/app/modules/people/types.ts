@@ -31,6 +31,8 @@ export type AttributeDataType = {
   isNumeric: boolean;
   isText: boolean;
   isUser: boolean;
+  isCustomer: boolean;
+  isSupplier: boolean;
 };
 
 export type Department = NonNullable<

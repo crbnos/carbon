@@ -1,18 +1,20 @@
 import type { Json } from "@carbon/database";
-import { Checkbox, HStack } from "@carbon/react";
+import { Checkbox } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuCalendar,
   LuCaseSensitive,
+  LuContainer,
   LuEuro,
   LuList,
+  LuSquareUser,
   LuToggleLeft,
   LuUser,
 } from "react-icons/lu";
-import { Avatar } from "~/components";
+import { CustomerAvatar, EmployeeAvatar, SupplierAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { DataType } from "~/modules/shared";
-import { usePeople } from "~/stores";
+import { useCustomers, usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { useCustomFieldsSchema } from "./useCustomFieldsSchema";
 
@@ -24,6 +26,8 @@ export function useCustomColumns<T extends { customFields: Json }>(
 
   const customColumns: ColumnDef<T>[] = [];
   const [people] = usePeople();
+  const [customers] = useCustomers();
+  const [suppliers] = useSuppliers();
 
   schema?.forEach((field) => {
     customColumns.push({
@@ -61,6 +65,22 @@ export function useCustomColumns<T extends { customFields: Json }>(
             ? {
                 type: "fetcher",
                 endpoint: path.to.api.customFieldOptions(table, field.id),
+              }
+            : field.dataTypeId === DataType.Customer
+            ? {
+                type: "static",
+                options: customers.map((customer) => ({
+                  value: customer.id,
+                  label: customer.name,
+                })),
+              }
+            : field.dataTypeId === DataType.Supplier
+            ? {
+                type: "static",
+                options: suppliers.map((supplier) => ({
+                  value: supplier.id,
+                  label: supplier.name,
+                })),
               }
             : undefined,
       },
@@ -103,23 +123,37 @@ export function useCustomColumns<T extends { customFields: Json }>(
               const personId = item.row.original?.customFields[
                 field.id
               ] as string;
-              const person = people.find((person) => person.id === personId);
-              if (!person) return null;
 
-              return (
-                <HStack>
-                  <Avatar
-                    size="sm"
-                    name={person.name}
-                    path={person.avatarUrl}
-                  />
-                  <p>{person.name}</p>
-                </HStack>
-              );
+              return <EmployeeAvatar employeeId={personId} />;
             } else {
               return null;
             }
+          case DataType.Customer:
+            if (
+              isObject(item.row.original.customFields) &&
+              field.id in item.row.original.customFields
+            ) {
+              const customerId = item.row.original?.customFields[
+                field.id
+              ] as string;
 
+              return <CustomerAvatar customerId={customerId} />;
+            } else {
+              return null;
+            }
+          case DataType.Supplier:
+            if (
+              isObject(item.row.original.customFields) &&
+              field.id in item.row.original.customFields
+            ) {
+              const supplierId = item.row.original?.customFields[
+                field.id
+              ] as string;
+
+              return <SupplierAvatar supplierId={supplierId} />;
+            } else {
+              return null;
+            }
           default:
             return null;
         }
@@ -148,6 +182,10 @@ function ColumnIcon({ dataTypeId }: { dataTypeId: DataType }) {
       return <LuCaseSensitive />;
     case DataType.User:
       return <LuUser />;
+    case DataType.Customer:
+      return <LuSquareUser />;
+    case DataType.Supplier:
+      return <LuContainer />;
     default:
       return null;
   }

@@ -1,7 +1,9 @@
 import { Boolean, DatePicker, Input, Number, Select } from "@carbon/form";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
+import Customer from "./Customer";
 import Employee from "./Employee";
+import Supplier from "./Supplier";
 
 type CustomFormFieldsProps = {
   table: string;
@@ -79,6 +81,22 @@ const CustomFormFields = ({ table, tags = [] }: CustomFormFieldsProps) => {
             case DataType.User:
               return (
                 <Employee
+                  key={field.id}
+                  name={getCustomFieldName(field.id)}
+                  label={field.name}
+                />
+              );
+            case DataType.Customer:
+              return (
+                <Customer
+                  key={field.id}
+                  name={getCustomFieldName(field.id)}
+                  label={field.name}
+                />
+              );
+            case DataType.Supplier:
+              return (
+                <Supplier
                   key={field.id}
                   name={getCustomFieldName(field.id)}
                   label={field.name}

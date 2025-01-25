@@ -12,7 +12,9 @@ import { zfd } from "zod-form-data";
 import { useCustomFieldsSchema } from "~/hooks/useCustomFieldsSchema";
 import { DataType } from "~/modules/shared";
 import { Enumerable } from "../Enumerable";
+import Customer from "./Customer";
 import Employee from "./Employee";
+import Supplier from "./Supplier";
 
 type CustomFormInlineFieldsProps = {
   customFields: Record<string, Json>;
@@ -215,6 +217,64 @@ const CustomFormInlineFields = ({
                   className="w-full"
                 >
                   <Employee
+                    name={field.id}
+                    label={field.name}
+                    inline
+                    isReadOnly={isDisabled}
+                    onChange={(value) => {
+                      if (value?.value) {
+                        onUpdate(
+                          JSON.stringify({
+                            ...fields,
+                            [field.id]: value.value,
+                          })
+                        );
+                      }
+                    }}
+                  />
+                </ValidatedForm>
+              );
+            case DataType.Customer:
+              return (
+                <ValidatedForm
+                  defaultValues={{
+                    [field.id]: fields[field.id] as string,
+                  }}
+                  validator={z.object({
+                    [field.id]: zfd.text(z.string().optional()),
+                  })}
+                  className="w-full"
+                >
+                  <Customer
+                    name={field.id}
+                    label={field.name}
+                    inline
+                    isReadOnly={isDisabled}
+                    onChange={(value) => {
+                      if (value?.value) {
+                        onUpdate(
+                          JSON.stringify({
+                            ...fields,
+                            [field.id]: value.value,
+                          })
+                        );
+                      }
+                    }}
+                  />
+                </ValidatedForm>
+              );
+            case DataType.Supplier:
+              return (
+                <ValidatedForm
+                  defaultValues={{
+                    [field.id]: fields[field.id] as string,
+                  }}
+                  validator={z.object({
+                    [field.id]: zfd.text(z.string().optional()),
+                  })}
+                  className="w-full"
+                >
+                  <Supplier
                     name={field.id}
                     label={field.name}
                     inline
