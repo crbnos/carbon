@@ -4,7 +4,12 @@ import { z } from "zod";
 // to avoid a circular dependency
 const methodType = ["Buy", "Make", "Pick"] as const;
 const itemReplenishmentSystems = ["Buy", "Make", "Buy and Make"] as const;
-const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
+const itemTrackingTypes = [
+  "Inventory",
+  "Non-Inventory",
+  "Serial",
+  "Lot",
+] as const;
 
 export const fieldMappings = {
   customer: {

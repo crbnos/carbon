@@ -361,7 +361,12 @@ serve(async (req: Request) => {
               .enum(["Buy", "Make", "Buy and Make"])
               .optional(),
             defaultMethodType: z.enum(["Buy", "Make", "Pick"]).optional(),
-            itemTrackingType: z.enum(["Inventory", "Non-Inventory"]),
+            itemTrackingType: z.enum([
+              "Inventory",
+              "Non-Inventory",
+              "Serial",
+              "Lot",
+            ]),
           });
 
           const materialValidator = itemValidator.extend({

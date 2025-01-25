@@ -14,13 +14,13 @@ import {
 
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
-  LuArrowDownToLine,
   LuCheckCheck,
   LuChevronDown,
   LuCirclePlus,
   LuCreditCard,
   LuEye,
   LuFile,
+  LuHandCoins,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -126,7 +126,7 @@ const PurchaseOrderHeader = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    leftIcon={<LuArrowDownToLine />}
+                    leftIcon={<LuHandCoins />}
                     variant={
                       ["To Receive", "To Receive and Invoice"].includes(
                         routeData?.purchaseOrder?.status ?? ""
@@ -159,7 +159,7 @@ const PurchaseOrderHeader = () => {
                   {receipts.map((receipt) => (
                     <DropdownMenuItem key={receipt.id} asChild>
                       <Link to={path.to.receipt(receipt.id)}>
-                        <DropdownMenuIcon icon={<LuArrowDownToLine />} />
+                        <DropdownMenuIcon icon={<LuHandCoins />} />
                         <HStack spacing={8}>
                           <span>{receipt.receiptId}</span>
                           <ReceiptStatus status={receipt.status} />
@@ -171,7 +171,7 @@ const PurchaseOrderHeader = () => {
               </DropdownMenu>
             ) : (
               <Button
-                leftIcon={<LuArrowDownToLine />}
+                leftIcon={<LuHandCoins />}
                 isDisabled={
                   !["To Receive", "To Receive and Invoice"].includes(
                     routeData?.purchaseOrder?.status ?? ""

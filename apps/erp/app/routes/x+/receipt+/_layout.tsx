@@ -13,6 +13,6 @@ export const handle: Handle = {
   module: "inventory",
 };
 
-export default function ReceiptsRoute() {
+export default function ReceiptRoute() {
   return <Outlet />;
 }

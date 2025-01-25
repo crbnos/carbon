@@ -377,7 +377,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Inventory</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>Tracking Type</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   {itemTrackingTypes.map((type) => (

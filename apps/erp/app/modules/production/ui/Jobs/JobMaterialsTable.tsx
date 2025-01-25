@@ -159,7 +159,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         },
         cell: ({ row }) => {
           const isInventoried =
-            row.original.item?.itemTrackingType === "Inventory";
+            row.original.item?.itemTrackingType !== "Non-Inventory";
           if (!isInventoried)
             return (
               <Badge variant="secondary">

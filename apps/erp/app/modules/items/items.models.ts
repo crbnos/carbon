@@ -15,7 +15,12 @@ export const configurationParameterDataTypes = [
   "list",
 ] as const;
 
-export const itemTrackingTypes = ["Inventory", "Non-Inventory"] as const;
+export const itemTrackingTypes = [
+  "Inventory",
+  "Non-Inventory",
+  "Serial",
+  "Lot",
+] as const;
 
 export const itemCostingMethods = [
   "Standard",

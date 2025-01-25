@@ -3,9 +3,12 @@ import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
+  LuBarcode,
+  LuBox,
   LuCircleCheck,
   LuCircleX,
   LuExternalLink,
+  LuGroup,
   LuHammer,
   LuHardHat,
   LuHeadphones,
@@ -16,7 +19,7 @@ import {
 } from "react-icons/lu";
 
 import { RxCodesandboxLogo } from "react-icons/rx";
-import { TbTargetArrow, TbTargetOff } from "react-icons/tb";
+import { TbTargetOff } from "react-icons/tb";
 
 import { getColor } from "@carbon/utils";
 import { Link } from "@remix-run/react";
@@ -152,8 +155,12 @@ export const TrackingTypeIcon = ({
   className?: string;
 }) => {
   switch (type) {
+    case "Serial":
+      return <LuBarcode className={cn("text-foreground", className)} />;
+    case "Lot":
+      return <LuGroup className={cn("text-emerald-500", className)} />;
     case "Inventory":
-      return <TbTargetArrow className={cn("text-blue-500", className)} />;
+      return <LuBox className={cn("text-blue-500", className)} />;
     case "Non-Inventory":
       return <TbTargetOff className={cn("text-red-500", className)} />;
     default:

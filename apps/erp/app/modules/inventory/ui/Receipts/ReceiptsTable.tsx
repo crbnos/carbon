@@ -10,12 +10,17 @@ import {
   LuClock,
   LuFileText,
   LuHash,
-  LuMapPin,
   LuPencil,
   LuTrash,
   LuUser,
 } from "react-icons/lu";
-import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  SupplierAvatar,
+  Table,
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
@@ -26,7 +31,7 @@ import {
   receiptSourceDocumentType,
   receiptStatusType,
 } from "~/modules/inventory";
-import { usePeople } from "~/stores";
+import { usePeople, useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -45,6 +50,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
 
   const rows = useMemo(() => data, [data]);
   const [people] = usePeople();
+  const [suppliers] = useSuppliers();
   const customColumns = useCustomColumns<Receipt>("receipt");
 
   const columns = useMemo<ColumnDef<Receipt>[]>(() => {
@@ -108,21 +114,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
           icon: <LuHash />,
         },
       },
-      {
-        accessorKey: "locationName",
-        header: "Location",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
-        meta: {
-          filter: {
-            type: "static",
-            options: locations.map(({ name }) => ({
-              value: name,
-              label: <Enumerable value={name} />,
-            })),
-          },
-          icon: <LuMapPin />,
-        },
-      },
+
       {
         accessorKey: "status",
         header: "Status",
@@ -143,10 +135,10 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
         },
       },
       {
-        id: "assignee",
-        header: "Assignee",
+        id: "postedBy",
+        header: "Posted By",
         cell: ({ row }) => (
-          <EmployeeAvatar employeeId={row.original.assignee} />
+          <EmployeeAvatar employeeId={row.original.postedBy} />
         ),
         meta: {
           filter: {
@@ -167,23 +159,41 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
           icon: <LuCalendar />,
         },
       },
-      // {
-      //   id: "supplierId",
-      //   header: "Supplier",
-      //   cell: ({ row }) => {
-      //     return <SupplierAvatar supplierId={row.original.supplierId} />;
-      //   },
-      //   meta: {
-      //     filter: {
-      //       type: "static",
-      //       options: suppliers?.map((supplier) => ({
-      //         value: supplier.id,
-      //         label: supplier.name,
-      //       })),
-      //     },
-      //     icon: <LuUser />,
-      //   },
-      // },
+      {
+        accessorKey: "assignee",
+        header: "Assignee",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.assignee} />
+        ),
+        meta: {
+          filter: {
+            type: "static",
+            options: people.map((employee) => ({
+              value: employee.id,
+              label: employee.name,
+            })),
+          },
+          icon: <LuUser />,
+        },
+      },
+      {
+        id: "supplierId",
+        header: "Supplier",
+        cell: ({ row }) => {
+          return <SupplierAvatar supplierId={row.original.supplierId} />;
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: suppliers?.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.name,
+            })),
+          },
+          icon: <LuUser />,
+        },
+      },
+
       {
         accessorKey: "invoiced",
         header: "Invoiced",
@@ -261,7 +271,7 @@ const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
     ];
 
     return [...result, ...customColumns];
-  }, [locations, people, customColumns]);
+  }, [people, suppliers, customColumns]);
 
   const [selectedReceipt, setSelectedReceipt] = useState<Receipt | null>(null);
   const deleteReceiptModal = useDisclosure();

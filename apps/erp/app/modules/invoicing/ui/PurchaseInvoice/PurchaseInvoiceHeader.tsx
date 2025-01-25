@@ -14,8 +14,8 @@ import { Link, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
-  LuArrowDownToLine,
   LuCheckCheck,
+  LuHandCoins,
   LuPanelLeft,
   LuPanelRight,
   LuShoppingCart,
@@ -156,11 +156,7 @@ const PurchaseInvoiceHeader = () => {
             )}
 
             {relatedDocs.receipts.length === 1 && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuArrowDownToLine />}
-                asChild
-              >
+              <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
                 <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
                   Receipt
                 </Link>
@@ -189,7 +185,7 @@ const PurchaseInvoiceHeader = () => {
             {relatedDocs.receipts.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<LuArrowDownToLine />}>
+                  <Button variant="secondary" leftIcon={<LuHandCoins />}>
                     Receipts
                   </Button>
                 </DropdownMenuTrigger>

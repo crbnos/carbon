@@ -78,7 +78,6 @@ const ConsumablesTable = memo(
           cell: ({ row }) => (
             <HStack className="py-1 min-w-[200px] truncate">
               <ItemThumbnail
-                size="sm"
                 thumbnailPath={row.original.thumbnailPath}
                 type="Consumable"
               />
@@ -332,7 +331,7 @@ const ConsumablesTable = memo(
                 </DropdownMenuPortal>
               </DropdownMenuSub>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger>Inventory</DropdownMenuSubTrigger>
+                <DropdownMenuSubTrigger>Tracking Type</DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
                     {itemTrackingTypes.map((type) => (

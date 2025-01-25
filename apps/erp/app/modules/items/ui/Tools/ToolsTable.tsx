@@ -346,7 +346,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Inventory</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>Tracking Type</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   {itemTrackingTypes.map((type) => (
