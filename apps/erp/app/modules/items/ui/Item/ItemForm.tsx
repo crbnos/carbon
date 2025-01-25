@@ -19,7 +19,7 @@ import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { LuEllipsisVertical } from "react-icons/lu";
 import type { z } from "zod";
-import { Copy } from "~/components";
+import { Copy, TrackingTypeIcon } from "~/components";
 import {
   Boolean,
   DefaultMethodType,
@@ -30,6 +30,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -55,7 +56,12 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
 
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({
-      label: itemTrackingType,
+      label: (
+        <span className="flex items-center gap-2">
+          <TrackingTypeIcon type={itemTrackingType} />
+          {itemTrackingType}
+        </span>
+      ),
       value: itemTrackingType,
     })) ?? [];
 
@@ -67,7 +73,12 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   );
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
-      label: itemReplenishmentSystem,
+      label: (
+        <span className="flex items-center gap-2">
+          <ReplenishmentSystemIcon type={itemReplenishmentSystem} />
+          {itemReplenishmentSystem}
+        </span>
+      ),
       value: itemReplenishmentSystem,
     })) ?? [];
 

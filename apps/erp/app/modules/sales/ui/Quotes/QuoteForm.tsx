@@ -164,7 +164,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 onChange={(
                   newValue: {
                     value: string | undefined;
-                    label: string;
+                    label: string | JSX.Element;
                   } | null
                 ) => {
                   if (newValue?.value) {

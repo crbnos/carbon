@@ -3,24 +3,19 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   Combobox,
   HStack,
   NumberField,
   NumberInput,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
   VStack,
 } from "@carbon/react";
 import { Outlet, useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { useCallback } from "react";
 import { Enumerable } from "~/components/Enumerable";
-import { useLocations } from "~/components/Form/Location";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import type { action } from "~/routes/x+/receipt+/lines.update";
@@ -37,10 +32,6 @@ const ReceiptLines = () => {
     receipt: Receipt;
     receiptLines: ReceiptLine[];
   }>(path.to.receipt(receiptId));
-
-  const [items] = useItems();
-  const unitsOfMeasure = useUnitOfMeasure();
-  const locations = useLocations();
 
   const receiptsById = new Map<string, ReceiptLine>(
     routeData?.receiptLines.map((line) => [line.id, line])
@@ -100,83 +91,19 @@ const ReceiptLines = () => {
         </HStack>
 
         <CardContent>
-          <Table>
-            <Thead>
-              <Tr>
-                <Th>Part</Th>
-                <Th>Received</Th>
-                <Th>Shelf</Th>
-                <Th>Location</Th>
-                <Th>UoM</Th>
-                <Th>Ordered</Th>
-                <Th>Outstanding</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {receiptLines.map((line) => (
-                <Tr key={line.id}>
-                  <Td>
-                    <VStack spacing={0}>
-                      <span>
-                        {items.find((p) => p.id === line.itemId)?.readableId}
-                      </span>
-                      <span className="text-muted-foreground text-xs">
-                        {items.find((p) => p.id === line.itemId)?.name}
-                      </span>
-                    </VStack>
-                  </Td>
-
-                  <Td>
-                    <ReceivedQuantity
-                      value={line.receivedQuantity}
-                      isReadOnly={isPosted}
-                      onChange={(value) => {
-                        onUpdateReceiptLine({
-                          lineId: line.id,
-                          field: "receivedQuantity",
-                          value,
-                        });
-                      }}
-                    />
-                  </Td>
-                  <Td>
-                    <Shelf
-                      locationId={line.locationId}
-                      shelfId={line.shelfId}
-                      isReadOnly={isPosted}
-                      onChange={(shelf) => {
-                        onUpdateReceiptLine({
-                          lineId: line.id,
-                          field: "shelfId",
-                          value: shelf,
-                        });
-                      }}
-                    />
-                  </Td>
-                  <Td>
-                    <Enumerable
-                      value={
-                        locations?.find((l) => l.value === line.locationId)
-                          ?.label ?? null
-                      }
-                    />
-                  </Td>
-
-                  <Td>
-                    <Enumerable
-                      value={
-                        unitsOfMeasure?.find(
-                          (u) => u.value === line.unitOfMeasure
-                        )?.label ?? null
-                      }
-                    />
-                  </Td>
-                  <Td>{line.orderQuantity}</Td>
-                  <Td>{line.outstandingQuantity}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+          <div className="border rounded-lg">
+            {receiptLines.map((line, index) => (
+              <ReceiptLineItem
+                key={line.id}
+                line={line}
+                isReadOnly={isPosted}
+                onUpdate={onUpdateReceiptLine}
+                className={
+                  index === receiptLines.length - 1 ? "border-none" : ""
+                }
+              />
+            ))}
+          </div>
         </CardContent>
       </Card>
       <Outlet />
@@ -184,29 +111,106 @@ const ReceiptLines = () => {
   );
 };
 
-function ReceivedQuantity({
-  value,
-  onChange,
+function ReceiptLineItem({
+  line,
+  className,
   isReadOnly,
+  onUpdate,
 }: {
-  value: number;
-  onChange: (value: number) => void;
+  line: ReceiptLine;
+  className?: string;
   isReadOnly: boolean;
+  onUpdate: ({
+    lineId,
+    field,
+    value,
+  }:
+    | {
+        lineId: string;
+        field: "receivedQuantity";
+        value: number;
+      }
+    | {
+        lineId: string;
+        field: "shelfId";
+        value: string;
+      }) => Promise<void>;
 }) {
+  const [items] = useItems();
+  const item = items.find((p) => p.id === line.itemId);
+  const unitsOfMeasure = useUnitOfMeasure();
+
   return (
-    <NumberField
-      value={value}
-      onChange={(value) => {
-        onChange(value);
-      }}
-    >
-      <NumberInput
-        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-        isDisabled={isReadOnly}
-        size="sm"
-        min={0}
-      />
-    </NumberField>
+    <div className={cn("border-b p-6", className)}>
+      <div className="flex flex-1 justify-between items-center w-full">
+        <HStack spacing={4} className="w-1/2">
+          <HStack spacing={4} className="flex-1">
+            <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+              <TrackingTypeIcon type={item?.itemTrackingType ?? "Inventory"} />
+            </div>
+            <VStack spacing={0}>
+              <span className="text-sm font-medium">{item?.name}</span>
+              <span className="text-xs text-muted-foreground line-clamp-2">
+                {item?.readableId}
+              </span>
+              <div className="mt-2">
+                <Enumerable
+                  value={
+                    unitsOfMeasure?.find((u) => u.value === line.unitOfMeasure)
+                      ?.label ?? null
+                  }
+                />
+              </div>
+            </VStack>
+            <span className="text-base text-muted-foreground">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-muted-foreground">
+                  Received
+                </label>
+
+                <NumberField
+                  value={line.receivedQuantity}
+                  onChange={(value) => {
+                    onUpdate({
+                      lineId: line.id,
+                      field: "receivedQuantity",
+                      value,
+                    });
+                  }}
+                >
+                  <NumberInput
+                    className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
+                    isDisabled={isReadOnly}
+                    size="sm"
+                    min={0}
+                  />
+                </NumberField>
+              </div>
+              {line.outstandingQuantity < line.receivedQuantity && (
+                <span className="text-xs text-red-500">
+                  {line.outstandingQuantity - line.receivedQuantity} previously
+                  received
+                </span>
+              )}
+            </span>
+          </HStack>
+        </HStack>
+        <div className="flex items-center justify-end gap-2">
+          <Shelf
+            locationId={line.locationId}
+            shelfId={line.shelfId}
+            isReadOnly={isReadOnly}
+            onChange={(shelf) => {
+              onUpdate({
+                lineId: line.id,
+                field: "shelfId",
+                value: shelf,
+              });
+            }}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -226,7 +230,8 @@ function Shelf({
   if (!locationId) return null;
 
   return (
-    <div className="min-w-[140px]">
+    <div className="flex flex-col items-start gap-1 min-w-[140px]">
+      <label className="text-xs text-muted-foreground">Shelf</label>
       <Combobox
         value={shelfId ?? undefined}
         onChange={(newValue) => {

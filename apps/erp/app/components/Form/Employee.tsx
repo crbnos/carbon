@@ -2,6 +2,7 @@ import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
 import { useMemo } from "react";
 import { usePeople } from "~/stores";
+import Avatar from "../Avatar";
 import EmployeeAvatar from "../EmployeeAvatar";
 
 type EmployeeSelectProps = Omit<
@@ -14,7 +15,7 @@ type EmployeeSelectProps = Omit<
 
 const EmployeePreview = (
   value: string,
-  options: { value: string; label: string }[]
+  options: { value: string; label: string | JSX.Element }[]
 ) => {
   return <EmployeeAvatar employeeId={value} />;
 };
@@ -24,9 +25,14 @@ const Employee = ({ type, inline, ...props }: EmployeeSelectProps) => {
 
   const options = useMemo(() => {
     const base =
-      people.map((part) => ({
-        value: part.id,
-        label: part.name,
+      people.map((person) => ({
+        value: person.id,
+        label: (
+          <div className="flex flex-row items-center gap-2 flex-grow">
+            <Avatar name={person.name} path={person.avatarUrl} size="xs" />
+            <span>{person.name}</span>
+          </div>
+        ),
       })) ?? [];
 
     if (type === "assignee") {

@@ -38,6 +38,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -173,7 +174,12 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   );
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
-      label: itemReplenishmentSystem,
+      label: (
+        <span className="flex items-center gap-2">
+          <ReplenishmentSystemIcon type={itemReplenishmentSystem} />
+          {itemReplenishmentSystem}
+        </span>
+      ),
       value: itemReplenishmentSystem,
     })) ?? [];
 

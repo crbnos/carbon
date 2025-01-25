@@ -25,6 +25,7 @@ import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
 import type { z } from "zod";
+import { TrackingTypeIcon } from "~/components";
 import {
   Boolean,
   CustomFormFields,
@@ -38,6 +39,7 @@ import {
   TextArea,
   UnitOfMeasure,
 } from "~/components/Form";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -162,7 +164,12 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
 
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({
-      label: itemTrackingType,
+      label: (
+        <span className="flex items-center gap-2">
+          <TrackingTypeIcon type={itemTrackingType} />
+          {itemTrackingType}
+        </span>
+      ),
       value: itemTrackingType,
     })) ?? [];
 
@@ -174,7 +181,12 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
   );
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
-      label: itemReplenishmentSystem,
+      label: (
+        <span className="flex items-center gap-2">
+          <ReplenishmentSystemIcon type={itemReplenishmentSystem} />
+          {itemReplenishmentSystem}
+        </span>
+      ),
       value: itemReplenishmentSystem,
     })) ?? [];
 

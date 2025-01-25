@@ -15,6 +15,7 @@ import { useFetcher } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
+import { TrackingTypeIcon } from "~/components";
 import {
   Boolean,
   CustomFormFields,
@@ -75,7 +76,12 @@ const MaterialForm = ({
 
   const itemTrackingTypeOptions =
     itemTrackingTypes.map((itemTrackingType) => ({
-      label: itemTrackingType,
+      label: (
+        <span className="flex items-center gap-2">
+          <TrackingTypeIcon type={itemTrackingType} />
+          {itemTrackingType}
+        </span>
+      ),
       value: itemTrackingType,
     })) ?? [];
 
