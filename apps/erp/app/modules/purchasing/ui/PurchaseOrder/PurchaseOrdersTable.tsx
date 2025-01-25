@@ -10,12 +10,12 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
 import {
-  LuArrowDownToLine,
   LuBookMarked,
   LuCalendar,
   LuContainer,
   LuCreditCard,
   LuDollarSign,
+  LuHandCoins,
   LuPencil,
   LuQrCode,
   LuStar,
@@ -337,7 +337,7 @@ const PurchaseOrdersTable = memo(
               receive(row);
             }}
           >
-            <MenuIcon icon={<LuArrowDownToLine />} />
+            <MenuIcon icon={<LuHandCoins />} />
             Receive
           </MenuItem>
           <MenuItem

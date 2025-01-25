@@ -745,6 +745,7 @@ serve(async (req: Request) => {
             .set({
               status: "Posted",
               postingDate: today,
+              postedBy: userId,
             })
             .where("id", "=", receiptId)
             .execute();

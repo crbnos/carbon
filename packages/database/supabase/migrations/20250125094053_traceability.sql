@@ -1,0 +1,4 @@
+ALTER TABLE "receipt" ADD COLUMN "postedBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE;
+
+ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Serial';
+ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Lot';

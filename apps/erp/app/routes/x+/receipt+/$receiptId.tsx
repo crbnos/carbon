@@ -54,8 +54,11 @@ export default function ReceiptRoute() {
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
         <ReceiptHeader />
-        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
-          <VStack spacing={4} className="h-full p-2 w-full max-w-5xl mx-auto">
+        <div className="flex h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
+          <VStack
+            spacing={4}
+            className="h-full p-2 w-full max-w-5xl mx-auto pb-32"
+          >
             <Outlet />
           </VStack>
         </div>

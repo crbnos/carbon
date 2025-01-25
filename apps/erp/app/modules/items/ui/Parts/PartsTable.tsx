@@ -350,7 +350,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
               </DropdownMenuPortal>
             </DropdownMenuSub>
             <DropdownMenuSub>
-              <DropdownMenuSubTrigger>Inventory</DropdownMenuSubTrigger>
+              <DropdownMenuSubTrigger>Tracking Type</DropdownMenuSubTrigger>
               <DropdownMenuPortal>
                 <DropdownMenuSubContent>
                   {itemTrackingTypes.map((type) => (

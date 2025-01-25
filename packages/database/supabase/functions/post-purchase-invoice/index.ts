@@ -1014,6 +1014,7 @@ serve(async (req: Request) => {
               supplierId: purchaseInvoice.data.supplierId,
               status: "Posted",
               postingDate: today,
+              postedBy: userId,
               invoiced: true,
               companyId,
               createdBy: purchaseInvoice.data.createdBy,
