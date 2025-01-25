@@ -17602,6 +17602,7 @@ export type Database = {
           internalNotes: Json | null
           invoiced: boolean | null
           locationId: string | null
+          postedBy: string | null
           postingDate: string | null
           receiptId: string
           sourceDocument:
@@ -17627,6 +17628,7 @@ export type Database = {
           internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
+          postedBy?: string | null
           postingDate?: string | null
           receiptId: string
           sourceDocument?:
@@ -17652,6 +17654,7 @@ export type Database = {
           internalNotes?: Json | null
           invoiced?: boolean | null
           locationId?: string | null
+          postedBy?: string | null
           postingDate?: string | null
           receiptId?: string
           sourceDocument?:
@@ -17771,6 +17774,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receipt_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "receipt_supplierId_fkey"
@@ -32499,6 +32537,16 @@ export type Database = {
         }
         Returns: string
       }
+      get_custom_field_unique_values: {
+        Args: {
+          table_name: string
+          field_key: string
+          company_id: string
+        }
+        Returns: {
+          value: Json
+        }[]
+      }
       get_item_quantities: {
         Args: {
           location_id: string
@@ -33022,7 +33070,7 @@ export type Database = {
         | "Fixed Reorder Quantity"
         | "Maximum Quantity"
       itemReplenishmentSystem: "Buy" | "Make" | "Buy and Make"
-      itemTrackingType: "Inventory" | "Non-Inventory"
+      itemTrackingType: "Inventory" | "Non-Inventory" | "Serial" | "Lot"
       itemType:
         | "Part"
         | "Material"
@@ -33030,6 +33078,8 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+        | "Serial"
+        | "Lot"
       jobOperationStatus:
         | "Canceled"
         | "Done"

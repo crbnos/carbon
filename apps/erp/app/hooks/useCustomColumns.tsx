@@ -13,6 +13,7 @@ import { Avatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { DataType } from "~/modules/shared";
 import { usePeople } from "~/stores";
+import { path } from "~/utils/path";
 import { useCustomFieldsSchema } from "./useCustomFieldsSchema";
 
 export function useCustomColumns<T extends { customFields: Json }>(
@@ -47,6 +48,19 @@ export function useCustomColumns<T extends { customFields: Json }>(
                     value: option,
                     label: <Enumerable value={option} />,
                   })) || [],
+              }
+            : field.dataTypeId === DataType.User
+            ? {
+                type: "static",
+                options: people.map((person) => ({
+                  value: person.id,
+                  label: person.name,
+                })),
+              }
+            : field.dataTypeId === DataType.Text
+            ? {
+                type: "fetcher",
+                endpoint: path.to.api.customFieldOptions(table, field.id),
               }
             : undefined,
       },
