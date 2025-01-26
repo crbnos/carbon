@@ -92,7 +92,7 @@ export function ColumnCard({
           <PulsingDot inactive={!column.active} />
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
-            <span className="mr-auto truncate"> {column.title}</span>
+
             {totalDuration > 0 ? (
               <span className="text-muted-foreground text-xs">
                 {formatDurationMilliseconds(totalDuration)}
