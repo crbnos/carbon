@@ -54,7 +54,7 @@ import {
   LuLayoutList,
   LuPackageSearch,
 } from "react-icons/lu";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Empty, Hyperlink, SupplierAvatar } from "~/components";
 import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -488,6 +488,21 @@ export default function PurchaseDashboard() {
             >
               <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                 <CartesianGrid vertical={false} />
+                <YAxis
+                  dataKey="value"
+                  tickLine={false}
+                  tickMargin={8}
+                  minTickGap={32}
+                  axisLine={false}
+                  tickFormatter={(value) => {
+                    return [
+                      "purchaseOrderAmount",
+                      "purchaseInvoiceAmount",
+                    ].includes(selectedKpiData.key)
+                      ? currencyFormatter.format(value as number)
+                      : numberFormatter.format(value as number);
+                  }}
+                />
                 <XAxis
                   dataKey={
                     ["week", "month"].includes(interval) ? "date" : "month"
