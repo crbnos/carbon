@@ -3,6 +3,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
@@ -237,6 +238,44 @@ export async function getReceiptLines(
   receiptId: string
 ) {
   return client.from("receiptLine").select("*").eq("receiptId", receiptId);
+}
+
+export async function getReceiptFiles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lineIds: string[]
+): Promise<{ data: StorageItem[]; error: string | null }> {
+  const promises = lineIds.map((lineId) =>
+    client.storage
+      .from("private")
+      .list(`${companyId}/inventory/${lineId}`)
+      .then((result) => ({
+        ...result,
+        lineId,
+      }))
+  );
+
+  const results = await Promise.all(promises);
+
+  // Check for errors
+  const firstError = results.find((result) => result.error);
+  if (firstError) {
+    return {
+      data: [],
+      error: firstError.error?.message ?? "Failed to fetch files",
+    };
+  }
+
+  // Merge data arrays and add lineId as bucketName
+  return {
+    data: results.flatMap((result) =>
+      (result.data ?? []).map((file) => ({
+        ...file,
+        bucket: result.lineId,
+      }))
+    ),
+    error: null,
+  };
 }
 
 export async function getShelvesList(

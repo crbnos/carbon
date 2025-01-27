@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Card,
   CardContent,
@@ -6,31 +7,47 @@ import {
   cn,
   Combobox,
   HStack,
+  Input,
   NumberField,
   NumberInput,
+  toast,
   VStack,
 } from "@carbon/react";
-import { Outlet, useFetcher, useFetchers, useParams } from "@remix-run/react";
-import { useCallback } from "react";
+import {
+  Await,
+  Outlet,
+  useFetcher,
+  useFetchers,
+  useParams,
+  useRevalidator,
+  useSubmit,
+} from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
+import { Suspense, useCallback, useState } from "react";
+import { LuBarcode, LuGroup } from "react-icons/lu";
 import { Enumerable } from "~/components/Enumerable";
+import FileDropzone from "~/components/FileDropzone";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { useRouteData } from "~/hooks";
+import { useRouteData, useUser } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import type { action } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
+import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
+import { stripSpecialCharacters } from "~/utils/string";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
   const fetcher = useFetcher<typeof action>();
-
+  const { upload, deleteFile } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLines: ReceiptLine[];
+    receiptFiles: PostgrestResponse<StorageItem>;
   }>(path.to.receipt(receiptId));
 
   const receiptsById = new Map<string, ReceiptLine>(
@@ -45,6 +62,29 @@ const ReceiptLines = () => {
   }
 
   const receiptLines = Array.from(receiptsById.values());
+  const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
+    Record<string, string[]>
+  >(() => {
+    return receiptLines.reduce(
+      (acc, line) => ({
+        ...acc,
+        [line.id]: Array(line.receivedQuantity).fill(""),
+      }),
+      {}
+    );
+  });
+
+  const [lotNumberByLineId, setLotNumberByLineId] = useState<
+    Record<string, string>
+  >(() => {
+    return receiptLines.reduce(
+      (acc, line) => ({
+        ...acc,
+        [line.id]: "",
+      }),
+      {}
+    );
+  });
 
   const onUpdateReceiptLine = useCallback(
     async ({
@@ -98,9 +138,26 @@ const ReceiptLines = () => {
                 line={line}
                 isReadOnly={isPosted}
                 onUpdate={onUpdateReceiptLine}
+                files={routeData?.receiptFiles}
                 className={
                   index === receiptLines.length - 1 ? "border-none" : ""
                 }
+                serialNumbers={serialNumbersByLineId[line.id] || []}
+                onSerialNumbersChange={(newSerialNumbers) => {
+                  setSerialNumbersByLineId((prev) => ({
+                    ...prev,
+                    [line.id]: newSerialNumbers,
+                  }));
+                }}
+                lotNumber={lotNumberByLineId[line.id] || ""}
+                onLotNumberChange={(newLotNumber) => {
+                  setLotNumberByLineId((prev) => ({
+                    ...prev,
+                    [line.id]: newLotNumber,
+                  }));
+                }}
+                upload={(files) => upload(files, line.id)}
+                deleteFile={(file) => deleteFile(file, line.id)}
               />
             ))}
           </div>
@@ -116,10 +173,22 @@ function ReceiptLineItem({
   className,
   isReadOnly,
   onUpdate,
+  files,
+  lotNumber,
+  serialNumbers,
+  onLotNumberChange,
+  onSerialNumbersChange,
+  upload,
+  deleteFile,
 }: {
   line: ReceiptLine;
   className?: string;
   isReadOnly: boolean;
+  files?: PostgrestResponse<StorageItem>;
+  lotNumber: string;
+  serialNumbers: string[];
+  onLotNumberChange: (lotNumber: string) => void;
+  onSerialNumbersChange: (serialNumbers: string[]) => void;
   onUpdate: ({
     lineId,
     field,
@@ -135,13 +204,15 @@ function ReceiptLineItem({
         field: "shelfId";
         value: string;
       }) => Promise<void>;
+  upload: (files: File[]) => Promise<void>;
+  deleteFile: (file: StorageItem) => Promise<void>;
 }) {
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
 
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("flex flex-col border-b p-6 gap-6", className)}>
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
@@ -162,40 +233,43 @@ function ReceiptLineItem({
                 />
               </div>
             </VStack>
-            <span className="text-base text-muted-foreground">
-              <div className="flex flex-col gap-1">
-                <label className="text-xs text-muted-foreground">
-                  Received
-                </label>
+            <VStack spacing={1}>
+              <label className="text-xs text-muted-foreground">Received</label>
 
-                <NumberField
-                  value={line.receivedQuantity}
-                  onChange={(value) => {
-                    onUpdate({
-                      lineId: line.id,
-                      field: "receivedQuantity",
-                      value,
-                    });
-                  }}
-                >
-                  <NumberInput
-                    className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-                    isDisabled={isReadOnly}
-                    size="sm"
-                    min={0}
-                  />
-                </NumberField>
-              </div>
-              {line.outstandingQuantity < line.receivedQuantity && (
-                <span className="text-xs text-red-500">
-                  {line.outstandingQuantity - line.receivedQuantity} previously
-                  received
-                </span>
-              )}
-            </span>
+              <NumberField
+                value={line.receivedQuantity}
+                onChange={(value) => {
+                  onUpdate({
+                    lineId: line.id,
+                    field: "receivedQuantity",
+                    value,
+                  });
+                  // Adjust serial numbers array size while preserving existing values
+                  if (value > serialNumbers.length) {
+                    onSerialNumbersChange([
+                      ...serialNumbers,
+                      ...Array(value - serialNumbers.length).fill(""),
+                    ]);
+                  } else if (value < serialNumbers.length) {
+                    onSerialNumbersChange(serialNumbers.slice(0, value));
+                  }
+                }}
+              >
+                <NumberInput
+                  className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
+                  isDisabled={isReadOnly}
+                  size="sm"
+                  min={0}
+                />
+              </NumberField>
+            </VStack>
           </HStack>
         </HStack>
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex flex-grow items-center justify-between gap-2 pl-4">
+          <VStack spacing={1}>
+            <label className="text-xs text-muted-foreground">Ordered</label>
+            <span className="text-sm py-1.5">{line.orderQuantity}</span>
+          </VStack>
           <Shelf
             locationId={line.locationId}
             shelfId={line.shelfId}
@@ -210,6 +284,73 @@ function ReceiptLineItem({
           />
         </div>
       </div>
+      {line.requiresLotTracking && (
+        <div className="flex flex-col gap-2 p-4 border rounded-lg">
+          <label className="text-xs text-muted-foreground flex items-center gap-2">
+            <LuGroup /> Lot Number
+          </label>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+            <Input
+              key={`${line.id}-lot`}
+              placeholder={`Lot number`}
+              disabled={isReadOnly}
+              value={lotNumber}
+              onChange={(e) => {
+                onLotNumberChange(e.target.value);
+              }}
+            />
+          </div>
+        </div>
+      )}
+      {line.requiresSerialTracking && (
+        <div className="flex flex-col gap-2 p-4 border rounded-lg">
+          <label className="text-xs text-muted-foreground flex items-center gap-2">
+            <LuBarcode /> Serial Numbers
+          </label>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+            {serialNumbers.map((serialNumber, index) => (
+              <Input
+                key={`${line.id}-${index}-serial`}
+                placeholder={`Serial ${index + 1}`}
+                disabled={isReadOnly}
+                value={serialNumber}
+                onChange={(e) => {
+                  const newSerialNumbers = [...serialNumbers];
+                  newSerialNumbers[index] = e.target.value;
+                  onSerialNumbersChange(newSerialNumbers);
+                }}
+              />
+            ))}
+          </div>
+
+          <input
+            type="hidden"
+            name={`serialNumbers-${line.id}`}
+            value={JSON.stringify(serialNumbers)}
+          />
+        </div>
+      )}
+      {(line.requiresLotTracking || line.requiresSerialTracking) && (
+        <>
+          <Suspense fallback={null}>
+            <Await resolve={files}>
+              {(resolvedFiles) => {
+                const lineFiles = resolvedFiles?.data?.filter(
+                  (file) => file.bucket === line.id
+                );
+                return Array.isArray(lineFiles) && lineFiles.length > 0 ? (
+                  <pre className="text-xs text-muted-foreground">
+                    {lineFiles.map((file) => file.name).join("\n")}
+                  </pre>
+                ) : null;
+              }}
+            </Await>
+          </Suspense>
+          <FileDropzone onDrop={upload} />
+        </>
+      )}
     </div>
   );
 }
@@ -274,3 +415,78 @@ const usePendingItems = () => {
 };
 
 export default ReceiptLines;
+
+function useReceiptFiles(receiptId: string) {
+  const { company } = useUser();
+  const { carbon } = useCarbon();
+
+  const getPath = useCallback(
+    ({ name }: { name: string }, lineId: string) => {
+      return `${company.id}/inventory/${lineId}/${stripSpecialCharacters(
+        name
+      )}`;
+    },
+    [company.id]
+  );
+
+  const submit = useSubmit();
+  const revalidator = useRevalidator();
+  const upload = useCallback(
+    async (files: File[], lineId: string) => {
+      if (!carbon) {
+        toast.error("Carbon client not available");
+        return;
+      }
+
+      for (const file of files) {
+        const fileName = getPath({ name: file.name }, lineId);
+        toast.info(`Uploading ${file.name}`);
+        const fileUpload = await carbon.storage
+          .from("private")
+          .upload(fileName, file, {
+            cacheControl: `${12 * 60 * 60}`,
+            upsert: true,
+          });
+
+        if (fileUpload.error) {
+          toast.error(`Failed to upload file: ${file.name}`);
+        } else if (fileUpload.data?.path) {
+          toast.success(`Uploaded: ${file.name}`);
+          const formData = new FormData();
+          formData.append("path", fileUpload.data.path);
+          formData.append("name", file.name);
+          formData.append("size", Math.round(file.size / 1024).toString());
+          formData.append("sourceDocument", "Receipt");
+          formData.append("sourceDocumentId", receiptId);
+
+          submit(formData, {
+            method: "post",
+            action: path.to.newDocument,
+            navigate: false,
+            fetcherKey: `${lineId}:${file.name}`,
+          });
+        }
+      }
+      revalidator.revalidate();
+    },
+    [carbon, revalidator, getPath, receiptId, submit]
+  );
+
+  const deleteFile = useCallback(
+    async (file: StorageItem, lineId: string) => {
+      const fileDelete = await carbon?.storage
+        .from("private")
+        .remove([getPath(file, lineId)]);
+
+      if (!fileDelete || fileDelete.error) {
+        toast.error(fileDelete?.error?.message || "Error deleting file");
+        return;
+      }
+
+      toast.success(`${file.name} deleted successfully`);
+    },
+    [getPath, carbon?.storage]
+  );
+
+  return { upload, deleteFile };
+}
