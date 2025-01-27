@@ -47,16 +47,27 @@ serve(async (req: Request) => {
       const width = img.width;
       const height = img.height;
 
-      if (contained) {
+      if (targetHeight) {
+        console.log("targetHeight");
+        const targetHeightInt = parseInt(targetHeight, 10);
+
+        // Ensure we have valid dimensions
+        if (isNaN(targetHeightInt) || targetHeightInt <= 0) {
+          throw new Error("Invalid target height");
+        }
+
+        const ratio = img.width / img.height;
+        const targetWidthInt = Math.round(targetHeightInt * ratio);
+
+        // Add quality settings for resize
+        img.resize(targetWidthInt, targetHeightInt);
+        img.quality = 90;
+      } else if (contained) {
         console.log("contained");
         // Calculate size with 10% padding
         const padding = 0.1; // 10% padding
         const maxDimension = Math.max(width, height);
         const sizeWithPadding = Math.ceil(maxDimension * (1 + 2 * padding));
-
-        // Calculate offsets to center the image with padding
-        const x = Math.floor((sizeWithPadding - width) / 2);
-        const y = Math.floor((sizeWithPadding - height) / 2);
 
         // Create geometry for the centered image with padding
         const containedGeometry = new MagickGeometry(
@@ -75,21 +86,6 @@ serve(async (req: Request) => {
         const resizeGeometry = new MagickGeometry(300, 300);
         resizeGeometry.ignoreAspectRatio = true;
         img.resize(resizeGeometry);
-        img.quality = 90;
-      } else if (targetHeight) {
-        console.log("targetHeight");
-        const targetHeightInt = parseInt(targetHeight, 10);
-
-        // Ensure we have valid dimensions
-        if (isNaN(targetHeightInt) || targetHeightInt <= 0) {
-          throw new Error("Invalid target height");
-        }
-
-        const ratio = img.width / img.height;
-        const targetWidthInt = Math.round(targetHeightInt * ratio);
-
-        // Add quality settings for resize
-        img.resize(targetWidthInt, targetHeightInt);
         img.quality = 90;
       } else {
         console.log("default");
