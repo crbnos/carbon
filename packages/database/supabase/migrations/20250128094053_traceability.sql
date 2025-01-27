@@ -220,34 +220,47 @@ CREATE POLICY "Users with production_delete can delete job material tracking" ON
   );
 
 
-CREATE POLICY "Inventory document view requires inventory_view" ON storage.objects 
-FOR SELECT USING (
-    bucket_id = 'private'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('inventory_view', (storage.foldername(name))[1])
-    AND (storage.foldername(name))[2] = 'inventory'
+CREATE POLICY "Inventory document view requires inventory_view" ON storage.objects USING (
+  bucket_id = 'private'
+  AND (storage.foldername(name))[1] = ANY (
+    (
+      SELECT
+        get_companies_with_permission('inventory_view')
+    )::text[]
+  )
+  AND (storage.foldername(name))[2] = 'inventory'
 );
 
-CREATE POLICY "Inventory document insert requires inventory_create" ON storage.objects 
-FOR INSERT WITH CHECK (
-    bucket_id = 'private'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('inventory_create', (storage.foldername(name))[1])
-    AND (storage.foldername(name))[2] = 'inventory'
+CREATE POLICY "Inventory document insert requires inventory_create" ON storage.objects
+WITH CHECK (
+  bucket_id = 'private'
+  AND (storage.foldername(name))[1] = ANY (
+    (
+      SELECT
+        get_companies_with_permission('inventory_create')
+    )::text[]
+  )
+  AND (storage.foldername(name))[2] = 'inventory'
 );
 
-CREATE POLICY "Inventory document update requires inventory_update" ON storage.objects 
-FOR UPDATE USING (
-    bucket_id = 'private'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('inventory_update', (storage.foldername(name))[1])
-    AND (storage.foldername(name))[2] = 'inventory'
+CREATE POLICY "Inventory document update requires inventory_update" ON storage.objects USING (
+  bucket_id = 'private'
+  AND (storage.foldername(name))[1] = ANY (
+    (
+      SELECT
+        get_companies_with_permission('inventory_update')
+    )::text[]
+  )
+  AND (storage.foldername(name))[2] = 'inventory'
 );
 
-CREATE POLICY "Inventory document delete requires inventory_delete" ON storage.objects 
-FOR DELETE USING (
-    bucket_id = 'private'
-    AND has_role('employee', (storage.foldername(name))[1])
-    AND has_company_permission('inventory_delete', (storage.foldername(name))[1])
-    AND (storage.foldername(name))[2] = 'inventory'
+CREATE POLICY "Inventory document delete requires inventory_delete" ON storage.objects USING (
+  bucket_id = 'private'
+  AND (storage.foldername(name))[1] = ANY (
+    (
+      SELECT
+        get_companies_with_permission('inventory_delete')
+    )::text[]
+  )
+  AND (storage.foldername(name))[2] = 'inventory'
 );
