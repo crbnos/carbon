@@ -123,6 +123,7 @@ CREATE TABLE "receiptLineTracking" (
   "serialNumber" TEXT,
   "lotNumber" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
+  "index" INTEGER NOT NULL DEFAULT 0,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   
@@ -217,3 +218,36 @@ CREATE POLICY "Users with production_delete can delete job material tracking" ON
   FOR DELETE USING (
     has_company_permission('production_delete', "companyId")
   );
+
+
+CREATE POLICY "Inventory document view requires inventory_view" ON storage.objects 
+FOR SELECT USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('inventory_view', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'inventory'
+);
+
+CREATE POLICY "Inventory document insert requires inventory_create" ON storage.objects 
+FOR INSERT WITH CHECK (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('inventory_create', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'inventory'
+);
+
+CREATE POLICY "Inventory document update requires inventory_update" ON storage.objects 
+FOR UPDATE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('inventory_update', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'inventory'
+);
+
+CREATE POLICY "Inventory document delete requires inventory_delete" ON storage.objects 
+FOR DELETE USING (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND has_company_permission('inventory_delete', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'inventory'
+);

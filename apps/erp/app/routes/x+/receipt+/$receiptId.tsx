@@ -1,14 +1,15 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import { PanelProvider } from "~/components/Layout";
 import {
   ReceiptHeader,
   getReceipt,
+  getReceiptFiles,
   getReceiptLines,
 } from "~/modules/inventory";
 import type { Handle } from "~/utils/handle";
@@ -20,16 +21,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "inventory",
   });
+
+  const serviceRole = await getCarbonServiceRole();
 
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
   const [receipt, receiptLines] = await Promise.all([
-    getReceipt(client, receiptId),
-    getReceiptLines(client, receiptId),
+    getReceipt(serviceRole, receiptId),
+    getReceiptLines(serviceRole, receiptId),
   ]);
 
   if (receipt.error) {
@@ -39,9 +42,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  if (receipt.data.companyId !== companyId) {
+    throw redirect(path.to.receipts);
+  }
+
+  let receiptLineIds: string[] = [];
+
+  if (receiptLines.data) {
+    receiptLineIds = receiptLines.data.map((line) => line.id);
+  }
+
+  return defer({
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
+    receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
   });
 }
 
