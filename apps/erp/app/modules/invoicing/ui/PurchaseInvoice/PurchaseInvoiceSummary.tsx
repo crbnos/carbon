@@ -307,10 +307,12 @@ const PurchaseInvoiceSummary = ({
   const shouldConvertCurrency =
     routeData?.purchaseInvoice?.currencyCode !== company?.baseCurrencyCode;
 
-  const formatter = useCurrencyFormatter(company?.baseCurrencyCode ?? "USD");
-  const presentationCurrencyFormatter = useCurrencyFormatter(
-    routeData?.purchaseInvoice?.currencyCode ?? "USD"
-  );
+  const formatter = useCurrencyFormatter({
+    currency: company?.baseCurrencyCode ?? "USD",
+  });
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency: routeData?.purchaseInvoice?.currencyCode ?? "USD",
+  });
 
   const isEditable = ["Draft", "To Review"].includes(
     routeData?.purchaseInvoice?.status ?? ""

@@ -66,8 +66,10 @@ const SupplierQuoteToOrderDrawer = ({
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const quoteCurrency = quote.currencyCode ?? baseCurrency;
-  const formatter = useCurrencyFormatter(baseCurrency);
-  const presentationCurrencyFormatter = useCurrencyFormatter(quoteCurrency);
+  const formatter = useCurrencyFormatter({ currency: baseCurrency });
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency: quoteCurrency,
+  });
 
   const renderStep = () => {
     switch (step) {

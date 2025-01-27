@@ -53,7 +53,6 @@ import {
 } from "react-icons/ri";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { CustomerAvatar, Empty, Hyperlink } from "~/components";
-import { useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import { KPIs } from "~/modules/sales/sales.models";
 import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
@@ -143,9 +142,11 @@ export default function SalesDashboard() {
     day: "numeric",
   });
 
-  const { company } = useUser();
-
-  const currencyFormatter = useCurrencyFormatter(company.baseCurrencyCode, 0);
+  const currencyCompactFormatter = useCurrencyFormatter({
+    notation: "compact",
+    compactDisplay: "short",
+  });
+  const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({
     maximumFractionDigits: 0,
     notation: "compact",
@@ -472,12 +473,10 @@ export default function SalesDashboard() {
                 <YAxis
                   dataKey="value"
                   tickLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
                   axisLine={false}
                   tickFormatter={(value) => {
                     return ["salesOrderRevenue"].includes(selectedKpiData.key)
-                      ? currencyFormatter.format(value as number)
+                      ? currencyCompactFormatter.format(value as number)
                       : numberFormatter.format(value as number);
                   }}
                 />

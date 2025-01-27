@@ -172,7 +172,13 @@ export default function PurchaseDashboard() {
 
   const { company } = useUser();
 
-  const currencyFormatter = useCurrencyFormatter(company.baseCurrencyCode, 0);
+  const currencyCompactFormatter = useCurrencyFormatter({
+    currency: company.baseCurrencyCode,
+    maximumFractionDigits: 0,
+    notation: "compact",
+    compactDisplay: "short",
+  });
+  const currencyFormatter = useCurrencyFormatter();
   const numberFormatter = useNumberFormatter({
     maximumFractionDigits: 0,
     notation: "compact",
@@ -491,15 +497,13 @@ export default function PurchaseDashboard() {
                 <YAxis
                   dataKey="value"
                   tickLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
                   axisLine={false}
                   tickFormatter={(value) => {
                     return [
                       "purchaseOrderAmount",
                       "purchaseInvoiceAmount",
                     ].includes(selectedKpiData.key)
-                      ? currencyFormatter.format(value as number)
+                      ? currencyCompactFormatter.format(value as number)
                       : numberFormatter.format(value as number);
                   }}
                 />

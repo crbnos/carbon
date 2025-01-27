@@ -47,7 +47,9 @@ const QuoteLineCosting = ({
   }));
 
   const formatter = useCurrencyFormatter();
-  const unitCostFormatter = useCurrencyFormatter(undefined, unitPricePrecision);
+  const unitCostFormatter = useCurrencyFormatter({
+    maximumFractionDigits: unitPricePrecision,
+  });
 
   const detailsDisclosure = useDisclosure();
 

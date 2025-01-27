@@ -110,13 +110,14 @@ const QuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
-  const unitPriceFormatter = useCurrencyFormatter(
-    routeData?.quote?.currencyCode ?? baseCurrency,
-    unitPricePrecision
-  );
-  const presentationCurrencyFormatter = useCurrencyFormatter(
-    routeData?.quote?.currencyCode ?? baseCurrency
-  );
+  const unitPriceFormatter = useCurrencyFormatter({
+    currency: routeData?.quote?.currencyCode ?? baseCurrency,
+    maximumFractionDigits: unitPricePrecision,
+  });
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency: routeData?.quote?.currencyCode ?? baseCurrency,
+    maximumFractionDigits: unitPricePrecision,
+  });
 
   const additionalCharges = useMemo(() => {
     if (fetcher.formAction === path.to.quoteLineCost(quoteId, lineId)) {

@@ -73,9 +73,9 @@ const SupplierQuoteLinePricing = ({
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   const formatter = useCurrencyFormatter();
-  const presentationCurrencyFormatter = useCurrencyFormatter(
-    routeData?.quote?.currencyCode ?? baseCurrency
-  );
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency: routeData?.quote?.currencyCode ?? baseCurrency,
+  });
 
   const onUpdatePrice = async (
     key:

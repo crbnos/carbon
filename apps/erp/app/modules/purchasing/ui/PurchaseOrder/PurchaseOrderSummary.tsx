@@ -310,9 +310,12 @@ const PurchaseOrderSummary = ({
 
   const { locale } = useLocale();
   const formatter = useCurrencyFormatter();
-  const presentationCurrencyFormatter = useCurrencyFormatter(
-    routeData?.purchaseOrder?.currencyCode ?? company?.baseCurrencyCode ?? "USD"
-  );
+  const presentationCurrencyFormatter = useCurrencyFormatter({
+    currency:
+      routeData?.purchaseOrder?.currencyCode ??
+      company?.baseCurrencyCode ??
+      "USD",
+  });
 
   const shouldConvertCurrency =
     routeData?.purchaseOrder?.currencyCode !== company?.baseCurrencyCode;
