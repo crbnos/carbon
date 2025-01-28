@@ -69,7 +69,7 @@ const DatePicker = (
                   )}
                 </div>
                 <div className="flex-shrink-0 -mt-px">
-                  <PopoverTrigger>
+                  <PopoverTrigger tabIndex={-1}>
                     <FieldButton {...buttonProps} isPressed={state.isOpen} />
                   </PopoverTrigger>
                 </div>
