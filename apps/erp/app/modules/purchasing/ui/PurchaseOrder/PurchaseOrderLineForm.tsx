@@ -16,9 +16,9 @@ import {
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { Number, ValidatedForm } from "@carbon/form";
+import { ValidatedForm } from "@carbon/form";
 import { useFetcher, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   ConversionFactor,
@@ -75,23 +75,56 @@ const PurchaseOrderLineForm = ({
     description: string;
     purchaseQuantity: number;
     supplierUnitPrice: number;
+    supplierShippingCost: number;
     purchaseUom: string;
     inventoryUom: string;
     conversionFactor: number;
     shelfId: string | null;
     minimumOrderQuantity?: number;
+    supplierTaxAmount: number;
+    taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     purchaseQuantity: initialValues.purchaseQuantity ?? 1,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
+    supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: initialValues.conversionFactor ?? 1,
     shelfId: initialValues.shelfId ?? "",
     minimumOrderQuantity: undefined,
+    supplierTaxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxPercent:
+      (initialValues.supplierUnitPrice ?? 0) *
+        (initialValues.purchaseQuantity ?? 1) +
+        (initialValues.supplierShippingCost ?? 0) >
+      0
+        ? (initialValues.supplierTaxAmount ?? 0) /
+          ((initialValues.supplierUnitPrice ?? 0) *
+            (initialValues.purchaseQuantity ?? 1) +
+            (initialValues.supplierShippingCost ?? 0))
+        : 0,
   });
+
+  // update tax amount when quantity or unit price changes
+  useEffect(() => {
+    const subtotal =
+      itemData.supplierUnitPrice * itemData.purchaseQuantity +
+      itemData.supplierShippingCost;
+    if (itemData.taxPercent !== 0) {
+      setItemData((d) => ({
+        ...d,
+        supplierTaxAmount: subtotal * itemData.taxPercent,
+      }));
+    }
+  }, [
+    itemData.supplierUnitPrice,
+    itemData.purchaseQuantity,
+    itemData.supplierShippingCost,
+    itemData.taxPercent,
+  ]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = !isEditable
@@ -111,11 +144,14 @@ const PurchaseOrderLineForm = ({
       description: "",
       purchaseQuantity: 1,
       supplierUnitPrice: 0,
+      supplierShippingCost: 0,
       inventoryUom: "",
       purchaseUom: "",
       conversionFactor: 1,
       shelfId: "",
       minimumOrderQuantity: undefined,
+      supplierTaxAmount: 0,
+      taxPercent: 0,
     });
   };
 
@@ -164,6 +200,7 @@ const PurchaseOrderLineForm = ({
           supplierUnitPrice:
             (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
             (routeData?.purchaseOrder?.exchangeRate ?? 1),
+          supplierShippingCost: 0,
           purchaseUom:
             supplierPart?.data?.supplierUnitOfMeasureCode ??
             itemReplenishment?.purchasingUnitOfMeasureCode ??
@@ -175,6 +212,8 @@ const PurchaseOrderLineForm = ({
             itemReplenishment?.conversionFactor ??
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
+          supplierTaxAmount: 0,
+          taxPercent: 0,
         });
 
         if (item.data?.type) {
@@ -182,28 +221,6 @@ const PurchaseOrderLineForm = ({
         }
 
         break;
-      // case "Service":
-      //   const service = await carbon
-      //     .from("item")
-      //     .select("readableId, name")
-      //     .eq("id", itemId)
-      //     .eq("companyId", company.id)
-      //     .single();
-
-      //   setItemData({
-      //     itemId: itemId,
-      //     itemReadableId: service.data?.readableId ?? "",
-      //     description: service.data?.name ?? "",
-      //     purchaseQuantity: 1,
-      //     supplierUnitPrice: 0,
-      //     purchaseUom: "EA",
-      //     inventoryUom: "EA",
-      //     conversionFactor: 1,
-      //     shelfId: "",
-      //     minimumOrderQuantity: undefined,
-      //   });
-
-      //   break;
       default:
         throw new Error(
           `Invalid purchase order line type: ${itemType} is not implemented`
@@ -298,32 +315,6 @@ const PurchaseOrderLineForm = ({
                       onTypeChange={onTypeChange}
                     />
 
-                    {/* 
-                    {itemType === "G/L Account" && (
-                      <Account
-                        name="accountNumber"
-                        label="Account"
-                        classes={["Expense", "Asset"]}
-                        onChange={(value) => {
-                          setItemData({
-                            itemId: "",
-                            itemReadableId: "",
-                            description: value?.label ?? "",
-                            purchaseQuantity: 1,
-                            supplierUnitPrice: 0,
-                            purchaseUom: "EA",
-                            inventoryUom: "EA",
-                            conversionFactor: 1,
-                            shelfId: "",
-                            minimumOrderQuantity: 0,
-                          });
-                        }}
-                      />
-                    )}
-                    {itemType === "Fixed Asset" && (
-                      // TODO: implement Fixed Asset
-                      <Select name="assetId" label="Asset" options={[]} />
-                    )} */}
                     <FormControl className="col-span-2">
                       <FormLabel>Description</FormLabel>
                       <Input
@@ -402,24 +393,43 @@ const PurchaseOrderLineForm = ({
                         }))
                       }
                     />
-                    <Number
+                    <NumberControlled
                       name="supplierShippingCost"
                       label="Shipping"
+                      value={itemData.supplierShippingCost}
                       formatOptions={{
                         style: "currency",
                         currency:
                           routeData?.purchaseOrder?.currencyCode ??
                           company.baseCurrencyCode,
                       }}
+                      onChange={(value) =>
+                        setItemData((d) => ({
+                          ...d,
+                          supplierShippingCost: value,
+                        }))
+                      }
                     />
-                    <Number
+                    <NumberControlled
                       name="supplierTaxAmount"
                       label="Tax"
+                      value={itemData.supplierTaxAmount}
                       formatOptions={{
                         style: "currency",
                         currency:
                           routeData?.purchaseOrder?.currencyCode ??
                           company.baseCurrencyCode,
+                      }}
+                      onChange={(value) => {
+                        const subtotal =
+                          itemData.supplierUnitPrice *
+                            itemData.purchaseQuantity +
+                          itemData.supplierShippingCost;
+                        setItemData((d) => ({
+                          ...d,
+                          supplierTaxAmount: value,
+                          taxPercent: subtotal > 0 ? value / subtotal : 0,
+                        }));
                       }}
                     />
                     {[
@@ -462,6 +472,30 @@ const PurchaseOrderLineForm = ({
                         }}
                       />
                     )}
+                    <NumberControlled
+                      name="taxPercent"
+                      label="Tax Percent"
+                      value={itemData.taxPercent}
+                      minValue={0}
+                      maxValue={1}
+                      step={0.0001}
+                      formatOptions={{
+                        style: "percent",
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2,
+                      }}
+                      onChange={(value) => {
+                        const subtotal =
+                          itemData.supplierUnitPrice *
+                            itemData.purchaseQuantity +
+                          itemData.supplierShippingCost;
+                        setItemData((d) => ({
+                          ...d,
+                          taxPercent: value,
+                          supplierTaxAmount: subtotal * value,
+                        }));
+                      }}
+                    />
 
                     <CustomFormFields table="purchaseOrderLine" />
                   </div>

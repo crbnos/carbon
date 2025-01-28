@@ -138,6 +138,7 @@ export default function EditPurchaseOrderLineRoute() {
     inventoryUnitOfMeasureCode: line?.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: line?.conversionFactor ?? 1,
     shelfId: line?.shelfId ?? "",
+    taxPercent: line?.taxPercent ?? 0,
     ...getCustomFields(line?.customFields),
   };
 

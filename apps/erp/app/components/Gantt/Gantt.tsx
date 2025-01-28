@@ -30,7 +30,7 @@ import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
   LuChevronDown,
-  LuChevronUp,
+  LuChevronRight,
   LuSearch,
   LuZoomIn,
   LuZoomOut,
@@ -212,7 +212,7 @@ const Gantt = ({
                           state.expanded ? (
                             <LuChevronDown className="h-4 w-4 text-gray-400" />
                           ) : (
-                            <LuChevronUp className="h-4 w-4 text-gray-400" />
+                            <LuChevronRight className="h-4 w-4 text-gray-400" />
                           )
                         ) : (
                           <div className="h-8 w-4" />

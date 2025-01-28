@@ -17,7 +17,7 @@ import {
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   ConversionFactor,
@@ -25,7 +25,6 @@ import {
   Hidden,
   Item,
   Location,
-  Number,
   NumberControlled,
   Shelf,
   Submit,
@@ -38,7 +37,9 @@ import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type PurchaseInvoiceLineFormProps = {
-  initialValues: z.infer<typeof purchaseInvoiceLineValidator>;
+  initialValues: z.infer<typeof purchaseInvoiceLineValidator> & {
+    taxPercent?: number;
+  };
   type?: "card" | "modal";
   onClose?: () => void;
 };
@@ -74,23 +75,47 @@ const PurchaseInvoiceLineForm = ({
     description: string;
     quantity: number;
     supplierUnitPrice: number;
+    supplierShippingCost: number;
     purchaseUom: string;
     inventoryUom: string;
     conversionFactor: number;
     shelfId: string | null;
     minimumOrderQuantity?: number;
+    taxAmount: number;
+    taxPercent: number;
   }>({
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
     supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
+    supplierShippingCost: initialValues.supplierShippingCost ?? 0,
     purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
     inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
     conversionFactor: initialValues.conversionFactor ?? 1,
     shelfId: initialValues.shelfId ?? "",
     minimumOrderQuantity: undefined,
+    taxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxPercent: initialValues.taxPercent ?? 0,
   });
+
+  // update tax amount when quantity or unit price changes
+  useEffect(() => {
+    const subtotal =
+      itemData.supplierUnitPrice * itemData.quantity +
+      itemData.supplierShippingCost;
+    if (itemData.taxPercent !== 0) {
+      setItemData((d) => ({
+        ...d,
+        taxAmount: subtotal * itemData.taxPercent,
+      }));
+    }
+  }, [
+    itemData.supplierUnitPrice,
+    itemData.quantity,
+    itemData.supplierShippingCost,
+    itemData.taxPercent,
+  ]);
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = !isEditable
@@ -108,11 +133,14 @@ const PurchaseInvoiceLineForm = ({
       description: "",
       quantity: 1,
       supplierUnitPrice: 0,
+      supplierShippingCost: 0,
       inventoryUom: "",
       purchaseUom: "",
       conversionFactor: 1,
       shelfId: "",
       minimumOrderQuantity: undefined,
+      taxAmount: 0,
+      taxPercent: 0,
     });
   };
 
@@ -161,6 +189,7 @@ const PurchaseInvoiceLineForm = ({
           supplierUnitPrice:
             (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
             (routeData?.purchaseInvoice?.exchangeRate ?? 1),
+          supplierShippingCost: 0,
           purchaseUom:
             supplierPart?.data?.supplierUnitOfMeasureCode ??
             itemReplenishment?.purchasingUnitOfMeasureCode ??
@@ -172,6 +201,8 @@ const PurchaseInvoiceLineForm = ({
             itemReplenishment?.conversionFactor ??
             1,
           shelfId: inventory.data?.defaultShelfId ?? null,
+          taxAmount: 0,
+          taxPercent: 0,
         });
 
         if (item.data?.type) {
@@ -257,6 +288,7 @@ const PurchaseInvoiceLineForm = ({
                 name="inventoryUnitOfMeasureCode"
                 value={itemData?.inventoryUom}
               />
+
               <VStack>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                   <Item
@@ -271,7 +303,7 @@ const PurchaseInvoiceLineForm = ({
                     onTypeChange={onTypeChange}
                   />
 
-                  <FormControl>
+                  <FormControl className="col-span-2">
                     <FormLabel>Description</FormLabel>
                     <Input
                       value={itemData.description}
@@ -344,24 +376,43 @@ const PurchaseInvoiceLineForm = ({
                           }))
                         }
                       />
-                      <Number
+                      <NumberControlled
                         name="supplierShippingCost"
                         label="Shipping"
+                        value={itemData.supplierShippingCost}
                         formatOptions={{
                           style: "currency",
                           currency:
                             routeData?.purchaseInvoice?.currencyCode ??
                             company.baseCurrencyCode,
                         }}
+                        onChange={(value) =>
+                          setItemData((d) => ({
+                            ...d,
+                            supplierShippingCost: value,
+                          }))
+                        }
                       />
-                      <Number
+
+                      <NumberControlled
                         name="supplierTaxAmount"
                         label="Tax"
+                        value={itemData.taxAmount}
                         formatOptions={{
                           style: "currency",
                           currency:
                             routeData?.purchaseInvoice?.currencyCode ??
                             company.baseCurrencyCode,
+                        }}
+                        onChange={(value) => {
+                          const subtotal =
+                            itemData.supplierUnitPrice * itemData.quantity +
+                            itemData.supplierShippingCost;
+                          setItemData((d) => ({
+                            ...d,
+                            taxAmount: value,
+                            taxPercent: subtotal > 0 ? value / subtotal : 0,
+                          }));
                         }}
                       />
 
@@ -387,6 +438,29 @@ const PurchaseInvoiceLineForm = ({
                       />
                     </>
                   )}
+                  <NumberControlled
+                    name="taxPercent"
+                    label="Tax Percent"
+                    value={itemData.taxPercent}
+                    minValue={0}
+                    maxValue={1}
+                    step={0.0001}
+                    formatOptions={{
+                      style: "percent",
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 2,
+                    }}
+                    onChange={(value) => {
+                      const subtotal =
+                        itemData.supplierUnitPrice * itemData.quantity +
+                        itemData.supplierShippingCost;
+                      setItemData((d) => ({
+                        ...d,
+                        taxPercent: value,
+                        taxAmount: subtotal * value,
+                      }));
+                    }}
+                  />
                   <CustomFormFields table="purchaseInvoiceLine" />
                 </div>
               </VStack>

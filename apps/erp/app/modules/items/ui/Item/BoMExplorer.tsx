@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronDown, LuChevronUp, LuSearch } from "react-icons/lu";
+import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { Copy, MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
@@ -157,7 +157,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
                       state.expanded ? (
                         <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                       ) : (
-                        <LuChevronUp className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
                       )
                     ) : (
                       <div className="h-8 w-4" />
