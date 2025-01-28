@@ -179,6 +179,7 @@ serve(async (req: Request) => {
             sourceDocument: "Purchase Order",
             sourceDocumentId: purchaseOrder.data.id,
             sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+            supplierId: purchaseOrder.data.supplierId,
             supplierInteractionId: purchaseOrder.data.supplierInteractionId,
             companyId: companyId,
             locationId: locationId,

@@ -21127,10 +21127,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -21213,10 +21213,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -21253,10 +21253,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -24325,10 +24325,10 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.trackingDetails",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
           },
           {
             $ref: "#/parameters/select",
@@ -24444,10 +24444,10 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.trackingDetails",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -24517,10 +24517,10 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.conversionFactor",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.trackingDetails",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
           },
           {
             $ref: "#/parameters/body.receiptLine",
@@ -27559,13 +27559,19 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
@@ -27645,13 +27651,19 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
@@ -27685,13 +27697,19 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumber",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
@@ -36496,6 +36514,9 @@ export default {
       get: {
         parameters: [
           {
+            $ref: "#/parameters/rowFilter.serialNumber.id",
+          },
+          {
             $ref: "#/parameters/rowFilter.serialNumber.number",
           },
           {
@@ -36576,6 +36597,9 @@ export default {
       delete: {
         parameters: [
           {
+            $ref: "#/parameters/rowFilter.serialNumber.id",
+          },
+          {
             $ref: "#/parameters/rowFilter.serialNumber.number",
           },
           {
@@ -36609,6 +36633,9 @@ export default {
       },
       patch: {
         parameters: [
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.id",
+          },
           {
             $ref: "#/parameters/rowFilter.serialNumber.number",
           },
@@ -36671,6 +36698,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.attributeDataType.isUser",
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isCustomer",
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isSupplier",
           },
           {
             $ref: "#/parameters/select",
@@ -36756,6 +36789,12 @@ export default {
             $ref: "#/parameters/rowFilter.attributeDataType.isUser",
           },
           {
+            $ref: "#/parameters/rowFilter.attributeDataType.isCustomer",
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isSupplier",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -36791,6 +36830,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.attributeDataType.isUser",
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isCustomer",
+          },
+          {
+            $ref: "#/parameters/rowFilter.attributeDataType.isSupplier",
           },
           {
             $ref: "#/parameters/body.attributeDataType",
@@ -37162,6 +37207,9 @@ export default {
       get: {
         parameters: [
           {
+            $ref: "#/parameters/rowFilter.lotNumber.id",
+          },
+          {
             $ref: "#/parameters/rowFilter.lotNumber.number",
           },
           {
@@ -37178,9 +37226,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.documentPath",
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.createdAt",
@@ -37245,6 +37290,9 @@ export default {
       delete: {
         parameters: [
           {
+            $ref: "#/parameters/rowFilter.lotNumber.id",
+          },
+          {
             $ref: "#/parameters/rowFilter.lotNumber.number",
           },
           {
@@ -37261,9 +37309,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.documentPath",
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.createdAt",
@@ -37282,6 +37327,9 @@ export default {
       patch: {
         parameters: [
           {
+            $ref: "#/parameters/rowFilter.lotNumber.id",
+          },
+          {
             $ref: "#/parameters/rowFilter.lotNumber.number",
           },
           {
@@ -37298,9 +37346,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.documentPath",
           },
           {
             $ref: "#/parameters/rowFilter.lotNumber.createdAt",
@@ -40212,6 +40257,63 @@ export default {
         tags: ["salesRfqs"],
       },
     },
+    "/rpc/get_companies_with_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_companies_with_permission"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                permission: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["permission"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_companies_with_permission"],
+      },
+    },
     "/rpc/get_next_numeric_sequence": {
       get: {
         parameters: [
@@ -40780,6 +40882,85 @@ export default {
         tags: ["(rpc) xid_machine"],
       },
     },
+    "/rpc/get_custom_field_unique_values": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "table_name",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "field_key",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_custom_field_unique_values"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                field_key: {
+                  format: "text",
+                  type: "string",
+                },
+                table_name: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["table_name", "field_key", "company_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_custom_field_unique_values"],
+      },
+    },
     "/rpc/has_role": {
       get: {
         parameters: [
@@ -41253,6 +41434,137 @@ export default {
           },
         },
         tags: ["(rpc) groups_query"],
+      },
+    },
+    "/rpc/update_receipt_line_lot_tracking": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_line_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_lot_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_lot_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_manufacturing_date",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_expiration_date",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "numeric",
+            in: "query",
+            name: "p_quantity",
+            required: true,
+            type: "number",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_receipt_line_lot_tracking"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_expiration_date: {
+                  format: "date",
+                  type: "string",
+                },
+                p_lot_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_lot_number: {
+                  format: "text",
+                  type: "string",
+                },
+                p_manufacturing_date: {
+                  format: "date",
+                  type: "string",
+                },
+                p_quantity: {
+                  format: "numeric",
+                  type: "number",
+                },
+                p_receipt_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_receipt_line_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "p_receipt_line_id",
+                "p_receipt_id",
+                "p_lot_number",
+                "p_lot_id",
+                "p_manufacturing_date",
+                "p_expiration_date",
+                "p_quantity",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_receipt_line_lot_tracking"],
       },
     },
     "/rpc/get_claims": {
@@ -52770,11 +53082,15 @@ export default {
           format: "text",
           type: "string",
         },
-        serialNumber: {
+        serialNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
           format: "text",
           type: "string",
         },
-        lotNumber: {
+        lotNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `lotNumber.id`.<fk table='lotNumber' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -54152,7 +54468,8 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
-        "requiresTracking",
+        "requiresSerialTracking",
+        "requiresLotTracking",
       ],
       properties: {
         id: {
@@ -54245,13 +54562,15 @@ export default {
           format: "numeric",
           type: "number",
         },
-        requiresTracking: {
+        requiresSerialTracking: {
           default: false,
           format: "boolean",
           type: "boolean",
         },
-        trackingDetails: {
-          format: "jsonb",
+        requiresLotTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -55566,6 +55885,8 @@ export default {
         "receiptId",
         "itemId",
         "quantity",
+        "index",
+        "posted",
         "companyId",
         "createdAt",
       ],
@@ -55594,11 +55915,15 @@ export default {
           format: "text",
           type: "string",
         },
-        serialNumber: {
+        serialNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
           format: "text",
           type: "string",
         },
-        lotNumber: {
+        lotNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `lotNumber.id`.<fk table='lotNumber' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55606,6 +55931,16 @@ export default {
           default: 1,
           format: "numeric",
           type: "number",
+        },
+        index: {
+          default: 0,
+          format: "integer",
+          type: "integer",
+        },
+        posted: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
         companyId: {
           description:
@@ -59627,8 +59962,13 @@ export default {
       type: "object",
     },
     serialNumber: {
-      required: ["number", "itemId", "companyId", "status", "createdAt"],
+      required: ["id", "number", "itemId", "companyId", "status", "createdAt"],
       properties: {
+        id: {
+          default: "public.xid()",
+          format: "text",
+          type: "string",
+        },
         number: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -59677,6 +60017,8 @@ export default {
         "isNumeric",
         "isText",
         "isUser",
+        "isCustomer",
+        "isSupplier",
       ],
       properties: {
         id: {
@@ -59714,6 +60056,16 @@ export default {
           type: "boolean",
         },
         isUser: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        isCustomer: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        isSupplier: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -59882,8 +60234,13 @@ export default {
       type: "object",
     },
     lotNumber: {
-      required: ["number", "itemId", "companyId", "createdAt"],
+      required: ["id", "number", "itemId", "companyId", "createdAt"],
       properties: {
+        id: {
+          default: "public.xid()",
+          format: "text",
+          type: "string",
+        },
         number: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -59911,10 +60268,6 @@ export default {
         },
         expirationDate: {
           format: "date",
-          type: "string",
-        },
-        documentPath: {
-          format: "text",
           type: "string",
         },
         createdAt: {
@@ -74284,15 +74637,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialTracking.serialNumber": {
-      name: "serialNumber",
+    "rowFilter.jobMaterialTracking.serialNumberId": {
+      name: "serialNumberId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialTracking.lotNumber": {
-      name: "lotNumber",
+    "rowFilter.jobMaterialTracking.lotNumberId": {
+      name: "lotNumberId",
       required: false,
       format: "text",
       in: "query",
@@ -76289,17 +76642,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.requiresTracking": {
-      name: "requiresTracking",
+    "rowFilter.receiptLine.requiresSerialTracking": {
+      name: "requiresSerialTracking",
       required: false,
       format: "boolean",
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.trackingDetails": {
-      name: "trackingDetails",
+    "rowFilter.receiptLine.requiresLotTracking": {
+      name: "requiresLotTracking",
       required: false,
-      format: "jsonb",
+      format: "boolean",
       in: "query",
       type: "string",
     },
@@ -78014,15 +78367,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLineTracking.serialNumber": {
-      name: "serialNumber",
+    "rowFilter.receiptLineTracking.serialNumberId": {
+      name: "serialNumberId",
       required: false,
       format: "text",
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLineTracking.lotNumber": {
-      name: "lotNumber",
+    "rowFilter.receiptLineTracking.lotNumberId": {
+      name: "lotNumberId",
       required: false,
       format: "text",
       in: "query",
@@ -78032,6 +78385,20 @@ export default {
       name: "quantity",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLineTracking.index": {
+      name: "index",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLineTracking.posted": {
+      name: "posted",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
@@ -83314,6 +83681,13 @@ export default {
         $ref: "#/definitions/serialNumber",
       },
     },
+    "rowFilter.serialNumber.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.serialNumber.number": {
       name: "number",
       required: false,
@@ -83423,6 +83797,20 @@ export default {
     },
     "rowFilter.attributeDataType.isUser": {
       name: "isUser",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.attributeDataType.isCustomer": {
+      name: "isCustomer",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.attributeDataType.isSupplier": {
+      name: "isSupplier",
       required: false,
       format: "boolean",
       in: "query",
@@ -83649,6 +84037,13 @@ export default {
         $ref: "#/definitions/lotNumber",
       },
     },
+    "rowFilter.lotNumber.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.lotNumber.number": {
       name: "number",
       required: false,
@@ -83688,13 +84083,6 @@ export default {
       name: "expirationDate",
       required: false,
       format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.documentPath": {
-      name: "documentPath",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },

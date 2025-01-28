@@ -6,13 +6,19 @@ import {
   CardTitle,
   cn,
   Combobox,
+  DatePicker,
   HStack,
+  IconButton,
   Input,
   NumberField,
   NumberInput,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
 } from "@carbon/react";
+import { type CalendarDate, parseDate } from "@internationalized/date";
 import {
   Await,
   Outlet,
@@ -24,7 +30,15 @@ import {
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useState } from "react";
-import { LuBarcode, LuGroup } from "react-icons/lu";
+import {
+  LuBarcode,
+  LuCalendar,
+  LuCircleAlert,
+  LuGroup,
+  LuX,
+} from "react-icons/lu";
+import { DocumentPreview } from "~/components";
+import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import FileDropzone from "~/components/FileDropzone";
 import { useShelves } from "~/components/Form/Shelf";
@@ -32,7 +46,8 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import type { action } from "~/routes/x+/receipt+/lines.update";
+import { getDocumentType } from "~/modules/shared/shared.service";
+import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -42,8 +57,8 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  const fetcher = useFetcher<typeof action>();
-  const { upload, deleteFile } = useReceiptFiles(receiptId);
+  const fetcher = useFetcher<typeof receiptLinesUpdateAction>();
+  const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLines: ReceiptLine[];
@@ -62,29 +77,35 @@ const ReceiptLines = () => {
   }
 
   const receiptLines = Array.from(receiptsById.values());
+
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
-    Record<string, string[]>
+    Record<string, { index: number; number: string }[]>
   >(() => {
     return receiptLines.reduce(
       (acc, line) => ({
         ...acc,
-        [line.id]: Array(line.receivedQuantity).fill(""),
+        [line.id]: Array(line.receivedQuantity)
+          .fill(null)
+          .map((_, index) => ({
+            index,
+            number: "",
+          })),
       }),
       {}
     );
   });
 
   const [lotNumberByLineId, setLotNumberByLineId] = useState<
-    Record<string, string>
-  >(() => {
-    return receiptLines.reduce(
-      (acc, line) => ({
-        ...acc,
-        [line.id]: "",
-      }),
-      {}
-    );
-  });
+    Record<
+      string,
+      {
+        id: string;
+        number: string;
+        manufacturingDate: string;
+        expirationDate: string;
+      }
+    >
+  >({});
 
   const onUpdateReceiptLine = useCallback(
     async ({
@@ -136,6 +157,7 @@ const ReceiptLines = () => {
               <ReceiptLineItem
                 key={line.id}
                 line={line}
+                receipt={routeData?.receipt}
                 isReadOnly={isPosted}
                 onUpdate={onUpdateReceiptLine}
                 files={routeData?.receiptFiles}
@@ -143,6 +165,7 @@ const ReceiptLines = () => {
                   index === receiptLines.length - 1 ? "border-none" : ""
                 }
                 serialNumbers={serialNumbersByLineId[line.id] || []}
+                getPath={(file) => getPath(file, line.id)}
                 onSerialNumbersChange={(newSerialNumbers) => {
                   setSerialNumbersByLineId((prev) => ({
                     ...prev,
@@ -150,12 +173,6 @@ const ReceiptLines = () => {
                   }));
                 }}
                 lotNumber={lotNumberByLineId[line.id] || ""}
-                onLotNumberChange={(newLotNumber) => {
-                  setLotNumberByLineId((prev) => ({
-                    ...prev,
-                    [line.id]: newLotNumber,
-                  }));
-                }}
                 upload={(files) => upload(files, line.id)}
                 deleteFile={(file) => deleteFile(file, line.id)}
               />
@@ -170,25 +187,34 @@ const ReceiptLines = () => {
 
 function ReceiptLineItem({
   line,
+  receipt,
   className,
   isReadOnly,
   onUpdate,
   files,
   lotNumber,
   serialNumbers,
-  onLotNumberChange,
+  getPath,
   onSerialNumbersChange,
   upload,
   deleteFile,
 }: {
   line: ReceiptLine;
+  receipt?: Receipt;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
-  lotNumber: string;
-  serialNumbers: string[];
-  onLotNumberChange: (lotNumber: string) => void;
-  onSerialNumbersChange: (serialNumbers: string[]) => void;
+  lotNumber: {
+    id: string;
+    number: string;
+    manufacturingDate?: string;
+    expirationDate?: string;
+  };
+  serialNumbers: { index: number; number: string }[];
+  getPath: (file: StorageItem) => string;
+  onSerialNumbersChange: (
+    serialNumbers: { index: number; number: string }[]
+  ) => void;
   onUpdate: ({
     lineId,
     field,
@@ -266,10 +292,34 @@ function ReceiptLineItem({
           </HStack>
         </HStack>
         <div className="flex flex-grow items-center justify-between gap-2 pl-4">
-          <VStack spacing={1}>
-            <label className="text-xs text-muted-foreground">Ordered</label>
-            <span className="text-sm py-1.5">{line.orderQuantity}</span>
-          </VStack>
+          <HStack spacing={4}>
+            <VStack spacing={1} className="text-center items-center">
+              <label className="text-xs text-muted-foreground">Ordered</label>
+              <span className="text-sm py-1.5">{line.orderQuantity}</span>
+            </VStack>
+
+            <VStack spacing={1} className="text-center items-center">
+              <label className="text-xs text-muted-foreground">
+                Outstanding
+              </label>
+              <HStack className="justify-center">
+                <span className="text-sm py-1.5">
+                  {line.outstandingQuantity}
+                </span>
+
+                {line.receivedQuantity > line.outstandingQuantity && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuCircleAlert className="text-red-500" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      There are more received than ordered
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </HStack>
+            </VStack>
+          </HStack>
           <Shelf
             locationId={line.locationId}
             shelfId={line.shelfId}
@@ -285,52 +335,21 @@ function ReceiptLineItem({
         </div>
       </div>
       {line.requiresLotTracking && (
-        <div className="flex flex-col gap-2 p-4 border rounded-lg">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuGroup /> Lot Number
-          </label>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
-            <Input
-              key={`${line.id}-lot`}
-              placeholder={`Lot number`}
-              disabled={isReadOnly}
-              value={lotNumber}
-              onChange={(e) => {
-                onLotNumberChange(e.target.value);
-              }}
-            />
-          </div>
-        </div>
+        <LotForm
+          receipt={receipt}
+          line={line}
+          isReadOnly={isReadOnly}
+          initialValues={lotNumber}
+        />
       )}
       {line.requiresSerialTracking && (
-        <div className="flex flex-col gap-2 p-4 border rounded-lg">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuBarcode /> Serial Numbers
-          </label>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
-            {serialNumbers.map((serialNumber, index) => (
-              <Input
-                key={`${line.id}-${index}-serial`}
-                placeholder={`Serial ${index + 1}`}
-                disabled={isReadOnly}
-                value={serialNumber}
-                onChange={(e) => {
-                  const newSerialNumbers = [...serialNumbers];
-                  newSerialNumbers[index] = e.target.value;
-                  onSerialNumbersChange(newSerialNumbers);
-                }}
-              />
-            ))}
-          </div>
-
-          <input
-            type="hidden"
-            name={`serialNumbers-${line.id}`}
-            value={JSON.stringify(serialNumbers)}
-          />
-        </div>
+        <SerialForm
+          receipt={receipt}
+          line={line}
+          serialNumbers={serialNumbers}
+          isReadOnly={isReadOnly}
+          onSerialNumbersChange={onSerialNumbersChange}
+        />
       )}
       {(line.requiresLotTracking || line.requiresSerialTracking) && (
         <>
@@ -341,9 +360,40 @@ function ReceiptLineItem({
                   (file) => file.bucket === line.id
                 );
                 return Array.isArray(lineFiles) && lineFiles.length > 0 ? (
-                  <pre className="text-xs text-muted-foreground">
-                    {lineFiles.map((file) => file.name).join("\n")}
-                  </pre>
+                  <div className="flex flex-col gap-2">
+                    {lineFiles.map((file) => {
+                      const documentType = getDocumentType(file.name);
+                      const isPreviewable = ["PDF", "Image"].includes(
+                        documentType
+                      );
+
+                      return (
+                        <HStack key={file.id}>
+                          <DocumentIcon type={documentType} />
+                          <span className="font-medium text-sm">
+                            {isPreviewable ? (
+                              <DocumentPreview
+                                bucket="private"
+                                pathToFile={getPath(file)}
+                                // @ts-ignore
+                                type={getDocumentType(file.name)}
+                              >
+                                {file.name}
+                              </DocumentPreview>
+                            ) : (
+                              file.name
+                            )}
+                          </span>
+                          <IconButton
+                            icon={<LuX />}
+                            aria-label="Delete file"
+                            variant="ghost"
+                            onClick={() => deleteFile(file)}
+                          />
+                        </HStack>
+                      );
+                    })}
+                  </div>
                 ) : null;
               }}
             </Await>
@@ -351,6 +401,232 @@ function ReceiptLineItem({
           <FileDropzone onDrop={upload} />
         </>
       )}
+    </div>
+  );
+}
+
+function LotForm({
+  line,
+  receipt,
+  initialValues,
+  isReadOnly,
+}: {
+  line: ReceiptLine;
+  receipt?: Receipt;
+  isReadOnly: boolean;
+  initialValues?: {
+    id: string;
+    number: string;
+    manufacturingDate?: string;
+    expirationDate?: string;
+  };
+}) {
+  const submit = useSubmit();
+  const [values, setValues] = useState<{
+    number: string;
+    manufacturingDate?: CalendarDate;
+    expirationDate?: CalendarDate;
+  }>(
+    initialValues
+      ? {
+          number: initialValues.number,
+          manufacturingDate: initialValues.manufacturingDate
+            ? parseDate(initialValues.manufacturingDate)
+            : undefined,
+          expirationDate: initialValues.expirationDate
+            ? parseDate(initialValues.expirationDate)
+            : undefined,
+        }
+      : {
+          number: "",
+          manufacturingDate: undefined,
+          expirationDate: undefined,
+        }
+  );
+
+  const updateLotNumber = async (newValues: typeof values) => {
+    if (!receipt?.id || !newValues.number.trim()) return;
+    if (
+      newValues.manufacturingDate &&
+      newValues.manufacturingDate.year < 1900
+    ) {
+      return;
+    }
+    if (newValues.expirationDate && newValues.expirationDate.year < 1900) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("itemId", line.itemId);
+    formData.append("receiptId", receipt.id);
+    formData.append("receiptLineId", line.id);
+    formData.append("trackingType", "lot");
+    formData.append("lotNumber", newValues.number.trim());
+    formData.append(
+      "manufacturingDate",
+      newValues.manufacturingDate?.toString() ?? ""
+    );
+    formData.append(
+      "expirationDate",
+      newValues.expirationDate?.toString() ?? ""
+    );
+    formData.append("quantity", line.receivedQuantity.toString());
+
+    submit(formData, {
+      method: "post",
+      action: path.to.receiptLinesTracking(receipt.id),
+      navigate: false,
+    });
+  };
+
+  const handleDateChange = (
+    field: "manufacturingDate" | "expirationDate",
+    newDate: CalendarDate | null
+  ) => {
+    const newValues = {
+      ...values,
+      [field]: newDate ?? undefined,
+    };
+    setValues(newValues);
+    updateLotNumber(newValues);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3 w-full p-4 border rounded-lg">
+      <div className="flex flex-col gap-2 w-full">
+        <label className="text-xs text-muted-foreground flex items-center gap-2">
+          <LuGroup /> Lot Number
+        </label>
+
+        <Input
+          placeholder={`Lot number`}
+          disabled={isReadOnly}
+          value={values.number}
+          onChange={(e) => {
+            setValues((prev) => ({
+              ...prev,
+              number: e.target.value,
+            }));
+          }}
+          onBlur={() => {
+            updateLotNumber(values);
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 w-full">
+        <label className="text-xs text-muted-foreground flex items-center gap-2">
+          <LuCalendar /> Manufactured Date
+        </label>
+
+        <DatePicker
+          value={values.manufacturingDate}
+          isDisabled={isReadOnly}
+          onChange={(newDate) => {
+            handleDateChange("manufacturingDate", newDate);
+          }}
+        />
+      </div>
+
+      <div className="flex flex-col gap-2 w-full">
+        <label className="text-xs text-muted-foreground flex items-center gap-2">
+          <LuCalendar /> Expiration Date
+        </label>
+
+        <DatePicker
+          value={values.expirationDate}
+          isDisabled={isReadOnly}
+          onChange={(newDate) => {
+            handleDateChange("expirationDate", newDate);
+          }}
+          minValue={values.manufacturingDate}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SerialForm({
+  line,
+  receipt,
+  serialNumbers,
+  isReadOnly,
+  onSerialNumbersChange,
+}: {
+  line: ReceiptLine;
+  receipt?: Receipt;
+  serialNumbers: { index: number; number: string }[];
+  isReadOnly: boolean;
+  onSerialNumbersChange: (
+    serialNumbers: { index: number; number: string }[]
+  ) => void;
+}) {
+  const submit = useSubmit();
+
+  const updateSerialNumber = useCallback(
+    async (serialNumber: { index: number; number: string }) => {
+      if (!receipt?.id || !serialNumber.number.trim()) return;
+
+      const formData = new FormData();
+      formData.append("itemId", line.itemId);
+      formData.append("receiptId", receipt.id);
+      formData.append("receiptLineId", line.id);
+      formData.append("trackingType", "serial");
+      formData.append("index", serialNumber.index.toString());
+      formData.append("serialNumber", serialNumber.number.trim());
+
+      submit(formData, {
+        method: "post",
+        action: path.to.receiptLinesTracking(receipt.id),
+        navigate: false,
+      });
+    },
+    [line.id, line.itemId, receipt?.id, submit]
+  );
+
+  return (
+    <div className="flex flex-col gap-2 p-4 border rounded-lg">
+      <label className="text-xs text-muted-foreground flex items-center gap-2">
+        <LuBarcode /> Serial Numbers
+      </label>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
+        {serialNumbers.map((serialNumber, index) => (
+          <Input
+            key={`${line.id}-${index}-serial`}
+            placeholder={`Serial ${index + 1}`}
+            disabled={isReadOnly}
+            value={serialNumber.number}
+            onChange={(e) => {
+              const newSerialNumbers = [...serialNumbers];
+              newSerialNumbers[index] = {
+                index,
+                number: e.target.value,
+              };
+              onSerialNumbersChange(newSerialNumbers);
+            }}
+            onBlur={() => {
+              if (serialNumber.number.trim()) {
+                updateSerialNumber(serialNumber);
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                if (serialNumber.number.trim()) {
+                  updateSerialNumber(serialNumber);
+                }
+                const nextInput = e.currentTarget
+                  .closest("div")
+                  ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
+                if (nextInput) {
+                  (nextInput as HTMLElement).focus();
+                }
+              }
+            }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -484,9 +760,10 @@ function useReceiptFiles(receiptId: string) {
       }
 
       toast.success(`${file.name} deleted successfully`);
+      revalidator.revalidate();
     },
-    [getPath, carbon?.storage]
+    [getPath, carbon?.storage, revalidator]
   );
 
-  return { upload, deleteFile };
+  return { upload, deleteFile, getPath };
 }
