@@ -320,10 +320,12 @@ function QuoteLineItem({
                     View Item Master
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={searchDisclosure.onOpen}>
-                  <DropdownMenuIcon icon={<LuSearch />} />
-                  Search
-                </DropdownMenuItem>
+                {line.methodType === "Make" && (
+                  <DropdownMenuItem onClick={searchDisclosure.onOpen}>
+                    <DropdownMenuIcon icon={<LuSearch />} />
+                    Search
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

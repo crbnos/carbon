@@ -43,6 +43,7 @@ serve(async (req: Request) => {
     const result = ImageMagick.read(bytes, (img) => {
       // First convert to PNG to ensure consistent handling
       img.format = MagickFormat.Png;
+      img.write((data) => data); // Write to PNG first
 
       const width = img.width;
       const height = img.height;
@@ -77,6 +78,7 @@ serve(async (req: Request) => {
           sizeWithPadding
         );
         containedGeometry.ignoreAspectRatio = true;
+
         img.extent(
           containedGeometry,
           Gravity.Center,
