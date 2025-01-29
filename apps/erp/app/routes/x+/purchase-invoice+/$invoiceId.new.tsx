@@ -57,9 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(
-    path.to.purchaseInvoiceLine(invoiceId, createPurchaseInvoiceLine.data.id)
-  );
+  throw redirect(path.to.purchaseInvoiceDetails(invoiceId));
 }
 
 export default function NewPurchaseInvoiceLineRoute() {

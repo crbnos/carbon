@@ -7,7 +7,13 @@ import type { ItemLedger } from "../../types";
 const getActivityText = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
-      return `received ${ledgerRecord.quantity} units`;
+      return `received ${ledgerRecord.quantity} units${
+        ledgerRecord.lotNumber ? ` from lot ${ledgerRecord.lotNumber}` : ""
+      }${
+        ledgerRecord.serialNumber
+          ? ` with serial number ${ledgerRecord.serialNumber}`
+          : ""
+      }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units`;
     case "Sales Shipment":

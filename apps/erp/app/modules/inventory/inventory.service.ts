@@ -168,7 +168,7 @@ export async function getInventoryItemsCount(
     .from("item")
     .select("id, readableId", { count: "exact" })
     .eq("companyId", companyId)
-    .eq("itemTrackingType", "Inventory");
+    .in("itemTrackingType", ["Inventory", "Serial", "Lot"]);
 
   if (args?.search) {
     query = query.or(

@@ -51,7 +51,12 @@ serve(async (req: Request) => {
 
     const [receipt, receiptLines] = await Promise.all([
       client.from("receipt").select("*").eq("id", receiptId).single(),
-      client.from("receiptLine").select("*").eq("receiptId", receiptId),
+      client
+        .from("receiptLine")
+        .select(
+          "*, receiptLineTracking(id, quantity, serialNumber(number), lotNumber(number))"
+        )
+        .eq("receiptId", receiptId),
     ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -640,6 +645,46 @@ serve(async (req: Request) => {
               companyId,
             });
           }
+
+          if (receiptLine.requiresLotTracking) {
+            itemLedgerInserts.push({
+              postingDate: today,
+              itemId: receiptLine.itemId,
+              itemReadableId: receiptLine.itemReadableId ?? "",
+              quantity: receiptLine.receivedQuantity,
+              locationId: receiptLine.locationId,
+              shelfId: receiptLine.shelfId,
+              entryType: "Positive Adjmt.",
+              documentType: "Purchase Receipt",
+              documentId: receipt.data?.id ?? undefined,
+              lotNumber:
+                receiptLine.receiptLineTracking?.[0]?.lotNumber?.number,
+              externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
+              createdBy: userId,
+              companyId,
+            });
+          }
+
+          if (receiptLine.requiresSerialTracking) {
+            receiptLine.receiptLineTracking.forEach((tracking) => {
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                itemReadableId: receiptLine.itemReadableId ?? "",
+                quantity: 1,
+                locationId: receiptLine.locationId,
+                shelfId: receiptLine.shelfId,
+                entryType: "Positive Adjmt.",
+                documentType: "Purchase Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                serialNumber: tracking.serialNumber?.number,
+                externalDocumentId:
+                  receipt.data?.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId,
+              });
+            });
+          }
         }
 
         const accountingPeriodId = await getCurrentAccountingPeriod(
@@ -748,6 +793,14 @@ serve(async (req: Request) => {
               postedBy: userId,
             })
             .where("id", "=", receiptId)
+            .execute();
+
+          await trx
+            .updateTable("receiptLineTracking")
+            .set({
+              posted: true,
+            })
+            .where("receiptId", "=", receiptId)
             .execute();
         });
         break;
