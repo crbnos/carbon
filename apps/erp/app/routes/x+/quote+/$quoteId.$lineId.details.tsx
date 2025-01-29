@@ -137,6 +137,8 @@ export default function QuoteLine() {
     [quoteData, line.id]
   );
 
+  console.log({ line });
+
   const getLineCosts = useLineCosts({
     methodTree,
     operations: operations as QuotationOperation[],
