@@ -177,7 +177,7 @@ function PurchaseInvoiceLineItem({
     location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
 
   return (
-    <VStack spacing={0}>
+    <VStack spacing={0} className="border-b">
       <Link
         to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
         prefetch="intent"

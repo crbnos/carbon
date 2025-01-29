@@ -207,7 +207,7 @@ function OptimisticSalesRFQLineItem({
   line: z.infer<typeof salesRfqDragValidator>;
 }) {
   return (
-    <VStack spacing={0} className="border-b border-border">
+    <VStack spacing={0} className="border-b">
       <HStack className="w-full p-2 items-center justify-between hover:bg-accent/30 cursor-pointer">
         <HStack spacing={2}>
           <div className="w-10 h-10 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-2">
@@ -271,7 +271,7 @@ function SalesRFQLineItem({
   const isSelected = lineId === line.id;
 
   return (
-    <VStack spacing={0}>
+    <VStack spacing={0} className="border-b">
       <Link
         className="w-full"
         prefetch="intent"

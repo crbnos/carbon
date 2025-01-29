@@ -1606,11 +1606,6 @@ function makeItem(
         )}
       </HStack>
     ),
-    footer: isTemporaryId(operation.id ?? "") ? null : (
-      <HStack className="w-full justify-end">
-        <MethodOperationTags operation={operation} availableTags={tags} />
-      </HStack>
-    ),
     data: operation,
   };
 }
@@ -1644,6 +1639,7 @@ function usePendingOperations() {
 function getFieldKey(field: string, operationId: string) {
   return `${field}:${operationId}`;
 }
+
 export function MethodOperationTags({
   operation,
   availableTags,

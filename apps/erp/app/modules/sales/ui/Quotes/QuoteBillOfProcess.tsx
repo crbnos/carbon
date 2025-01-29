@@ -161,11 +161,6 @@ function makeItem(
         )}
       </HStack>
     ),
-    footer: isTemporaryId(operation.id ?? "") ? null : (
-      <HStack className="w-full justify-end">
-        <QuoteOperationTags operation={operation} availableTags={tags} />
-      </HStack>
-    ),
     data: operation,
   };
 }

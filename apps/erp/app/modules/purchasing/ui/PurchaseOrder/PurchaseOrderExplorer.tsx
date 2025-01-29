@@ -177,7 +177,7 @@ function PurchaseOrderLineItem({
     location.pathname === path.to.purchaseOrderLine(orderId, line.id!);
 
   return (
-    <VStack spacing={0}>
+    <VStack spacing={0} className="border-b">
       <Link
         to={path.to.purchaseOrderLine(orderId, line.id!)}
         prefetch="intent"
@@ -186,7 +186,6 @@ function PurchaseOrderLineItem({
         <HStack
           className={cn(
             "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            !disclosure.isOpen && "border-b border-border",
             isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
           )}
         >

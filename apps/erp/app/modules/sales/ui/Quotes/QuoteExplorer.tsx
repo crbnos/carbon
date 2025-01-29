@@ -231,11 +231,10 @@ function QuoteLineItem({
   };
 
   return (
-    <VStack spacing={0}>
+    <VStack spacing={0} className="border-b">
       <HStack
         className={cn(
           "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-          !disclosure.isOpen && "border-b border-border",
           isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
         )}
         onClick={() => onLineClick(line)}

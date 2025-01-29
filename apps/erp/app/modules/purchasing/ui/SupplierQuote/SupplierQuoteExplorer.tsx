@@ -177,7 +177,7 @@ function SupplierQuoteLineItem({
     location.pathname === path.to.supplierQuoteLine(id, line.id!);
 
   return (
-    <VStack spacing={0}>
+    <VStack spacing={0} className="border-b">
       <Link
         to={path.to.supplierQuoteLine(id, line.id!)}
         prefetch="intent"
@@ -186,7 +186,6 @@ function SupplierQuoteLineItem({
         <HStack
           className={cn(
             "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            !disclosure.isOpen && "border-b border-border",
             isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
           )}
         >
