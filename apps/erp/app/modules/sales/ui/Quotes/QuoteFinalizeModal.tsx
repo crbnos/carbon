@@ -27,11 +27,19 @@ import {
   getQuoteLinePricesByQuoteId,
   getQuoteLines,
 } from "../../sales.service";
-import type { Quotation, QuotationLine, QuotationPrice } from "../../types";
+import type {
+  Quotation,
+  QuotationLine,
+  QuotationPrice,
+  QuotationShipment,
+} from "../../types";
 
 type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
+  lines: QuotationLine[];
+  pricing: QuotationPrice[];
+  shipment: QuotationShipment | null;
   fetcher: FetcherWithComponents<{}>;
 };
 
@@ -39,6 +47,8 @@ const QuotationFinalizeModal = ({
   quote,
   onClose,
   fetcher,
+  shipment,
+  pricing,
 }: QuotationFinalizeModalProps) => {
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
@@ -100,6 +110,15 @@ const QuotationFinalizeModal = ({
     ]),
   ];
 
+  const hasShippingCost = shipment?.shippingCost && shipment.shippingCost > 0;
+  const allLinesHaveShippingCosts = lines.every((line) => {
+    const linePrices = prices.filter((price) => price.quoteLineId === line.id);
+    return linePrices.every(
+      (price) => price.shippingCost && price.shippingCost > 0
+    );
+  });
+  const showShippingWarning = !hasShippingCost && !allLinesHaveShippingCosts;
+
   return (
     <Modal
       open
@@ -128,21 +147,32 @@ const QuotationFinalizeModal = ({
             </ModalDescription>
           </ModalHeader>
           <ModalBody>
-            {warningLineReadableIds.length > 0 && (
-              <Alert variant="destructive">
-                <LuTriangleAlert className="h-4 w-4" />
-                <AlertTitle>Lines need prices or lead times</AlertTitle>
-                <AlertDescription>
-                  The following line items are missing prices or lead times:
-                  <ul className="list-disc py-2 pl-4">
-                    {warningLineReadableIds.map((readableId) => (
-                      <li key={readableId}>{readableId}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
-            )}
             <VStack spacing={4}>
+              {warningLineReadableIds.length > 0 && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Lines need prices or lead times</AlertTitle>
+                  <AlertDescription>
+                    The following line items are missing prices or lead times:
+                    <ul className="list-disc py-2 pl-4">
+                      {warningLineReadableIds.map((readableId) => (
+                        <li key={readableId}>{readableId}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {showShippingWarning && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Missing Shipping Costs</AlertTitle>
+                  <AlertDescription>
+                    This quote has no shipping costs defined. Please add
+                    shipping costs either at the quote level or for individual
+                    line items.
+                  </AlertDescription>
+                </Alert>
+              )}
               {canEmail && (
                 <SelectControlled
                   label="Send Via"

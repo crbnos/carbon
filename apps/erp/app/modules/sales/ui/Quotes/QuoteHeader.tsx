@@ -49,6 +49,7 @@ import type {
   Quotation,
   QuotationLine,
   QuotationPrice,
+  QuotationShipment,
 } from "../../types";
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
@@ -66,6 +67,7 @@ const QuoteHeader = () => {
     lines: QuotationLine[];
     opportunity: Opportunity;
     prices: QuotationPrice[];
+    shipment: QuotationShipment;
   }>(path.to.quote(quoteId));
 
   const eligibleLines = routeData?.lines.filter(
@@ -286,6 +288,9 @@ const QuoteHeader = () => {
       {finalizeModal.isOpen && (
         <QuoteFinalizeModal
           quote={routeData?.quote}
+          lines={eligibleLines ?? []}
+          pricing={routeData?.prices ?? []}
+          shipment={routeData?.shipment ?? null}
           onClose={finalizeModal.onClose}
           fetcher={finalizeFetcher}
         />
