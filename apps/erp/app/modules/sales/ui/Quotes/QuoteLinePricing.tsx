@@ -200,8 +200,6 @@ const QuoteLinePricing = ({
     return totalCost;
   });
 
-  console.log({ unitCostsByQuantity });
-
   const netPricesByQuantity = quantities.map((quantity, index) => {
     const price = prices[quantity]?.unitPrice ?? 0;
     const discount = prices[quantity]?.discountPercent ?? 0;
@@ -368,6 +366,27 @@ const QuoteLinePricing = ({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onRecalculate(30)}>
                     30% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(40)}>
+                    40% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(50)}>
+                    50% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(60)}>
+                    60% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(70)}>
+                    70% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(80)}>
+                    80% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(90)}>
+                    90% Markup
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onRecalculate(100)}>
+                    100% Markup
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

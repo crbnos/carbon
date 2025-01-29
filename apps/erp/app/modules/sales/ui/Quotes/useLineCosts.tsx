@@ -4,6 +4,7 @@ import type { Tree } from "~/components/TreeView";
 import type {
   CostEffects,
   Costs,
+  QuotationLine,
   QuotationOperation,
   QuoteMethod,
 } from "../../types";
@@ -28,11 +29,11 @@ type EnhancedTree = Tree<QuoteMethod & { operations?: QuotationOperation[] }>;
 export function useLineCosts({
   methodTree: originalMethodTree,
   operations,
-  unitCost = 0,
+  line,
 }: {
   methodTree?: Tree<QuoteMethod>;
   operations: QuotationOperation[];
-  unitCost?: number;
+  line: QuotationLine;
 }): (quantity: number) => Costs {
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -330,14 +331,14 @@ export function useLineCosts({
       }
     }
 
-    if (methodTree) {
+    if (methodTree && line.methodType === "Make") {
       walkTree(methodTree);
     } else {
-      effects.materialCost.push((quantity) => unitCost * quantity);
+      effects.materialCost.push((quantity) => (line.unitCost ?? 0) * quantity);
     }
 
     return effects;
-  }, [methodTree, unitCost]);
+  }, [methodTree, line.methodType, line.unitCost]);
 
   const getCosts = useCallback(
     (quantity: number) => {

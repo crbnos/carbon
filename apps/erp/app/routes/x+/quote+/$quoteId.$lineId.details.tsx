@@ -137,12 +137,10 @@ export default function QuoteLine() {
     [quoteData, line.id]
   );
 
-  console.log({ line, methodTree });
-
   const getLineCosts = useLineCosts({
     methodTree,
     operations: operations as QuotationOperation[],
-    unitCost: line.unitCost ?? 0,
+    line,
   });
 
   const initialValues = {
