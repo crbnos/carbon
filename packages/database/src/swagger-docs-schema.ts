@@ -4380,6 +4380,168 @@ export default {
         tags: ["currencyCode"],
       },
     },
+    "/batchNumber": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.number",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.manufacturingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/batchNumber",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["batchNumber"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.batchNumber",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["batchNumber"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.number",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.manufacturingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["batchNumber"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.number",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.manufacturingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.batchNumber",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["batchNumber"],
+      },
+    },
     "/methodMaterial": {
       get: {
         parameters: [
@@ -21130,7 +21292,7 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -21216,7 +21378,7 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -21256,7 +21418,7 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
@@ -24328,7 +24490,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking",
           },
           {
             $ref: "#/parameters/select",
@@ -24447,7 +24609,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -24520,7 +24682,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLine.requiresSerialTracking",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLine.requiresLotTracking",
+            $ref: "#/parameters/rowFilter.receiptLine.requiresBatchTracking",
           },
           {
             $ref: "#/parameters/body.receiptLine",
@@ -25726,7 +25888,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.serialNumber",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.lotNumber",
+            $ref: "#/parameters/rowFilter.itemLedger.batchNumber",
           },
           {
             $ref: "#/parameters/select",
@@ -25839,7 +26001,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.serialNumber",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.lotNumber",
+            $ref: "#/parameters/rowFilter.itemLedger.batchNumber",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -25906,7 +26068,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemLedger.serialNumber",
           },
           {
-            $ref: "#/parameters/rowFilter.itemLedger.lotNumber",
+            $ref: "#/parameters/rowFilter.itemLedger.batchNumber",
           },
           {
             $ref: "#/parameters/body.itemLedger",
@@ -27562,7 +27724,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
@@ -27654,7 +27816,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
@@ -27700,7 +27862,7 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
           },
           {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.lotNumberId",
+            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
           },
           {
             $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
@@ -37203,168 +37365,6 @@ export default {
         tags: ["quoteLine"],
       },
     },
-    "/lotNumber": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.number",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.supplierId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.manufacturingDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.createdAt",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/lotNumber",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["lotNumber"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.lotNumber",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["lotNumber"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.number",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.supplierId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.manufacturingDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.createdAt",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["lotNumber"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.number",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.supplierId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.manufacturingDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.expirationDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.lotNumber.createdAt",
-          },
-          {
-            $ref: "#/parameters/body.lotNumber",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["lotNumber"],
-      },
-    },
     "/jobMaterialWithMakeMethodId": {
       get: {
         parameters: [
@@ -41531,7 +41531,7 @@ export default {
         tags: ["(rpc) update_receipt_line_serial_tracking"],
       },
     },
-    "/rpc/update_receipt_line_lot_tracking": {
+    "/rpc/update_receipt_line_batch_tracking": {
       get: {
         parameters: [
           {
@@ -41551,14 +41551,14 @@ export default {
           {
             format: "text",
             in: "query",
-            name: "p_lot_number",
+            name: "p_batch_number",
             required: true,
             type: "string",
           },
           {
             format: "text",
             in: "query",
-            name: "p_lot_id",
+            name: "p_batch_id",
             required: true,
             type: "string",
           },
@@ -41594,7 +41594,7 @@ export default {
             description: "OK",
           },
         },
-        tags: ["(rpc) update_receipt_line_lot_tracking"],
+        tags: ["(rpc) update_receipt_line_batch_tracking"],
       },
       post: {
         parameters: [
@@ -41604,16 +41604,16 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_batch_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_batch_number: {
+                  format: "text",
+                  type: "string",
+                },
                 p_expiration_date: {
                   format: "date",
-                  type: "string",
-                },
-                p_lot_id: {
-                  format: "text",
-                  type: "string",
-                },
-                p_lot_number: {
-                  format: "text",
                   type: "string",
                 },
                 p_manufacturing_date: {
@@ -41636,8 +41636,8 @@ export default {
               required: [
                 "p_receipt_line_id",
                 "p_receipt_id",
-                "p_lot_number",
-                "p_lot_id",
+                "p_batch_number",
+                "p_batch_id",
                 "p_manufacturing_date",
                 "p_expiration_date",
                 "p_quantity",
@@ -41659,7 +41659,7 @@ export default {
             description: "OK",
           },
         },
-        tags: ["(rpc) update_receipt_line_lot_tracking"],
+        tags: ["(rpc) update_receipt_line_batch_tracking"],
       },
     },
     "/rpc/get_claims": {
@@ -44836,6 +44836,51 @@ export default {
       },
       type: "object",
     },
+    batchNumber: {
+      required: ["id", "number", "itemId", "companyId", "createdAt"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          format: "text",
+          type: "string",
+        },
+        number: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          format: "text",
+          type: "string",
+        },
+        manufacturingDate: {
+          format: "date",
+          type: "string",
+        },
+        expirationDate: {
+          format: "date",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     methodMaterial: {
       required: [
         "id",
@@ -46219,7 +46264,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -50370,7 +50415,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -53183,9 +53228,9 @@ export default {
           format: "text",
           type: "string",
         },
-        lotNumberId: {
+        batchNumberId: {
           description:
-            "Note:\nThis is a Foreign Key to `lotNumber.id`.<fk table='lotNumber' column='id'/>",
+            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -54041,7 +54086,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -54377,7 +54422,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -54564,7 +54609,7 @@ export default {
         "createdAt",
         "createdBy",
         "requiresSerialTracking",
-        "requiresLotTracking",
+        "requiresBatchTracking",
       ],
       properties: {
         id: {
@@ -54662,7 +54707,7 @@ export default {
           format: "boolean",
           type: "boolean",
         },
-        requiresLotTracking: {
+        requiresBatchTracking: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -55244,7 +55289,7 @@ export default {
           format: "text",
           type: "string",
         },
-        lotNumber: {
+        batchNumber: {
           format: "text",
           type: "string",
         },
@@ -56016,9 +56061,9 @@ export default {
           format: "text",
           type: "string",
         },
-        lotNumberId: {
+        batchNumberId: {
           description:
-            "Note:\nThis is a Foreign Key to `lotNumber.id`.<fk table='lotNumber' column='id'/>",
+            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -58267,7 +58312,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -59090,7 +59135,7 @@ export default {
           type: "string",
         },
         itemTrackingType: {
-          enum: ["Inventory", "Non-Inventory", "Serial", "Lot"],
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
         },
@@ -60324,51 +60369,6 @@ export default {
         },
         configuration: {
           format: "jsonb",
-        },
-      },
-      type: "object",
-    },
-    lotNumber: {
-      required: ["id", "number", "itemId", "companyId", "createdAt"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          format: "text",
-          type: "string",
-        },
-        number: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        supplierId: {
-          format: "text",
-          type: "string",
-        },
-        manufacturingDate: {
-          format: "date",
-          type: "string",
-        },
-        expirationDate: {
-          format: "date",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
         },
       },
       type: "object",
@@ -63907,6 +63907,71 @@ export default {
       name: "name",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.batchNumber": {
+      name: "batchNumber",
+      description: "batchNumber",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/batchNumber",
+      },
+    },
+    "rowFilter.batchNumber.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.number": {
+      name: "number",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.supplierId": {
+      name: "supplierId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.manufacturingDate": {
+      name: "manufacturingDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.expirationDate": {
+      name: "expirationDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },
@@ -74739,8 +74804,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialTracking.lotNumberId": {
-      name: "lotNumberId",
+    "rowFilter.jobMaterialTracking.batchNumberId": {
+      name: "batchNumberId",
       required: false,
       format: "text",
       in: "query",
@@ -76744,8 +76809,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLine.requiresLotTracking": {
-      name: "requiresLotTracking",
+    "rowFilter.receiptLine.requiresBatchTracking": {
+      name: "requiresBatchTracking",
       required: false,
       format: "boolean",
       in: "query",
@@ -77479,8 +77544,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.itemLedger.lotNumber": {
-      name: "lotNumber",
+    "rowFilter.itemLedger.batchNumber": {
+      name: "batchNumber",
       required: false,
       format: "text",
       in: "query",
@@ -78469,8 +78534,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.receiptLineTracking.lotNumberId": {
-      name: "lotNumberId",
+    "rowFilter.receiptLineTracking.batchNumberId": {
+      name: "batchNumberId",
       required: false,
       format: "text",
       in: "query",
@@ -84120,71 +84185,6 @@ export default {
       name: "configuration",
       required: false,
       format: "jsonb",
-      in: "query",
-      type: "string",
-    },
-    "body.lotNumber": {
-      name: "lotNumber",
-      description: "lotNumber",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/lotNumber",
-      },
-    },
-    "rowFilter.lotNumber.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.number": {
-      name: "number",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.supplierId": {
-      name: "supplierId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.manufacturingDate": {
-      name: "manufacturingDate",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.expirationDate": {
-      name: "expirationDate",
-      required: false,
-      format: "date",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.lotNumber.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
       in: "query",
       type: "string",
     },

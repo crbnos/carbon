@@ -168,7 +168,7 @@ export async function getInventoryItemsCount(
     .from("item")
     .select("id, readableId", { count: "exact" })
     .eq("companyId", companyId)
-    .in("itemTrackingType", ["Inventory", "Serial", "Lot"]);
+    .in("itemTrackingType", ["Inventory", "Serial", "Batch"]);
 
   if (args?.search) {
     query = query.or(
@@ -247,7 +247,7 @@ export async function getReceiptLineTracking(
   return client
     .from("receiptLineTracking")
     .select(
-      "*, lotNumber(id, number, manufacturingDate, expirationDate), serialNumber(id, number)"
+      "*, batchNumber(id, number, manufacturingDate, expirationDate), serialNumber(id, number)"
     )
     .eq("receiptId", receiptId);
 }

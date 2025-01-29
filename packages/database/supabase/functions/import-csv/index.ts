@@ -365,7 +365,7 @@ serve(async (req: Request) => {
               "Inventory",
               "Non-Inventory",
               "Serial",
-              "Lot",
+              "Batch",
             ]),
           });
 

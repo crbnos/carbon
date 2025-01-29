@@ -8,7 +8,7 @@ const itemTrackingTypes = [
   "Inventory",
   "Non-Inventory",
   "Serial",
-  "Lot",
+  "Batch",
 ] as const;
 
 export const fieldMappings = {
