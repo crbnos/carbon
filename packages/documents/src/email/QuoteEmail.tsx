@@ -1,4 +1,3 @@
-import { VERCEL_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import {
   Body,
@@ -30,8 +29,8 @@ const QuoteEmail = ({
 }: QuoteEmailProps) => {
   const reSubject = `Re: ${quote.quoteId} from ${company.name}`;
   const digitalQuoteUrl =
-    companySettings.digitalQuoteEnabled && !!quote.externalLinkId && VERCEL_URL
-      ? `${VERCEL_URL}/share/quote/${quote.externalLinkId}`
+    companySettings.digitalQuoteEnabled && !!quote.externalLinkId
+      ? `https://app.carbonos.dev/share/quote/${quote.externalLinkId}` // the VERCEL_URL variable was giving us a preview branch
       : undefined;
 
   return (
