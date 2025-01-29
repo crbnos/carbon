@@ -49,9 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const salesOrderLineId = createSalesOrderLine.data.id;
-
-  throw redirect(path.to.salesOrderLine(orderId, salesOrderLineId));
+  throw redirect(path.to.salesOrderDetails(orderId));
 }
 
 export default function NewSalesOrderLineRoute() {

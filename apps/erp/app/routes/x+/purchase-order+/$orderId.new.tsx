@@ -54,9 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const purchaseOrderLineId = createPurchaseOrderLine.data.id;
-
-  throw redirect(path.to.purchaseOrderLine(orderId, purchaseOrderLineId));
+  throw redirect(path.to.purchaseOrderDetails(orderId));
 }
 
 export default function NewPurchaseOrderLineRoute() {
