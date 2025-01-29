@@ -153,9 +153,7 @@ CREATE TABLE "receiptLineTracking" (
   )
 );
 
-
-
--- Create table to track serial/batch numbers used in job operations
+-- Create table to track serial/batch numbers from job operations
 CREATE TABLE "jobMaterialTracking" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "jobMaterialId" TEXT NOT NULL,
@@ -179,6 +177,50 @@ CREATE TABLE "jobMaterialTracking" (
   )
 );
 
+-- Create table to track serial/batch numbers produced in job operations
+CREATE TABLE "jobProductionTracking" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "jobId" TEXT NOT NULL,
+  "itemId" TEXT NOT NULL,
+  "serialNumberId" TEXT,
+  "batchNumberId" TEXT,
+  "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
+  "companyId" TEXT NOT NULL,
+  "producedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  
+  CONSTRAINT "jobProductionTracking_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "jobProductionTracking_job_fkey" FOREIGN KEY ("jobId") REFERENCES "job"("id") ON DELETE CASCADE,
+  CONSTRAINT "jobProductionTracking_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+  CONSTRAINT "jobProductionTracking_serialNumberId_fkey" FOREIGN KEY ("serialNumberId") REFERENCES "serialNumber"("id") ON DELETE RESTRICT,
+  CONSTRAINT "jobProductionTracking_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT,
+  CONSTRAINT "jobProductionTracking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "jobProductionTracking_serial_quantity_check" CHECK (
+    ("serialNumberId" IS NULL AND "batchNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
+  )
+);
+
+-- -- Create table to track serial/batch numbers for deliveries
+-- CREATE TABLE "deliveryTracking" (
+--   "id" TEXT NOT NULL DEFAULT xid(),
+--   "deliveryId" TEXT NOT NULL,
+--   "itemId" TEXT NOT NULL,
+--   "serialNumberId" TEXT,
+--   "batchNumberId" TEXT,
+--   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
+--   "companyId" TEXT NOT NULL,
+--   "deliveredAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  
+--   CONSTRAINT "deliveryTracking_pkey" PRIMARY KEY ("id"),
+--   CONSTRAINT "deliveryTracking_delivery_fkey" FOREIGN KEY ("deliveryId") REFERENCES "delivery"("id") ON DELETE CASCADE,
+--   CONSTRAINT "deliveryTracking_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+--   CONSTRAINT "deliveryTracking_serialNumberId_fkey" FOREIGN KEY ("serialNumberId") REFERENCES "serialNumber"("id") ON DELETE RESTRICT,
+--   CONSTRAINT "deliveryTracking_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT,
+--   CONSTRAINT "deliveryTracking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+--   CONSTRAINT "deliveryTracking_serial_quantity_check" CHECK (
+--     ("serialNumberId" IS NULL AND "batchNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
+--   )
+-- );
+
 -- Add helpful indexes
 CREATE INDEX "receiptLineTracking_receiptLine_idx" ON "receiptLineTracking" ("receiptLineId");
 CREATE INDEX "receiptLineTracking_receipt_idx" ON "receiptLineTracking" ("receiptId");
@@ -191,9 +233,19 @@ CREATE INDEX "jobMaterialTracking_jobOperation_idx" ON "jobMaterialTracking" ("j
 CREATE INDEX "jobMaterialTracking_serialNumberId_idx" ON "jobMaterialTracking" ("serialNumberId");
 CREATE INDEX "jobMaterialTracking_batchNumberId_idx" ON "jobMaterialTracking" ("batchNumberId");
 
+CREATE INDEX "jobProductionTracking_jobOperation_idx" ON "jobProductionTracking" ("jobId");
+CREATE INDEX "jobProductionTracking_serialNumberId_idx" ON "jobProductionTracking" ("serialNumberId");
+CREATE INDEX "jobProductionTracking_batchNumberId_idx" ON "jobProductionTracking" ("batchNumberId");
+
+-- CREATE INDEX "deliveryTracking_delivery_idx" ON "deliveryTracking" ("deliveryId");
+-- CREATE INDEX "deliveryTracking_serialNumberId_idx" ON "deliveryTracking" ("serialNumberId");
+-- CREATE INDEX "deliveryTracking_batchNumberId_idx" ON "deliveryTracking" ("batchNumberId");
+
 -- Add RLS policies
 ALTER TABLE "receiptLineTracking" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "jobMaterialTracking" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "jobProductionTracking" ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE "deliveryTracking" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view receipt tracking" ON "receiptLineTracking"
   FOR SELECT USING (
@@ -226,7 +278,9 @@ CREATE POLICY "Anyone can view job material tracking" ON "jobMaterialTracking"
 
 CREATE POLICY "Users with production_create can insert job material tracking" ON "jobMaterialTracking"
   FOR INSERT WITH CHECK (
-    has_company_permission('production_create', "companyId")
+     "companyId" = ANY(
+      SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
   );
 
 CREATE POLICY "Users with production_update can update job material tracking" ON "jobMaterialTracking"
@@ -239,6 +293,49 @@ CREATE POLICY "Users with production_delete can delete job material tracking" ON
     has_company_permission('production_delete', "companyId")
   );
 
+CREATE POLICY "Anyone can view job production tracking" ON "jobProductionTracking"
+  FOR SELECT USING (
+    "companyId" = ANY(
+      SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+    )
+  );
+
+CREATE POLICY "Users with production_create can insert job production tracking" ON "jobProductionTracking"
+  FOR INSERT WITH CHECK (
+    has_company_permission('production_create', "companyId")
+  );
+
+CREATE POLICY "Users with production_update can update job production tracking" ON "jobProductionTracking"
+  FOR UPDATE USING (
+    has_company_permission('production_update', "companyId")
+  );
+
+CREATE POLICY "Users with production_delete can delete job production tracking" ON "jobProductionTracking"
+  FOR DELETE USING (
+    has_company_permission('production_delete', "companyId")
+  );
+
+-- CREATE POLICY "Anyone can view delivery tracking" ON "deliveryTracking"
+--   FOR SELECT USING (
+--     "companyId" = ANY(
+--       SELECT "companyId" from "userToCompany" where "userId" = (SELECT auth.uid())::text
+--     )
+--   );
+
+-- CREATE POLICY "Users with shipping_create can insert delivery tracking" ON "deliveryTracking"
+--   FOR INSERT WITH CHECK (
+--     has_company_permission('shipping_create', "companyId")
+--   );
+
+-- CREATE POLICY "Users with shipping_update can update delivery tracking" ON "deliveryTracking"
+--   FOR UPDATE USING (
+--     has_company_permission('shipping_update', "companyId")
+--   );
+
+-- CREATE POLICY "Users with shipping_delete can delete delivery tracking" ON "deliveryTracking"
+--   FOR DELETE USING (
+--     has_company_permission('shipping_delete', "companyId")
+--   );
 
 CREATE POLICY "Inventory document view requires inventory_view" ON storage.objects USING (
   bucket_id = 'private'
@@ -472,3 +569,35 @@ BEGIN
     i."unitOfMeasureCode";
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
+
+
+CREATE OR REPLACE VIEW "batchNumbers" WITH(SECURITY_INVOKER=true) AS
+  SELECT DISTINCT
+    bn."id",
+    bn."number", 
+    bn."manufacturingDate",
+    bn."expirationDate",
+    bn."supplierId",
+    bn."companyId",
+    bn."itemId",
+    i."name" AS "itemName",
+    i."readableId" AS "itemReadableId"
+  FROM "batchNumber" bn
+  JOIN "item" i ON i."id" = bn."itemId"
+  WHERE EXISTS (
+    SELECT 1 FROM "receiptLineTracking" rlt 
+    WHERE rlt."batchNumberId" = bn."id"
+  ) OR EXISTS (
+    SELECT 1 FROM "jobProductionTracking" jpt
+    WHERE jpt."batchNumberId" = bn."id"
+  )
+  GROUP BY
+    bn."id",
+    bn."number",
+    bn."manufacturingDate", 
+    bn."expirationDate",
+    bn."supplierId",
+    bn."companyId",
+    bn."itemId",
+    i."name",
+    i."readableId";

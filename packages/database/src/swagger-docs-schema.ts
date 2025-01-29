@@ -27894,6 +27894,168 @@ export default {
         tags: ["receiptLineTracking"],
       },
     },
+    "/jobProductionTracking": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobProductionTracking",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobProductionTracking"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobProductionTracking",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobProductionTracking"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobProductionTracking"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+          },
+          {
+            $ref: "#/parameters/body.jobProductionTracking",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobProductionTracking"],
+      },
+    },
     "/employeeJob": {
       get: {
         parameters: [
@@ -56096,6 +56258,65 @@ export default {
       },
       type: "object",
     },
+    jobProductionTracking: {
+      required: [
+        "id",
+        "jobId",
+        "itemId",
+        "quantity",
+        "companyId",
+        "producedAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        serialNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        batchNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        producedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     employeeJob: {
       required: ["id", "companyId"],
       properties: {
@@ -78571,6 +78792,71 @@ export default {
     },
     "rowFilter.receiptLineTracking.createdAt": {
       name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "body.jobProductionTracking": {
+      name: "jobProductionTracking",
+      description: "jobProductionTracking",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobProductionTracking",
+      },
+    },
+    "rowFilter.jobProductionTracking.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.jobId": {
+      name: "jobId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.serialNumberId": {
+      name: "serialNumberId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.batchNumberId": {
+      name: "batchNumberId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.producedAt": {
+      name: "producedAt",
       required: false,
       format: "timestamp with time zone",
       in: "query",

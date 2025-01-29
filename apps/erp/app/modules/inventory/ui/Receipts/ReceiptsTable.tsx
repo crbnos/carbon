@@ -32,16 +32,14 @@ import {
   receiptStatusType,
 } from "~/modules/inventory";
 import { usePeople, useSuppliers } from "~/stores";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
 type ReceiptsTableProps = {
   data: Receipt[];
   count: number;
-  locations: ListItem[];
 };
 
-const ReceiptsTable = memo(({ data, count, locations }: ReceiptsTableProps) => {
+const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
   useRealtime("receipt", `id=in.(${data.map((d) => d.id).join(",")})`);
 
   const [params] = useUrlParams();
