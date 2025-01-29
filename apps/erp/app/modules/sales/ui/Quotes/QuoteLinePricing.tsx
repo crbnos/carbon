@@ -200,6 +200,8 @@ const QuoteLinePricing = ({
     return totalCost;
   });
 
+  console.log({ unitCostsByQuantity });
+
   const netPricesByQuantity = quantities.map((quantity, index) => {
     const price = prices[quantity]?.unitPrice ?? 0;
     const discount = prices[quantity]?.discountPercent ?? 0;
