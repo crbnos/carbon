@@ -10,6 +10,7 @@ import {
   ReceiptHeader,
   getReceipt,
   getReceiptFiles,
+  getReceiptLineTracking,
   getReceiptLines,
 } from "~/modules/inventory";
 import type { Handle } from "~/utils/handle";
@@ -30,9 +31,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines] = await Promise.all([
+  const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
     getReceipt(serviceRole, receiptId),
     getReceiptLines(serviceRole, receiptId),
+    getReceiptLineTracking(serviceRole, receiptId),
   ]);
 
   if (receipt.error) {
@@ -55,6 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
+    receiptLineTracking: receiptLineTracking.data ?? [],
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
   });
 }

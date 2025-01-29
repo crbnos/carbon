@@ -240,6 +240,18 @@ export async function getReceiptLines(
   return client.from("receiptLine").select("*").eq("receiptId", receiptId);
 }
 
+export async function getReceiptLineTracking(
+  client: SupabaseClient<Database>,
+  receiptId: string
+) {
+  return client
+    .from("receiptLineTracking")
+    .select(
+      "*, lotNumber(id, number, manufacturingDate, expirationDate), serialNumber(id, number)"
+    )
+    .eq("receiptId", receiptId);
+}
+
 export async function getReceiptFiles(
   client: SupabaseClient<Database>,
   companyId: string,

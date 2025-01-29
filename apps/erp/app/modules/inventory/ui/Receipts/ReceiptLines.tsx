@@ -29,7 +29,7 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuBarcode,
   LuCalendar,
@@ -45,7 +45,11 @@ import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
+import type {
+  Receipt,
+  ReceiptLine,
+  ReceiptLineTracking,
+} from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
 import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
@@ -63,17 +67,18 @@ const ReceiptLines = () => {
     receipt: Receipt;
     receiptLines: ReceiptLine[];
     receiptFiles: PostgrestResponse<StorageItem>;
+    receiptLineTracking: ReceiptLineTracking[];
   }>(path.to.receipt(receiptId));
 
   const receiptsById = new Map<string, ReceiptLine>(
     routeData?.receiptLines.map((line) => [line.id, line])
   );
-  const pendingItems = usePendingItems();
+  const pendingReceiptLines = usePendingReceiptLines();
 
-  for (let pendingItem of pendingItems) {
-    let item = receiptsById.get(pendingItem.id);
-    let merged = item ? { ...item, ...pendingItem } : pendingItem;
-    receiptsById.set(pendingItem.id, merged as ReceiptLine);
+  for (let pendingReceiptLine of pendingReceiptLines) {
+    let item = receiptsById.get(pendingReceiptLine.id);
+    let merged = item ? { ...item, ...pendingReceiptLine } : pendingReceiptLine;
+    receiptsById.set(pendingReceiptLine.id, merged as ReceiptLine);
   }
 
   const receiptLines = Array.from(receiptsById.values());
@@ -86,26 +91,48 @@ const ReceiptLines = () => {
         ...acc,
         [line.id]: Array(line.receivedQuantity)
           .fill(null)
-          .map((_, index) => ({
-            index,
-            number: "",
-          })),
+          .map((_, index) => {
+            const serialNumber = routeData?.receiptLineTracking.find(
+              (t) =>
+                t.receiptLineId === line.id &&
+                t.serialNumber !== null &&
+                t.index === index
+            )?.serialNumber;
+            return {
+              index,
+              number: serialNumber?.number ?? "",
+            };
+          }),
       }),
       {}
     );
   });
 
-  const [lotNumberByLineId, setLotNumberByLineId] = useState<
-    Record<
-      string,
-      {
-        id: string;
-        number: string;
-        manufacturingDate: string;
-        expirationDate: string;
-      }
-    >
-  >({});
+  useEffect(() => {
+    setSerialNumbersByLineId(
+      receiptLines.reduce(
+        (acc, line) => ({
+          ...acc,
+          [line.id]: Array(line.receivedQuantity)
+            .fill(null)
+            .map((_, index) => {
+              const serialNumber = routeData?.receiptLineTracking.find(
+                (t) =>
+                  t.receiptLineId === line.id &&
+                  t.serialNumber !== null &&
+                  t.index === index
+              )?.serialNumber;
+              return {
+                index,
+                number: serialNumber?.number ?? "",
+              };
+            }),
+        }),
+        {}
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeData?.receipt?.sourceDocumentId]);
 
   const onUpdateReceiptLine = useCallback(
     async ({
@@ -172,7 +199,16 @@ const ReceiptLines = () => {
                     [line.id]: newSerialNumbers,
                   }));
                 }}
-                lotNumber={lotNumberByLineId[line.id] || ""}
+                lotNumber={
+                  routeData?.receiptLineTracking.find(
+                    (t) => t.receiptLineId === line.id && t.lotNumber !== null
+                  )?.lotNumber ?? {
+                    id: "",
+                    number: "",
+                    manufacturingDate: null,
+                    expirationDate: null,
+                  }
+                }
                 upload={(files) => upload(files, line.id)}
                 deleteFile={(file) => deleteFile(file, line.id)}
               />
@@ -207,8 +243,8 @@ function ReceiptLineItem({
   lotNumber: {
     id: string;
     number: string;
-    manufacturingDate?: string;
-    expirationDate?: string;
+    manufacturingDate?: string | null;
+    expirationDate?: string | null;
   };
   serialNumbers: { index: number; number: string }[];
   getPath: (file: StorageItem) => string;
@@ -417,8 +453,8 @@ function LotForm({
   initialValues?: {
     id: string;
     number: string;
-    manufacturingDate?: string;
-    expirationDate?: string;
+    manufacturingDate?: string | null;
+    expirationDate?: string | null;
   };
 }) {
   const submit = useSubmit();
@@ -561,11 +597,35 @@ function SerialForm({
     serialNumbers: { index: number; number: string }[]
   ) => void;
 }) {
-  const submit = useSubmit();
+  const [errors, setErrors] = useState<Record<number, string>>({});
+
+  // Check for duplicates within the current form
+  const validateSerialNumber = useCallback(
+    (serialNumber: string, currentIndex: number) => {
+      const trimmedNumber = serialNumber.trim();
+      if (!trimmedNumber) return null;
+
+      const isDuplicate = serialNumbers.some(
+        (sn, idx) => idx !== currentIndex && sn.number.trim() === trimmedNumber
+      );
+
+      return isDuplicate ? "Duplicate serial number" : null;
+    },
+    [serialNumbers]
+  );
 
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
       if (!receipt?.id || !serialNumber.number.trim()) return;
+
+      const error = validateSerialNumber(
+        serialNumber.number,
+        serialNumber.index
+      );
+      if (error) {
+        setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
+        return;
+      }
 
       const formData = new FormData();
       formData.append("itemId", line.itemId);
@@ -575,13 +635,35 @@ function SerialForm({
       formData.append("index", serialNumber.index.toString());
       formData.append("serialNumber", serialNumber.number.trim());
 
-      submit(formData, {
-        method: "post",
-        action: path.to.receiptLinesTracking(receipt.id),
-        navigate: false,
-      });
+      try {
+        const response = await fetch(path.to.receiptLinesTracking(receipt.id), {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          // Clear error if submission was successful
+          setErrors((prev) => {
+            const newErrors = { ...prev };
+            delete newErrors[serialNumber.index];
+            return newErrors;
+          });
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            [serialNumber.index]: "Serial number already exists",
+          }));
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes("duplicate")) {
+          setErrors((prev) => ({
+            ...prev,
+            [serialNumber.index]: "Serial number already exists for this item",
+          }));
+        }
+      }
     },
-    [line.id, line.itemId, receipt?.id, submit]
+    [line.id, line.itemId, receipt?.id, validateSerialNumber]
   );
 
   return (
@@ -592,39 +674,60 @@ function SerialForm({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => (
-          <Input
+          <div
             key={`${line.id}-${index}-serial`}
-            placeholder={`Serial ${index + 1}`}
-            disabled={isReadOnly}
-            value={serialNumber.number}
-            onChange={(e) => {
-              const newSerialNumbers = [...serialNumbers];
-              newSerialNumbers[index] = {
-                index,
-                number: e.target.value,
-              };
-              onSerialNumbersChange(newSerialNumbers);
-            }}
-            onBlur={() => {
-              if (serialNumber.number.trim()) {
-                updateSerialNumber(serialNumber);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
+            className="flex flex-col gap-1"
+          >
+            <Input
+              placeholder={`Serial ${index + 1}`}
+              disabled={isReadOnly}
+              value={serialNumber.number}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                const error = validateSerialNumber(newValue, index);
+
+                setErrors((prev) => {
+                  const newErrors = { ...prev };
+                  if (error) {
+                    newErrors[index] = error;
+                  } else {
+                    delete newErrors[index];
+                  }
+                  return newErrors;
+                });
+
+                const newSerialNumbers = [...serialNumbers];
+                newSerialNumbers[index] = {
+                  index,
+                  number: newValue,
+                };
+                onSerialNumbersChange(newSerialNumbers);
+              }}
+              onBlur={() => {
                 if (serialNumber.number.trim()) {
                   updateSerialNumber(serialNumber);
                 }
-                const nextInput = e.currentTarget
-                  .closest("div")
-                  ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                if (nextInput) {
-                  (nextInput as HTMLElement).focus();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (serialNumber.number.trim()) {
+                    updateSerialNumber(serialNumber);
+                  }
+                  const nextInput = e.currentTarget
+                    .closest("div")
+                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
+                  if (nextInput) {
+                    (nextInput as HTMLElement).focus();
+                  }
                 }
-              }
-            }}
-          />
+              }}
+              className={cn(errors[index] && "border-destructive")}
+            />
+            {errors[index] && (
+              <span className="text-xs text-destructive">{errors[index]}</span>
+            )}
+          </div>
         ))}
       </div>
     </div>
@@ -665,7 +768,7 @@ function Shelf({
   );
 }
 
-const usePendingItems = () => {
+const usePendingReceiptLines = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };

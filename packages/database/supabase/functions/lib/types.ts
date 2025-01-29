@@ -33531,25 +33531,15 @@ export type Database = {
         };
         Returns: undefined;
       };
-      update_receipt_line_serial_tracking:
-        | {
-            Args: {
-              p_receipt_line_id: string;
-              p_receipt_id: string;
-              p_serial_number: string;
-              p_index: number;
-            };
-            Returns: undefined;
-          }
-        | {
-            Args: {
-              p_receipt_line_id: string;
-              p_receipt_id: string;
-              p_serial_numbers: string[];
-              p_quantity: number;
-            };
-            Returns: undefined;
-          };
+      update_receipt_line_serial_tracking: {
+        Args: {
+          p_receipt_line_id: string;
+          p_receipt_id: string;
+          p_serial_number: string;
+          p_index: number;
+        };
+        Returns: undefined;
+      };
       users_for_groups: {
         Args: {
           groups: string[];

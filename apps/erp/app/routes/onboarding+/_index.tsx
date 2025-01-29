@@ -41,7 +41,7 @@ export default function GetStarted() {
         </Heading>
         <motion.p
           {...fade}
-          transition={{ duration: 1.4, ease: "easeInOut", delay: 1.9 }}
+          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
           className="text-muted-foreground text-sm pb-4"
         >
           CarbonOS is the operating system for manufacturing
@@ -49,7 +49,7 @@ export default function GetStarted() {
 
         <Button
           {...fade}
-          transition={{ duration: 1, delay: 2.4 }}
+          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
           size="lg"
           asChild
         >
