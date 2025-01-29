@@ -57,6 +57,30 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const serialNumber = formData.get("serialNumber") as string;
     const index = Number(formData.get("index"));
 
+    // Check if serial number already exists for this item
+    const { data: existingSerial, error: queryError } = await client
+      .from("serialNumber")
+      .select("id, receiptLineTracking(id)")
+      .eq("number", serialNumber)
+      .eq("itemId", itemId)
+      .neq("receiptLineTracking.receiptLineId", receiptLineId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+
+    if (queryError) {
+      return json({ error: "Failed to check serial number" }, { status: 500 });
+    }
+
+    if (
+      Array.isArray(existingSerial?.receiptLineTracking) &&
+      existingSerial?.receiptLineTracking?.length > 0
+    ) {
+      return json(
+        { error: "Serial number already exists for this item" },
+        { status: 400 }
+      );
+    }
+
     // Use a transaction to ensure data consistency
     const { error } = await client.rpc("update_receipt_line_serial_tracking", {
       p_receipt_line_id: receiptLineId,
@@ -67,6 +91,13 @@ export async function action({ request, context }: ActionFunctionArgs) {
 
     if (error) {
       console.error(error);
+      // Check if error is due to unique constraint violation
+      if (error.message?.includes("duplicate key value")) {
+        return json(
+          { error: "Serial number already exists for this item" },
+          { status: 400 }
+        );
+      }
       return json({ error: "Failed to update tracking" }, { status: 500 });
     }
   }

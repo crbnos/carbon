@@ -57,7 +57,7 @@ export default function ConfirmMagicLink() {
         </Heading>
         <motion.p
           {...fade}
-          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.9 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
           className="text-muted-foreground text-sm pb-4"
         >
           CarbonOS is the operating system for manufacturing
@@ -65,7 +65,7 @@ export default function ConfirmMagicLink() {
 
         <Button
           {...fade}
-          transition={{ duration: 0.8, ease: "easeInOut", delay: 1.4 }}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
           size="lg"
           onClick={() => {
             window.location.href = getConfirmationURL(token);

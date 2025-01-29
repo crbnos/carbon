@@ -348,45 +348,45 @@ DECLARE
   v_serial_id TEXT;
 BEGIN
   -- First upsert the serial number
-  INSERT INTO "serialNumber" ("id", "number", "itemId", "companyId", "supplierId")
-  SELECT 
-    xid(),
-    p_serial_number,
-    rl."itemId",
-    rl."companyId",
-    r."supplierId"
-  FROM "receiptLine" rl
-  JOIN "receipt" r ON r.id = rl."receiptId"
-  WHERE rl.id = p_receipt_line_id
-  ON CONFLICT ("number", "itemId") DO UPDATE SET
-    "supplierId" = EXCLUDED."supplierId"
-  RETURNING id INTO v_serial_id;
+    INSERT INTO "serialNumber" ("id", "number", "itemId", "companyId", "supplierId")
+    SELECT 
+      xid(),
+      p_serial_number,
+      rl."itemId",
+      rl."companyId",
+      r."supplierId"
+    FROM "receiptLine" rl
+    JOIN "receipt" r ON r.id = rl."receiptId"
+    WHERE rl.id = p_receipt_line_id
+    ON CONFLICT ("number", "itemId") DO UPDATE SET
+      "supplierId" = EXCLUDED."supplierId"
+    RETURNING id INTO v_serial_id;
 
   -- Delete any existing tracking record for this index
   DELETE FROM "receiptLineTracking"
   WHERE "receiptLineId" = p_receipt_line_id
   AND "index" = p_index;
 
-  -- Insert the tracking record
-  INSERT INTO "receiptLineTracking" (
-    "receiptLineId",
-    "receiptId", 
-    "itemId",
-    "serialNumberId",
-    "quantity",
-    "index",
-    "companyId"
-  )
-  SELECT
-    p_receipt_line_id,
-    p_receipt_id,
-    rl."itemId",
-    v_serial_id,
-    1,
-    p_index,
-    rl."companyId"
-  FROM "receiptLine" rl
-  JOIN "receipt" r ON r.id = rl."receiptId"
-  WHERE rl.id = p_receipt_line_id;
+    -- Insert the tracking record
+    INSERT INTO "receiptLineTracking" (
+      "receiptLineId",
+      "receiptId", 
+      "itemId",
+      "serialNumberId",
+      "quantity",
+      "index",
+      "companyId"
+    )
+    SELECT
+      p_receipt_line_id,
+      p_receipt_id,
+      rl."itemId",
+      v_serial_id,
+      1,
+      p_index,
+      rl."companyId"
+    FROM "receiptLine" rl
+    JOIN "receipt" r ON r.id = rl."receiptId"
+    WHERE rl.id = p_receipt_line_id;
 END;
 $$ LANGUAGE plpgsql;

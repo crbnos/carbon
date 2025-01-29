@@ -20,7 +20,7 @@ import {
 import { cn } from "./utils/cn";
 
 export const avatarVariants = cva(
-  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-semibold",
+  "flex flex-shrink-0 overflow-hidden rounded-full items-center justify-center font-semibold transition-transform duration-200 ease-in-out",
   {
     variants: {
       size: {
@@ -33,7 +33,7 @@ export const avatarVariants = cva(
         xxs: "h-4 w-4 text-[8px] tracking-tight",
       },
       isGroup: {
-        true: "ring-2 ring-background",
+        true: "ring-2 ring-background hover:-translate-y-1 hover:scale-110",
       },
     },
     defaultVariants: {
@@ -166,7 +166,7 @@ const AvatarGroup = forwardRef<HTMLDivElement, AvatarGroupProps>(
         <div
           ref={ref}
           className={cn(
-            "flex items-center justify-start -space-x-2",
+            "flex items-center justify-start -space-x-2 [&>*:not(:first-of-type)]:mask-radial",
             className
           )}
           {...props}

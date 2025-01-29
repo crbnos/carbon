@@ -636,9 +636,9 @@ const Table = <T extends object>({
                 </TableBase>
               </div>
             ) : hasFilters ? (
-              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex flex-col w-full h-full items-center justify-start gap-4 pt-[15dvh]">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuTriangleAlert className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6 flex-shrink-0" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No results found
@@ -648,9 +648,9 @@ const Table = <T extends object>({
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex flex-col w-full h-full items-center justify-start gap-4 pt-[15dvh]">
                 <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                  <LuTriangleAlert className="h-6 w-6" />
+                  <LuTriangleAlert className="h-6 w-6 flex-shrink-0" />
                 </div>
                 <span className="text-xs font-mono font-light text-foreground uppercase">
                   No data exists

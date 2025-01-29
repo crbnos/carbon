@@ -14101,10 +14101,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxPercent",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.taxPercent",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath",
@@ -39604,10 +39604,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/select",
@@ -39774,10 +39774,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -39898,10 +39898,10 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount",
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine",
@@ -41434,6 +41434,101 @@ export default {
           },
         },
         tags: ["(rpc) groups_query"],
+      },
+    },
+    "/rpc/update_receipt_line_serial_tracking": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_line_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_receipt_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_serial_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_index",
+            required: true,
+            type: "integer",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_receipt_line_serial_tracking"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_index: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_receipt_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_receipt_line_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_serial_number: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "p_receipt_line_id",
+                "p_receipt_id",
+                "p_serial_number",
+                "p_index",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_receipt_line_serial_tracking"],
       },
     },
     "/rpc/update_receipt_line_lot_tracking": {
@@ -49673,11 +49768,11 @@ export default {
           format: "numeric",
           type: "number",
         },
-        taxPercent: {
+        totalAmount: {
           format: "numeric",
           type: "number",
         },
-        totalAmount: {
+        taxPercent: {
           format: "numeric",
           type: "number",
         },
@@ -61336,11 +61431,11 @@ export default {
           format: "numeric",
           type: "number",
         },
-        taxPercent: {
+        totalAmount: {
           format: "numeric",
           type: "number",
         },
-        totalAmount: {
+        taxPercent: {
           format: "numeric",
           type: "number",
         },
@@ -70174,15 +70269,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLines.taxPercent": {
-      name: "taxPercent",
+    "rowFilter.purchaseInvoiceLines.totalAmount": {
+      name: "totalAmount",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLines.totalAmount": {
-      name: "totalAmount",
+    "rowFilter.purchaseInvoiceLines.taxPercent": {
+      name: "taxPercent",
       required: false,
       format: "numeric",
       in: "query",
@@ -85505,15 +85600,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLine.taxPercent": {
-      name: "taxPercent",
+    "rowFilter.purchaseInvoiceLine.totalAmount": {
+      name: "totalAmount",
       required: false,
       format: "numeric",
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseInvoiceLine.totalAmount": {
-      name: "totalAmount",
+    "rowFilter.purchaseInvoiceLine.taxPercent": {
+      name: "taxPercent",
       required: false,
       format: "numeric",
       in: "query",

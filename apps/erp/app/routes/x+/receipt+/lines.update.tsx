@@ -31,6 +31,14 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("id", ids as string[])
         .eq("companyId", companyId);
 
+      if (field === "receivedQuantity") {
+        await client
+          .from("receiptLineTracking")
+          .delete()
+          .in("receiptLineId", ids as string[])
+          .gte("index", Number(value) - 1);
+      }
+
       return json(update);
     default:
       return json({

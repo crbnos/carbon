@@ -3,6 +3,7 @@ import type {
   getInventoryItems,
   getItemLedgerPage,
   getReceiptLines,
+  getReceiptLineTracking,
   getReceipts,
   getShippingMethods,
 } from "./inventory.service";
@@ -17,6 +18,10 @@ export type ItemLedger = NonNullable<
 
 export type Receipt = NonNullable<
   Awaited<ReturnType<typeof getReceipts>>["data"]
+>[number];
+
+export type ReceiptLineTracking = NonNullable<
+  Awaited<ReturnType<typeof getReceiptLineTracking>>["data"]
 >[number];
 
 export type ReceiptSourceDocument =
