@@ -1,7 +1,7 @@
 ALTER TABLE "receipt" ADD COLUMN "postedBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE;
 
 ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Serial';
-ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Lot';
+ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Batch';
 
 -- Add tracking method to item table
 ALTER TABLE "item" ADD COLUMN "trackingMethod" TEXT CHECK ("trackingMethod" IN ('None', 'SerialNumber', 'BatchNumber'));
@@ -26,8 +26,8 @@ CREATE TABLE "serialNumber" (
 
 CREATE INDEX "serialNumber_id_idx" ON "serialNumber" ("id");
 
--- Create table for lot/lot numbers
-CREATE TABLE "lotNumber" (
+-- Create table for batch/batch numbers
+CREATE TABLE "batchNumber" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "number" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
@@ -37,18 +37,18 @@ CREATE TABLE "lotNumber" (
   "expirationDate" DATE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   
-  CONSTRAINT "lotNumber_id_unique" UNIQUE ("id"),
-  CONSTRAINT "lotNumber_pkey" PRIMARY KEY ("number", "itemId"),
-  CONSTRAINT "lotNumber_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
-  CONSTRAINT "lotNumber_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+  CONSTRAINT "batchNumber_id_unique" UNIQUE ("id"),
+  CONSTRAINT "batchNumber_pkey" PRIMARY KEY ("number", "itemId"),
+  CONSTRAINT "batchNumber_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+  CONSTRAINT "batchNumber_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
 );
 
-CREATE INDEX "lotNumber_id_idx" ON "lotNumber" ("id");
+CREATE INDEX "batchNumber_id_idx" ON "batchNumber" ("id");
 
 
 -- Add RLS policies for new tables
 ALTER TABLE "serialNumber" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "lotNumber" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "batchNumber" ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone can view serial numbers" ON "serialNumber";
 CREATE POLICY "Anyone can view serial numbers" ON "serialNumber"
@@ -73,8 +73,8 @@ CREATE POLICY "Anyone with parts_update can update serial numbers" ON "serialNum
     has_company_permission('parts_update', "companyId")
   );
 
-DROP POLICY IF EXISTS "Anyone can view lot numbers" ON "lotNumber";
-CREATE POLICY "Anyone can view lot numbers" ON "lotNumber"
+DROP POLICY IF EXISTS "Anyone can view batch numbers" ON "batchNumber";
+CREATE POLICY "Anyone can view batch numbers" ON "batchNumber"
   FOR SELECT
   USING (
    "companyId" = ANY(
@@ -82,15 +82,15 @@ CREATE POLICY "Anyone can view lot numbers" ON "lotNumber"
     )
   );
 
-DROP POLICY IF EXISTS "Employees with parts_create can insert lot numbers" ON "lotNumber";
-CREATE POLICY "Employees with parts_create can insert lot numbers" ON "lotNumber"
+DROP POLICY IF EXISTS "Employees with parts_create can insert batch numbers" ON "batchNumber";
+CREATE POLICY "Employees with parts_create can insert batch numbers" ON "batchNumber"
   FOR INSERT
   WITH CHECK (
     has_company_permission('parts_create', "companyId")
   );
 
-DROP POLICY IF EXISTS "Employees with parts_update can insert lot numbers" ON "lotNumber";
-CREATE POLICY "Employees with parts_update can insert lot numbers" ON "lotNumber"
+DROP POLICY IF EXISTS "Employees with parts_update can insert batch numbers" ON "batchNumber";
+CREATE POLICY "Employees with parts_update can insert batch numbers" ON "batchNumber"
   FOR UPDATE
   USING (
     has_company_permission('parts_update', "companyId")
@@ -100,41 +100,41 @@ CREATE POLICY "Employees with parts_update can insert lot numbers" ON "lotNumber
 -- Create indexes for performance
 CREATE INDEX "serialNumber_itemId_idx" ON "serialNumber" ("itemId");
 CREATE INDEX "serialNumber_companyId_idx" ON "serialNumber" ("companyId");
-CREATE INDEX "lotNumber_itemId_idx" ON "lotNumber" ("itemId");
-CREATE INDEX "lotNumber_companyId_idx" ON "lotNumber" ("companyId");
+CREATE INDEX "batchNumber_itemId_idx" ON "batchNumber" ("itemId");
+CREATE INDEX "batchNumber_companyId_idx" ON "batchNumber" ("companyId");
 
 -- Modify itemLedger to include tracking references
 ALTER TABLE "itemLedger" 
 ADD COLUMN "serialNumber" TEXT,
-ADD COLUMN "lotNumber" TEXT,
+ADD COLUMN "batchNumber" TEXT,
 ADD CONSTRAINT "itemLedger_serialNumber_fkey" 
   FOREIGN KEY ("serialNumber", "itemId") 
   REFERENCES "serialNumber"("number", "itemId") 
   ON UPDATE CASCADE
   ON DELETE RESTRICT,
-ADD CONSTRAINT "itemLedger_lotNumber_fkey" 
-  FOREIGN KEY ("lotNumber", "itemId") 
-  REFERENCES "lotNumber"("number", "itemId") 
+ADD CONSTRAINT "itemLedger_batchNumber_fkey" 
+  FOREIGN KEY ("batchNumber", "itemId") 
+  REFERENCES "batchNumber"("number", "itemId") 
   ON UPDATE CASCADE
   ON DELETE RESTRICT;
 
 
 CREATE INDEX "itemLedger_serialNumber_idx" ON "itemLedger" ("serialNumber");
-CREATE INDEX "itemLedger_lotNumber_idx" ON "itemLedger" ("lotNumber");
+CREATE INDEX "itemLedger_batchNumber_idx" ON "itemLedger" ("batchNumber");
 
 -- Add tracking info to receiptLine
 ALTER TABLE "receiptLine" 
 ADD COLUMN "requiresSerialTracking" BOOLEAN NOT NULL DEFAULT false,
-ADD COLUMN "requiresLotTracking" BOOLEAN NOT NULL DEFAULT false;
+ADD COLUMN "requiresBatchTracking" BOOLEAN NOT NULL DEFAULT false;
 
--- Create table to track serial/lot numbers from receipts
+-- Create table to track serial/batch numbers from receipts
 CREATE TABLE "receiptLineTracking" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "receiptLineId" TEXT NOT NULL,
   "receiptId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
   "serialNumberId" TEXT,
-  "lotNumberId" TEXT,
+  "batchNumberId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
   "index" INTEGER NOT NULL DEFAULT 0,
   "posted" BOOLEAN NOT NULL DEFAULT false,
@@ -146,23 +146,23 @@ CREATE TABLE "receiptLineTracking" (
   CONSTRAINT "receiptLineTracking_receipt_fkey" FOREIGN KEY ("receiptId") REFERENCES "receipt"("id") ON DELETE CASCADE,
   CONSTRAINT "receiptLineTracking_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "receiptLineTracking_serialNumberId_fkey" FOREIGN KEY ("serialNumberId") REFERENCES "serialNumber"("id") ON DELETE RESTRICT,
-  CONSTRAINT "receiptLineTracking_lotNumberId_fkey" FOREIGN KEY ("lotNumberId") REFERENCES "lotNumber"("id") ON DELETE RESTRICT,
+  CONSTRAINT "receiptLineTracking_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT,
   CONSTRAINT "receiptLineTracking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "receiptLineTracking_serial_quantity_check" CHECK (
-    ("serialNumberId" IS NULL AND "lotNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
+    ("serialNumberId" IS NULL AND "batchNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
   )
 );
 
 
 
--- Create table to track serial/lot numbers used in job operations
+-- Create table to track serial/batch numbers used in job operations
 CREATE TABLE "jobMaterialTracking" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "jobMaterialId" TEXT NOT NULL,
   "jobOperationId" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
   "serialNumberId" TEXT,
-  "lotNumberId" TEXT,
+  "batchNumberId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
   "consumedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -172,10 +172,10 @@ CREATE TABLE "jobMaterialTracking" (
   CONSTRAINT "jobMaterialTracking_jobOperation_fkey" FOREIGN KEY ("jobOperationId") REFERENCES "jobOperation"("id") ON DELETE CASCADE,
   CONSTRAINT "jobMaterialTracking_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "jobMaterialTracking_serialNumberId_fkey" FOREIGN KEY ("serialNumberId") REFERENCES "serialNumber"("id") ON DELETE RESTRICT,
-  CONSTRAINT "jobMaterialTracking_lotNumberId_fkey" FOREIGN KEY ("lotNumberId") REFERENCES "lotNumber"("id") ON DELETE RESTRICT,
+  CONSTRAINT "jobMaterialTracking_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT,
   CONSTRAINT "jobMaterialTracking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "jobMaterialTracking_serial_quantity_check" CHECK (
-    ("serialNumberId" IS NULL AND "lotNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
+    ("serialNumberId" IS NULL AND "batchNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
   )
 );
 
@@ -183,13 +183,13 @@ CREATE TABLE "jobMaterialTracking" (
 CREATE INDEX "receiptLineTracking_receiptLine_idx" ON "receiptLineTracking" ("receiptLineId");
 CREATE INDEX "receiptLineTracking_receipt_idx" ON "receiptLineTracking" ("receiptId");
 CREATE INDEX "receiptLineTracking_serialNumberId_idx" ON "receiptLineTracking" ("serialNumberId");
-CREATE INDEX "receiptLineTracking_lotNumberId_idx" ON "receiptLineTracking" ("lotNumberId");
+CREATE INDEX "receiptLineTracking_batchNumberId_idx" ON "receiptLineTracking" ("batchNumberId");
 CREATE INDEX "receiptLineTracking_posted_idx" ON "receiptLineTracking" ("posted");
 
 CREATE INDEX "jobMaterialTracking_jobMaterial_idx" ON "jobMaterialTracking" ("jobMaterialId");
 CREATE INDEX "jobMaterialTracking_jobOperation_idx" ON "jobMaterialTracking" ("jobOperationId");
 CREATE INDEX "jobMaterialTracking_serialNumberId_idx" ON "jobMaterialTracking" ("serialNumberId");
-CREATE INDEX "jobMaterialTracking_lotNumberId_idx" ON "jobMaterialTracking" ("lotNumberId");
+CREATE INDEX "jobMaterialTracking_batchNumberId_idx" ON "jobMaterialTracking" ("batchNumberId");
 
 -- Add RLS policies
 ALTER TABLE "receiptLineTracking" ENABLE ROW LEVEL SECURITY;
@@ -285,21 +285,21 @@ CREATE POLICY "Inventory document delete requires inventory_delete" ON storage.o
   AND (storage.foldername(name))[2] = 'inventory'
 );
 
-CREATE OR REPLACE FUNCTION update_receipt_line_lot_tracking(
+CREATE OR REPLACE FUNCTION update_receipt_line_batch_tracking(
   p_receipt_line_id TEXT,
   p_receipt_id TEXT,
-  p_lot_number TEXT,
-  p_lot_id TEXT,
+  p_batch_number TEXT,
+  p_batch_id TEXT,
   p_manufacturing_date DATE,
   p_expiration_date DATE,
   p_quantity NUMERIC
 ) RETURNS void AS $$
 BEGIN
-  -- First upsert the lot number
-  INSERT INTO "lotNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId")
+  -- First upsert the batch number
+  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId")
   SELECT 
-    p_lot_id,
-    p_lot_number,
+    p_batch_id,
+    p_batch_number,
     rl."itemId",
     rl."companyId",
     p_manufacturing_date,
@@ -321,7 +321,7 @@ BEGIN
     "receiptLineId",
     "receiptId", 
     "itemId",
-    "lotNumberId",
+    "batchNumberId",
     "quantity",
     "companyId"
   )
@@ -329,7 +329,7 @@ BEGIN
     p_receipt_line_id,
     p_receipt_id,
     rl."itemId",
-    p_lot_id,
+    p_batch_id,
     p_quantity,
     rl."companyId"
   FROM "receiptLine" rl
@@ -449,7 +449,7 @@ BEGIN
   LEFT JOIN "itemInventory" inv ON i."id" = inv."itemId" AND inv."locationId" = loc."id"
   LEFT JOIN "material" mat ON i."id" = mat."itemId"
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  WHERE i."itemTrackingType" IN ('Inventory', 'Serial', 'Lot')
+  WHERE i."itemTrackingType" IN ('Inventory', 'Serial', 'Batch')
     AND i."companyId" = loc."companyId"
     AND inv."locationId" = location_id
   GROUP BY 

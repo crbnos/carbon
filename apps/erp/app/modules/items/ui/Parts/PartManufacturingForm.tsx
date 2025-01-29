@@ -47,7 +47,7 @@ const PartManufacturingForm = ({
         <CardContent>
           <Hidden name="itemId" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
-            <Number name="lotSize" label="Lot Size" />
+            <Number name="lotSize" label="Batch Size" />
             <Number
               name="scrapPercentage"
               label="Scrap Percent"

@@ -88,7 +88,7 @@ serve(async (req: Request) => {
         .map((d) => d.id)
     );
     const batchItems = new Set(
-      items.data?.filter((d) => d.itemTrackingType === "Lot").map((d) => d.id)
+      items.data?.filter((d) => d.itemTrackingType === "Batch").map((d) => d.id)
     );
 
     const hasReceipt = !!receipt.data?.id;
@@ -129,7 +129,7 @@ serve(async (req: Request) => {
           receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
           conversionFactor: d.conversionFactor ?? 1,
           requiresSerialTracking: serializedItems.has(d.itemId),
-          requiresLotTracking: batchItems.has(d.itemId),
+          requiresBatchTracking: batchItems.has(d.itemId),
           unitPrice:
             d.unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
           unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",

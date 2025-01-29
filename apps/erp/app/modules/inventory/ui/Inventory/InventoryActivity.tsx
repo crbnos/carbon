@@ -8,7 +8,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
       return `received ${ledgerRecord.quantity} units${
-        ledgerRecord.lotNumber ? ` from lot ${ledgerRecord.lotNumber}` : ""
+        ledgerRecord.batchNumber ? ` from lot ${ledgerRecord.batchNumber}` : ""
       }${
         ledgerRecord.serialNumber
           ? ` with serial number ${ledgerRecord.serialNumber}`

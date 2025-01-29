@@ -54,7 +54,7 @@ serve(async (req: Request) => {
       client
         .from("receiptLine")
         .select(
-          "*, receiptLineTracking(id, quantity, serialNumber(number), lotNumber(number))"
+          "*, receiptLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
         )
         .eq("receiptId", receiptId),
     ]);
@@ -646,7 +646,7 @@ serve(async (req: Request) => {
             });
           }
 
-          if (receiptLine.requiresLotTracking) {
+          if (receiptLine.requiresBatchTracking) {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
@@ -657,8 +657,8 @@ serve(async (req: Request) => {
               entryType: "Positive Adjmt.",
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
-              lotNumber:
-                receiptLine.receiptLineTracking?.[0]?.lotNumber?.number,
+              batchNumber:
+                receiptLine.receiptLineTracking?.[0]?.batchNumber?.number,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
               createdBy: userId,
               companyId,

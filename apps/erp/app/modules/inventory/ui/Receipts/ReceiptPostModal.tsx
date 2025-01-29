@@ -44,7 +44,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     const receiptLines = await carbon
       .from("receiptLine")
       .select(
-        "id, itemReadableId, receivedQuantity, requiresLotTracking, requiresSerialTracking, receiptLineTracking(id, quantity, serialNumber(number), lotNumber(number))"
+        "id, itemReadableId, receivedQuantity, requiresBatchTracking, requiresSerialTracking, receiptLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
       )
       .eq("receiptId", receiptId);
 
@@ -61,14 +61,14 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
 
     receiptLines.data.forEach((line) => {
       if (
-        line.requiresLotTracking &&
+        line.requiresBatchTracking &&
         (line.receiptLineTracking.length === 0 ||
-          !line.receiptLineTracking[0].lotNumber)
+          !line.receiptLineTracking[0].batchNumber)
       ) {
         errors.push({
           itemReadableId: line.itemReadableId,
           receivedQuantity: line.receivedQuantity,
-          receivedQuantityError: "Lot number is required",
+          receivedQuantityError: "Batch number is required",
         });
       }
 

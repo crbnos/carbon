@@ -199,10 +199,10 @@ const ReceiptLines = () => {
                     [line.id]: newSerialNumbers,
                   }));
                 }}
-                lotNumber={
+                batchNumber={
                   routeData?.receiptLineTracking.find(
-                    (t) => t.receiptLineId === line.id && t.lotNumber !== null
-                  )?.lotNumber ?? {
+                    (t) => t.receiptLineId === line.id && t.batchNumber !== null
+                  )?.batchNumber ?? {
                     id: "",
                     number: "",
                     manufacturingDate: null,
@@ -228,7 +228,7 @@ function ReceiptLineItem({
   isReadOnly,
   onUpdate,
   files,
-  lotNumber,
+  batchNumber,
   serialNumbers,
   getPath,
   onSerialNumbersChange,
@@ -240,7 +240,7 @@ function ReceiptLineItem({
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
-  lotNumber: {
+  batchNumber: {
     id: string;
     number: string;
     manufacturingDate?: string | null;
@@ -370,12 +370,12 @@ function ReceiptLineItem({
           />
         </div>
       </div>
-      {line.requiresLotTracking && (
-        <LotForm
+      {line.requiresBatchTracking && (
+        <BatchForm
           receipt={receipt}
           line={line}
           isReadOnly={isReadOnly}
-          initialValues={lotNumber}
+          initialValues={batchNumber}
         />
       )}
       {line.requiresSerialTracking && (
@@ -387,7 +387,7 @@ function ReceiptLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {(line.requiresLotTracking || line.requiresSerialTracking) && (
+      {(line.requiresBatchTracking || line.requiresSerialTracking) && (
         <>
           <Suspense fallback={null}>
             <Await resolve={files}>
@@ -441,7 +441,7 @@ function ReceiptLineItem({
   );
 }
 
-function LotForm({
+function BatchForm({
   line,
   receipt,
   initialValues,
@@ -480,7 +480,7 @@ function LotForm({
         }
   );
 
-  const updateLotNumber = async (newValues: typeof values) => {
+  const updateBatchNumber = async (newValues: typeof values) => {
     if (!receipt?.id || !newValues.number.trim()) return;
     if (
       newValues.manufacturingDate &&
@@ -496,8 +496,8 @@ function LotForm({
     formData.append("itemId", line.itemId);
     formData.append("receiptId", receipt.id);
     formData.append("receiptLineId", line.id);
-    formData.append("trackingType", "lot");
-    formData.append("lotNumber", newValues.number.trim());
+    formData.append("trackingType", "batch");
+    formData.append("batchNumber", newValues.number.trim());
     formData.append(
       "manufacturingDate",
       newValues.manufacturingDate?.toString() ?? ""
@@ -524,18 +524,18 @@ function LotForm({
       [field]: newDate ?? undefined,
     };
     setValues(newValues);
-    updateLotNumber(newValues);
+    updateBatchNumber(newValues);
   };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3 w-full p-4 border rounded-lg">
       <div className="flex flex-col gap-2 w-full">
         <label className="text-xs text-muted-foreground flex items-center gap-2">
-          <LuGroup /> Lot Number
+          <LuGroup /> Batch Number
         </label>
 
         <Input
-          placeholder={`Lot number`}
+          placeholder={`Batch number`}
           disabled={isReadOnly}
           value={values.number}
           onChange={(e) => {
@@ -545,7 +545,7 @@ function LotForm({
             }));
           }}
           onBlur={() => {
-            updateLotNumber(values);
+            updateBatchNumber(values);
           }}
         />
       </div>

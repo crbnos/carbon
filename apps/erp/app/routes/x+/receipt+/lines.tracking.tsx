@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { json, type ActionFunctionArgs } from "@remix-run/node";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 
 export async function action({ request, context }: ActionFunctionArgs) {
@@ -11,37 +11,37 @@ export async function action({ request, context }: ActionFunctionArgs) {
   const receiptLineId = formData.get("receiptLineId") as string;
   const receiptId = formData.get("receiptId") as string;
   const itemId = formData.get("itemId") as string;
-  const trackingType = formData.get("trackingType") as "lot" | "serial";
+  const trackingType = formData.get("trackingType") as "batch" | "serial";
 
-  if (trackingType === "lot") {
-    const lotNumber = formData.get("lotNumber") as string;
+  if (trackingType === "batch") {
+    const batchNumber = formData.get("batchNumber") as string;
     const manufacturingDate = formData.get("manufacturingDate") as
       | string
       | null;
     const expirationDate = formData.get("expirationDate") as string | null;
     const quantity = Number(formData.get("quantity"));
 
-    // First, get or create the lot number record
-    const { data: existingLot, error: lotQueryError } = await client
-      .from("lotNumber")
+    // First, get or create the batch number record
+    const { data: existingBatch, error: batchQueryError } = await client
+      .from("batchNumber")
       .select("id")
-      .eq("number", lotNumber)
+      .eq("number", batchNumber)
       .eq("itemId", itemId)
       .eq("companyId", companyId)
       .maybeSingle();
 
-    if (lotQueryError) {
-      return json({ error: "Failed to query lot number" }, { status: 500 });
+    if (batchQueryError) {
+      return json({ error: "Failed to query batch number" }, { status: 500 });
     }
 
-    const lotId = existingLot?.id ?? nanoid();
+    const batchId = existingBatch?.id ?? nanoid();
 
     // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_receipt_line_lot_tracking", {
+    const { error } = await client.rpc("update_receipt_line_batch_tracking", {
       p_receipt_line_id: receiptLineId,
       p_receipt_id: receiptId,
-      p_lot_number: lotNumber,
-      p_lot_id: lotId,
+      p_batch_number: batchNumber,
+      p_batch_id: batchId,
       // @ts-ignore
       p_manufacturing_date: manufacturingDate || null,
       // @ts-ignore
