@@ -1,4 +1,4 @@
-import { LuBox, LuHandCoins, LuTruck } from "react-icons/lu";
+import { LuBox, LuGroup, LuHandCoins, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -43,6 +43,11 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         name: "Receipts",
         to: path.to.receipts,
         icon: <LuHandCoins />,
+      },
+      {
+        name: "Batches",
+        to: path.to.batches,
+        icon: <LuGroup />,
       },
       // {
       //   name: "Shipments",

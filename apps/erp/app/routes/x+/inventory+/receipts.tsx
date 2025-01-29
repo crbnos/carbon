@@ -6,7 +6,6 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ReceiptsTable, getReceipts } from "~/modules/inventory";
-import { getLocationsList } from "~/modules/resources";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -27,7 +26,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [receipts, locations] = await Promise.all([
+  const [receipts] = await Promise.all([
     getReceipts(client, companyId, {
       search,
       limit,
@@ -35,7 +34,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       sorts,
       filters,
     }),
-    getLocationsList(client, companyId),
   ]);
 
   if (receipts.error) {
@@ -48,16 +46,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     receipts: receipts.data ?? [],
     count: receipts.count ?? 0,
-    locations: locations.data ?? [],
   });
 }
 
 export default function ReceiptsRoute() {
-  const { receipts, count, locations } = useLoaderData<typeof loader>();
+  const { receipts, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <ReceiptsTable data={receipts} count={count ?? 0} locations={locations} />
+      <ReceiptsTable data={receipts} count={count ?? 0} />
       <Outlet />
     </VStack>
   );

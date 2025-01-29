@@ -76,6 +76,32 @@ export async function insertManualInventoryAdjustment(
   return client.from("itemLedger").insert([data]).select("*").single();
 }
 
+export async function getBatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("batchNumbers")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `number.ilike.%${args.search}%,itemName.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "number", ascending: false },
+  ]);
+  return query;
+}
+
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,

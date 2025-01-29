@@ -140,6 +140,8 @@ export const path = {
       generatePath(`${x}/people/attributes/${id}`),
     attributeCategoryList: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}`),
+    batches: `${x}/inventory/batches`,
+    batch: (id: string) => generatePath(`${x}/inventory/batches/${id}`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateJob: `${x}/job/update`,
@@ -506,9 +508,9 @@ export const path = {
     newAttributeCategory: `${x}/people/attributes/new`,
     newAttributeForCategory: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}/new`),
+    newBatch: `${x}/inventory/batches/new`,
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
-
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing/new`),
@@ -814,6 +816,9 @@ export const path = {
     scrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/${id}`),
     scrapReasons: `${x}/production/scrap-reasons`,
+    serialNumbers: `${x}/inventory/serial-numbers`,
+    serialNumber: (id: string) =>
+      generatePath(`${x}/inventory/serial-numbers/${id}`),
     service: (id: string) => generatePath(`${x}/service/${id}`),
     services: `${x}/items/services`,
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
