@@ -38,8 +38,8 @@ import { stripSpecialCharacters } from "~/utils/string";
 type DocumentsProps = {
   files: StorageItem[];
   modelUpload?: ModelUpload;
-  sourceDocument: "Job";
-  sourceDocumentId: string;
+  sourceDocument?: "Job";
+  sourceDocumentId?: string;
   sourceDocumentLineId?: string;
   writeBucket: string;
   writeBucketPermission: string;
@@ -145,7 +145,7 @@ const Documents = ({
   );
 
   const deleteModel = useCallback(async () => {
-    if (!carbon) return;
+    if (!carbon || !sourceDocumentId) return;
 
     if (sourceDocument === "Job") {
       const result = await carbon
@@ -213,7 +213,11 @@ const Documents = ({
 
         if (fileUpload.error) {
           toast.error(`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+        } else if (
+          fileUpload.data?.path &&
+          sourceDocument &&
+          sourceDocumentId
+        ) {
           toast.success(`Uploaded: ${file.name}`);
           const formData = new FormData();
           formData.append("path", fileUpload.data.path);
@@ -254,7 +258,9 @@ const Documents = ({
       <HStack className="justify-between items-start">
         <CardHeader>
           <CardTitle>Files</CardTitle>
-          <CardDescription>{sourceDocument} documents</CardDescription>
+          {sourceDocument && (
+            <CardDescription>{sourceDocument} documents</CardDescription>
+          )}
         </CardHeader>
         <CardAction>
           <File

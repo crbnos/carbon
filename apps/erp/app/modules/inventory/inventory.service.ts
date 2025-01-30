@@ -8,6 +8,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  batchPropertyOrderValidator,
+  batchPropertyValidator,
   inventoryAdjustmentValidator,
   receiptValidator,
   shelfValidator,
@@ -76,6 +78,22 @@ export async function insertManualInventoryAdjustment(
   return client.from("itemLedger").insert([data]).select("*").single();
 }
 
+export async function getBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("batchNumber")
+    .select(
+      "*, item(id, name, readableId), receiptLineTracking(*, receipt(*)), jobMaterialTracking(*, jobMaterial(job(id, jobId))), jobProductionTracking(*)"
+    )
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .eq("receiptLineTracking.posted", true)
+    .single();
+}
+
 export async function getBatches(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -100,6 +118,38 @@ export async function getBatches(
     { column: "number", ascending: false },
   ]);
   return query;
+}
+
+export async function getBatchFiles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    receiptLineIds: string[];
+    batchId: string;
+  }
+) {
+  const [batchFiles, receiptFiles] = await Promise.all([
+    client.storage
+      .from("private")
+      .list(`${companyId}/inventory/${args.batchId}`),
+    getReceiptFiles(client, companyId, args.receiptLineIds),
+  ]);
+
+  if (batchFiles.error) {
+    return batchFiles;
+  }
+
+  if (receiptFiles.error) {
+    return receiptFiles;
+  }
+
+  return {
+    data: [...batchFiles.data, ...receiptFiles.data].map((file) => ({
+      ...file,
+      bucket: "inventory",
+    })),
+    error: null,
+  };
 }
 
 export async function getItemLedgerPage(
@@ -137,6 +187,13 @@ export async function getItemLedgerPage(
   };
 }
 
+export async function deleteBatchProperty(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("batchProperty").delete().eq("id", id);
+}
+
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -152,6 +209,18 @@ export async function deleteShippingMethod(
     .from("shippingMethod")
     .update({ active: false })
     .eq("id", shippingMethodId);
+}
+
+export async function getBatchProperties(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("batchProperty")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId);
 }
 
 export async function getInventoryItems(
@@ -402,6 +471,46 @@ export async function getShippingTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
+}
+
+export async function updateBatchPropertyOrder(
+  client: SupabaseClient<Database>,
+  data: Omit<
+    z.infer<typeof batchPropertyOrderValidator>,
+    "batchPropertyGroupId"
+  > & {
+    batchPropertyGroupId?: string | null;
+    updatedBy: string;
+  }
+) {
+  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+}
+
+export async function upsertBatchProperty(
+  client: SupabaseClient<Database>,
+  batchProperty: z.infer<typeof batchPropertyValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { userId, ...data } = batchProperty;
+  if (batchProperty.id) {
+    return client
+      .from("batchProperty")
+      .update(
+        sanitize({
+          ...data,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        })
+      )
+      .eq("id", batchProperty.id);
+  }
+
+  return client.from("batchProperty").insert({
+    ...data,
+    createdBy: userId,
+  });
 }
 
 export async function upsertReceipt(

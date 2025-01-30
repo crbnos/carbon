@@ -4393,6 +4393,9 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.source",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.companyId",
           },
           {
@@ -4405,7 +4408,16 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.properties",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdBy",
           },
           {
             $ref: "#/parameters/select",
@@ -4476,6 +4488,9 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.source",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.companyId",
           },
           {
@@ -4488,7 +4503,16 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.properties",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdBy",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -4513,6 +4537,9 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.source",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.companyId",
           },
           {
@@ -4525,7 +4552,16 @@ export default {
             $ref: "#/parameters/rowFilter.batchNumber.expirationDate",
           },
           {
+            $ref: "#/parameters/rowFilter.batchNumber.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.properties",
+          },
+          {
             $ref: "#/parameters/rowFilter.batchNumber.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumber.createdBy",
           },
           {
             $ref: "#/parameters/body.batchNumber",
@@ -13149,6 +13185,78 @@ export default {
         tags: ["costLedger"],
       },
     },
+    "/batchNumbers": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.number",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.manufacturingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.expirationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.source",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchNumbers.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/batchNumbers",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["batchNumbers"],
+      },
+    },
     "/purchaseOrderLine": {
       get: {
         parameters: [
@@ -18051,6 +18159,204 @@ export default {
         tags: ["accountCategory"],
       },
     },
+    "/batchProperty": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/batchProperty",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["batchProperty"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.batchProperty",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["batchProperty"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["batchProperty"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.label",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.dataType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.listOptions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.batchProperty.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.batchProperty",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["batchProperty"],
+      },
+    },
     "/salesOrders": {
       get: {
         parameters: [
@@ -21301,7 +21607,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.consumedAt",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
           },
           {
             $ref: "#/parameters/select",
@@ -21387,7 +21696,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.consumedAt",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -21427,7 +21739,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.consumedAt",
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
           },
           {
             $ref: "#/parameters/body.jobMaterialTracking",
@@ -27742,6 +28057,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27834,6 +28152,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27880,6 +28201,9 @@ export default {
             $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
           },
           {
+            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
+          },
+          {
             $ref: "#/parameters/body.receiptLineTracking",
           },
           {
@@ -27919,7 +28243,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
           },
           {
             $ref: "#/parameters/select",
@@ -28002,7 +28329,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -28039,7 +28369,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.producedAt",
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
           },
           {
             $ref: "#/parameters/body.jobProductionTracking",
@@ -36847,6 +37180,9 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.serialNumber.source",
+          },
+          {
             $ref: "#/parameters/rowFilter.serialNumber.supplierId",
           },
           {
@@ -36930,6 +37266,9 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.serialNumber.source",
+          },
+          {
             $ref: "#/parameters/rowFilter.serialNumber.supplierId",
           },
           {
@@ -36965,6 +37304,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.source",
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.supplierId",
@@ -44999,7 +45341,7 @@ export default {
       type: "object",
     },
     batchNumber: {
-      required: ["id", "number", "itemId", "companyId", "createdAt"],
+      required: ["id", "number", "itemId", "source", "companyId", "createdAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -45015,6 +45357,12 @@ export default {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        source: {
+          default: "Purchased",
+          enum: ["Purchased", "Manufactured"],
+          format: 'public."trackingSource"',
           type: "string",
         },
         companyId: {
@@ -45035,9 +45383,22 @@ export default {
           format: "date",
           type: "string",
         },
+        notes: {
+          format: "json",
+        },
+        properties: {
+          format: "jsonb",
+        },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          default: "auth.uid()",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -49352,6 +49713,57 @@ export default {
       },
       type: "object",
     },
+    batchNumbers: {
+      properties: {
+        id: {
+          format: "text",
+          type: "string",
+        },
+        number: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        manufacturingDate: {
+          format: "date",
+          type: "string",
+        },
+        expirationDate: {
+          format: "date",
+          type: "string",
+        },
+        supplierId: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        source: {
+          enum: ["Purchased", "Manufactured"],
+          format: 'public."trackingSource"',
+          type: "string",
+        },
+        itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseOrderLine: {
       required: [
         "id",
@@ -51733,6 +52145,86 @@ export default {
       },
       type: "object",
     },
+    batchProperty: {
+      required: [
+        "id",
+        "itemId",
+        "label",
+        "key",
+        "dataType",
+        "sortOrder",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        label: {
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        dataType: {
+          enum: ["text", "numeric", "boolean", "list"],
+          format: 'public."configurationParameterDataType"',
+          type: "string",
+        },
+        listOptions: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     salesOrders: {
       properties: {
         id: {
@@ -53357,7 +53849,7 @@ export default {
         "itemId",
         "quantity",
         "companyId",
-        "consumedAt",
+        "createdAt",
       ],
       properties: {
         id: {
@@ -53407,9 +53899,16 @@ export default {
           format: "text",
           type: "string",
         },
-        consumedAt: {
+        createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          default: "auth.uid()",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -56255,18 +56754,18 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        createdBy: {
+          default: "auth.uid()",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
     jobProductionTracking: {
-      required: [
-        "id",
-        "jobId",
-        "itemId",
-        "quantity",
-        "companyId",
-        "producedAt",
-      ],
+      required: ["id", "jobId", "itemId", "quantity", "companyId", "createdAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -56309,9 +56808,16 @@ export default {
           format: "text",
           type: "string",
         },
-        producedAt: {
+        createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          default: "auth.uid()",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -57026,7 +57532,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -57075,7 +57581,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60323,7 +60829,15 @@ export default {
       type: "object",
     },
     serialNumber: {
-      required: ["id", "number", "itemId", "companyId", "status", "createdAt"],
+      required: [
+        "id",
+        "number",
+        "itemId",
+        "source",
+        "companyId",
+        "status",
+        "createdAt",
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -60339,6 +60853,12 @@ export default {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        source: {
+          default: "Purchased",
+          enum: ["Purchased", "Manufactured"],
+          format: 'public."trackingSource"',
           type: "string",
         },
         supplierId: {
@@ -64161,6 +64681,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.batchNumber.source": {
+      name: "source",
+      required: false,
+      format: 'public."trackingSource"',
+      in: "query",
+      type: "string",
+    },
     "rowFilter.batchNumber.companyId": {
       name: "companyId",
       required: false,
@@ -64189,10 +64716,31 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.batchNumber.notes": {
+      name: "notes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.properties": {
+      name: "properties",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.batchNumber.createdAt": {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumber.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -69684,6 +70232,85 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.batchNumbers": {
+      name: "batchNumbers",
+      description: "batchNumbers",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/batchNumbers",
+      },
+    },
+    "rowFilter.batchNumbers.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.number": {
+      name: "number",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.manufacturingDate": {
+      name: "manufacturingDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.expirationDate": {
+      name: "expirationDate",
+      required: false,
+      format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.supplierId": {
+      name: "supplierId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.source": {
+      name: "source",
+      required: false,
+      format: 'public."trackingSource"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.itemName": {
+      name: "itemName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchNumbers.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderLine": {
       name: "purchaseOrderLine",
       description: "purchaseOrderLine",
@@ -72975,6 +73602,99 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.batchProperty": {
+      name: "batchProperty",
+      description: "batchProperty",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/batchProperty",
+      },
+    },
+    "rowFilter.batchProperty.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.label": {
+      name: "label",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.dataType": {
+      name: "dataType",
+      required: false,
+      format: 'public."configurationParameterDataType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.listOptions": {
+      name: "listOptions",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.batchProperty.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrders": {
       name: "salesOrders",
       description: "salesOrders",
@@ -75046,10 +75766,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobMaterialTracking.consumedAt": {
-      name: "consumedAt",
+    "rowFilter.jobMaterialTracking.createdAt": {
+      name: "createdAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialTracking.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -78797,6 +79524,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.receiptLineTracking.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.jobProductionTracking": {
       name: "jobProductionTracking",
       description: "jobProductionTracking",
@@ -78855,10 +79589,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobProductionTracking.producedAt": {
-      name: "producedAt",
+    "rowFilter.jobProductionTracking.createdAt": {
+      name: "createdAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobProductionTracking.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -84145,6 +84886,13 @@ export default {
       name: "itemId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumber.source": {
+      name: "source",
+      required: false,
+      format: 'public."trackingSource"',
       in: "query",
       type: "string",
     },

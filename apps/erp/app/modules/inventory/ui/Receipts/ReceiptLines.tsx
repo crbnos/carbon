@@ -750,7 +750,7 @@ function Shelf({
   if (!locationId) return null;
 
   return (
-    <div className="flex flex-col items-start gap-1 min-w-[140px]">
+    <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
       <label className="text-xs text-muted-foreground">Shelf</label>
       <Combobox
         value={shelfId ?? undefined}

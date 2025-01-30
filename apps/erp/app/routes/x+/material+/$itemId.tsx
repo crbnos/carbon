@@ -1,7 +1,6 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -70,9 +69,7 @@ export default function MaterialRoute() {
       <MaterialHeader />
       <div className="flex h-[calc(100dvh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-          <VStack spacing={2} className="p-2 w-full h-full">
-            <Outlet />
-          </VStack>
+          <Outlet />
         </div>
         <MaterialProperties />
       </div>

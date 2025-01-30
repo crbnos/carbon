@@ -1,4 +1,4 @@
-import { MenuIcon, MenuItem, VStack } from "@carbon/react";
+import { Badge, MenuIcon, MenuItem, VStack } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -9,8 +9,9 @@ import {
   LuCalendar,
   LuContainer,
   LuPencil,
+  LuTruck,
 } from "react-icons/lu";
-import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
+import { Hyperlink, SupplierAvatar, Table } from "~/components";
 import { usePermissions } from "~/hooks";
 import type { BatchTableRow } from "~/modules/inventory";
 import { useItems, useSuppliers } from "~/stores";
@@ -61,6 +62,26 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
               label: item.readableId,
               helperText: item.name,
             })),
+          },
+        },
+      },
+      {
+        accessorKey: "source",
+        header: "Source",
+        cell: ({ row }) =>
+          row.original.source === "Purchased" ? (
+            <Badge variant="green">Purchased</Badge>
+          ) : (
+            <Badge variant="blue">Manufactured</Badge>
+          ),
+        meta: {
+          icon: <LuTruck />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "Purchased", label: "Purchased" },
+              { value: "Manufactured", label: "Manufactured" },
+            ],
           },
         },
       },
@@ -130,11 +151,6 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         defaultColumnPinning={{
           left: ["batchId"],
         }}
-        primaryAction={
-          permissions.can("create", "inventory") && (
-            <New label="Batch" to={path.to.newBatch} />
-          )
-        }
         renderContextMenu={renderContextMenu}
         title="Batches"
       />

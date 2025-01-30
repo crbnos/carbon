@@ -3,11 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData } from "@remix-run/react";
+import { Await, useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import { InventoryDetails } from "~/modules/inventory/ui/Inventory";
+import { getBatchProperties, InventoryDetails } from "~/modules/inventory";
+import BatchPropertiesForm from "~/modules/inventory/Batches/BatchProperties";
 import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
@@ -139,11 +141,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     consumableInventory: consumableInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
+    batchProperties: getBatchProperties(client, itemId, companyId),
   });
 }
 
@@ -195,8 +198,13 @@ export default function ConsumableInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.consumableRoot);
 
-  const { consumableInventory, itemShelfQuantities, quantities, itemId } =
-    useLoaderData<typeof loader>();
+  const {
+    consumableInventory,
+    itemShelfQuantities,
+    quantities,
+    itemId,
+    batchProperties,
+  } = useLoaderData<typeof loader>();
 
   const consumableData = useRouteData<{
     consumableSummary: Consumable;
@@ -211,7 +219,7 @@ export default function ConsumableInventoryRoute() {
     ...getCustomFields(consumableInventory.customFields ?? {}),
   };
   return (
-    <VStack spacing={2}>
+    <VStack spacing={2} className="p-2">
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
@@ -228,6 +236,18 @@ export default function ConsumableInventoryRoute() {
         shelves={sharedConsumablesData?.shelves ?? []}
         unitOfMeasures={sharedConsumablesData?.unitOfMeasures ?? []}
       />
+      {consumableData.consumableSummary?.itemTrackingType === "Batch" && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedProperties) => (
+              <BatchPropertiesForm
+                key={`batch-properties:${itemId}`}
+                properties={resolvedProperties.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
     </VStack>
   );
 }
