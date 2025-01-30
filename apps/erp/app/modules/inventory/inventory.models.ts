@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { configurationParameterDataTypes } from "../items/items.models";
 
 export const itemTypes = [
   "Part",
@@ -40,6 +41,39 @@ export const itemLedgerDocumentTypes = [
   "Inventory Shipment",
   "Direct Transfer",
 ] as const;
+
+export const batchPropertyValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    itemId: z.string().min(1, { message: "Item ID is required" }),
+    label: z.string().min(1, { message: "Label is required" }),
+    dataType: z.enum(configurationParameterDataTypes),
+    listOptions: z.string().min(1).array().optional(),
+    configurationParameterGroupId: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.dataType === "list") {
+        return !!data.listOptions;
+      }
+      return true;
+    },
+    { message: "List options are required", path: ["listOptions"] }
+  )
+  .refine(
+    (data) => {
+      return data.label.match(/^[a-zA-Z0-9 ]+$/);
+    },
+    {
+      message: "Only alphanumeric characters and spaces are allowed",
+      path: ["label"],
+    }
+  );
+
+export const batchPropertyOrderValidator = z.object({
+  id: z.string().min(1, { message: "ID is required" }),
+  sortOrder: zfd.numeric(z.number().min(0)),
+});
 
 export const inventoryAdjustmentValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),

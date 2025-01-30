@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import type {
+  getBatch,
   getBatches,
+  getBatchProperties,
   getInventoryItems,
   getItemLedgerPage,
   getReceiptLines,
@@ -8,6 +10,14 @@ import type {
   getReceipts,
   getShippingMethods,
 } from "./inventory.service";
+
+export type BatchDetails = NonNullable<
+  Awaited<ReturnType<typeof getBatch>>["data"]
+>;
+
+export type BatchProperty = NonNullable<
+  Awaited<ReturnType<typeof getBatchProperties>>["data"]
+>[number];
 
 export type BatchTableRow = NonNullable<
   Awaited<ReturnType<typeof getBatches>>["data"]

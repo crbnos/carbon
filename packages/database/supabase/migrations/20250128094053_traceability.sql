@@ -6,11 +6,17 @@ ALTER TYPE "itemTrackingType" ADD VALUE IF NOT EXISTS 'Batch';
 -- Add tracking method to item table
 ALTER TABLE "item" ADD COLUMN "trackingMethod" TEXT CHECK ("trackingMethod" IN ('None', 'SerialNumber', 'BatchNumber'));
 
+CREATE TYPE "trackingSource" AS ENUM (
+  'Purchased',
+  'Manufactured'
+);
+
 -- Create table for serial numbers
 CREATE TABLE "serialNumber" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "number" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
+  "source" "trackingSource" NOT NULL DEFAULT 'Purchased',
   "supplierId" TEXT,
   "companyId" TEXT NOT NULL,
   "status" TEXT NOT NULL DEFAULT 'Available' CHECK ("status" IN ('Available', 'Reserved', 'Consumed')),
@@ -31,11 +37,15 @@ CREATE TABLE "batchNumber" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "number" TEXT NOT NULL,
   "itemId" TEXT NOT NULL,
+  "source" "trackingSource" NOT NULL DEFAULT 'Purchased',
   "companyId" TEXT NOT NULL,
   "supplierId" TEXT,
   "manufacturingDate" DATE,
   "expirationDate" DATE,
+  "notes" JSON DEFAULT '{}',
+  "properties" JSONB DEFAULT '{}',
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE DEFAULT auth.uid(),
   
   CONSTRAINT "batchNumber_id_unique" UNIQUE ("id"),
   CONSTRAINT "batchNumber_pkey" PRIMARY KEY ("number", "itemId"),
@@ -140,6 +150,7 @@ CREATE TABLE "receiptLineTracking" (
   "posted" BOOLEAN NOT NULL DEFAULT false,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE DEFAULT auth.uid(),
   
   CONSTRAINT "receiptLineTracking_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "receiptLineTracking_receiptLine_fkey" FOREIGN KEY ("receiptLineId") REFERENCES "receiptLine"("id") ON DELETE CASCADE,
@@ -163,7 +174,8 @@ CREATE TABLE "jobMaterialTracking" (
   "batchNumberId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
-  "consumedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE DEFAULT auth.uid(),
   
   CONSTRAINT "jobMaterialTracking_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "jobMaterialTracking_jobMaterial_fkey" FOREIGN KEY ("jobMaterialId") REFERENCES "jobMaterial"("id") ON DELETE CASCADE,
@@ -186,7 +198,8 @@ CREATE TABLE "jobProductionTracking" (
   "batchNumberId" TEXT,
   "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
   "companyId" TEXT NOT NULL,
-  "producedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  "createdBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE DEFAULT auth.uid(),
   
   CONSTRAINT "jobProductionTracking_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "jobProductionTracking_job_fkey" FOREIGN KEY ("jobId") REFERENCES "job"("id") ON DELETE CASCADE,
@@ -393,7 +406,7 @@ CREATE OR REPLACE FUNCTION update_receipt_line_batch_tracking(
 ) RETURNS void AS $$
 BEGIN
   -- First upsert the batch number
-  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId")
+  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId", "source")
   SELECT 
     p_batch_id,
     p_batch_number,
@@ -401,7 +414,8 @@ BEGIN
     rl."companyId",
     p_manufacturing_date,
     p_expiration_date,
-    r."supplierId"
+    r."supplierId",
+    'Purchased'
   FROM "receiptLine" rl
   JOIN "receipt" r ON r.id = rl."receiptId"
   WHERE rl.id = p_receipt_line_id
@@ -445,13 +459,14 @@ DECLARE
   v_serial_id TEXT;
 BEGIN
   -- First upsert the serial number
-    INSERT INTO "serialNumber" ("id", "number", "itemId", "companyId", "supplierId")
+    INSERT INTO "serialNumber" ("id", "number", "itemId", "companyId", "supplierId", "source")
     SELECT 
       xid(),
       p_serial_number,
       rl."itemId",
       rl."companyId",
-      r."supplierId"
+      r."supplierId",
+      'Purchased'
     FROM "receiptLine" rl
     JOIN "receipt" r ON r.id = rl."receiptId"
     WHERE rl.id = p_receipt_line_id
@@ -571,6 +586,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
 
 
+DROP VIEW IF EXISTS "batchNumbers";
 CREATE OR REPLACE VIEW "batchNumbers" WITH(SECURITY_INVOKER=true) AS
   SELECT DISTINCT
     bn."id",
@@ -580,13 +596,14 @@ CREATE OR REPLACE VIEW "batchNumbers" WITH(SECURITY_INVOKER=true) AS
     bn."supplierId",
     bn."companyId",
     bn."itemId",
+    bn."source",
     i."name" AS "itemName",
     i."readableId" AS "itemReadableId"
   FROM "batchNumber" bn
   JOIN "item" i ON i."id" = bn."itemId"
   WHERE EXISTS (
     SELECT 1 FROM "receiptLineTracking" rlt 
-    WHERE rlt."batchNumberId" = bn."id"
+    WHERE rlt."batchNumberId" = bn."id" AND rlt."posted" = true
   ) OR EXISTS (
     SELECT 1 FROM "jobProductionTracking" jpt
     WHERE jpt."batchNumberId" = bn."id"
@@ -599,5 +616,65 @@ CREATE OR REPLACE VIEW "batchNumbers" WITH(SECURITY_INVOKER=true) AS
     bn."supplierId",
     bn."companyId",
     bn."itemId",
+    bn."source",
     i."name",
     i."readableId";
+
+CREATE TABLE IF NOT EXISTS "batchProperty" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "itemId" TEXT NOT NULL,
+  "label" TEXT NOT NULL,
+  "dataType" "configurationParameterDataType" NOT NULL,
+  "listOptions" TEXT[],
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "batchProperty_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "batchProperty_itemId_key_unique" UNIQUE ("itemId", "key"),
+  CONSTRAINT "batchProperty_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "batchProperty_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "batchProperty_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "batchProperty_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "batchProperty_itemId_idx" ON "batchProperty" ("itemId");
+CREATE INDEX "batchProperty_companyId_idx" ON "batchProperty" ("companyId");
+
+ALTER TABLE "batchProperty" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Employees with inventory_view can view batch parameters" ON "batchProperty"
+  FOR SELECT
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('inventory_view', "companyId")
+  );
+
+CREATE POLICY "Employees with inventory_create can insert batch parameters" ON "batchProperty"
+  FOR INSERT
+  WITH CHECK (   
+    has_role('employee', "companyId") AND 
+    has_company_permission('inventory_create', "companyId")
+);
+
+CREATE POLICY "Employees with inventory_update can update batch parameters" ON "batchProperty"
+  FOR UPDATE
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('inventory_update', "companyId")
+  );
+
+CREATE POLICY "Employees with inventory_delete can delete batch parameters" ON "batchProperty"
+  FOR DELETE
+  USING (
+    has_role('employee', "companyId") AND 
+    has_company_permission('inventory_delete', "companyId")
+  );
+
+CREATE POLICY "Requests with an API key can access batch parameters" ON "batchProperty"
+FOR ALL USING (
+  has_valid_api_key_for_company("companyId")
+);

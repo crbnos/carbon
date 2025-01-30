@@ -1,10 +1,9 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
-import { useRealtime } from "~/hooks";
 import {
   getItemFiles,
   getPart,
@@ -58,10 +57,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function PartRoute() {
-  const { partSummary } = useLoaderData<typeof loader>();
-
-  useRealtime("modelUpload", `modelPath=eq.${partSummary.modelPath}`);
-
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <PartHeader />

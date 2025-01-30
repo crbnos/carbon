@@ -3,11 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData } from "@remix-run/react";
+import { Await, useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
-import { InventoryDetails } from "~/modules/inventory";
+import { getBatchProperties, InventoryDetails } from "~/modules/inventory";
+import BatchPropertiesForm from "~/modules/inventory/Batches/BatchProperties";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
@@ -136,11 +138,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({
+  return defer({
     materialInventory: materialInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
+    batchProperties: getBatchProperties(client, itemId, companyId),
   });
 }
 
@@ -192,8 +195,13 @@ export default function MaterialInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.materialRoot);
 
-  const { materialInventory, itemShelfQuantities, quantities, itemId } =
-    useLoaderData<typeof loader>();
+  const {
+    materialInventory,
+    itemShelfQuantities,
+    quantities,
+    itemId,
+    batchProperties,
+  } = useLoaderData<typeof loader>();
 
   const materialData = useRouteData<{
     materialSummary: Material;
@@ -208,13 +216,13 @@ export default function MaterialInventoryRoute() {
     ...getCustomFields(materialInventory.customFields ?? {}),
   };
   return (
-    <VStack spacing={2}>
+    <VStack spacing={2} className="p-2">
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
         locations={sharedMaterialsData?.locations ?? []}
         shelves={sharedMaterialsData?.shelves ?? []}
-        type="Part"
+        type="Material"
       />
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
@@ -225,6 +233,18 @@ export default function MaterialInventoryRoute() {
         shelves={sharedMaterialsData?.shelves ?? []}
         unitOfMeasures={sharedMaterialsData?.unitOfMeasures ?? []}
       />
+      {materialData.materialSummary?.itemTrackingType === "Batch" && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedProperties) => (
+              <BatchPropertiesForm
+                key={`batch-properties:${itemId}`}
+                properties={resolvedProperties.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
     </VStack>
   );
 }

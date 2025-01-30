@@ -141,7 +141,11 @@ export const path = {
     attributeCategoryList: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}`),
     batches: `${x}/inventory/batches`,
-    batch: (id: string) => generatePath(`${x}/inventory/batches/${id}`),
+    batch: (id: string) => generatePath(`${x}/batch/${id}`),
+    batchProperty: (itemId: string) =>
+      generatePath(`${x}/inventory/batch-property/${itemId}/property`),
+    batchPropertyOrder: (itemId: string) =>
+      generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateJob: `${x}/job/update`,
@@ -250,6 +254,10 @@ export const path = {
       generatePath(`${x}/people/attribute/delete/${id}`),
     deleteAttributeCategory: (id: string) =>
       generatePath(`${x}/people/attributes/delete/${id}`),
+    deleteBatchProperty: (itemId: string, id: string) =>
+      generatePath(
+        `${x}/inventory/batch-property/${itemId}/property/delete/${id}`
+      ),
     deleteConfigurationParameter: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
     deleteConfigurationParameterGroup: (itemId: string, id: string) =>

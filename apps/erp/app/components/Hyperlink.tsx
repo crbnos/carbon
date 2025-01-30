@@ -1,7 +1,8 @@
-import { cn } from "@carbon/react";
+import { Button, cn } from "@carbon/react";
 import type { LinkProps } from "@remix-run/react";
 import { Link } from "@remix-run/react";
 import type { ComponentProps, PropsWithChildren } from "react";
+import { LuSquareArrowOutUpRight } from "react-icons/lu";
 
 const Hyperlink = ({
   children,
@@ -14,12 +15,20 @@ const Hyperlink = ({
     <Link
       prefetch="intent"
       className={cn(
-        "text-foreground font-medium cursor-pointer hover:underline",
+        "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-between gap-2",
         className
       )}
       {...props}
     >
-      {children}
+      <span className="flex-1">{children}</span>
+      <Button
+        leftIcon={<LuSquareArrowOutUpRight />}
+        variant="secondary"
+        className="opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
+        size="sm"
+      >
+        Open
+      </Button>
     </Link>
   ) : (
     <span className={cn("text-foreground", className)} {...props}>
