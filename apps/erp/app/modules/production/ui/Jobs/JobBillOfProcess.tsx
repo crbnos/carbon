@@ -17,7 +17,10 @@ import {
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
   IconButton,
@@ -38,7 +41,12 @@ import {
   formatRelativeTime,
 } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSubmit,
+} from "@remix-run/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -98,7 +106,10 @@ import type { action as editJobOperationToolAction } from "~/routes/x+/job+/meth
 import type { action as newJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.new";
 import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { jobOperationValidator } from "../../production.models";
+import {
+  jobOperationStatus,
+  jobOperationValidator,
+} from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
 
@@ -138,7 +149,6 @@ function makeItem(
     title: (
       <HStack>
         <h3 className="font-semibold truncate">{operation.description}</h3>
-        <OperationStatusIcon status={operation.status} />
       </HStack>
     ),
     checked: false,
@@ -174,12 +184,15 @@ function makeItem(
     ),
     footer: isTemporaryId(operation.id ?? "") ? null : (
       <HStack className="w-full justify-between">
-        <Assignee
-          table="jobOperation"
-          id={operation.id!}
-          size="sm"
-          value={operation.assignee ?? undefined}
-        />
+        <HStack>
+          <JobOperationStatus operation={operation} />
+          <Assignee
+            table="jobOperation"
+            id={operation.id!}
+            size="sm"
+            value={operation.assignee ?? undefined}
+          />
+        </HStack>
         <JobOperationTags operation={operation} availableTags={tags} />
       </HStack>
     ),
@@ -2065,5 +2078,87 @@ function JobOperationTags({
         onChange={onUpdateTags}
       />
     </ValidatedForm>
+  );
+}
+
+function useOptimisticJobStatus(operationId: string) {
+  const fetchers = useFetchers();
+  const pendingUpdate = fetchers.find(
+    (f) =>
+      f.formData?.get("id") === operationId &&
+      f.key === `jobOperation:${operationId}`
+  );
+  return pendingUpdate?.formData?.get("status") as
+    | JobOperation["status"]
+    | undefined;
+}
+
+function JobOperationStatus({ operation }: { operation: Operation }) {
+  const { jobId } = useParams();
+  if (!jobId) throw new Error("Job ID is required");
+
+  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const isPaused = routeData?.job?.status === "Paused";
+  const submit = useSubmit();
+  const permissions = usePermissions();
+  const optimisticStatus = useOptimisticJobStatus(operation.id!);
+
+  const isDisabled = !permissions.can("update", "production");
+
+  const onOperationStatusChange = useCallback(
+    (id: string, status: JobOperation["status"]) => {
+      submit(
+        {
+          id,
+          status,
+        },
+        {
+          method: "post",
+          action: path.to.jobOperationStatus,
+          navigate: false,
+          fetcherKey: `jobOperation:${id}`,
+        }
+      );
+    },
+    [submit]
+  );
+
+  const currentStatus =
+    optimisticStatus || (isPaused ? "Paused" : operation.status);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <IconButton
+          size="sm"
+          variant="ghost"
+          aria-label="Change status"
+          icon={<OperationStatusIcon status={currentStatus} />}
+          isDisabled={isDisabled}
+        />
+      </DropdownMenuTrigger>
+      {!isDisabled && (
+        <DropdownMenuContent align="start">
+          <DropdownMenuRadioGroup
+            value={currentStatus}
+            onValueChange={(status) =>
+              onOperationStatusChange(
+                operation.id!,
+                status as JobOperation["status"]
+              )
+            }
+          >
+            {jobOperationStatus.map((status) => (
+              <DropdownMenuRadioItem key={status} value={status}>
+                <DropdownMenuIcon
+                  icon={<OperationStatusIcon status={status} />}
+                />
+                <span>{status}</span>
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      )}
+    </DropdownMenu>
   );
 }

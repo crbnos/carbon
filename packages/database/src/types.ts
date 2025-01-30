@@ -1693,9 +1693,11 @@ export type Database = {
         Row: {
           id: number
           isBoolean: boolean
+          isCustomer: boolean
           isDate: boolean
           isList: boolean
           isNumeric: boolean
+          isSupplier: boolean
           isText: boolean
           isUser: boolean
           label: string
@@ -1703,9 +1705,11 @@ export type Database = {
         Insert: {
           id?: number
           isBoolean?: boolean
+          isCustomer?: boolean
           isDate?: boolean
           isList?: boolean
           isNumeric?: boolean
+          isSupplier?: boolean
           isText?: boolean
           isUser?: boolean
           label: string
@@ -1713,14 +1717,280 @@ export type Database = {
         Update: {
           id?: number
           isBoolean?: boolean
+          isCustomer?: boolean
           isDate?: boolean
           isList?: boolean
           isNumeric?: boolean
+          isSupplier?: boolean
           isText?: boolean
           isUser?: boolean
           label?: string
         }
         Relationships: []
+      }
+      batchNumber: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          expirationDate: string | null
+          id: string
+          itemId: string
+          manufacturingDate: string | null
+          notes: Json | null
+          number: string
+          properties: Json | null
+          source: Database["public"]["Enums"]["trackingSource"]
+          supplierId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          expirationDate?: string | null
+          id?: string
+          itemId: string
+          manufacturingDate?: string | null
+          notes?: Json | null
+          number: string
+          properties?: Json | null
+          source?: Database["public"]["Enums"]["trackingSource"]
+          supplierId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          expirationDate?: string | null
+          id?: string
+          itemId?: string
+          manufacturingDate?: string | null
+          notes?: Json | null
+          number?: string
+          properties?: Json | null
+          source?: Database["public"]["Enums"]["trackingSource"]
+          supplierId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchNumber_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "batchNumber_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      batchProperty: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          dataType: Database["public"]["Enums"]["configurationParameterDataType"]
+          id: string
+          itemId: string
+          label: string
+          listOptions: string[] | null
+          sortOrder: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          dataType: Database["public"]["Enums"]["configurationParameterDataType"]
+          id?: string
+          itemId: string
+          label: string
+          listOptions?: string[] | null
+          sortOrder?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          dataType?: Database["public"]["Enums"]["configurationParameterDataType"]
+          id?: string
+          itemId?: string
+          label?: string
+          listOptions?: string[] | null
+          sortOrder?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batchProperty_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchProperty_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchProperty_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "batchProperty_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
       }
       company: {
         Row: {
@@ -6307,6 +6577,7 @@ export type Database = {
           readableId: string
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath: string | null
+          trackingMethod: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -6329,6 +6600,7 @@ export type Database = {
           readableId: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
+          trackingMethod?: string | null
           type: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6351,6 +6623,7 @@ export type Database = {
           readableId?: string
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
           thumbnailPath?: string | null
+          trackingMethod?: string | null
           type?: Database["public"]["Enums"]["itemType"]
           unitOfMeasureCode?: string | null
           updatedAt?: string | null
@@ -6751,6 +7024,7 @@ export type Database = {
       }
       itemLedger: {
         Row: {
+          batchNumber: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -6768,9 +7042,11 @@ export type Database = {
           locationId: string | null
           postingDate: string
           quantity: number
+          serialNumber: string | null
           shelfId: string | null
         }
         Insert: {
+          batchNumber?: string | null
           companyId: string
           createdAt?: string
           createdBy?: string
@@ -6788,9 +7064,11 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity: number
+          serialNumber?: string | null
           shelfId?: string | null
         }
         Update: {
+          batchNumber?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -6808,9 +7086,24 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity?: number
+          serialNumber?: string | null
           shelfId?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "itemLedger_batchNumber_fkey"
+            columns: ["batchNumber", "itemId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["number", "itemId"]
+          },
+          {
+            foreignKeyName: "itemLedger_batchNumber_fkey"
+            columns: ["batchNumber", "itemId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["number", "itemId"]
+          },
           {
             foreignKeyName: "itemLedger_createdBy_fkey"
             columns: ["createdBy"]
@@ -6859,6 +7152,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_serialNumber_fkey"
+            columns: ["serialNumber", "itemId"]
+            isOneToOne: false
+            referencedRelation: "serialNumber"
+            referencedColumns: ["number", "itemId"]
           },
           {
             foreignKeyName: "itemLedger_shelfId_fkey"
@@ -8445,6 +8745,165 @@ export type Database = {
           },
         ]
       }
+      jobMaterialTracking: {
+        Row: {
+          batchNumberId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          id: string
+          itemId: string
+          jobMaterialId: string
+          jobOperationId: string
+          quantity: number
+          serialNumberId: string | null
+        }
+        Insert: {
+          batchNumberId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          itemId: string
+          jobMaterialId: string
+          jobOperationId: string
+          quantity?: number
+          serialNumberId?: string | null
+        }
+        Update: {
+          batchNumberId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          itemId?: string
+          jobMaterialId?: string
+          jobOperationId?: string
+          quantity?: number
+          serialNumberId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobMaterialTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_jobMaterial_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_jobMaterial_fkey"
+            columns: ["jobMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_jobOperation_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterialTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobOperation: {
         Row: {
           assignee: string | null
@@ -9057,6 +9516,148 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      jobProductionTracking: {
+        Row: {
+          batchNumberId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          id: string
+          itemId: string
+          jobId: string
+          quantity: number
+          serialNumberId: string | null
+        }
+        Insert: {
+          batchNumberId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          itemId: string
+          jobId: string
+          quantity?: number
+          serialNumberId?: string | null
+        }
+        Update: {
+          batchNumberId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          itemId?: string
+          jobId?: string
+          quantity?: number
+          serialNumberId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobProductionTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_job_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -17904,6 +18505,8 @@ export type Database = {
           outstandingQuantity: number
           receiptId: string
           receivedQuantity: number
+          requiresBatchTracking: boolean
+          requiresSerialTracking: boolean
           shelfId: string | null
           unitOfMeasure: string
           unitPrice: number
@@ -17924,6 +18527,8 @@ export type Database = {
           outstandingQuantity?: number
           receiptId: string
           receivedQuantity?: number
+          requiresBatchTracking?: boolean
+          requiresSerialTracking?: boolean
           shelfId?: string | null
           unitOfMeasure: string
           unitPrice: number
@@ -17944,6 +18549,8 @@ export type Database = {
           outstandingQuantity?: number
           receiptId?: string
           receivedQuantity?: number
+          requiresBatchTracking?: boolean
+          requiresSerialTracking?: boolean
           shelfId?: string | null
           unitOfMeasure?: string
           unitPrice?: number
@@ -18048,6 +18655,157 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      receiptLineTracking: {
+        Row: {
+          batchNumberId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          id: string
+          index: number
+          itemId: string
+          posted: boolean
+          quantity: number
+          receiptId: string
+          receiptLineId: string
+          serialNumberId: string | null
+        }
+        Insert: {
+          batchNumberId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          index?: number
+          itemId: string
+          posted?: boolean
+          quantity?: number
+          receiptId: string
+          receiptLineId: string
+          serialNumberId?: string | null
+        }
+        Update: {
+          batchNumberId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          index?: number
+          itemId?: string
+          posted?: boolean
+          quantity?: number
+          receiptId?: string
+          receiptLineId?: string
+          serialNumberId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receiptLineTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_receipt_fkey"
+            columns: ["receiptId"]
+            isOneToOne: false
+            referencedRelation: "receipt"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_receiptLine_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLineTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -20066,6 +20824,78 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      serialNumber: {
+        Row: {
+          companyId: string
+          createdAt: string
+          expirationDate: string | null
+          id: string
+          itemId: string
+          number: string
+          source: Database["public"]["Enums"]["trackingSource"]
+          status: string
+          supplierId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          expirationDate?: string | null
+          id?: string
+          itemId: string
+          number: string
+          source?: Database["public"]["Enums"]["trackingSource"]
+          status?: string
+          supplierId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          expirationDate?: string | null
+          id?: string
+          itemId?: string
+          number?: string
+          source?: Database["public"]["Enums"]["trackingSource"]
+          status?: string
+          supplierId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serialNumber_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -25337,6 +26167,57 @@ export type Database = {
           },
         ]
       }
+      batchNumbers: {
+        Row: {
+          companyId: string | null
+          expirationDate: string | null
+          id: string | null
+          itemId: string | null
+          itemName: string | null
+          itemReadableId: string | null
+          manufacturingDate: string | null
+          number: string | null
+          source: Database["public"]["Enums"]["trackingSource"] | null
+          supplierId: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "batchNumber_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           addressLine1: string | null
@@ -27507,14 +28388,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -30325,14 +31206,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32526,6 +33407,12 @@ export type Database = {
         }
         Returns: Json
       }
+      get_companies_with_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
+      }
       get_company_id_from_api_key: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -32730,6 +33617,14 @@ export type Database = {
         }
         Returns: string
       }
+      get_next_prefixed_sequence: {
+        Args: {
+          company_id: string
+          item_type: Database["public"]["Enums"]["itemType"]
+          prefix: string
+        }
+        Returns: string
+      }
       get_next_sequence: {
         Args: {
           sequence_name: string
@@ -32899,6 +33794,27 @@ export type Database = {
           "": Json
         }
         Returns: string[]
+      }
+      update_receipt_line_batch_tracking: {
+        Args: {
+          p_receipt_line_id: string
+          p_receipt_id: string
+          p_batch_number: string
+          p_batch_id: string
+          p_manufacturing_date: string
+          p_expiration_date: string
+          p_quantity: number
+        }
+        Returns: undefined
+      }
+      update_receipt_line_serial_tracking: {
+        Args: {
+          p_receipt_line_id: string
+          p_receipt_id: string
+          p_serial_number: string
+          p_index: number
+        }
+        Returns: undefined
       }
       users_for_groups: {
         Args: {
@@ -33070,7 +33986,7 @@ export type Database = {
         | "Fixed Reorder Quantity"
         | "Maximum Quantity"
       itemReplenishmentSystem: "Buy" | "Make" | "Buy and Make"
-      itemTrackingType: "Inventory" | "Non-Inventory" | "Serial" | "Lot"
+      itemTrackingType: "Inventory" | "Non-Inventory" | "Serial" | "Batch"
       itemType:
         | "Part"
         | "Material"
@@ -33078,8 +33994,6 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
-        | "Serial"
-        | "Lot"
       jobOperationStatus:
         | "Canceled"
         | "Done"
@@ -33264,6 +34178,7 @@ export type Database = {
         | "Reminder"
         | "Refund"
       supplierQuoteStatus: "Active" | "Expired"
+      trackingSource: "Purchased" | "Manufactured"
     }
     CompositeTypes: {
       [_ in never]: never
