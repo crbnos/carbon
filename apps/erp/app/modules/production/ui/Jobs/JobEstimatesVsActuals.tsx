@@ -33,11 +33,7 @@ import {
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import type { z } from "zod";
-import {
-  MethodIcon,
-  OperationStatusIcon,
-  TimeTypeIcon,
-} from "~/components/Icons";
+import { MethodIcon, TimeTypeIcon } from "~/components/Icons";
 
 import { useCarbon } from "@carbon/auth";
 import { formatDurationMilliseconds } from "@carbon/utils";
@@ -60,6 +56,7 @@ import type {
   ProductionEvent,
   ProductionQuantity,
 } from "../../types";
+import { JobOperationStatus } from "./JobOperationStatus";
 
 type Operation = z.infer<typeof jobOperationValidator> & {
   status: JobOperation["status"];
@@ -304,16 +301,7 @@ const JobEstimatesVsActuals = ({
                         <Td className="border-r border-border min-w-[200px] px-2">
                           <HStack className="w-full justify-between ">
                             <span>{operation.description}</span>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <OperationStatusIcon
-                                  status={operation.status}
-                                />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {operation.status}
-                              </TooltipContent>
-                            </Tooltip>
+                            <JobOperationStatus operation={operation} />
                           </HStack>
                         </Td>
                         <Td className="px-2">
