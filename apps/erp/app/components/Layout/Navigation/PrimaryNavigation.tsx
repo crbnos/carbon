@@ -1,10 +1,8 @@
-import { Button, VStack, cn, useDisclosure } from "@carbon/react";
+import { VStack, cn, useDisclosure } from "@carbon/react";
 import { Link, useMatches } from "@remix-run/react";
 import { forwardRef, type AnchorHTMLAttributes } from "react";
-import { BsFillHexagonFill } from "react-icons/bs";
 import { z } from "zod";
-import { useModules, useOptimisticLocation, useUser } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
+import { useModules, useOptimisticLocation } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
 export const ModuleHandle = z.object({
@@ -12,10 +10,6 @@ export const ModuleHandle = z.object({
 });
 
 const PrimaryNavigation = () => {
-  const { company } = useUser();
-  const mode = useMode();
-  const logo = mode === "dark" ? company?.logoDarkIcon : company?.logoLightIcon;
-
   const navigationPanel = useDisclosure();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
@@ -36,7 +30,7 @@ const PrimaryNavigation = () => {
       <nav
         data-state={navigationPanel.isOpen ? "expanded" : "collapsed"}
         className={cn(
-          "bg-background py-[3px] group z-10 h-full w-14 data-[state=expanded]:w-[13rem]",
+          "bg-background py-2 group z-10 h-full w-14 data-[state=expanded]:w-[13rem]",
           "border-r border-border data-[state=expanded]:shadow-xl",
           "transition-width duration-200",
           "hide-scrollbar flex flex-col justify-between overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -49,20 +43,6 @@ const PrimaryNavigation = () => {
           className="flex flex-col justify-between h-full px-2"
         >
           <VStack spacing={1}>
-            <Button isIcon asChild variant="ghost" size="lg">
-              <Link to="/">
-                {logo ? (
-                  <img
-                    src={logo}
-                    alt={`${company.name} logo`}
-                    className="w-full h-auto rounded"
-                  />
-                ) : (
-                  <BsFillHexagonFill />
-                )}
-              </Link>
-            </Button>
-
             {links.map((link) => {
               const m = getModule(link.to);
 
@@ -151,6 +131,6 @@ NavigationIconLink.displayName = "NavigationIconLink";
 
 export default PrimaryNavigation;
 
-function getModule(link: string) {
+export function getModule(link: string) {
   return link.split("/")?.[2];
 }

@@ -13,11 +13,14 @@ const Topbar = () => {
   const notificationsKey = `${user.id}:${user.company.id}`;
 
   return (
-    <div className="flex bg-background text-foreground border-b border-border px-4 top-0 sticky z-10 space-x-4 justify-between items-center">
-      <Breadcrumbs />
-
-      <HStack spacing={2} className="justify-end py-2">
+    <div className="flex bg-background text-foreground border-b border-border px-4 top-0 sticky z-10 items-center">
+      <div className="flex-1">
+        <Breadcrumbs />
+      </div>
+      <div className="flex-1 flex justify-center">
         {permissions.is("employee") ? <Search /> : <div />}
+      </div>
+      <HStack spacing={2} className="flex-1 justify-end py-2">
         <Feedback />
         <CreateMenu />
         <Notifications key={notificationsKey} />

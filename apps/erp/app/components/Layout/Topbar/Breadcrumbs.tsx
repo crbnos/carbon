@@ -67,21 +67,28 @@ const Breadcrumbs = () => {
     .filter(Boolean);
 
   const isMobile = useIsMobile();
+  const { company } = useUser();
+  const mode = useMode();
+  const logo = mode === "dark" ? company?.logoDarkIcon : company?.logoLightIcon;
 
   return (
     <HStack className="items-center h-full -ml-2" spacing={0}>
+      <Button isIcon asChild variant="ghost" size="lg">
+        <Link to="/">
+          {logo ? (
+            <img
+              src={logo}
+              alt={`${company.name} logo`}
+              className="w-full h-auto rounded"
+            />
+          ) : (
+            <BsFillHexagonFill />
+          )}
+        </Link>
+      </Button>
+
       <BreadcrumbsBase className="line-clamp-1">
-        {isMobile ? (
-          <BreadcrumbItem>
-            <Button isIcon asChild variant="ghost">
-              <Link to="/">
-                <BsFillHexagonFill />
-              </Link>
-            </Button>
-          </BreadcrumbItem>
-        ) : (
-          <CompanyBreadcrumb />
-        )}
+        {!isMobile && <CompanyBreadcrumb />}
         {breadcrumbs.map((breadcrumb, i) => (
           <BreadcrumbItem key={i}>
             <BreadcrumbLink
