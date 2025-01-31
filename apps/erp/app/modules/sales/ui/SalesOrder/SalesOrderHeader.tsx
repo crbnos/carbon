@@ -32,7 +32,10 @@ import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.s
 import { path } from "~/utils/path";
 import type { SalesOrder, SalesOrderLine } from "../../types";
 
+import { useMemo } from "react";
+import { CSVLink } from "react-csv";
 import Confirm from "~/components/Modals/Confirm/Confirm";
+import { useCustomers } from "~/stores/customers";
 import SalesStatus from "./SalesStatus";
 
 const SalesOrderHeader = () => {
@@ -51,7 +54,39 @@ const SalesOrderHeader = () => {
   const statusFetcher = useFetcher<typeof statusAction>();
 
   const salesOrderToJobsModal = useDisclosure();
-  // const deleteSalesOrderModal = useDisclosure();
+  const [customers] = useCustomers();
+
+  const csvExportData = useMemo(() => {
+    const headers = [
+      "Part ID",
+      "Quantity",
+      "Customer",
+      "Customer #",
+      "Sales Order #",
+      "Order Date",
+      "Promised Date",
+    ];
+    if (!routeData?.lines) return [headers];
+    return [
+      headers,
+      ...routeData?.lines.map((item) => [
+        item.itemReadableId,
+        item.saleQuantity,
+        customers.find((c) => c.id === routeData?.salesOrder?.customerId)?.name,
+        routeData?.salesOrder?.customerReference,
+        routeData?.salesOrder?.salesOrderId,
+        routeData?.salesOrder?.orderDate,
+        item.promisedDate,
+      ]),
+    ];
+  }, [
+    customers,
+    routeData?.lines,
+    routeData?.salesOrder?.customerId,
+    routeData?.salesOrder?.customerReference,
+    routeData?.salesOrder?.orderDate,
+    routeData?.salesOrder?.salesOrderId,
+  ]);
 
   return (
     <>
@@ -88,6 +123,15 @@ const SalesOrderHeader = () => {
                 >
                   <DropdownMenuIcon icon={<LuGitCompare />} />
                   Convert Lines to Jobs
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <CSVLink
+                    data={csvExportData}
+                    filename={`${routeData?.salesOrder?.salesOrderId}.csv`}
+                  >
+                    <DropdownMenuIcon icon={<LuFile />} />
+                    Export Lines to CSV
+                  </CSVLink>
                 </DropdownMenuItem>
                 {/* <DropdownMenuItem
                   destructive
