@@ -32,6 +32,7 @@ import {
 } from "~/components/Form";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { usePermissions } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
@@ -54,16 +55,22 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
 
+  const { isInternal } = useFlags();
+
   const itemTrackingTypeOptions =
-    itemTrackingTypes.map((itemTrackingType) => ({
-      label: (
-        <span className="flex items-center gap-2">
-          <TrackingTypeIcon type={itemTrackingType} />
-          {itemTrackingType}
-        </span>
-      ),
-      value: itemTrackingType,
-    })) ?? [];
+    itemTrackingTypes
+      .map((itemTrackingType) => ({
+        label: (
+          <span className="flex items-center gap-2">
+            <TrackingTypeIcon type={itemTrackingType} />
+            {itemTrackingType}
+          </span>
+        ),
+        value: itemTrackingType,
+      }))
+      .filter(
+        (item) => isInternal || !["Serial", "Batch"].includes(item.value)
+      ) ?? [];
 
   const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
     initialValues.replenishmentSystem ?? "Buy"
