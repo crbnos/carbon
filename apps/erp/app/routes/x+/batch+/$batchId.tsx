@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,6 +28,7 @@ import {
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import { useRouteData } from "@carbon/remix";
 import { formatDate, formatRelativeTime } from "@carbon/utils";
+import { useNumberFormatter } from "@react-aria/i18n";
 import { Await, Link, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -46,9 +48,14 @@ import {
   Hyperlink,
   SupplierAvatar,
 } from "~/components";
+import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { usePermissions, useUser } from "~/hooks";
-import type { BatchDetails } from "~/modules/inventory";
-import { getBatch, getBatchFiles } from "~/modules/inventory/inventory.service";
+import type { BatchDetails, BatchProperty } from "~/modules/inventory";
+import {
+  getBatch,
+  getBatchFiles,
+  getBatchProperties,
+} from "~/modules/inventory/inventory.service";
 import BatchHeader from "~/modules/inventory/ui/Batches/BatchHeader";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -77,12 +84,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const batchProperties = await getBatchProperties(
+    serviceRole,
+    [batch.data.itemId],
+    companyId
+  );
+
   const receiptLineIds = batch.data.receiptLineTracking.map(
     (receiptLine) => receiptLine.receiptLineId
   );
 
   return defer({
     batch: batch.data,
+    batchProperties: batchProperties?.data ?? [],
     receiptFiles: getBatchFiles(serviceRole, companyId, {
       receiptLineIds,
       batchId,
@@ -105,6 +119,7 @@ export default function BatchDetailRoute() {
         >
           <BatchSummary />
           <BatchTransactions />
+          <BatchNotes />
           <Suspense fallback={null}>
             <Await resolve={receiptFiles}>
               {(files) => (
@@ -117,7 +132,6 @@ export default function BatchDetailRoute() {
               )}
             </Await>
           </Suspense>
-          <BatchNotes />
         </VStack>
       </div>
     </div>
@@ -130,11 +144,28 @@ function BatchSummary() {
 
   const routeData = useRouteData<{
     batch: BatchDetails;
+    batchProperties: BatchProperty[];
   }>(path.to.batch(batchId));
 
-  if (!routeData?.batch) return null;
+  const numberFormatter = useNumberFormatter();
+  if (!routeData?.batch) throw new Error("Could not find batch");
 
-  const { batch } = routeData;
+  const { batch, batchProperties } = routeData;
+
+  const properties = batch.properties
+    ? Object.entries(batch.properties)
+        .reduce<(BatchProperty & { value: string | number | boolean })[]>(
+          (acc, [key, value]) => {
+            const property = batchProperties.find((p) => p.id === key);
+            if (property) {
+              acc.push({ ...property, value });
+            }
+            return acc;
+          },
+          []
+        )
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+    : [];
 
   return (
     <Card>
@@ -170,7 +201,32 @@ function BatchSummary() {
       </CardHeader>
       <CardContent>
         <VStack>
-          <pre>{JSON.stringify(batch.properties, null, 2)}</pre>
+          {properties.map((property) => (
+            <div
+              key={property.id}
+              className="flex items-center justify-between p-6 rounded-lg border w-full"
+            >
+              <HStack spacing={4} className="flex-1">
+                <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                  <ConfiguratorDataTypeIcon
+                    type={property.dataType}
+                    className="w-4 h-4"
+                  />
+                </div>
+
+                <span className="text-sm font-medium">{property.label}</span>
+              </HStack>
+              <span className="text-base font-medium">
+                {property.dataType === "boolean" ? (
+                  <Checkbox isChecked={property.value as boolean} />
+                ) : property.dataType === "numeric" ? (
+                  numberFormatter.format(property.value as number)
+                ) : (
+                  property.value
+                )}
+              </span>
+            </div>
+          ))}
         </VStack>
       </CardContent>
     </Card>
