@@ -89,11 +89,9 @@ export function formatTimeFromNow(isoString: string) {
 
   for (let i = 0; i <= DIVISIONS.length; i++) {
     const division = DIVISIONS[i];
-    if (Math.abs(duration) < division!.amount) {
-      return relativeFormatter.format(
-        Math.round(-1 * duration),
-        division!.name
-      );
+    if (!division) return "";
+    if (Math.abs(duration) < division.amount) {
+      return relativeFormatter.format(Math.round(-1 * duration), division.name);
     }
     duration /= division!.amount;
   }
