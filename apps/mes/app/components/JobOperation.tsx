@@ -1472,12 +1472,21 @@ function useFiles(job: Job) {
   const downloadFile = useCallback(
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      document.body.removeChild(a);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = file.name;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
     [getFilePath]
   );
@@ -1490,12 +1499,21 @@ function useFiles(job: Job) {
       }
 
       const url = path.to.file.previewFile(`private/${model.modelPath}`);
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      a.href = url;
-      a.download = model.modelName;
-      a.click();
-      document.body.removeChild(a);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = model.modelName;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
     []
   );
