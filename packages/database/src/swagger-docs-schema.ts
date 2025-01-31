@@ -18172,9 +18172,6 @@ export default {
             $ref: "#/parameters/rowFilter.batchProperty.label",
           },
           {
-            $ref: "#/parameters/rowFilter.batchProperty.key",
-          },
-          {
             $ref: "#/parameters/rowFilter.batchProperty.dataType",
           },
           {
@@ -18267,9 +18264,6 @@ export default {
             $ref: "#/parameters/rowFilter.batchProperty.label",
           },
           {
-            $ref: "#/parameters/rowFilter.batchProperty.key",
-          },
-          {
             $ref: "#/parameters/rowFilter.batchProperty.dataType",
           },
           {
@@ -18314,9 +18308,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.batchProperty.label",
-          },
-          {
-            $ref: "#/parameters/rowFilter.batchProperty.key",
           },
           {
             $ref: "#/parameters/rowFilter.batchProperty.dataType",
@@ -40818,6 +40809,85 @@ export default {
         tags: ["(rpc) get_companies_with_permission"],
       },
     },
+    "/rpc/get_next_prefixed_sequence": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: '"itemType"',
+            in: "query",
+            name: "item_type",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "prefix",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_next_prefixed_sequence"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                item_type: {
+                  format: '"itemType"',
+                  type: "string",
+                },
+                prefix: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["company_id", "item_type", "prefix"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_next_prefixed_sequence"],
+      },
+    },
     "/rpc/get_next_numeric_sequence": {
       get: {
         parameters: [
@@ -42087,6 +42157,13 @@ export default {
             required: true,
             type: "number",
           },
+          {
+            format: "jsonb",
+            in: "query",
+            name: "p_properties",
+            required: false,
+            type: "string",
+          },
         ],
         produces: [
           "application/json",
@@ -42123,6 +42200,9 @@ export default {
                 p_manufacturing_date: {
                   format: "date",
                   type: "string",
+                },
+                p_properties: {
+                  format: "jsonb",
                 },
                 p_quantity: {
                   format: "numeric",
@@ -52150,7 +52230,6 @@ export default {
         "id",
         "itemId",
         "label",
-        "key",
         "dataType",
         "sortOrder",
         "companyId",
@@ -52171,10 +52250,6 @@ export default {
           type: "string",
         },
         label: {
-          format: "text",
-          type: "string",
-        },
-        key: {
           format: "text",
           type: "string",
         },
@@ -73627,13 +73702,6 @@ export default {
     },
     "rowFilter.batchProperty.label": {
       name: "label",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.batchProperty.key": {
-      name: "key",
       required: false,
       format: "text",
       in: "query",

@@ -33804,6 +33804,7 @@ export type Database = {
           p_manufacturing_date: string
           p_expiration_date: string
           p_quantity: number
+          p_properties?: Json
         }
         Returns: undefined
       }

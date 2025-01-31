@@ -637,7 +637,6 @@ CREATE TABLE IF NOT EXISTS "batchProperty" (
   "updatedBy" TEXT,
 
   CONSTRAINT "batchProperty_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "batchProperty_itemId_key_unique" UNIQUE ("itemId", "key"),
   CONSTRAINT "batchProperty_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "batchProperty_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "batchProperty_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
