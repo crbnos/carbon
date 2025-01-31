@@ -48,8 +48,8 @@ import {
 } from "~/components";
 import { usePermissions, useUser } from "~/hooks";
 import type { BatchDetails } from "~/modules/inventory";
-import BatchHeader from "~/modules/inventory/Batches/BatchHeader";
 import { getBatch, getBatchFiles } from "~/modules/inventory/inventory.service";
+import BatchHeader from "~/modules/inventory/ui/Batches/BatchHeader";
 import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
@@ -169,7 +169,9 @@ function BatchSummary() {
         </HStack>
       </CardHeader>
       <CardContent>
-        <VStack></VStack>
+        <VStack>
+          <pre>{JSON.stringify(batch.properties, null, 2)}</pre>
+        </VStack>
       </CardContent>
     </Card>
   );

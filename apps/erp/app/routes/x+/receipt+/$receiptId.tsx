@@ -8,6 +8,7 @@ import { defer, redirect } from "@vercel/remix";
 import { PanelProvider } from "~/components/Layout";
 import {
   ReceiptHeader,
+  getBatchProperties,
   getReceipt,
   getReceiptFiles,
   getReceiptLineTracking,
@@ -49,9 +50,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let receiptLineIds: string[] = [];
+  let itemsWithBatchProperties: string[] = [];
 
   if (receiptLines.data) {
     receiptLineIds = receiptLines.data.map((line) => line.id);
+    itemsWithBatchProperties = receiptLines.data
+      .filter((line) => line.itemId && line.requiresBatchTracking)
+      .map((line) => line.itemId);
   }
 
   return defer({
@@ -59,6 +64,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     receiptLines: receiptLines.data ?? [],
     receiptLineTracking: receiptLineTracking.data ?? [],
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
+    batchProperties:
+      getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
+      [],
   });
 }
 

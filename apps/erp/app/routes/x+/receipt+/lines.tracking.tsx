@@ -20,7 +20,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       | null;
     const expirationDate = formData.get("expirationDate") as string | null;
     const quantity = Number(formData.get("quantity"));
-
+    const properties = formData.get("properties") as string | null;
     // First, get or create the batch number record
     const { data: existingBatch, error: batchQueryError } = await client
       .from("batchNumber")
@@ -35,6 +35,12 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     const batchId = existingBatch?.id ?? nanoid();
+    let propertiesJson = {};
+    try {
+      propertiesJson = properties ? JSON.parse(properties) : {};
+    } catch (error) {
+      console.error(error);
+    }
 
     // Use a transaction to ensure data consistency
     const { error } = await client.rpc("update_receipt_line_batch_tracking", {
@@ -47,6 +53,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       // @ts-ignore
       p_expiration_date: expirationDate || null,
       p_quantity: quantity,
+      p_properties: propertiesJson,
     });
 
     if (error) {

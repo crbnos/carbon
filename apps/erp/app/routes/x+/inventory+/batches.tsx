@@ -6,7 +6,7 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { getBatches } from "~/modules/inventory";
-import BatchesTable from "~/modules/inventory/Batches/BatchesTable";
+import BatchesTable from "~/modules/inventory/ui/Batches/BatchesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";

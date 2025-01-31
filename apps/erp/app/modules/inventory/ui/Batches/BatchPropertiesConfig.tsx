@@ -18,6 +18,7 @@ import {
   IconButton,
   ModalCard,
   ModalCardBody,
+  ModalCardContent,
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
@@ -38,12 +39,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSubmit,
-} from "@remix-run/react";
+import { useFetcher, useFetchers, useSubmit } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -58,20 +54,21 @@ import { configurationParameterDataTypes } from "~/modules/items/items.models";
 import type { action as batchPropertyAction } from "~/routes/x+/inventory+/batch-property+/$itemId.property";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
-import { batchPropertyValidator } from "../inventory.models";
-import type { BatchProperty } from "../types";
+import { batchPropertyValidator } from "../../inventory.models";
+import type { BatchProperty } from "../../types";
 
-export default function BatchPropertiesForm({
+export default function BatchPropertiesConfig({
+  itemId,
   properties: initialProperties,
   type = "card",
   onClose,
 }: {
+  itemId: string;
   properties: BatchProperty[];
   type?: "card" | "modal";
   onClose?: () => void;
 }) {
-  const { isList, itemId, onChangeCheckForListType, setIsList } =
-    useBatchProperties();
+  const { isList, onChangeCheckForListType, setIsList } = useBatchProperties();
 
   const submit = useSubmit();
   const fetcher = useFetcher<typeof batchPropertyAction>();
@@ -115,107 +112,111 @@ export default function BatchPropertiesForm({
   return (
     <ModalCardProvider type={type}>
       <ModalCard onClose={onClose}>
-        <ModalCardHeader>
-          <ModalCardTitle>Batch Properties</ModalCardTitle>
-        </ModalCardHeader>
+        <ModalCardContent>
+          <ModalCardHeader>
+            <ModalCardTitle>Batch Properties</ModalCardTitle>
+          </ModalCardHeader>
 
-        <ModalCardBody>
-          <div className="flex flex-col gap-4">
-            <div className="p-6 border rounded-lg">
-              <ValidatedForm
-                action={path.to.batchProperty(itemId)}
-                method="post"
-                fetcher={fetcher}
-                validator={batchPropertyValidator}
-                resetAfterSubmit
-                onSubmit={() => {
-                  setIsList(false);
-                }}
-                defaultValues={{
-                  itemId: itemId,
-                  label: "",
-                  dataType: "text",
-                  listOptions: [],
-                }}
-                className="w-full"
-              >
-                <Hidden name="id" />
-                <Hidden name="itemId" />
-                <VStack spacing={4}>
-                  <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                    <VStack>
-                      <Input name="label" label="Label" />
-                    </VStack>
+          <ModalCardBody>
+            <div className="flex flex-col gap-4">
+              <div className="p-6 border rounded-lg">
+                <ValidatedForm
+                  action={path.to.batchProperty(itemId)}
+                  method="post"
+                  fetcher={fetcher}
+                  validator={batchPropertyValidator}
+                  resetAfterSubmit
+                  onSubmit={() => {
+                    setIsList(false);
+                  }}
+                  defaultValues={{
+                    itemId: itemId,
+                    label: "",
+                    dataType: "text",
+                    listOptions: [],
+                  }}
+                  className="w-full"
+                >
+                  <Hidden name="id" />
+                  <Hidden name="itemId" />
+                  <VStack spacing={4}>
+                    <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                      <VStack>
+                        <Input name="label" label="Label" />
+                      </VStack>
 
-                    <Select
-                      name="dataType"
-                      label="Data Type"
-                      options={configurationParameterDataTypes.map((type) => ({
-                        label: (
-                          <HStack className="w-full">
-                            <ConfiguratorDataTypeIcon
-                              type={type}
-                              className="mr-2"
-                            />
-                            {capitalize(type)}
-                          </HStack>
-                        ),
-                        value: type,
-                      }))}
-                      onChange={onChangeCheckForListType}
-                    />
-                    {isList && (
-                      <ArrayInput name="listOptions" label="List Options" />
-                    )}
-                  </div>
-                  <HStack spacing={2}>
-                    <Submit
-                      leftIcon={<LuCirclePlus />}
-                      isDisabled={fetcher.state !== "idle"}
-                      isLoading={fetcher.state !== "idle"}
-                    >
-                      Add Property
-                    </Submit>
-                  </HStack>
-                </VStack>
-              </ValidatedForm>
-            </div>
-
-            {properties.length > 0 && (
-              <DndContext
-                sensors={sensors}
-                onDragStart={onDragStart}
-                onDragEnd={onDragEnd}
-              >
-                <SortableContext items={properties.map((p) => p.id)}>
-                  <div className="flex flex-col gap-2">
-                    {properties.map((property) => (
-                      <BatchPropertyComponent
-                        key={property.id}
-                        property={property}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-                <ClientOnly fallback={null}>
-                  {() =>
-                    createPortal(
-                      <DragOverlay>
-                        {activeProperty && (
-                          <BatchPropertyComponent
-                            property={activeProperty}
-                            isOverlay
-                          />
+                      <Select
+                        name="dataType"
+                        label="Data Type"
+                        options={configurationParameterDataTypes.map(
+                          (type) => ({
+                            label: (
+                              <HStack className="w-full">
+                                <ConfiguratorDataTypeIcon
+                                  type={type}
+                                  className="mr-2"
+                                />
+                                {capitalize(type)}
+                              </HStack>
+                            ),
+                            value: type,
+                          })
                         )}
-                      </DragOverlay>,
-                      document.body
-                    )
-                  }
-                </ClientOnly>
-              </DndContext>
-            )}
-          </div>
-        </ModalCardBody>
+                        onChange={onChangeCheckForListType}
+                      />
+                      {isList && (
+                        <ArrayInput name="listOptions" label="List Options" />
+                      )}
+                    </div>
+                    <HStack spacing={2}>
+                      <Submit
+                        leftIcon={<LuCirclePlus />}
+                        isDisabled={fetcher.state !== "idle"}
+                        isLoading={fetcher.state !== "idle"}
+                      >
+                        Add Property
+                      </Submit>
+                    </HStack>
+                  </VStack>
+                </ValidatedForm>
+              </div>
+
+              {properties.length > 0 && (
+                <DndContext
+                  sensors={sensors}
+                  onDragStart={onDragStart}
+                  onDragEnd={onDragEnd}
+                >
+                  <SortableContext items={properties.map((p) => p.id)}>
+                    <div className="flex flex-col gap-2">
+                      {properties.map((property) => (
+                        <BatchPropertyComponent
+                          key={property.id}
+                          property={property}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                  <ClientOnly fallback={null}>
+                    {() =>
+                      createPortal(
+                        <DragOverlay>
+                          {activeProperty && (
+                            <BatchPropertyComponent
+                              property={activeProperty}
+                              isOverlay
+                            />
+                          )}
+                        </DragOverlay>,
+                        document.body
+                      )
+                    }
+                  </ClientOnly>
+                </DndContext>
+              )}
+            </div>
+          </ModalCardBody>
+        </ModalCardContent>
       </ModalCard>
     </ModalCardProvider>
   );
@@ -456,9 +457,6 @@ function BatchPropertyComponent({
 }
 
 function useBatchProperties(property?: BatchProperty) {
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("Could not find itemId");
-
   const [isList, setIsList] = useState(property?.dataType === "list");
 
   const onChangeCheckForListType = (
@@ -474,7 +472,6 @@ function useBatchProperties(property?: BatchProperty) {
 
   return {
     isList,
-    itemId,
     onChangeCheckForListType,
     setIsList,
   };

@@ -402,11 +402,12 @@ CREATE OR REPLACE FUNCTION update_receipt_line_batch_tracking(
   p_batch_id TEXT,
   p_manufacturing_date DATE,
   p_expiration_date DATE,
-  p_quantity NUMERIC
+  p_quantity NUMERIC,
+  p_properties JSONB DEFAULT '{}'
 ) RETURNS void AS $$
 BEGIN
   -- First upsert the batch number
-  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId", "source")
+  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "supplierId", "source", "properties")
   SELECT 
     p_batch_id,
     p_batch_number,
@@ -415,13 +416,15 @@ BEGIN
     p_manufacturing_date,
     p_expiration_date,
     r."supplierId",
-    'Purchased'
+    'Purchased',
+    p_properties
   FROM "receiptLine" rl
   JOIN "receipt" r ON r.id = rl."receiptId"
   WHERE rl.id = p_receipt_line_id
   ON CONFLICT (id) DO UPDATE SET
     "manufacturingDate" = EXCLUDED."manufacturingDate",
-    "expirationDate" = EXCLUDED."expirationDate";
+    "expirationDate" = EXCLUDED."expirationDate",
+    "properties" = EXCLUDED."properties";
 
   -- Delete any existing tracking records for this receipt line
   DELETE FROM "receiptLineTracking"

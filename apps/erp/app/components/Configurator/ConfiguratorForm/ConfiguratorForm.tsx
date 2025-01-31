@@ -84,7 +84,12 @@ function ParameterField({ parameter }: ParameterFieldProps) {
     case "numeric":
       return (
         <div className="space-y-2">
-          <Label htmlFor={parameter.key}>{parameter.label}</Label>
+          <Label
+            className="text-xs text-muted-foreground"
+            htmlFor={parameter.key}
+          >
+            {parameter.label}
+          </Label>
           <NumberField
             onChange={(value) => handleChange(Number(value))}
             value={formData[parameter.key] as number}
@@ -107,7 +112,12 @@ function ParameterField({ parameter }: ParameterFieldProps) {
     case "text":
       return (
         <div className="space-y-2">
-          <Label htmlFor={parameter.key}>{parameter.label}</Label>
+          <Label
+            className="text-xs text-muted-foreground"
+            htmlFor={parameter.key}
+          >
+            {parameter.label}
+          </Label>
           <Input
             id={parameter.key}
             type="text"
@@ -121,7 +131,12 @@ function ParameterField({ parameter }: ParameterFieldProps) {
     case "list":
       return (
         <div className="space-y-2">
-          <Label htmlFor={parameter.key}>{parameter.label}</Label>
+          <Label
+            className="text-xs text-muted-foreground"
+            htmlFor={parameter.key}
+          >
+            {parameter.label}
+          </Label>
           <Select
             value={formData[parameter.key] as string}
             onValueChange={handleChange}
@@ -143,7 +158,12 @@ function ParameterField({ parameter }: ParameterFieldProps) {
     case "boolean":
       return (
         <div className="flex flex-col items-start gap-2">
-          <Label htmlFor={parameter.key}>{parameter.label}</Label>
+          <Label
+            className="text-xs text-muted-foreground"
+            htmlFor={parameter.key}
+          >
+            {parameter.label}
+          </Label>
           <Switch
             id={parameter.key}
             checked={(formData[parameter.key] as boolean) || false}
