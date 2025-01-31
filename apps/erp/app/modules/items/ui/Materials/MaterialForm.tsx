@@ -32,6 +32,7 @@ import {
 import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
 import { path } from "~/utils/path";
 import { itemTrackingTypes, materialValidator } from "../../items.models";
 
@@ -74,16 +75,23 @@ const MaterialForm = ({
     initialValues.defaultMethodType ?? "Buy"
   );
 
+  const { isInternal } = useFlags();
+  console.log({ isInternal });
+
   const itemTrackingTypeOptions =
-    itemTrackingTypes.map((itemTrackingType) => ({
-      label: (
-        <span className="flex items-center gap-2">
-          <TrackingTypeIcon type={itemTrackingType} />
-          {itemTrackingType}
-        </span>
-      ),
-      value: itemTrackingType,
-    })) ?? [];
+    itemTrackingTypes
+      .map((itemTrackingType) => ({
+        label: (
+          <span className="flex items-center gap-2">
+            <TrackingTypeIcon type={itemTrackingType} />
+            {itemTrackingType}
+          </span>
+        ),
+        value: itemTrackingType,
+      }))
+      .filter(
+        (item) => isInternal || !["Serial", "Batch"].includes(item.value)
+      ) ?? [];
 
   return (
     <ModalCardProvider type={type}>

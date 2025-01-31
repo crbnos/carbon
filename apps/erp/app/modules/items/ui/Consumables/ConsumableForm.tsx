@@ -30,6 +30,7 @@ import {
 } from "~/components/Form";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
 import { path } from "~/utils/path";
 import { consumableValidator, itemTrackingTypes } from "../../items.models";
 
@@ -72,16 +73,22 @@ const ConsumableForm = ({
     initialValues.defaultMethodType ?? "Buy"
   );
 
+  const { isInternal } = useFlags();
+
   const itemTrackingTypeOptions =
-    itemTrackingTypes.map((itemTrackingType) => ({
-      label: (
-        <span className="flex items-center gap-2">
-          <TrackingTypeIcon type={itemTrackingType} />
-          {itemTrackingType}
-        </span>
-      ),
-      value: itemTrackingType,
-    })) ?? [];
+    itemTrackingTypes
+      .map((itemTrackingType) => ({
+        label: (
+          <span className="flex items-center gap-2">
+            <TrackingTypeIcon type={itemTrackingType} />
+            {itemTrackingType}
+          </span>
+        ),
+        value: itemTrackingType,
+      }))
+      .filter(
+        (item) => isInternal || !["Serial", "Batch"].includes(item.value)
+      ) ?? [];
 
   return (
     <ModalCardProvider type={type}>
