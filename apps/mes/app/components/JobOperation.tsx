@@ -1446,8 +1446,6 @@ function useOperation(
 function useFiles(job: Job) {
   const user = useUser();
 
-  const { carbon } = useCarbon();
-
   const getFilePath = useCallback(
     (file: StorageItem) => {
       const companyId = user.company.id;
@@ -1473,34 +1471,15 @@ function useFiles(job: Job) {
 
   const downloadFile = useCallback(
     async (file: StorageItem) => {
-      const type = getFileType(file.name);
-      if (type === "PDF") {
-        const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
-        window.open(url, "_blank");
-      } else {
-        const result = await carbon?.storage
-          .from("private")
-          .download(getFilePath(file));
-
-        if (!result || result.error) {
-          toast.error(result?.error?.message || "Error downloading file");
-          return;
-        }
-
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        const url = window.URL.createObjectURL(result.data);
-        a.href = url;
-        a.download = file.name;
-        a.click();
-
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        }, 0);
-      }
+      const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
+      const a = document.createElement("a");
+      document.body.appendChild(a);
+      a.href = url;
+      a.download = file.name;
+      a.click();
+      document.body.removeChild(a);
     },
-    [carbon?.storage, getFilePath]
+    [getFilePath]
   );
 
   const downloadModel = useCallback(
@@ -1510,28 +1489,14 @@ function useFiles(job: Job) {
         return;
       }
 
-      const result = await carbon?.storage
-        .from("private")
-        .download(model.modelPath);
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
+      const url = path.to.file.previewFile(`private/${model.modelPath}`);
       const a = document.createElement("a");
       document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
       a.href = url;
       a.download = model.modelName;
       a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }, 0);
+      document.body.removeChild(a);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
