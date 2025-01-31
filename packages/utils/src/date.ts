@@ -75,11 +75,13 @@ export function formatTimeAgo(isoString: string) {
 
   for (let i = 0; i <= DIVISIONS.length; i++) {
     const division = DIVISIONS[i];
-    if (Math.abs(duration) < division!.amount) {
-      return relativeFormatter.format(Math.round(duration), division!.name);
+    if (!division) return "";
+    if (Math.abs(duration) < division.amount) {
+      return relativeFormatter.format(Math.round(duration), division.name);
     }
-    duration /= division!.amount;
+    duration /= division.amount;
   }
+  return "";
 }
 
 export function formatTimeFromNow(isoString: string) {
