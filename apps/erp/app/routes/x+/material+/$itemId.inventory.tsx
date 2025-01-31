@@ -9,7 +9,7 @@ import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import { getBatchProperties, InventoryDetails } from "~/modules/inventory";
-import BatchPropertiesForm from "~/modules/inventory/Batches/BatchProperties";
+import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
@@ -143,7 +143,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
-    batchProperties: getBatchProperties(client, itemId, companyId),
+    batchProperties: getBatchProperties(client, [itemId], companyId),
   });
 }
 
@@ -237,7 +237,8 @@ export default function MaterialInventoryRoute() {
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedProperties) => (
-              <BatchPropertiesForm
+              <BatchPropertiesConfig
+                itemId={itemId}
                 key={`batch-properties:${itemId}`}
                 properties={resolvedProperties.data ?? []}
               />

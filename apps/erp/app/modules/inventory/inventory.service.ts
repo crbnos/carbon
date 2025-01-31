@@ -213,14 +213,15 @@ export async function deleteShippingMethod(
 
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
-  itemId: string,
+  itemIds: string[],
   companyId: string
 ) {
   return client
     .from("batchProperty")
     .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId);
+    .in("itemId", itemIds)
+    .eq("companyId", companyId)
+    .order("sortOrder");
 }
 
 export async function getInventoryItems(
@@ -342,7 +343,7 @@ export async function getReceiptLineTracking(
   return client
     .from("receiptLineTracking")
     .select(
-      "*, batchNumber(id, number, manufacturingDate, expirationDate), serialNumber(id, number)"
+      "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
     )
     .eq("receiptId", receiptId);
 }

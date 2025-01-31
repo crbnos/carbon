@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import {
+  Button,
   Card,
   CardContent,
   CardHeader,
@@ -7,6 +8,7 @@ import {
   cn,
   Combobox,
   DatePicker,
+  Heading,
   HStack,
   IconButton,
   Input,
@@ -16,6 +18,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  useDisclosure,
   VStack,
 } from "@carbon/react";
 import { type CalendarDate, parseDate } from "@internationalized/date";
@@ -46,6 +49,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import type {
+  BatchProperty,
   Receipt,
   ReceiptLine,
   ReceiptLineTracking,
@@ -56,6 +60,8 @@ import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
+import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -68,6 +74,7 @@ const ReceiptLines = () => {
     receiptLines: ReceiptLine[];
     receiptFiles: PostgrestResponse<StorageItem>;
     receiptLineTracking: ReceiptLineTracking[];
+    batchProperties: PostgrestResponse<BatchProperty>;
   }>(path.to.receipt(receiptId));
 
   const receiptsById = new Map<string, ReceiptLine>(
@@ -199,6 +206,7 @@ const ReceiptLines = () => {
                     [line.id]: newSerialNumbers,
                   }));
                 }}
+                batchProperties={routeData?.batchProperties}
                 batchNumber={
                   routeData?.receiptLineTracking.find(
                     (t) => t.receiptLineId === line.id && t.batchNumber !== null
@@ -207,6 +215,7 @@ const ReceiptLines = () => {
                     number: "",
                     manufacturingDate: null,
                     expirationDate: null,
+                    properties: {},
                   }
                 }
                 upload={(files) => upload(files, line.id)}
@@ -228,6 +237,7 @@ function ReceiptLineItem({
   isReadOnly,
   onUpdate,
   files,
+  batchProperties,
   batchNumber,
   serialNumbers,
   getPath,
@@ -240,11 +250,13 @@ function ReceiptLineItem({
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
+  batchProperties?: PostgrestResponse<BatchProperty>;
   batchNumber: {
     id: string;
     number: string;
     manufacturingDate?: string | null;
     expirationDate?: string | null;
+    properties?: any;
   };
   serialNumbers: { index: number; number: string }[];
   getPath: (file: StorageItem) => string;
@@ -371,12 +383,15 @@ function ReceiptLineItem({
         </div>
       </div>
       {line.requiresBatchTracking && (
-        <BatchForm
-          receipt={receipt}
-          line={line}
-          isReadOnly={isReadOnly}
-          initialValues={batchNumber}
-        />
+        <>
+          <BatchForm
+            receipt={receipt}
+            line={line}
+            isReadOnly={isReadOnly}
+            initialValues={batchNumber}
+            batchProperties={batchProperties}
+          />
+        </>
       )}
       {line.requiresSerialTracking && (
         <SerialForm
@@ -444,17 +459,20 @@ function ReceiptLineItem({
 function BatchForm({
   line,
   receipt,
+  batchProperties,
   initialValues,
   isReadOnly,
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
   isReadOnly: boolean;
+  batchProperties?: PostgrestResponse<BatchProperty>;
   initialValues?: {
     id: string;
     number: string;
     manufacturingDate?: string | null;
     expirationDate?: string | null;
+    properties?: any;
   };
 }) {
   const submit = useSubmit();
@@ -462,6 +480,7 @@ function BatchForm({
     number: string;
     manufacturingDate?: CalendarDate;
     expirationDate?: CalendarDate;
+    properties: any;
   }>(
     initialValues
       ? {
@@ -472,23 +491,44 @@ function BatchForm({
           expirationDate: initialValues.expirationDate
             ? parseDate(initialValues.expirationDate)
             : undefined,
+          properties: initialValues.properties ?? {},
         }
       : {
           number: "",
           manufacturingDate: undefined,
           expirationDate: undefined,
+          properties: {},
         }
   );
 
-  const updateBatchNumber = async (newValues: typeof values) => {
+  const { carbon } = useCarbon();
+  const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!receipt?.id || !newValues.number.trim()) return;
-    if (
-      newValues.manufacturingDate &&
-      newValues.manufacturingDate.year < 1900
-    ) {
-      return;
-    }
-    if (newValues.expirationDate && newValues.expirationDate.year < 1900) {
+
+    const batchMatch = isNew
+      ? (await carbon
+          ?.from("batchNumber")
+          .select("*")
+          .eq("number", newValues.number.trim())
+          .eq("itemId", line.itemId)
+          .eq("companyId", receipt.companyId)
+          .maybeSingle()) ?? { data: null }
+      : { data: null };
+
+    let valuesToSubmit = newValues;
+
+    if (batchMatch.data) {
+      // Just update the local state without triggering another database write
+      setValues({
+        ...newValues,
+        manufacturingDate: batchMatch.data.manufacturingDate
+          ? parseDate(batchMatch.data.manufacturingDate)
+          : undefined,
+        expirationDate: batchMatch.data.expirationDate
+          ? parseDate(batchMatch.data.expirationDate)
+          : undefined,
+        properties: batchMatch.data.properties ?? {},
+      });
       return;
     }
 
@@ -497,15 +537,31 @@ function BatchForm({
     formData.append("receiptId", receipt.id);
     formData.append("receiptLineId", line.id);
     formData.append("trackingType", "batch");
-    formData.append("batchNumber", newValues.number.trim());
-    formData.append(
-      "manufacturingDate",
-      newValues.manufacturingDate?.toString() ?? ""
-    );
-    formData.append(
-      "expirationDate",
-      newValues.expirationDate?.toString() ?? ""
-    );
+    formData.append("batchNumber", valuesToSubmit.number.trim());
+    if (
+      valuesToSubmit.manufacturingDate &&
+      valuesToSubmit.manufacturingDate.year >= 1900
+    ) {
+      formData.append(
+        "manufacturingDate",
+        valuesToSubmit.manufacturingDate.toString()
+      );
+    } else {
+      formData.append("manufacturingDate", "");
+    }
+    if (
+      valuesToSubmit.expirationDate &&
+      valuesToSubmit.expirationDate.year >= 1900
+    ) {
+      formData.append(
+        "expirationDate",
+        valuesToSubmit.expirationDate.toString()
+      );
+    } else {
+      formData.append("expirationDate", "");
+    }
+
+    formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", line.receivedQuantity.toString());
 
     submit(formData, {
@@ -521,63 +577,123 @@ function BatchForm({
   ) => {
     const newValues = {
       ...values,
-      [field]: newDate ?? undefined,
+      [field]: newDate ?? null,
     };
     setValues(newValues);
     updateBatchNumber(newValues);
   };
 
+  const handlePropertiesChange = (newProperties: any) => {
+    const newValues = {
+      ...values,
+      properties: newProperties,
+    };
+    setValues(newValues);
+    updateBatchNumber(newValues);
+  };
+
+  const propertiesDisclosure = useDisclosure();
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3 w-full p-4 border rounded-lg">
-      <div className="flex flex-col gap-2 w-full">
-        <label className="text-xs text-muted-foreground flex items-center gap-2">
-          <LuGroup /> Batch Number
-        </label>
-
-        <Input
-          placeholder={`Batch number`}
-          disabled={isReadOnly}
-          value={values.number}
-          onChange={(e) => {
-            setValues((prev) => ({
-              ...prev,
-              number: e.target.value,
-            }));
-          }}
-          onBlur={() => {
-            updateBatchNumber(values);
-          }}
-        />
+    <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
+      <div className="flex justify-between items-center gap-4">
+        <Heading size="h4">Batch Properties</Heading>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={propertiesDisclosure.onOpen}
+        >
+          Edit Properties
+        </Button>
       </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+        <div className="flex flex-col gap-2 w-full">
+          <label className="text-xs text-muted-foreground flex items-center gap-2">
+            <LuGroup /> Batch Number
+          </label>
 
-      <div className="flex flex-col gap-2 w-full">
-        <label className="text-xs text-muted-foreground flex items-center gap-2">
-          <LuCalendar /> Manufactured Date
-        </label>
+          <Input
+            placeholder={`Batch number`}
+            disabled={isReadOnly}
+            value={values.number}
+            onChange={(e) => {
+              setValues((prev) => ({
+                ...prev,
+                number: e.target.value,
+              }));
+            }}
+            onBlur={() => {
+              updateBatchNumber(values, true);
+            }}
+          />
+        </div>
 
-        <DatePicker
-          value={values.manufacturingDate}
-          isDisabled={isReadOnly}
-          onChange={(newDate) => {
-            handleDateChange("manufacturingDate", newDate);
-          }}
-        />
+        <div className="flex flex-col gap-2 w-full">
+          <label className="text-xs text-muted-foreground flex items-center gap-2">
+            <LuCalendar /> Manufactured Date
+          </label>
+
+          <DatePicker
+            value={values.manufacturingDate}
+            isDisabled={isReadOnly}
+            onChange={(newDate) => {
+              handleDateChange("manufacturingDate", newDate);
+            }}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 w-full">
+          <label className="text-xs text-muted-foreground flex items-center gap-2">
+            <LuCalendar /> Expiration Date
+          </label>
+
+          <DatePicker
+            value={values.expirationDate}
+            isDisabled={isReadOnly}
+            onChange={(newDate) => {
+              handleDateChange("expirationDate", newDate);
+            }}
+            minValue={values.manufacturingDate}
+          />
+        </div>
+
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedBatchProperties) => {
+              return (
+                <BatchPropertiesFields
+                  itemId={line.itemId}
+                  properties={
+                    resolvedBatchProperties?.data?.filter(
+                      (p) => p.itemId === line.itemId
+                    ) ?? []
+                  }
+                  values={values.properties}
+                  onChange={(newProperties) => {
+                    handlePropertiesChange(newProperties);
+                  }}
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
       </div>
-
-      <div className="flex flex-col gap-2 w-full">
-        <label className="text-xs text-muted-foreground flex items-center gap-2">
-          <LuCalendar /> Expiration Date
-        </label>
-
-        <DatePicker
-          value={values.expirationDate}
-          isDisabled={isReadOnly}
-          onChange={(newDate) => {
-            handleDateChange("expirationDate", newDate);
-          }}
-          minValue={values.manufacturingDate}
-        />
-      </div>
+      {propertiesDisclosure.isOpen && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedBatchProperties) => {
+              return (
+                <BatchPropertiesConfig
+                  itemId={line.itemId}
+                  properties={resolvedBatchProperties?.data ?? []}
+                  type="modal"
+                  onClose={propertiesDisclosure.onClose}
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
+      )}
     </div>
   );
 }
@@ -667,7 +783,7 @@ function SerialForm({
   );
 
   return (
-    <div className="flex flex-col gap-2 p-4 border rounded-lg">
+    <div className="flex flex-col gap-2 p-6 border rounded-lg">
       <label className="text-xs text-muted-foreground flex items-center gap-2">
         <LuBarcode /> Serial Numbers
       </label>
