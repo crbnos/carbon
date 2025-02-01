@@ -1,19 +1,23 @@
 import {
+  Badge,
   Card,
+  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  HStack,
   Label,
   ScrollArea,
   toast,
+  useDebounce,
   VStack,
 } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 
-import { error } from "@carbon/auth";
+import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Boolean, Submit, ValidatedForm, validator } from "@carbon/form";
@@ -23,12 +27,19 @@ import { Users } from "~/components/Form";
 import {
   digitalQuoteValidator,
   getCompanySettings,
+  getTerms,
   rfqReadyValidator,
   updateDigitalQuoteSetting,
   updateRfqReadySetting,
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+import type { JSONContent } from "@carbon/react";
+import { Editor, generateHTML } from "@carbon/react/Editor";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import { LuCircleCheck } from "react-icons/lu";
+import { usePermissions, useUser } from "~/hooks";
 
 export const handle: Handle = {
   breadcrumb: "Sales",
@@ -40,7 +51,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings",
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, terms] = await Promise.all([
+    getCompanySettings(client, companyId),
+    getTerms(client, companyId),
+  ]);
   if (!companySettings.data)
     throw redirect(
       path.to.settings,
@@ -49,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return json({ companySettings: companySettings.data });
+  return json({ companySettings: companySettings.data, terms: terms.data });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -103,7 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function SalesSettingsRoute() {
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, terms } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [digitalQuoteEnabled, setDigitalQuoteEnabled] = useState(
     companySettings.digitalQuoteEnabled ?? false
@@ -118,6 +132,46 @@ export default function SalesSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
+
+  const permissions = usePermissions();
+  const { carbon } = useCarbon();
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
+
+  const [salesTermsStatus, setSalesTermsStatus] = useState<"saved" | "draft">(
+    "saved"
+  );
+
+  const handleUpdateSalesTerms = (content: JSONContent) => {
+    setSalesTermsStatus("draft");
+    onUpdateSalesTerms(content);
+  };
+
+  const onUpdateSalesTerms = useDebounce(
+    async (content: JSONContent) => {
+      setSalesTermsStatus("draft");
+      await carbon
+        ?.from("terms")
+        .update({
+          salesTerms: content,
+          updatedAt: today(getLocalTimeZone()).toString(),
+          updatedBy: userId,
+        })
+        .eq("id", companyId);
+      setSalesTermsStatus("saved");
+    },
+    2500,
+    true
+  );
+
+  const onUploadImage = async (file: File) => {
+    // Implement image upload logic here
+    // This is a placeholder function
+    console.error("Image upload not implemented", file);
+    return "";
+  };
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -209,6 +263,40 @@ export default function SalesSettingsRoute() {
               <Submit>Save</Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <Card>
+          <HStack className="justify-between items-start">
+            <CardHeader>
+              <CardTitle>Sales Terms &amp; Conditions</CardTitle>
+              <CardDescription>
+                Define the terms and conditions for quotes and sales orders
+              </CardDescription>
+            </CardHeader>
+            <CardAction className="py-6">
+              {salesTermsStatus === "draft" ? (
+                <Badge variant="secondary">Draft</Badge>
+              ) : (
+                <LuCircleCheck className="w-4 h-4 text-emerald-500" />
+              )}
+            </CardAction>
+          </HStack>
+          <CardContent>
+            {permissions.can("update", "settings") ? (
+              <Editor
+                initialValue={(terms?.salesTerms ?? {}) as JSONContent}
+                onUpload={onUploadImage}
+                onChange={handleUpdateSalesTerms}
+              />
+            ) : (
+              <div
+                className="prose dark:prose-invert"
+                dangerouslySetInnerHTML={{
+                  __html: generateHTML(terms?.salesTerms as JSONContent),
+                }}
+              />
+            )}
+          </CardContent>
         </Card>
       </VStack>
     </ScrollArea>

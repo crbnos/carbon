@@ -699,6 +699,7 @@ export const path = {
       generatePath(`${x}/purchase-order/${id}/status`),
     purchaseOrders: `${x}/purchasing/orders`,
     purchasing: `${x}/purchasing`,
+    purchasingSettings: `${x}/settings/purchasing`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
     quoteAssembly: (quoteId: string, lineId: string, assemblyId: string) =>
       generatePath(
@@ -890,7 +891,6 @@ export const path = {
     tableSequence: (id: string) =>
       generatePath(`${x}/settings/sequences/${id}`),
     tags: `${x}/settings/tags`,
-    terms: `${x}/settings/terms`,
     theme: `${x}/account/theme`,
     timecards: `${x}/timecards`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),
