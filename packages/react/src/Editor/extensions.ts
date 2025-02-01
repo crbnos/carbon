@@ -36,17 +36,17 @@ const HTMLContent = Node.create({
   parseHTML() {
     return [
       {
-        tag: "div[data-html-content]",
+        tag: "div[data-loom-video]",
       },
     ];
   },
 
   renderHTML({ node }) {
     const container = document.createElement("div");
-    container.setAttribute("data-html-content", "true");
+    container.setAttribute("data-loom-video", "true");
     container.setAttribute("tabindex", "0");
     container.className =
-      "focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:ring-2 hover:ring-primary hover:ring-offset-2 p-2 border bg-zinc-100 dark:bg-zinc-900 cursor-move rounded-lg";
+      "focus:ring-2 focus:ring-primary hover:bg-zinc-200 dark:hover:bg-zinc-800 p-2 border bg-zinc-100 dark:bg-zinc-900 cursor-move rounded-lg";
     container.innerHTML = node.attrs.html;
     return container;
   },
