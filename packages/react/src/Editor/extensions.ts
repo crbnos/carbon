@@ -1,3 +1,6 @@
+import { Extension, Node } from "@tiptap/core";
+import { Plugin, PluginKey } from "@tiptap/pm/state";
+import { cx } from "class-variance-authority";
 import {
   AIHighlight,
   HorizontalRule,
@@ -11,7 +14,96 @@ import {
 } from "novel/extensions";
 import { UploadImagesPlugin } from "novel/plugins";
 
-import { cx } from "class-variance-authority";
+// Loom video regex pattern
+const LOOM_REGEX = /https:\/\/www\.loom\.com\/share\/([a-zA-Z0-9]+)/;
+
+// Custom node for HTML content
+const HTMLContent = Node.create({
+  name: "htmlContent",
+  group: "block",
+  atom: true,
+  selectable: true,
+  draggable: true,
+
+  addAttributes() {
+    return {
+      html: {
+        default: "",
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: "div[data-html-content]",
+      },
+    ];
+  },
+
+  renderHTML({ node }) {
+    const container = document.createElement("div");
+    container.setAttribute("data-html-content", "true");
+    container.setAttribute("tabindex", "0");
+    container.className =
+      "focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none rounded-lg";
+    container.innerHTML = node.attrs.html;
+    return container;
+  },
+});
+
+const LoomEmbed = Extension.create({
+  name: "loomEmbed",
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey("loomEmbed"),
+        props: {
+          handlePaste: (view, event) => {
+            const text = event.clipboardData?.getData("text/plain");
+            if (!text) return false;
+
+            const match = text.match(LOOM_REGEX);
+            if (!match) return false;
+
+            const [, videoId] = match;
+            const embedHtml = `<div style="margin: 1em 0;"><div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/${videoId}" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
+
+            // Create an HTML content node
+            const node = view.state.schema.nodes.htmlContent.create({
+              html: embedHtml,
+            });
+            const transaction = view.state.tr.replaceSelectionWith(node);
+            view.dispatch(transaction);
+
+            return true;
+          },
+          handleKeyDown: (view, event) => {
+            // Handle delete/backspace when embed is selected
+            if (
+              (event.key === "Delete" || event.key === "Backspace") &&
+              view.state.selection.empty
+            ) {
+              const $pos = view.state.selection.$from;
+              const node = $pos.parent.maybeChild($pos.index());
+              if (node && node.type.name === "htmlContent") {
+                view.dispatch(
+                  view.state.tr.delete(
+                    $pos.pos - $pos.parentOffset,
+                    $pos.pos - $pos.parentOffset + node.nodeSize
+                  )
+                );
+                return true;
+              }
+            }
+            return false;
+          },
+        },
+      }),
+    ];
+  },
+});
 
 const aiHighlight = AIHighlight;
 const placeholder = Placeholder;
@@ -114,4 +206,6 @@ export const defaultExtensions = [
   taskItem,
   horizontalRule,
   aiHighlight,
+  LoomEmbed,
+  HTMLContent,
 ];
