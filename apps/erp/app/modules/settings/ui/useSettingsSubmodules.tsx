@@ -1,10 +1,10 @@
 import {
   LuCrown,
   LuFactory,
-  LuFileText,
   LuImage,
   LuLayoutDashboard,
   LuSheet,
+  LuShoppingCart,
   LuWorkflow,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -27,13 +27,6 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         role: "employee",
         icon: <LuImage />,
       },
-
-      {
-        name: "Standard Terms",
-        to: path.to.terms,
-        role: "employee",
-        icon: <LuFileText />,
-      },
     ],
   },
   {
@@ -44,6 +37,12 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.salesSettings,
         role: "employee",
         icon: <LuCrown />,
+      },
+      {
+        name: "Purchasing",
+        to: path.to.purchasingSettings,
+        role: "employee",
+        icon: <LuShoppingCart />,
       },
     ],
   },

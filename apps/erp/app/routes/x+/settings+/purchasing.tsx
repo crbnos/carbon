@@ -27,8 +27,8 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Terms",
-  to: path.to.terms,
+  breadcrumb: "Purchasing",
+  to: path.to.purchasingSettings,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -61,9 +61,6 @@ export default function Terms() {
   const [purchasingTermsStatus, setPurchasingTermsStatus] = useState<
     "saved" | "draft"
   >("saved");
-  const [salesTermsStatus, setSalesTermsStatus] = useState<"saved" | "draft">(
-    "saved"
-  );
 
   const handleUpdatePurchasingTerms = (content: JSONContent) => {
     setPurchasingTermsStatus("draft");
@@ -81,28 +78,6 @@ export default function Terms() {
         })
         .eq("id", companyId);
       if (!error) setPurchasingTermsStatus("saved");
-    },
-    2500,
-    true
-  );
-
-  const handleUpdateSalesTerms = (content: JSONContent) => {
-    setSalesTermsStatus("draft");
-    onUpdateSalesTerms(content);
-  };
-
-  const onUpdateSalesTerms = useDebounce(
-    async (content: JSONContent) => {
-      setSalesTermsStatus("draft");
-      await carbon
-        ?.from("terms")
-        .update({
-          salesTerms: content,
-          updatedAt: today(getLocalTimeZone()).toString(),
-          updatedBy: userId,
-        })
-        .eq("id", companyId);
-      setSalesTermsStatus("saved");
     },
     2500,
     true
@@ -145,39 +120,6 @@ export default function Terms() {
               className="prose dark:prose-invert"
               dangerouslySetInnerHTML={{
                 __html: generateHTML(terms.purchasingTerms as JSONContent),
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>Sales Terms &amp; Conditions</CardTitle>
-            <CardDescription>
-              Define the terms and conditions for quotes and sales orders
-            </CardDescription>
-          </CardHeader>
-          <CardAction className="py-6">
-            {salesTermsStatus === "draft" ? (
-              <Badge variant="secondary">Draft</Badge>
-            ) : (
-              <LuCircleCheck className="w-4 h-4 text-emerald-500" />
-            )}
-          </CardAction>
-        </HStack>
-        <CardContent>
-          {permissions.can("update", "settings") ? (
-            <Editor
-              initialValue={(terms.salesTerms ?? {}) as JSONContent}
-              onUpload={onUploadImage}
-              onChange={handleUpdateSalesTerms}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(terms.salesTerms as JSONContent),
               }}
             />
           )}
