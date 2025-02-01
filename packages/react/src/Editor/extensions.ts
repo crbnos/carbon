@@ -46,7 +46,7 @@ const HTMLContent = Node.create({
     container.setAttribute("data-html-content", "true");
     container.setAttribute("tabindex", "0");
     container.className =
-      "focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:outline-none rounded-lg";
+      "focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:ring-2 hover:ring-primary hover:ring-offset-2 p-2 border bg-zinc-100 dark:bg-zinc-900 cursor-move rounded-lg";
     container.innerHTML = node.attrs.html;
     return container;
   },
@@ -68,7 +68,7 @@ const LoomEmbed = Extension.create({
             if (!match) return false;
 
             const [, videoId] = match;
-            const embedHtml = `<div style="margin: 1em 0;"><div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/${videoId}" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
+            const embedHtml = `<div><div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/${videoId}" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
 
             // Create an HTML content node
             const node = view.state.schema.nodes.htmlContent.create({
