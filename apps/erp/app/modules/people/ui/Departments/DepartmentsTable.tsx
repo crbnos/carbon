@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBuilding, LuPencil, LuTrash } from "react-icons/lu";
-import { New, Table } from "~/components";
+import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -35,11 +35,9 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
         accessorKey: "name",
         header: "Department",
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id)}
-            className="cursor-pointer"
-          />
+          <Hyperlink to={row.original.id}>
+            <Enumerable value={row.original.name} />
+          </Hyperlink>
         ),
         meta: {
           icon: <LuBuilding />,
@@ -60,7 +58,7 @@ const DepartmentsTable = memo(({ data, count }: DepartmentsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, customColumns]);
+  }, [customColumns]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBrain, LuClock, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
-import { EmployeeAvatarGroup, New, Table } from "~/components";
+import { EmployeeAvatarGroup, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Abilities, AbilityDatum } from "../../types";
@@ -36,13 +36,11 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         accessorKey: "name",
         header: "Ability",
         cell: ({ row }) => (
-          <Badge
-            variant="secondary"
-            onClick={() => navigate(path.to.ability(row.original.id))}
-            className="cursor-pointer"
-          >
-            {row.original.name}
-          </Badge>
+          <Hyperlink to={path.to.ability(row.original.id)}>
+            <Badge variant="secondary" className="cursor-pointer">
+              {row.original.name}
+            </Badge>
+          </Hyperlink>
         ),
         meta: {
           icon: <LuBrain />,
@@ -70,7 +68,7 @@ const AbilitiesTable = memo(({ data, count }: AbilitiesTableProps) => {
         },
       },
     ];
-  }, [navigate]);
+  }, []);
 
   const renderContextMenu = useCallback(
     (row: (typeof rows)[number]) => {

@@ -14,7 +14,7 @@ import {
   LuUser,
   LuWrench,
 } from "react-icons/lu";
-import { EmployeeAvatar, New, Table } from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
@@ -70,16 +70,19 @@ const WorkCentersTable = memo(
           cell: ({ row }) => (
             <HStack>
               {((row.original.processes as any[]) ?? []).length > 0 ? (
-                <Enumerable
-                  value={row.original.name}
-                  onClick={() => navigate(row.original.id!)}
-                  className="cursor-pointer"
-                />
+                <Hyperlink to={row.original.id!}>
+                  <Enumerable
+                    value={row.original.name}
+                    className="cursor-pointer"
+                  />
+                </Hyperlink>
               ) : (
-                <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
-                  <LuTriangleAlert />
-                  <span>{row.original.name}</span>
-                </HStack>
+                <Hyperlink to={row.original.id!}>
+                  <HStack spacing={2}>
+                    <LuTriangleAlert />
+                    <span>{row.original.name}</span>
+                  </HStack>
+                </Hyperlink>
               )}
 
               {row.original.requiredAbilityId && (

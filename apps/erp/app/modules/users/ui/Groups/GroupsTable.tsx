@@ -9,7 +9,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBookMarked, LuPencil, LuTrash, LuUsers } from "react-icons/lu";
-import { Avatar, New, Table } from "~/components";
+import { Avatar, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { Group } from "~/modules/users";
 import { path } from "~/utils/path";
@@ -45,7 +45,16 @@ const GroupsTable = memo(({ data, count }: GroupsTableProps) => {
       {
         accessorKey: "name",
         header: "Group Name",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) =>
+          row.original.isEmployeeTypeGroup ||
+          row.original.isCustomerTypeGroup ||
+          row.original.isSupplierTypeGroup ? (
+            <span>{row.original.name}</span>
+          ) : (
+            <Hyperlink to={path.to.group(row.original.id)}>
+              {row.original.name}
+            </Hyperlink>
+          ),
         meta: {
           icon: <LuBookMarked />,
         },

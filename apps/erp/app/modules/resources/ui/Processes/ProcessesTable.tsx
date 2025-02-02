@@ -22,7 +22,7 @@ import {
   LuUser,
   LuUsers,
 } from "react-icons/lu";
-import { EmployeeAvatar, New, Table } from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -59,16 +59,19 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         cell: ({ row }) =>
           row.original.processType === "Outside" ||
           ((row.original.workCenters as any[]) ?? []).length > 0 ? (
-            <Enumerable
-              value={row.original.name}
-              onClick={() => navigate(row.original.id!)}
-              className="cursor-pointer"
-            />
+            <Hyperlink to={row.original.id!}>
+              <Enumerable
+                value={row.original.name}
+                className="cursor-pointer"
+              />
+            </Hyperlink>
           ) : (
-            <HStack onClick={() => navigate(row.original.id!)} spacing={2}>
-              <LuTriangleAlert />
-              <span>{row.original.name}</span>
-            </HStack>
+            <Hyperlink to={row.original.id!}>
+              <HStack spacing={2}>
+                <LuTriangleAlert />
+                <span>{row.original.name}</span>
+              </HStack>
+            </Hyperlink>
           ),
         meta: {
           icon: <LuCog />,

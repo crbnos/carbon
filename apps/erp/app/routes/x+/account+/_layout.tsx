@@ -25,10 +25,10 @@ export default function AccountRoute() {
 
   return (
     <VStack
-      className="flex w-full h-full items-center justify-start bg-background"
+      className="flex w-full h-full items-center justify-start bg-card"
       spacing={4}
     >
-      <div className="flex bg-background border-b border-border py-8 px-2 w-full justify-center">
+      <div className="flex bg-card border-b border-border py-8 px-2 w-full justify-center">
         <div className="w-full max-w-[60rem]">
           <Heading size="h3">Account Settings</Heading>
         </div>

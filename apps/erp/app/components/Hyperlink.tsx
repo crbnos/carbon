@@ -15,16 +15,16 @@ const Hyperlink = ({
     <Link
       prefetch="intent"
       className={cn(
-        "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-between gap-2",
+        "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-start gap-3",
         className
       )}
       {...props}
     >
-      <span className="flex-1">{children}</span>
+      <span>{children}</span>
       <Button
         leftIcon={<LuSquareArrowOutUpRight />}
         variant="secondary"
-        className="opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
+        className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
         size="sm"
       >
         Open

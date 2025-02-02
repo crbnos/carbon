@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuBookMarked, LuCode, LuPencil, LuTrash } from "react-icons/lu";
-import { New, Table } from "~/components";
+import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -28,11 +28,9 @@ const UnitOfMeasuresTable = memo(
           accessorKey: "name",
           header: "Name",
           cell: ({ row }) => (
-            <Enumerable
-              onClick={() => navigate(row.original.id)}
-              value={row.original.name}
-              className="cursor-pointer"
-            />
+            <Hyperlink to={row.original.id}>
+              <Enumerable value={row.original.name} />
+            </Hyperlink>
           ),
           meta: {
             icon: <LuBookMarked />,
@@ -48,7 +46,7 @@ const UnitOfMeasuresTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-    }, [navigate, customColumns]);
+    }, [customColumns]);
 
     const renderContextMenu = useCallback(
       (row: (typeof data)[number]) => {

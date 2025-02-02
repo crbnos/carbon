@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuStar, LuTrash } from "react-icons/lu";
-import { New, Table } from "~/components";
+import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -29,11 +29,9 @@ const CustomerStatusesTable = memo(
           accessorKey: "name",
           header: "Customer Status",
           cell: ({ row }) => (
-            <Enumerable
-              value={row.original.name}
-              onClick={() => navigate(row.original.id)}
-              className="cursor-pointer"
-            />
+            <Hyperlink to={row.original.id}>
+              <Enumerable value={row.original.name} />
+            </Hyperlink>
           ),
           meta: {
             icon: <LuStar />,
@@ -41,7 +39,7 @@ const CustomerStatusesTable = memo(
         },
       ];
       return [...defaultColumns, ...customColumns];
-    }, [navigate, customColumns]);
+    }, [customColumns]);
 
     const renderContextMenu = useCallback(
       (row: CustomerStatus) => {

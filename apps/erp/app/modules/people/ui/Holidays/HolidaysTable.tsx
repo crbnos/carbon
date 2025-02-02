@@ -1,4 +1,5 @@
 import { MenuIcon, MenuItem } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -57,7 +58,7 @@ const HolidaysTable = memo(({ data, count, years }: HolidaysTableProps) => {
       {
         accessorKey: "date",
         header: "Date",
-        cell: (item) => item.getValue<string>(),
+        cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendarDays />,
         },
