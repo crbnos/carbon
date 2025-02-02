@@ -33407,10 +33407,44 @@ export type Database = {
         }
         Returns: Json
       }
+      get_companies_with_any_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_companies_with_customer_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
+      }
+      get_companies_with_customer_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
+      get_companies_with_employee_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
+      }
+      get_companies_with_employee_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       get_companies_with_permission: {
         Args: {
           permission: string
         }
+        Returns: string[]
+      }
+      get_companies_with_supplier_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
+      }
+      get_companies_with_supplier_role: {
+        Args: Record<PropertyKey, never>
         Returns: string[]
       }
       get_company_id_from_api_key: {
