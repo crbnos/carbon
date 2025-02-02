@@ -126,7 +126,7 @@ export default function JobDetailsRoute() {
   useRealtime("modelUpload", `modelPath=eq.(${jobData?.job.modelPath})`);
 
   return (
-    <VStack spacing={2} className="p-2 h-full">
+    <VStack spacing={4} className="p-4 h-full">
       <JobNotes
         id={jobId}
         title={jobData?.job.jobId ?? ""}

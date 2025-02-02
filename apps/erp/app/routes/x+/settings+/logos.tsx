@@ -71,7 +71,7 @@ export default function LogosRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
-      <VStack spacing={2} className="p-2 h-full">
+      <VStack spacing={4} className="p-4 h-full">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

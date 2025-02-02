@@ -77,7 +77,7 @@ export default function Company() {
   };
 
   return (
-    <VStack spacing={0} className="p-2 h-full">
+    <VStack spacing={4} className="p-4 h-full">
       <Card>
         <CardHeader>
           <CardTitle>Company</CardTitle>
