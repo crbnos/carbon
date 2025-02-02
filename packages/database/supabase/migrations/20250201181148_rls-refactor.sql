@@ -1375,5 +1375,425 @@ FOR DELETE USING (
         get_companies_with_employee_permission('sales_delete')
     )::text[]
   )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_delete')
+    )::text[]
+  )
 );
 
+DROP POLICY IF EXISTS "Employees with sales_create can create customer locations" ON "public"."customerLocation";
+DROP POLICY IF EXISTS "Employees with sales_delete can delete customer locations" ON "public"."customerLocation";
+DROP POLICY IF EXISTS "Employees with sales_update can update customer locations" ON "public"."customerLocation";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer locations" ON "public"."customerLocation";
+DROP POLICY IF EXISTS "Requests with an API key can access customer locations" ON "public"."customerLocation";
+
+CREATE POLICY "SELECT" ON "public"."customerLocation"
+FOR SELECT USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_view')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_view')
+    )::text[]
+  )
+);
+
+
+CREATE POLICY "INSERT" ON "public"."customerLocation"
+FOR INSERT WITH CHECK (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_create')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerLocation"
+FOR UPDATE USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_update')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerLocation"
+FOR DELETE USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_delete')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_delete')
+    )::text[]
+  )
+);
+
+
+-- Drop existing policies with descriptions
+DROP POLICY IF EXISTS "Employees with sales_create or parts_create can insert customer part to item" ON "public"."customerPartToItem";
+DROP POLICY IF EXISTS "Employees with sales_delete or parts_delete can delete customer part to item" ON "public"."customerPartToItem";
+DROP POLICY IF EXISTS "Employees with sales_update or parts_update can update customer part to item" ON "public"."customerPartToItem";
+DROP POLICY IF EXISTS "Employees with sales_view or parts_view can view customer part to item" ON "public"."customerPartToItem";
+DROP POLICY IF EXISTS "Requests with an API key can access customer parts" ON "public"."customerPartToItem";
+
+-- Create new policies
+CREATE POLICY "INSERT" ON "public"."customerPartToItem"
+FOR INSERT TO public WITH CHECK (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_employee_permission('sales_create'))
+      UNION
+      SELECT unnest(get_companies_with_employee_permission('parts_create'))
+    ))
+  ) 
+  OR "customerId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_customer_ids_with_customer_permission('sales_create'))
+      UNION
+      SELECT unnest(get_customer_ids_with_customer_permission('parts_create'))
+    ))
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerPartToItem"
+FOR DELETE TO public USING (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_employee_permission('sales_delete'))
+      UNION
+      SELECT unnest(get_companies_with_employee_permission('parts_delete'))
+    ))
+  ) 
+  OR "customerId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_customer_ids_with_customer_permission('sales_delete'))
+      UNION
+      SELECT unnest(get_customer_ids_with_customer_permission('parts_delete'))
+    ))
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerPartToItem"
+FOR UPDATE TO public USING (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_employee_permission('sales_update'))
+      UNION
+      SELECT unnest(get_companies_with_employee_permission('parts_update'))
+    ))
+  ) 
+  OR "customerId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_customer_ids_with_customer_permission('sales_update'))
+      UNION
+      SELECT unnest(get_customer_ids_with_customer_permission('parts_update'))
+    ))
+  )
+);
+
+CREATE POLICY "SELECT" ON "public"."customerPartToItem"
+FOR SELECT TO public USING (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_employee_permission('sales_view'))
+      UNION
+      SELECT unnest(get_companies_with_employee_permission('parts_view'))
+    ))
+  ) 
+  OR "customerId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_customer_ids_with_customer_permission('sales_view'))
+      UNION
+      SELECT unnest(get_customer_ids_with_customer_permission('parts_view'))
+    ))
+  )
+);
+
+
+
+-- customer payment
+
+DROP POLICY IF EXISTS "Employees with sales_update can update customer payment" ON "public"."customerPayment";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer payment" ON "public"."customerPayment";
+DROP POLICY IF EXISTS "Requests with an API key can access customer payments" ON "public"."customerPayment";
+
+
+CREATE POLICY "SELECT" ON "public"."customerPayment"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerPayment"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_update')
+    )::text[]
+  ) 
+);
+
+
+-- customer shipping
+
+DROP POLICY IF EXISTS "Employees with purchasing_update can update customer shipping" ON "public"."customerShipping";
+DROP POLICY IF EXISTS "Employees with purchasing_view can view customer shipping" ON "public"."customerShipping";
+DROP POLICY IF EXISTS "Requests with an API key can access customer shipments" ON "public"."customerShipping";
+
+
+CREATE POLICY "SELECT" ON "public"."customerShipping"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerShipping"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_update')
+    )::text[]
+  ) 
+);
+
+-- customer status
+
+DROP POLICY IF EXISTS "Employees with sales_create can create customer statuses" ON "public"."customerStatus";
+DROP POLICY IF EXISTS "Employees with sales_delete can delete customer statuses" ON "public"."customerStatus";
+DROP POLICY IF EXISTS "Employees with sales_update can update customer statuses" ON "public"."customerStatus";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer statuses" ON "public"."customerStatus";
+DROP POLICY IF EXISTS "Requests with an API key can access customer statuses" ON "public"."customerStatus";
+
+
+CREATE POLICY "SELECT" ON "public"."customerStatus"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_any_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."customerStatus"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerStatus"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerStatus"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_delete')
+    )::text[]
+  )
+);
+
+-- customer type
+
+DROP POLICY IF EXISTS "Employees with sales_create can create customer types" ON "public"."customerType";
+DROP POLICY IF EXISTS "Employees with sales_delete can delete customer types" ON "public"."customerType";
+DROP POLICY IF EXISTS "Employees with sales_update can update customer types" ON "public"."customerType";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer types" ON "public"."customerType";
+DROP POLICY IF EXISTS "Requests with an API key can access customer types" ON "public"."customerType";
+
+CREATE POLICY "SELECT" ON "public"."customerType"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_any_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."customerType"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerType"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerType"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_delete')
+    )::text[]
+  )
+);
+
+-- department
+
+DROP POLICY IF EXISTS "Employees can view departments" ON "public"."department";
+DROP POLICY IF EXISTS "Employees with people_create can insert departments" ON "public"."department";
+DROP POLICY IF EXISTS "Employees with people_delete can delete departments" ON "public"."department";
+DROP POLICY IF EXISTS "Employees with people_update can update departments" ON "public"."department";
+DROP POLICY IF EXISTS "Requests with an API key can access departments" ON "public"."department";
+
+CREATE POLICY "SELECT" ON "public"."department"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."department"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('people_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."department"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('people_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."department"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('people_delete')
+    )::text[]
+  )
+);
+
+-- document
+
+
+DROP POLICY IF EXISTS "Requests with an API key can access documents" ON "public"."document";
+DROP POLICY IF EXISTS "Users with documents can view documents where they are in the r" ON "public"."document";
+DROP POLICY IF EXISTS "Users with documents_create can create documents where they are" ON "public"."document";
+DROP POLICY IF EXISTS "Users with documents_delete can delete documents where they are" ON "public"."document";
+DROP POLICY IF EXISTS "Users with documents_update can update documents where they are" ON "public"."document";
+DROP POLICY IF EXISTS "Users with purchasing_create can create documents that start wi" ON "public"."document";
+DROP POLICY IF EXISTS "Users with purchasing_delete can delete documents that start wi" ON "public"."document";
+DROP POLICY IF EXISTS "Users with purchasing_update can update documents that start wi" ON "public"."document";
+DROP POLICY IF EXISTS "Users with purchasing_view can view documents that start with p" ON "public"."document";
+DROP POLICY IF EXISTS "Users with sales_create can create documents that start with qu" ON "public"."document";
+DROP POLICY IF EXISTS "Users with sales_delete can delete documents that start with qu" ON "public"."document";
+DROP POLICY IF EXISTS "Users with sales_update can update documents that start with qu" ON "public"."document";
+DROP POLICY IF EXISTS "Users with sales_view can view documents that start with quote" ON "public"."document";
+
+CREATE POLICY "SELECT" ON "public"."document" 
+  FOR SELECT USING (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_permission ('documents_view')
+      )::text[]
+    )
+    AND (groups_for_user(auth.uid()::text) && "readGroups") = true
+  );
+
+CREATE POLICY "INSERT" ON "public"."document" 
+  FOR INSERT WITH CHECK (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_permission ('documents_create')
+      )::text[]
+    )
+    AND (groups_for_user(auth.uid()::text) && "writeGroups") = true
+  );
+
+CREATE POLICY "UPDATE" ON "public"."document"
+  FOR UPDATE USING (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_permission ('documents_update')
+      )::text[]
+    )
+    AND (groups_for_user(auth.uid()::text) && "writeGroups") = true
+  );
+
+CREATE POLICY "DELETE" ON "public"."document"
+  FOR DELETE USING (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_permission ('documents_delete')
+      )::text[]
+    )
+    AND (groups_for_user(auth.uid()::text) && "writeGroups") = true
+  );

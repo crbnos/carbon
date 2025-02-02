@@ -41,7 +41,7 @@ const CustomerPaymentForm = ({ initialValues }: CustomerPaymentFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Customer Payment Terms</CardTitle>
+          <CardTitle>Payment Terms</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="customerId" />
