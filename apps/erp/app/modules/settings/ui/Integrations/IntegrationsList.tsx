@@ -21,7 +21,7 @@ const IntegrationsList = ({
   availableIntegrations,
 }: IntegrationsListProps) => {
   return (
-    <div className="grid gap-2 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-2 w-full">
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-4 w-full">
       {availableIntegrations.map((integration) => {
         return (
           <IntegrationCard

@@ -22,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function PersonRoute() {
   return (
     <div className="flex h-full w-full justify-center bg-muted">
-      <VStack spacing={4} className="h-full p-2 w-full max-w-[80rem]">
+      <VStack spacing={4} className="h-full p-4 w-full max-w-[80rem]">
         <Outlet />
       </VStack>
     </div>

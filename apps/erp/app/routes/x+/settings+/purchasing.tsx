@@ -8,7 +8,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Heading,
   HStack,
+  ScrollArea,
   useDebounce,
   VStack,
 } from "@carbon/react";
@@ -91,40 +93,46 @@ export default function Terms() {
   };
 
   return (
-    <VStack spacing={4} className="p-4 h-full">
-      <Card>
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>Purchasing Terms &amp; Conditions</CardTitle>
-            <CardDescription>
-              Define the terms and conditions for purchase orders
-            </CardDescription>
-          </CardHeader>
-          <CardAction className="py-6">
-            {purchasingTermsStatus === "draft" ? (
-              <Badge variant="secondary">Draft</Badge>
+    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+      <VStack
+        spacing={4}
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+      >
+        <Heading size="h3">Purchasing</Heading>
+        <Card>
+          <HStack className="justify-between items-start">
+            <CardHeader>
+              <CardTitle>Purchasing Terms &amp; Conditions</CardTitle>
+              <CardDescription>
+                Define the terms and conditions for purchase orders
+              </CardDescription>
+            </CardHeader>
+            <CardAction className="py-6">
+              {purchasingTermsStatus === "draft" ? (
+                <Badge variant="secondary">Draft</Badge>
+              ) : (
+                <LuCircleCheck className="w-4 h-4 text-emerald-500" />
+              )}
+            </CardAction>
+          </HStack>
+          <CardContent>
+            {permissions.can("update", "settings") ? (
+              <Editor
+                initialValue={(terms.purchasingTerms ?? {}) as JSONContent}
+                onUpload={onUploadImage}
+                onChange={handleUpdatePurchasingTerms}
+              />
             ) : (
-              <LuCircleCheck className="w-4 h-4 text-emerald-500" />
+              <div
+                className="prose dark:prose-invert"
+                dangerouslySetInnerHTML={{
+                  __html: generateHTML(terms.purchasingTerms as JSONContent),
+                }}
+              />
             )}
-          </CardAction>
-        </HStack>
-        <CardContent>
-          {permissions.can("update", "settings") ? (
-            <Editor
-              initialValue={(terms.purchasingTerms ?? {}) as JSONContent}
-              onUpload={onUploadImage}
-              onChange={handleUpdatePurchasingTerms}
-            />
-          ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(terms.purchasingTerms as JSONContent),
-              }}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </VStack>
+          </CardContent>
+        </Card>
+      </VStack>
+    </ScrollArea>
   );
 }
