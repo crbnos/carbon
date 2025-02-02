@@ -8,6 +8,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Heading,
+  ScrollArea,
   VStack,
 } from "@carbon/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -77,19 +79,25 @@ export default function Company() {
   };
 
   return (
-    <VStack spacing={4} className="p-4 h-full">
-      <Card>
-        <CardHeader>
-          <CardTitle>Company</CardTitle>
-          <CardDescription>
-            This information will be used on document headers
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* @ts-ignore */}
-          <CompanyForm company={initialValues} />
-        </CardContent>
-      </Card>
-    </VStack>
+    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+      <VStack
+        spacing={4}
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+      >
+        <Heading size="h3">Company</Heading>
+        <Card>
+          <CardHeader>
+            <CardTitle>Basic Information</CardTitle>
+            <CardDescription>
+              This information will be used on document headers
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* @ts-ignore */}
+            <CompanyForm company={initialValues} />
+          </CardContent>
+        </Card>
+      </VStack>
+    </ScrollArea>
   );
 }

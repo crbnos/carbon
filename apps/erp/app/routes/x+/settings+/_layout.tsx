@@ -34,7 +34,7 @@ export default function SettingsRoute() {
 
   return (
     <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_1fr] w-full h-full">
+      <div className="grid grid-cols-[auto_1fr] w-full h-full bg-card">
         <GroupedContentSidebar groups={groups} />
         <VStack
           spacing={0}

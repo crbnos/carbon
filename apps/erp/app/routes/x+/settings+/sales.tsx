@@ -7,6 +7,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -175,7 +176,11 @@ export default function SalesSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
-      <VStack spacing={4} className="p-4 h-full">
+      <VStack
+        spacing={4}
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+      >
+        <Heading size="h3">Sales</Heading>
         <Card>
           <ValidatedForm
             method="post"

@@ -3,6 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Heading,
   ScrollArea,
   VStack,
 } from "@carbon/react";
@@ -71,32 +72,16 @@ export default function LogosRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
-      <VStack spacing={4} className="p-4 h-full">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LuSun /> Horizontal Light Mode
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CompanyLogoForm company={company} mode="light" icon={false} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <LuMoon /> Horizontal Dark Mode
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CompanyLogoForm company={company} mode="dark" icon={false} />
-          </CardContent>
-        </Card>
-        <div className="grid grid-cols-2 gap-2 w-full">
+      <VStack
+        spacing={4}
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+      >
+        <Heading size="h3">Logos</Heading>
+        <div className="grid grid-cols-2 gap-4 w-full">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <LuSun /> Icon Light Mode
+                <LuSun /> Mark Light Mode
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -106,7 +91,7 @@ export default function LogosRoute() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <LuMoon /> Icon Dark Mode
+                <LuMoon /> Mark Dark Mode
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -114,6 +99,26 @@ export default function LogosRoute() {
             </CardContent>
           </Card>
         </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LuSun /> Wordmark Light Mode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CompanyLogoForm company={company} mode="light" icon={false} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <LuMoon /> Wordmark Dark Mode
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CompanyLogoForm company={company} mode="dark" icon={false} />
+          </CardContent>
+        </Card>
       </VStack>
     </ScrollArea>
   );
