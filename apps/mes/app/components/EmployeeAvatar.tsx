@@ -22,7 +22,7 @@ const EmployeeAvatar = ({
   if (employeeId === "system") {
     return (
       <HStack className="truncate no-underline hover:no-underline">
-        <Avatar size={size ?? "xs"} path={undefined} name={"System"} />
+        <Avatar size={size ?? "xs"} path={undefined} />
         {withName && <span>System</span>}
       </HStack>
     );
@@ -31,7 +31,7 @@ const EmployeeAvatar = ({
   const person = people.find((p) => p.id === employeeId);
 
   if (!person) {
-    return <Avatar size={size ?? "xs"} path={undefined} name="System" />;
+    return <Avatar size={size ?? "xs"} path={undefined} />;
   }
 
   return (
