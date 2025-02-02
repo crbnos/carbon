@@ -94,112 +94,51 @@ BEGIN
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION get_companies_with_customer_role() RETURNS text[] LANGUAGE "plpgsql" SECURITY DEFINER
-SET
-  search_path = public AS $$
-DECLARE
-  user_companies text[];
-BEGIN
-  SELECT array_agg("companyId"::text)
-  INTO user_companies
-  FROM "userToCompany"
-  WHERE "userId" = auth.uid()::text AND "role" = 'customer';
-
-  RETURN user_companies;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION get_companies_with_customer_permission (permission text) RETURNS text[] LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION get_customer_ids_with_customer_permission (permission text) RETURNS text[] LANGUAGE "plpgsql" SECURITY DEFINER
 SET
   search_path = public AS $$
 DECLARE
   permission_companies text[];
-  api_key_company text;
-  employee_companies text[];
+  customer_company_ids text[];
+  customer_ids text[];
 BEGIN
-  api_key_company := get_company_id_from_api_key();
-
-  -- If API key exists for a company, add it to results
-  IF api_key_company IS NOT NULL THEN
-    RETURN ARRAY[api_key_company];
-  END IF;
-
-  -- Get companies where user is an employee
+  -- Get companies where user is a customer
   SELECT array_agg("companyId"::text)
-  INTO employee_companies
+  INTO customer_company_ids
   FROM "userToCompany" 
   WHERE "userId" = auth.uid()::text AND "role" = 'customer';
 
   -- Get companies from user permissions
   SELECT jsonb_to_text_array(COALESCE(permissions->permission, '[]')) 
   INTO permission_companies 
-  FROM public."userPermission" 
-  WHERE id::text = auth.uid()::text;
+  FROM public."userPermission" up
+  WHERE up.id::text = auth.uid()::text;
 
-  -- Filter permission_companies to only include companies where user is employee
-  IF permission_companies IS NOT NULL AND employee_companies IS NOT NULL THEN
+  -- Filter permission_companies to only include companies where user is customer
+  IF permission_companies IS NOT NULL AND customer_company_ids IS NOT NULL THEN
     SELECT array_agg(company)
     INTO permission_companies
     FROM unnest(permission_companies) company
-    WHERE company = ANY(employee_companies);
+    WHERE company = ANY(customer_company_ids);
   ELSE
     permission_companies := '{}';
   END IF;
 
-  RETURN permission_companies;
+  -- Get customer IDs where company matches filtered permissions
+  SELECT array_agg(c.id::text)
+  INTO customer_ids
+  FROM "customer" c
+  WHERE c."companyId" = ANY(permission_companies);
+
+  -- Get customer IDs from customer accounts
+  SELECT array_agg(ca."customerId"::text)
+  INTO customer_ids
+  FROM "customerAccount" ca
+  WHERE ca.id::uuid = auth.uid() AND ca."companyId" = ANY(customer_company_ids);
+
+  RETURN customer_ids;
 END;
 $$;
-
-
-CREATE OR REPLACE FUNCTION get_companies_with_supplier_role() RETURNS text[] LANGUAGE "plpgsql" 
-SET
-  search_path = public AS $$
-DECLARE
-  user_companies text[];
-BEGIN
-  SELECT array_agg("companyId"::text)
-  INTO user_companies
-  FROM "userToCompany"
-  WHERE "userId" = auth.uid()::text AND "role" = 'supplier';
-
-  RETURN user_companies;
-END;
-$$;
-CREATE OR REPLACE FUNCTION get_companies_with_supplier_permission (permission text) RETURNS text[] LANGUAGE "plpgsql" SECURITY DEFINER
-SET
-  search_path = public AS $$
-DECLARE
-  permission_companies text[];
-  employee_companies text[];
-BEGIN
-
-  -- Get companies where user is an employee
-  SELECT array_agg("companyId"::text)
-  INTO employee_companies
-  FROM "userToCompany" 
-  WHERE "userId" = auth.uid()::text AND "role" = 'supplier';
-
-  -- Get companies from user permissions
-  SELECT jsonb_to_text_array(COALESCE(permissions->permission, '[]')) 
-  INTO permission_companies 
-  FROM public."userPermission" 
-  WHERE id::text = auth.uid()::text;
-
-  -- Filter permission_companies to only include companies where user is employee
-  IF permission_companies IS NOT NULL AND employee_companies IS NOT NULL THEN
-    SELECT array_agg(company)
-    INTO permission_companies
-    FROM unnest(permission_companies) company
-    WHERE company = ANY(employee_companies);
-  ELSE
-    permission_companies := '{}';
-  END IF;
-
-  RETURN permission_companies;
-END;
-$$;
-
-
 
 
 -- ability
@@ -498,7 +437,7 @@ USING (
       UNION
       SELECT unnest(get_companies_with_employee_permission('purchasing_view'))
     ))
-  )
+  ) 
 );
 
 CREATE POLICY "INSERT" ON "public"."address"
@@ -1031,7 +970,6 @@ USING (
       SELECT unnest(get_companies_with_employee_permission('purchasing_view'))
     ))
   ) 
-  
 );
 
 CREATE POLICY "INSERT" ON "public"."contact"
@@ -1044,7 +982,6 @@ WITH CHECK (
       SELECT unnest(get_companies_with_employee_permission('purchasing_create'))
     ))
   ) 
-  
 );
 
 CREATE POLICY "UPDATE" ON "public"."contact"
@@ -1057,7 +994,6 @@ USING (
       SELECT unnest(get_companies_with_employee_permission('purchasing_update'))
     ))
   )
-  
 );
 
 CREATE POLICY "DELETE" ON "public"."contact"
@@ -1213,6 +1149,55 @@ FOR UPDATE USING (
   )
 );
 
+-- custom fields
+
+DROP POLICY IF EXISTS "Employees can view custom fields" ON "public"."customField";
+DROP POLICY IF EXISTS "Employees with settings_create can insert custom fields" ON "public"."customField";
+DROP POLICY IF EXISTS "Employees with settings_delete can delete custom fields" ON "public"."customField";
+DROP POLICY IF EXISTS "Employees with settings_update can update custom fields" ON "public"."customField";
+DROP POLICY IF EXISTS "Requests with an API key can access custom fields" ON "public"."customField";
+
+CREATE POLICY "SELECT" ON "public"."customField"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_any_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."customField"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('settings_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customField"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('settings_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customField"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('settings_delete')
+    )::text[]
+  )
+);
+
+
 -- customer
 
 DROP POLICY IF EXISTS "Customers with sales_update can update their own organization" ON "public"."customer";
@@ -1230,6 +1215,12 @@ FOR SELECT USING (
     (
       SELECT
         get_companies_with_employee_permission ('sales_view')
+    )::text[]
+  )
+  OR "id" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission ('sales_view')
     )::text[]
   )
 );
@@ -1264,4 +1255,125 @@ FOR DELETE USING (
   ) 
 );
 
+
+-- customer account
+
+DROP POLICY IF EXISTS "Employees with sales_create can create customer accounts" ON "public"."customerAccount";
+DROP POLICY IF EXISTS "Employees with sales_delete can delete customer accounts" ON "public"."customerAccount";
+DROP POLICY IF EXISTS "Employees with sales_update can update customer accounts" ON "public"."customerAccount";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer accounts" ON "public"."customerAccount";
+DROP POLICY IF EXISTS "Requests with an API key can access customer accounts" ON "public"."customerAccount";
+
+CREATE POLICY "SELECT" ON "public"."customerAccount"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_view')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission ('sales_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."customerAccount"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerAccount"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerAccount"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('sales_delete')
+    )::text[]
+  )
+);
+
+DROP POLICY IF EXISTS "Customers with sales_create can create customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Customers with sales_update can update their customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Customers with sales_view can their own customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Employees with sales_create can create customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Employees with sales_delete can delete customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Employees with sales_update can update customer contacts" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Employees with sales_view can view customer contact" ON "public"."customerContact";
+DROP POLICY IF EXISTS "Requests with an API key can access customer contacts" ON "public"."customerContact";
+
+CREATE POLICY "SELECT" ON "public"."customerContact"
+FOR SELECT USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_view')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."customerContact"
+FOR INSERT WITH CHECK (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_create')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."customerContact"
+FOR UPDATE USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_update')
+    )::text[]
+  )
+  OR "customerId" = ANY (
+    (
+      SELECT
+        get_customer_ids_with_customer_permission('sales_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."customerContact"
+FOR DELETE USING (
+  get_company_id_from_foreign_key("customerId", 'customer') = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission('sales_delete')
+    )::text[]
+  )
+);
 
