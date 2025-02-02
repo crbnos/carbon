@@ -47,7 +47,7 @@ const SupplierShippingForm = ({ initialValues }: SupplierShippingFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Supplier Shipping</CardTitle>
+          <CardTitle>Shipping</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="supplierId" />

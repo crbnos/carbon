@@ -47,7 +47,7 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
     >
       <Card>
         <CardHeader>
-          <CardTitle>Customer Shipping</CardTitle>
+          <CardTitle>Shipping</CardTitle>
         </CardHeader>
         <CardContent>
           <Hidden name="customerId" />
