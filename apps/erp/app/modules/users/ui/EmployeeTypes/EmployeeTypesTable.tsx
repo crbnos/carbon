@@ -4,7 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { BsPeopleFill } from "react-icons/bs";
 import { LuPencil, LuTrash, LuUsers } from "react-icons/lu";
-import { New, Table } from "~/components";
+import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { EmployeeType } from "~/modules/users";
@@ -32,18 +32,19 @@ const EmployeeTypesTable = memo(({ data, count }: EmployeeTypesTableProps) => {
               className="cursor-not-allowed"
             />
           ) : (
-            <Enumerable
-              value={row.original.name}
-              onClick={() => navigate(row.original.id)}
-              className="cursor-pointer"
-            />
+            <Hyperlink to={row.original.id}>
+              <Enumerable
+                value={row.original.name}
+                className="cursor-pointer"
+              />
+            </Hyperlink>
           ),
         meta: {
           icon: <LuUsers />,
         },
       },
     ];
-  }, [navigate]);
+  }, []);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {

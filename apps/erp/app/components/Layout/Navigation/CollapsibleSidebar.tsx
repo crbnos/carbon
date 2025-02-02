@@ -86,7 +86,7 @@ export const CollapsibleSidebar = ({
       variants={variants}
       className="relative flex h-[calc(100dvh-49px)]"
     >
-      <div className="h-full w-full overflow-y-scroll scrollbar-thin bg-background border-r border-border">
+      <div className="h-full w-full overflow-y-scroll scrollbar-thin bg-card border-r border-border">
         {isOpen ? children : null}
       </div>
     </motion.div>

@@ -176,7 +176,7 @@ export default function AbilitiesRoute() {
 
   return (
     <>
-      <div className="bg-background w-full relative">
+      <div className="bg-card w-full relative border-b">
         <HStack className="w-full justify-between p-4">
           {editingTitle.isOpen ? (
             <ValidatedForm

@@ -25,7 +25,7 @@ export const KPIs = [
   },
   {
     key: "salesOrderRevenue",
-    label: "Sales Order Revenue",
+    label: "Sales",
   },
   // {
   //   key: "turnaroundTime",

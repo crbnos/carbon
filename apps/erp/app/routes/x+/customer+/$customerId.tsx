@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { usePermissions } from "~/hooks";
 import {
   getCustomer,
   getCustomerContacts,
@@ -13,6 +14,7 @@ import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+import { cn } from "../../../../../../packages/react/src/utils/cn";
 
 export const handle: Handle = {
   breadcrumb: "Customers",
@@ -53,11 +55,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function CustomerRoute() {
+  const permissions = usePermissions();
+  const isEmployee = permissions.is("employee");
   return (
     <>
       <CustomerHeader />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
-        <CustomerSidebar />
+      <div
+        className={cn("grid grid-cols-1 h-full w-full gap-4", {
+          "md:grid-cols-[1fr_4fr]": isEmployee,
+        })}
+      >
+        {isEmployee && <CustomerSidebar />}
         <Outlet />
       </div>
     </>

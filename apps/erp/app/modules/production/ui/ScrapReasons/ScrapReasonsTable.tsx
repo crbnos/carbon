@@ -3,7 +3,7 @@ import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
-import { New, Table } from "~/components";
+import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -27,11 +27,9 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
         accessorKey: "name",
         header: "Scrap Reason",
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id)}
-            className="cursor-pointer"
-          />
+          <Hyperlink to={row.original.id}>
+            <Enumerable value={row.original.name} />
+          </Hyperlink>
         ),
         meta: {
           icon: <LuTrash />,
@@ -39,7 +37,7 @@ const ScrapReasonsTable = memo(({ data, count }: ScrapReasonsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [navigate, customColumns]);
+  }, [customColumns]);
 
   const renderContextMenu = useCallback(
     (row: ScrapReason) => {

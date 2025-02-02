@@ -13,7 +13,7 @@ import {
   LuTrash,
   LuUser,
 } from "react-icons/lu";
-import { EmployeeAvatar, New, Table } from "~/components";
+import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -43,11 +43,9 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         accessorKey: "name",
         header: "Location",
         cell: ({ row }) => (
-          <Enumerable
-            value={row.original.name}
-            onClick={() => navigate(row.original.id)}
-            className="cursor-pointer"
-          />
+          <Hyperlink to={row.original.id}>
+            <Enumerable value={row.original.name} className="cursor-pointer" />
+          </Hyperlink>
         ),
         meta: {
           icon: <LuMapPin />,
@@ -126,7 +124,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [people, customColumns, navigate]);
+  }, [people, customColumns]);
 
   const renderContextMenu = useCallback(
     (row: (typeof data)[number]) => {
