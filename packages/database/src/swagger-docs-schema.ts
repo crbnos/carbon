@@ -29490,150 +29490,6 @@ export default {
         tags: ["companySettings"],
       },
     },
-    "/externalLinkMessage": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.externalLinkId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.message",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.companyId",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/externalLinkMessage",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["externalLinkMessage"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.externalLinkMessage",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["externalLinkMessage"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.externalLinkId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.message",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.companyId",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["externalLinkMessage"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.externalLinkId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.message",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.externalLinkMessage.companyId",
-          },
-          {
-            $ref: "#/parameters/body.externalLinkMessage",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["externalLinkMessage"],
-      },
-    },
     "/jobFavorite": {
       get: {
         parameters: [
@@ -43705,6 +43561,120 @@ export default {
         tags: ["(rpc) get_method_tree"],
       },
     },
+    "/rpc/get_customer_ids_with_customer_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_customer_ids_with_customer_permission"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                permission: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["permission"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_customer_ids_with_customer_permission"],
+      },
+    },
+    "/rpc/get_supplier_ids_with_supplier_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_supplier_ids_with_supplier_permission"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                permission: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["permission"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_supplier_ids_with_supplier_permission"],
+      },
+    },
     "/rpc/get_active_job_count": {
       get: {
         parameters: [
@@ -57536,45 +57506,6 @@ export default {
             type: "string",
           },
           type: "array",
-        },
-      },
-      type: "object",
-    },
-    externalLinkMessage: {
-      required: ["id", "externalLinkId", "message", "createdAt", "companyId"],
-      properties: {
-        id: {
-          default: "extensions.uuid_generate_v4()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "uuid",
-          type: "string",
-        },
-        externalLinkId: {
-          description:
-            "Note:\nThis is a Foreign Key to `externalLink.id`.<fk table='externalLink' column='id'/>",
-          format: "uuid",
-          type: "string",
-        },
-        message: {
-          format: "text",
-          type: "string",
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
         },
       },
       type: "object",
@@ -80477,57 +80408,6 @@ export default {
       name: "rfqReadyNotificationGroup",
       required: false,
       format: "text[]",
-      in: "query",
-      type: "string",
-    },
-    "body.externalLinkMessage": {
-      name: "externalLinkMessage",
-      description: "externalLinkMessage",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/externalLinkMessage",
-      },
-    },
-    "rowFilter.externalLinkMessage.id": {
-      name: "id",
-      required: false,
-      format: "uuid",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.externalLinkMessage.externalLinkId": {
-      name: "externalLinkId",
-      required: false,
-      format: "uuid",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.externalLinkMessage.message": {
-      name: "message",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.externalLinkMessage.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.externalLinkMessage.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.externalLinkMessage.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
