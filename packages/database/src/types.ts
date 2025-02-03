@@ -5779,104 +5779,6 @@ export type Database = {
           },
         ]
       }
-      externalLinkMessage: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string | null
-          externalLinkId: string
-          id: string
-          message: string
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy?: string | null
-          externalLinkId: string
-          id?: string
-          message: string
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string | null
-          externalLinkId?: string
-          id?: string
-          message?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "externalLinkMessages_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "externalLinkMessages_externalLinkId_fkey"
-            columns: ["externalLinkId"]
-            isOneToOne: false
-            referencedRelation: "externalLink"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       feedback: {
         Row: {
           attachmentPath: string | null
@@ -33411,16 +33313,6 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string[]
       }
-      get_companies_with_customer_permission: {
-        Args: {
-          permission: string
-        }
-        Returns: string[]
-      }
-      get_companies_with_customer_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
       get_companies_with_employee_permission: {
         Args: {
           permission: string
@@ -33435,16 +33327,6 @@ export type Database = {
         Args: {
           permission: string
         }
-        Returns: string[]
-      }
-      get_companies_with_supplier_permission: {
-        Args: {
-          permission: string
-        }
-        Returns: string[]
-      }
-      get_companies_with_supplier_role: {
-        Args: Record<PropertyKey, never>
         Returns: string[]
       }
       get_company_id_from_api_key: {
@@ -33467,6 +33349,12 @@ export type Database = {
         Returns: {
           value: Json
         }[]
+      }
+      get_customer_ids_with_customer_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
       }
       get_item_quantities: {
         Args: {
@@ -33755,6 +33643,12 @@ export type Database = {
           assignee: string
           tags: string[]
         }[]
+      }
+      get_supplier_ids_with_supplier_permission: {
+        Args: {
+          permission: string
+        }
+        Returns: string[]
       }
       groups_for_user: {
         Args: {

@@ -2464,3 +2464,98 @@ CREATE POLICY "DELETE" ON "public"."item" FOR DELETE USING (
       )
   )
 );
+
+-- itemCost
+
+DROP POLICY IF EXISTS "Employees with parts_update can update part costs" ON "public"."itemCost";
+DROP POLICY IF EXISTS "Employees with parts_view can view part costs" ON "public"."itemCost";
+DROP POLICY IF EXISTS "Requests with an API key can access item costs" ON "public"."itemCost";
+DROP POLICY IF EXISTS "Suppliers with parts_update can update parts costs that they su" ON "public"."itemCost";
+DROP POLICY IF EXISTS "Suppliers with parts_view can view item costs they supply" ON "public"."itemCost";
+
+CREATE POLICY "SELECT" ON "public"."itemCost" FOR
+SELECT
+  USING (
+    "companyId" = ANY (
+      SELECT DISTINCT unnest(ARRAY(
+        SELECT unnest(get_companies_with_employee_permission('parts_view'))
+        UNION
+        SELECT unnest(get_companies_with_employee_permission('sales_view'))
+      ))
+    )
+    OR "itemId" IN (
+      SELECT
+        "itemId"
+      FROM
+        "supplierPart"
+      WHERE
+        "supplierId" = ANY (
+          (
+            SELECT
+              get_supplier_ids_with_supplier_permission ('parts_view')
+          )::text[]
+        )
+    )
+  );
+
+CREATE POLICY "INSERT" ON "public"."itemCost" FOR INSERT
+WITH
+  CHECK (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_employee_permission ('parts_create')
+      )::text[]
+    )
+  );
+
+CREATE POLICY "UPDATE" ON "public"."itemCost"
+FOR UPDATE
+  USING (
+    "companyId" = ANY (
+      (
+        SELECT
+          get_companies_with_employee_permission ('parts_update')
+      )::text[]
+    )
+    OR "itemId" IN (
+      SELECT
+        "itemId"
+      FROM
+        "supplierPart"
+      WHERE
+        "supplierId" = ANY (
+          (
+            SELECT
+              get_supplier_ids_with_supplier_permission ('parts_update')
+          )::text[]
+        )
+    )
+    OR "itemId" IN (
+      SELECT
+        "itemId"
+      FROM
+        "customerPartToItem"
+      WHERE
+        "customerId" = ANY (
+          (
+            SELECT
+              get_customer_ids_with_customer_permission ('parts_update')
+          )::text[]
+        )
+    )
+  );
+
+DROP POLICY IF EXISTS "Employees with parts_view or inventory_view inventory_view can view item inventory" ON "public"."itemInventory";
+
+CREATE POLICY "SELECT" ON "public"."itemInventory" FOR
+SELECT
+  USING (
+    "companyId" = ANY (
+      SELECT DISTINCT unnest(ARRAY(
+        SELECT unnest(get_companies_with_employee_permission('parts_view'))
+        UNION
+        SELECT unnest(get_companies_with_employee_permission('inventory_view'))
+      ))
+    )
+  );
