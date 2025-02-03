@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ClientOnly } from "@carbon/react";
@@ -40,6 +40,7 @@ export const handle: Handle = {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production",
+    bypassRls: true,
   });
 
   const { jobId } = params;
@@ -53,7 +54,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (companyId !== job.data?.companyId) {
     throw redirect(path.to.jobs);
   }
-  const serviceRole = await getCarbonServiceRole();
 
   if (job.error) {
     throw redirect(
@@ -65,10 +65,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     job: job.data,
     tags: tags.data ?? [],
-    files: getJobDocuments(serviceRole, companyId, job.data),
-    method: getJobMethodTree(serviceRole, jobId), // returns a promise
+    files: getJobDocuments(client, companyId, job.data),
+    method: getJobMethodTree(client, jobId), // returns a promise
     configurationParameters: getConfigurationParameters(
-      serviceRole,
+      client,
       job.data.itemId!,
       companyId
     ),

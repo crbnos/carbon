@@ -20,7 +20,7 @@ const Hyperlink = ({
       )}
       {...props}
     >
-      <span>{children}</span>
+      <span className="flex flex-row items-center gap-1">{children}</span>
       <Button
         leftIcon={<LuSquareArrowOutUpRight />}
         variant="secondary"

@@ -109,3 +109,14 @@ export const themeValidator = z.object({
     errorMap: (issue, ctx) => ({ message: "Theme is required" }),
   }),
 });
+
+export const webhookValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  table: z.string().min(1, { message: "Table is required" }),
+  url: z.string().url({ message: "Must be a valid URL" }),
+  onInsert: zfd.checkbox(),
+  onUpdate: zfd.checkbox(),
+  onDelete: zfd.checkbox(),
+  active: zfd.checkbox(),
+});

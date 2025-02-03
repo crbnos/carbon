@@ -25411,6 +25411,108 @@ export type Database = {
           },
         ]
       }
+      webhook: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          name: string
+          onDelete: boolean
+          onInsert: boolean
+          onUpdate: boolean
+          table: string
+          updatedAt: string | null
+          updatedBy: string | null
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          name: string
+          onDelete?: boolean
+          onInsert?: boolean
+          onUpdate?: boolean
+          table: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          url: string
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          name?: string
+          onDelete?: boolean
+          onInsert?: boolean
+          onUpdate?: boolean
+          table?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "webhook_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "webhook_table_fkey"
+            columns: ["table"]
+            isOneToOne: false
+            referencedRelation: "webhookTable"
+            referencedColumns: ["table"]
+          },
+        ]
+      }
+      webhookTable: {
+        Row: {
+          module: Database["public"]["Enums"]["module"]
+          name: string
+          table: string
+        }
+        Insert: {
+          module: Database["public"]["Enums"]["module"]
+          name: string
+          table: string
+        }
+        Update: {
+          module?: Database["public"]["Enums"]["module"]
+          name?: string
+          table?: string
+        }
+        Relationships: []
+      }
       workCenter: {
         Row: {
           active: boolean

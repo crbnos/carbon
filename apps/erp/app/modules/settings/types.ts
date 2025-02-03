@@ -5,6 +5,7 @@ import type {
   getCustomFieldsTables,
   getIntegrations,
   getSequences,
+  getWebhooks,
 } from "./settings.service";
 
 export type ApiKey = NonNullable<
@@ -29,4 +30,8 @@ export type Integration = NonNullable<
 
 export type Sequence = NonNullable<
   Awaited<ReturnType<typeof getSequences>>["data"]
+>[number];
+
+export type Webhook = NonNullable<
+  Awaited<ReturnType<typeof getWebhooks>>["data"]
 >[number];

@@ -16,7 +16,7 @@ import {
 } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { FlatTreeItem } from "~/components/TreeView";
@@ -49,6 +49,7 @@ export const shouldRevalidate = ({
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
+    bypassRls: true,
   });
 
   const { itemId } = params;
@@ -72,14 +73,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error("Access denied"))
     );
   }
-  const serviceRole = await getCarbonServiceRole();
 
   const [methodTree, methodMaterials, methodOperations, partManufacturing] =
     await Promise.all([
-      getMethodTree(serviceRole, makeMethod.data.id),
-      getMethodMaterialsByMakeMethod(serviceRole, makeMethod.data.id),
-      getMethodOperationsByMakeMethodId(serviceRole, makeMethod.data.id),
-      getItemManufacturing(serviceRole, itemId, companyId),
+      getMethodTree(client, makeMethod.data.id),
+      getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
+      getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
+      getItemManufacturing(client, itemId, companyId),
     ]);
   if (methodTree?.error) {
     throw redirect(
@@ -133,10 +133,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partManufacturing: partManufacturing.data,
     configurationParametersAndGroups: partManufacturing.data
       ?.requiresConfiguration
-      ? await getConfigurationParameters(serviceRole, itemId, companyId)
+      ? await getConfigurationParameters(client, itemId, companyId)
       : { groups: [], parameters: [] },
     configurationRules: partManufacturing.data?.requiresConfiguration
-      ? await getConfigurationRules(serviceRole, itemId, companyId)
+      ? await getConfigurationRules(client, itemId, companyId)
       : [],
   });
 }

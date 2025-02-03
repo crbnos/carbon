@@ -5,6 +5,7 @@ import {
   LuLayoutDashboard,
   LuSheet,
   LuShoppingCart,
+  LuWebhook,
   LuWorkflow,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -66,6 +67,12 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.sequences,
         role: "employee",
         icon: <LuSheet />,
+      },
+      {
+        name: "Webhooks",
+        to: path.to.webhooks,
+        role: "employee",
+        icon: <LuWebhook />,
       },
     ],
   },
