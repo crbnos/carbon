@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet } from "@remix-run/react";
@@ -26,21 +26,20 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "parts",
+    bypassRls: true,
   });
-
-  const serviceRole = await getCarbonServiceRole();
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
   const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
     [
-      getMaterial(serviceRole, itemId, companyId),
-      getSupplierParts(serviceRole, itemId, companyId),
-      getPickMethods(serviceRole, itemId, companyId),
-      getTagsList(serviceRole, companyId, "material"),
+      getMaterial(client, itemId, companyId),
+      getSupplierParts(client, itemId, companyId),
+      getPickMethods(client, itemId, companyId),
+      getTagsList(client, companyId, "material"),
     ]
   );
 
@@ -56,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     materialSummary: materialSummary.data,
-    files: getItemFiles(serviceRole, itemId, companyId),
+    files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
     tags: tags.data ?? [],

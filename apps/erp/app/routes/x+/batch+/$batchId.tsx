@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole, useCarbon } from "@carbon/auth";
+import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
@@ -67,16 +67,15 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
+    bypassRls: true,
   });
-
-  const serviceRole = await getCarbonServiceRole();
 
   const { batchId } = params;
   if (!batchId) throw new Error("Batch ID is required");
 
-  const batch = await getBatch(serviceRole, batchId, companyId);
+  const batch = await getBatch(client, batchId, companyId);
   if (batch.error) {
     throw redirect(
       path.to.batches,
@@ -85,7 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const batchProperties = await getBatchProperties(
-    serviceRole,
+    client,
     [batch.data.itemId],
     companyId
   );
@@ -97,7 +96,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     batch: batch.data,
     batchProperties: batchProperties?.data ?? [],
-    receiptFiles: getBatchFiles(serviceRole, companyId, {
+    receiptFiles: getBatchFiles(client, companyId, {
       receiptLineIds,
       batchId,
     }) ?? { data: [], error: null },

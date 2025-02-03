@@ -11,6 +11,7 @@ import type {
   apiKeyValidator,
   companyValidator,
   sequenceValidator,
+  webhookValidator,
 } from "./settings.models";
 
 export async function deactivateIntegration(
@@ -41,6 +42,23 @@ export async function deleteApiKey(
   return client.from("apiKey").delete().eq("id", id);
 }
 
+export async function deleteWebhook(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("webhook").delete().eq("id", id);
+}
+
+export async function deactivateWebhooks(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("webhook")
+    .update({ active: false })
+    .eq("companyId", companyId);
+}
+
 export async function getApiKeys(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -48,6 +66,46 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getTerms(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.from("terms").select("*").eq("id", companyId).single();
+}
+
+export async function getWebhook(client: SupabaseClient<Database>, id: string) {
+  return client.from("webhook").select("*").eq("id", id).single();
+}
+
+export async function getWebhookTables(client: SupabaseClient<Database>) {
+  return client.from("webhookTable").select("*");
+}
+
+export async function getWebhooks(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("webhook")
     .select("*", {
       count: "exact",
     })
@@ -459,10 +517,19 @@ export async function updateSequence(
     .eq("table", table);
 }
 
-// Add this function to the file
-export async function getTerms(
+export async function upsertWebhook(
   client: SupabaseClient<Database>,
-  companyId: string
+  webhook:
+    | (Omit<z.infer<typeof webhookValidator>, "id"> & {
+        createdBy: string;
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
+        id: string;
+      })
 ) {
-  return client.from("terms").select("*").eq("id", companyId).single();
+  if ("createdBy" in webhook) {
+    return client.from("webhook").insert(webhook).select("id").single();
+  }
+  return client.from("webhook").update(sanitize(webhook)).eq("id", webhook.id);
 }

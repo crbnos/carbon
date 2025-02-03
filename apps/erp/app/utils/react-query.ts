@@ -86,6 +86,11 @@ export const uomsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Medium,
 });
 
+export const webhookTablesQuery = () => ({
+  queryKey: ["webhookTables"],
+  staleTime: RefreshRate.Never,
+});
+
 export const workCentersQuery = (companyId: string | null) => ({
   queryKey: ["workCenters", companyId ?? "null"],
   staleTime: RefreshRate.Low,

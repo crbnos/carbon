@@ -75,6 +75,7 @@ export const path = {
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       unitOfMeasures: `${api}/items/uoms`,
+      webhookTables: `${api}/webhook/tables`,
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`),
       workCenters: `${api}/resources/work-centers`,
@@ -377,6 +378,8 @@ export const path = {
     deleteUom: (id: string) => generatePath(`${x}/items/uom/delete/${id}`),
     deleteUserAttribute: (id: string) =>
       generatePath(`${x}/account/${id}/delete/attribute`),
+    deleteWebhook: (id: string) =>
+      generatePath(`${x}/settings/webhooks/delete/${id}`),
     deleteWorkCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/delete/${id}`),
     department: (id: string) => generatePath(`${x}/people/departments/${id}`),
@@ -618,6 +621,7 @@ export const path = {
       generatePath(`${x}/tool/${id}/purchasing/new`),
     newUom: `${x}/items/uom/new`,
     newWorkCenter: `${x}/resources/work-centers/new`,
+    newWebhook: `${x}/settings/webhooks/new`,
     noQuoteReasons: `${x}/sales/no-quote-reasons`,
     noQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/${id}`),
@@ -926,6 +930,8 @@ export const path = {
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
+    webhook: (id: string) => generatePath(`${x}/settings/webhooks/${id}`),
+    webhooks: `${x}/settings/webhooks`,
     workCenters: `${x}/resources/work-centers`,
     workCenter: (id: string) =>
       generatePath(`${x}/resources/work-centers/${id}`),

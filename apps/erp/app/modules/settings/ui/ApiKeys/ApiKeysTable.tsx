@@ -1,10 +1,11 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { Badge, Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { Outlet, useNavigate } from "@remix-run/react";
+import { Link, Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuCalendar,
+  LuCode,
   LuKey,
   LuPencil,
   LuTag,
@@ -115,12 +116,17 @@ const ApiKeysTable = memo(({ data, count }: ApiKeysTableProps) => {
         columns={columns}
         count={count ?? 0}
         primaryAction={
-          permissions.can("update", "users") && (
-            <New
-              label="API Key"
-              to={`${path.to.newApiKey}?${params.toString()}`}
-            />
-          )
+          <HStack>
+            {permissions.can("update", "users") && (
+              <New
+                label="API Key"
+                to={`${path.to.newApiKey}?${params.toString()}`}
+              />
+            )}
+            <Button leftIcon={<LuCode />} variant="secondary" asChild>
+              <Link to={path.to.apiIntroduction}>API Docs</Link>
+            </Button>
+          </HStack>
         }
         renderContextMenu={renderContextMenu}
         title="API Keys"

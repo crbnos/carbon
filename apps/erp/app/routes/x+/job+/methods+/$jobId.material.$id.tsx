@@ -1,4 +1,4 @@
-import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -12,8 +12,9 @@ import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "production",
+    bypassRls: true,
   });
 
   const { jobId, id } = params;
@@ -32,8 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const serviceRole = getCarbonServiceRole();
-  const updateJobMaterial = await upsertJobMaterial(serviceRole, {
+  const updateJobMaterial = await upsertJobMaterial(client, {
     jobId,
     ...validation.data,
     id: id,
@@ -66,14 +66,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculateResult = await recalculateJobMakeMethodRequirements(
-    serviceRole,
-    {
-      id: validation.data.jobMakeMethodId,
-      companyId,
-      userId,
-    }
-  );
+  const recalculateResult = await recalculateJobMakeMethodRequirements(client, {
+    id: validation.data.jobMakeMethodId,
+    companyId,
+    userId,
+  });
 
   if (recalculateResult.error) {
     return json(
