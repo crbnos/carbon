@@ -136,9 +136,9 @@ export default function AuthenticatedRoute() {
           <TooltipProvider>
             <div className="flex flex-col h-screen">
               <Topbar />
-              <div className="flex flex-1 h-[calc(100vh-49px)]">
+              <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                 <PrimaryNavigation />
-                <main className="flex-1 overflow-y-auto scrollbar-hide bg-muted">
+                <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted rounded-tl-2xl relative z-10">
                   <Outlet />
                 </main>
               </div>
