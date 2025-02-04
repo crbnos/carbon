@@ -1266,6 +1266,123 @@ export default {
         tags: ["shippingTerm"],
       },
     },
+    "/config": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.config.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.apiUrl",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.anonKey",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/config",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["config"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.config",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["config"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.config.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.apiUrl",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.anonKey",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["config"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.config.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.apiUrl",
+          },
+          {
+            $ref: "#/parameters/rowFilter.config.anonKey",
+          },
+          {
+            $ref: "#/parameters/body.config",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["config"],
+      },
+    },
     "/customerAccount": {
       get: {
         parameters: [
@@ -7030,6 +7147,123 @@ export default {
           },
         },
         tags: ["item"],
+      },
+    },
+    "/webhookTable": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.name",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/webhookTable",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["webhookTable"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.webhookTable",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["webhookTable"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.name",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["webhookTable"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhookTable.name",
+          },
+          {
+            $ref: "#/parameters/body.webhookTable",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["webhookTable"],
       },
     },
     "/receipt": {
@@ -15547,6 +15781,249 @@ export default {
           },
         },
         tags: ["job"],
+      },
+    },
+    "/webhook": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhook.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.url",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onInsert",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onUpdate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onDelete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.successCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastSuccess",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.errorCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastError",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/webhook",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["webhook"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.webhook",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["webhook"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhook.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.url",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onInsert",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onUpdate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onDelete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.successCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastSuccess",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.errorCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastError",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["webhook"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.webhook.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.url",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onInsert",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onUpdate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.onDelete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.successCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastSuccess",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.errorCount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.lastError",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.webhook.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.webhook",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["webhook"],
       },
     },
     "/purchaseOrderFavorite": {
@@ -41060,6 +41537,63 @@ export default {
         tags: ["(rpc) journalLinesByAccountNumber"],
       },
     },
+    "/rpc/increment_webhook_success": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "webhook_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) increment_webhook_success"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                webhook_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["webhook_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) increment_webhook_success"],
+      },
+    },
     "/rpc/get_my_permission": {
       get: {
         parameters: [
@@ -42573,6 +43107,63 @@ export default {
           },
         },
         tags: ["(rpc) has_valid_api_key_for_company"],
+      },
+    },
+    "/rpc/increment_webhook_error": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "webhook_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) increment_webhook_error"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                webhook_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["webhook_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) increment_webhook_error"],
       },
     },
     "/rpc/xid_pid": {
@@ -44252,6 +44843,26 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    config: {
+      required: ["id", "apiUrl", "anonKey"],
+      properties: {
+        id: {
+          default: true,
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "boolean",
+          type: "boolean",
+        },
+        apiUrl: {
+          format: "text",
+          type: "string",
+        },
+        anonKey: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -47037,6 +47648,41 @@ export default {
           format: "jsonb",
         },
         trackingMethod: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    webhookTable: {
+      required: ["table", "module", "name"],
+      properties: {
+        table: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        module: {
+          enum: [
+            "Accounting",
+            "Documents",
+            "Invoicing",
+            "Inventory",
+            "Items",
+            "Messaging",
+            "Parts",
+            "People",
+            "Production",
+            "Purchasing",
+            "Resources",
+            "Sales",
+            "Settings",
+            "Users",
+          ],
+          format: "public.module",
+          type: "string",
+        },
+        name: {
           format: "text",
           type: "string",
         },
@@ -51088,6 +51734,107 @@ export default {
         secondsToComplete: {
           format: "numeric",
           type: "number",
+        },
+      },
+      type: "object",
+    },
+    webhook: {
+      required: [
+        "id",
+        "name",
+        "table",
+        "url",
+        "active",
+        "onInsert",
+        "onUpdate",
+        "onDelete",
+        "successCount",
+        "errorCount",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        table: {
+          description:
+            "Note:\nThis is a Foreign Key to `webhookTable.table`.<fk table='webhookTable' column='table'/>",
+          format: "text",
+          type: "string",
+        },
+        url: {
+          format: "text",
+          type: "string",
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean",
+        },
+        onInsert: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        onUpdate: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        onDelete: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        successCount: {
+          default: 0,
+          format: "bigint",
+          type: "integer",
+        },
+        lastSuccess: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        errorCount: {
+          default: 0,
+          format: "bigint",
+          type: "integer",
+        },
+        lastError: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -63159,6 +63906,36 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.config": {
+      name: "config",
+      description: "config",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/config",
+      },
+    },
+    "rowFilter.config.id": {
+      name: "id",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.config.apiUrl": {
+      name: "apiUrl",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.config.anonKey": {
+      name: "anonKey",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.customerAccount": {
       name: "customerAccount",
       description: "customerAccount",
@@ -66761,6 +67538,36 @@ export default {
     },
     "rowFilter.item.trackingMethod": {
       name: "trackingMethod",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.webhookTable": {
+      name: "webhookTable",
+      description: "webhookTable",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/webhookTable",
+      },
+    },
+    "rowFilter.webhookTable.table": {
+      name: "table",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhookTable.module": {
+      name: "module",
+      required: false,
+      format: "public.module",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhookTable.name": {
+      name: "name",
       required: false,
       format: "text",
       in: "query",
@@ -71985,6 +72792,134 @@ export default {
       name: "secondsToComplete",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "body.webhook": {
+      name: "webhook",
+      description: "webhook",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/webhook",
+      },
+    },
+    "rowFilter.webhook.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.table": {
+      name: "table",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.url": {
+      name: "url",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.active": {
+      name: "active",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.onInsert": {
+      name: "onInsert",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.onUpdate": {
+      name: "onUpdate",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.onDelete": {
+      name: "onDelete",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.successCount": {
+      name: "successCount",
+      required: false,
+      format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.lastSuccess": {
+      name: "lastSuccess",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.errorCount": {
+      name: "errorCount",
+      required: false,
+      format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.lastError": {
+      name: "lastError",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.webhook.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { json, redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { getWebhooks } from "~/modules/settings";
+import { getConfig, getWebhooks } from "~/modules/settings";
 import { WebhooksTable } from "~/modules/settings/ui/Webhooks";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -25,13 +25,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const webhooks = await getWebhooks(client, companyId, {
-    limit,
-    offset,
-    sorts,
-    search,
-    filters,
-  });
+  const [webhooks, config] = await Promise.all([
+    getWebhooks(client, companyId, {
+      limit,
+      offset,
+      sorts,
+      search,
+      filters,
+    }),
+    getConfig(client),
+  ]);
+
   if (webhooks.error) {
     throw redirect(
       path.to.settings,
@@ -39,9 +43,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (config.error || !config.data?.apiUrl) {
+    throw redirect(
+      path.to.settings,
+      await flash(
+        request,
+        error(
+          config.error,
+          "Failed to load config. Please make sure a valid record exists in your public.config table."
+        )
+      )
+    );
+  }
+
   return json({
     webhooks: webhooks.data ?? [],
     count: webhooks.count ?? 0,
+    config: config.data,
   });
 }
 

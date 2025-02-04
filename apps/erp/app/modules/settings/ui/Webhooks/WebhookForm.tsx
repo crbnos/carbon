@@ -1,5 +1,6 @@
-import { Boolean, Combobox, Input, ValidatedForm } from "@carbon/form";
+import { Boolean, Input, Select, ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Button,
   Drawer,
   DrawerBody,
@@ -83,25 +84,38 @@ const WebhookForm = ({
             <Hidden name="id" />
 
             <VStack spacing={4}>
+              <Select name="table" label="Table" options={tables} />
+              <FormControl>
+                <FormLabel>Notifications</FormLabel>
+                <VStack>
+                  <Boolean
+                    name="onInsert"
+                    description={<Badge variant="green">Insert</Badge>}
+                  />
+                  <Boolean
+                    name="onUpdate"
+                    description={<Badge variant="blue">Update</Badge>}
+                  />
+                  <Boolean
+                    name="onDelete"
+                    description={<Badge variant="red">Delete</Badge>}
+                  />
+                </VStack>
+              </FormControl>
+
+              <Separator />
+
               <Input
                 name="name"
                 label="Name"
                 helperText="This is a unique identifier for the webhook"
               />
+
               <Input
                 name="url"
                 label="Webhook URL"
-                helperText="The URL of the webhook"
+                helperText="The endpoint that receives a POST request with the updated data when the table is updated"
               />
-              <Combobox name="table" label="Table" options={tables} />
-              <FormControl>
-                <FormLabel>Notifications</FormLabel>
-                <VStack>
-                  <Boolean name="onInsert" description="Insert" />
-                  <Boolean name="onUpdate" description="Update" />
-                  <Boolean name="onDelete" description="Delete" />
-                </VStack>
-              </FormControl>
 
               <Separator />
 

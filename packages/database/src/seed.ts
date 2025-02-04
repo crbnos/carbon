@@ -46,6 +46,17 @@ const getUserId = async (): Promise<string> => {
 async function seed() {
   const id = await getUserId();
 
+  const upsertConfig = await supabaseAdmin.from("config").upsert([
+    {
+      id: true,
+      apiUrl: process.env.SUPABASE_API_URL!.includes("localhost")
+        ? "http://host.docker.internal:54321"
+        : process.env.SUPABASE_API_URL,
+      anonKey: process.env.SUPABASE_ANON_PUBLIC!,
+    },
+  ]);
+  if (upsertConfig.error) throw upsertConfig.error;
+
   const upsertAdmin = await supabaseAdmin.from("user").upsert([
     {
       id,

@@ -110,13 +110,24 @@ export const themeValidator = z.object({
   }),
 });
 
-export const webhookValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().min(1, { message: "Name is required" }),
-  table: z.string().min(1, { message: "Table is required" }),
-  url: z.string().url({ message: "Must be a valid URL" }),
-  onInsert: zfd.checkbox(),
-  onUpdate: zfd.checkbox(),
-  onDelete: zfd.checkbox(),
-  active: zfd.checkbox(),
-});
+export const webhookValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().min(1, { message: "Name is required" }),
+    table: z.string().min(1, { message: "Table is required" }),
+    url: z.string().url({ message: "Must be a valid URL" }),
+    onInsert: zfd.checkbox(),
+    onUpdate: zfd.checkbox(),
+    onDelete: zfd.checkbox(),
+    active: zfd.checkbox(),
+  })
+  .refine(
+    (input) => {
+      if (input.onInsert || input.onUpdate || input.onDelete) return true;
+      return false;
+    },
+    {
+      message: "At least one action is required",
+      path: ["onDelete"],
+    }
+  );

@@ -2224,6 +2224,24 @@ export type Database = {
           },
         ]
       }
+      config: {
+        Row: {
+          anonKey: string
+          apiUrl: string
+          id: boolean
+        }
+        Insert: {
+          anonKey: string
+          apiUrl: string
+          id?: boolean
+        }
+        Update: {
+          anonKey?: string
+          apiUrl?: string
+          id?: boolean
+        }
+        Relationships: []
+      }
       configurationParameter: {
         Row: {
           companyId: string
@@ -25417,11 +25435,15 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          errorCount: number
           id: string
+          lastError: string | null
+          lastSuccess: string | null
           name: string
           onDelete: boolean
           onInsert: boolean
           onUpdate: boolean
+          successCount: number
           table: string
           updatedAt: string | null
           updatedBy: string | null
@@ -25432,11 +25454,15 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          errorCount?: number
           id?: string
+          lastError?: string | null
+          lastSuccess?: string | null
           name: string
           onDelete?: boolean
           onInsert?: boolean
           onUpdate?: boolean
+          successCount?: number
           table: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -25447,11 +25473,15 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          errorCount?: number
           id?: string
+          lastError?: string | null
+          lastSuccess?: string | null
           name?: string
           onDelete?: boolean
           onInsert?: boolean
           onUpdate?: boolean
+          successCount?: number
           table?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -33801,6 +33831,18 @@ export type Database = {
           company: string
         }
         Returns: boolean
+      }
+      increment_webhook_error: {
+        Args: {
+          webhook_id: string
+        }
+        Returns: undefined
+      }
+      increment_webhook_success: {
+        Args: {
+          webhook_id: string
+        }
+        Returns: undefined
       }
       is_claims_admin: {
         Args: Record<PropertyKey, never>
