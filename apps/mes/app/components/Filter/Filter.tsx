@@ -160,7 +160,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
               className="h-9"
             />
             <CommandEmpty>
-              {loading ? "Loading..." : "No available filters."}
+              {loading ? "Loading..." : "No available filters"}
             </CommandEmpty>
             {activeFilter === null ? (
               <CommandGroup>

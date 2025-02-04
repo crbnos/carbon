@@ -72,10 +72,7 @@ export default function LogosRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
+      <VStack spacing={4} className="py-12 px-4 max-w-[60rem] h-full mx-auto">
         <Heading size="h3">Logos</Heading>
         <div className="grid grid-cols-2 gap-4 w-full">
           <Card>

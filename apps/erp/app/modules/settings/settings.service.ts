@@ -84,46 +84,6 @@ export async function getApiKeys(
   return query;
 }
 
-export async function getTerms(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client.from("terms").select("*").eq("id", companyId).single();
-}
-
-export async function getWebhook(client: SupabaseClient<Database>, id: string) {
-  return client.from("webhook").select("*").eq("id", id).single();
-}
-
-export async function getWebhookTables(client: SupabaseClient<Database>) {
-  return client.from("webhookTable").select("*");
-}
-
-export async function getWebhooks(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args?: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("webhook")
-    .select("*", {
-      count: "exact",
-    })
-    .eq("companyId", companyId);
-
-  if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
-  }
-
-  if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: true },
-    ]);
-  }
-
-  return query;
-}
-
 export async function getCompanies(
   client: SupabaseClient<Database>,
   userId: string
@@ -210,6 +170,10 @@ export async function getCompanyIntegrations(
     .from("companyIntegration")
     .select("*")
     .eq("companyId", companyId);
+}
+
+export async function getConfig(client: SupabaseClient<Database>) {
+  return client.from("config").select("*").single();
 }
 
 export async function getCurrentSequence(
@@ -357,6 +321,46 @@ export async function getSequencesList(
     .eq("table", table)
     .eq("companyId", companyId)
     .order("table");
+}
+
+export async function getTerms(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.from("terms").select("*").eq("id", companyId).single();
+}
+
+export async function getWebhook(client: SupabaseClient<Database>, id: string) {
+  return client.from("webhook").select("*").eq("id", id).single();
+}
+
+export async function getWebhookTables(client: SupabaseClient<Database>) {
+  return client.from("webhookTable").select("*").order("name");
+}
+
+export async function getWebhooks(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("webhook")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function insertCompany(
