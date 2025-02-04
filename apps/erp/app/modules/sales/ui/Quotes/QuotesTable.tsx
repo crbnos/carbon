@@ -314,6 +314,34 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         }
         renderContextMenu={renderContextMenu}
         title="Quotes"
+        savedView={{
+          columnOrder: [
+            "quoteId",
+            "status",
+            "createdBy",
+            "customerId",
+            "customerReference",
+            "salesPersonId",
+            "estimatorId",
+            "assignee",
+            "dueDate",
+            "expirationDate",
+            "locationName",
+            "createdAt",
+            "updatedBy",
+            "updatedAt",
+          ],
+          columnPinning: {
+            left: ["quoteId", "status"],
+            right: ["Actions"],
+          },
+          columnVisibility: {
+            createdAt: true,
+            createdBy: true,
+            updatedAt: false,
+            updatedBy: false,
+          },
+        }}
       />
       {selectedQuotation && selectedQuotation.id && (
         <ConfirmDelete
