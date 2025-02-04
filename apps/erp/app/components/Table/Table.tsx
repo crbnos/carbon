@@ -81,6 +81,19 @@ interface TableProps<T extends object> {
   onSelectedRowsChange?: (selectedRows: T[]) => void;
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
+  savedView?: {
+    columnOrder?: string[];
+    columnPinning?: ColumnPinningState;
+    columnVisibility?: Record<string, boolean>;
+    filters?: any;
+  };
+  onSaveView?: (view: {
+    name: string;
+    columnOrder: string[];
+    columnPinning: ColumnPinningState;
+    columnVisibility: Record<string, boolean>;
+    filters: any;
+  }) => void;
 }
 
 const Table = <T extends object>({
@@ -103,6 +116,7 @@ const Table = <T extends object>({
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
+  savedView,
 }: TableProps<T>) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
@@ -120,12 +134,12 @@ const Table = <T extends object>({
 
   /* Column Visibility */
   const [columnVisibility, setColumnVisibility] = useState(
-    defaultColumnVisibility ?? {}
+    savedView?.columnVisibility ?? defaultColumnVisibility ?? {}
   );
 
   /* Column Ordering */
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
-    defaultColumnOrder ?? []
+    savedView?.columnOrder ?? defaultColumnOrder ?? []
   );
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     const left: string[] = [];
@@ -135,6 +149,9 @@ const Table = <T extends object>({
     }
     if (renderContextMenu) {
       right.push("Actions");
+    }
+    if (savedView?.columnPinning) {
+      return savedView.columnPinning;
     }
     if (
       defaultColumnPinning &&
@@ -557,6 +574,16 @@ const Table = <T extends object>({
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300,
   });
+
+  useEffect(() => {
+    console.log({
+      savedView: {
+        columnOrder,
+        columnPinning,
+        columnVisibility,
+      },
+    });
+  }, [columnOrder, columnPinning, columnVisibility, savedView]);
 
   return (
     <VStack
