@@ -40,6 +40,12 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
     ref
   ) => {
     const { getInputProps, error } = useField(name);
+    const formatOptions =
+      rest.formatOptions ??
+      ({
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 10,
+      } satisfies Intl.NumberFormatOptions);
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
@@ -57,6 +63,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
             id: name,
             ...rest,
           })}
+          formatOptions={formatOptions}
         >
           <NumberInputGroup className="relative">
             <NumberInput isReadOnly={isReadOnly} ref={ref} />
