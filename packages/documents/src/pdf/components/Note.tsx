@@ -12,7 +12,7 @@ const convertTiptapJSON = (
   switch (node.type) {
     case "doc":
       return (
-        <View style={{ fontSize: 11 }}>
+        <View style={{ fontSize: 9 }}>
           {args?.title && (
             <View style={styles.thead}>
               <Text>{args?.title}</Text>
@@ -27,7 +27,7 @@ const convertTiptapJSON = (
         <Text
           key={`heading-${node.attrs.level}`}
           style={{
-            fontSize: 16 - node.attrs.level * 2,
+            fontSize: 13,
             fontWeight: "bold",
             marginBottom: 10,
           }}
@@ -38,7 +38,7 @@ const convertTiptapJSON = (
 
     case "paragraph":
       return (
-        <Text key="paragraph" style={{ marginBottom: 10 }}>
+        <Text key="paragraph" style={{ marginBottom: 10, fontSize: 9 }}>
           {node.content?.map((child) => convertTiptapJSON(child)) || ""}
         </Text>
       );
@@ -75,7 +75,7 @@ const convertTiptapJSON = (
           key={`listItem-${args.index}`}
           style={{ flexDirection: "row", marginBottom: 5 }}
         >
-          <Text style={{ marginRight: 5 }}> {indicator} </Text>
+          <Text style={{ marginRight: 5, fontSize: 9 }}> {indicator} </Text>
           <View>
             {node.content.map((child, index) => convertTiptapJSON(child))}
           </View>
@@ -97,7 +97,7 @@ const convertTiptapJSON = (
           key={`taskItem-${args.index}`}
           style={{ flexDirection: "row", marginBottom: 5 }}
         >
-          <Text style={{ marginRight: 5 }}>•</Text>
+          <Text style={{ marginRight: 5, fontSize: 9 }}>•</Text>
           <View>
             {node.content.map((child, index) => convertTiptapJSON(child))}
           </View>

@@ -202,6 +202,14 @@ const SalesOrderPDF = ({
                   <Text style={tw("text-[9px] opacity-80")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
+                  <View style={tw("mt-1")}>
+                    {Object.keys(line.externalNotes ?? {}).length > 0 && (
+                      <Note
+                        key={`${line.id}-notes`}
+                        content={line.externalNotes as JSONContent}
+                      />
+                    )}
+                  </View>
                 </View>
                 <Text style={tw("w-1/6 text-right")}>
                   {line.salesOrderLineType === "Comment"
