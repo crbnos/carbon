@@ -585,7 +585,11 @@ const QuoteSummary = ({
                 price.quoteLineId === salesOrderLine.id &&
                 price.quantity === salesOrderLine.saleQuantity
             )
-          : routeData?.prices?.find((price) => price.quoteLineId === line.id);
+          : routeData?.prices?.find(
+              (price) =>
+                price.quoteLineId === line.id &&
+                line.quantity?.includes(price.quantity)
+            );
         if (!line.id) {
           return acc;
         }

@@ -1004,7 +1004,12 @@ const Quote = ({
                 price.quoteLineId === salesOrderLine.id &&
                 price.quantity === salesOrderLine.saleQuantity
             )
-          : quoteLinePrices?.find((price) => price.quoteLineId === line.id);
+          : quoteLinePrices?.find(
+              (price) =>
+                price.quoteLineId === line.id &&
+                line.quantity?.includes(price.quantity)
+            );
+
         if (!line.id) {
           return acc;
         }
@@ -1085,6 +1090,8 @@ const Quote = ({
     maxFiles: 1,
     maxSize: 25 * 1024 * 1024, // 25MB limit
   });
+
+  console.log({ selectedLines });
 
   return (
     <VStack spacing={8} className="w-full items-center p-2 md:p-8">
