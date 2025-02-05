@@ -5429,13 +5429,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeJob_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "employeeJob_managerId_fkey"
             columns: ["managerId"]
             isOneToOne: false
@@ -6941,13 +6934,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "itemInventory_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "itemInventory_shelfId_fkey"
             columns: ["shelfId"]
             isOneToOne: false
@@ -7086,13 +7072,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "itemLedger_serialNumber_fkey"
@@ -7288,13 +7267,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemPlanning_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "itemPlanning_updatedBy_fkey"
@@ -8105,13 +8077,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -12521,13 +12486,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "pickMethod_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "pickMethod_shelfId_fkey"
             columns: ["defaultShelfId"]
             isOneToOne: false
@@ -12775,13 +12733,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "postingGroupInventory_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "postingGroupInventory_materialVarianceAccount_fkey"
@@ -14047,13 +13998,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "purchaseInvoice_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "purchaseInvoice_paymentTermId_fkey"
             columns: ["paymentTermId"]
             isOneToOne: false
@@ -14194,13 +14138,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceDelivery_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseInvoiceDelivery_shippingMethodId_fkey"
@@ -14518,13 +14455,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLines_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
@@ -15218,13 +15148,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseOrderDelivery_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseOrderDelivery_shippingMethodId_fkey"
@@ -16422,13 +16345,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quote_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "quote_salesPersonId_fkey"
             columns: ["salesPersonId"]
             isOneToOne: false
@@ -16778,13 +16694,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteLine_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "quoteLine_quoteId_fkey"
@@ -18152,13 +18061,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quoteShipment_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "quoteShipment_shippingMethodId_fkey"
             columns: ["shippingMethodId"]
             isOneToOne: false
@@ -18395,13 +18297,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "receipt_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "receipt_postedBy_fkey"
             columns: ["postedBy"]
             isOneToOne: false
@@ -18631,13 +18526,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "receiptLine_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "receiptLine_receiptId_fkey"
@@ -19098,13 +18986,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesOrder_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "salesOrder_updatedBy_fkey"
@@ -19797,13 +19678,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "salesOrderShipment_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "salesOrderShipment_shippingMethodId_fkey"
             columns: ["shippingMethodId"]
             isOneToOne: false
@@ -20270,13 +20144,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfq_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "salesRfq_noQuoteReasonId_fkey"
@@ -21259,13 +21126,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "shelf_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "shelf_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -21446,13 +21306,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shifts_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "shifts_updatedBy_fkey"
@@ -25540,13 +25393,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "warehouse_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "warehouse_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -25825,13 +25671,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "workCenter_requiredAbilityId_fkey"
@@ -27558,7 +27397,6 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
-          defaultShelf: boolean | null
           description: string | null
           estimatedQuantity: number | null
           id: string | null
@@ -27572,10 +27410,7 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
           quantity: number | null
-          quantityIssued: number | null
-          quantityToIssue: number | null
           scrapQuantity: number | null
-          shelfId: string | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -27692,13 +27527,6 @@ export type Database = {
             columns: ["jobOperationId"]
             isOneToOne: false
             referencedRelation: "jobOperationsWithMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "jobMaterial_shelfId_fkey"
-            columns: ["shelfId"]
-            isOneToOne: false
-            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -28165,13 +27993,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -29176,13 +28997,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "purchaseInvoiceLines_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "purchaseInvoiceLines_purchaseOrderId_fkey"
             columns: ["purchaseOrderId"]
             isOneToOne: false
@@ -29474,13 +29288,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoice_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "purchaseInvoice_paymentTermId_fkey"
@@ -29861,7 +29668,6 @@ export type Database = {
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           locationId: string | null
-          locationName: string | null
           orderDate: string | null
           orderTotal: number | null
           paymentTermId: string | null
@@ -29877,6 +29683,7 @@ export type Database = {
           supplierInteractionId: string | null
           supplierLocationId: string | null
           supplierReference: string | null
+          supplierShippingCost: number | null
           tags: string[] | null
           thumbnailPath: string | null
           updatedAt: string | null
@@ -30115,6 +29922,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "purchaseOrderDelivery_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "purchaseOrderDelivery_shippingMethodId_fkey"
             columns: ["shippingMethodId"]
             isOneToOne: false
@@ -30351,13 +30165,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quoteLine_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "quoteLine_quoteId_fkey"
             columns: ["quoteId"]
             isOneToOne: false
@@ -30435,15 +30242,12 @@ export type Database = {
           itemType: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
-          productionQuantity: number | null
           quantity: number | null
           quoteId: string | null
           quoteLineId: string | null
           quoteMakeMethodId: string | null
           quoteMaterialMakeMethodId: string | null
           quoteOperationId: string | null
-          scrapQuantity: number | null
-          tags: string[] | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -31122,13 +30926,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "quote_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "quote_salesPersonId_fkey"
             columns: ["salesPersonId"]
             isOneToOne: false
@@ -31479,8 +31276,8 @@ export type Database = {
           internalNotes: Json | null
           itemType: Database["public"]["Enums"]["itemType"] | null
           jobs: Json[] | null
+          lines: Json[] | null
           locationId: string | null
-          locationName: string | null
           orderDate: string | null
           orderTotal: number | null
           paymentTermId: string | null
@@ -31672,13 +31469,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesOrder_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "salesOrder_updatedBy_fkey"
@@ -32147,13 +31937,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "salesRfq_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "salesRfq_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -32283,13 +32066,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "shifts_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "shifts_updatedBy_fkey"
@@ -33332,13 +33108,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "employeeJob_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
-          },
-          {
             foreignKeyName: "location_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
@@ -33459,13 +33228,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["locationId"]
           },
           {
             foreignKeyName: "workCenter_requiredAbilityId_fkey"
@@ -34771,6 +34533,10 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
+      }
+      operation: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       search: {
         Args: {
