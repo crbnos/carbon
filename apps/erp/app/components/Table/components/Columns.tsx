@@ -8,6 +8,9 @@ import {
   DrawerTrigger,
   HStack,
   IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { Reorder } from "framer-motion";
@@ -35,18 +38,25 @@ const Columns = <T extends object>({
 }: ColumnsProps<T>) => {
   return (
     <Drawer>
-      <DrawerTrigger asChild>
-        <IconButton
-          aria-label="Columns"
-          title="Columns"
-          variant="ghost"
-          icon={<LuColumns2 />}
-        />
+      <DrawerTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              aria-label="Columns"
+              title="Columns"
+              variant="ghost"
+              icon={<LuColumns2 />}
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Column visibility and order</p>
+          </TooltipContent>
+        </Tooltip>
       </DrawerTrigger>
       <DrawerContent>
         <DrawerHeader>
-          <DrawerTitle>Edit column view</DrawerTitle>
-          <DrawerDescription>Manage and reorder columns</DrawerDescription>
+          <DrawerTitle>Edit column visibility</DrawerTitle>
+          <DrawerDescription>Hide, pin and reorder columns</DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
           <Reorder.Group

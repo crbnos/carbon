@@ -1,6 +1,7 @@
 import {
   ActionMenu,
   Button,
+  cn,
   ContextMenu,
   ContextMenuContent,
   ContextMenuTrigger,
@@ -17,10 +18,9 @@ import {
   Th,
   Thead,
   Tr,
-  VStack,
-  cn,
   useEscape,
   useMount,
+  VStack,
 } from "@carbon/react";
 import { clamp } from "@carbon/utils";
 import { useNavigation } from "@remix-run/react";
@@ -44,7 +44,7 @@ import type {
   EditableTableCellComponent,
   Position,
 } from "~/components/Editable";
-import type { fieldMappings } from "~/modules/shared";
+import type { fieldMappings, SavedView } from "~/modules/shared";
 import {
   IndeterminateCheckbox,
   Pagination,
@@ -81,19 +81,6 @@ interface TableProps<T extends object> {
   onSelectedRowsChange?: (selectedRows: T[]) => void;
   renderActions?: (selectedRows: T[]) => ReactNode;
   renderContextMenu?: (row: T) => JSX.Element | null;
-  savedView?: {
-    columnOrder?: string[];
-    columnPinning?: ColumnPinningState;
-    columnVisibility?: Record<string, boolean>;
-    filters?: any;
-  };
-  onSaveView?: (view: {
-    name: string;
-    columnOrder: string[];
-    columnPinning: ColumnPinningState;
-    columnVisibility: Record<string, boolean>;
-    filters: any;
-  }) => void;
 }
 
 const Table = <T extends object>({
@@ -116,9 +103,10 @@ const Table = <T extends object>({
   onSelectedRowsChange,
   renderActions,
   renderContextMenu,
-  savedView,
 }: TableProps<T>) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
+
+  const savedView = useSavedView();
 
   /* Data for Optimistic Updates */
   const [internalData, setInternalData] = useState<T[]>(data);
@@ -606,7 +594,7 @@ const Table = <T extends object>({
       spacing={0}
       className={cn(
         "h-full bg-card",
-        !compact && "flex flex-col w-full px-0 md:px-4 lg:px-8 xl:px-12"
+        !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6"
       )}
     >
       <TableHeader
@@ -906,6 +894,10 @@ function getActionColumn<T>(
       size: 60,
     },
   ];
+}
+
+function useSavedView(): SavedView | undefined {
+  return undefined;
 }
 
 export default Table;
