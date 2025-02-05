@@ -508,31 +508,65 @@ const Table = <T extends object>({
   const [columnSizeMap, setColumnSizeMap] = useState<ColumnSizeMap>(new Map());
 
   useEffect(() => {
-    // Allow time for the table to render and delayed column size transitions to occur before calculating column widths
-    const timeout = setTimeout(() => {
+    const calculateColumnWidths = () => {
       const tableWrapperEl = getTableWrapperEl();
+      if (!tableWrapperEl) return;
+
       const columnWidths: ColumnSizeMap = new Map();
+      let leftPinnedWidth = 0;
 
-      let totalWidth = 0;
-
+      // First pass - calculate widths
       table.getHeaderGroups().forEach(({ headers }) => {
         headers.forEach((header) => {
-          const headerEl = tableWrapperEl?.querySelector(
+          const headerEl = tableWrapperEl.querySelector(
             getHeaderElSelector(header.id)
           );
+          const width = headerEl?.clientWidth ?? 0;
 
-          columnWidths.set(header.id, {
-            width: headerEl?.clientWidth ?? 0,
-            startX: totalWidth,
-          });
-          totalWidth += headerEl?.clientWidth ?? 0;
+          if (header.column.getIsPinned() === "left") {
+            columnWidths.set(header.id, {
+              width,
+              startX: leftPinnedWidth,
+            });
+            leftPinnedWidth += width;
+          } else {
+            columnWidths.set(header.id, {
+              width,
+              startX: 0, // Will be calculated in second pass
+            });
+          }
+        });
+      });
+
+      // Second pass - calculate non-pinned positions
+      let currentX = leftPinnedWidth;
+      table.getHeaderGroups().forEach(({ headers }) => {
+        headers.forEach((header) => {
+          if (!header.column.getIsPinned()) {
+            columnWidths.set(header.id, {
+              width: columnWidths.get(header.id)?.width ?? 0,
+              startX: currentX,
+            });
+            currentX += columnWidths.get(header.id)?.width ?? 0;
+          }
         });
       });
 
       setColumnSizeMap(columnWidths);
-    }, 500);
+    };
 
-    return () => clearTimeout(timeout);
+    // Initial calculation
+    calculateColumnWidths();
+
+    // Add resize observer to handle window/table size changes
+    const tableWrapper = getTableWrapperEl();
+    if (tableWrapper) {
+      const resizeObserver = new ResizeObserver(() => {
+        calculateColumnWidths();
+      });
+      resizeObserver.observe(tableWrapper);
+      return () => resizeObserver.disconnect();
+    }
   }, [
     getTableWrapperEl,
     table,
@@ -541,30 +575,22 @@ const Table = <T extends object>({
     columnOrder,
     withSelectableRows,
   ]);
-
   // const lastLeftPinnedColumn = table
   //   .getLeftVisibleLeafColumns()
   //   .findLast((c) => c.getIsPinned() === "left");
 
   const getPinnedStyles = (column: Column<T>): CSSProperties => {
     const isPinned = column.getIsPinned();
+    if (!isPinned) return {};
+
+    const pinnedPosition = columnSizeMap.get(column.id);
+    const startX = pinnedPosition?.startX ?? 0;
 
     return {
-      // display: "inline-block",
-      left:
-        isPinned === "left"
-          ? columnSizeMap.get(column.id)?.startX ?? 0
-          : undefined,
-      right: isPinned === "right" ? column.getAfter("right") : undefined,
-      position: isPinned ? "sticky" : "relative",
-      zIndex: isPinned ? 1 : 0,
-      // backgroundColor: isPinned ? "hsl(var(--card))" : undefined,
-      boxShadow: isPinned
-        ? isPinned === "left"
-          ? "4px 0 6px -2px rgba(0, 0, 0, 0.1)"
-          : "-4px 0 6px -2px rgba(0, 0, 0, 0.1)"
-        : "none",
-
+      position: "sticky",
+      left: isPinned === "left" ? startX : undefined,
+      right: isPinned === "right" ? 0 : undefined,
+      zIndex: 2,
       maxWidth: isPinned === "right" ? 60 : undefined,
     };
   };
@@ -574,16 +600,6 @@ const Table = <T extends object>({
   const isLoading = useSpinDelay(navigation.state === "loading", {
     delay: 300,
   });
-
-  useEffect(() => {
-    console.log({
-      savedView: {
-        columnOrder,
-        columnPinning,
-        columnVisibility,
-      },
-    });
-  }, [columnOrder, columnPinning, columnVisibility, savedView]);
 
   return (
     <VStack
