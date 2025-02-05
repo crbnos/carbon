@@ -195,14 +195,6 @@ export async function upsertExternalLink(
   return client.from("externalLink").insert(externalLink).select("id").single();
 }
 
-export async function updateNote(
-  client: SupabaseClient<Database>,
-  id: string,
-  note: string
-) {
-  return client.from("note").update({ note }).eq("id", id);
-}
-
 export async function updateModelThumbnail(
   client: SupabaseClient<Database>,
   modelId: string,
@@ -232,4 +224,53 @@ export async function upsertModelUpload(
     return client.from("modelUpload").insert(upload);
   }
   return client.from("modelUpload").update(upload).eq("id", upload.id);
+}
+
+export async function updateNote(
+  client: SupabaseClient<Database>,
+  id: string,
+  note: string
+) {
+  return client.from("note").update({ note }).eq("id", id);
+}
+
+export async function upsertSavedView(
+  client: SupabaseClient<Database>,
+  view: {
+    id?: string;
+    name: string;
+    description?: string;
+    table: string;
+    type: "Public" | "Private";
+    filter?: string;
+    sort?: string;
+    columnPinning?: Record<string, boolean>;
+    columnVisibility?: Record<string, boolean>;
+    columnOrder?: string[];
+    userId: string;
+    companyId: string;
+  }
+) {
+  const { userId, ...data } = view;
+  if ("id" in view && view.id) {
+    return client
+      .from("tableView")
+      .update({
+        ...data,
+        updatedBy: userId,
+      })
+      .eq("id", view.id);
+  }
+  const tableModule = await client
+    .from("customFieldTable")
+    .select("module")
+    .eq("table", view.table)
+    .single();
+
+  if (tableModule.error) return tableModule;
+  return client.from("tableView").insert({
+    ...data,
+    module: tableModule.data?.module,
+    createdBy: userId,
+  });
 }

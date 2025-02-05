@@ -91,6 +91,23 @@ export const operationToolValidator = z.object({
   ),
 });
 
+export const savedViewValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  table: z.string(),
+  name: z.string().min(1, { message: "A name is required to save a view" }),
+  description: z.string().optional(),
+  filter: z.string().optional(),
+  sort: z.string().optional(),
+  state: z.string(),
+  type: z.enum(["Public", "Private"]),
+});
+
+export const savedViewStateValidator = z.object({
+  columnOrder: z.array(z.string()),
+  columnPinning: z.any(),
+  columnVisibility: z.record(z.boolean()),
+});
+
 export const standardFactorType = [
   "Hours/Piece",
   "Hours/100 Pieces",

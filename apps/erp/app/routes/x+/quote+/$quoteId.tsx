@@ -136,7 +136,7 @@ export default function QuoteRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full ">
         <QuoteHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">

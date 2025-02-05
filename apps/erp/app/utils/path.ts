@@ -824,6 +824,7 @@ export const path = {
     salesRfqStatus: (id: string) => generatePath(`${x}/sales-rfq/${id}/status`),
     salesRfqs: `${x}/sales/rfqs`,
     salesSettings: `${x}/settings/sales`,
+    saveView: `${x}/shared/view`,
     schedule: `${x}/schedule`,
     scheduleOperationUpdate: `${x}/schedule/operation/update`,
     scrapReason: (id: string) =>
