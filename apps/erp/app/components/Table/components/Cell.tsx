@@ -20,6 +20,7 @@ type CellProps<T> = {
   getPinnedStyles: (column: Column<any, unknown>) => CSSProperties;
   onClick?: () => void;
   onUpdate?: (updates: Record<string, unknown>) => void;
+  table: any;
 };
 
 const Cell = <T extends object>({
@@ -33,6 +34,7 @@ const Cell = <T extends object>({
   getPinnedStyles,
   onClick,
   onUpdate,
+  table,
 }: CellProps<T>) => {
   const { ref, tabIndex, onFocus } = useMovingCellRef(isSelected);
   const [hasError, setHasError] = useState(false);
@@ -50,6 +52,8 @@ const Cell = <T extends object>({
     ? editableComponents[accessorKey]
     : null;
 
+  const isPinned = cell.column.getIsPinned();
+
   return (
     <Td
       className={cn(
@@ -59,12 +63,16 @@ const Cell = <T extends object>({
         isEditMode && "border-border border-r",
         hasError && "ring-inset ring-2 ring-red-500",
         isSelected && "!ring-inset !ring-2 !ring-ring",
-        isSelected && hasEditableTableCellComponent && "!bg-background"
+        isSelected && hasEditableTableCellComponent && "!bg-background",
+        "transition-[left,right,box-shadow] duration-200",
+        isPinned && "bg-card"
       )}
       ref={ref}
       style={{
         ...getPinnedStyles(cell.column),
         width: cell.column.getSize(),
+        margin: 0,
+        borderSpacing: 0,
       }}
       data-row={cell.row.index}
       data-column={columnIndex}
@@ -106,7 +114,8 @@ const MemoizedCell = memo(
     next.isEditMode === prev.isEditMode &&
     next.cell.getValue() === prev.cell.getValue() &&
     next.cell.getContext() === prev.cell.getContext() &&
-    next.pinnedColumns === prev.pinnedColumns
+    next.pinnedColumns === prev.pinnedColumns &&
+    next.columnIndex === prev.columnIndex
 ) as typeof Cell;
 
 export default MemoizedCell;
