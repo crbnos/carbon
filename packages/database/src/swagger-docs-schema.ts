@@ -573,6 +573,231 @@ export default {
         tags: ["supplierAccount"],
       },
     },
+    "/tableView": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableView.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnPinning",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnVisibility",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.filter",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.sort",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/tableView",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["tableView"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.tableView",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["tableView"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableView.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnPinning",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnVisibility",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.filter",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.sort",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["tableView"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.tableView.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.table",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.module",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnPinning",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.columnVisibility",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.filter",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.sort",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tableView.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.tableView",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["tableView"],
+      },
+    },
     "/supplierType": {
       get: {
         parameters: [
@@ -44637,6 +44862,110 @@ export default {
       },
       type: "object",
     },
+    tableView: {
+      required: [
+        "id",
+        "name",
+        "table",
+        "type",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        table: {
+          description:
+            "Note:\nThis is a Foreign Key to `customFieldTable.table`.<fk table='customFieldTable' column='table'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        module: {
+          enum: [
+            "Accounting",
+            "Documents",
+            "Invoicing",
+            "Inventory",
+            "Items",
+            "Messaging",
+            "Parts",
+            "People",
+            "Production",
+            "Purchasing",
+            "Resources",
+            "Sales",
+            "Settings",
+            "Users",
+          ],
+          format: "public.module",
+          type: "string",
+        },
+        type: {
+          default: "Private",
+          enum: ["Public", "Private"],
+          format: 'public."tableViewType"',
+          type: "string",
+        },
+        columnOrder: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        columnPinning: {
+          format: "jsonb",
+        },
+        columnVisibility: {
+          format: "jsonb",
+        },
+        filter: {
+          format: "text",
+          type: "string",
+        },
+        sort: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     supplierType: {
       required: [
         "id",
@@ -63660,6 +63989,120 @@ export default {
       name: "active",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "body.tableView": {
+      name: "tableView",
+      description: "tableView",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/tableView",
+      },
+    },
+    "rowFilter.tableView.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.table": {
+      name: "table",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.module": {
+      name: "module",
+      required: false,
+      format: "public.module",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.type": {
+      name: "type",
+      required: false,
+      format: 'public."tableViewType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.columnOrder": {
+      name: "columnOrder",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.columnPinning": {
+      name: "columnPinning",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.columnVisibility": {
+      name: "columnVisibility",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.filter": {
+      name: "filter",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.sort": {
+      name: "sort",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

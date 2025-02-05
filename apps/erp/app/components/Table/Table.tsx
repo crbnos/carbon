@@ -72,9 +72,11 @@ interface TableProps<T extends object> {
     label: string;
   }[];
   primaryAction?: ReactNode;
+  table?: string;
   title?: string;
   withInlineEditing?: boolean;
   withPagination?: boolean;
+  withSavedView?: boolean;
   withSearch?: boolean;
   withSelectableRows?: boolean;
   withSimpleSorting?: boolean;
@@ -94,9 +96,11 @@ const Table = <T extends object>({
   editableComponents,
   importCSV,
   primaryAction,
+  table: tableName,
   title,
   withInlineEditing = false,
   withPagination = true,
+  withSavedView = true,
   withSearch = true,
   withSelectableRows = false,
   withSimpleSorting = true,
@@ -600,6 +604,8 @@ const Table = <T extends object>({
       <TableHeader
         columnAccessors={columnAccessors}
         columnOrder={columnOrder}
+        columnPinning={columnPinning}
+        columnVisibility={columnVisibility}
         columns={table.getAllLeafColumns()}
         compact={compact}
         editMode={editMode}
@@ -611,9 +617,11 @@ const Table = <T extends object>({
         selectedRows={selectedRows}
         setColumnOrder={setColumnOrder}
         setEditMode={setEditMode}
+        table={tableName}
         title={title}
         withInlineEditing={withInlineEditing}
         withPagination={withPagination}
+        withSavedView={withSavedView}
         withSearch={withSearch}
         withSelectableRows={withSelectableRows}
       />

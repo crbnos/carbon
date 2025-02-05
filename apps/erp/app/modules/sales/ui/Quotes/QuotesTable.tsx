@@ -213,7 +213,6 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           icon: <LuMap />,
         },
       },
-
       {
         id: "createdBy",
         header: "Created By",
@@ -313,6 +312,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           )
         }
         renderContextMenu={renderContextMenu}
+        table="quote"
         title="Quotes"
       />
       {selectedQuotation && selectedQuotation.id && (

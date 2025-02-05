@@ -1,11 +1,13 @@
-CREATE TYPE "viewType" AS ENUM ('Public', 'Private');
+CREATE TYPE "tableViewType" AS ENUM ('Public', 'Private');
 
 DROP TABLE IF EXISTS "tableView";
 CREATE TABLE IF NOT EXISTS "tableView" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "table" TEXT NOT NULL,
-  "type" "viewType" NOT NULL DEFAULT 'Private',
+  "description" TEXT,
+  "module" module,
+  "type" "tableViewType" NOT NULL DEFAULT 'Private',
   "columnOrder" TEXT ARRAY,
   "columnPinning" JSONB,
   "columnVisibility" JSONB,
@@ -22,7 +24,12 @@ CREATE TABLE IF NOT EXISTS "tableView" (
   CONSTRAINT "tableView_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
-ALTER TABLE "view" ENABLE ROW LEVEL SECURITY;
+CREATE INDEX "tableView_module_createdBy_idx" ON "tableView" ("module", "createdBy");
+CREATE INDEX "tableView_companyId_idx" ON "tableView" ("companyId");
+
+
+
+ALTER TABLE "tableView" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "SELECT" ON "tableView"
   FOR SELECT

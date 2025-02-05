@@ -24130,6 +24130,173 @@ export type Database = {
           },
         ]
       }
+      tableView: {
+        Row: {
+          columnOrder: string[] | null
+          columnPinning: Json | null
+          columnVisibility: Json | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string | null
+          filter: string | null
+          id: string
+          module: Database["public"]["Enums"]["module"] | null
+          name: string
+          sort: string | null
+          table: string
+          type: Database["public"]["Enums"]["tableViewType"]
+          updatedBy: string | null
+        }
+        Insert: {
+          columnOrder?: string[] | null
+          columnPinning?: Json | null
+          columnVisibility?: Json | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description?: string | null
+          filter?: string | null
+          id?: string
+          module?: Database["public"]["Enums"]["module"] | null
+          name: string
+          sort?: string | null
+          table: string
+          type?: Database["public"]["Enums"]["tableViewType"]
+          updatedBy?: string | null
+        }
+        Update: {
+          columnOrder?: string[] | null
+          columnPinning?: Json | null
+          columnVisibility?: Json | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string | null
+          filter?: string | null
+          id?: string
+          module?: Database["public"]["Enums"]["module"] | null
+          name?: string
+          sort?: string | null
+          table?: string
+          type?: Database["public"]["Enums"]["tableViewType"]
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tableView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "tableView_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "tableView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "tableView_table_fkey"
+            columns: ["table"]
+            isOneToOne: false
+            referencedRelation: "customFieldTable"
+            referencedColumns: ["table"]
+          },
+          {
+            foreignKeyName: "tableView_table_fkey"
+            columns: ["table"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["table"]
+          },
+          {
+            foreignKeyName: "tableView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tableView_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       tag: {
         Row: {
           companyId: string
@@ -34251,6 +34418,7 @@ export type Database = {
         | "Reminder"
         | "Refund"
       supplierQuoteStatus: "Active" | "Expired"
+      tableViewType: "Public" | "Private"
       trackingSource: "Purchased" | "Manufactured"
     }
     CompositeTypes: {

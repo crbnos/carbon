@@ -1,4 +1,4 @@
-import { Input, ValidatedForm } from "@carbon/form";
+import { Hidden, Input, Submit, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
@@ -21,16 +21,23 @@ import {
   TooltipTrigger,
   useDisclosure,
 } from "@carbon/react";
-import type { Column, ColumnOrderState } from "@tanstack/react-table";
+import { useFetcher } from "@remix-run/react";
+import type {
+  Column,
+  ColumnOrderState,
+  ColumnPinningState,
+} from "@tanstack/react-table";
 import { useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuCheck, LuFilePen, LuImport, LuLayers, LuLock } from "react-icons/lu";
-import { z } from "zod";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
+import { savedViewValidator } from "~/modules/shared/shared.models";
+import type { action as savedViewAction } from "~/routes/x+/shared+/view";
+import { path } from "~/utils/path";
 import Columns from "./Columns";
 import { ActiveFilters, Filter } from "./Filter";
 import type { ColumnFilter } from "./Filter/types";
@@ -42,6 +49,8 @@ type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
   columnAccessors: Record<string, string>;
   columnOrder: ColumnOrderState;
+  columnPinning: ColumnPinningState;
+  columnVisibility: Record<string, boolean>;
   columns: Column<T, unknown>[];
   compact?: boolean;
   editMode: boolean;
@@ -55,7 +64,9 @@ type HeaderProps<T> = {
   selectedRows: T[];
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
+  table?: string;
   title?: string;
+  withSavedView: boolean;
   withInlineEditing: boolean;
   withPagination: boolean;
   withSearch: boolean;
@@ -66,6 +77,8 @@ const TableHeader = <T extends object>({
   compact,
   columnAccessors,
   columnOrder,
+  columnPinning,
+  columnVisibility,
   columns,
   editMode,
   filters,
@@ -76,9 +89,11 @@ const TableHeader = <T extends object>({
   renderActions,
   setColumnOrder,
   setEditMode,
+  table,
   title,
   withInlineEditing,
   withPagination,
+  withSavedView,
   withSearch,
   withSelectableRows,
 }: HeaderProps<T>) => {
@@ -89,20 +104,30 @@ const TableHeader = <T extends object>({
   >(null);
 
   const savedViewDisclosure = useDisclosure();
+  const canSaveView = withSavedView && !!table;
+  const fetcher = useFetcher<typeof savedViewAction>();
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
-      {savedViewDisclosure.isOpen ? (
+      {canSaveView && savedViewDisclosure.isOpen ? (
         <ValidatedForm
-          onSubmit={() => {}}
-          validator={z.object({
-            name: z
-              .string()
-              .min(1, { message: "A name is required to save a view" }),
-          })}
+          method="post"
+          action={path.to.saveView}
+          validator={savedViewValidator}
           className="w-full px-2 md:px-0"
+          fetcher={fetcher}
         >
           <Card className="my-4 p-0">
+            <Hidden
+              name="state"
+              value={JSON.stringify({
+                columnOrder,
+                columnPinning,
+                columnVisibility,
+              })}
+            />
+            <Hidden name="table" value={table} />
+            <Hidden name="type" value="Private" />
             <CardContent className="flex flex-col gap-0 p-4">
               <Input
                 autoFocus
@@ -122,7 +147,7 @@ const TableHeader = <T extends object>({
               <Button variant="secondary" onClick={savedViewDisclosure.onClose}>
                 Cancel
               </Button>
-              <Button>Save</Button>
+              <Submit>Save</Submit>
             </CardFooter>
           </Card>
         </ValidatedForm>
@@ -214,19 +239,21 @@ const TableHeader = <T extends object>({
             withSelectableRows={withSelectableRows}
           />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <IconButton
-                aria-label="Save View"
-                variant={savedViewDisclosure.isOpen ? "active" : "ghost"}
-                icon={<LuLayers />}
-                onClick={savedViewDisclosure.onToggle}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Save View</p>
-            </TooltipContent>
-          </Tooltip>
+          {canSaveView && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconButton
+                  aria-label="Save View"
+                  variant={savedViewDisclosure.isOpen ? "active" : "ghost"}
+                  icon={<LuLayers />}
+                  onClick={savedViewDisclosure.onToggle}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Save View</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           {withPagination &&
             (pagination.canNextPage || pagination.canPreviousPage) && (
