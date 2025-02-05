@@ -114,7 +114,8 @@ export function SalesOrderLineJobs({
                 <Tr>
                   <Th>Job ID</Th>
                   <Th>Status</Th>
-                  <Th>Quantity Complete</Th>
+                  <Th>Quantity</Th>
+                  <Th>Complete</Th>
                   <Th>Assignee</Th>
                 </Tr>
               </Thead>
@@ -129,6 +130,7 @@ export function SalesOrderLineJobs({
                     <Td>
                       <JobStatus status={job.status} />
                     </Td>
+                    <Td>{job.quantity}</Td>
                     <Td>{job.quantityComplete}</Td>
                     <Td>
                       <Assignee
