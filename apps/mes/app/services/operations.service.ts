@@ -423,6 +423,7 @@ export async function endProductionEvents(
     .update({
       endTime: args.endTime,
     })
+    .is("endTime", null)
     .eq("employeeId", args.employeeId)
     .eq("companyId", args.companyId);
 }
