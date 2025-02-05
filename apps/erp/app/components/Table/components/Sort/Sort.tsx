@@ -13,6 +13,9 @@ import {
   PopoverHeader,
   PopoverTrigger,
   Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   cn,
 } from "@carbon/react";
 import { Reorder } from "framer-motion";
@@ -37,14 +40,21 @@ const Sort = ({ columnAccessors }: SortProps) => {
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <IconButton
-          aria-label="Sort"
-          title="Sort"
-          variant={hasNoSorts ? "ghost" : "secondary"}
-          icon={<LuArrowUpDown />}
-          className={cn(hasNoSorts && "!border-dashed border-border")}
-        />
+      <PopoverTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              aria-label="Sort"
+              title="Sort"
+              variant={hasNoSorts ? "ghost" : "secondary"}
+              icon={<LuArrowUpDown />}
+              className={cn(hasNoSorts && "!border-dashed border-border")}
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Sort by</p>
+          </TooltipContent>
+        </Tooltip>
       </PopoverTrigger>
       <PopoverContent className="w-[420px]">
         {hasNoSorts && (

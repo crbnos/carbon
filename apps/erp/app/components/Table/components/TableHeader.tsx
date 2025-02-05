@@ -1,6 +1,10 @@
+import { Input, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  Card,
+  CardContent,
+  CardFooter,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +16,16 @@ import {
   Heading,
   HStack,
   IconButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useDisclosure,
 } from "@carbon/react";
 import type { Column, ColumnOrderState } from "@tanstack/react-table";
 import { useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
-import { LuCheck, LuFilePen, LuImport, LuLock } from "react-icons/lu";
+import { LuCheck, LuFilePen, LuImport, LuLayers, LuLock } from "react-icons/lu";
+import { z } from "zod";
 import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
@@ -79,53 +88,91 @@ const TableHeader = <T extends object>({
     keyof typeof fieldMappings | null
   >(null);
 
+  const savedViewDisclosure = useDisclosure();
+
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
-      <HStack
-        className={cn(
-          compact
-            ? "px-4 py-2 justify-between bg-card border-b  w-full"
-            : "px-4 md:px-0 py-6 md:py-10 justify-between bg-card w-full relative"
-        )}
-      >
-        <HStack spacing={1}>
-          <CollapsibleSidebarTrigger />
-          {title && <Heading size={compact ? "h3" : "h2"}>{title}</Heading>}
-        </HStack>
-
-        <HStack>
-          {/* <Button variant="secondary" leftIcon={<LuDownload />}>
-            Export
-          </Button> */}
-          <>{primaryAction}</>
-          {importCSV && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label="Table actions"
-                  variant="secondary"
-                  icon={<BsThreeDotsVertical />}
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {importCSV.map(({ table, label }) => (
-                  <DropdownMenuItem
-                    key={table}
-                    onClick={() => {
-                      setImportCSVTable(table);
-                    }}
-                  >
-                    <DropdownMenuIcon icon={<LuImport />} />
-                    Import {label} CSV
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+      {savedViewDisclosure.isOpen ? (
+        <ValidatedForm
+          onSubmit={() => {}}
+          validator={z.object({
+            name: z
+              .string()
+              .min(1, { message: "A name is required to save a view" }),
+          })}
+          className="w-full px-2 md:px-0"
+        >
+          <Card className="my-4 p-0">
+            <CardContent className="flex flex-col gap-0 p-4">
+              <Input
+                autoFocus
+                name="name"
+                placeholder="My Saved View"
+                label=""
+                className="border-none p-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium text-base"
+              />
+              <Input
+                name="description"
+                label=""
+                placeholder="Description (optional)"
+                className="border-none p-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm"
+              />
+            </CardContent>
+            <CardFooter className="border-t bg-muted/30 p-4">
+              <Button variant="secondary" onClick={savedViewDisclosure.onClose}>
+                Cancel
+              </Button>
+              <Button>Save</Button>
+            </CardFooter>
+          </Card>
+        </ValidatedForm>
+      ) : (
+        <HStack
+          className={cn(
+            compact
+              ? "px-4 py-2 justify-between bg-card border-b  w-full"
+              : "px-4 md:px-0 py-6 justify-between bg-card w-full relative"
           )}
+        >
+          <HStack spacing={1}>
+            <CollapsibleSidebarTrigger />
+            {title && <Heading size={compact ? "h3" : "h2"}>{title}</Heading>}
+          </HStack>
+
+          <HStack>
+            {/* <Button variant="secondary" leftIcon={<LuDownload />}>
+            Export
+            </Button> */}
+            <>{primaryAction}</>
+            {importCSV && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <IconButton
+                    aria-label="Table actions"
+                    variant="secondary"
+                    icon={<BsThreeDotsVertical />}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {importCSV.map(({ table, label }) => (
+                    <DropdownMenuItem
+                      key={table}
+                      onClick={() => {
+                        setImportCSVTable(table);
+                      }}
+                    >
+                      <DropdownMenuIcon icon={<LuImport />} />
+                      Import {label} CSV
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </HStack>
         </HStack>
-      </HStack>
+      )}
       <HStack
         className={cn(
           compact
@@ -166,6 +213,20 @@ const TableHeader = <T extends object>({
             setColumnOrder={setColumnOrder}
             withSelectableRows={withSelectableRows}
           />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <IconButton
+                aria-label="Save View"
+                variant={savedViewDisclosure.isOpen ? "active" : "ghost"}
+                icon={<LuLayers />}
+                onClick={savedViewDisclosure.onToggle}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Save View</p>
+            </TooltipContent>
+          </Tooltip>
 
           {withPagination &&
             (pagination.canNextPage || pagination.canPreviousPage) && (

@@ -1,3 +1,4 @@
+import type { ColumnPinningState } from "@tanstack/react-table";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type {
@@ -57,6 +58,15 @@ export type OptimisticFileObject = Omit<
   "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
 >;
 
-export type StandardFactor = (typeof standardFactorType)[number];
-
 export type QuantityEffect = (quantity: number) => number;
+
+export type SavedView = {
+  columnOrder: string[];
+  columnPinning: ColumnPinningState;
+  columnVisibility: Record<string, boolean>;
+  name: string;
+  sort: string;
+  filters: string;
+};
+
+export type StandardFactor = (typeof standardFactorType)[number];
