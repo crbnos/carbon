@@ -226,6 +226,8 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       }
       renderContextMenu={renderContextMenu}
       title="Processes"
+      table="process"
+      withSavedView
     />
   );
 });

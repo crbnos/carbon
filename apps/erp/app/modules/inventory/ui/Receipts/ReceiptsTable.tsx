@@ -332,6 +332,8 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
         }
         renderContextMenu={renderContextMenu}
         title="Receipts"
+        table="receipt"
+        withSavedView
       />
       {selectedReceipt && selectedReceipt.id && (
         <ConfirmDelete

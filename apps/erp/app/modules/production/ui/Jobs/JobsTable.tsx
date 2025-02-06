@@ -427,6 +427,8 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         }
         renderContextMenu={renderContextMenu}
         title="Jobs"
+        table="job"
+        withSavedView
       />
 
       {selectedJob && selectedJob.id && (

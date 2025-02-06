@@ -384,6 +384,8 @@ const PurchaseOrdersTable = memo(
           }
           renderContextMenu={renderContextMenu}
           title="Purchase Orders"
+          table="purchaseOrder"
+          withSavedView
         />
 
         {selectedPurchaseOrder && selectedPurchaseOrder.id && (

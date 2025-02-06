@@ -168,6 +168,8 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       }
       renderContextMenu={renderContextMenu}
       title="Locations"
+      table="location"
+      withSavedView
     />
   );
 });

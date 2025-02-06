@@ -314,6 +314,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
         renderContextMenu={renderContextMenu}
         table="quote"
         title="Quotes"
+        withSavedView
       />
       {selectedQuotation && selectedQuotation.id && (
         <ConfirmDelete

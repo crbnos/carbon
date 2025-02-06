@@ -410,8 +410,10 @@ const ConsumablesTable = memo(
           }
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
-          withSelectableRows
           title="Consumables"
+          table="consumable"
+          withSavedView
+          withSelectableRows
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete

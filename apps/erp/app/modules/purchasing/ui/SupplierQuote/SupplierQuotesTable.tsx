@@ -258,6 +258,8 @@ const SupplierQuotesTable = memo(
           }
           renderContextMenu={renderContextMenu}
           title="Supplier Quotes"
+          table="supplierQuote"
+          withSavedView
         />
         {selectedSupplierQuote && selectedSupplierQuote.id && (
           <ConfirmDelete

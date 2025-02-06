@@ -280,6 +280,8 @@ const SuppliersTable = memo(
           }
           renderContextMenu={renderContextMenu}
           title="Suppliers"
+          table="supplier"
+          withSavedView
         />
       </>
     );

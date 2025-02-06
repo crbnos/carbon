@@ -426,6 +426,8 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
         renderActions={renderActions}
         renderContextMenu={renderContextMenu}
         title="Tools"
+        table="tool"
+        withSavedView
         withSelectableRows
       />
       {selectedItem && selectedItem.id && (

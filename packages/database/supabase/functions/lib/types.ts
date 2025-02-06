@@ -24247,20 +24247,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "tableView_table_fkey"
-            columns: ["table"]
-            isOneToOne: false
-            referencedRelation: "customFieldTable"
-            referencedColumns: ["table"]
-          },
-          {
-            foreignKeyName: "tableView_table_fkey"
-            columns: ["table"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["table"]
-          },
-          {
             foreignKeyName: "tableView_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false

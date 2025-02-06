@@ -1,5 +1,6 @@
 import { LuHardHat, LuSquareKanban, LuTrash } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -11,6 +12,7 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         name: "Jobs",
         to: path.to.jobs,
         icon: <LuHardHat />,
+        table: "job",
       },
       {
         name: "Schedule",
@@ -34,7 +36,8 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
 
 export default function useProductionSubmodules() {
   const permissions = usePermissions();
-  // to modify
+  const { addSavedViewsToRoutes } = useSavedViews();
+
   return {
     groups: productionRoutes
       .filter((group) => {
@@ -50,13 +53,15 @@ export default function useProductionSubmodules() {
       })
       .map((group) => ({
         ...group,
-        routes: group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        }),
+        routes: group.routes
+          .filter((route) => {
+            if (route.role) {
+              return permissions.is(route.role);
+            } else {
+              return true;
+            }
+          })
+          .map(addSavedViewsToRoutes),
       })),
   };
 }

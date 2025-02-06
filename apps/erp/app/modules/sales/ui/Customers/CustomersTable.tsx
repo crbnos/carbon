@@ -274,7 +274,9 @@ const CustomersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          table="customer"
           title="Customers"
+          withSavedView
         />
         {selectedCustomer && selectedCustomer.id && (
           <ConfirmDelete

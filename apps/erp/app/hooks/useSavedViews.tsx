@@ -1,6 +1,7 @@
 import { useRouteData, useUrlParams } from "@carbon/remix";
 import { path } from "~/utils/path";
 import type { SavedView } from "~/modules/shared/types";
+import { Route } from "~/types";
 
 type SavedViews = SavedView[];
 
@@ -9,6 +10,7 @@ export function useSavedViews(): {
   hasView: boolean;
   savedViews: SavedViews;
   view: string | null;
+  addSavedViewsToRoutes: (route: Route) => Route;
 } {
   const [params] = useUrlParams();
   const view = params.get("view");
@@ -22,11 +24,24 @@ export function useSavedViews(): {
 
   const currentView = savedViews.find((v) => v.id === view) ?? null;
 
+  const addSavedViewsToRoutes = (route: Route) => ({
+    ...route,
+    views: savedViews
+      .filter((view) => view.table === route.table)
+      .map((view) => ({
+        ...view,
+        to: `${route.to}?view=${view.id}${
+          view.filters?.length ? `&filter=${view.filters.join("&filter=")}` : ""
+        }${view.sorts?.length ? `&sort=${view.sorts.join("&sort=")}` : ""}`,
+      })),
+  });
+
   return {
     currentView,
     hasView: currentView !== null,
     savedViews,
     view,
+    addSavedViewsToRoutes,
   };
 }
 
