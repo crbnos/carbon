@@ -4,6 +4,7 @@ import {
   LuNetwork,
   LuUsers,
 } from "react-icons/lu";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -15,6 +16,7 @@ const peopleRoutes: RouteGroup[] = [
         name: "People",
         to: path.to.people,
         icon: <LuUsers />,
+        table: "employee",
       },
     ],
   },
@@ -46,5 +48,12 @@ const peopleRoutes: RouteGroup[] = [
 ];
 
 export default function usePeopleSubmodules() {
-  return { groups: peopleRoutes };
+  const { addSavedViewsToRoutes } = useSavedViews();
+
+  return {
+    groups: peopleRoutes.map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes),
+    })),
+  };
 }

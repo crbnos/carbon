@@ -44885,8 +44885,6 @@ export default {
           type: "string",
         },
         table: {
-          description:
-            "Note:\nThis is a Foreign Key to `customFieldTable.table`.<fk table='customFieldTable' column='table'/>",
           format: "text",
           type: "string",
         },

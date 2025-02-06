@@ -477,6 +477,8 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
         }
         renderContextMenu={renderContextMenu}
         title="Sales Orders"
+        table="salesOrder"
+        withSavedView
       />
 
       {selectedSalesOrder && selectedSalesOrder.id && (

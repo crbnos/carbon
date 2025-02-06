@@ -8,6 +8,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuIcon,
 } from "@carbon/react";
 import { Link, useSubmit } from "@remix-run/react";
 import { useOptimisticLocation } from "~/hooks";
@@ -19,6 +20,7 @@ import {
   LuChevronRight,
   LuEllipsisVertical,
   LuGripVertical,
+  LuTrash,
 } from "react-icons/lu";
 import { useEffect, useState } from "react";
 import { path } from "~/utils/path";
@@ -98,7 +100,7 @@ const GroupedContentSidebar = ({
                         leftIcon={route.icon}
                         variant={isActive ? "active" : "ghost"}
                         className={cn(
-                          "justify-start truncate flex-grow",
+                          "justify-start flex-grow truncate",
                           !isActive &&
                             "hover:bg-active hover:text-active-foreground"
                         )}
@@ -218,14 +220,15 @@ const ViewsReorderGroup = ({
         const isViewActive = `${location.pathname}${location.search}`.includes(
           `view=${view.id}`
         );
+
         return (
           <Reorder.Item key={view.to} value={view} className="w-full">
-            <div className="group/view flex items-center truncate relative">
+            <div className="group/view flex items-center relative">
               <Button
                 asChild
                 variant={isViewActive ? "active" : "ghost"}
                 className={cn(
-                  "justify-start truncate text-sm pl-7 pr-7 flex-grow",
+                  "justify-start text-sm pl-7 pr-7 truncate flex-grow",
                   !isViewActive &&
                     "hover:bg-active hover:text-active-foreground"
                 )}
@@ -253,6 +256,7 @@ const ViewsReorderGroup = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem destructive onSelect={() => onDelete(view)}>
+                    <DropdownMenuIcon icon={<LuTrash />} />
                     Delete view
                   </DropdownMenuItem>
                 </DropdownMenuContent>

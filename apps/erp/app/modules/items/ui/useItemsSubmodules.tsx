@@ -8,6 +8,7 @@ import {
   LuShapes,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -19,21 +20,25 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
         name: "Parts",
         to: path.to.parts,
         icon: <AiOutlinePartition />,
+        table: "part",
       },
       {
         name: "Materials",
         to: path.to.materials,
         icon: <LuAtom />,
+        table: "material",
       },
       {
         name: "Tools",
         to: path.to.tools,
         icon: <LuHammer />,
+        table: "tool",
       },
       {
         name: "Consumables",
         to: path.to.consumables,
         icon: <LuPizza />,
+        table: "consumable",
       },
       // {
       //   name: "Services",
@@ -90,6 +95,8 @@ const itemsRoutes: AuthenticatedRouteGroup[] = [
 
 export default function useItemsSubmodules() {
   const permissions = usePermissions();
+  const { addSavedViewsToRoutes } = useSavedViews();
+
   return {
     groups: itemsRoutes
       .filter((group) => {
@@ -105,13 +112,15 @@ export default function useItemsSubmodules() {
       })
       .map((group) => ({
         ...group,
-        routes: group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        }),
+        routes: group.routes
+          .filter((route) => {
+            if (route.role) {
+              return permissions.is(route.role);
+            } else {
+              return true;
+            }
+          })
+          .map(addSavedViewsToRoutes),
       })),
   };
 }

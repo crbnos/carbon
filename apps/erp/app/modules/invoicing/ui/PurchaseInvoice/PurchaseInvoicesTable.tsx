@@ -318,6 +318,8 @@ const PurchaseInvoicesTable = memo(
           }
           renderContextMenu={renderContextMenu}
           title="Purchase Invoices"
+          table="purchaseInvoice"
+          withSavedView
         />
 
         {selectedPurchaseInvoice && selectedPurchaseInvoice.id && (

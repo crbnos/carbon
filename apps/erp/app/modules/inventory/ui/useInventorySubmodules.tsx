@@ -1,5 +1,6 @@
 import { LuBox, LuGroup, LuHandCoins, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -12,6 +13,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.inventory,
         role: "employee",
         icon: <LuBox />,
+        table: "inventory",
         // groups: [
         //   {
         //     name: "Parts",
@@ -43,11 +45,13 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         name: "Receipts",
         to: path.to.receipts,
         icon: <LuHandCoins />,
+        table: "receipt",
       },
       {
         name: "Batches",
         to: path.to.batches,
         icon: <LuGroup />,
+        table: "batchNumber",
       },
       // {
       //   name: "Shipments",
@@ -70,6 +74,8 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
 
 export default function useAccountingSubmodules() {
   const permissions = usePermissions();
+  const { addSavedViewsToRoutes } = useSavedViews();
+
   return {
     groups: inventoryRoutes
       .filter((group) => {
@@ -85,13 +91,15 @@ export default function useAccountingSubmodules() {
       })
       .map((group) => ({
         ...group,
-        routes: group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        }),
+        routes: group.routes
+          .filter((route) => {
+            if (route.role) {
+              return permissions.is(route.role);
+            } else {
+              return true;
+            }
+          })
+          .map(addSavedViewsToRoutes),
       })),
   };
 }

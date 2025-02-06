@@ -153,6 +153,8 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         }}
         renderContextMenu={renderContextMenu}
         title="Batches"
+        table="batchNumber"
+        withSavedView
       />
     </>
   );

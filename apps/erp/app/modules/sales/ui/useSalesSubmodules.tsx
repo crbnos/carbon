@@ -17,11 +17,13 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
         name: "Customers",
         to: path.to.customers,
         icon: <LuSquareUser />,
+        table: "customer",
       },
       {
         name: "RFQs",
         to: path.to.salesRfqs,
         icon: <RiProgress2Line />,
+        table: "salesRfq",
       },
       {
         name: "Quotes",
@@ -33,6 +35,7 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
         name: "Orders",
         to: path.to.salesOrders,
         icon: <RiProgress8Line />,
+        table: "salesOrder",
       },
     ],
   },
@@ -63,7 +66,7 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
 
 export default function useSalesSubmodules() {
   const permissions = usePermissions();
-  const { savedViews } = useSavedViews();
+  const { addSavedViewsToRoutes } = useSavedViews();
 
   return {
     groups: salesRoutes
@@ -88,21 +91,7 @@ export default function useSalesSubmodules() {
               return true;
             }
           })
-          .map((route) => ({
-            ...route,
-            views: savedViews
-              .filter((view) => view.table === route.table)
-              .map((view) => ({
-                ...view,
-                to: `${route.to}?view=${view.id}${
-                  view.filters?.length
-                    ? `&filter=${view.filters.join("&filter=")}`
-                    : ""
-                }${
-                  view.sorts?.length ? `&sort=${view.sorts.join("&sort=")}` : ""
-                }`,
-              })),
-          })),
+          .map(addSavedViewsToRoutes),
       })),
   };
 }

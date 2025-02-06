@@ -101,7 +101,7 @@ const Table = <T extends object>({
   title,
   withInlineEditing = false,
   withPagination = true,
-  withSavedView = true,
+  withSavedView = false,
   withSearch = true,
   withSelectableRows = false,
   withSimpleSorting = true,

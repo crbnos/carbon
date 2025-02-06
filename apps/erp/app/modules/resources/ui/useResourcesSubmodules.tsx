@@ -1,5 +1,6 @@
 import { LuHammer, LuMapPin } from "react-icons/lu";
 import { TbRoute } from "react-icons/tb";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -11,26 +12,37 @@ const resourcesRoutes: RouteGroup[] = [
         name: "Abilities",
         to: path.to.abilities,
         icon: <LuHammer />,
+        table: "ability",
       },
       {
         name: "Locations",
         to: path.to.locations,
         icon: <LuMapPin />,
+        table: "location",
       },
       {
         name: "Processes",
         to: path.to.processes,
         icon: <TbRoute />,
+        table: "process",
       },
       {
         name: "Work Centers",
         to: path.to.workCenters,
         icon: <LuMapPin />,
+        table: "workCenter",
       },
     ],
   },
 ];
 
 export default function useResourcesSubmodules() {
-  return { groups: resourcesRoutes };
+  const { addSavedViewsToRoutes } = useSavedViews();
+
+  return {
+    groups: resourcesRoutes.map((group) => ({
+      ...group,
+      routes: group.routes.map(addSavedViewsToRoutes),
+    })),
+  };
 }

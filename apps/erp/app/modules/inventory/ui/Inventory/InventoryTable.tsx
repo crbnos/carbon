@@ -281,6 +281,8 @@ const InventoryTable = memo(
                 />
               }
               title="Inventory"
+              table="inventory"
+              withSavedView
             />
           </>
         )}
