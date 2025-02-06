@@ -1,4 +1,4 @@
-ALTER TABLE "tableView" DROP CONSTRAINT "tableView_table_fkey";
+ALTER TABLE "tableView" DROP CONSTRAINT IF EXISTS "tableView_table_fkey";
 
 INSERT INTO "customFieldTable" ("table", "name", "module")
 VALUES 
