@@ -106,6 +106,8 @@ export const savedViewStateValidator = z.object({
   columnOrder: z.array(z.string()),
   columnPinning: z.any(),
   columnVisibility: z.record(z.boolean()),
+  filters: z.array(z.string()).optional(),
+  sorts: z.array(z.string()).optional(),
 });
 
 export const standardFactorType = [

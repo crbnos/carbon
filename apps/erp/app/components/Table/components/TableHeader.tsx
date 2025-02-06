@@ -16,6 +16,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -27,7 +28,7 @@ import type {
   ColumnOrderState,
   ColumnPinningState,
 } from "@tanstack/react-table";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuCheck, LuFilePen, LuImport, LuLayers, LuLock } from "react-icons/lu";
 import { SearchFilter } from "~/components";
@@ -36,7 +37,7 @@ import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
 import { useUrlParams } from "~/hooks";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import { savedViewValidator } from "~/modules/shared/shared.models";
-import type { action as savedViewAction } from "~/routes/x+/shared+/view";
+import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
 import Columns from "./Columns";
 import { ActiveFilters, Filter } from "./Filter";
@@ -99,21 +100,34 @@ const TableHeader = <T extends object>({
 }: HeaderProps<T>) => {
   const [params] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
+  const currentSorts = params.getAll("sort").filter(Boolean);
+
   const [importCSVTable, setImportCSVTable] = useState<
     keyof typeof fieldMappings | null
   >(null);
 
   const savedViewDisclosure = useDisclosure();
   const canSaveView = withSavedView && !!table;
+
   const fetcher = useFetcher<typeof savedViewAction>();
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      savedViewDisclosure.onClose();
+    } else if (fetcher.data?.success === false) {
+      toast.error(fetcher.data.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state, fetcher.data?.success]);
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
       {canSaveView && savedViewDisclosure.isOpen ? (
         <ValidatedForm
           method="post"
-          action={path.to.saveView}
+          action={path.to.saveViews}
           validator={savedViewValidator}
+          resetAfterSubmit
           className="w-full px-2 md:px-0"
           fetcher={fetcher}
         >
@@ -124,6 +138,8 @@ const TableHeader = <T extends object>({
                 columnOrder,
                 columnPinning,
                 columnVisibility,
+                filters: currentFilters,
+                sorts: currentSorts,
               })}
             />
             <Hidden name="table" value={table} />

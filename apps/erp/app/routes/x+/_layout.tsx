@@ -25,6 +25,7 @@ import { path } from "~/utils/path";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useUser } from "~/hooks";
+import { getSavedViews } from "~/modules/shared/shared.service";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -33,7 +34,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
     currentUrl.pathname.startsWith("/x/users") ||
-    currentUrl.pathname.startsWith("/refresh-session")
+    currentUrl.pathname.startsWith("/refresh-session") ||
+    currentUrl.pathname.startsWith("/x/shared/views")
   ) {
     return true;
   }
@@ -62,6 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companies,
     customFields,
     integrations,
+    savedViews,
     user,
     claims,
     groups,
@@ -70,6 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getCompanies(client, userId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
+    getSavedViews(client, userId, companyId),
     getUser(client, userId),
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
@@ -102,6 +106,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     permissions: claims?.permissions,
     role: claims?.role,
     user: user.data,
+    savedViews: savedViews.data ?? [],
   });
 }
 
@@ -138,7 +143,7 @@ export default function AuthenticatedRoute() {
               <Topbar />
               <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                 <PrimaryNavigation />
-                <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted rounded-tl-2xl relative z-10">
+                <main className="flex-1 overflow-y-auto scrollbar-hide border-l border-t bg-muted sm:rounded-tl-2xl relative z-10">
                   <Outlet />
                 </main>
               </div>

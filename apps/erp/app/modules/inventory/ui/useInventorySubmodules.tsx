@@ -12,32 +12,32 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.inventory,
         role: "employee",
         icon: <LuBox />,
-        groups: [
-          {
-            name: "Parts",
-            to: `${path.to.inventory}?filter=${encodeURIComponent(
-              "type:eq:Part"
-            )}`,
-          },
-          {
-            name: "Materials",
-            to: `${path.to.inventory}?filter=${encodeURIComponent(
-              "type:eq:Material"
-            )}`,
-          },
-          {
-            name: "Tools",
-            to: `${path.to.inventory}?filter=${encodeURIComponent(
-              "type:eq:Tool"
-            )}`,
-          },
-          {
-            name: "Consumables",
-            to: `${path.to.inventory}?filter=${encodeURIComponent(
-              "type:eq:Consumable"
-            )}`,
-          },
-        ],
+        // groups: [
+        //   {
+        //     name: "Parts",
+        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
+        //       "type:eq:Part"
+        //     )}`,
+        //   },
+        //   {
+        //     name: "Materials",
+        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
+        //       "type:eq:Material"
+        //     )}`,
+        //   },
+        //   {
+        //     name: "Tools",
+        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
+        //       "type:eq:Tool"
+        //     )}`,
+        //   },
+        //   {
+        //     name: "Consumables",
+        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
+        //       "type:eq:Consumable"
+        //     )}`,
+        //   },
+        // ],
       },
       {
         name: "Receipts",

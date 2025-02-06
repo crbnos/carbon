@@ -24,8 +24,6 @@ export function useNextItemId(
             prefix,
           });
 
-          console.log(nextIdRpc);
-
           if (nextIdRpc.data) {
             const sequence = nextIdRpc.data.slice(prefix.length);
             const currentSequence = parseInt(sequence);

@@ -257,11 +257,6 @@ function LineItems({
 
         const isMade = line.methodType === "Make";
 
-        console.log({
-          line,
-          jobs,
-        });
-
         const hasEnoughJobsToCoverQuantity =
           jobs.reduce((acc, job) => acc + job.productionQuantity, 0) >=
           (line.saleQuantity ?? 0);

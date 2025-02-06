@@ -5,6 +5,7 @@ import {
   RiProgress8Line,
 } from "react-icons/ri";
 import { usePermissions } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
@@ -26,6 +27,7 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
         name: "Quotes",
         to: path.to.quotes,
         icon: <RiProgress4Line />,
+        table: "quote",
       },
       {
         name: "Orders",
@@ -61,7 +63,8 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
 
 export default function useSalesSubmodules() {
   const permissions = usePermissions();
-  // to modify
+  const { savedViews } = useSavedViews();
+
   return {
     groups: salesRoutes
       .filter((group) => {
@@ -77,13 +80,29 @@ export default function useSalesSubmodules() {
       })
       .map((group) => ({
         ...group,
-        routes: group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
-          }
-        }),
+        routes: group.routes
+          .filter((route) => {
+            if (route.role) {
+              return permissions.is(route.role);
+            } else {
+              return true;
+            }
+          })
+          .map((route) => ({
+            ...route,
+            views: savedViews
+              .filter((view) => view.table === route.table)
+              .map((view) => ({
+                ...view,
+                to: `${route.to}?view=${view.id}${
+                  view.filters?.length
+                    ? `&filter=${view.filters.join("&filter=")}`
+                    : ""
+                }${
+                  view.sorts?.length ? `&sort=${view.sorts.join("&sort=")}` : ""
+                }`,
+              })),
+          })),
       })),
   };
 }
