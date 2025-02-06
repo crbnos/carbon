@@ -45,6 +45,7 @@ import type { ColumnFilter } from "./Filter/types";
 import type { PaginationProps } from "./Pagination";
 import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
+import { useSavedViews } from "~/hooks/useSavedViews";
 
 type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
@@ -98,7 +99,7 @@ const TableHeader = <T extends object>({
   withSearch,
   withSelectableRows,
 }: HeaderProps<T>) => {
-  const [params] = useUrlParams();
+  const [params, setParams] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
 
@@ -112,13 +113,18 @@ const TableHeader = <T extends object>({
   const fetcher = useFetcher<typeof savedViewAction>();
 
   useEffect(() => {
-    if (fetcher.data?.success) {
+    if (fetcher.data?.success && fetcher.data.id) {
+      setParams({ view: fetcher.data.id });
       savedViewDisclosure.onClose();
     } else if (fetcher.data?.success === false) {
       toast.error(fetcher.data.message);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.state, fetcher.data?.success]);
+
+  const { currentView, hasView } = useSavedViews();
+  const viewTitle = currentView?.name ?? title;
+  // const viewDescription = currentView?.description ?? "";
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
@@ -129,9 +135,11 @@ const TableHeader = <T extends object>({
           validator={savedViewValidator}
           resetAfterSubmit
           className="w-full px-2 md:px-0"
+          defaultValues={currentView ?? {}}
           fetcher={fetcher}
         >
           <Card className="my-4 p-0">
+            <Hidden name="id" value={currentView?.id} />
             <Hidden
               name="state"
               value={JSON.stringify({
@@ -163,7 +171,7 @@ const TableHeader = <T extends object>({
               <Button variant="secondary" onClick={savedViewDisclosure.onClose}>
                 Cancel
               </Button>
-              <Submit>Save</Submit>
+              <Submit>{hasView ? "Update" : "Save"}</Submit>
             </CardFooter>
           </Card>
         </ValidatedForm>
@@ -177,7 +185,9 @@ const TableHeader = <T extends object>({
         >
           <HStack spacing={1}>
             <CollapsibleSidebarTrigger />
-            {title && <Heading size={compact ? "h3" : "h2"}>{title}</Heading>}
+            {viewTitle && (
+              <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+            )}
           </HStack>
 
           <HStack>
@@ -260,13 +270,15 @@ const TableHeader = <T extends object>({
               <TooltipTrigger asChild>
                 <IconButton
                   aria-label="Save View"
-                  variant={savedViewDisclosure.isOpen ? "active" : "ghost"}
+                  variant={
+                    savedViewDisclosure.isOpen || hasView ? "active" : "ghost"
+                  }
                   icon={<LuLayers />}
                   onClick={savedViewDisclosure.onToggle}
                 />
               </TooltipTrigger>
               <TooltipContent>
-                <p>Save View</p>
+                <p>{hasView ? "Edit View" : "Save View"}</p>
               </TooltipContent>
             </Tooltip>
           )}

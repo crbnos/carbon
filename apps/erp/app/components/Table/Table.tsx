@@ -44,7 +44,7 @@ import type {
   EditableTableCellComponent,
   Position,
 } from "~/components/Editable";
-import type { fieldMappings, SavedView } from "~/modules/shared";
+import type { fieldMappings } from "~/modules/shared";
 import {
   IndeterminateCheckbox,
   Pagination,
@@ -57,6 +57,7 @@ import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
+import { useSavedViews } from "~/hooks/useSavedViews";
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
@@ -110,7 +111,7 @@ const Table = <T extends object>({
 }: TableProps<T>) => {
   const tableContainerRef = useRef<HTMLDivElement>(null);
 
-  const savedView = useSavedView();
+  const { currentView, view } = useSavedViews();
 
   /* Data for Optimistic Updates */
   const [internalData, setInternalData] = useState<T[]>(data);
@@ -126,12 +127,12 @@ const Table = <T extends object>({
 
   /* Column Visibility */
   const [columnVisibility, setColumnVisibility] = useState(
-    savedView?.columnVisibility ?? defaultColumnVisibility ?? {}
+    currentView?.columnVisibility ?? defaultColumnVisibility ?? {}
   );
 
   /* Column Ordering */
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
-    savedView?.columnOrder ?? defaultColumnOrder ?? []
+    currentView?.columnOrder ?? defaultColumnOrder ?? []
   );
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     const left: string[] = [];
@@ -142,8 +143,8 @@ const Table = <T extends object>({
     if (renderContextMenu) {
       right.push("Actions");
     }
-    if (savedView?.columnPinning) {
-      return savedView.columnPinning;
+    if (currentView?.columnPinning) {
+      return currentView.columnPinning;
     }
     if (
       defaultColumnPinning &&
@@ -158,6 +159,41 @@ const Table = <T extends object>({
       right,
     };
   });
+
+  useEffect(() => {
+    if (currentView) {
+      setColumnVisibility(currentView.columnVisibility);
+      setColumnOrder(currentView.columnOrder);
+      setColumnPinning(currentView.columnPinning);
+    } else {
+      setColumnVisibility(defaultColumnVisibility ?? {});
+      setColumnOrder(defaultColumnOrder ?? []);
+      setColumnPinning(() => {
+        const left: string[] = [];
+        const right: string[] = [];
+        if (withSelectableRows) {
+          left.push("Select");
+        }
+        if (renderContextMenu) {
+          right.push("Actions");
+        }
+
+        if (
+          defaultColumnPinning &&
+          "left" in defaultColumnPinning &&
+          Array.isArray(defaultColumnPinning.left)
+        ) {
+          left.push(...defaultColumnPinning.left);
+        }
+
+        return {
+          left,
+          right,
+        };
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
 
   /* Sorting */
   const { isSorted, toggleSortByAscending, toggleSortByDescending } = useSort();
@@ -595,6 +631,7 @@ const Table = <T extends object>({
 
   return (
     <VStack
+      key={view ?? tableName ?? ""}
       spacing={0}
       className={cn(
         "h-full bg-card",
@@ -902,10 +939,6 @@ function getActionColumn<T>(
       size: 60,
     },
   ];
-}
-
-function useSavedView(): SavedView | undefined {
-  return undefined;
 }
 
 export default Table;

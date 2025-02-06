@@ -46,7 +46,7 @@ const Sort = ({ columnAccessors }: SortProps) => {
             <IconButton
               aria-label="Sort"
               title="Sort"
-              variant={hasNoSorts ? "ghost" : "secondary"}
+              variant={hasNoSorts ? "ghost" : "active"}
               icon={<LuArrowUpDown />}
               className={cn(hasNoSorts && "!border-dashed border-border")}
             />
