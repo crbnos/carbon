@@ -279,7 +279,9 @@ export async function upsertSavedView(
         ...data,
         updatedBy: userId,
       })
-      .eq("id", view.id);
+      .eq("id", view.id)
+      .select("id")
+      .single();
   }
 
   const { data: maxSortOrderData, error: maxSortOrderError } = await client
@@ -295,11 +297,15 @@ export async function upsertSavedView(
 
   const newSortOrder = maxSortOrderData ? maxSortOrderData.sortOrder + 1 : 1;
 
-  return client.from("tableView").insert({
-    ...data,
-    createdBy: userId,
-    sortOrder: newSortOrder,
-  });
+  return client
+    .from("tableView")
+    .insert({
+      ...data,
+      createdBy: userId,
+      sortOrder: newSortOrder,
+    })
+    .select("id")
+    .single();
 }
 
 export async function updateSavedViewOrder(

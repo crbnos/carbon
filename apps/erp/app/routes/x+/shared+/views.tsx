@@ -19,6 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return json({
       success: false,
+      id: null,
       message: "Invalid form data",
     });
   }
@@ -40,17 +41,28 @@ export async function action({ request }: ActionFunctionArgs) {
       console.error(result.error);
       return json({
         success: false,
+        id: null,
         message: result.error.message,
+      });
+    }
+
+    if (data.id) {
+      return json({
+        success: true,
+        id: data.id,
+        message: "View updated",
       });
     }
 
     return json({
       success: true,
+      id: result.data.id,
       message: "View saved",
     });
   } catch (error) {
     return json({
       success: false,
+      id: null,
       message: "Invalid state",
     });
   }

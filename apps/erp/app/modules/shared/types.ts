@@ -67,6 +67,7 @@ export type SavedView = {
   columnPinning: ColumnPinningState;
   columnVisibility: Record<string, boolean>;
   name: string;
+  description?: string;
   sortOrder: number;
   sorts: string[];
   filters: string[];

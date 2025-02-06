@@ -1,12 +1,18 @@
-import { useRouteData } from "@carbon/remix";
+import { useRouteData, useUrlParams } from "@carbon/remix";
 import { path } from "~/utils/path";
 import type { SavedView } from "~/modules/shared/types";
 
 type SavedViews = SavedView[];
 
 export function useSavedViews(): {
+  currentView: SavedView | null;
+  hasView: boolean;
   savedViews: SavedViews;
+  view: string | null;
 } {
+  const [params] = useUrlParams();
+  const view = params.get("view");
+
   const data = useRouteData<{
     savedViews: unknown;
   }>(path.to.authenticatedRoot);
@@ -14,8 +20,13 @@ export function useSavedViews(): {
   const savedViews =
     data?.savedViews && isSavedViews(data.savedViews) ? data.savedViews : [];
 
+  const currentView = savedViews.find((v) => v.id === view) ?? null;
+
   return {
+    currentView,
+    hasView: currentView !== null,
     savedViews,
+    view,
   };
 }
 

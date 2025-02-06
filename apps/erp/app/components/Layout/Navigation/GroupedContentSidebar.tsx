@@ -20,7 +20,7 @@ import {
   LuEllipsisVertical,
   LuGripVertical,
 } from "react-icons/lu";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { path } from "~/utils/path";
 import { ConfirmDelete } from "~/components/Modals";
 
@@ -78,11 +78,7 @@ const GroupedContentSidebar = ({
                 const isActive = exactMatch
                   ? location.pathname === route.to
                   : location.pathname.includes(route.to) &&
-                    !route.views?.some((subRoute) =>
-                      `${location.pathname}${location.search}`.includes(
-                        subRoute.to
-                      )
-                    );
+                    !`${location.pathname}${location.search}`.includes("view=");
 
                 const hasViews = route.views && route.views.length > 0;
                 const isExpanded = expandedViews[route.name];
@@ -191,6 +187,16 @@ const ViewsReorderGroup = ({
     return [];
   });
 
+  const viewNames = views
+    .map((view) => view.name)
+    .sort()
+    .join(",");
+
+  useEffect(() => {
+    setSortedViews([...views].sort((a, b) => a.sortOrder - b.sortOrder));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [views.length, viewNames]);
+
   const debouncedOnReorder = useDebounce(onReorder, 500, true);
 
   return (
@@ -210,7 +216,7 @@ const ViewsReorderGroup = ({
     >
       {sortedViews.map((view) => {
         const isViewActive = `${location.pathname}${location.search}`.includes(
-          view.to
+          `view=${view.id}`
         );
         return (
           <Reorder.Item key={view.to} value={view} className="w-full">
