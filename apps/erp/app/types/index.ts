@@ -56,8 +56,14 @@ export type Route = {
   name: string;
   to: string;
   icon?: any;
+  views?: {
+    id: string;
+    name: string;
+    to: string;
+    sortOrder: number;
+  }[];
   q?: string; // TODO: this is dumb
-  groups?: Omit<Route, "groups">[];
+  table?: string;
 };
 
 export type RouteGroup = {

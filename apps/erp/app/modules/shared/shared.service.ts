@@ -10,6 +10,13 @@ export async function deleteNote(
   return client.from("note").update({ active: false }).eq("id", noteId);
 }
 
+export async function deleteSavedView(
+  client: SupabaseClient<Database>,
+  viewId: string
+) {
+  return client.from("tableView").delete().eq("id", viewId);
+}
+
 export async function getBase64ImageFromSupabase(
   client: SupabaseClient<Database>,
   path: string
@@ -131,6 +138,19 @@ export async function getNotes(
     .order("createdAt");
 }
 
+export async function getSavedViews(
+  client: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  return client
+    .from("tableView")
+    .select("*")
+    .eq("createdBy", userId)
+    .eq("companyId", companyId)
+    .order("name");
+}
+
 export async function getTagsList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -242,8 +262,8 @@ export async function upsertSavedView(
     description?: string;
     table: string;
     type: "Public" | "Private";
-    filter?: string;
-    sort?: string;
+    filters?: string[];
+    sorts?: string[];
     columnPinning?: Record<string, boolean>;
     columnVisibility?: Record<string, boolean>;
     columnOrder?: string[];
@@ -261,16 +281,37 @@ export async function upsertSavedView(
       })
       .eq("id", view.id);
   }
-  const tableModule = await client
-    .from("customFieldTable")
-    .select("module")
-    .eq("table", view.table)
-    .single();
 
-  if (tableModule.error) return tableModule;
+  const { data: maxSortOrderData, error: maxSortOrderError } = await client
+    .from("tableView")
+    .select("sortOrder")
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (maxSortOrderError) {
+    return { data: null, error: maxSortOrderError };
+  }
+
+  const newSortOrder = maxSortOrderData ? maxSortOrderData.sortOrder + 1 : 1;
+
   return client.from("tableView").insert({
     ...data,
-    module: tableModule.data?.module,
     createdBy: userId,
+    sortOrder: newSortOrder,
   });
+}
+
+export async function updateSavedViewOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client.from("tableView").update({ sortOrder, updatedBy }).eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }

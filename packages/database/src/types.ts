@@ -24139,11 +24139,11 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string | null
-          filter: string | null
+          filters: string[] | null
           id: string
-          module: Database["public"]["Enums"]["module"] | null
           name: string
-          sort: string | null
+          sortOrder: number
+          sorts: string[] | null
           table: string
           type: Database["public"]["Enums"]["tableViewType"]
           updatedBy: string | null
@@ -24156,11 +24156,11 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description?: string | null
-          filter?: string | null
+          filters?: string[] | null
           id?: string
-          module?: Database["public"]["Enums"]["module"] | null
           name: string
-          sort?: string | null
+          sortOrder?: number
+          sorts?: string[] | null
           table: string
           type?: Database["public"]["Enums"]["tableViewType"]
           updatedBy?: string | null
@@ -24173,11 +24173,11 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string | null
-          filter?: string | null
+          filters?: string[] | null
           id?: string
-          module?: Database["public"]["Enums"]["module"] | null
           name?: string
-          sort?: string | null
+          sortOrder?: number
+          sorts?: string[] | null
           table?: string
           type?: Database["public"]["Enums"]["tableViewType"]
           updatedBy?: string | null
@@ -27564,6 +27564,7 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
+          defaultShelf: boolean | null
           description: string | null
           estimatedQuantity: number | null
           id: string | null
@@ -27577,7 +27578,10 @@ export type Database = {
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
           quantity: number | null
+          quantityIssued: number | null
+          quantityToIssue: number | null
           scrapQuantity: number | null
+          shelfId: string | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -27694,6 +27698,13 @@ export type Database = {
             columns: ["jobOperationId"]
             isOneToOne: false
             referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
             referencedColumns: ["id"]
           },
           {
@@ -30409,12 +30420,15 @@ export type Database = {
           itemType: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
+          productionQuantity: number | null
           quantity: number | null
           quoteId: string | null
           quoteLineId: string | null
           quoteMakeMethodId: string | null
           quoteMaterialMakeMethodId: string | null
           quoteOperationId: string | null
+          scrapQuantity: number | null
+          tags: string[] | null
           unitCost: number | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -34701,10 +34715,6 @@ export type Database = {
           metadata: Json
           updated_at: string
         }[]
-      }
-      operation: {
-        Args: Record<PropertyKey, never>
-        Returns: string
       }
       search: {
         Args: {

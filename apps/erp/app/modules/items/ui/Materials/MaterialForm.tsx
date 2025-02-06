@@ -76,7 +76,6 @@ const MaterialForm = ({
   );
 
   const { isInternal } = useFlags();
-  console.log({ isInternal });
 
   const itemTrackingTypeOptions =
     itemTrackingTypes

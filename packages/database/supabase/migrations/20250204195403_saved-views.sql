@@ -6,25 +6,26 @@ CREATE TABLE IF NOT EXISTS "tableView" (
   "name" TEXT NOT NULL,
   "table" TEXT NOT NULL,
   "description" TEXT,
-  "module" module,
   "type" "tableViewType" NOT NULL DEFAULT 'Private',
+  "sortOrder" INTEGER NOT NULL DEFAULT 0,
   "columnOrder" TEXT ARRAY,
   "columnPinning" JSONB,
   "columnVisibility" JSONB,
-  "filter" TEXT,
-  "sort" TEXT,
+  "filters" TEXT ARRAY,
+  "sorts" TEXT ARRAY,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedBy" TEXT,
   CONSTRAINT "tableView_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "tableView_table_fkey" FOREIGN KEY ("table") REFERENCES "customFieldTable"("table") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "tableView_name_table_createdBy_key" UNIQUE ("name", "table", "createdBy"),
   CONSTRAINT "tableView_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "tableView_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "tableView_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
-CREATE INDEX "tableView_module_createdBy_idx" ON "tableView" ("module", "createdBy");
+CREATE INDEX "tableView_module_createdBy_idx" ON "tableView" ("createdBy");
 CREATE INDEX "tableView_companyId_idx" ON "tableView" ("companyId");
 
 

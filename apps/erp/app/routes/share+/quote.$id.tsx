@@ -1091,8 +1091,6 @@ const Quote = ({
     maxSize: 25 * 1024 * 1024, // 25MB limit
   });
 
-  console.log({ selectedLines });
-
   return (
     <VStack spacing={8} className="w-full items-center p-2 md:p-8">
       {logo && (

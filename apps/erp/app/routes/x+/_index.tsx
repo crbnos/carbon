@@ -67,7 +67,7 @@ const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
   <Link
     to={module.to}
     prefetch="intent"
-    className="flex flex-col gap-3 items-center justify-center py-8  border border-border dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08),_0px_0px_10px_rgba(0,_0,_0,_0.12),_0px_0px_24px_rgba(0,_0,_0,_0.16),_0px_0px_80px_rgba(0,_0,_0,_0.2)] bg-gradient-to-bl from-card from-50% to-background rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer"
+    className="aspect-video flex flex-col gap-3 items-center justify-center py-8  border border-border dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08),_0px_0px_10px_rgba(0,_0,_0,_0.12),_0px_0px_24px_rgba(0,_0,_0,_0.16),_0px_0px_80px_rgba(0,_0,_0,_0.2)] bg-gradient-to-bl from-card from-50% to-background rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer"
   >
     <div className="p-4 rounded-full border">
       <module.icon className="text-2xl" />

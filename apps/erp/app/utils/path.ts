@@ -355,6 +355,8 @@ export const path = {
     deleteSalesRfq: (id: string) => generatePath(`${x}/sales-rfq/${id}/delete`),
     deleteSalesRfqLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-rfq/${id}/${lineId}/delete`),
+    deleteSavedView: (id: string) =>
+      generatePath(`${x}/shared/views/delete/${id}`),
     deleteScrapReason: (id: string) =>
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
     deleteShift: (id: string) =>
@@ -824,7 +826,8 @@ export const path = {
     salesRfqStatus: (id: string) => generatePath(`${x}/sales-rfq/${id}/status`),
     salesRfqs: `${x}/sales/rfqs`,
     salesSettings: `${x}/settings/sales`,
-    saveView: `${x}/shared/view`,
+    saveViews: `${x}/shared/views`,
+    saveViewOrder: `${x}/shared/view/order`,
     schedule: `${x}/schedule`,
     scheduleOperationUpdate: `${x}/schedule/operation/update`,
     scrapReason: (id: string) =>
@@ -949,7 +952,7 @@ export const getStoragePath = (bucket: string, path: string) => {
   return `${SUPABASE_API_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
-export const requestReferrer = (request: Request) => {
+export const requestReferrer = (request: Request, withParams = true) => {
   return request.headers.get("referer");
 };
 

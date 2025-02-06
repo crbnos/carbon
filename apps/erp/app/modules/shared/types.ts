@@ -61,12 +61,15 @@ export type OptimisticFileObject = Omit<
 export type QuantityEffect = (quantity: number) => number;
 
 export type SavedView = {
+  id: string;
+  table: string;
   columnOrder: string[];
   columnPinning: ColumnPinningState;
   columnVisibility: Record<string, boolean>;
   name: string;
-  sort: string;
-  filters: string;
+  sortOrder: number;
+  sorts: string[];
+  filters: string[];
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];

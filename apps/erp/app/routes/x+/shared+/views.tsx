@@ -37,6 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (result.error) {
+      console.error(result.error);
       return json({
         success: false,
         message: result.error.message,

@@ -23,8 +23,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const salesOrderLineId = formData.get("salesOrderLineId") as string | null;
   const jobId = formData.get("jobId") as string | null;
 
-  console.log({ itemId, salesRfqLineId, quoteLineId, salesOrderLineId, jobId });
-
   if (!modelId) {
     throw new Error("File ID is required");
   }

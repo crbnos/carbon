@@ -589,10 +589,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.description",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.module",
+            $ref: "#/parameters/rowFilter.tableView.type",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.type",
+            $ref: "#/parameters/rowFilter.tableView.sortOrder",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.columnOrder",
@@ -604,10 +604,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.columnVisibility",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.filter",
+            $ref: "#/parameters/rowFilter.tableView.filters",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.sort",
+            $ref: "#/parameters/rowFilter.tableView.sorts",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.companyId",
@@ -693,10 +693,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.description",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.module",
+            $ref: "#/parameters/rowFilter.tableView.type",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.type",
+            $ref: "#/parameters/rowFilter.tableView.sortOrder",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.columnOrder",
@@ -708,10 +708,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.columnVisibility",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.filter",
+            $ref: "#/parameters/rowFilter.tableView.filters",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.sort",
+            $ref: "#/parameters/rowFilter.tableView.sorts",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.companyId",
@@ -751,10 +751,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.description",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.module",
+            $ref: "#/parameters/rowFilter.tableView.type",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.type",
+            $ref: "#/parameters/rowFilter.tableView.sortOrder",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.columnOrder",
@@ -766,10 +766,10 @@ export default {
             $ref: "#/parameters/rowFilter.tableView.columnVisibility",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.filter",
+            $ref: "#/parameters/rowFilter.tableView.filters",
           },
           {
-            $ref: "#/parameters/rowFilter.tableView.sort",
+            $ref: "#/parameters/rowFilter.tableView.sorts",
           },
           {
             $ref: "#/parameters/rowFilter.tableView.companyId",
@@ -19141,6 +19141,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.jobs",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.lines",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.shippingTermName",
           },
           {
@@ -19160,9 +19163,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrders.locationName",
           },
           {
             $ref: "#/parameters/select",
@@ -36805,7 +36805,7 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrders.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.purchaseOrders.locationName",
+            $ref: "#/parameters/rowFilter.purchaseOrders.supplierShippingCost",
           },
           {
             $ref: "#/parameters/select",
@@ -44868,6 +44868,7 @@ export default {
         "name",
         "table",
         "type",
+        "sortOrder",
         "companyId",
         "createdAt",
         "createdBy",
@@ -44893,31 +44894,16 @@ export default {
           format: "text",
           type: "string",
         },
-        module: {
-          enum: [
-            "Accounting",
-            "Documents",
-            "Invoicing",
-            "Inventory",
-            "Items",
-            "Messaging",
-            "Parts",
-            "People",
-            "Production",
-            "Purchasing",
-            "Resources",
-            "Sales",
-            "Settings",
-            "Users",
-          ],
-          format: "public.module",
-          type: "string",
-        },
         type: {
           default: "Private",
           enum: ["Public", "Private"],
           format: 'public."tableViewType"',
           type: "string",
+        },
+        sortOrder: {
+          default: 0,
+          format: "integer",
+          type: "integer",
         },
         columnOrder: {
           format: "text[]",
@@ -44932,13 +44918,19 @@ export default {
         columnVisibility: {
           format: "jsonb",
         },
-        filter: {
-          format: "text",
-          type: "string",
+        filters: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
-        sort: {
-          format: "text",
-          type: "string",
+        sorts: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         companyId: {
           description:
@@ -53661,6 +53653,11 @@ export default {
           items: {},
           type: "array",
         },
+        lines: {
+          format: "json[]",
+          items: {},
+          type: "array",
+        },
         shippingTermName: {
           format: "text",
           type: "string",
@@ -53692,10 +53689,6 @@ export default {
         shippingCost: {
           format: "numeric",
           type: "number",
-        },
-        locationName: {
-          format: "text",
-          type: "string",
         },
       },
       type: "object",
@@ -61650,13 +61643,14 @@ export default {
           type: "string",
         },
         locationId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
-        locationName: {
-          format: "text",
-          type: "string",
+        supplierShippingCost: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -64029,17 +64023,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tableView.module": {
-      name: "module",
-      required: false,
-      format: "public.module",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.tableView.type": {
       name: "type",
       required: false,
       format: 'public."tableViewType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tableView.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "integer",
       in: "query",
       type: "string",
     },
@@ -64064,17 +64058,17 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tableView.filter": {
-      name: "filter",
+    "rowFilter.tableView.filters": {
+      name: "filters",
       required: false,
-      format: "text",
+      format: "text[]",
       in: "query",
       type: "string",
     },
-    "rowFilter.tableView.sort": {
-      name: "sort",
+    "rowFilter.tableView.sorts": {
+      name: "sorts",
       required: false,
-      format: "text",
+      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -75475,6 +75469,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrders.lines": {
+      name: "lines",
+      required: false,
+      format: "json[]",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrders.shippingTermName": {
       name: "shippingTermName",
       required: false,
@@ -75521,13 +75522,6 @@ export default {
       name: "shippingCost",
       required: false,
       format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrders.locationName": {
-      name: "locationName",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -85862,10 +85856,10 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.purchaseOrders.locationName": {
-      name: "locationName",
+    "rowFilter.purchaseOrders.supplierShippingCost": {
+      name: "supplierShippingCost",
       required: false,
-      format: "text",
+      format: "numeric",
       in: "query",
       type: "string",
     },
