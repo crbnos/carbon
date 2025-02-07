@@ -67,7 +67,7 @@ export default function MaterialDetailsRoute() {
   if (!materialData) throw new Error("Could not find material data");
 
   return (
-    <VStack spacing={2} className="w-full h-full">
+    <VStack spacing={2} className="w-full h-full p-2">
       <ItemNotes
         id={materialData.materialSummary?.itemId ?? null}
         title={materialData.materialSummary?.id ?? ""}

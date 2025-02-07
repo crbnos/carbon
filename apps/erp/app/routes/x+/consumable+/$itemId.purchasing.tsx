@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -108,7 +109,7 @@ export default function ConsumablePurchasingRoute() {
   };
 
   return (
-    <>
+    <VStack spacing={2} className="p-2">
       <ItemPurchasingForm
         key={initialValues.itemId}
         initialValues={initialValues}
@@ -117,6 +118,6 @@ export default function ConsumablePurchasingRoute() {
         }
       />
       <SupplierParts supplierParts={supplierParts} />
-    </>
+    </VStack>
   );
 }

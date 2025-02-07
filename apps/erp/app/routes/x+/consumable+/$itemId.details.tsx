@@ -67,7 +67,7 @@ export default function ConsumableDetailsRoute() {
   if (!consumableData) throw new Error("Could not find consumable data");
 
   return (
-    <VStack spacing={2} className="w-full h-full">
+    <VStack spacing={2} className="w-full h-full p-2">
       <ItemNotes
         id={consumableData.consumableSummary?.itemId ?? null}
         title={consumableData.consumableSummary?.id ?? ""}
