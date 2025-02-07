@@ -61,6 +61,7 @@ import {
   Assignee,
   DirectionAwareTabs,
   EmployeeAvatar,
+  Empty,
   TimeTypeIcon,
 } from "~/components";
 import Activity from "~/components/Activity";
@@ -627,7 +628,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 1,
-        label: "Work Instructions",
+        label: "Instructions",
         content: (
           <div className="flex flex-col">
             <div>
@@ -1966,57 +1967,63 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
       <ScrollArea className="flex-1 p-4">
         <Loading isLoading={isLoading}>
           <div className="flex flex-col gap-3">
-            {messages.map((m) => {
-              const createdBy = employees.find(
-                (employee) => employee.id === m.createdBy
-              );
-              const isUser = m.createdBy === user.id;
-              return (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "flex gap-2 items-end",
-                    isUser && "flex-row-reverse"
-                  )}
-                >
-                  <Avatar
-                    src={createdBy?.avatarUrl ?? undefined}
-                    name={createdBy?.name}
-                  />
+            {messages.length === 0 ? (
+              <div className="flex justify-center pt-16">
+                <Empty />
+              </div>
+            ) : (
+              messages.map((m) => {
+                const createdBy = employees.find(
+                  (employee) => employee.id === m.createdBy
+                );
+                const isUser = m.createdBy === user.id;
+                return (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      "flex gap-2 items-end",
+                      isUser && "flex-row-reverse"
+                    )}
+                  >
+                    <Avatar
+                      src={createdBy?.avatarUrl ?? undefined}
+                      name={createdBy?.name}
+                    />
 
-                  <div className="flex flex-col gap-1 max-w-[80%] ">
-                    <div className="flex flex-col gap-1">
-                      {!isUser && (
-                        <span className="text-xs opacity-70">
-                          {createdBy?.name}
-                        </span>
-                      )}
-                      <div
-                        className={cn(
-                          "rounded-2xl p-3 w-full flex flex-col gap-1",
-                          isUser ? "bg-blue-500 text-white" : "bg-muted"
+                    <div className="flex flex-col gap-1 max-w-[80%] ">
+                      <div className="flex flex-col gap-1">
+                        {!isUser && (
+                          <span className="text-xs opacity-70">
+                            {createdBy?.name}
+                          </span>
                         )}
-                      >
-                        <p className="text-sm">{m.note}</p>
+                        <div
+                          className={cn(
+                            "rounded-2xl p-3 w-full flex flex-col gap-1",
+                            isUser ? "bg-blue-500 text-white" : "bg-muted"
+                          )}
+                        >
+                          <p className="text-sm">{m.note}</p>
 
-                        <span className="text-xs opacity-70">
-                          {new Date(m.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
+                          <span className="text-xs opacity-70">
+                            {new Date(m.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
             <div ref={messagesEndRef} style={{ height: 0 }} />
           </div>
         </Loading>
       </ScrollArea>
 
-      <div className="border-t p-4">
+      <div>
         <form className="flex gap-2" onSubmit={handleSubmit}>
           <Input
             className="flex-1"

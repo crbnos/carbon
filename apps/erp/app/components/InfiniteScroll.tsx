@@ -3,6 +3,7 @@
 import { Skeleton } from "@carbon/react";
 import { useEffect } from "react";
 import { useInView } from "react-intersection-observer";
+import Empty from "./Empty";
 
 interface InfiniteScrollProps<T extends { id: string }> {
   component: React.FC<{ item: T }>;
@@ -62,9 +63,13 @@ export default function InfiniteScroll<T extends { id: string }>({
   return (
     <div className="w-full">
       <ul className="relative h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-        {items.map((item) => (
-          <Component key={item.id} item={item} />
-        ))}
+        {items.length === 0 ? (
+          <div className="flex pt-16 justify-center">
+            <Empty />
+          </div>
+        ) : (
+          items.map((item) => <Component key={item.id} item={item} />)
+        )}
         <div ref={ref}>{hasMore && <LoadingSkeleton />}</div>
       </ul>
     </div>

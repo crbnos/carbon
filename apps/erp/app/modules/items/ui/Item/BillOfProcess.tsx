@@ -412,7 +412,7 @@ const BillOfProcess = ({
       },
       {
         id: 1,
-        label: "Work Instructions",
+        label: "Instructions",
         content: (
           <div className="flex flex-col">
             <div>
