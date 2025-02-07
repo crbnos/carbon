@@ -38,7 +38,7 @@ import { RiProgress4Line } from "react-icons/ri";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { usePanels } from "~/components/Layout";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesRFQ, SalesRFQLine } from "../../types";
 import SalesRFQStatus from "./SalesRFQStatus";
@@ -269,6 +269,7 @@ function NoQuoteReasonModal({
   rfqId: string;
   onClose: () => void;
 }) {
+  const user = useUser();
   const [noQuoteReasons, setNoQuoteReasons] = useState<
     {
       label: string;
@@ -278,7 +279,11 @@ function NoQuoteReasonModal({
   const { carbon } = useCarbon();
   const fetchReasons = async () => {
     if (!carbon) return;
-    const { data } = await carbon.from("noQuoteReason").select("*");
+    const { data } = await carbon
+      .from("noQuoteReason")
+      .select("*")
+      .eq("companyId", user.company.id);
+
     setNoQuoteReasons(
       data?.map((reason) => ({ label: reason.name, value: reason.id })) ?? []
     );
