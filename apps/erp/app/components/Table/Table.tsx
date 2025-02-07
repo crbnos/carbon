@@ -546,6 +546,7 @@ const Table = <T extends object>({
       // First pass - calculate widths
       table.getHeaderGroups().forEach(({ headers }) => {
         headers.forEach((header) => {
+          if (header.id.includes(">>")) return;
           const headerEl = tableWrapperEl.querySelector(
             getHeaderElSelector(header.id)
           );
