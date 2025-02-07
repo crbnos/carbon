@@ -299,28 +299,24 @@ export const useOpportunityDocuments = ({
 
   const download = useCallback(
     async (attachment: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
-        .download(getPath(attachment));
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = attachment.name;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${getPath(attachment)}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = attachment.name;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
-    [carbon?.storage, getPath]
+    [getPath]
   );
 
   const createDocumentRecord = useCallback(

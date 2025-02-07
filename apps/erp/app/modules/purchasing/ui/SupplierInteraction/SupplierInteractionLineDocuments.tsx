@@ -91,28 +91,24 @@ const useSupplierInteractionLineDocuments = ({
 
   const download = useCallback(
     async (file: ItemFile) => {
-      const result = await carbon?.storage
-        .from("private")
-        .download(getPath(file));
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = file.name;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${getPath(file)}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = file.name;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
-    [carbon?.storage, getPath]
+    [getPath]
   );
 
   const createDocumentRecord = useCallback(

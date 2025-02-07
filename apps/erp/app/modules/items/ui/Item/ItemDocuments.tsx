@@ -323,26 +323,27 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         return;
       }
 
-      const result = await carbon?.storage
-        .from("private")
-        .download(model.modelPath);
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
+      if (!model.modelPath || !model.modelName) {
+        toast.error("Model data is missing");
         return;
       }
 
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = model.modelName;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = model.modelName;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -350,26 +351,22 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const download = useCallback(
     async (file: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
-        .download(getPath(file));
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = file.name;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${getPath(file)}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = file.name;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [getPath]

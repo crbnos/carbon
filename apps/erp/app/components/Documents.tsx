@@ -109,7 +109,7 @@ const Documents = ({
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getReadPath, carbon?.storage, revalidator]
+    [carbon?.storage, getReadPath, revalidator]
   );
 
   const downloadModel = useCallback(
@@ -119,26 +119,22 @@ const Documents = ({
         return;
       }
 
-      const result = await carbon?.storage
-        .from("private")
-        .download(model.modelPath);
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = model.modelName;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${model.modelPath}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = model.modelName;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -170,28 +166,24 @@ const Documents = ({
 
   const download = useCallback(
     async (file: StorageItem) => {
-      const result = await carbon?.storage
-        .from("private")
-        .download(getReadPath(file));
-
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error downloading file");
-        return;
-      }
-
-      const a = document.createElement("a");
-      document.body.appendChild(a);
-      const url = window.URL.createObjectURL(result.data);
-      a.href = url;
-      a.download = file.name;
-      a.click();
-
-      setTimeout(() => {
-        window.URL.revokeObjectURL(url);
+      const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        document.body.appendChild(a);
+        a.href = blobUrl;
+        a.download = file.name;
+        a.click();
+        window.URL.revokeObjectURL(blobUrl);
         document.body.removeChild(a);
-      }, 0);
+      } catch (error) {
+        toast.error("Error downloading file");
+        console.error(error);
+      }
     },
-    [carbon?.storage, getReadPath]
+    [getReadPath]
   );
 
   const upload = useCallback(
