@@ -23,9 +23,10 @@ import {
   upsertConsumable,
 } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
+import type {
+  UsedInNode} from "~/modules/items/ui/Item/UsedIn";
 import {
   UsedInSkeleton,
-  UsedInItem,
   UsedInTree,
 } from "~/modules/items/ui/Item/UsedIn";
 
@@ -117,7 +118,7 @@ export default function ConsumableDetailsRoute() {
                       quoteMaterials,
                     } = resolvedUsedIn;
 
-                    const tree: UsedInItem[] = [
+                    const tree: UsedInNode[] = [
                       {
                         key: "jobMaterials",
                         name: "Job Materials",

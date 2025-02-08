@@ -21,10 +21,11 @@ import { getPartUsedIn, toolValidator, upsertTool } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import type {
+  UsedInNode} from "~/modules/items/ui/Item/UsedIn";
 import {
   UsedInSkeleton,
-  UsedInItem,
-  UsedInTree,
+  UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -110,7 +111,7 @@ export default function ToolDetailsRoute() {
                       quoteMaterials,
                     } = resolvedUsedIn;
 
-                    const tree: UsedInItem[] = [
+                    const tree: UsedInNode[] = [
                       {
                         key: "jobs",
                         name: "Jobs",
