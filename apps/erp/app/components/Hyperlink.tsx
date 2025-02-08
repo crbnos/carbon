@@ -21,14 +21,16 @@ const Hyperlink = ({
       {...props}
     >
       <span className="flex flex-row items-center gap-1">{children}</span>
-      <Button
-        leftIcon={<LuSquareArrowOutUpRight />}
-        variant="secondary"
-        className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
-        size="sm"
-      >
-        Open
-      </Button>
+      {props.to && props.to !== "#" && (
+        <Button
+          leftIcon={<LuSquareArrowOutUpRight />}
+          variant="secondary"
+          className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline"
+          size="sm"
+        >
+          Open
+        </Button>
+      )}
     </Link>
   ) : (
     <span className={cn("text-foreground", className)} {...props}>

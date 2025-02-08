@@ -3,18 +3,46 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { Spinner, VStack } from "@carbon/react";
-import { Await, useParams } from "@remix-run/react";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import {
+  Spinner,
+  VStack,
+  ScrollArea,
+  ResizablePanel,
+  ResizablePanelGroup,
+  ResizableHandle,
+} from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { redirect, defer } from "@vercel/remix";
 import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Consumable, ItemFile } from "~/modules/items";
-import { consumableValidator, upsertConsumable } from "~/modules/items";
+import {
+  getMaterialUsedIn,
+  consumableValidator,
+  upsertConsumable,
+} from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
+import {
+  UsedInSkeleton,
+  UsedInItem,
+  UsedInTree,
+} from "~/modules/items/ui/Item/UsedIn";
 
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+    bypassRls: true,
+  });
+
+  const { itemId } = params;
+  if (!itemId) throw new Error("Could not find itemId");
+
+  return defer({ usedIn: getMaterialUsedIn(client, itemId, companyId) });
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -55,6 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ConsumableDetailsRoute() {
+  const { usedIn } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
 
   const { itemId } = useParams();
@@ -67,32 +96,117 @@ export default function ConsumableDetailsRoute() {
   if (!consumableData) throw new Error("Could not find consumable data");
 
   return (
-    <VStack spacing={2} className="w-full h-full p-2">
-      <ItemNotes
-        id={consumableData.consumableSummary?.itemId ?? null}
-        title={consumableData.consumableSummary?.id ?? ""}
-        subTitle={consumableData.consumableSummary?.name ?? ""}
-        notes={consumableData.consumableSummary?.notes as JSONContent}
-      />
-      {permissions.is("employee") && (
-        <Suspense
-          fallback={
-            <div className="flex w-full h-[full] rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-              <Spinner className="h-10 w-10" />
-            </div>
-          }
+    <div className="flex flex-grow overflow-hidden">
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel
+          order={1}
+          minSize={10}
+          defaultSize={20}
+          className="bg-card"
         >
-          <Await resolve={consumableData?.files}>
-            {(files) => (
-              <ItemDocuments
-                files={files ?? []}
-                itemId={itemId}
-                type="Consumable"
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <div className="grid h-full overflow-hidden p-2">
+              <Suspense fallback={<UsedInSkeleton />}>
+                <Await resolve={usedIn}>
+                  {(resolvedUsedIn) => {
+                    const {
+                      jobMaterials,
+                      methodMaterials,
+                      purchaseOrderLines,
+                      receiptLines,
+                      quoteMaterials,
+                    } = resolvedUsedIn;
+
+                    const tree: UsedInItem[] = [
+                      {
+                        key: "jobMaterials",
+                        name: "Job Materials",
+                        module: "production",
+                        children: jobMaterials,
+                      },
+                      {
+                        key: "methodMaterials",
+                        name: "Method Materials",
+                        module: "parts",
+                        // @ts-expect-error
+                        children: methodMaterials,
+                      },
+                      {
+                        key: "purchaseOrderLines",
+                        name: "Purchase Orders",
+                        module: "purchasing",
+                        children: purchaseOrderLines.map((po) => ({
+                          ...po,
+                          methodType: "Buy",
+                        })),
+                      },
+                      {
+                        key: "receiptLines",
+                        name: "Receipts",
+                        module: "inventory",
+                        children: receiptLines.map((receipt) => ({
+                          ...receipt,
+                          methodType: "Pick",
+                        })),
+                      },
+                      {
+                        key: "quoteMaterials",
+                        name: "Quote Materials",
+                        module: "sales",
+                        children: quoteMaterials?.map((qm) => ({
+                          ...qm,
+                          documentReadableId: qm.documentReadableId ?? "",
+                        })),
+                      },
+                    ];
+
+                    return (
+                      <UsedInTree
+                        tree={tree}
+                        itemReadableId={
+                          consumableData.consumableSummary?.id ?? ""
+                        }
+                      />
+                    );
+                  }}
+                </Await>
+              </Suspense>
+            </div>
+          </ScrollArea>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel order={2} minSize={40} defaultSize={60}>
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <VStack spacing={2} className="p-2">
+              <ItemNotes
+                id={consumableData.consumableSummary?.itemId ?? null}
+                title={consumableData.consumableSummary?.name ?? ""}
+                subTitle={consumableData.consumableSummary?.id ?? ""}
+                notes={consumableData.consumableSummary?.notes as JSONContent}
               />
-            )}
-          </Await>
-        </Suspense>
-      )}
-    </VStack>
+              {permissions.is("employee") && (
+                <Suspense
+                  fallback={
+                    <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+                      <Spinner className="h-10 w-10" />
+                    </div>
+                  }
+                >
+                  <Await resolve={consumableData?.files}>
+                    {(files) => (
+                      <ItemDocuments
+                        files={files ?? []}
+                        itemId={itemId}
+                        type="Consumable"
+                      />
+                    )}
+                  </Await>
+                </Suspense>
+              )}
+            </VStack>
+          </ScrollArea>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
   );
 }

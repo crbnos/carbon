@@ -39,6 +39,7 @@ import {
 } from "../../items.models";
 import type { ItemFile, PickMethod, SupplierPart, Tool } from "../../types";
 import { FileBadge } from "../Item";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 
 const ToolProperties = () => {
   const { itemId } = useParams();
@@ -308,9 +309,13 @@ const ToolProperties = () => {
         <h3 className="text-xs text-muted-foreground">Replenishment</h3>
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Enumerable
-              value={routeData?.toolSummary?.replenishmentSystem ?? null}
-            />
+            <Badge variant="secondary">
+              <ReplenishmentSystemIcon
+                type={routeData?.toolSummary?.replenishmentSystem!}
+                className="mr-2"
+              />
+              <span>{routeData?.toolSummary?.replenishmentSystem!}</span>
+            </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {itemReplenishmentSystems.map((system) => (
@@ -318,7 +323,10 @@ const ToolProperties = () => {
                 key={system}
                 onClick={() => onUpdate("replenishmentSystem", system)}
               >
-                <Enumerable value={system} />
+                <DropdownMenuIcon
+                  icon={<ReplenishmentSystemIcon type={system} />}
+                />
+                <span>{system}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

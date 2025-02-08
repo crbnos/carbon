@@ -43,7 +43,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
-import { getLinkToItemManufacturing } from "~/modules/items/ui/Item/ItemForm";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
@@ -74,7 +74,7 @@ const QuoteMakeMethodTools = () => {
 
   const itemLink =
     itemType && itemId
-      ? getLinkToItemManufacturing(itemType as MethodItemType, itemId)
+      ? getLinkToItemDetails(itemType as MethodItemType, itemId)
       : null;
 
   const lineData = useRouteData<{

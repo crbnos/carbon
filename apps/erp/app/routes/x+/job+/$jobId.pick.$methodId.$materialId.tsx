@@ -1,4 +1,4 @@
-import { VStack } from "@carbon/react";
+import { useMount, VStack } from "@carbon/react";
 import { json, redirect, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 
@@ -12,6 +12,7 @@ import {
 import { JobMaterialForm } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { path } from "~/utils/path";
+import { usePanels } from "~/components/Layout";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -67,6 +68,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function JobMaterialPickPage() {
   const { material, operations } = useLoaderData<typeof loader>();
+
+  const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    if (isExplorerCollapsed) {
+      setIsExplorerCollapsed(false);
+    }
+  });
 
   const { materialId } = useParams();
   if (!materialId) throw new Error("Could not find materialId");

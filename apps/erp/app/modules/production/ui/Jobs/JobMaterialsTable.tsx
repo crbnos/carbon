@@ -41,6 +41,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Job, JobMaterial } from "../../types";
+import { useParts } from "~/stores";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
@@ -57,12 +58,13 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const fetcher = useFetcher<{}>();
   const unitsOfMeasure = useUnitOfMeasure();
   const locations = useLocations();
+  const parts = useParts();
 
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
       {
-        accessorKey: "readableId",
-        header: "Item ID",
+        accessorKey: "itemReadableId",
+        header: "Item",
         cell: ({ row }) => (
           <HStack className="py-1">
             <ItemThumbnail
@@ -91,6 +93,13 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         ),
         meta: {
           icon: <LuBookMarked />,
+          filter: {
+            type: "static",
+            options: parts.map((part) => ({
+              value: part.readableId,
+              label: part.readableId,
+            })),
+          },
         },
       },
       {
@@ -229,7 +238,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         },
       },
     ];
-  }, [jobId, locations, routeData?.job.locationId, unitsOfMeasure]);
+  }, [jobId, locations, parts, routeData?.job.locationId, unitsOfMeasure]);
 
   const permissions = usePermissions();
   const { carbon } = useCarbon();
