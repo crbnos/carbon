@@ -1,16 +1,12 @@
 import type { ComponentProps } from "react";
-export interface CountProps extends ComponentProps<"div"> {
+import { Badge } from "./Badge";
+export interface CountProps extends ComponentProps<typeof Badge> {
   count: number;
 }
 
 const Count = ({ count, ...props }: CountProps) => {
   const c = count > 99 ? "99+" : count;
-  return (
-    <div
-      className="text-foreground font-mono font-semibold text-sm flex items-center justify-center"
-      {...props}
-    >{`${c}`}</div>
-  );
+  return <Badge variant="gray" {...props}>{`${c}`}</Badge>;
 };
 
 export { Count };

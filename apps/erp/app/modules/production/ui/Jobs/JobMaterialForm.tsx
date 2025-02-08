@@ -1,6 +1,7 @@
 import {
   Card,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -186,9 +187,10 @@ const JobMaterialForm = ({
         validator={jobMaterialValidator}
       >
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="line-clamp-2">{itemData.description}</CardTitle>
+          <CardDescription className="flex items-center gap-2">
             {itemData.itemReadableId} <Copy text={itemData.itemReadableId} />
-          </CardTitle>
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Hidden name="jobMakeMethodId" />

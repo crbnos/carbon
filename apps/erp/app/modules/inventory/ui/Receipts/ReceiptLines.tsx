@@ -96,20 +96,18 @@ const ReceiptLines = () => {
     return receiptLines.reduce(
       (acc, line) => ({
         ...acc,
-        [line.id]: Array(line.receivedQuantity)
-          .fill(null)
-          .map((_, index) => {
-            const serialNumber = routeData?.receiptLineTracking.find(
-              (t) =>
-                t.receiptLineId === line.id &&
-                t.serialNumber !== null &&
-                t.index === index
-            )?.serialNumber;
-            return {
-              index,
-              number: serialNumber?.number ?? "",
-            };
-          }),
+        [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
+          const serialNumber = routeData?.receiptLineTracking.find(
+            (t) =>
+              t.receiptLineId === line.id &&
+              t.serialNumber !== null &&
+              t.index === index
+          )?.serialNumber;
+          return {
+            index,
+            number: serialNumber?.number ?? "",
+          };
+        }),
       }),
       {}
     );
@@ -120,9 +118,9 @@ const ReceiptLines = () => {
       receiptLines.reduce(
         (acc, line) => ({
           ...acc,
-          [line.id]: Array(line.receivedQuantity)
-            .fill(null)
-            .map((_, index) => {
+          [line.id]: Array.from(
+            { length: line.receivedQuantity },
+            (_, index) => {
               const serialNumber = routeData?.receiptLineTracking.find(
                 (t) =>
                   t.receiptLineId === line.id &&
@@ -133,7 +131,8 @@ const ReceiptLines = () => {
                 index,
                 number: serialNumber?.number ?? "",
               };
-            }),
+            }
+          ),
         }),
         {}
       )
@@ -322,7 +321,13 @@ function ReceiptLineItem({
                   if (value > serialNumbers.length) {
                     onSerialNumbersChange([
                       ...serialNumbers,
-                      ...Array(value - serialNumbers.length).fill(""),
+                      ...Array.from(
+                        { length: value - serialNumbers.length },
+                        () => ({
+                          index: serialNumbers.length,
+                          number: "",
+                        })
+                      ),
                     ]);
                   } else if (value < serialNumbers.length) {
                     onSerialNumbersChange(serialNumbers.slice(0, value));

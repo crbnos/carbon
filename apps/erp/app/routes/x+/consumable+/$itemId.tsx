@@ -66,7 +66,7 @@ export default function ConsumableRoute() {
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <ConsumableHeader />
       <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
           <Outlet />
         </div>
         <ConsumableProperties />

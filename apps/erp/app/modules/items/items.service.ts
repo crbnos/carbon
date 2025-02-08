@@ -425,6 +425,18 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
+export async function getItemQuantities(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string,
+  locationId: string
+) {
+  return client
+    .rpc("get_item_quantities", { location_id: locationId })
+    .eq("itemId", itemId)
+    .maybeSingle();
+}
+
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -436,18 +448,6 @@ export async function getItemReplenishment(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
-}
-
-export async function getItemQuantities(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  locationId: string
-) {
-  return client
-    .rpc("get_item_quantities", { location_id: locationId })
-    .eq("itemId", itemId)
-    .maybeSingle();
 }
 
 export async function getItemShelfQuantities(
@@ -475,6 +475,139 @@ export async function getItemUnitSalePrice(
     .eq("itemId", id)
     .eq("companyId", companyId)
     .single();
+}
+
+export async function getMaterialUsedIn(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [
+    jobMaterials,
+    methodMaterials,
+    purchaseOrderLines,
+    receiptLines,
+    quoteMaterials,
+  ] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("methodMaterial")
+      .select(
+        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableId, documentId:id, itemType:type))"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("receiptLine")
+      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("quoteMaterial")
+      .select(
+        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+  ]);
+
+  return {
+    jobMaterials: jobMaterials.data ?? [],
+    methodMaterials: methodMaterials.data ?? [],
+    purchaseOrderLines: purchaseOrderLines.data ?? [],
+    receiptLines: receiptLines.data ?? [],
+    quoteMaterials: quoteMaterials.data ?? [],
+  };
+}
+
+export async function getPartUsedIn(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [
+    jobMaterials,
+    jobs,
+    methodMaterials,
+    purchaseOrderLines,
+    receiptLines,
+    quoteLines,
+    quoteMaterials,
+    salesOrderLines,
+  ] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("job")
+      .select("id, documentReadableId:jobId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("methodMaterial")
+      .select(
+        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableId, documentId:id, itemType:type))"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("receiptLine")
+      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("quoteLine")
+      .select(
+        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("quoteMaterial")
+      .select(
+        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("salesOrderLine")
+      .select(
+        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+  ]);
+
+  return {
+    jobMaterials: jobMaterials.data ?? [],
+    jobs: jobs.data ?? [],
+    methodMaterials: methodMaterials.data ?? [],
+    purchaseOrderLines: purchaseOrderLines.data ?? [],
+    receiptLines: receiptLines.data ?? [],
+    quoteLines: quoteLines.data ?? [],
+    quoteMaterials: quoteMaterials.data ?? [],
+    salesOrderLines: salesOrderLines.data ?? [],
+  };
 }
 
 export async function getMakeMethod(

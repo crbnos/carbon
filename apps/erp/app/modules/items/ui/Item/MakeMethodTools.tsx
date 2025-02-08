@@ -31,7 +31,7 @@ import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getMethodValidator } from "../../items.models";
-import { getLinkToItemManufacturing } from "./ItemForm";
+import { getLinkToItemDetails } from "./ItemForm";
 
 type MakeMethodToolsProps = {
   itemId: string;
@@ -58,8 +58,7 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
 
-  const itemLink =
-    type && itemId ? getLinkToItemManufacturing(type, itemId) : null;
+  const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   return (
     <>

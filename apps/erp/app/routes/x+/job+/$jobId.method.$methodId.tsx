@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { Spinner, VStack } from "@carbon/react";
+import { Spinner, useMount, VStack } from "@carbon/react";
 import {
   Await,
   defer,
@@ -29,6 +29,7 @@ import {
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { usePanels } from "~/components/Layout";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -101,6 +102,14 @@ export default function JobMakeMethodRoute() {
 
   const loaderData = useLoaderData<typeof loader>();
   const { materials, operations, productionData, tags } = loaderData;
+
+  const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    if (isExplorerCollapsed) {
+      setIsExplorerCollapsed(false);
+    }
+  });
 
   return (
     <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">

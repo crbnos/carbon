@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { Spinner, VStack } from "@carbon/react";
+import { Spinner, useMount, VStack } from "@carbon/react";
 import {
   Await,
   defer,
@@ -31,6 +31,7 @@ import {
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { usePanels } from "~/components/Layout";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -127,6 +128,14 @@ export default function JobMakeMethodRoute() {
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
   const { material, materials, operations, productionData, tags } = loaderData;
+
+  const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
+
+  useMount(() => {
+    if (isExplorerCollapsed) {
+      setIsExplorerCollapsed(false);
+    }
+  });
 
   return (
     <VStack spacing={2} className="p-2">

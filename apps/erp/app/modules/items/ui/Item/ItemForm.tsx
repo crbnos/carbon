@@ -100,11 +100,11 @@ const ItemForm = ({ initialValues, type }: ItemFormProps) => {
       >
         <HStack className="w-full justify-between">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="line-clamp-2">{initialValues.name}</CardTitle>
+            <CardDescription className="flex items-center gap-2">
               {initialValues.readableId}
               <Copy text={initialValues.readableId ?? ""} />
-            </CardTitle>
-            <CardDescription>{initialValues.name}</CardDescription>
+            </CardDescription>
           </CardHeader>
           <CardAction>
             <DropdownMenu>

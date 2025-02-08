@@ -622,16 +622,19 @@ export function createTreeFromFlatItems<TData>(
 export function LevelLine({
   isError = false,
   isSelected,
+  className,
 }: {
   isError?: boolean;
   isSelected: boolean;
+  className?: string;
 }) {
   return (
     <div
       className={cn(
         "h-8 w-3 border-r border-border",
         isError && "border-destructive",
-        isSelected && "border-foreground/60"
+        isSelected && "border-foreground/60",
+        className
       )}
     />
   );

@@ -28,7 +28,6 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
@@ -50,6 +49,7 @@ import type {
   SupplierPart,
 } from "../../types";
 import { FileBadge } from "../Item";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 
 const PartProperties = () => {
   const { itemId } = useParams();
@@ -330,9 +330,13 @@ const PartProperties = () => {
         <h3 className="text-xs text-muted-foreground">Replenishment</h3>
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <Enumerable
-              value={routeData?.partSummary?.replenishmentSystem ?? null}
-            />
+            <Badge variant="secondary">
+              <ReplenishmentSystemIcon
+                type={routeData?.partSummary?.replenishmentSystem!}
+                className="mr-2"
+              />
+              <span>{routeData?.partSummary?.replenishmentSystem!}</span>
+            </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             {itemReplenishmentSystems.map((system) => (
@@ -340,7 +344,10 @@ const PartProperties = () => {
                 key={system}
                 onClick={() => onUpdate("replenishmentSystem", system)}
               >
-                <Enumerable value={system} />
+                <DropdownMenuIcon
+                  icon={<ReplenishmentSystemIcon type={system} />}
+                />
+                <span>{system}</span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
