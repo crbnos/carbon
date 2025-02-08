@@ -23,10 +23,11 @@ import {
   upsertMaterial,
 } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
+import type {
+  UsedInNode} from "~/modules/items/ui/Item/UsedIn";
 import {
   UsedInSkeleton,
-  UsedInItem,
-  UsedInTree,
+  UsedInTree
 } from "~/modules/items/ui/Item/UsedIn";
 
 import { setCustomFields } from "~/utils/form";
@@ -117,7 +118,7 @@ export default function MaterialDetailsRoute() {
                       quoteMaterials,
                     } = resolvedUsedIn;
 
-                    const tree: UsedInItem[] = [
+                    const tree: UsedInNode[] = [
                       {
                         key: "jobMaterials",
                         name: "Job Materials",

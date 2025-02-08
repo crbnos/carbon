@@ -41,7 +41,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Job, JobMaterial } from "../../types";
-import { useParts } from "~/stores";
+import { useItems } from "~/stores";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
@@ -58,7 +58,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const fetcher = useFetcher<{}>();
   const unitsOfMeasure = useUnitOfMeasure();
   const locations = useLocations();
-  const parts = useParts();
+  const [items] = useItems();
 
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
@@ -95,9 +95,9 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
           icon: <LuBookMarked />,
           filter: {
             type: "static",
-            options: parts.map((part) => ({
-              value: part.readableId,
-              label: part.readableId,
+            options: items.map((item) => ({
+              value: item.readableId,
+              label: item.readableId,
             })),
           },
         },
@@ -238,7 +238,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         },
       },
     ];
-  }, [jobId, locations, parts, routeData?.job.locationId, unitsOfMeasure]);
+  }, [jobId, locations, items, routeData?.job.locationId, unitsOfMeasure]);
 
   const permissions = usePermissions();
   const { carbon } = useCarbon();
