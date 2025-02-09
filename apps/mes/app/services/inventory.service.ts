@@ -18,34 +18,8 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  // Look up the current quantity for this itemId, locationId, and shelfId
-  const query = client
-    .from("itemInventory")
-    .select("quantityOnHand")
-    .eq("itemId", inventoryAdjustment.itemId)
-    .eq("locationId", inventoryAdjustment.locationId);
-
-  if (inventoryAdjustment.shelfId) {
-    query.eq("shelfId", inventoryAdjustment.shelfId);
-  } else {
-    query.is("shelfId", null);
-  }
-
-  const { data: currentQuantity, error: quantityError } =
-    await query.maybeSingle();
-  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
-
-  if (quantityError) {
-    return { error: "Failed to fetch current quantity" };
-  }
-
   // Check if it's a negative adjustment and if the quantity is sufficient
   if (inventoryAdjustment.entryType === "Negative Adjmt.") {
-    if (inventoryAdjustment.quantity > currentQuantityOnHand) {
-      return {
-        error: "Insufficient quantity for negative adjustment",
-      };
-    }
     inventoryAdjustment.quantity = -Math.abs(inventoryAdjustment.quantity);
   }
 
