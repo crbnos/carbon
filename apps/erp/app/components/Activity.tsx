@@ -22,17 +22,17 @@ const Activity = ({
   const person = people.find((p) => p.id === employeeId);
 
   return (
-    <li className="relative pl-14 pb-10 flex-grow w-full">
-      <div className="absolute left-0 top-0 flex items-center justify-center w-10 h-10">
+    <li className="relative flex-grow w-full border rounded-lg bg-card p-6 pl-14">
+      <div className="absolute left-3 top-6 flex items-center justify-center w-10 h-10">
         <Avatar
           path={person?.avatarUrl ?? undefined}
           name={person?.name ?? ""}
         />
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2">
         <div className="flex-grow">
           <p>
-            <span className="font-semibold mr-2">
+            <span className="font-semibold mr-1">
               {person?.name ?? "Deactivated user"}
             </span>
             <span className="text-gray-400">{activityMessage}</span>
