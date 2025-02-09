@@ -86,11 +86,10 @@ export async function getBatch(
   return client
     .from("batchNumber")
     .select(
-      "*, item(id, name, readableId), receiptLineTracking(*, receipt(*)), jobMaterialTracking(*, jobMaterial(job(id, jobId))), jobProductionTracking(*)"
+      "*, item(id, name, readableId), receiptLineTracking(*, receipt(*)), jobMaterialTracking(*, jobMaterial(job(id, jobId))), jobProductionTracking(*), shipmentLineTracking(*, shipmentLine(*, shipment(*)))"
     )
     .eq("id", batchId)
     .eq("companyId", companyId)
-    .eq("receiptLineTracking.posted", true)
     .single();
 }
 
@@ -410,6 +409,97 @@ export async function getShelvesListForLocation(
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .order("name");
+}
+
+export async function getShipments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("shipment")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .neq("sourceDocumentId", "");
+
+  if (args.search) {
+    query = query.or(
+      `shipmentId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "shipmentId", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipment").select("*").eq("id", shipmentId).single();
+}
+
+export async function getShipmentLines(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
+}
+
+export async function getShipmentLineTracking(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client
+    .from("shipmentLineTracking")
+    .select(
+      "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
+    )
+    .eq("shipmentId", shipmentId);
+}
+
+export async function getShipmentFiles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lineIds: string[]
+): Promise<{ data: StorageItem[]; error: string | null }> {
+  const promises = lineIds.map((lineId) =>
+    client.storage
+      .from("private")
+      .list(`${companyId}/inventory/${lineId}`)
+      .then((result) => ({
+        ...result,
+        lineId,
+      }))
+  );
+
+  const results = await Promise.all(promises);
+
+  // Check for errors
+  const firstError = results.find((result) => result.error);
+  if (firstError) {
+    return {
+      data: [],
+      error: firstError.error?.message ?? "Failed to fetch files",
+    };
+  }
+
+  // Merge data arrays and add lineId as bucketName
+  return {
+    data: results.flatMap((result) =>
+      (result.data ?? []).map((file) => ({
+        ...file,
+        bucket: result.lineId,
+      }))
+    ),
+    error: null,
+  };
 }
 
 export async function getShippingMethod(

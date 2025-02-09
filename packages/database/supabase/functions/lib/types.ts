@@ -21344,6 +21344,610 @@ export type Database = {
           },
         ]
       }
+      shipment: {
+        Row: {
+          assignee: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerId: string | null
+          customFields: Json | null
+          externalDocumentId: string | null
+          externalNotes: Json | null
+          id: string
+          internalNotes: Json | null
+          invoiced: boolean | null
+          locationId: string | null
+          opportunityId: string | null
+          postedBy: string | null
+          postingDate: string | null
+          shipmentId: string
+          sourceDocument:
+            | Database["public"]["Enums"]["shipmentSourceDocument"]
+            | null
+          sourceDocumentId: string | null
+          sourceDocumentReadableId: string | null
+          status: Database["public"]["Enums"]["shipmentStatus"]
+          tags: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          assignee?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerId?: string | null
+          customFields?: Json | null
+          externalDocumentId?: string | null
+          externalNotes?: Json | null
+          id?: string
+          internalNotes?: Json | null
+          invoiced?: boolean | null
+          locationId?: string | null
+          opportunityId?: string | null
+          postedBy?: string | null
+          postingDate?: string | null
+          shipmentId: string
+          sourceDocument?:
+            | Database["public"]["Enums"]["shipmentSourceDocument"]
+            | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["shipmentStatus"]
+          tags?: string[] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          assignee?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerId?: string | null
+          customFields?: Json | null
+          externalDocumentId?: string | null
+          externalNotes?: Json | null
+          id?: string
+          internalNotes?: Json | null
+          invoiced?: boolean | null
+          locationId?: string | null
+          opportunityId?: string | null
+          postedBy?: string | null
+          postingDate?: string | null
+          shipmentId?: string
+          sourceDocument?:
+            | Database["public"]["Enums"]["shipmentSourceDocument"]
+            | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["shipmentStatus"]
+          tags?: string[] | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipment_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "shipment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "shipment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_opportunityId_fkey"
+            columns: ["opportunityId"]
+            isOneToOne: false
+            referencedRelation: "opportunity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_postedBy_fkey"
+            columns: ["postedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      shipmentLine: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          itemId: string
+          itemReadableId: string | null
+          lineId: string | null
+          locationId: string | null
+          orderQuantity: number
+          outstandingQuantity: number
+          requiresBatchTracking: boolean
+          requiresSerialTracking: boolean
+          shelfId: string | null
+          shipmentId: string
+          shippedQuantity: number
+          unitOfMeasure: string
+          unitPrice: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          itemId: string
+          itemReadableId?: string | null
+          lineId?: string | null
+          locationId?: string | null
+          orderQuantity?: number
+          outstandingQuantity?: number
+          requiresBatchTracking?: boolean
+          requiresSerialTracking?: boolean
+          shelfId?: string | null
+          shipmentId: string
+          shippedQuantity?: number
+          unitOfMeasure: string
+          unitPrice: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          itemId?: string
+          itemReadableId?: string | null
+          lineId?: string | null
+          locationId?: string | null
+          orderQuantity?: number
+          outstandingQuantity?: number
+          requiresBatchTracking?: boolean
+          requiresSerialTracking?: boolean
+          shelfId?: string | null
+          shipmentId?: string
+          shippedQuantity?: number
+          unitOfMeasure?: string
+          unitPrice?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      shipmentLineTracking: {
+        Row: {
+          batchNumberId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string | null
+          id: string
+          index: number
+          itemId: string
+          posted: boolean
+          quantity: number
+          serialNumberId: string | null
+          shipmentId: string
+          shipmentLineId: string
+        }
+        Insert: {
+          batchNumberId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          index?: number
+          itemId: string
+          posted?: boolean
+          quantity?: number
+          serialNumberId?: string | null
+          shipmentId: string
+          shipmentLineId: string
+        }
+        Update: {
+          batchNumberId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string | null
+          id?: string
+          index?: number
+          itemId?: string
+          posted?: boolean
+          quantity?: number
+          serialNumberId?: string | null
+          shipmentId?: string
+          shipmentLineId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipmentLineTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_shipment_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_shipmentLine_fkey"
+            columns: ["shipmentLineId"]
+            isOneToOne: false
+            referencedRelation: "shipmentLine"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shippingMethod: {
         Row: {
           active: boolean
@@ -34409,6 +35013,16 @@ export type Database = {
         | "Material"
         | "Fixture"
       serviceType: "Internal" | "External"
+      shipmentSourceDocument:
+        | "Sales Order"
+        | "Sales Invoice"
+        | "Sales Return Order"
+        | "Purchase Order"
+        | "Purchase Invoice"
+        | "Purchase Return Order"
+        | "Inbound Transfer"
+        | "Outbound Transfer"
+      shipmentStatus: "Draft" | "Pending" | "Posted"
       shippingCarrier: "UPS" | "FedEx" | "USPS" | "DHL" | "Other"
       supplierLedgerDocumentType:
         | "Payment"

@@ -8,6 +8,8 @@ import type {
   getReceiptLines,
   getReceiptLineTracking,
   getReceipts,
+  getShipments,
+  getShipmentLines,
   getShippingMethods,
 } from "./inventory.service";
 
@@ -50,6 +52,14 @@ export type ReceiptLineItem = Omit<
   ReceiptLine,
   "id" | "updatedBy" | "createdAt" | "updatedAt"
 >;
+
+export type Shipment = NonNullable<
+  Awaited<ReturnType<typeof getShipments>>["data"]
+>[number];
+
+export type ShipmentLine = NonNullable<
+  Awaited<ReturnType<typeof getShipmentLines>>["data"]
+>[number];
 
 export type ShippingCarrier = Database["public"]["Enums"]["shippingCarrier"];
 

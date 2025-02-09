@@ -129,6 +129,19 @@ export const shelfValidator = z.object({
   locationId: z.string().min(1, { message: "Location ID is required" }),
 });
 
+export const shipmentStatusType = ["Draft", "Pending", "Posted"] as const;
+
+export const shipmentSourceDocumentType = [
+  "Sales Order",
+  // "Sales Invoice",
+  // "Sales Return Order",
+  // "Purchase Order",
+  // "Purchase Invoice",
+  // "Purchase Return Order",
+  // "Inbound Transfer",
+  // "Outbound Transfer",
+] as const;
+
 export const shippingCarrierType = [
   "UPS",
   "FedEx",

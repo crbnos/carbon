@@ -346,7 +346,6 @@ export const path = {
       ),
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
-
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
@@ -361,6 +360,7 @@ export const path = {
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
+    deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
     deleteShippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/delete/${id}`),
     deleteSupplierContact: (supplierId: string, id: string) =>
@@ -599,6 +599,7 @@ export const path = {
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newShelf: `${x}/inventory/shelves/new`,
+    newShipment: `${x}/shipment/new`,
     newShift: `${x}/people/shifts/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
     newService: `${x}/service/new`,
@@ -852,6 +853,9 @@ export const path = {
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipments: `${x}/inventory/shipments`,
+    shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
+    shipmentDetails: (id: string) =>
+      generatePath(`${x}/shipment/${id}/details`),
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,
