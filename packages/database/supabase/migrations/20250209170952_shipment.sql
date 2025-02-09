@@ -15,6 +15,21 @@ CREATE TYPE "shipmentStatus" AS ENUM (
   'Posted'
 );
 
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('shipment', 'Shipment', 'Sales');
+
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 
+  'shipment',
+  'Shipment',
+  'SHP',
+  NULL,
+  0,
+  6,
+  1,
+  "id"
+FROM "company";
+
 CREATE TABLE "shipment" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "shipmentId" TEXT NOT NULL,
@@ -51,9 +66,6 @@ CREATE TABLE "shipment" (
   CONSTRAINT "shipment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "shipment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
-
-INSERT INTO "customFieldTable" ("table", "name", "module") 
-VALUES ('shipment', 'Shipment', 'Sales');
 
 CREATE INDEX "shipment_shipmentId_idx" ON "shipment" ("shipmentId", "companyId");
 CREATE INDEX "shipment_status_idx" ON "shipment" ("status", "companyId");
