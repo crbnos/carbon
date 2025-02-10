@@ -14404,7 +14404,10 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.sourceDocumentReadableId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
+            $ref: "#/parameters/rowFilter.shipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.trackingNumber",
           },
           {
             $ref: "#/parameters/rowFilter.shipment.customerId",
@@ -14532,7 +14535,10 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.sourceDocumentReadableId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
+            $ref: "#/parameters/rowFilter.shipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.trackingNumber",
           },
           {
             $ref: "#/parameters/rowFilter.shipment.customerId",
@@ -14614,7 +14620,10 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.sourceDocumentReadableId",
           },
           {
-            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
+            $ref: "#/parameters/rowFilter.shipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.trackingNumber",
           },
           {
             $ref: "#/parameters/rowFilter.shipment.customerId",
@@ -52051,7 +52060,13 @@ export default {
           format: "text",
           type: "string",
         },
-        externalDocumentId: {
+        shippingMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shippingMethod.id`.<fk table='shippingMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        trackingNumber: {
           format: "text",
           type: "string",
         },
@@ -54499,6 +54514,9 @@ export default {
             "Invoiced",
             "Cancelled",
             "Closed",
+            "To Ship and Invoice",
+            "To Ship",
+            "To Invoice",
           ],
           format: 'public."salesOrderStatus"',
           type: "string",
@@ -56917,6 +56935,9 @@ export default {
             "Invoiced",
             "Cancelled",
             "Closed",
+            "To Ship and Invoice",
+            "To Ship",
+            "To Invoice",
           ],
           format: 'public."salesOrderStatus"',
           type: "string",
@@ -60834,6 +60855,9 @@ export default {
             "Invoiced",
             "Cancelled",
             "Closed",
+            "To Ship and Invoice",
+            "To Ship",
+            "To Invoice",
           ],
           format: 'public."salesOrderStatus"',
           type: "string",
@@ -73291,8 +73315,15 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.shipment.externalDocumentId": {
-      name: "externalDocumentId",
+    "rowFilter.shipment.shippingMethodId": {
+      name: "shippingMethodId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipment.trackingNumber": {
+      name: "trackingNumber",
       required: false,
       format: "text",
       in: "query",

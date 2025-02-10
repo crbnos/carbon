@@ -2,53 +2,56 @@ import { useCarbon } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { useRouteData, useUser } from "~/hooks";
-import type { Receipt, ReceiptSourceDocument } from "~/modules/inventory/types";
+import type {
+  Shipment,
+  ShipmentSourceDocument,
+} from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
-export default function useReceiptForm() {
-  const { receiptId } = useParams();
-  if (!receiptId) throw new Error("receiptId not found");
+export default function useShipmentForm() {
+  const { shipmentId } = useParams();
+  if (!shipmentId) throw new Error("shipmentId not found");
 
-  const receiptData = useRouteData<{
-    receipt: Receipt;
-  }>(path.to.receipt(receiptId));
-  if (!receiptData) throw new Error("Could not find receiptData");
-  const receipt = receiptData.receipt;
+  const shipmentData = useRouteData<{
+    shipment: Shipment;
+  }>(path.to.shipment(shipmentId));
+  if (!shipmentData) throw new Error("Could not find shipmentData");
+  const shipment = shipmentData.shipment;
 
   const user = useUser();
   const [error, setError] = useState<string | null>(null);
   const { carbon } = useCarbon();
 
   const [locationId, setLocationId] = useState<string | null>(
-    receipt.locationId ?? user.defaults.locationId ?? null
+    shipment.locationId ?? user.defaults.locationId ?? null
   );
-  const [supplierId, setSupplierId] = useState<string | null>(
-    receipt.supplierId ?? null
+  const [customerId, setSupplierId] = useState<string | null>(
+    shipment.customerId ?? null
   );
 
   const [sourceDocuments, setSourceDocuments] = useState<ListItem[]>([]);
-  const [sourceDocument, setSourceDocument] = useState<ReceiptSourceDocument>(
-    receipt.sourceDocument ?? "Purchase Order"
+  const [sourceDocument, setSourceDocument] = useState<ShipmentSourceDocument>(
+    shipment.sourceDocument ?? "Sales Order"
   );
 
   const fetchSourceDocuments = useCallback(() => {
     if (!carbon || !user.company.id) return;
 
     switch (sourceDocument) {
-      case "Purchase Order":
+      case "Sales Order":
         carbon
-          ?.from("purchaseOrder")
-          .select("id, purchaseOrderId")
+          ?.from("salesOrder")
+          .select("id, salesOrderId")
           .eq("companyId", user.company.id)
-          .or("status.eq.To Receive, status.eq.To Receive and Invoice")
+          .or("status.eq.To Ship, status.eq.To Ship and Invoice")
           .then((response) => {
             if (response.error) {
               setError(response.error.message);
             } else {
               setSourceDocuments(
                 response.data.map((d) => ({
-                  name: d.purchaseOrderId,
+                  name: d.salesOrderId,
                   id: d.id,
                 }))
               );
@@ -67,7 +70,7 @@ export default function useReceiptForm() {
   return {
     error,
     locationId,
-    supplierId,
+    customerId,
     sourceDocuments,
     setLocationId,
     setSourceDocument,

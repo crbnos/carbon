@@ -37,7 +37,8 @@ CREATE TABLE "shipment" (
   "sourceDocument" "shipmentSourceDocument",
   "sourceDocumentId" TEXT,
   "sourceDocumentReadableId" TEXT,
-  "externalDocumentId" TEXT,
+  "shippingMethodId" TEXT,
+  "trackingNumber" TEXT,
   "customerId" TEXT,
   "status" "shipmentStatus" NOT NULL DEFAULT 'Draft',
   "postingDate" DATE,
@@ -59,6 +60,7 @@ CREATE TABLE "shipment" (
   CONSTRAINT "shipment_shipmentId_key" UNIQUE ("shipmentId", "companyId"),
   CONSTRAINT "shipment_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "shipment_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "shipment_shippingMethodId_fkey" FOREIGN KEY ("shippingMethodId") REFERENCES "shippingMethod" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "shipment_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "shipment_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user" ("id") ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT "shipment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -402,3 +404,7 @@ FOR DELETE USING (
 );
 
 ALTER publication supabase_realtime ADD TABLE "shipment";
+
+ALTER TYPE "salesOrderStatus" ADD VALUE 'To Ship and Invoice';
+ALTER TYPE "salesOrderStatus" ADD VALUE 'To Ship';
+ALTER TYPE "salesOrderStatus" ADD VALUE 'To Invoice';

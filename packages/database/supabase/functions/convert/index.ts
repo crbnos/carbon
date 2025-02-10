@@ -306,7 +306,7 @@ serve(async (req: Request) => {
             digitalQuoteAcceptedBy && digitalQuoteAcceptedByEmail;
           const salesOrderStatus = originatedFromDigitalQuote
             ? "Needs Approval"
-            : "Confirmed";
+            : "To Ship and Invoice";
 
           const salesOrder = await trx
             .insertInto("salesOrder")

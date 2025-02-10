@@ -21352,7 +21352,6 @@ export type Database = {
           createdBy: string
           customerId: string | null
           customFields: Json | null
-          externalDocumentId: string | null
           externalNotes: Json | null
           id: string
           internalNotes: Json | null
@@ -21362,6 +21361,7 @@ export type Database = {
           postedBy: string | null
           postingDate: string | null
           shipmentId: string
+          shippingMethodId: string | null
           sourceDocument:
             | Database["public"]["Enums"]["shipmentSourceDocument"]
             | null
@@ -21369,6 +21369,7 @@ export type Database = {
           sourceDocumentReadableId: string | null
           status: Database["public"]["Enums"]["shipmentStatus"]
           tags: string[] | null
+          trackingNumber: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -21379,7 +21380,6 @@ export type Database = {
           createdBy: string
           customerId?: string | null
           customFields?: Json | null
-          externalDocumentId?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -21389,6 +21389,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           shipmentId: string
+          shippingMethodId?: string | null
           sourceDocument?:
             | Database["public"]["Enums"]["shipmentSourceDocument"]
             | null
@@ -21396,6 +21397,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["shipmentStatus"]
           tags?: string[] | null
+          trackingNumber?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21406,7 +21408,6 @@ export type Database = {
           createdBy?: string
           customerId?: string | null
           customFields?: Json | null
-          externalDocumentId?: string | null
           externalNotes?: Json | null
           id?: string
           internalNotes?: Json | null
@@ -21416,6 +21417,7 @@ export type Database = {
           postedBy?: string | null
           postingDate?: string | null
           shipmentId?: string
+          shippingMethodId?: string | null
           sourceDocument?:
             | Database["public"]["Enums"]["shipmentSourceDocument"]
             | null
@@ -21423,6 +21425,7 @@ export type Database = {
           sourceDocumentReadableId?: string | null
           status?: Database["public"]["Enums"]["shipmentStatus"]
           tags?: string[] | null
+          trackingNumber?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -21594,6 +21597,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipment_shippingMethodId_fkey"
+            columns: ["shippingMethodId"]
+            isOneToOne: false
+            referencedRelation: "shippingMethod"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shipment_updatedBy_fkey"
@@ -34982,6 +34992,9 @@ export type Database = {
         | "Invoiced"
         | "Cancelled"
         | "Closed"
+        | "To Ship and Invoice"
+        | "To Ship"
+        | "To Invoice"
       salesOrderTransactionType:
         | "Edit"
         | "Favorite"

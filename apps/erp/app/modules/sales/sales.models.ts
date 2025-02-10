@@ -529,11 +529,14 @@ export const salesOrderLineType = [
 
 export const salesOrderStatusType = [
   "Draft",
-  "In Progress",
+  // "In Progress",
   "Needs Approval",
-  "Confirmed",
+  // "Confirmed",
+  "To Ship and Invoice",
+  "To Ship",
+  "To Invoice",
   "Completed",
-  "Invoiced",
+  // "Invoiced",
   "Cancelled",
   "Closed",
 ] as const;

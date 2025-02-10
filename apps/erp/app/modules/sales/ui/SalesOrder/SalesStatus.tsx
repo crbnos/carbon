@@ -1,8 +1,8 @@
 import { Status } from "@carbon/react";
-import type { salesOrderStatusType } from "../../sales.models";
+import type { Database } from "@carbon/database";
 
 type SalesOrderStatusProps = {
-  status?: (typeof salesOrderStatusType)[number] | null;
+  status?: Database["public"]["Enums"]["salesOrderStatus"] | null;
 };
 
 const SalesStatus = ({ status }: SalesOrderStatusProps) => {
@@ -12,12 +12,15 @@ const SalesStatus = ({ status }: SalesOrderStatusProps) => {
     case "Cancelled":
     case "Closed":
       return <Status color="red">{status}</Status>;
+    case "To Ship and Invoice":
+    case "To Ship":
+      return <Status color="orange">{status}</Status>;
+    case "To Invoice":
     case "Confirmed":
       return <Status color="blue">{status}</Status>;
+    case "Needs Approval":
     case "In Progress":
       return <Status color="yellow">{status}</Status>;
-    case "Needs Approval":
-      return <Status color="orange">{status}</Status>;
     case "Invoiced":
     case "Completed":
       return <Status color="green">{status}</Status>;

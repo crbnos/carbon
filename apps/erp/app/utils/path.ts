@@ -156,6 +156,7 @@ export const path = {
     bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
+    bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
@@ -592,6 +593,7 @@ export const path = {
     newQuoteMaterial: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
+    newSalesInvoice: `${x}/sales-invoice/new`,
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/new`),
@@ -786,6 +788,7 @@ export const path = {
     root: "/",
     routings: `${x}/items/routing`,
     sales: `${x}/sales`,
+    salesInvoice: (id: string) => generatePath(`${x}/sales-invoice/${id}`),
     salesInvoices: `${x}/invoicing/sales`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderShipment: (id: string) =>
@@ -856,6 +859,9 @@ export const path = {
     shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
     shipmentDetails: (id: string) =>
       generatePath(`${x}/shipment/${id}/details`),
+    shipmentLinesTracking: (id: string) =>
+      generatePath(`${x}/shipment/lines/tracking`),
+    shipmentPost: (id: string) => generatePath(`${x}/shipment/${id}/post`),
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,

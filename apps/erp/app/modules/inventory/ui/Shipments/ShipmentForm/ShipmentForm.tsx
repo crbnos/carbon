@@ -26,39 +26,40 @@ import {
   Input,
   Location,
   Select,
+  ShippingMethod,
   Submit,
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
-  ReceiptLine,
-  ReceiptSourceDocument,
-  receiptStatusType,
+  ShipmentLine,
+  ShipmentSourceDocument,
+  shipmentStatusType,
 } from "~/modules/inventory";
 import {
-  receiptSourceDocumentType,
-  receiptValidator,
+  shipmentSourceDocumentType,
+  shipmentValidator,
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
-import useReceiptForm from "./useReceiptForm";
+import useShipmentForm from "./useShipmentForm";
 
-type ReceiptFormProps = {
-  initialValues: z.infer<typeof receiptValidator>;
-  status: (typeof receiptStatusType)[number];
-  receiptLines?: ReceiptLine[];
+type ShipmentFormProps = {
+  initialValues: z.infer<typeof shipmentValidator>;
+  status: (typeof shipmentStatusType)[number];
+  shipmentLines?: ShipmentLine[];
 };
 
-const formId = "receipt-form";
+const formId = "shipment-form";
 
-const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
+const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
   const permissions = usePermissions();
   const {
     locationId,
     sourceDocuments,
-    supplierId,
+    customerId,
     setLocationId,
     setSourceDocument,
-  } = useReceiptForm();
+  } = useShipmentForm();
 
   const isPosted = status === "Posted";
   const isEditing = initialValues.id !== undefined;
@@ -70,19 +71,19 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
       <Card>
         <ValidatedForm
           id={formId}
-          validator={receiptValidator}
+          validator={shipmentValidator}
           method="post"
-          action={path.to.receiptDetails(initialValues.id)}
+          action={path.to.shipmentDetails(initialValues.id)}
           defaultValues={initialValues}
           style={{ width: "100%" }}
         >
           <HStack className="justify-between w-full">
             <CardHeader>
-              <CardTitle>{isEditing ? "Receipt" : "New Receipt"}</CardTitle>
+              <CardTitle>{isEditing ? "Shipment" : "New Shipment"}</CardTitle>
               {!isEditing && (
                 <CardDescription>
-                  A receipt is a record of a part received from a supplier or
-                  transferred from another location.
+                  A shipment is a record of a part shipped to a customer or
+                  transferred to another location.
                 </CardDescription>
               )}
             </CardHeader>
@@ -104,7 +105,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
                         className="text-destructive hover:text-destructive"
                       >
                         <DropdownMenuIcon icon={<LuTrash />} />
-                        Delete Receipt
+                        Delete Shipment
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -113,10 +114,10 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
           </HStack>
           <CardContent>
             <Hidden name="id" />
-            <Hidden name="supplierId" value={supplierId ?? ""} />
+            <Hidden name="customerId" value={customerId ?? ""} />
             <VStack spacing={4} className="min-h-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 w-full">
-                <Input name="receiptId" label="Receipt ID" isReadOnly />
+                <Input name="shipmentId" label="Shipment ID" isReadOnly />
                 <Location
                   name="locationId"
                   label="Location"
@@ -129,14 +130,14 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
                 <Select
                   name="sourceDocument"
                   label="Source Document"
-                  options={receiptSourceDocumentType.map((v) => ({
+                  options={shipmentSourceDocumentType.map((v) => ({
                     label: v,
                     value: v,
                   }))}
                   onChange={(newValue) => {
                     if (newValue) {
                       setSourceDocument(
-                        newValue.value as ReceiptSourceDocument
+                        newValue.value as ShipmentSourceDocument
                       );
                     }
                   }}
@@ -151,8 +152,12 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
                   }))}
                   isReadOnly={isPosted}
                 />
-                <Input name="externalDocumentId" label="External Reference" />
-                <CustomFormFields table="receipt" />
+                <Input name="trackingNumber" label="Tracking Number" />
+                <ShippingMethod
+                  name="shippingMethodId"
+                  label="Shipping Method"
+                />
+                <CustomFormFields table="shipment" />
               </div>
             </VStack>
           </CardContent>
@@ -171,10 +176,10 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
       </Card>
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
-          action={path.to.deleteReceipt(initialValues.id)}
+          action={path.to.deleteShipment(initialValues.id)}
           isOpen={deleteDisclosure.isOpen}
-          name={initialValues.receiptId!}
-          text={`Are you sure you want to delete ${initialValues.receiptId!}? This cannot be undone.`}
+          name={initialValues.shipmentId!}
+          text={`Are you sure you want to delete ${initialValues.shipmentId!}? This cannot be undone.`}
           onCancel={() => {
             deleteDisclosure.onClose();
           }}
@@ -187,4 +192,4 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
   );
 };
 
-export default ReceiptForm;
+export default ShipmentForm;

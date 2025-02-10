@@ -3,6 +3,7 @@ import {
   LuBox,
   LuGroup,
   LuHandCoins,
+  LuTally5,
   LuTruck,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -18,7 +19,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         name: "Quantities",
         to: path.to.inventory,
         role: "employee",
-        icon: <LuBox />,
+        icon: <LuTally5 />,
         table: "inventory",
       },
       {

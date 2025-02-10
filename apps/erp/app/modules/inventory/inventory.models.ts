@@ -150,6 +150,20 @@ export const shippingCarrierType = [
   "Other",
 ] as const;
 
+export const shipmentValidator = z.object({
+  id: z.string().min(1),
+  shipmentId: z.string().min(1, { message: "Receipt ID is required" }),
+  locationId: zfd.text(z.string().optional()),
+  sourceDocument: z.enum(shipmentSourceDocumentType).optional(),
+  sourceDocumentId: zfd.text(
+    z.string().min(1, { message: "Source Document ID is required" })
+  ),
+  trackingNumber: zfd.text(z.string().optional()),
+  shippingMethodId: zfd.text(z.string().optional()),
+  sourceDocumentReadableId: zfd.text(z.string().optional()),
+  customerId: zfd.text(z.string().optional()),
+});
+
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),

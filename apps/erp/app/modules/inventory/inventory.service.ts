@@ -13,69 +13,39 @@ import type {
   inventoryAdjustmentValidator,
   receiptValidator,
   shelfValidator,
+  shipmentValidator,
   shippingMethodValidator,
 } from "./inventory.models";
 
-export async function insertManualInventoryAdjustment(
+export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
-  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
-    companyId: string;
-    createdBy: string;
-  }
+  id: string
 ) {
-  const { adjustmentType, ...rest } = inventoryAdjustment;
-  const data = {
-    ...rest,
-    entryType:
-      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
-  };
+  return client.from("batchProperty").delete().eq("id", id);
+}
 
-  // Look up the current quantity for this itemId, locationId, and shelfId
-  const query = client
-    .from("itemInventory")
-    .select("quantityOnHand")
-    .eq("itemId", data.itemId)
-    .eq("locationId", data.locationId);
+export async function deleteReceipt(
+  client: SupabaseClient<Database>,
+  receiptId: string
+) {
+  return client.from("receipt").delete().eq("id", receiptId);
+}
 
-  if (data.shelfId) {
-    query.eq("shelfId", data.shelfId);
-  } else {
-    query.is("shelfId", null);
-  }
+export async function deleteShippingMethod(
+  client: SupabaseClient<Database>,
+  shippingMethodId: string
+) {
+  return client
+    .from("shippingMethod")
+    .update({ active: false })
+    .eq("id", shippingMethodId);
+}
 
-  const { data: currentQuantity, error: quantityError } =
-    await query.maybeSingle();
-  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
-
-  if (quantityError) {
-    return { error: "Failed to fetch current quantity" };
-  }
-
-  if (adjustmentType === "Set Quantity" && currentQuantity) {
-    const quantityDifference = data.quantity - currentQuantityOnHand;
-    if (quantityDifference > 0) {
-      data.entryType = "Positive Adjmt.";
-      data.quantity = quantityDifference;
-    } else if (quantityDifference < 0) {
-      data.entryType = "Negative Adjmt.";
-      data.quantity = -Math.abs(quantityDifference);
-    } else {
-      // No change in quantity, we can return early
-      return { data: null };
-    }
-  }
-
-  // Check if it's a negative adjustment and if the quantity is sufficient
-  if (data.entryType === "Negative Adjmt.") {
-    if (data.quantity > currentQuantityOnHand) {
-      return {
-        error: "Insufficient quantity for negative adjustment",
-      };
-    }
-    data.quantity = -Math.abs(data.quantity);
-  }
-
-  return client.from("itemLedger").insert([data]).select("*").single();
+export async function deleteShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipment").delete().eq("id", shipmentId);
 }
 
 export async function getBatch(
@@ -184,30 +154,6 @@ export async function getItemLedgerPage(
     pageSize,
     hasMore: count !== null && offset + pageSize < count,
   };
-}
-
-export async function deleteBatchProperty(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("batchProperty").delete().eq("id", id);
-}
-
-export async function deleteReceipt(
-  client: SupabaseClient<Database>,
-  receiptId: string
-) {
-  return client.from("receipt").delete().eq("id", receiptId);
-}
-
-export async function deleteShippingMethod(
-  client: SupabaseClient<Database>,
-  shippingMethodId: string
-) {
-  return client
-    .from("shippingMethod")
-    .update({ active: false })
-    .eq("id", shippingMethodId);
 }
 
 export async function getBatchProperties(
@@ -564,6 +510,68 @@ export async function getShippingTermsList(
     .order("name", { ascending: true });
 }
 
+export async function insertManualInventoryAdjustment(
+  client: SupabaseClient<Database>,
+  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const { adjustmentType, ...rest } = inventoryAdjustment;
+  const data = {
+    ...rest,
+    entryType:
+      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
+  };
+
+  // Look up the current quantity for this itemId, locationId, and shelfId
+  const query = client
+    .from("itemInventory")
+    .select("quantityOnHand")
+    .eq("itemId", data.itemId)
+    .eq("locationId", data.locationId);
+
+  if (data.shelfId) {
+    query.eq("shelfId", data.shelfId);
+  } else {
+    query.is("shelfId", null);
+  }
+
+  const { data: currentQuantity, error: quantityError } =
+    await query.maybeSingle();
+  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
+
+  if (quantityError) {
+    return { error: "Failed to fetch current quantity" };
+  }
+
+  if (adjustmentType === "Set Quantity" && currentQuantity) {
+    const quantityDifference = data.quantity - currentQuantityOnHand;
+    if (quantityDifference > 0) {
+      data.entryType = "Positive Adjmt.";
+      data.quantity = quantityDifference;
+    } else if (quantityDifference < 0) {
+      data.entryType = "Negative Adjmt.";
+      data.quantity = -Math.abs(quantityDifference);
+    } else {
+      // No change in quantity, we can return early
+      return { data: null };
+    }
+  }
+
+  // Check if it's a negative adjustment and if the quantity is sufficient
+  if (data.entryType === "Negative Adjmt.") {
+    if (data.quantity > currentQuantityOnHand) {
+      return {
+        error: "Insufficient quantity for negative adjustment",
+      };
+    }
+    data.quantity = -Math.abs(data.quantity);
+  }
+
+  return client.from("itemLedger").insert([data]).select("*").single();
+}
+
 export async function updateBatchPropertyOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -694,6 +702,36 @@ export async function upsertShippingMethod(
     .from("shippingMethod")
     .update(sanitize(shippingMethod))
     .eq("id", shippingMethod.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertShipment(
+  client: SupabaseClient<Database>,
+  shipment:
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        shipmentId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        id: string;
+        shipmentId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in shipment) {
+    return client.from("shipment").insert([shipment]).select("*").single();
+  }
+  return client
+    .from("receipt")
+    .update({
+      ...sanitize(shipment),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", shipment.id)
     .select("id")
     .single();
 }

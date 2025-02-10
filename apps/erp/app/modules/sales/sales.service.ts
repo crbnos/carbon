@@ -1335,7 +1335,7 @@ export async function releaseSalesOrder(
   return client
     .from("salesOrder")
     .update({
-      status: "Confirmed",
+      status: "To Ship and Invoice",
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })

@@ -56,6 +56,7 @@ import { path } from "~/utils/path";
 import { salesOrderStatusType } from "../../sales.models";
 import type { SalesOrder, SalesOrderJob } from "../../types";
 import SalesStatus from "./SalesStatus";
+import { useSalesOrder } from "./useSalesOrder";
 
 type SalesOrdersTableProps = {
   data: SalesOrder[];
@@ -503,34 +504,3 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
 SalesOrdersTable.displayName = "SalesOrdersTable";
 
 export default SalesOrdersTable;
-
-export const useSalesOrder = () => {
-  const navigate = useNavigate();
-
-  const edit = useCallback(
-    (salesOrder: SalesOrder) => navigate(path.to.salesOrder(salesOrder.id!)),
-    [navigate]
-  );
-
-  /*const invoice = useCallback(
-    (salesOrder: SalesOrder) =>
-      navigate(
-        `${path.to.newPurchaseInvoice}?sourceDocument=Purchase Order&sourceDocumentId=${purchaseOrder.id}`
-      ),
-    [navigate]
-  );
-
-  const receive = useCallback(
-    (salesOrder: SalesOrder) =>
-      navigate(
-        `${path.to.newReceipt}?sourceDocument=Purchase Order&sourceDocumentId=${salesOrder.id}`
-      ),
-    [navigate]
-  );*/
-
-  return {
-    edit,
-    //invoice,
-    //receive,
-  };
-};

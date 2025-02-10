@@ -15,31 +15,33 @@ import {
 } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
-import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";
-import { path } from "~/utils/path";
+import type { Shipment, ShipmentLine } from "~/modules/inventory";
 
-const ReceiptHeader = () => {
-  const { receiptId } = useParams();
-  if (!receiptId) throw new Error("receiptId not found");
+import { path } from "~/utils/path";
+import ShipmentStatus from "./ShipmentStatus";
+import ShipmentPostModal from "./ShipmentPostModal";
+
+const ShipmentHeader = () => {
+  const { shipmentId } = useParams();
+  if (!shipmentId) throw new Error("shipmentId not found");
 
   const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
-    receipt: Receipt;
-    receiptLines: ReceiptLine[];
-  }>(path.to.receipt(receiptId));
+    shipment: Shipment;
+    shipmentLines: ShipmentLine[];
+  }>(path.to.shipment(shipmentId));
 
-  if (!routeData?.receipt) throw new Error("Failed to load receipt");
+  if (!routeData?.shipment) throw new Error("Failed to load shipment");
 
   const permissions = usePermissions();
   const postModal = useDisclosure();
 
   const canPost =
-    routeData.receiptLines.length > 0 &&
-    routeData.receiptLines.some((line) => line.receivedQuantity > 0);
+    routeData.shipmentLines.length > 0 &&
+    routeData.shipmentLines.some((line) => line.shippedQuantity > 0);
 
-  const isPosted = routeData.receipt.status === "Posted";
+  const isPosted = routeData.shipment.status === "Posted";
 
   return (
     <>
@@ -52,19 +54,21 @@ const ReceiptHeader = () => {
               onClick={toggleExplorer}
               variant="ghost"
             />
-            <Link to={path.to.receiptDetails(receiptId)}>
+            <Link to={path.to.shipmentDetails(shipmentId)}>
               <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.receipt?.receiptId}</span>
+                <span>{routeData?.shipment?.shipmentId}</span>
               </Heading>
             </Link>
-            <ReceiptStatus status={routeData?.receipt?.status} />
+            <ShipmentStatus status={routeData?.shipment?.status} />
           </HStack>
           <HStack>
             <SourceDocumentLink
-              sourceDocument={routeData.receipt.sourceDocument ?? undefined}
-              sourceDocumentId={routeData.receipt.sourceDocumentId ?? undefined}
+              sourceDocument={routeData.shipment.sourceDocument ?? undefined}
+              sourceDocumentId={
+                routeData.shipment.sourceDocumentId ?? undefined
+              }
               sourceDocumentReadableId={
-                routeData.receipt.sourceDocumentReadableId ?? undefined
+                routeData.shipment.sourceDocumentReadableId ?? undefined
               }
             />
             <Button
@@ -86,7 +90,7 @@ const ReceiptHeader = () => {
         </HStack>
       </div>
 
-      {postModal.isOpen && <ReceiptPostModal onClose={postModal.onClose} />}
+      {postModal.isOpen && <ShipmentPostModal onClose={postModal.onClose} />}
     </>
   );
 };
@@ -103,25 +107,25 @@ function SourceDocumentLink({
   if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
     return null;
   switch (sourceDocument) {
-    case "Purchase Order":
+    case "Sales Order":
       return (
         <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
-          <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
-            Purchase Order
+          <Link to={path.to.salesOrderDetails(sourceDocumentId!)}>
+            Sales Order
           </Link>
         </Button>
       );
-    case "Purchase Invoice":
-      return (
-        <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
-          <Link to={path.to.purchaseInvoice(sourceDocumentId!)}>
-            Purchase Invoice
-          </Link>
-        </Button>
-      );
+    // case "Sales Invoice":
+    //   return (
+    //     <Button variant="secondary" leftIcon={<LuCreditCard />} asChild>
+    //       <Link to={path.to.salesInvoiceDetails(sourceDocumentId!)}>
+    //         Sales Invoice
+    //       </Link>
+    //     </Button>
+    //   );
     default:
       return null;
   }
 }
 
-export default ReceiptHeader;
+export default ShipmentHeader;

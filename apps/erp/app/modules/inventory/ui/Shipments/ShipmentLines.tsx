@@ -50,12 +50,12 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import type {
   BatchProperty,
-  Receipt,
-  ReceiptLine,
-  ReceiptLineTracking,
+  Shipment,
+  ShipmentLine,
+  ShipmentLineTracking,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
-import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
+import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
@@ -63,43 +63,45 @@ import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 
-const ReceiptLines = () => {
-  const { receiptId } = useParams();
-  if (!receiptId) throw new Error("receiptId not found");
+const ShipmentLines = () => {
+  const { shipmentId } = useParams();
+  if (!shipmentId) throw new Error("shipmentId not found");
 
-  const fetcher = useFetcher<typeof receiptLinesUpdateAction>();
-  const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
+  const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
+  const { upload, deleteFile, getPath } = useShipmentFiles(shipmentId);
   const routeData = useRouteData<{
-    receipt: Receipt;
-    receiptLines: ReceiptLine[];
-    receiptFiles: PostgrestResponse<StorageItem>;
-    receiptLineTracking: ReceiptLineTracking[];
+    shipment: Shipment;
+    shipmentLines: ShipmentLine[];
+    shipmentFiles: PostgrestResponse<StorageItem>;
+    shipmentLineTracking: ShipmentLineTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
-  }>(path.to.receipt(receiptId));
+  }>(path.to.shipment(shipmentId));
 
-  const receiptsById = new Map<string, ReceiptLine>(
-    routeData?.receiptLines.map((line) => [line.id, line])
+  const shipmentsById = new Map<string, ShipmentLine>(
+    routeData?.shipmentLines.map((line) => [line.id, line])
   );
-  const pendingReceiptLines = usePendingReceiptLines();
+  const pendingShipmentLines = usePendingShipmentLines();
 
-  for (let pendingReceiptLine of pendingReceiptLines) {
-    let item = receiptsById.get(pendingReceiptLine.id);
-    let merged = item ? { ...item, ...pendingReceiptLine } : pendingReceiptLine;
-    receiptsById.set(pendingReceiptLine.id, merged as ReceiptLine);
+  for (let pendingShipmentLine of pendingShipmentLines) {
+    let item = shipmentsById.get(pendingShipmentLine.id);
+    let merged = item
+      ? { ...item, ...pendingShipmentLine }
+      : pendingShipmentLine;
+    shipmentsById.set(pendingShipmentLine.id, merged as ShipmentLine);
   }
 
-  const receiptLines = Array.from(receiptsById.values());
+  const shipmentLines = Array.from(shipmentsById.values());
 
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
     Record<string, { index: number; number: string }[]>
   >(() => {
-    return receiptLines.reduce(
+    return shipmentLines.reduce(
       (acc, line) => ({
         ...acc,
-        [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
-          const serialNumber = routeData?.receiptLineTracking.find(
+        [line.id]: Array.from({ length: line.shippedQuantity }, (_, index) => {
+          const serialNumber = routeData?.shipmentLineTracking.find(
             (t) =>
-              t.receiptLineId === line.id &&
+              t.shipmentLineId === line.id &&
               t.serialNumber !== null &&
               t.index === index
           )?.serialNumber;
@@ -115,15 +117,15 @@ const ReceiptLines = () => {
 
   useEffect(() => {
     setSerialNumbersByLineId(
-      receiptLines.reduce(
+      shipmentLines.reduce(
         (acc, line) => ({
           ...acc,
           [line.id]: Array.from(
-            { length: line.receivedQuantity },
+            { length: line.shippedQuantity },
             (_, index) => {
-              const serialNumber = routeData?.receiptLineTracking.find(
+              const serialNumber = routeData?.shipmentLineTracking.find(
                 (t) =>
-                  t.receiptLineId === line.id &&
+                  t.shipmentLineId === line.id &&
                   t.serialNumber !== null &&
                   t.index === index
               )?.serialNumber;
@@ -138,9 +140,9 @@ const ReceiptLines = () => {
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeData?.receipt?.sourceDocumentId]);
+  }, [routeData?.shipment?.sourceDocumentId]);
 
-  const onUpdateReceiptLine = useCallback(
+  const onUpdateShipmentLine = useCallback(
     async ({
       lineId,
       field,
@@ -148,7 +150,7 @@ const ReceiptLines = () => {
     }:
       | {
           lineId: string;
-          field: "receivedQuantity";
+          field: "shippedQuantity";
           value: number;
         }
       | {
@@ -156,7 +158,7 @@ const ReceiptLines = () => {
           field: "shelfId";
           value: string;
         }) => {
-      if (value === receiptLines.find((l) => l.id === lineId)?.[field]) {
+      if (value === shipmentLines.find((l) => l.id === lineId)?.[field]) {
         return;
       }
       const formData = new FormData();
@@ -166,36 +168,36 @@ const ReceiptLines = () => {
       formData.append("value", value.toString());
       fetcher.submit(formData, {
         method: "post",
-        action: path.to.bulkUpdateReceiptLine,
+        action: path.to.bulkUpdateShipmentLine,
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
-  const isPosted = routeData?.receipt.status === "Posted";
+  const isPosted = routeData?.shipment.status === "Posted";
 
   return (
     <>
       <Card>
         <HStack className="justify-between items-start">
           <CardHeader>
-            <CardTitle>Receipt Lines</CardTitle>
+            <CardTitle>Shipment Lines</CardTitle>
           </CardHeader>
         </HStack>
 
         <CardContent>
           <div className="border rounded-lg">
-            {receiptLines.map((line, index) => (
-              <ReceiptLineItem
+            {shipmentLines.map((line, index) => (
+              <ShipmentLineItem
                 key={line.id}
                 line={line}
-                receipt={routeData?.receipt}
+                shipment={routeData?.shipment}
                 isReadOnly={isPosted}
-                onUpdate={onUpdateReceiptLine}
-                files={routeData?.receiptFiles}
+                onUpdate={onUpdateShipmentLine}
+                files={routeData?.shipmentFiles}
                 className={
-                  index === receiptLines.length - 1 ? "border-none" : ""
+                  index === shipmentLines.length - 1 ? "border-none" : ""
                 }
                 serialNumbers={serialNumbersByLineId[line.id] || []}
                 getPath={(file) => getPath(file, line.id)}
@@ -207,8 +209,9 @@ const ReceiptLines = () => {
                 }}
                 batchProperties={routeData?.batchProperties}
                 batchNumber={
-                  routeData?.receiptLineTracking.find(
-                    (t) => t.receiptLineId === line.id && t.batchNumber !== null
+                  routeData?.shipmentLineTracking.find(
+                    (t) =>
+                      t.shipmentLineId === line.id && t.batchNumber !== null
                   )?.batchNumber ?? {
                     id: "",
                     number: "",
@@ -229,9 +232,9 @@ const ReceiptLines = () => {
   );
 };
 
-function ReceiptLineItem({
+function ShipmentLineItem({
   line,
-  receipt,
+  shipment,
   className,
   isReadOnly,
   onUpdate,
@@ -244,8 +247,8 @@ function ReceiptLineItem({
   upload,
   deleteFile,
 }: {
-  line: ReceiptLine;
-  receipt?: Receipt;
+  line: ShipmentLine;
+  shipment?: Shipment;
   className?: string;
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
@@ -269,7 +272,7 @@ function ReceiptLineItem({
   }:
     | {
         lineId: string;
-        field: "receivedQuantity";
+        field: "shippedQuantity";
         value: number;
       }
     | {
@@ -310,11 +313,11 @@ function ReceiptLineItem({
               <label className="text-xs text-muted-foreground">Received</label>
 
               <NumberField
-                value={line.receivedQuantity}
+                value={line.shippedQuantity}
                 onChange={(value) => {
                   onUpdate({
                     lineId: line.id,
-                    field: "receivedQuantity",
+                    field: "shippedQuantity",
                     value,
                   });
                   // Adjust serial numbers array size while preserving existing values
@@ -360,7 +363,7 @@ function ReceiptLineItem({
                   {line.outstandingQuantity}
                 </span>
 
-                {line.receivedQuantity > line.outstandingQuantity && (
+                {line.shippedQuantity > line.outstandingQuantity && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
@@ -390,7 +393,7 @@ function ReceiptLineItem({
       {line.requiresBatchTracking && (
         <>
           <BatchForm
-            receipt={receipt}
+            shipment={shipment}
             line={line}
             isReadOnly={isReadOnly}
             initialValues={batchNumber}
@@ -400,7 +403,7 @@ function ReceiptLineItem({
       )}
       {line.requiresSerialTracking && (
         <SerialForm
-          receipt={receipt}
+          shipment={shipment}
           line={line}
           serialNumbers={serialNumbers}
           isReadOnly={isReadOnly}
@@ -463,13 +466,13 @@ function ReceiptLineItem({
 
 function BatchForm({
   line,
-  receipt,
+  shipment,
   batchProperties,
   initialValues,
   isReadOnly,
 }: {
-  line: ReceiptLine;
-  receipt?: Receipt;
+  line: ShipmentLine;
+  shipment?: Shipment;
   isReadOnly: boolean;
   batchProperties?: PostgrestResponse<BatchProperty>;
   initialValues?: {
@@ -508,7 +511,7 @@ function BatchForm({
 
   const { carbon } = useCarbon();
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
-    if (!receipt?.id || !newValues.number.trim()) return;
+    if (!shipment?.id || !newValues.number.trim()) return;
 
     const batchMatch = isNew
       ? (await carbon
@@ -516,7 +519,7 @@ function BatchForm({
           .select("*")
           .eq("number", newValues.number.trim())
           .eq("itemId", line.itemId)
-          .eq("companyId", receipt.companyId)
+          .eq("companyId", shipment.companyId)
           .maybeSingle()) ?? { data: null }
       : { data: null };
 
@@ -539,8 +542,8 @@ function BatchForm({
 
     const formData = new FormData();
     formData.append("itemId", line.itemId);
-    formData.append("receiptId", receipt.id);
-    formData.append("receiptLineId", line.id);
+    formData.append("shipmentId", shipment.id);
+    formData.append("shipmentLineId", line.id);
     formData.append("trackingType", "batch");
     formData.append("batchNumber", valuesToSubmit.number.trim());
     if (
@@ -567,11 +570,11 @@ function BatchForm({
     }
 
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
-    formData.append("quantity", line.receivedQuantity.toString());
+    formData.append("quantity", line.shippedQuantity.toString());
 
     submit(formData, {
       method: "post",
-      action: path.to.receiptLinesTracking(receipt.id),
+      action: path.to.shipmentLinesTracking(shipment.id),
       navigate: false,
     });
   };
@@ -705,13 +708,13 @@ function BatchForm({
 
 function SerialForm({
   line,
-  receipt,
+  shipment,
   serialNumbers,
   isReadOnly,
   onSerialNumbersChange,
 }: {
-  line: ReceiptLine;
-  receipt?: Receipt;
+  line: ShipmentLine;
+  shipment?: Shipment;
   serialNumbers: { index: number; number: string }[];
   isReadOnly: boolean;
   onSerialNumbersChange: (
@@ -737,7 +740,7 @@ function SerialForm({
 
   const updateSerialNumber = useCallback(
     async (serialNumber: { index: number; number: string }) => {
-      if (!receipt?.id || !serialNumber.number.trim()) return;
+      if (!shipment?.id || !serialNumber.number.trim()) return;
 
       const error = validateSerialNumber(
         serialNumber.number,
@@ -750,17 +753,20 @@ function SerialForm({
 
       const formData = new FormData();
       formData.append("itemId", line.itemId);
-      formData.append("receiptId", receipt.id);
-      formData.append("receiptLineId", line.id);
+      formData.append("shipmentId", shipment.id);
+      formData.append("shipmentLineId", line.id);
       formData.append("trackingType", "serial");
       formData.append("index", serialNumber.index.toString());
       formData.append("serialNumber", serialNumber.number.trim());
 
       try {
-        const response = await fetch(path.to.receiptLinesTracking(receipt.id), {
-          method: "POST",
-          body: formData,
-        });
+        const response = await fetch(
+          path.to.shipmentLinesTracking(shipment.id),
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
 
         if (response.ok) {
           // Clear error if submission was successful
@@ -784,7 +790,7 @@ function SerialForm({
         }
       }
     },
-    [line.id, line.itemId, receipt?.id, validateSerialNumber]
+    [line.id, line.itemId, shipment?.id, validateSerialNumber]
   );
 
   return (
@@ -889,14 +895,14 @@ function Shelf({
   );
 }
 
-const usePendingReceiptLines = () => {
+const usePendingShipmentLines = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;
   };
 
   return useFetchers()
     .filter((fetcher): fetcher is PendingItem => {
-      return fetcher.formAction === path.to.bulkUpdateReceiptLine;
+      return fetcher.formAction === path.to.bulkUpdateShipmentLine;
     })
     .reduce<{ id: string; [key: string]: string | null }[]>((acc, fetcher) => {
       const lineId = fetcher.formData.get("ids") as string;
@@ -914,9 +920,9 @@ const usePendingReceiptLines = () => {
     }, []);
 };
 
-export default ReceiptLines;
+export default ShipmentLines;
 
-function useReceiptFiles(receiptId: string) {
+function useShipmentFiles(shipmentId: string) {
   const { company } = useUser();
   const { carbon } = useCarbon();
 
@@ -956,8 +962,8 @@ function useReceiptFiles(receiptId: string) {
           formData.append("path", fileUpload.data.path);
           formData.append("name", file.name);
           formData.append("size", Math.round(file.size / 1024).toString());
-          formData.append("sourceDocument", "Receipt");
-          formData.append("sourceDocumentId", receiptId);
+          formData.append("sourceDocument", "Shipment");
+          formData.append("sourceDocumentId", shipmentId);
 
           submit(formData, {
             method: "post",
@@ -969,7 +975,7 @@ function useReceiptFiles(receiptId: string) {
       }
       revalidator.revalidate();
     },
-    [carbon, revalidator, getPath, receiptId, submit]
+    [carbon, revalidator, getPath, shipmentId, submit]
   );
 
   const deleteFile = useCallback(

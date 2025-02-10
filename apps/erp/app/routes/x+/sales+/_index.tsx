@@ -69,6 +69,9 @@ const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"] as const;
 const OPEN_QUOTE_STATUSES = ["Sent", "Draft"] as const;
 const OPEN_SALES_ORDER_STATUSES = [
   "Confirmed",
+  "To Ship and Invoice",
+  "To Ship",
+  "To Invoice",
   "Needs Approval",
   "In Progress",
   "Draft",

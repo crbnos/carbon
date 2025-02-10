@@ -21,9 +21,9 @@ import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
-const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
-  const { receiptId } = useParams();
-  if (!receiptId) throw new Error("receiptId not found");
+const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
+  const { shipmentId } = useParams();
+  if (!shipmentId) throw new Error("shipmentId not found");
 
   const navigation = useNavigation();
   const { carbon } = useCarbon();
@@ -31,57 +31,57 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const [validationErrors, setValidationErrors] = useState<
     {
       itemReadableId: string | null;
-      receivedQuantity: number;
-      receivedQuantityError: string;
+      shippedQuantity: number;
+      shippedQuantityError: string;
     }[]
   >([]);
 
-  const getReceiptLines = async () => {
+  const getShipmentLines = async () => {
     if (!carbon) {
       toast.error("Carbon client not found");
       return;
     }
-    const receiptLines = await carbon
-      .from("receiptLine")
+    const shipmentLines = await carbon
+      .from("shipmentLine")
       .select(
-        "id, itemReadableId, receivedQuantity, requiresBatchTracking, requiresSerialTracking, receiptLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
+        "id, itemReadableId, shippedQuantity, requiresBatchTracking, requiresSerialTracking, shipmentLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
       )
-      .eq("receiptId", receiptId);
+      .eq("shipmentId", shipmentId);
 
-    if (receiptLines.error) {
-      toast.error("Error fetching receipt lines");
+    if (shipmentLines.error) {
+      toast.error("Error fetching shipment lines");
       return;
     }
 
     const errors: {
       itemReadableId: string | null;
-      receivedQuantity: number;
-      receivedQuantityError: string;
+      shippedQuantity: number;
+      shippedQuantityError: string;
     }[] = [];
 
-    receiptLines.data.forEach((line) => {
+    shipmentLines.data.forEach((line) => {
       if (
         line.requiresBatchTracking &&
-        (line.receiptLineTracking.length === 0 ||
-          !line.receiptLineTracking[0].batchNumber)
+        (line.shipmentLineTracking.length === 0 ||
+          !line.shipmentLineTracking[0].batchNumber)
       ) {
         errors.push({
           itemReadableId: line.itemReadableId,
-          receivedQuantity: line.receivedQuantity,
-          receivedQuantityError: "Batch number is required",
+          shippedQuantity: line.shippedQuantity,
+          shippedQuantityError: "Batch number is required",
         });
       }
 
       if (line.requiresSerialTracking) {
-        const quantityWithSerial = line.receiptLineTracking.reduce(
+        const quantityWithSerial = line.shipmentLineTracking.reduce(
           (acc, tracking) => acc + tracking.quantity,
           0
         );
-        if (quantityWithSerial !== line.receivedQuantity) {
+        if (quantityWithSerial !== line.shippedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
-            receivedQuantity: line.receivedQuantity,
-            receivedQuantityError: "Serial numbers are missing",
+            shippedQuantity: line.shippedQuantity,
+            shippedQuantityError: "Serial numbers are missing",
           });
         }
       }
@@ -92,7 +92,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   useMount(() => {
-    getReceiptLines();
+    getShipmentLines();
   });
 
   return (
@@ -105,9 +105,9 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Post Receipt</ModalTitle>
+          <ModalTitle>Post Shipment</ModalTitle>
           <ModalDescription>
-            Are you sure you want to post this receipt?
+            Are you sure you want to post this shipment?
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
@@ -121,10 +121,10 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
                     <li key={index} className="text-sm font-medium">
                       <span className="font-mono">{error.itemReadableId}</span>
                       <span className="text-muted-foreground ml-2">
-                        {error.receivedQuantity}
+                        {error.shippedQuantity}
                       </span>
                       <span className="block mt-0.5 text-red-500 font-normal">
-                        {error.receivedQuantityError}
+                        {error.shippedQuantityError}
                       </span>
                     </li>
                   ))}
@@ -138,7 +138,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             <Button variant="solid" onClick={onClose}>
               Cancel
             </Button>
-            <Form action={path.to.receiptPost(receiptId)} method="post">
+            <Form action={path.to.shipmentPost(shipmentId)} method="post">
               <Button
                 isDisabled={
                   navigation.state !== "idle" ||
@@ -147,7 +147,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
                 }
                 type="submit"
               >
-                Post Receipt
+                Post Shipment
               </Button>
             </Form>
           </HStack>
@@ -157,4 +157,4 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-export default ReceiptPostModal;
+export default ShipmentPostModal;

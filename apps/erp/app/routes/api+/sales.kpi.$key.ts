@@ -353,6 +353,9 @@ async function getSalesOrdersQuery(
     .in("status", [
       "In Progress",
       "Needs Approval",
+      "To Ship and Invoice",
+      "To Ship",
+      "To Invoice",
       "Confirmed",
       "Completed",
       "Invoiced",
