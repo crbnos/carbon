@@ -48739,6 +48739,8 @@ export default {
           type: "string",
         },
         modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -53668,6 +53670,8 @@ export default {
           format: "jsonb",
         },
         modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55513,6 +55517,8 @@ export default {
           type: "string",
         },
         modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -59496,6 +59502,8 @@ export default {
           type: "string",
         },
         modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -63430,6 +63438,8 @@ export default {
           format: "jsonb",
         },
         modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
           format: "text",
           type: "string",
         },
