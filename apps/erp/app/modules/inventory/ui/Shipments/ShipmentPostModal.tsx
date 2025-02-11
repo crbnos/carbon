@@ -41,15 +41,22 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       toast.error("Carbon client not found");
       return;
     }
-    const shipmentLines = await carbon
-      .from("shipmentLine")
-      .select(
-        "id, itemReadableId, shippedQuantity, requiresBatchTracking, requiresSerialTracking, shipmentLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
-      )
-      .eq("shipmentId", shipmentId);
+    const [shipmentLines, shipmentLineTracking] = await Promise.all([
+      carbon
+        .from("shipmentLine")
+        .select(
+          "id, itemReadableId, shippedQuantity, requiresBatchTracking, requiresSerialTracking"
+        )
+        .eq("shipmentId", shipmentId),
+      carbon
+        .from("itemTracking")
+        .select("*, serialNumber(number), batchNumber(number)")
+        .eq("sourceDocument", "Shipment")
+        .eq("sourceDocumentId", shipmentId),
+    ]);
 
-    if (shipmentLines.error) {
-      toast.error("Error fetching shipment lines");
+    if (shipmentLines.error || shipmentLineTracking.error) {
+      toast.error("Error fetching shipment lines or tracking data");
       return;
     }
 
@@ -59,7 +66,14 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       shippedQuantityError: string;
     }[] = [];
 
-    shipmentLines.data.forEach((line) => {
+    const shipmentLinesWithTracking = shipmentLines.data.map((line) => ({
+      ...line,
+      shipmentLineTracking: shipmentLineTracking.data.filter(
+        (tracking) => tracking.sourceDocumentLineId === line.id
+      ),
+    }));
+
+    shipmentLinesWithTracking.forEach((line) => {
       if (
         line.requiresBatchTracking &&
         (line.shipmentLineTracking.length === 0 ||

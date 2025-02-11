@@ -17,7 +17,6 @@ import type {
 export type BatchDetails = NonNullable<
   Awaited<ReturnType<typeof getBatch>>["data"]
 >;
-
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]
 >[number];
@@ -34,6 +33,10 @@ export type ItemLedger = NonNullable<
   Awaited<ReturnType<typeof getItemLedgerPage>>["data"]
 >[number];
 
+export type ItemTracking = NonNullable<
+  Awaited<ReturnType<typeof getReceiptLineTracking>>["data"]
+>[number];
+
 export type Receipt = NonNullable<
   Awaited<ReturnType<typeof getReceipts>>["data"]
 >[number];
@@ -46,10 +49,6 @@ export type ReceiptLineItem = Omit<
   ReceiptLine,
   "id" | "updatedBy" | "createdAt" | "updatedAt"
 >;
-
-export type ReceiptLineTracking = NonNullable<
-  Awaited<ReturnType<typeof getReceiptLineTracking>>["data"]
->[number];
 
 export type ReceiptSourceDocument =
   Database["public"]["Enums"]["receiptSourceDocument"];

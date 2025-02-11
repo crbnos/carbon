@@ -12,6 +12,9 @@ import {
   HStack,
   IconButton,
   Input,
+  ModalHeader,
+  ModalContent,
+  Modal,
   NumberField,
   NumberInput,
   toast,
@@ -20,6 +23,10 @@ import {
   TooltipTrigger,
   useDisclosure,
   VStack,
+  ModalBody,
+  ModalFooter,
+  ModalTitle,
+  ModalDescription,
 } from "@carbon/react";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import {
@@ -38,9 +45,10 @@ import {
   LuCalendar,
   LuCircleAlert,
   LuGroup,
+  LuSplit,
   LuX,
 } from "react-icons/lu";
-import { DocumentPreview } from "~/components";
+import { DocumentPreview, Empty } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import FileDropzone from "~/components/FileDropzone";
@@ -48,12 +56,13 @@ import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
-import type {
-  BatchProperty,
-  getSerialNumbersForItem,
-  Shipment,
-  ShipmentLine,
-  ShipmentLineTracking,
+import {
+  splitValidator,
+  type BatchProperty,
+  type getSerialNumbersForItem,
+  type Shipment,
+  type ShipmentLine,
+  type ShipmentLineTracking,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
@@ -63,6 +72,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { ValidatedForm, Submit, Number } from "@carbon/form";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -102,7 +112,7 @@ const ShipmentLines = () => {
         [line.id]: Array.from({ length: line.shippedQuantity }, (_, index) => {
           const serialNumber = routeData?.shipmentLineTracking.find(
             (t) =>
-              t.shipmentLineId === line.id &&
+              t.sourceDocumentLineId === line.id &&
               t.serialNumber !== null &&
               t.index === index
           )?.serialNumber;
@@ -126,7 +136,7 @@ const ShipmentLines = () => {
             (_, index) => {
               const serialNumber = routeData?.shipmentLineTracking.find(
                 (t) =>
-                  t.shipmentLineId === line.id &&
+                  t.sourceDocumentLineId === line.id &&
                   t.serialNumber !== null &&
                   t.index === index
               )?.serialNumber;
@@ -189,42 +199,47 @@ const ShipmentLines = () => {
 
         <CardContent>
           <div className="border rounded-lg">
-            {shipmentLines.map((line, index) => (
-              <ShipmentLineItem
-                key={line.id}
-                line={line}
-                shipment={routeData?.shipment}
-                isReadOnly={isPosted}
-                onUpdate={onUpdateShipmentLine}
-                files={routeData?.shipmentFiles}
-                className={
-                  index === shipmentLines.length - 1 ? "border-none" : ""
-                }
-                serialNumbers={serialNumbersByLineId[line.id] || []}
-                getPath={(file) => getPath(file, line.id)}
-                onSerialNumbersChange={(newSerialNumbers) => {
-                  setSerialNumbersByLineId((prev) => ({
-                    ...prev,
-                    [line.id]: newSerialNumbers,
-                  }));
-                }}
-                batchProperties={routeData?.batchProperties}
-                batchNumber={
-                  routeData?.shipmentLineTracking.find(
-                    (t) =>
-                      t.shipmentLineId === line.id && t.batchNumber !== null
-                  )?.batchNumber ?? {
-                    id: "",
-                    number: "",
-                    manufacturingDate: null,
-                    expirationDate: null,
-                    properties: {},
+            {shipmentLines.length === 0 ? (
+              <Empty className="py-6" />
+            ) : (
+              shipmentLines.map((line, index) => (
+                <ShipmentLineItem
+                  key={line.id}
+                  line={line}
+                  shipment={routeData?.shipment}
+                  isReadOnly={isPosted}
+                  onUpdate={onUpdateShipmentLine}
+                  files={routeData?.shipmentFiles}
+                  className={
+                    index === shipmentLines.length - 1 ? "border-none" : ""
                   }
-                }
-                upload={(files) => upload(files, line.id)}
-                deleteFile={(file) => deleteFile(file, line.id)}
-              />
-            ))}
+                  serialNumbers={serialNumbersByLineId[line.id] || []}
+                  getPath={(file) => getPath(file, line.id)}
+                  onSerialNumbersChange={(newSerialNumbers) => {
+                    setSerialNumbersByLineId((prev) => ({
+                      ...prev,
+                      [line.id]: newSerialNumbers,
+                    }));
+                  }}
+                  batchProperties={routeData?.batchProperties}
+                  batchNumber={
+                    routeData?.shipmentLineTracking.find(
+                      (t) =>
+                        t.sourceDocumentLineId === line.id &&
+                        t.batchNumber !== null
+                    )?.batchNumber ?? {
+                      id: "",
+                      number: "",
+                      manufacturingDate: null,
+                      expirationDate: null,
+                      properties: {},
+                    }
+                  }
+                  upload={(files) => upload(files, line.id)}
+                  deleteFile={(file) => deleteFile(file, line.id)}
+                />
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -287,9 +302,24 @@ function ShipmentLineItem({
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
+  const splitDisclosure = useDisclosure();
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6", className)}>
+    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
+      <div className="absolute top-4 right-6">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              aria-label="Split shipment line"
+              icon={<LuSplit />}
+              variant="ghost"
+              size="sm"
+              onClick={splitDisclosure.onOpen}
+            />
+          </TooltipTrigger>
+          <TooltipContent>Split shipment line</TooltipContent>
+        </Tooltip>
+      </div>
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
@@ -459,6 +489,12 @@ function ShipmentLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
+          {splitDisclosure.isOpen && (
+            <SplitShipmentLineModal
+              line={line}
+              onClose={splitDisclosure.onClose}
+            />
+          )}
         </>
       )}
     </div>
@@ -527,8 +563,7 @@ function BatchForm({
     let valuesToSubmit = newValues;
 
     if (batchMatch.data) {
-      // Just update the local state without triggering another database write
-      setValues({
+      valuesToSubmit = {
         ...newValues,
         manufacturingDate: batchMatch.data.manufacturingDate
           ? parseDate(batchMatch.data.manufacturingDate)
@@ -536,9 +571,9 @@ function BatchForm({
         expirationDate: batchMatch.data.expirationDate
           ? parseDate(batchMatch.data.expirationDate)
           : undefined,
-        properties: batchMatch.data.properties ?? {},
-      });
-      return;
+      };
+      // Just update the local state without triggering another database write
+      setValues(valuesToSubmit);
     }
 
     const formData = new FormData();
@@ -859,6 +894,63 @@ function SerialForm({
         ))}
       </div>
     </div>
+  );
+}
+
+function SplitShipmentLineModal({
+  line,
+  onClose,
+}: {
+  line: ShipmentLine;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<{ success: boolean }>();
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ValidatedForm
+          method="post"
+          action={path.to.shipmentLineSplit}
+          validator={splitValidator}
+          fetcher={fetcher}
+        >
+          <ModalHeader>
+            <ModalTitle>Split Shipment Line</ModalTitle>
+            <ModalDescription>
+              Select the quantity that you'd like to split into a new line.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody>
+            <input type="hidden" name="documentId" value={line.shipmentId} />
+            <input type="hidden" name="documentLineId" value={line.id} />
+            <input
+              type="hidden"
+              name="locationId"
+              value={line.locationId ?? ""}
+            />
+            <Number
+              name="quantity"
+              label="Quantity"
+              maxValue={line.orderQuantity - 0.0001}
+              minValue={0.0001}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit>Split Line</Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
 

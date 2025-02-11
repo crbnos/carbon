@@ -33,9 +33,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (field === "shippedQuantity") {
         await client
-          .from("shipmentLineTracking")
+          .from("itemTracking")
           .delete()
-          .in("shipmentLineId", ids as string[])
+          .in("sourceDocumentLineId", ids as string[])
           .gte("index", Number(value) - 1);
       }
 

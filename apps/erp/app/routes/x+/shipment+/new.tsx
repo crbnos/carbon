@@ -63,8 +63,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         },
       });
 
-      console.log(defaultShipment.error);
-
       if (!defaultShipment.data || defaultShipment.error) {
         throw redirect(
           path.to.shipments,

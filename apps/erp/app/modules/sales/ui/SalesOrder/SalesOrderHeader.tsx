@@ -126,7 +126,9 @@ const SalesOrderHeader = () => {
               <DropdownMenuContent>
                 <DropdownMenuItem
                   disabled={
-                    routeData?.salesOrder?.status !== "To Ship and Invoice" ||
+                    !["To Ship and Invoice", "To Ship"].includes(
+                      routeData?.salesOrder?.status ?? ""
+                    ) ||
                     !permissions.can("create", "production") ||
                     !!routeData?.salesOrder?.jobs
                   }
@@ -190,7 +192,7 @@ const SalesOrderHeader = () => {
               method="post"
               action={path.to.salesOrderStatus(orderId)}
             >
-              <input type="hidden" name="status" value="To Ship and Invoice" />
+              <input type="hidden" name="status" value="To Ship" />
               <Button
                 isDisabled={
                   !["Draft", "Needs Approval"].includes(
@@ -201,8 +203,7 @@ const SalesOrderHeader = () => {
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") ===
-                    "To Ship and Invoice"
+                  statusFetcher.formData?.get("status") === "To Ship"
                 }
                 leftIcon={<LuCheckCheck />}
                 type="submit"

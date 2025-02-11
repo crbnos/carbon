@@ -55,10 +55,9 @@ export async function getBatch(
 ) {
   return client
     .from("batchNumber")
-    .select(
-      "*, item(id, name, readableId), receiptLineTracking(*, receipt(*)), jobMaterialTracking(*, jobMaterial(job(id, jobId))), jobProductionTracking(*), shipmentLineTracking(*, shipmentLine(*, shipment(*)))"
-    )
+    .select("*, item(id, name, readableId), itemTracking(*)")
     .eq("id", batchId)
+    .eq("itemTracking.posted", true)
     .eq("companyId", companyId)
     .single();
 }
@@ -286,11 +285,12 @@ export async function getReceiptLineTracking(
   receiptId: string
 ) {
   return client
-    .from("receiptLineTracking")
+    .from("itemTracking")
     .select(
       "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
     )
-    .eq("receiptId", receiptId);
+    .eq("sourceDocument", "Receipt")
+    .eq("sourceDocumentId", receiptId);
 }
 
 export async function getReceiptFiles(
@@ -416,11 +416,12 @@ export async function getShipmentLineTracking(
   shipmentId: string
 ) {
   return client
-    .from("shipmentLineTracking")
+    .from("itemTracking")
     .select(
       "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
     )
-    .eq("shipmentId", shipmentId);
+    .eq("sourceDocument", "Shipment")
+    .eq("sourceDocumentId", shipmentId);
 }
 
 export async function getShipmentFiles(
@@ -739,7 +740,7 @@ export async function upsertShipment(
     return client.from("shipment").insert([shipment]).select("*").single();
   }
   return client
-    .from("receipt")
+    .from("shipment")
     .update({
       ...sanitize(shipment),
       updatedAt: today(getLocalTimeZone()).toString(),

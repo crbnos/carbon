@@ -175,3 +175,12 @@ export const shippingMethodValidator = z.object({
   carrierAccountId: zfd.text(z.string().optional()),
   trackingUrl: zfd.text(z.string().optional()),
 });
+
+export const splitValidator = z.object({
+  documentId: z.string().min(1, { message: "Document ID is required" }),
+  documentLineId: z
+    .string()
+    .min(1, { message: "Document Line ID is required" }),
+  locationId: z.string().min(1, { message: "Location ID is required" }),
+  quantity: zfd.numeric(z.number()),
+});

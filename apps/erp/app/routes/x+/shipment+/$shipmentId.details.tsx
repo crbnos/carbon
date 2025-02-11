@@ -54,6 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  console.log(validation.data);
+
   const shipmentDataHasChanged =
     currentShipment.data.sourceDocument !== data.sourceDocument ||
     currentShipment.data.sourceDocumentId !== data.sourceDocumentId ||
@@ -65,8 +67,9 @@ export async function action({ request }: ActionFunctionArgs) {
       case "Sales Order":
         const salesOrderShipment = await serviceRole.functions.invoke<{
           id: string;
-        }>("create-shipment-from-sales-order", {
+        }>("create-inventory-document", {
           body: {
+            type: "shipmentFromSalesOrder",
             companyId,
             locationId: data.locationId,
             salesOrderId: data.sourceDocumentId,

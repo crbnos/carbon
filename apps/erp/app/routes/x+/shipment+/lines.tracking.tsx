@@ -2,12 +2,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 
-export async function action({ request, context }: ActionFunctionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     create: "inventory",
   });
 
   const formData = await request.formData();
+
   const shipmentLineId = formData.get("shipmentLineId") as string;
   const shipmentId = formData.get("shipmentId") as string;
   const itemId = formData.get("itemId") as string;
@@ -67,10 +68,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // Check if serial number already exists for this item
     const { data: existingSerial, error: queryError } = await client
       .from("serialNumber")
-      .select("id, shipmentLineTracking(id)")
+      .select("id, itemTracking(id)")
       .eq("number", serialNumber)
       .eq("itemId", itemId)
-      .neq("shipmentLineTracking.shipmentLineId", shipmentLineId)
+      .neq("itemTracking.sourceDocumentLineId", shipmentLineId)
       .eq("companyId", companyId)
       .maybeSingle();
 
@@ -79,8 +80,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (
-      Array.isArray(existingSerial?.shipmentLineTracking) &&
-      existingSerial?.shipmentLineTracking?.length > 0
+      Array.isArray(existingSerial?.itemTracking) &&
+      existingSerial?.itemTracking?.length > 0
     ) {
       return json(
         { error: "Serial number already exists for this item" },

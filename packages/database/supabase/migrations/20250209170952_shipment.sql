@@ -201,210 +201,6 @@ FOR DELETE USING (
     )
 );
 
--- Create table to track serial/batch numbers from receipts
-CREATE TABLE "shipmentLineTracking" (
-  "id" TEXT NOT NULL DEFAULT xid(),
-  "shipmentLineId" TEXT NOT NULL,
-  "shipmentId" TEXT NOT NULL,
-  "itemId" TEXT NOT NULL,
-  "serialNumberId" TEXT,
-  "batchNumberId" TEXT,
-  "quantity" NUMERIC(12, 4) NOT NULL DEFAULT 1,
-  "index" INTEGER NOT NULL DEFAULT 0,
-  "posted" BOOLEAN NOT NULL DEFAULT false,
-  "companyId" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  "createdBy" TEXT REFERENCES "user"("id") ON DELETE CASCADE DEFAULT auth.uid(),
-  
-  CONSTRAINT "shipmentLineTracking_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "shipmentLineTracking_shipmentLine_fkey" FOREIGN KEY ("shipmentLineId") REFERENCES "shipmentLine"("id") ON DELETE CASCADE,
-  CONSTRAINT "shipmentLineTracking_shipment_fkey" FOREIGN KEY ("shipmentId") REFERENCES "shipment"("id") ON DELETE CASCADE,
-  CONSTRAINT "shipmentLineTracking_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
-  CONSTRAINT "shipmentLineTracking_serialNumberId_fkey" FOREIGN KEY ("serialNumberId") REFERENCES "serialNumber"("id") ON DELETE RESTRICT,
-  CONSTRAINT "shipmentLineTracking_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT,
-  CONSTRAINT "shipmentLineTracking_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
-  CONSTRAINT "shipmentLineTracking_serial_quantity_check" CHECK (
-    ("serialNumberId" IS NULL AND "batchNumberId" IS NOT NULL) OR ("serialNumberId" IS NOT NULL AND "quantity" = 1)
-  )
-);
-
-ALTER TABLE "shipmentLineTracking" ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "SELECT" ON "shipmentLineTracking"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_any_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "shipmentLineTracking"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_create')
-    )::text[]
-  )
-);
-
-CREATE POLICY "UPDATE" ON "shipmentLineTracking"
-FOR UPDATE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_update')
-    )::text[]
-  )
-);
-
-CREATE POLICY "DELETE" ON "shipmentLineTracking"
-FOR DELETE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_delete')
-    )::text[]
-  )
-);
-
-DROP POLICY "Anyone can view receipt tracking" ON "receiptLineTracking";
-DROP POLICY "Users with inventory_create can insert receipt tracking" ON "receiptLineTracking";
-DROP POLICY "Users with inventory_update can update receipt tracking" ON "receiptLineTracking";
-DROP POLICY "Users with inventory_delete can delete receipt tracking" ON "receiptLineTracking";
-
-CREATE POLICY "SELECT" ON "receiptLineTracking"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_any_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "receiptLineTracking"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_create')
-    )::text[]
-  )
-);
-
-CREATE POLICY "UPDATE" ON "receiptLineTracking"
-FOR UPDATE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_update')
-    )::text[]
-  )
-);
-
-CREATE POLICY "DELETE" ON "receiptLineTracking"
-FOR DELETE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('inventory_delete')
-    )::text[]
-  )
-);
-
-
-DROP POLICY "Anyone can view job material tracking" ON "jobMaterialTracking";
-DROP POLICY "Users with production_create can insert job material tracking" ON "jobMaterialTracking";
-DROP POLICY "Users with production_update can update job material tracking" ON "jobMaterialTracking";
-DROP POLICY "Users with production_delete can delete job material tracking" ON "jobMaterialTracking";
-
-CREATE POLICY "SELECT" ON "jobMaterialTracking"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_any_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "jobMaterialTracking"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_create')
-    )::text[]
-  )
-);
-
-CREATE POLICY "UPDATE" ON "jobMaterialTracking"
-FOR UPDATE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_update')
-    )::text[]
-  )
-);
-
-CREATE POLICY "DELETE" ON "jobMaterialTracking"
-FOR DELETE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_delete')
-    )::text[]
-  )
-);
-
-DROP POLICY "Anyone can view job production tracking" ON "jobProductionTracking";
-DROP POLICY "Users with production_create can insert job production tracking" ON "jobProductionTracking";
-DROP POLICY "Users with production_update can update job production tracking" ON "jobProductionTracking";
-DROP POLICY "Users with production_delete can delete job production tracking" ON "jobProductionTracking";
-
-CREATE POLICY "SELECT" ON "jobProductionTracking"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_any_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "jobProductionTracking"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_create')
-    )::text[]
-  )
-);
-
-CREATE POLICY "UPDATE" ON "jobProductionTracking"
-FOR UPDATE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_update')
-    )::text[]
-  )
-);
-
-CREATE POLICY "DELETE" ON "jobProductionTracking"
-FOR DELETE USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_permission('production_delete')
-    )::text[]
-  )
-);
 
 ALTER publication supabase_realtime ADD TABLE "shipment";
 
@@ -443,21 +239,27 @@ BEGIN
     "properties" = EXCLUDED."properties";
 
   -- Delete any existing tracking records for this shipment line
-  DELETE FROM "shipmentLineTracking"
-  WHERE "shipmentLineId" = p_shipment_line_id;
+  DELETE FROM "itemTracking"
+  WHERE "sourceDocument" = 'Shipment'
+  AND "sourceDocumentId" = p_shipment_id
+  AND "sourceDocumentLineId" = p_shipment_line_id;
 
   -- Insert the new tracking record
-  INSERT INTO "shipmentLineTracking" (
-    "shipmentLineId",
-    "shipmentId", 
+  INSERT INTO "itemTracking" (
+    "sourceDocument",
+    "sourceDocumentReadableId",
+    "sourceDocumentId", 
+    "sourceDocumentLineId",
     "itemId",
     "batchNumberId",
     "quantity",
     "companyId"
   )
   SELECT
-    p_shipment_line_id,
+    'Shipment',
+    s."shipmentId",
     p_shipment_id,
+    p_shipment_line_id,
     sl."itemId",
     p_batch_id,
     p_quantity,
@@ -493,14 +295,18 @@ BEGIN
     RETURNING id INTO v_serial_id;
 
   -- Delete any existing tracking record for this index
-  DELETE FROM "shipmentLineTracking"
-  WHERE "shipmentLineId" = p_shipment_line_id
+  DELETE FROM "itemTracking"
+  WHERE "sourceDocument" = 'Shipment'
+  AND "sourceDocumentId" = p_shipment_id
+  AND "sourceDocumentLineId" = p_shipment_line_id
   AND "index" = p_index;
 
     -- Insert the tracking record
-    INSERT INTO "shipmentLineTracking" (
-      "shipmentLineId",
-      "shipmentId", 
+    INSERT INTO "itemTracking" (
+      "sourceDocument",
+      "sourceDocumentReadableId",
+      "sourceDocumentId", 
+      "sourceDocumentLineId",
       "itemId",
       "serialNumberId",
       "quantity",
@@ -508,8 +314,10 @@ BEGIN
       "companyId"
     )
     SELECT
-      p_shipment_line_id,
+      'Shipment',
+      s."shipmentId",
       p_shipment_id,
+      p_shipment_line_id,
       sl."itemId",
       v_serial_id,
       1,
@@ -522,34 +330,3 @@ END;
 $$ LANGUAGE plpgsql;
 
 
-DROP VIEW IF EXISTS "serialNumbers";
-CREATE OR REPLACE VIEW "serialNumbers" WITH(SECURITY_INVOKER=true) AS
-  SELECT DISTINCT
-    sn."id",
-    sn."number", 
-    sn."status",
-    sn."supplierId",
-    sn."companyId",
-    sn."itemId",
-    sn."source",
-    i."name" AS "itemName",
-    i."readableId" AS "itemReadableId"
-  FROM "serialNumber" sn
-  JOIN "item" i ON i."id" = sn."itemId"
-  WHERE EXISTS (
-    SELECT 1 FROM "receiptLineTracking" rlt 
-    WHERE rlt."serialNumberId" = sn."id" AND rlt."posted" = true
-  ) OR EXISTS (
-    SELECT 1 FROM "jobProductionTracking" jpt
-    WHERE jpt."serialNumberId" = sn."id"
-  )
-  GROUP BY
-    sn."id",
-    sn."number",
-    sn."status",
-    sn."supplierId",
-    sn."companyId",
-    sn."itemId",
-    sn."source",
-    i."name",
-    i."readableId";

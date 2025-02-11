@@ -18,16 +18,25 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
-    type: z.literal("shipmentDefault"),
-    locationId: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
-  }),
-  z.object({
     type: z.literal("receiptFromPurchaseOrder"),
     locationId: z.string(),
     purchaseOrderId: z.string(),
     receiptId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("receiptLineSplit"),
+    quantity: z.number(),
+    locationId: z.string(),
+    receiptId: z.string(),
+    receiptLineId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentDefault"),
+    locationId: z.string(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -39,8 +48,16 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
+  z.object({
+    type: z.literal("shipmentLineSplit"),
+    quantity: z.number(),
+    locationId: z.string(),
+    shipmentId: z.string(),
+    shipmentLineId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
 ]);
-
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -61,9 +78,6 @@ serve(async (req: Request) => {
         userId,
       });
       try {
-        if (!userId) throw new Error("Payload is missing userId");
-        if (!companyId) throw new Error("Payload is missing companyId");
-
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "receipt", companyId);
           const newReceipt = await trx
@@ -112,11 +126,6 @@ serve(async (req: Request) => {
       });
 
       try {
-        if (!purchaseOrderId)
-          throw new Error("Payload is missing purchaseOrderId");
-        if (!userId) throw new Error("Payload is missing userId");
-        if (!companyId) throw new Error("Payload is missing companyId");
-
         const client = await getSupabaseServiceRole(
           req.headers.get("Authorization"),
           req.headers.get("carbon-key") ?? "",
@@ -307,6 +316,80 @@ serve(async (req: Request) => {
         });
       }
     }
+    case "receiptLineSplit": {
+      const { receiptId, receiptLineId, quantity } = payload;
+
+      console.log({
+        function: "create-inventory-document",
+        type,
+        locationId,
+        receiptId,
+        receiptLineId,
+        quantity,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [receiptLine] = await Promise.all([
+          client
+            .from("receiptLine")
+            .select("*")
+            .eq("id", receiptLineId)
+            .single(),
+        ]);
+
+        if (!receiptLine.data) throw new Error("Shipment line not found");
+
+        await db.transaction().execute(async (trx) => {
+          const { id, ...data } = receiptLine.data;
+
+          await trx
+            .insertInto("receiptLine")
+            .values({
+              ...data,
+              orderQuantity: quantity,
+              outstandingQuantity: quantity,
+              receivedQuantity: quantity,
+              createdBy: userId,
+            })
+            .execute();
+
+          await trx
+            .updateTable("receiptLine")
+            .set({
+              orderQuantity: receiptLine.data.orderQuantity - quantity,
+              outstandingQuantity:
+                receiptLine.data.outstandingQuantity - quantity,
+              receivedQuantity: receiptLine.data.receivedQuantity - quantity,
+              updatedBy: userId,
+            })
+            .where("id", "=", receiptLineId)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: receiptLineId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
     case "shipmentDefault": {
       let createdDocumentId;
       console.log({
@@ -317,9 +400,6 @@ serve(async (req: Request) => {
         userId,
       });
       try {
-        if (!userId) throw new Error("Payload is missing userId");
-        if (!companyId) throw new Error("Payload is missing companyId");
-
         await db.transaction().execute(async (trx) => {
           createdDocumentId = await getNextSequence(trx, "shipment", companyId);
 
@@ -369,10 +449,6 @@ serve(async (req: Request) => {
       });
 
       try {
-        if (!salesOrderId) throw new Error("Payload is missing salesOrderId");
-        if (!userId) throw new Error("Payload is missing userId");
-        if (!companyId) throw new Error("Payload is missing companyId");
-
         const client = await getSupabaseServiceRole(
           req.headers.get("Authorization"),
           req.headers.get("carbon-key") ?? "",
@@ -402,7 +478,7 @@ serve(async (req: Request) => {
           client
             .from("salesOrderShipment")
             .select("*")
-            .eq("id", existingShipmentId)
+            .eq("id", salesOrderId)
             .maybeSingle(),
           client
             .from("shipment")
@@ -522,6 +598,11 @@ serve(async (req: Request) => {
               "shipment",
               companyId
             );
+
+            console.log({
+              salesOrderShipment: salesOrderShipment.data,
+            });
+
             const newShipment = await trx
               .insertInto("shipment")
               .values({
@@ -560,6 +641,80 @@ serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             id: shipmentId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+    case "shipmentLineSplit": {
+      const { shipmentId, shipmentLineId, quantity } = payload;
+
+      console.log({
+        function: "create-inventory-document",
+        type,
+        locationId,
+        shipmentId,
+        shipmentLineId,
+        quantity,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [shipmentLine] = await Promise.all([
+          client
+            .from("shipmentLine")
+            .select("*")
+            .eq("id", shipmentLineId)
+            .single(),
+        ]);
+
+        if (!shipmentLine.data) throw new Error("Shipment line not found");
+
+        await db.transaction().execute(async (trx) => {
+          const { id, ...data } = shipmentLine.data;
+
+          await trx
+            .insertInto("shipmentLine")
+            .values({
+              ...data,
+              orderQuantity: quantity,
+              outstandingQuantity: quantity,
+              shippedQuantity: quantity,
+              createdBy: userId,
+            })
+            .execute();
+
+          await trx
+            .updateTable("shipmentLine")
+            .set({
+              orderQuantity: shipmentLine.data.orderQuantity - quantity,
+              outstandingQuantity:
+                shipmentLine.data.outstandingQuantity - quantity,
+              shippedQuantity: shipmentLine.data.shippedQuantity - quantity,
+              updatedBy: userId,
+            })
+            .where("id", "=", shipmentLineId)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: shipmentLineId,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

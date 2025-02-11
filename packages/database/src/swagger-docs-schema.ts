@@ -5457,6 +5457,222 @@ export default {
         tags: ["process"],
       },
     },
+    "/itemTracking": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocument",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.posted",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/itemTracking",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["itemTracking"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.itemTracking",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["itemTracking"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocument",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.posted",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["itemTracking"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocument",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.sourceDocumentReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.serialNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.index",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.posted",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemTracking.createdBy",
+          },
+          {
+            $ref: "#/parameters/body.itemTracking",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["itemTracking"],
+      },
+    },
     "/quoteMaterial": {
       get: {
         parameters: [
@@ -13261,204 +13477,6 @@ export default {
           },
         },
         tags: ["jobMaterial"],
-      },
-    },
-    "/shipmentLineTracking": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/shipmentLineTracking",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["shipmentLineTracking"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.shipmentLineTracking",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["shipmentLineTracking"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["shipmentLineTracking"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.shipmentId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.shipmentLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/body.shipmentLineTracking",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["shipmentLineTracking"],
       },
     },
     "/purchaseOrderSuppliers": {
@@ -22776,186 +22794,6 @@ export default {
         tags: ["quoteOperationsWithMakeMethods"],
       },
     },
-    "/jobMaterialTracking": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobMaterialId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobOperationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/jobMaterialTracking",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["jobMaterialTracking"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.jobMaterialTracking",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["jobMaterialTracking"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobMaterialId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobOperationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["jobMaterialTracking"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobMaterialId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.jobOperationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobMaterialTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/body.jobMaterialTracking",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["jobMaterialTracking"],
-      },
-    },
     "/oauthToken": {
       get: {
         parameters: [
@@ -29478,375 +29316,6 @@ export default {
         tags: ["itemPlanning"],
       },
     },
-    "/receiptLineTracking": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/receiptLineTracking",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["receiptLineTracking"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.receiptLineTracking",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["receiptLineTracking"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["receiptLineTracking"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptLineId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.receiptId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.index",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.posted",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.receiptLineTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/body.receiptLineTracking",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["receiptLineTracking"],
-      },
-    },
-    "/jobProductionTracking": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/jobProductionTracking",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["jobProductionTracking"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.jobProductionTracking",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["jobProductionTracking"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["jobProductionTracking"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.jobId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.serialNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.batchNumberId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobProductionTracking.createdBy",
-          },
-          {
-            $ref: "#/parameters/body.jobProductionTracking",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["jobProductionTracking"],
-      },
-    },
     "/employeeJob": {
       get: {
         parameters: [
@@ -30295,6 +29764,75 @@ export default {
           },
         },
         tags: ["account"],
+      },
+    },
+    "/serialNumbers": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.number",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.source",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumbers.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/serialNumbers",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["serialNumbers"],
       },
     },
     "/companyIntegration": {
@@ -38521,6 +38059,9 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.expirationDate",
           },
           {
+            $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -38607,6 +38148,9 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.expirationDate",
           },
           {
+            $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -38645,6 +38189,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.expirationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
           },
           {
             $ref: "#/parameters/body.serialNumber",
@@ -42662,6 +42209,147 @@ export default {
         tags: ["(rpc) get_my_permission"],
       },
     },
+    "/rpc/update_shipment_line_batch_tracking": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_shipment_line_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_shipment_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_batch_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_batch_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_manufacturing_date",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "p_expiration_date",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "numeric",
+            in: "query",
+            name: "p_quantity",
+            required: true,
+            type: "number",
+          },
+          {
+            format: "jsonb",
+            in: "query",
+            name: "p_properties",
+            required: false,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_shipment_line_batch_tracking"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_batch_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_batch_number: {
+                  format: "text",
+                  type: "string",
+                },
+                p_expiration_date: {
+                  format: "date",
+                  type: "string",
+                },
+                p_manufacturing_date: {
+                  format: "date",
+                  type: "string",
+                },
+                p_properties: {
+                  format: "jsonb",
+                },
+                p_quantity: {
+                  format: "numeric",
+                  type: "number",
+                },
+                p_shipment_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_shipment_line_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "p_shipment_line_id",
+                "p_shipment_id",
+                "p_batch_number",
+                "p_batch_id",
+                "p_manufacturing_date",
+                "p_expiration_date",
+                "p_quantity",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_shipment_line_batch_tracking"],
+      },
+    },
     "/rpc/get_next_sequence": {
       get: {
         parameters: [
@@ -43157,6 +42845,101 @@ export default {
           },
         },
         tags: ["(rpc) has_any_company_permission"],
+      },
+    },
+    "/rpc/update_shipment_line_serial_tracking": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_shipment_line_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_shipment_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_serial_number",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "p_index",
+            required: true,
+            type: "integer",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_shipment_line_serial_tracking"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_index: {
+                  format: "integer",
+                  type: "integer",
+                },
+                p_serial_number: {
+                  format: "text",
+                  type: "string",
+                },
+                p_shipment_id: {
+                  format: "text",
+                  type: "string",
+                },
+                p_shipment_line_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: [
+                "p_shipment_line_id",
+                "p_shipment_id",
+                "p_serial_number",
+                "p_index",
+              ],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) update_shipment_line_serial_tracking"],
       },
     },
     "/rpc/get_job_operation_by_id": {
@@ -47588,6 +47371,96 @@ export default {
       },
       type: "object",
     },
+    itemTracking: {
+      required: [
+        "id",
+        "sourceDocument",
+        "sourceDocumentId",
+        "itemId",
+        "quantity",
+        "index",
+        "posted",
+        "companyId",
+        "createdAt",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        sourceDocument: {
+          enum: ["Receipt", "Job Production", "Job Material", "Shipment"],
+          format: 'public."itemTrackingSourceDocument"',
+          type: "string",
+        },
+        sourceDocumentId: {
+          format: "text",
+          type: "string",
+        },
+        sourceDocumentLineId: {
+          format: "text",
+          type: "string",
+        },
+        sourceDocumentReadableId: {
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        serialNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        batchNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        index: {
+          default: 0,
+          format: "integer",
+          type: "integer",
+        },
+        posted: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          default: "auth.uid()",
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     quoteMaterial: {
       required: [
         "id",
@@ -51398,91 +51271,6 @@ export default {
         quantityToIssue: {
           format: "numeric",
           type: "number",
-        },
-      },
-      type: "object",
-    },
-    shipmentLineTracking: {
-      required: [
-        "id",
-        "shipmentLineId",
-        "shipmentId",
-        "itemId",
-        "quantity",
-        "index",
-        "posted",
-        "companyId",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        shipmentLineId: {
-          description:
-            "Note:\nThis is a Foreign Key to `shipmentLine.id`.<fk table='shipmentLine' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        shipmentId: {
-          description:
-            "Note:\nThis is a Foreign Key to `shipment.id`.<fk table='shipment' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        serialNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        batchNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quantity: {
-          default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        index: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
-        posted: {
-          default: false,
-          format: "boolean",
-          type: "boolean",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          default: "auth.uid()",
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
         },
       },
       type: "object",
@@ -56114,79 +55902,6 @@ export default {
       },
       type: "object",
     },
-    jobMaterialTracking: {
-      required: [
-        "id",
-        "jobMaterialId",
-        "jobOperationId",
-        "itemId",
-        "quantity",
-        "companyId",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        jobMaterialId: {
-          description:
-            "Note:\nThis is a Foreign Key to `jobMaterial.id`.<fk table='jobMaterial' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        jobOperationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        serialNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        batchNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quantity: {
-          default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          default: "auth.uid()",
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     oauthToken: {
       required: [
         "id",
@@ -59071,150 +58786,6 @@ export default {
       },
       type: "object",
     },
-    receiptLineTracking: {
-      required: [
-        "id",
-        "receiptLineId",
-        "receiptId",
-        "itemId",
-        "quantity",
-        "index",
-        "posted",
-        "companyId",
-        "createdAt",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        receiptLineId: {
-          description:
-            "Note:\nThis is a Foreign Key to `receiptLine.id`.<fk table='receiptLine' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        receiptId: {
-          description:
-            "Note:\nThis is a Foreign Key to `receipt.id`.<fk table='receipt' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        serialNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        batchNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quantity: {
-          default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        index: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
-        posted: {
-          default: false,
-          format: "boolean",
-          type: "boolean",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          default: "auth.uid()",
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    jobProductionTracking: {
-      required: ["id", "jobId", "itemId", "quantity", "companyId", "createdAt"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        jobId: {
-          description:
-            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        serialNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `serialNumber.id`.<fk table='serialNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        batchNumberId: {
-          description:
-            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quantity: {
-          default: 1,
-          format: "numeric",
-          type: "number",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
-          default: "auth.uid()",
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
     employeeJob: {
       required: ["id", "companyId"],
       properties: {
@@ -59389,6 +58960,53 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    serialNumbers: {
+      properties: {
+        id: {
+          format: "text",
+          type: "string",
+        },
+        number: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        status: {
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        source: {
+          enum: ["Purchased", "Manufactured"],
+          format: 'public."trackingSource"',
+          type: "string",
+        },
+        itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -63256,6 +62874,12 @@ export default {
         },
         expirationDate: {
           format: "date",
+          type: "string",
+        },
+        batchNumberId: {
+          description:
+            "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -67606,6 +67230,113 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.itemTracking": {
+      name: "itemTracking",
+      description: "itemTracking",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/itemTracking",
+      },
+    },
+    "rowFilter.itemTracking.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.sourceDocument": {
+      name: "sourceDocument",
+      required: false,
+      format: 'public."itemTrackingSourceDocument"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.sourceDocumentId": {
+      name: "sourceDocumentId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.sourceDocumentLineId": {
+      name: "sourceDocumentLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.sourceDocumentReadableId": {
+      name: "sourceDocumentReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.serialNumberId": {
+      name: "serialNumberId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.batchNumberId": {
+      name: "batchNumberId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.index": {
+      name: "index",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.posted": {
+      name: "posted",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemTracking.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -72510,99 +72241,6 @@ export default {
       name: "quantityToIssue",
       required: false,
       format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "body.shipmentLineTracking": {
-      name: "shipmentLineTracking",
-      description: "shipmentLineTracking",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/shipmentLineTracking",
-      },
-    },
-    "rowFilter.shipmentLineTracking.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.shipmentLineId": {
-      name: "shipmentLineId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.shipmentId": {
-      name: "shipmentId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.serialNumberId": {
-      name: "serialNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.batchNumberId": {
-      name: "batchNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.quantity": {
-      name: "quantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.index": {
-      name: "index",
-      required: false,
-      format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.posted": {
-      name: "posted",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.shipmentLineTracking.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },
@@ -78659,85 +78297,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "body.jobMaterialTracking": {
-      name: "jobMaterialTracking",
-      description: "jobMaterialTracking",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/jobMaterialTracking",
-      },
-    },
-    "rowFilter.jobMaterialTracking.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.jobMaterialId": {
-      name: "jobMaterialId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.jobOperationId": {
-      name: "jobOperationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.serialNumberId": {
-      name: "serialNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.batchNumberId": {
-      name: "batchNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.quantity": {
-      name: "quantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobMaterialTracking.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "body.oauthToken": {
       name: "oauthToken",
       description: "oauthToken",
@@ -82538,171 +82097,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "body.receiptLineTracking": {
-      name: "receiptLineTracking",
-      description: "receiptLineTracking",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/receiptLineTracking",
-      },
-    },
-    "rowFilter.receiptLineTracking.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.receiptLineId": {
-      name: "receiptLineId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.receiptId": {
-      name: "receiptId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.serialNumberId": {
-      name: "serialNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.batchNumberId": {
-      name: "batchNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.quantity": {
-      name: "quantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.index": {
-      name: "index",
-      required: false,
-      format: "integer",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.posted": {
-      name: "posted",
-      required: false,
-      format: "boolean",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.receiptLineTracking.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "body.jobProductionTracking": {
-      name: "jobProductionTracking",
-      description: "jobProductionTracking",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/jobProductionTracking",
-      },
-    },
-    "rowFilter.jobProductionTracking.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.jobId": {
-      name: "jobId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.serialNumberId": {
-      name: "serialNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.batchNumberId": {
-      name: "batchNumberId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.quantity": {
-      name: "quantity",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.createdAt": {
-      name: "createdAt",
-      required: false,
-      format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.jobProductionTracking.createdBy": {
-      name: "createdBy",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "body.employeeJob": {
       name: "employeeJob",
       description: "employeeJob",
@@ -82928,6 +82322,78 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.serialNumbers": {
+      name: "serialNumbers",
+      description: "serialNumbers",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/serialNumbers",
+      },
+    },
+    "rowFilter.serialNumbers.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.number": {
+      name: "number",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.status": {
+      name: "status",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.supplierId": {
+      name: "supplierId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.source": {
+      name: "source",
+      required: false,
+      format: 'public."trackingSource"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.itemName": {
+      name: "itemName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumbers.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -87998,6 +87464,13 @@ export default {
       name: "expirationDate",
       required: false,
       format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumber.batchNumberId": {
+      name: "batchNumberId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
