@@ -331,6 +331,19 @@ export async function getReceiptFiles(
   };
 }
 
+export async function getSerialNumbersForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .from("serialNumbers")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .eq("status", "Available");
+}
+
 export async function getShelvesList(
   client: SupabaseClient<Database>,
   companyId: string

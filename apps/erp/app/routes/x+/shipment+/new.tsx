@@ -30,8 +30,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     case "Sales Order":
       const salesOrderShipment = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-shipment-from-sales-order", {
+      }>("create-inventory-document", {
         body: {
+          type: "shipmentFromSalesOrder",
           companyId,
           locationId: defaults.data?.locationId,
           salesOrderId: sourceDocumentId,
@@ -53,13 +54,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     default:
       const defaultShipment = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-shipment-default", {
+      }>("create-inventory-document", {
         body: {
+          type: "shipmentDefault",
           companyId,
           locationId: defaults.data?.locationId,
           userId: userId,
         },
       });
+
+      console.log(defaultShipment.error);
 
       if (!defaultShipment.data || defaultShipment.error) {
         throw redirect(

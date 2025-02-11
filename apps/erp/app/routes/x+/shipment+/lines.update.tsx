@@ -20,9 +20,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (field) {
     case "shelfId":
-    case "receivedQuantity":
+    case "shippedQuantity":
       const update = await client
-        .from("receiptLine")
+        .from("shipmentLine")
         .update({
           [field]: value ? value : null,
           updatedBy: userId,
@@ -31,11 +31,11 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("id", ids as string[])
         .eq("companyId", companyId);
 
-      if (field === "receivedQuantity") {
+      if (field === "shippedQuantity") {
         await client
-          .from("receiptLineTracking")
+          .from("shipmentLineTracking")
           .delete()
-          .in("receiptLineId", ids as string[])
+          .in("shipmentLineId", ids as string[])
           .gte("index", Number(value) - 1);
       }
 

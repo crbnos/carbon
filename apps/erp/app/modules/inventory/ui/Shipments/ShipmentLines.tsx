@@ -32,7 +32,7 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBarcode,
   LuCalendar,
@@ -50,6 +50,7 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import type {
   BatchProperty,
+  getSerialNumbersForItem,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking,
@@ -996,4 +997,30 @@ function useShipmentFiles(shipmentId: string) {
   );
 
   return { upload, deleteFile, getPath };
+}
+
+export function SerialNumberInput({ itemId }: { itemId: string }) {}
+
+export function useSerialNumbers(itemId?: string) {
+  const serialNumbersFetcher =
+    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
+
+  useEffect(() => {
+    if (itemId) {
+      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
+  const options = useMemo(
+    () =>
+      serialNumbersFetcher.data?.data?.map((c) => ({
+        value: c.id,
+        label: c.number,
+      })) ?? [],
+
+    [serialNumbersFetcher.data]
+  );
+
+  return { options, data: serialNumbersFetcher.data };
 }

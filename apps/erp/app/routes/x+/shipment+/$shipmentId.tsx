@@ -7,19 +7,19 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider } from "~/components/Layout";
 import {
-  ReceiptHeader,
   getBatchProperties,
-  getReceipt,
-  getReceiptFiles,
-  getReceiptLineTracking,
-  getReceiptLines,
+  getShipment,
+  getShipmentFiles,
+  getShipmentLineTracking,
+  getShipmentLines,
 } from "~/modules/inventory";
+import ShipmentHeader from "~/modules/inventory/ui/Shipments/ShipmentHeader";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Receipts",
-  to: path.to.receipts,
+  breadcrumb: "Shipments",
+  to: path.to.shipments,
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,56 +29,57 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const { receiptId } = params;
-  if (!receiptId) throw new Error("Could not find receiptId");
+  const { shipmentId } = params;
+  if (!shipmentId) throw new Error("Could not find shipmentId");
 
-  const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
-    getReceipt(serviceRole, receiptId),
-    getReceiptLines(serviceRole, receiptId),
-    getReceiptLineTracking(serviceRole, receiptId),
+  const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
+    getShipment(serviceRole, shipmentId),
+    getShipmentLines(serviceRole, shipmentId),
+    getShipmentLineTracking(serviceRole, shipmentId),
   ]);
 
-  if (receipt.error) {
+  if (shipment.error) {
     throw redirect(
-      path.to.receipts,
-      await flash(request, error(receipt.error, "Failed to load receipt"))
+      path.to.shipments,
+      await flash(request, error(shipment.error, "Failed to load shipment"))
     );
   }
 
-  if (receipt.data.companyId !== companyId) {
-    throw redirect(path.to.receipts);
+  if (shipment.data.companyId !== companyId) {
+    throw redirect(path.to.shipments);
   }
 
-  let receiptLineIds: string[] = [];
+  let shipmentLineIds: string[] = [];
   let itemsWithBatchProperties: string[] = [];
 
-  if (receiptLines.data) {
-    receiptLineIds = receiptLines.data.map((line) => line.id);
-    itemsWithBatchProperties = receiptLines.data
+  if (shipmentLines.data) {
+    shipmentLineIds = shipmentLines.data.map((line) => line.id);
+    itemsWithBatchProperties = shipmentLines.data
       .filter((line) => line.itemId && line.requiresBatchTracking)
       .map((line) => line.itemId);
   }
 
   return defer({
-    receipt: receipt.data,
-    receiptLines: receiptLines.data ?? [],
-    receiptLineTracking: receiptLineTracking.data ?? [],
-    receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
+    shipment: shipment.data,
+    shipmentLines: shipmentLines.data ?? [],
+    shipmentLineTracking: shipmentLineTracking.data ?? [],
+    shipmentFiles:
+      getShipmentFiles(serviceRole, companyId, shipmentLineIds) ?? [],
     batchProperties:
       getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
       [],
   });
 }
 
-export default function ReceiptRoute() {
+export default function ShipmentRoute() {
   const params = useParams();
-  const { receiptId } = params;
-  if (!receiptId) throw new Error("Could not find receiptId");
+  const { shipmentId } = params;
+  if (!shipmentId) throw new Error("Could not find shipmentId");
 
   return (
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-        <ReceiptHeader />
+        <ShipmentHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
           <VStack
             spacing={4}

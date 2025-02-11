@@ -63,8 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
       case "Purchase Order":
         const purchaseOrderReceipt = await serviceRole.functions.invoke<{
           id: string;
-        }>("create-receipt-from-purchase-order", {
+        }>("create-inventory-document", {
           body: {
+            type: "receiptFromPurchaseOrder",
             companyId,
             locationId: data.locationId,
             purchaseOrderId: data.sourceDocumentId,

@@ -59,6 +59,8 @@ export const path = {
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
+      serialNumbers: (itemId: string) =>
+        generatePath(`${api}/inventory/serial-numbers?itemId=${itemId}`),
       services: `${api}/items/services`,
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),

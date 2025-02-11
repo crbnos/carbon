@@ -8,8 +8,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const receiptLineId = formData.get("receiptLineId") as string;
-  const receiptId = formData.get("receiptId") as string;
+  const shipmentLineId = formData.get("shipmentLineId") as string;
+  const shipmentId = formData.get("shipmentId") as string;
   const itemId = formData.get("itemId") as string;
   const trackingType = formData.get("trackingType") as "batch" | "serial";
 
@@ -43,9 +43,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_receipt_line_batch_tracking", {
-      p_receipt_line_id: receiptLineId,
-      p_receipt_id: receiptId,
+    const { error } = await client.rpc("update_shipment_line_batch_tracking", {
+      p_shipment_line_id: shipmentLineId,
+      p_shipment_id: shipmentId,
       p_batch_number: batchNumber,
       p_batch_id: batchId,
       // @ts-ignore
@@ -67,10 +67,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // Check if serial number already exists for this item
     const { data: existingSerial, error: queryError } = await client
       .from("serialNumber")
-      .select("id, receiptLineTracking(id)")
+      .select("id, shipmentLineTracking(id)")
       .eq("number", serialNumber)
       .eq("itemId", itemId)
-      .neq("receiptLineTracking.receiptLineId", receiptLineId)
+      .neq("shipmentLineTracking.shipmentLineId", shipmentLineId)
       .eq("companyId", companyId)
       .maybeSingle();
 
@@ -79,8 +79,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (
-      Array.isArray(existingSerial?.receiptLineTracking) &&
-      existingSerial?.receiptLineTracking?.length > 0
+      Array.isArray(existingSerial?.shipmentLineTracking) &&
+      existingSerial?.shipmentLineTracking?.length > 0
     ) {
       return json(
         { error: "Serial number already exists for this item" },
@@ -89,9 +89,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_receipt_line_serial_tracking", {
-      p_receipt_line_id: receiptLineId,
-      p_receipt_id: receiptId,
+    const { error } = await client.rpc("update_shipment_line_serial_tracking", {
+      p_shipment_line_id: shipmentLineId,
+      p_shipment_id: shipmentId,
       p_serial_number: serialNumber,
       p_index: index,
     });

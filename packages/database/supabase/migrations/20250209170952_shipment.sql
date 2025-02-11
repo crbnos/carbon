@@ -1,3 +1,6 @@
+ALTER TABLE "serialNumber" ADD COLUMN "batchNumberId" TEXT;
+ALTER TABLE "serialNumber" ADD CONSTRAINT "serialNumber_batchNumberId_fkey" FOREIGN KEY ("batchNumberId") REFERENCES "batchNumber"("id") ON DELETE RESTRICT;
+
 CREATE TYPE "shipmentSourceDocument" AS ENUM (
   'Sales Order',
   'Sales Invoice',
@@ -16,7 +19,7 @@ CREATE TYPE "shipmentStatus" AS ENUM (
 );
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
-VALUES ('shipment', 'Shipment', 'Sales');
+VALUES ('shipment', 'Shipment', 'Inventory');
 
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
 SELECT 
@@ -408,3 +411,145 @@ ALTER publication supabase_realtime ADD TABLE "shipment";
 ALTER TYPE "salesOrderStatus" ADD VALUE 'To Ship and Invoice';
 ALTER TYPE "salesOrderStatus" ADD VALUE 'To Ship';
 ALTER TYPE "salesOrderStatus" ADD VALUE 'To Invoice';
+
+CREATE OR REPLACE FUNCTION update_shipment_line_batch_tracking(
+  p_shipment_line_id TEXT,
+  p_shipment_id TEXT,
+  p_batch_number TEXT,
+  p_batch_id TEXT,
+  p_manufacturing_date DATE,
+  p_expiration_date DATE,
+  p_quantity NUMERIC,
+  p_properties JSONB DEFAULT '{}'
+) RETURNS void AS $$
+BEGIN
+  -- First upsert the batch number
+  INSERT INTO "batchNumber" ("id", "number", "itemId", "companyId", "manufacturingDate", "expirationDate", "source", "properties")
+  SELECT 
+    p_batch_id,
+    p_batch_number,
+    sl."itemId",
+    sl."companyId",
+    p_manufacturing_date,
+    p_expiration_date,
+    'Purchased',
+    p_properties
+  FROM "shipmentLine" sl
+  JOIN "shipment" s ON s.id = sl."shipmentId"
+  WHERE sl.id = p_shipment_line_id
+  ON CONFLICT (id) DO UPDATE SET
+    "manufacturingDate" = EXCLUDED."manufacturingDate",
+    "expirationDate" = EXCLUDED."expirationDate",
+    "properties" = EXCLUDED."properties";
+
+  -- Delete any existing tracking records for this shipment line
+  DELETE FROM "shipmentLineTracking"
+  WHERE "shipmentLineId" = p_shipment_line_id;
+
+  -- Insert the new tracking record
+  INSERT INTO "shipmentLineTracking" (
+    "shipmentLineId",
+    "shipmentId", 
+    "itemId",
+    "batchNumberId",
+    "quantity",
+    "companyId"
+  )
+  SELECT
+    p_shipment_line_id,
+    p_shipment_id,
+    sl."itemId",
+    p_batch_id,
+    p_quantity,
+    sl."companyId"
+  FROM "shipmentLine" sl
+  JOIN "shipment" s ON s.id = sl."shipmentId"
+  WHERE sl.id = p_shipment_line_id;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_shipment_line_serial_tracking(
+  p_shipment_line_id TEXT,
+  p_shipment_id TEXT,
+  p_serial_number TEXT,
+  p_index INTEGER
+) RETURNS void AS $$
+DECLARE
+  v_serial_id TEXT;
+BEGIN
+  -- First upsert the serial number
+    INSERT INTO "serialNumber" ("id", "number", "itemId", "companyId", "source")
+    SELECT 
+      xid(),
+      p_serial_number,
+      sl."itemId",
+      sl."companyId",
+      'Purchased'
+    FROM "shipmentLine" sl
+    JOIN "shipment" s ON s.id = sl."shipmentId"
+    WHERE sl.id = p_shipment_line_id
+    ON CONFLICT ("number", "itemId") DO UPDATE SET
+      "source" = EXCLUDED."source"
+    RETURNING id INTO v_serial_id;
+
+  -- Delete any existing tracking record for this index
+  DELETE FROM "shipmentLineTracking"
+  WHERE "shipmentLineId" = p_shipment_line_id
+  AND "index" = p_index;
+
+    -- Insert the tracking record
+    INSERT INTO "shipmentLineTracking" (
+      "shipmentLineId",
+      "shipmentId", 
+      "itemId",
+      "serialNumberId",
+      "quantity",
+      "index",
+      "companyId"
+    )
+    SELECT
+      p_shipment_line_id,
+      p_shipment_id,
+      sl."itemId",
+      v_serial_id,
+      1,
+      p_index,
+      sl."companyId"
+    FROM "shipmentLine" sl
+    JOIN "shipment" s ON s.id = sl."shipmentId"
+    WHERE sl.id = p_shipment_line_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+DROP VIEW IF EXISTS "serialNumbers";
+CREATE OR REPLACE VIEW "serialNumbers" WITH(SECURITY_INVOKER=true) AS
+  SELECT DISTINCT
+    sn."id",
+    sn."number", 
+    sn."status",
+    sn."supplierId",
+    sn."companyId",
+    sn."itemId",
+    sn."source",
+    i."name" AS "itemName",
+    i."readableId" AS "itemReadableId"
+  FROM "serialNumber" sn
+  JOIN "item" i ON i."id" = sn."itemId"
+  WHERE EXISTS (
+    SELECT 1 FROM "receiptLineTracking" rlt 
+    WHERE rlt."serialNumberId" = sn."id" AND rlt."posted" = true
+  ) OR EXISTS (
+    SELECT 1 FROM "jobProductionTracking" jpt
+    WHERE jpt."serialNumberId" = sn."id"
+  )
+  GROUP BY
+    sn."id",
+    sn."number",
+    sn."status",
+    sn."supplierId",
+    sn."companyId",
+    sn."itemId",
+    sn."source",
+    i."name",
+    i."readableId";

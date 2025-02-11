@@ -7081,6 +7081,13 @@ export type Database = {
             referencedColumns: ["number", "itemId"]
           },
           {
+            foreignKeyName: "itemLedger_serialNumber_fkey"
+            columns: ["serialNumber", "itemId"]
+            isOneToOne: false
+            referencedRelation: "serialNumbers"
+            referencedColumns: ["number", "itemId"]
+          },
+          {
             foreignKeyName: "itemLedger_shelfId_fkey"
             columns: ["shelfId"]
             isOneToOne: false
@@ -8822,6 +8829,13 @@ export type Database = {
             referencedRelation: "serialNumber"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "jobMaterialTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumbers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       jobOperation: {
@@ -9577,6 +9591,13 @@ export type Database = {
             columns: ["serialNumberId"]
             isOneToOne: false
             referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobProductionTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumbers"
             referencedColumns: ["id"]
           },
         ]
@@ -18727,6 +18748,13 @@ export type Database = {
             referencedRelation: "serialNumber"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "receiptLineTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumbers"
+            referencedColumns: ["id"]
+          },
         ]
       }
       salesOrder: {
@@ -20749,6 +20777,7 @@ export type Database = {
       }
       serialNumber: {
         Row: {
+          batchNumberId: string | null
           companyId: string
           createdAt: string
           expirationDate: string | null
@@ -20760,6 +20789,7 @@ export type Database = {
           supplierId: string | null
         }
         Insert: {
+          batchNumberId?: string | null
           companyId: string
           createdAt?: string
           expirationDate?: string | null
@@ -20771,6 +20801,7 @@ export type Database = {
           supplierId?: string | null
         }
         Update: {
+          batchNumberId?: string | null
           companyId?: string
           createdAt?: string
           expirationDate?: string | null
@@ -20782,6 +20813,20 @@ export type Database = {
           supplierId?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "serialNumber_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serialNumber_batchNumberId_fkey"
+            columns: ["batchNumberId"]
+            isOneToOne: false
+            referencedRelation: "batchNumbers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "serialNumber_companyId_fkey"
             columns: ["companyId"]
@@ -21940,6 +21985,13 @@ export type Database = {
             columns: ["serialNumberId"]
             isOneToOne: false
             referencedRelation: "serialNumber"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLineTracking_serialNumberId_fkey"
+            columns: ["serialNumberId"]
+            isOneToOne: false
+            referencedRelation: "serialNumbers"
             referencedColumns: ["id"]
           },
           {
@@ -32021,14 +32073,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32751,6 +32803,56 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      serialNumbers: {
+        Row: {
+          companyId: string | null
+          id: string | null
+          itemId: string | null
+          itemName: string | null
+          itemReadableId: string | null
+          number: string | null
+          source: Database["public"]["Enums"]["trackingSource"] | null
+          status: string | null
+          supplierId: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serialNumber_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "serialNumber_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -34665,6 +34767,28 @@ export type Database = {
         Args: {
           p_receipt_line_id: string
           p_receipt_id: string
+          p_serial_number: string
+          p_index: number
+        }
+        Returns: undefined
+      }
+      update_shipment_line_batch_tracking: {
+        Args: {
+          p_shipment_line_id: string
+          p_shipment_id: string
+          p_batch_number: string
+          p_batch_id: string
+          p_manufacturing_date: string
+          p_expiration_date: string
+          p_quantity: number
+          p_properties?: Json
+        }
+        Returns: undefined
+      }
+      update_shipment_line_serial_tracking: {
+        Args: {
+          p_shipment_line_id: string
+          p_shipment_id: string
           p_serial_number: string
           p_index: number
         }
