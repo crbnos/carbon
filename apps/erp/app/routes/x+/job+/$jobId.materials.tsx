@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
     role: "employee",
   });
@@ -37,13 +37,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const materials = await getJobMaterialsWithQuantityOnHand(client, jobId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters,
-  });
+  const materials = await getJobMaterialsWithQuantityOnHand(
+    client,
+    jobId,
+    companyId,
+    job.data.locationId ?? "",
+    {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }
+  );
 
   if (materials.error) {
     redirect(

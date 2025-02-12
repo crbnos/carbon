@@ -11,7 +11,6 @@ import type {
   ItemQuantities,
   ItemShelfQuantities,
   pickMethodValidator,
-  UnitOfMeasureListItem,
 } from "~/modules/items";
 import type { ListItem } from "~/types";
 import InventoryShelves from "./InventoryShelves";
@@ -19,21 +18,17 @@ import InventoryShelves from "./InventoryShelves";
 type InventoryDetailsProps = {
   itemShelfQuantities: ItemShelfQuantities[];
   itemUnitOfMeasureCode: string;
-  locations: ListItem[];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities | null;
   shelves: ListItem[];
-  unitOfMeasures: UnitOfMeasureListItem[];
 };
 
 const InventoryDetails = ({
   itemShelfQuantities,
   itemUnitOfMeasureCode,
-  locations,
   pickMethod,
   quantities,
   shelves,
-  unitOfMeasures,
 }: InventoryDetailsProps) => {
   const { locale } = useLocale();
   const formatter = Intl.NumberFormat(locale, {
@@ -80,8 +75,10 @@ const InventoryDetails = ({
             <CardDescription>
               <VStack>Quantity on Production Order</VStack>
             </CardDescription>
-            <CardTitle className="text-4xl opacity-20">
-              {`${formatter.format(quantities?.quantityOnProdOrder ?? 0)}`}
+            <CardTitle className="text-4xl">
+              {`${formatter.format(
+                quantities?.quantityOnProductionOrder ?? 0
+              )}`}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -89,10 +86,8 @@ const InventoryDetails = ({
       <InventoryShelves
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode}
-        locations={locations}
         pickMethod={pickMethod}
         shelves={shelves}
-        unitOfMeasures={unitOfMeasures}
       />
     </VStack>
   );

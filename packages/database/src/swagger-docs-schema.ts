@@ -11986,6 +11986,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.sentDate",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -12165,6 +12168,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.sentDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12296,6 +12302,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.sentDate",
           },
           {
             $ref: "#/parameters/body.salesOrderLine",
@@ -33238,6 +33247,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.salesPersonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33372,6 +33384,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.salesPersonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33458,6 +33473,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.salesPersonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -38050,9 +38068,6 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.serialNumber.status",
-          },
-          {
             $ref: "#/parameters/rowFilter.serialNumber.createdAt",
           },
           {
@@ -38060,6 +38075,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.status",
           },
           {
             $ref: "#/parameters/select",
@@ -38139,9 +38157,6 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.serialNumber.status",
-          },
-          {
             $ref: "#/parameters/rowFilter.serialNumber.createdAt",
           },
           {
@@ -38149,6 +38164,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.status",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -38182,9 +38200,6 @@ export default {
             $ref: "#/parameters/rowFilter.serialNumber.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.serialNumber.status",
-          },
-          {
             $ref: "#/parameters/rowFilter.serialNumber.createdAt",
           },
           {
@@ -38192,6 +38207,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.serialNumber.batchNumberId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.serialNumber.status",
           },
           {
             $ref: "#/parameters/body.serialNumber",
@@ -42867,7 +42885,7 @@ export default {
           {
             format: "text",
             in: "query",
-            name: "p_serial_number",
+            name: "p_serial_number_id",
             required: true,
             type: "string",
           },
@@ -42903,7 +42921,7 @@ export default {
                   format: "integer",
                   type: "integer",
                 },
-                p_serial_number: {
+                p_serial_number_id: {
                   format: "text",
                   type: "string",
                 },
@@ -42919,7 +42937,7 @@ export default {
               required: [
                 "p_shipment_line_id",
                 "p_shipment_id",
-                "p_serial_number",
+                "p_serial_number_id",
                 "p_index",
               ],
               type: "object",
@@ -50860,6 +50878,10 @@ export default {
         convertedUnitPrice: {
           format: "numeric",
           type: "number",
+        },
+        sentDate: {
+          format: "date",
+          type: "string",
         },
       },
       type: "object",
@@ -58976,7 +58998,8 @@ export default {
           type: "string",
         },
         status: {
-          format: "text",
+          enum: ["Available", "Reserved", "Consumed"],
+          format: 'public."serialStatus"',
           type: "string",
         },
         supplierId: {
@@ -60589,6 +60612,10 @@ export default {
         },
         salesPersonId: {
           format: "text",
+          type: "string",
+        },
+        sentCompleteDate: {
+          format: "date",
           type: "string",
         },
       },
@@ -62826,8 +62853,8 @@ export default {
         "itemId",
         "source",
         "companyId",
-        "status",
         "createdAt",
+        "status",
       ],
       properties: {
         id: {
@@ -62862,11 +62889,6 @@ export default {
           format: "text",
           type: "string",
         },
-        status: {
-          default: "Available",
-          format: "text",
-          type: "string",
-        },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
@@ -62880,6 +62902,12 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `batchNumber.id`.<fk table='batchNumber' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        status: {
+          default: "Available",
+          enum: ["Available", "Reserved", "Consumed"],
+          format: 'public."serialStatus"',
           type: "string",
         },
       },
@@ -71709,6 +71737,13 @@ export default {
       name: "convertedUnitPrice",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrderLine.sentDate": {
+      name: "sentDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -82351,7 +82386,7 @@ export default {
     "rowFilter.serialNumbers.status": {
       name: "status",
       required: false,
-      format: "text",
+      format: 'public."serialStatus"',
       in: "query",
       type: "string",
     },
@@ -84424,6 +84459,13 @@ export default {
       name: "salesPersonId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.sentCompleteDate": {
+      name: "sentCompleteDate",
+      required: false,
+      format: "date",
       in: "query",
       type: "string",
     },
@@ -87446,13 +87488,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.serialNumber.status": {
-      name: "status",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
     "rowFilter.serialNumber.createdAt": {
       name: "createdAt",
       required: false,
@@ -87471,6 +87506,13 @@ export default {
       name: "batchNumberId",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.serialNumber.status": {
+      name: "status",
+      required: false,
+      format: 'public."serialStatus"',
       in: "query",
       type: "string",
     },

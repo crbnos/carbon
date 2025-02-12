@@ -62,38 +62,29 @@ export async function action({ request }: ActionFunctionArgs) {
       return json({ error: "Failed to update tracking" }, { status: 500 });
     }
   } else if (trackingType === "serial") {
-    const serialNumber = formData.get("serialNumber") as string;
+    const serialNumberId = formData.get("serialNumberId") as string;
     const index = Number(formData.get("index"));
 
     // Check if serial number already exists for this item
-    const { data: existingSerial, error: queryError } = await client
+    const { error: queryError } = await client
       .from("serialNumber")
-      .select("id, itemTracking(id)")
-      .eq("number", serialNumber)
+      .select("id, itemTracking(id, sourceDocument, posted)")
+      .eq("id", serialNumberId)
       .eq("itemId", itemId)
       .neq("itemTracking.sourceDocumentLineId", shipmentLineId)
       .eq("companyId", companyId)
-      .maybeSingle();
+      .eq("status", "Available")
+      .single();
 
     if (queryError) {
-      return json({ error: "Failed to check serial number" }, { status: 500 });
-    }
-
-    if (
-      Array.isArray(existingSerial?.itemTracking) &&
-      existingSerial?.itemTracking?.length > 0
-    ) {
-      return json(
-        { error: "Serial number already exists for this item" },
-        { status: 400 }
-      );
+      return json({ error: "Serial number does not exist" }, { status: 400 });
     }
 
     // Use a transaction to ensure data consistency
     const { error } = await client.rpc("update_shipment_line_serial_tracking", {
       p_shipment_line_id: shipmentLineId,
       p_shipment_id: shipmentId,
-      p_serial_number: serialNumber,
+      p_serial_number_id: serialNumberId,
       p_index: index,
     });
 

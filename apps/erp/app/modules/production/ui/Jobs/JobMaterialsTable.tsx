@@ -1,19 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import {
-  Badge,
-  Button,
-  HStack,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  VStack,
-} from "@carbon/react";
+import { Badge, Button, HStack, VStack } from "@carbon/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -77,7 +63,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
               <Hyperlink
                 to={path.to.jobMethodMaterial(
                   jobId,
-                  row.original.methodType,
+                  row.original.methodType.toLowerCase(),
                   row.original.jobMakeMethodId,
                   row.original.id
                 )}
@@ -145,7 +131,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
       },
 
       {
-        accessorKey: "quantity",
+        accessorKey: "quantityPerParent",
         header: "Qty. per Parent",
         cell: (item) => item.getValue(),
         meta: {
@@ -154,7 +140,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
       },
       {
         accessorKey: "estimatedQuantity",
-        header: "Estimated Qty.",
+        header: "Estimated",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuHash />,
@@ -162,13 +148,13 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
       },
       {
         id: "quantityOnHand",
-        header: "Qty. On Hand",
+        header: "On Hand",
         meta: {
           icon: <LuHash />,
         },
         cell: ({ row }) => {
           const isInventoried =
-            row.original.item?.itemTrackingType !== "Non-Inventory";
+            row.original.itemTrackingType !== "Non-Inventory";
           if (!isInventoried)
             return (
               <Badge variant="secondary">
@@ -181,51 +167,17 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
             return null;
           }
 
-          const quantityOnHand =
-            row.original.item?.itemInventory?.reduce<number>((acc, curr) => {
-              if (curr.locationId === routeData?.job.locationId)
-                return acc + curr.quantityOnHand;
-              return acc;
-            }, 0) ?? 0;
+          const quantityOnHand = row.original.quantityOnHand;
 
           if (quantityOnHand < (row.original.estimatedQuantity ?? 0))
             return (
-              <Popover>
-                <PopoverTrigger>
-                  <Badge variant="destructive">
-                    <LuFlag className="mr-2" />
-                    <span className="group-hover:hidden">Insufficient</span>
-                    <span className="hidden group-hover:block">
-                      {quantityOnHand}
-                    </span>
-                  </Badge>
-                </PopoverTrigger>
-                <PopoverContent className="w-[360px]">
-                  <TableBase>
-                    <Thead>
-                      <Tr>
-                        <Th>Location</Th>
-                        <Th>Shelf</Th>
-                        <Th>Qty.</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {row.original.item?.itemInventory?.map((i) => (
-                        <Tr key={`${i.locationId}-${i.shelfId}`}>
-                          <Td>
-                            {
-                              locations.find((l) => l.value === i.locationId)
-                                ?.label
-                            }
-                          </Td>
-                          <Td>{i.shelfId}</Td>
-                          <Td>{i.quantityOnHand}</Td>
-                        </Tr>
-                      ))}
-                    </Tbody>
-                  </TableBase>
-                </PopoverContent>
-              </Popover>
+              <Badge variant="destructive">
+                <LuFlag className="mr-2" />
+                <span className="group-hover:hidden">Insufficient</span>
+                <span className="hidden group-hover:block">
+                  {quantityOnHand}
+                </span>
+              </Badge>
             );
 
           return (
@@ -235,6 +187,22 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
               <span className="hidden group-hover:block">{quantityOnHand}</span>
             </Badge>
           );
+        },
+      },
+      {
+        id: "quantityOnPurchaseOrder",
+        header: "On PO",
+        cell: ({ row }) => row.original.quantityOnPurchaseOrder,
+        meta: {
+          icon: <LuHash />,
+        },
+      },
+      {
+        id: "quantityOnProductionOrder",
+        header: "In Prod.",
+        cell: ({ row }) => row.original.quantityOnProductionOrder,
+        meta: {
+          icon: <LuHash />,
         },
       },
     ];

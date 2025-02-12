@@ -14,32 +14,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "inventory",
   });
 
-  const { receiptId } = params;
-  if (!receiptId) throw new Error("receiptId not found");
+  const { shipmentId } = params;
+  if (!shipmentId) throw new Error("shipmentId not found");
 
   const setPendingState = await client
-    .from("receipt")
+    .from("shipment")
     .update({
       status: "Pending",
     })
-    .eq("id", receiptId);
+    .eq("id", shipmentId);
 
   if (setPendingState.error) {
     throw redirect(
-      path.to.receipts,
+      path.to.shipments,
       await flash(
         request,
-        error(setPendingState.error, "Failed to post receipt")
+        error(setPendingState.error, "Failed to post shipment")
       )
     );
   }
 
   await tasks.trigger<typeof postTransactionTask>("post-transactions", {
-    type: "receipt",
-    documentId: receiptId,
+    type: "shipment",
+    documentId: shipmentId,
     userId,
     companyId,
   });
 
-  throw redirect(path.to.receipts);
+  throw redirect(path.to.shipments);
 }

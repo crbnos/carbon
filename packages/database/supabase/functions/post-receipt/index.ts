@@ -678,7 +678,7 @@ serve(async (req: Request) => {
             const lineTracking = receiptLineTracking.data?.filter(
               (tracking) =>
                 tracking.sourceDocument === "Receipt" &&
-                tracking.sourceDocumentLineId === receiptLine.lineId
+                tracking.sourceDocumentLineId === receiptLine.id
             );
 
             lineTracking?.forEach((tracking) => {

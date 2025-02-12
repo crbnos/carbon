@@ -4,6 +4,7 @@ import {
   Card,
   CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   HStack,
@@ -28,37 +29,32 @@ import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Number, Select, Shelf } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type {
-  ItemShelfQuantities,
-  pickMethodValidator,
-  UnitOfMeasureListItem,
-} from "~/modules/items";
+import type { ItemShelfQuantities, pickMethodValidator } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 
 type InventoryShelvesProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
   itemShelfQuantities: ItemShelfQuantities[];
   itemUnitOfMeasureCode: string;
-  locations: ListItem[];
   shelves: ListItem[];
-  unitOfMeasures: UnitOfMeasureListItem[];
 };
 
 const InventoryShelves = ({
   itemShelfQuantities,
   itemUnitOfMeasureCode,
-  locations,
   pickMethod,
   shelves,
-  unitOfMeasures,
 }: InventoryShelvesProps) => {
   const permissions = usePermissions();
   const adjustmentModal = useDisclosure();
 
+  const unitOfMeasures = useUnitOfMeasure();
+
   const itemUnitOfMeasure = useMemo(
-    () => unitOfMeasures.find((unit) => unit.code === itemUnitOfMeasureCode),
+    () => unitOfMeasures.find((unit) => unit.value === itemUnitOfMeasureCode),
     [itemUnitOfMeasureCode, unitOfMeasures]
   );
 
@@ -68,6 +64,15 @@ const InventoryShelves = ({
         <HStack className="w-full justify-between">
           <CardHeader>
             <CardTitle>Shelves</CardTitle>
+            <CardDescription>
+              <Enumerable
+                value={
+                  unitOfMeasures.find(
+                    (uom) => uom.value === itemUnitOfMeasureCode
+                  )?.label || itemUnitOfMeasureCode
+                }
+              />
+            </CardDescription>
           </CardHeader>
           <CardAction>
             <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
@@ -77,33 +82,22 @@ const InventoryShelves = ({
           <Table className="table-fixed">
             <Thead>
               <Tr>
-                <Th>Location</Th>
                 <Th>Shelf</Th>
+                <Th>Batch</Th>
+                <Th>Serial</Th>
                 <Th>QoH</Th>
-                <Th>UoM</Th>
               </Tr>
             </Thead>
             <Tbody>
               {itemShelfQuantities.map((item, index) => (
                 <Tr key={index}>
                   <Td>
-                    <Enumerable
-                      value={
-                        locations.find((loc) => loc.id === item.locationId)
-                          ?.name ?? null
-                      }
-                    />
-                  </Td>
-                  <Td>
                     {shelves.find((s) => s.id === item.shelfId)?.name ||
                       item.shelfId}
                   </Td>
-                  <Td>{item.quantityOnHand}</Td>
-                  <Td>
-                    {unitOfMeasures.find(
-                      (uom) => uom.code === itemUnitOfMeasureCode
-                    )?.name || itemUnitOfMeasureCode}
-                  </Td>
+                  <Td>{item.batchNumber}</Td>
+                  <Td>{item.serialNumber}</Td>
+                  <Td>{item.quantity}</Td>
                 </Tr>
               ))}
             </Tbody>
@@ -164,7 +158,7 @@ const InventoryShelves = ({
                   <Input
                     name="unitOfMeasure"
                     label="Unit of Measure"
-                    value={itemUnitOfMeasure?.name ?? ""}
+                    value={itemUnitOfMeasure?.label ?? ""}
                     isReadOnly
                   />
                 </VStack>

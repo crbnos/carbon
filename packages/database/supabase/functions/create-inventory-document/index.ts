@@ -356,6 +356,15 @@ serve(async (req: Request) => {
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = receiptLine.data;
 
+          if (receiptLine.data.requiresSerialTracking) {
+            await trx
+              .deleteFrom("itemTracking")
+              .where("sourceDocument", "=", "Receipt")
+              .where("sourceDocumentId", "=", receiptId)
+              .where("sourceDocumentLineId", "=", receiptLineId)
+              .execute();
+          }
+
           await trx
             .insertInto("receiptLine")
             .values({
@@ -897,6 +906,15 @@ serve(async (req: Request) => {
 
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = shipmentLine.data;
+
+          if (shipmentLine.data.requiresSerialTracking) {
+            await trx
+              .deleteFrom("itemTracking")
+              .where("sourceDocument", "=", "Shipment")
+              .where("sourceDocumentId", "=", shipmentId)
+              .where("sourceDocumentLineId", "=", shipmentLineId)
+              .execute();
+          }
 
           await trx
             .insertInto("shipmentLine")

@@ -11,13 +11,11 @@ import {
   Heading,
   HStack,
   IconButton,
-  Input,
   ModalHeader,
   ModalContent,
   Modal,
   NumberField,
   NumberInput,
-  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -35,7 +33,6 @@ import {
   useFetcher,
   useFetchers,
   useParams,
-  useRevalidator,
   useSubmit,
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -49,14 +46,13 @@ import {
   LuX,
 } from "react-icons/lu";
 import { DocumentPreview, Empty } from "~/components";
-import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import FileDropzone from "~/components/FileDropzone";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
-import { useRouteData, useUser } from "~/hooks";
+import { useRouteData } from "~/hooks";
 import {
+  getBatchNumbersForItem,
   splitValidator,
   type BatchProperty,
   type getSerialNumbersForItem,
@@ -64,12 +60,9 @@ import {
   type ShipmentLine,
   type ShipmentLineTracking,
 } from "~/modules/inventory";
-import { getDocumentType } from "~/modules/shared/shared.service";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
-import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
-import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 import { ValidatedForm, Submit, Number } from "@carbon/form";
@@ -79,11 +72,10 @@ const ShipmentLines = () => {
   if (!shipmentId) throw new Error("shipmentId not found");
 
   const fetcher = useFetcher<typeof shipmentLinesUpdateAction>();
-  const { upload, deleteFile, getPath } = useShipmentFiles(shipmentId);
+
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
-    shipmentFiles: PostgrestResponse<StorageItem>;
     shipmentLineTracking: ShipmentLineTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
   }>(path.to.shipment(shipmentId));
@@ -104,7 +96,7 @@ const ShipmentLines = () => {
   const shipmentLines = Array.from(shipmentsById.values());
 
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
-    Record<string, { index: number; number: string }[]>
+    Record<string, { index: number; id: string }[]>
   >(() => {
     return shipmentLines.reduce(
       (acc, line) => ({
@@ -118,7 +110,7 @@ const ShipmentLines = () => {
           )?.serialNumber;
           return {
             index,
-            number: serialNumber?.number ?? "",
+            id: serialNumber?.id ?? "",
           };
         }),
       }),
@@ -142,7 +134,7 @@ const ShipmentLines = () => {
               )?.serialNumber;
               return {
                 index,
-                number: serialNumber?.number ?? "",
+                id: serialNumber?.id ?? "",
               };
             }
           ),
@@ -151,7 +143,7 @@ const ShipmentLines = () => {
       )
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeData?.shipment?.sourceDocumentId]);
+  }, [routeData?.shipment?.sourceDocumentId, shipmentLines.length]);
 
   const onUpdateShipmentLine = useCallback(
     async ({
@@ -209,12 +201,10 @@ const ShipmentLines = () => {
                   shipment={routeData?.shipment}
                   isReadOnly={isPosted}
                   onUpdate={onUpdateShipmentLine}
-                  files={routeData?.shipmentFiles}
                   className={
                     index === shipmentLines.length - 1 ? "border-none" : ""
                   }
                   serialNumbers={serialNumbersByLineId[line.id] || []}
-                  getPath={(file) => getPath(file, line.id)}
                   onSerialNumbersChange={(newSerialNumbers) => {
                     setSerialNumbersByLineId((prev) => ({
                       ...prev,
@@ -235,8 +225,6 @@ const ShipmentLines = () => {
                       properties: {},
                     }
                   }
-                  upload={(files) => upload(files, line.id)}
-                  deleteFile={(file) => deleteFile(file, line.id)}
                 />
               ))
             )}
@@ -254,20 +242,15 @@ function ShipmentLineItem({
   className,
   isReadOnly,
   onUpdate,
-  files,
   batchProperties,
   batchNumber,
   serialNumbers,
-  getPath,
   onSerialNumbersChange,
-  upload,
-  deleteFile,
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
   className?: string;
   isReadOnly: boolean;
-  files?: PostgrestResponse<StorageItem>;
   batchProperties?: PostgrestResponse<BatchProperty>;
   batchNumber: {
     id: string;
@@ -276,10 +259,9 @@ function ShipmentLineItem({
     expirationDate?: string | null;
     properties?: any;
   };
-  serialNumbers: { index: number; number: string }[];
-  getPath: (file: StorageItem) => string;
+  serialNumbers: { index: number; id: string }[];
   onSerialNumbersChange: (
-    serialNumbers: { index: number; number: string }[]
+    serialNumbers: { index: number; id: string }[]
   ) => void;
   onUpdate: ({
     lineId,
@@ -296,8 +278,6 @@ function ShipmentLineItem({
         field: "shelfId";
         value: string;
       }) => Promise<void>;
-  upload: (files: File[]) => Promise<void>;
-  deleteFile: (file: StorageItem) => Promise<void>;
 }) {
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
@@ -359,7 +339,7 @@ function ShipmentLineItem({
                         { length: value - serialNumbers.length },
                         () => ({
                           index: serialNumbers.length,
-                          number: "",
+                          id: "",
                         })
                       ),
                     ]);
@@ -441,61 +421,8 @@ function ShipmentLineItem({
           onSerialNumbersChange={onSerialNumbersChange}
         />
       )}
-      {(line.requiresBatchTracking || line.requiresSerialTracking) && (
-        <>
-          <Suspense fallback={null}>
-            <Await resolve={files}>
-              {(resolvedFiles) => {
-                const lineFiles = resolvedFiles?.data?.filter(
-                  (file) => file.bucket === line.id
-                );
-                return Array.isArray(lineFiles) && lineFiles.length > 0 ? (
-                  <div className="flex flex-col gap-2">
-                    {lineFiles.map((file) => {
-                      const documentType = getDocumentType(file.name);
-                      const isPreviewable = ["PDF", "Image"].includes(
-                        documentType
-                      );
-
-                      return (
-                        <HStack key={file.id}>
-                          <DocumentIcon type={documentType} />
-                          <span className="font-medium text-sm">
-                            {isPreviewable ? (
-                              <DocumentPreview
-                                bucket="private"
-                                pathToFile={getPath(file)}
-                                // @ts-ignore
-                                type={getDocumentType(file.name)}
-                              >
-                                {file.name}
-                              </DocumentPreview>
-                            ) : (
-                              file.name
-                            )}
-                          </span>
-                          <IconButton
-                            icon={<LuX />}
-                            aria-label="Delete file"
-                            variant="ghost"
-                            onClick={() => deleteFile(file)}
-                          />
-                        </HStack>
-                      );
-                    })}
-                  </div>
-                ) : null;
-              }}
-            </Await>
-          </Suspense>
-          <FileDropzone onDrop={upload} />
-          {splitDisclosure.isOpen && (
-            <SplitShipmentLineModal
-              line={line}
-              onClose={splitDisclosure.onClose}
-            />
-          )}
-        </>
+      {splitDisclosure.isOpen && (
+        <SplitShipmentLineModal line={line} onClose={splitDisclosure.onClose} />
       )}
     </div>
   );
@@ -545,6 +472,8 @@ function BatchForm({
           properties: {},
         }
   );
+
+  const { options: batchNumberOptions } = useBatchNumbers(line.itemId);
 
   const { carbon } = useCarbon();
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
@@ -656,18 +585,21 @@ function BatchForm({
             <LuGroup /> Batch Number
           </label>
 
-          <Input
+          <Combobox
+            options={batchNumberOptions}
             placeholder={`Batch number`}
             disabled={isReadOnly}
             value={values.number}
-            onChange={(e) => {
-              setValues((prev) => ({
-                ...prev,
-                number: e.target.value,
-              }));
-            }}
-            onBlur={() => {
-              updateBatchNumber(values, true);
+            onChange={(newValue) => {
+              updateBatchNumber(
+                {
+                  ...values,
+                  number:
+                    batchNumberOptions.find((o) => o.value === newValue)
+                      ?.label ?? "",
+                },
+                true
+              );
             }}
           />
         </div>
@@ -751,22 +683,22 @@ function SerialForm({
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
-  serialNumbers: { index: number; number: string }[];
+  serialNumbers: { index: number; id: string }[];
   isReadOnly: boolean;
   onSerialNumbersChange: (
-    serialNumbers: { index: number; number: string }[]
+    serialNumbers: { index: number; id: string }[]
   ) => void;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
+  const { options } = useSerialNumbers(line.itemId);
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
-    (serialNumber: string, currentIndex: number) => {
-      const trimmedNumber = serialNumber.trim();
-      if (!trimmedNumber) return null;
+    (serialNumberId: string, currentIndex: number) => {
+      if (!serialNumberId) return null;
 
       const isDuplicate = serialNumbers.some(
-        (sn, idx) => idx !== currentIndex && sn.number.trim() === trimmedNumber
+        (sn, idx) => idx !== currentIndex && sn.id === serialNumberId
       );
 
       return isDuplicate ? "Duplicate serial number" : null;
@@ -775,25 +707,22 @@ function SerialForm({
   );
 
   const updateSerialNumber = useCallback(
-    async (serialNumber: { index: number; number: string }) => {
-      if (!shipment?.id || !serialNumber.number.trim()) return;
+    async (serialNumber: { index: number; id: string }) => {
+      if (!shipment?.id || !serialNumber.id) return;
 
-      const error = validateSerialNumber(
-        serialNumber.number,
-        serialNumber.index
-      );
+      const error = validateSerialNumber(serialNumber.id, serialNumber.index);
       if (error) {
         setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
         return;
       }
 
       const formData = new FormData();
+      formData.append("trackingType", "serial");
       formData.append("itemId", line.itemId);
       formData.append("shipmentId", shipment.id);
       formData.append("shipmentLineId", line.id);
-      formData.append("trackingType", "serial");
       formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumber", serialNumber.number.trim());
+      formData.append("serialNumberId", serialNumber.id.trim());
 
       try {
         const response = await fetch(
@@ -841,12 +770,19 @@ function SerialForm({
             key={`${line.id}-${index}-serial`}
             className="flex flex-col gap-1"
           >
-            <Input
+            <Combobox
+              options={
+                options.filter(
+                  (o) =>
+                    !serialNumbers.some(
+                      (sn) => sn.id === o.value && sn.index !== index
+                    )
+                ) ?? []
+              }
               placeholder={`Serial ${index + 1}`}
               disabled={isReadOnly}
-              value={serialNumber.number}
-              onChange={(e) => {
-                const newValue = e.target.value;
+              value={serialNumber.id}
+              onChange={(newValue) => {
                 const error = validateSerialNumber(newValue, index);
 
                 setErrors((prev) => {
@@ -862,28 +798,10 @@ function SerialForm({
                 const newSerialNumbers = [...serialNumbers];
                 newSerialNumbers[index] = {
                   index,
-                  number: newValue,
+                  id: newValue,
                 };
                 onSerialNumbersChange(newSerialNumbers);
-              }}
-              onBlur={() => {
-                if (serialNumber.number.trim()) {
-                  updateSerialNumber(serialNumber);
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (serialNumber.number.trim()) {
-                    updateSerialNumber(serialNumber);
-                  }
-                  const nextInput = e.currentTarget
-                    .closest("div")
-                    ?.querySelector(`input[placeholder="Serial ${index + 2}"]`);
-                  if (nextInput) {
-                    (nextInput as HTMLElement).focus();
-                  }
-                }
+                updateSerialNumber(newSerialNumbers[index]);
               }}
               className={cn(errors[index] && "border-destructive")}
             />
@@ -1015,84 +933,6 @@ const usePendingShipmentLines = () => {
 
 export default ShipmentLines;
 
-function useShipmentFiles(shipmentId: string) {
-  const { company } = useUser();
-  const { carbon } = useCarbon();
-
-  const getPath = useCallback(
-    ({ name }: { name: string }, lineId: string) => {
-      return `${company.id}/inventory/${lineId}/${stripSpecialCharacters(
-        name
-      )}`;
-    },
-    [company.id]
-  );
-
-  const submit = useSubmit();
-  const revalidator = useRevalidator();
-  const upload = useCallback(
-    async (files: File[], lineId: string) => {
-      if (!carbon) {
-        toast.error("Carbon client not available");
-        return;
-      }
-
-      for (const file of files) {
-        const fileName = getPath({ name: file.name }, lineId);
-        toast.info(`Uploading ${file.name}`);
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true,
-          });
-
-        if (fileUpload.error) {
-          toast.error(`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
-          toast.success(`Uploaded: ${file.name}`);
-          const formData = new FormData();
-          formData.append("path", fileUpload.data.path);
-          formData.append("name", file.name);
-          formData.append("size", Math.round(file.size / 1024).toString());
-          formData.append("sourceDocument", "Shipment");
-          formData.append("sourceDocumentId", shipmentId);
-
-          submit(formData, {
-            method: "post",
-            action: path.to.newDocument,
-            navigate: false,
-            fetcherKey: `${lineId}:${file.name}`,
-          });
-        }
-      }
-      revalidator.revalidate();
-    },
-    [carbon, revalidator, getPath, shipmentId, submit]
-  );
-
-  const deleteFile = useCallback(
-    async (file: StorageItem, lineId: string) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file, lineId)]);
-
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
-        return;
-      }
-
-      toast.success(`${file.name} deleted successfully`);
-      revalidator.revalidate();
-    },
-    [getPath, carbon?.storage, revalidator]
-  );
-
-  return { upload, deleteFile, getPath };
-}
-
-export function SerialNumberInput({ itemId }: { itemId: string }) {}
-
 export function useSerialNumbers(itemId?: string) {
   const serialNumbersFetcher =
     useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
@@ -1106,13 +946,38 @@ export function useSerialNumbers(itemId?: string) {
 
   const options = useMemo(
     () =>
-      serialNumbersFetcher.data?.data?.map((c) => ({
-        value: c.id,
-        label: c.number,
-      })) ?? [],
+      serialNumbersFetcher.data?.data
+        ?.map((c) => ({
+          value: c.id ?? "",
+          label: c.number ?? "",
+        }))
+        .filter((o) => o.value !== "" && o.label !== "") ?? [],
 
     [serialNumbersFetcher.data]
   );
 
   return { options, data: serialNumbersFetcher.data };
+}
+
+export function useBatchNumbers(itemId?: string) {
+  const batchNumbersFetcher =
+    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
+
+  useEffect(() => {
+    if (itemId) {
+      batchNumbersFetcher.load(path.to.api.batchNumbers(itemId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
+  const options = useMemo(() => {
+    return (
+      batchNumbersFetcher.data?.data?.map((c) => ({
+        value: c.number ?? "",
+        label: c.number ?? "",
+      })) ?? []
+    ).filter((o) => o.value !== "");
+  }, [batchNumbersFetcher.data]);
+
+  return { options, data: batchNumbersFetcher.data };
 }

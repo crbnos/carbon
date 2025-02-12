@@ -9,7 +9,6 @@ import { PanelProvider } from "~/components/Layout";
 import {
   getBatchProperties,
   getShipment,
-  getShipmentFiles,
   getShipmentLineTracking,
   getShipmentLines,
 } from "~/modules/inventory";
@@ -49,11 +48,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.shipments);
   }
 
-  let shipmentLineIds: string[] = [];
   let itemsWithBatchProperties: string[] = [];
 
   if (shipmentLines.data) {
-    shipmentLineIds = shipmentLines.data.map((line) => line.id);
     itemsWithBatchProperties = shipmentLines.data
       .filter((line) => line.itemId && line.requiresBatchTracking)
       .map((line) => line.itemId);
@@ -63,8 +60,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     shipmentLineTracking: shipmentLineTracking.data ?? [],
-    shipmentFiles:
-      getShipmentFiles(serviceRole, companyId, shipmentLineIds) ?? [],
     batchProperties:
       getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
       [],

@@ -17,6 +17,8 @@ export const path = {
       assign: `${api}/assign`,
       autodeskToken: `${api}/autodesk/token`,
       autodeskUpload: `${api}/autodesk/upload`,
+      batchNumbers: (itemId: string) =>
+        generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
       countries: `${api}/countries`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>

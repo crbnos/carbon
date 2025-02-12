@@ -120,6 +120,18 @@ export async function getBatchFiles(
   };
 }
 
+export async function getBatchNumbersForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .from("batchNumbers")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId);
+}
+
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -171,11 +183,15 @@ export async function getBatchProperties(
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
   }
 ) {
-  let query = client.rpc("get_item_quantities", { location_id: locationId });
+  let query = client.rpc("get_inventory_quantities", {
+    location_id: locationId,
+    company_id: companyId,
+  });
 
   if (args?.search) {
     query = query.or(
@@ -199,6 +215,7 @@ export async function getInventoryItems(
 
 export async function getInventoryItemsCount(
   client: SupabaseClient<Database>,
+  locationId: string,
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
@@ -206,9 +223,11 @@ export async function getInventoryItemsCount(
 ) {
   let query = client
     .from("item")
-    .select("id, readableId", { count: "exact" })
-    .eq("companyId", companyId)
-    .in("itemTrackingType", ["Inventory", "Serial", "Batch"]);
+    .select("id", {
+      count: "exact",
+    })
+    .neq("itemTrackingType", "Non-Inventory")
+    .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
@@ -225,16 +244,7 @@ export async function getInventoryItemsCount(
     query = query.eq("active", true);
   }
 
-  const filteredArgs = {
-    ...args,
-    filters: args.filters?.filter(
-      (filter) =>
-        filter.column !== "materialFormId" &&
-        filter.column !== "materialSubstanceId"
-    ),
-  };
-
-  query = setGenericQueryFilters(query, filteredArgs);
+  query = setGenericQueryFilters(query, args);
 
   return query;
 }
@@ -538,26 +548,20 @@ export async function insertManualInventoryAdjustment(
       adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
   };
 
-  // Look up the current quantity for this itemId, locationId, and shelfId
-  const query = client
-    .from("itemInventory")
-    .select("quantityOnHand")
-    .eq("itemId", data.itemId)
-    .eq("locationId", data.locationId);
+  const shelfQuantities = await client.rpc(
+    "get_item_quantities_by_shelf_batch_serial",
+    {
+      item_id: data.itemId,
+      company_id: data.companyId,
+      location_id: data.locationId,
+    }
+  );
 
-  if (data.shelfId) {
-    query.eq("shelfId", data.shelfId);
-  } else {
-    query.is("shelfId", null);
-  }
+  const currentQuantity = shelfQuantities?.data?.find(
+    (quantity) => quantity.shelfId === data.shelfId
+  );
 
-  const { data: currentQuantity, error: quantityError } =
-    await query.maybeSingle();
-  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
-
-  if (quantityError) {
-    return { error: "Failed to fetch current quantity" };
-  }
+  const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
 
   if (adjustmentType === "Set Quantity" && currentQuantity) {
     const quantityDifference = data.quantity - currentQuantityOnHand;

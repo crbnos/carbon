@@ -57,5 +57,7 @@ export const journalReference = {
   to: {
     purchaseInvoice: (id: string) => `purchase-invoice:${id}`,
     receipt: (id: string) => `receipt:${id}`,
+    salesInvoice: (id: string) => `sales-invoice:${id}`,
+    shipment: (id: string) => `shipment:${id}`,
   },
 };

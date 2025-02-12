@@ -54,8 +54,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  console.log(validation.data);
-
   const shipmentDataHasChanged =
     currentShipment.data.sourceDocument !== data.sourceDocument ||
     currentShipment.data.sourceDocumentId !== data.sourceDocumentId ||

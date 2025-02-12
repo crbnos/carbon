@@ -18528,6 +18528,7 @@ export type Database = {
           revisionId: number
           salesOrderId: string
           salesPersonId: string | null
+          sentCompleteDate: string | null
           status: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt: string | null
           updatedBy: string | null
@@ -18555,6 +18556,7 @@ export type Database = {
           revisionId?: number
           salesOrderId: string
           salesPersonId?: string | null
+          sentCompleteDate?: string | null
           status?: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18582,6 +18584,7 @@ export type Database = {
           revisionId?: number
           salesOrderId?: string
           salesPersonId?: string | null
+          sentCompleteDate?: string | null
           status?: Database["public"]["Enums"]["salesOrderStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
@@ -18911,6 +18914,7 @@ export type Database = {
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
           sentComplete: boolean
+          sentDate: string | null
           setupPrice: number | null
           shelfId: string | null
           shippingCost: number
@@ -18953,6 +18957,7 @@ export type Database = {
           salesOrderId: string
           salesOrderLineType: Database["public"]["Enums"]["salesOrderLineType"]
           sentComplete?: boolean
+          sentDate?: string | null
           setupPrice?: number | null
           shelfId?: string | null
           shippingCost?: number
@@ -18995,6 +19000,7 @@ export type Database = {
           salesOrderId?: string
           salesOrderLineType?: Database["public"]["Enums"]["salesOrderLineType"]
           sentComplete?: boolean
+          sentDate?: string | null
           setupPrice?: number | null
           shelfId?: string | null
           shippingCost?: number
@@ -20567,7 +20573,7 @@ export type Database = {
           itemId: string
           number: string
           source: Database["public"]["Enums"]["trackingSource"]
-          status: string
+          status: Database["public"]["Enums"]["serialStatus"]
           supplierId: string | null
         }
         Insert: {
@@ -20579,7 +20585,7 @@ export type Database = {
           itemId: string
           number: string
           source?: Database["public"]["Enums"]["trackingSource"]
-          status?: string
+          status?: Database["public"]["Enums"]["serialStatus"]
           supplierId?: string | null
         }
         Update: {
@@ -20591,7 +20597,7 @@ export type Database = {
           itemId?: string
           number?: string
           source?: Database["public"]["Enums"]["trackingSource"]
-          status?: string
+          status?: Database["public"]["Enums"]["serialStatus"]
           supplierId?: string | null
         }
         Relationships: [
@@ -31732,14 +31738,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32509,7 +32515,7 @@ export type Database = {
           itemReadableId: string | null
           number: string | null
           source: Database["public"]["Enums"]["trackingSource"] | null
-          status: string | null
+          status: Database["public"]["Enums"]["serialStatus"] | null
           supplierId: string | null
         }
         Relationships: [
@@ -34065,32 +34071,42 @@ export type Database = {
         }
         Returns: string[]
       }
-      get_item_quantities: {
+      get_inventory_quantities: {
         Args: {
+          company_id: string
+          location_id: string
+        }
+        Returns: {
+          id: string
+          readableId: string
+          name: string
+          active: boolean
+          type: Database["public"]["Enums"]["itemType"]
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          materialSubstanceId: string
+          materialFormId: string
+          thumbnailPath: string
+          unitOfMeasureCode: string
+          quantityOnHand: number
+          quantityOnSalesOrder: number
+          quantityOnPurchaseOrder: number
+          quantityOnProductionOrder: number
+        }[]
+      }
+      get_item_quantities_by_shelf_batch_serial: {
+        Args: {
+          item_id: string
+          company_id: string
           location_id: string
         }
         Returns: {
           itemId: string
-          companyId: string
-          locationId: string
-          quantityOnHand: number
-          quantityOnPurchaseOrder: number
-          quantityOnSalesOrder: number
-          quantityOnProdOrder: number
-          quantityAvailable: number
-          materialSubstanceId: string
-          materialFormId: string
-          grade: string
-          dimensions: string
-          finish: string
-          readableId: string
-          type: Database["public"]["Enums"]["itemType"]
-          name: string
-          active: boolean
-          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
-          thumbnailPath: string
-          locationName: string
-          unitOfMeasureCode: string
+          shelfId: string
+          shelfName: string
+          batchNumber: string
+          serialNumber: string
+          quantity: number
         }[]
       }
       get_job_method: {
@@ -34205,6 +34221,33 @@ export type Database = {
           operationQuantity: number
           quantityComplete: number
           quantityScrapped: number
+        }[]
+      }
+      get_job_quantity_on_hand: {
+        Args: {
+          job_id: string
+          company_id: string
+          location_id: string
+        }
+        Returns: {
+          id: string
+          jobMaterialItemId: string
+          jobMakeMethodId: string
+          itemReadableId: string
+          name: string
+          description: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          methodType: Database["public"]["Enums"]["methodType"]
+          type: Database["public"]["Enums"]["itemType"]
+          thumbnailPath: string
+          unitOfMeasureCode: string
+          quantityPerParent: number
+          estimatedQuantity: number
+          quantityIssued: number
+          quantityOnHand: number
+          quantityOnSalesOrder: number
+          quantityOnPurchaseOrder: number
+          quantityOnProductionOrder: number
         }[]
       }
       get_method_tree: {
@@ -34483,7 +34526,7 @@ export type Database = {
         Args: {
           p_shipment_line_id: string
           p_shipment_id: string
-          p_serial_number: string
+          p_serial_number_id: string
           p_index: number
         }
         Returns: undefined
@@ -34535,6 +34578,21 @@ export type Database = {
           _xid: unknown
         }
         Returns: string
+      }
+      your_function_name: {
+        Args: {
+          item_id: string
+          company_id: string
+          location_id: string
+        }
+        Returns: {
+          itemId: string
+          shelfId: string
+          shelfName: string
+          batchNumber: string
+          serialNumber: string
+          quantity: number
+        }[]
       }
     }
     Enums: {
@@ -34848,6 +34906,7 @@ export type Database = {
         | "Consumable"
         | "Material"
         | "Fixture"
+      serialStatus: "Available" | "Reserved" | "Consumed"
       serviceType: "Internal" | "External"
       shipmentSourceDocument:
         | "Sales Order"

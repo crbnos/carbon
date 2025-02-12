@@ -8,7 +8,7 @@ const serviceRole = getCarbonServiceRole();
 
 const postTransactionSchema = z.object({
   documentId: z.string(),
-  type: z.enum(["receipt", "purchase-invoice"]),
+  type: z.enum(["receipt", "purchase-invoice", "shipment"]),
   userId: z.string(),
   companyId: z.string(),
 });
@@ -79,6 +79,26 @@ export const postTransactionTask = task({
             message: priceUpdate.error?.message,
           };
         }
+
+        break;
+      case "shipment":
+        console.info(`📫 Posting shipment ${payload.documentId}`);
+        console.info(payload);
+        const postShipment = await serviceRole.functions.invoke(
+          "post-shipment",
+          {
+            body: {
+              shipmentId: payload.documentId,
+              userId: payload.userId,
+              companyId: payload.companyId,
+            },
+          }
+        );
+
+        result = {
+          success: postShipment.error === null,
+          message: postShipment.error?.message,
+        };
 
         break;
       default:
