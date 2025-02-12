@@ -122,6 +122,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
+            console.log({ payload });
             if (
               "companyId" in payload.new &&
               payload.new.companyId !== companyId
