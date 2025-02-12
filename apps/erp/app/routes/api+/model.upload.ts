@@ -33,6 +33,19 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Model path is required");
   }
 
+  const modelRecord = await client.from("modelUpload").insert({
+    id: modelId,
+    modelPath,
+    name,
+    size,
+    companyId,
+    createdBy: userId,
+  });
+
+  if (modelRecord.error) {
+    throw new Error("Failed to record upload: " + modelRecord.error.message);
+  }
+
   if (itemId) {
     await client
       .from("item")
@@ -59,19 +72,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   if (jobId) {
     await client.from("job").update({ modelUploadId: modelId }).eq("id", jobId);
-  }
-
-  const modelRecord = await client.from("modelUpload").insert({
-    id: modelId,
-    modelPath,
-    name,
-    size,
-    companyId,
-    createdBy: userId,
-  });
-
-  if (modelRecord.error) {
-    throw new Error("Failed to record upload: " + modelRecord.error.message);
   }
 
   await tasks.trigger<typeof modelThumbnailTask>("model-thumbnail", {
