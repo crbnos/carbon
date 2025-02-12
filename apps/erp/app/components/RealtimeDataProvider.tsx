@@ -119,17 +119,15 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "item",
-            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
-            console.log({ payload });
-            if (
-              "companyId" in payload.new &&
-              payload.new.companyId !== companyId
-            )
-              return;
             switch (payload.eventType) {
               case "INSERT":
+                if (
+                  "companyId" in payload.new &&
+                  payload.new.companyId !== companyId
+                )
+                  return;
                 const { new: inserted } = payload;
 
                 setItems((items) =>
@@ -185,16 +183,15 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "customer",
-            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
-            if (
-              "companyId" in payload.new &&
-              payload.new.companyId !== companyId
-            )
-              return;
             switch (payload.eventType) {
               case "INSERT":
+                if (
+                  "companyId" in payload.new &&
+                  payload.new.companyId !== companyId
+                )
+                  return;
                 const { new: inserted } = payload;
                 setCustomers((customers) =>
                   [
@@ -239,16 +236,15 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "supplier",
-            filter: `companyId=eq.${companyId}`,
           },
           (payload) => {
-            if (
-              "companyId" in payload.new &&
-              payload.new.companyId !== companyId
-            )
-              return;
             switch (payload.eventType) {
               case "INSERT":
+                if (
+                  "companyId" in payload.new &&
+                  payload.new.companyId !== companyId
+                )
+                  return;
                 const { new: inserted } = payload;
 
                 setSuppliers((suppliers) =>
@@ -294,14 +290,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             table: "employee",
-            filter: `companyId=eq.${companyId}`,
           },
           async (payload) => {
-            if (
-              "companyId" in payload.new &&
-              payload.new.companyId !== companyId
-            )
-              return;
             // TODO: there's a cleaner way of doing this, but since customers and suppliers
             // are also in the users table, we can't automatically add/update/delete them
             // from our list of employees. So for now we just refetch.
