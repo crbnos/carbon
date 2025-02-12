@@ -1134,6 +1134,16 @@ export async function getSalesOrderLine(
     .single();
 }
 
+export async function getSalesOrderLineShipments(
+  client: SupabaseClient<Database>,
+  salesOrderLineId: string
+) {
+  return client
+    .from("shipmentLine")
+    .select("*, shipment(*), shelf(id, name)")
+    .eq("lineId", salesOrderLineId);
+}
+
 export async function getSalesRFQ(
   client: SupabaseClient<Database>,
   id: string

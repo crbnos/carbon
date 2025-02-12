@@ -86,23 +86,23 @@ export async function action({ request }: ActionFunctionArgs) {
       default:
         throw new Error("Unsupported source document");
     }
-  }
+  } else {
+    const updateReceipt = await upsertReceipt(client, {
+      id,
+      ...data,
+      updatedBy: userId,
+      customFields: setCustomFields(formData),
+    });
 
-  const updateReceipt = await upsertReceipt(client, {
-    id,
-    ...data,
-    updatedBy: userId,
-    customFields: setCustomFields(formData),
-  });
-
-  if (updateReceipt.error) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(updateReceipt.error, "Failed to update receipt")
-      )
-    );
+    if (updateReceipt.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(updateReceipt.error, "Failed to update receipt")
+        )
+      );
+    }
   }
 
   throw redirect(
@@ -140,7 +140,7 @@ export default function ReceiptDetailsRoute() {
   return (
     <>
       <ReceiptForm
-        key={initialValues.receiptId}
+        key={initialValues.sourceDocumentId}
         // @ts-ignore
         initialValues={initialValues}
         status={routeData.receipt.status}

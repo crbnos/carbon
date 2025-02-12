@@ -86,24 +86,15 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
         cell: ({ row }) => {
           if (!row.original.sourceDocumentId) return null;
           switch (row.original.sourceDocument) {
-            case "Purchase Order":
+            case "Sales Order":
               return (
                 <Hyperlink
-                  to={path.to.purchaseOrderDetails(
-                    row.original.sourceDocumentId!
-                  )}
+                  to={path.to.salesOrderDetails(row.original.sourceDocumentId!)}
                 >
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
-            case "Purchase Invoice":
-              return (
-                <Hyperlink
-                  to={path.to.purchaseInvoice(row.original.sourceDocumentId!)}
-                >
-                  {row.original.sourceDocumentReadableId}
-                </Hyperlink>
-              );
+
             default:
               return null;
           }

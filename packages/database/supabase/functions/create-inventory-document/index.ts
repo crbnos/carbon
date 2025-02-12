@@ -49,6 +49,13 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("shipmentFromSalesOrderLine"),
+    locationId: z.string(),
+    salesOrderLineId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("shipmentLineSplit"),
     quantity: z.number(),
     locationId: z.string(),
@@ -554,6 +561,209 @@ serve(async (req: Request) => {
             shippedQuantity: outstandingQuantity,
             requiresSerialTracking: serializedItems.has(d.itemId),
             requiresBatchTracking: batchItems.has(d.itemId),
+            unitPrice: shippingAndTaxUnitCost,
+            unitOfMeasure: d.unitOfMeasureCode ?? "EA",
+            locationId: d.locationId,
+            shelfId: d.shelfId,
+            createdBy: userId ?? "",
+          });
+
+          return acc;
+        }, []);
+
+        if (shipmentLineItems.length === 0) {
+          throw new Error("No valid shipment line items found");
+        }
+
+        let shipmentId = hasShipment ? shipment.data?.id! : "";
+        let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+
+        await db.transaction().execute(async (trx) => {
+          if (hasShipment) {
+            console.log({ shipmentId });
+
+            // update existing shipment
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Sales Order",
+                sourceDocumentId: salesOrder.data.id,
+                sourceDocumentReadableId: salesOrder.data.salesOrderId,
+                customerId: salesOrder.data.customerId,
+                shippingMethodId: salesOrderShipment.data?.shippingMethodId,
+                opportunityId: opportunity.data?.id,
+                locationId: locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", shipmentId)
+              .returning(["id", "shipmentId"])
+              .execute();
+            // delete existing shipment lines
+            await trx
+              .deleteFrom("shipmentLine")
+              .where("shipmentId", "=", shipmentId)
+              .execute();
+          } else {
+            shipmentIdReadable = await getNextSequence(
+              trx,
+              "shipment",
+              companyId
+            );
+
+            const newShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: shipmentIdReadable,
+                sourceDocument: "Sales Order",
+                sourceDocumentId: salesOrder.data.id,
+                sourceDocumentReadableId: salesOrder.data.salesOrderId,
+                shippingMethodId: salesOrderShipment.data?.shippingMethodId,
+                customerId: salesOrder.data.customerId,
+                opportunityId: opportunity.data?.id,
+                companyId: companyId,
+                locationId: locationId,
+                createdBy: userId,
+              })
+              .returning(["id", "shipmentId"])
+              .execute();
+
+            shipmentId = newShipment?.[0]?.id!;
+            shipmentIdReadable = newShipment?.[0]?.shipmentId!;
+          }
+
+          if (shipmentLineItems.length > 0) {
+            await trx
+              .insertInto("shipmentLine")
+              .values(
+                shipmentLineItems.map((line) => ({
+                  ...line,
+                  shipmentId: shipmentId,
+                  locationId,
+                }))
+              )
+              .execute();
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: shipmentId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+    case "shipmentFromSalesOrderLine": {
+      const { salesOrderLineId, shipmentId: existingShipmentId } = payload;
+
+      console.log({
+        function: "create-inventory-document",
+        type,
+        companyId,
+        locationId,
+        salesOrderLineId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const salesOrderLine = await client
+          .from("salesOrderLine")
+          .select("*")
+          .eq("id", salesOrderLineId)
+          .eq("locationId", locationId)
+          .single();
+
+        if (!salesOrderLine.data || !salesOrderLine.data.itemId)
+          throw new Error("Sales order line not found");
+        const salesOrderId = salesOrderLine.data.salesOrderId;
+
+        const [salesOrder, salesOrderShipment, shipment, opportunity] =
+          await Promise.all([
+            client
+              .from("salesOrder")
+              .select("*")
+              .eq("id", salesOrderId)
+              .single(),
+            client
+              .from("salesOrderShipment")
+              .select("*")
+              .eq("id", salesOrderId)
+              .maybeSingle(),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", existingShipmentId)
+              .maybeSingle(),
+            client
+              .from("opportunity")
+              .select("*")
+              .eq("salesOrderId", salesOrderId)
+              .single(),
+          ]);
+
+        if (!salesOrder.data) throw new Error("Sales order not found");
+
+        const item = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .eq("id", salesOrderLine.data.itemId)
+          .single();
+
+        if (!item.data) throw new Error("Item not found");
+
+        const isSerial = item.data.itemTrackingType === "Serial";
+        const isBatch = item.data.itemTrackingType === "Batch";
+
+        const hasShipment = !!shipment.data?.id;
+
+        const previouslyShippedQuantity = salesOrderLine.data.quantitySent ?? 0;
+
+        const shipmentLineItems = [salesOrderLine.data].reduce<
+          ShipmentLineItem[]
+        >((acc, d) => {
+          if (
+            !d.itemId ||
+            !d.saleQuantity ||
+            d.unitPrice === null ||
+            d.salesOrderLineType === "Service" ||
+            isNaN(d.unitPrice)
+          ) {
+            return acc;
+          }
+
+          const outstandingQuantity =
+            (d.saleQuantity ?? 0) - previouslyShippedQuantity;
+
+          const shippingAndTaxUnitCost =
+            (d.shippingCost / d.saleQuantity + d.unitPrice) *
+            (1 + d.taxPercent);
+
+          acc.push({
+            lineId: d.id,
+            companyId: companyId,
+            itemId: d.itemId,
+            itemReadableId: d.itemReadableId,
+            orderQuantity: d.saleQuantity,
+            outstandingQuantity: outstandingQuantity,
+            shippedQuantity: outstandingQuantity,
+            requiresSerialTracking: isSerial,
+            requiresBatchTracking: isBatch,
             unitPrice: shippingAndTaxUnitCost,
             unitOfMeasure: d.unitOfMeasureCode ?? "EA",
             locationId: d.locationId,

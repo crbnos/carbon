@@ -599,6 +599,8 @@ export const path = {
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/new`),
+    newSalesOrderLineShipment: (id: string, lineId: string) =>
+      generatePath(`${x}/sales-order/${id}/${lineId}/shipment`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,

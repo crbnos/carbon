@@ -81,10 +81,7 @@ export default function ShipmentRoute() {
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
         <ShipmentHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-y-auto scrollbar-hide w-full">
-          <VStack
-            spacing={4}
-            className="h-full p-2 w-full max-w-5xl mx-auto pb-32"
-          >
+          <VStack spacing={4} className="h-full p-2 w-full max-w-5xl mx-auto">
             <Outlet />
           </VStack>
         </div>

@@ -90,23 +90,23 @@ export async function action({ request }: ActionFunctionArgs) {
       default:
         throw new Error("Unsupported source document");
     }
-  }
+  } else {
+    const updateShipment = await upsertShipment(client, {
+      id,
+      ...data,
+      updatedBy: userId,
+      customFields: setCustomFields(formData),
+    });
 
-  const updateShipment = await upsertShipment(client, {
-    id,
-    ...data,
-    updatedBy: userId,
-    customFields: setCustomFields(formData),
-  });
-
-  if (updateShipment.error) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(updateShipment.error, "Failed to update shipment")
-      )
-    );
+    if (updateShipment.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(updateShipment.error, "Failed to update shipment")
+        )
+      );
+    }
   }
 
   throw redirect(
@@ -143,9 +143,9 @@ export default function ShipmentDetailsRoute() {
   };
 
   return (
-    <>
+    <div className="flex flex-col gap-2 pb-16 w-full">
       <ShipmentForm
-        key={initialValues.shipmentId}
+        key={initialValues.sourceDocumentId}
         // @ts-ignore
         initialValues={initialValues}
         status={routeData.shipment.status}
@@ -160,6 +160,6 @@ export default function ShipmentDetailsRoute() {
         internalNotes={routeData.shipment.internalNotes as JSONContent}
         externalNotes={routeData.shipment.externalNotes as JSONContent}
       />
-    </>
+    </div>
   );
 }
