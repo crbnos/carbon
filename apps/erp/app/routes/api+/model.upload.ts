@@ -47,12 +47,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (itemId) {
-    const result = await client
+    await client
       .from("item")
       .update({ modelUploadId: modelId })
       .eq("id", itemId);
-
-    console.log(result);
   }
   if (salesRfqLineId) {
     await client
