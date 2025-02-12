@@ -131,13 +131,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  console.log({
-    pickMethod: pickMethod,
-    quantities: quantities,
-    itemShelfQuantities: itemShelfQuantities,
-    item: item,
-  });
-
   return json({
     pickMethod: pickMethod.data,
     quantities: quantities.data,

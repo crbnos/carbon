@@ -180,8 +180,6 @@ serve(async (req: Request) => {
                 tracking.sourceDocumentLineId === shipmentLine.id
             );
 
-            console.log({ lineTracking });
-
             lineTracking?.forEach((tracking) => {
               itemLedgerInserts.push({
                 postingDate: today,
