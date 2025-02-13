@@ -9,7 +9,7 @@ import {
   Count,
 } from "@carbon/react";
 import { useState } from "react";
-import { LuSearch, LuChevronRight, LuShip } from "react-icons/lu";
+import { LuSearch, LuChevronRight, LuTruck } from "react-icons/lu";
 import { MethodIcon, Hyperlink } from "~/components";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
@@ -149,7 +149,7 @@ export function UsedInItem({
               >
                 <LevelLine isSelected={false} className="mr-2" />
                 {child.methodType === "Shipment" ? (
-                  <LuShip className="mr-2" />
+                  <LuTruck className="mr-2 text-indigo-600" />
                 ) : (
                   <MethodIcon
                     type={child.methodType ?? "Method"}
@@ -197,6 +197,9 @@ function getUseInLink(
     case "salesOrderLines":
       if (!child.documentId) return "#";
       return path.to.salesOrder(child.documentId);
+    case "shipmentLines":
+      if (!child.documentId) return "#";
+      return path.to.shipment(child.documentId);
     default:
       return "#";
   }
