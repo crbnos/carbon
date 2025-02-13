@@ -154,6 +154,27 @@ serve(async (req: Request) => {
           return acc;
         }, {});
 
+        const itemTrackingUpdates =
+          receiptLineTracking.data?.reduce<
+            Record<
+              string,
+              Database["public"]["Tables"]["itemTracking"]["Update"]
+            >
+          >((acc, itemTracking) => {
+            const quantity =
+              receiptLines.data?.find(
+                (receiptLine) =>
+                  receiptLine.id === itemTracking.sourceDocumentLineId
+              )?.receivedQuantity ?? itemTracking.quantity;
+
+            acc[itemTracking.id] = {
+              posted: true,
+              quantity: quantity,
+            };
+
+            return acc;
+          }, {}) ?? {};
+
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
             string,
@@ -810,13 +831,17 @@ serve(async (req: Request) => {
             .where("id", "=", receiptId)
             .execute();
 
-          await trx
-            .updateTable("itemTracking")
-            .set({
-              posted: true,
-            })
-            .where("sourceDocumentId", "=", receiptId)
-            .execute();
+          if (Object.keys(itemTrackingUpdates).length > 0) {
+            for await (const [id, update] of Object.entries(
+              itemTrackingUpdates
+            )) {
+              await trx
+                .updateTable("itemTracking")
+                .set(update)
+                .where("id", "=", id)
+                .execute();
+            }
+          }
         });
         break;
       }

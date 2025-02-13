@@ -242,7 +242,7 @@ serve(async (req: Request) => {
 
             const sentComplete =
               salesOrderLine.sentComplete ||
-              shippedQuantity >= salesOrderLine.saleQuantity;
+              newQuantitySent >= salesOrderLine.saleQuantity;
 
             const updates: Record<
               string,
@@ -264,6 +264,27 @@ serve(async (req: Request) => {
 
           return acc;
         }, {});
+
+        const itemTrackingUpdates =
+          shipmentLineTracking.data?.reduce<
+            Record<
+              string,
+              Database["public"]["Tables"]["itemTracking"]["Update"]
+            >
+          >((acc, itemTracking) => {
+            const quantity =
+              shipmentLines.data?.find(
+                (shipmentLine) =>
+                  shipmentLine.id === itemTracking.sourceDocumentLineId
+              )?.shippedQuantity ?? itemTracking.quantity;
+
+            acc[itemTracking.id] = {
+              posted: true,
+              quantity: quantity,
+            };
+
+            return acc;
+          }, {}) ?? {};
 
         await db.transaction().execute(async (trx) => {
           for await (const [salesOrderLineId, update] of Object.entries(
@@ -332,13 +353,17 @@ serve(async (req: Request) => {
             .where("id", "=", shipmentId)
             .execute();
 
-          await trx
-            .updateTable("itemTracking")
-            .set({
-              posted: true,
-            })
-            .where("sourceDocumentId", "=", shipmentId)
-            .execute();
+          if (Object.keys(itemTrackingUpdates).length > 0) {
+            for await (const [id, update] of Object.entries(
+              itemTrackingUpdates
+            )) {
+              await trx
+                .updateTable("itemTracking")
+                .set(update)
+                .where("id", "=", id)
+                .execute();
+            }
+          }
 
           if (serialNumbersConsumed.length > 0) {
             await trx
