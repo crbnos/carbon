@@ -473,7 +473,9 @@ const LineItems = ({
           return acc;
         }
         acc[line.id!] =
-          quoteLinePrices?.filter((p) => p.quoteLineId === line.id) ?? [];
+          quoteLinePrices
+            ?.filter((p) => p.quoteLineId === line.id)
+            .sort((a, b) => a.quantity - b.quantity) ?? [];
         return acc;
       }, {}) ?? {},
     [quoteLines, quoteLinePrices]
@@ -491,9 +493,9 @@ const LineItems = ({
   return (
     <VStack spacing={8} className="w-full">
       {quoteLines?.map((line) => {
-        const prices = quoteLinePrices?.find(
-          (price) => price.quoteLineId === line.id
-        );
+        const prices = quoteLinePrices
+          ?.filter((price) => price.quoteLineId === line.id)
+          .sort((a, b) => a.quantity - b.quantity);
 
         if (!line || !prices || !line.id) {
           return null;

@@ -101,7 +101,9 @@ const LineItems = ({
             return acc;
           }
           acc[line.id!] =
-            routeData?.prices?.filter((p) => p.quoteLineId === line.id) ?? [];
+            routeData?.prices
+              ?.filter((p) => p.quoteLineId === line.id)
+              .sort((a, b) => a.quantity - b.quantity) ?? [];
           return acc;
         },
         {}
