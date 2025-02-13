@@ -13,69 +13,39 @@ import type {
   inventoryAdjustmentValidator,
   receiptValidator,
   shelfValidator,
+  shipmentValidator,
   shippingMethodValidator,
 } from "./inventory.models";
 
-export async function insertManualInventoryAdjustment(
+export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
-  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
-    companyId: string;
-    createdBy: string;
-  }
+  id: string
 ) {
-  const { adjustmentType, ...rest } = inventoryAdjustment;
-  const data = {
-    ...rest,
-    entryType:
-      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
-  };
+  return client.from("batchProperty").delete().eq("id", id);
+}
 
-  // Look up the current quantity for this itemId, locationId, and shelfId
-  const query = client
-    .from("itemInventory")
-    .select("quantityOnHand")
-    .eq("itemId", data.itemId)
-    .eq("locationId", data.locationId);
+export async function deleteReceipt(
+  client: SupabaseClient<Database>,
+  receiptId: string
+) {
+  return client.from("receipt").delete().eq("id", receiptId);
+}
 
-  if (data.shelfId) {
-    query.eq("shelfId", data.shelfId);
-  } else {
-    query.is("shelfId", null);
-  }
+export async function deleteShippingMethod(
+  client: SupabaseClient<Database>,
+  shippingMethodId: string
+) {
+  return client
+    .from("shippingMethod")
+    .update({ active: false })
+    .eq("id", shippingMethodId);
+}
 
-  const { data: currentQuantity, error: quantityError } =
-    await query.maybeSingle();
-  const currentQuantityOnHand = currentQuantity?.quantityOnHand ?? 0;
-
-  if (quantityError) {
-    return { error: "Failed to fetch current quantity" };
-  }
-
-  if (adjustmentType === "Set Quantity" && currentQuantity) {
-    const quantityDifference = data.quantity - currentQuantityOnHand;
-    if (quantityDifference > 0) {
-      data.entryType = "Positive Adjmt.";
-      data.quantity = quantityDifference;
-    } else if (quantityDifference < 0) {
-      data.entryType = "Negative Adjmt.";
-      data.quantity = -Math.abs(quantityDifference);
-    } else {
-      // No change in quantity, we can return early
-      return { data: null };
-    }
-  }
-
-  // Check if it's a negative adjustment and if the quantity is sufficient
-  if (data.entryType === "Negative Adjmt.") {
-    if (data.quantity > currentQuantityOnHand) {
-      return {
-        error: "Insufficient quantity for negative adjustment",
-      };
-    }
-    data.quantity = -Math.abs(data.quantity);
-  }
-
-  return client.from("itemLedger").insert([data]).select("*").single();
+export async function deleteShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipment").delete().eq("id", shipmentId);
 }
 
 export async function getBatch(
@@ -85,12 +55,10 @@ export async function getBatch(
 ) {
   return client
     .from("batchNumber")
-    .select(
-      "*, item(id, name, readableId), receiptLineTracking(*, receipt(*)), jobMaterialTracking(*, jobMaterial(job(id, jobId))), jobProductionTracking(*)"
-    )
+    .select("*, item(id, name, readableId), itemTracking(*)")
     .eq("id", batchId)
+    .eq("itemTracking.posted", true)
     .eq("companyId", companyId)
-    .eq("receiptLineTracking.posted", true)
     .single();
 }
 
@@ -152,6 +120,18 @@ export async function getBatchFiles(
   };
 }
 
+export async function getBatchNumbersForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string
+) {
+  return client
+    .from("batchNumbers")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId);
+}
+
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -187,30 +167,6 @@ export async function getItemLedgerPage(
   };
 }
 
-export async function deleteBatchProperty(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("batchProperty").delete().eq("id", id);
-}
-
-export async function deleteReceipt(
-  client: SupabaseClient<Database>,
-  receiptId: string
-) {
-  return client.from("receipt").delete().eq("id", receiptId);
-}
-
-export async function deleteShippingMethod(
-  client: SupabaseClient<Database>,
-  shippingMethodId: string
-) {
-  return client
-    .from("shippingMethod")
-    .update({ active: false })
-    .eq("id", shippingMethodId);
-}
-
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -227,11 +183,15 @@ export async function getBatchProperties(
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
   }
 ) {
-  let query = client.rpc("get_item_quantities", { location_id: locationId });
+  let query = client.rpc("get_inventory_quantities", {
+    location_id: locationId,
+    company_id: companyId,
+  });
 
   if (args?.search) {
     query = query.or(
@@ -255,6 +215,7 @@ export async function getInventoryItems(
 
 export async function getInventoryItemsCount(
   client: SupabaseClient<Database>,
+  locationId: string,
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
@@ -262,9 +223,11 @@ export async function getInventoryItemsCount(
 ) {
   let query = client
     .from("item")
-    .select("id, readableId", { count: "exact" })
-    .eq("companyId", companyId)
-    .in("itemTrackingType", ["Inventory", "Serial", "Batch"]);
+    .select("id", {
+      count: "exact",
+    })
+    .neq("itemTrackingType", "Non-Inventory")
+    .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.or(
@@ -281,16 +244,7 @@ export async function getInventoryItemsCount(
     query = query.eq("active", true);
   }
 
-  const filteredArgs = {
-    ...args,
-    filters: args.filters?.filter(
-      (filter) =>
-        filter.column !== "materialFormId" &&
-        filter.column !== "materialSubstanceId"
-    ),
-  };
-
-  query = setGenericQueryFilters(query, filteredArgs);
+  query = setGenericQueryFilters(query, args);
 
   return query;
 }
@@ -341,11 +295,12 @@ export async function getReceiptLineTracking(
   receiptId: string
 ) {
   return client
-    .from("receiptLineTracking")
+    .from("itemTracking")
     .select(
       "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
     )
-    .eq("receiptId", receiptId);
+    .eq("sourceDocument", "Receipt")
+    .eq("sourceDocumentId", receiptId);
 }
 
 export async function getReceiptFiles(
@@ -386,6 +341,25 @@ export async function getReceiptFiles(
   };
 }
 
+export async function getSerialNumbersForItem(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string,
+  includeUnavailable: boolean
+) {
+  let query = client
+    .from("serialNumbers")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId);
+
+  if (!includeUnavailable) {
+    query = query.eq("status", "Available");
+  }
+
+  return query;
+}
+
 export async function getShelvesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -410,6 +384,105 @@ export async function getShelvesListForLocation(
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .order("name");
+}
+
+export async function getShipments(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("shipment")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .neq("sourceDocumentId", "");
+
+  if (args.search) {
+    query = query.or(
+      `shipmentId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "shipmentId", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipment").select("*").eq("id", shipmentId).single();
+}
+
+export async function getShipmentLines(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
+}
+
+export async function getShipmentLinesWithDetails(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipmentLines").select("*").eq("shipmentId", shipmentId);
+}
+
+export async function getShipmentLineTracking(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client
+    .from("itemTracking")
+    .select(
+      "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
+    )
+    .eq("sourceDocument", "Shipment")
+    .eq("sourceDocumentId", shipmentId);
+}
+
+export async function getShipmentFiles(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lineIds: string[]
+): Promise<{ data: StorageItem[]; error: string | null }> {
+  const promises = lineIds.map((lineId) =>
+    client.storage
+      .from("private")
+      .list(`${companyId}/inventory/${lineId}`)
+      .then((result) => ({
+        ...result,
+        lineId,
+      }))
+  );
+
+  const results = await Promise.all(promises);
+
+  // Check for errors
+  const firstError = results.find((result) => result.error);
+  if (firstError) {
+    return {
+      data: [],
+      error: firstError.error?.message ?? "Failed to fetch files",
+    };
+  }
+
+  // Merge data arrays and add lineId as bucketName
+  return {
+    data: results.flatMap((result) =>
+      (result.data ?? []).map((file) => ({
+        ...file,
+        bucket: result.lineId,
+      }))
+    ),
+    error: null,
+  };
 }
 
 export async function getShippingMethod(
@@ -472,6 +545,62 @@ export async function getShippingTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
+}
+
+export async function insertManualInventoryAdjustment(
+  client: SupabaseClient<Database>,
+  inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  const { adjustmentType, ...rest } = inventoryAdjustment;
+  const data = {
+    ...rest,
+    entryType:
+      adjustmentType === "Set Quantity" ? "Positive Adjmt." : adjustmentType, // This will be overwritten below
+  };
+
+  const shelfQuantities = await client.rpc(
+    "get_item_quantities_by_shelf_batch_serial",
+    {
+      item_id: data.itemId,
+      company_id: data.companyId,
+      location_id: data.locationId,
+    }
+  );
+
+  const currentQuantity = shelfQuantities?.data?.find(
+    (quantity) => quantity.shelfId === data.shelfId
+  );
+
+  const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
+
+  if (adjustmentType === "Set Quantity" && currentQuantity) {
+    const quantityDifference = data.quantity - currentQuantityOnHand;
+    if (quantityDifference > 0) {
+      data.entryType = "Positive Adjmt.";
+      data.quantity = quantityDifference;
+    } else if (quantityDifference < 0) {
+      data.entryType = "Negative Adjmt.";
+      data.quantity = -Math.abs(quantityDifference);
+    } else {
+      // No change in quantity, we can return early
+      return { data: null };
+    }
+  }
+
+  // Check if it's a negative adjustment and if the quantity is sufficient
+  if (data.entryType === "Negative Adjmt.") {
+    if (data.quantity > currentQuantityOnHand) {
+      return {
+        error: "Insufficient quantity for negative adjustment",
+      };
+    }
+    data.quantity = -Math.abs(data.quantity);
+  }
+
+  return client.from("itemLedger").insert([data]).select("*").single();
 }
 
 export async function updateBatchPropertyOrder(
@@ -604,6 +733,36 @@ export async function upsertShippingMethod(
     .from("shippingMethod")
     .update(sanitize(shippingMethod))
     .eq("id", shippingMethod.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertShipment(
+  client: SupabaseClient<Database>,
+  shipment:
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        shipmentId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        id: string;
+        shipmentId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in shipment) {
+    return client.from("shipment").insert([shipment]).select("*").single();
+  }
+  return client
+    .from("shipment")
+    .update({
+      ...sanitize(shipment),
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", shipment.id)
     .select("id")
     .single();
 }

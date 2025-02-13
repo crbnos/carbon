@@ -19,11 +19,15 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units`;
     case "Sales Shipment":
-      return `shipped ${ledgerRecord.quantity} units`;
+      return `shipped ${-1 * ledgerRecord.quantity} units${
+        ledgerRecord.serialNumber
+          ? ` with serial number ${ledgerRecord.serialNumber}`
+          : ""
+      }`;
     case "Sales Invoice":
       return `invoiced ${ledgerRecord.quantity} units for sale`;
     case "Transfer Shipment":
-      return `shipped ${ledgerRecord.quantity} units for transfer`;
+      return `shipped ${-1 * ledgerRecord.quantity} units for transfer`;
     case "Transfer Receipt":
       return `received ${ledgerRecord.quantity} units from transfer`;
     case "Direct Transfer":
@@ -31,7 +35,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Inventory Receipt":
       return `received ${ledgerRecord.quantity} units into inventory`;
     case "Inventory Shipment":
-      return `shipped ${ledgerRecord.quantity} units from inventory`;
+      return `shipped ${-1 * ledgerRecord.quantity} units from inventory`;
     case "Posted Assembly":
       return `assembled ${ledgerRecord.quantity} units`;
     case "Purchase Credit Memo":
@@ -47,7 +51,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Service Invoice":
       return `invoiced ${ledgerRecord.quantity} units for service`;
     case "Service Shipment":
-      return `shipped ${ledgerRecord.quantity} units for service`;
+      return `shipped ${-1 * ledgerRecord.quantity} units for service`;
     case "Job Consumption":
       return (
         <span>

@@ -41,15 +41,22 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       toast.error("Carbon client not found");
       return;
     }
-    const receiptLines = await carbon
-      .from("receiptLine")
-      .select(
-        "id, itemReadableId, receivedQuantity, requiresBatchTracking, requiresSerialTracking, receiptLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
-      )
-      .eq("receiptId", receiptId);
+    const [receiptLines, receiptLineTracking] = await Promise.all([
+      carbon
+        .from("receiptLine")
+        .select(
+          "id, itemReadableId, receivedQuantity, requiresBatchTracking, requiresSerialTracking"
+        )
+        .eq("receiptId", receiptId),
+      carbon
+        .from("itemTracking")
+        .select("*, serialNumber(number), batchNumber(number)")
+        .eq("sourceDocument", "Receipt")
+        .eq("sourceDocumentId", receiptId),
+    ]);
 
-    if (receiptLines.error) {
-      toast.error("Error fetching receipt lines");
+    if (receiptLines.error || receiptLineTracking.error) {
+      toast.error("Error fetching receipt lines or tracking data");
       return;
     }
 
@@ -59,7 +66,14 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       receivedQuantityError: string;
     }[] = [];
 
-    receiptLines.data.forEach((line) => {
+    const receiptLinesWithTracking = receiptLines.data.map((line) => ({
+      ...line,
+      receiptLineTracking: receiptLineTracking.data.filter(
+        (tracking) => tracking.sourceDocumentLineId === line.id
+      ),
+    }));
+
+    receiptLinesWithTracking.forEach((line) => {
       if (
         line.requiresBatchTracking &&
         (line.receiptLineTracking.length === 0 ||

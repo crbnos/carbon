@@ -66,6 +66,14 @@ export const shelvesQuery = (
   staleTime: RefreshRate.Low,
 });
 
+export const serialNumbersQuery = (
+  companyId: string | null,
+  itemId: string | null
+) => ({
+  queryKey: ["serialNumbers", companyId ?? "null", itemId ?? "null"],
+  staleTime: RefreshRate.Low,
+});
+
 export const shippingMethodsQuery = (companyId: string | null) => ({
   queryKey: ["shippingMethods", companyId ?? "null"],
   staleTime: RefreshRate.Low,

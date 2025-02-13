@@ -10,18 +10,15 @@ import {
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useRouteData } from "~/hooks";
 import type { InventoryItem } from "~/modules/inventory";
 import { getInventoryItems, getInventoryItemsCount } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
   getMaterialSubstancesList,
-  type UnitOfMeasureListItem,
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
-import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -69,24 +66,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, items, forms, substances] = await Promise.all([
-    getInventoryItems(client, locationId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters,
-    }),
-    getInventoryItemsCount(client, companyId, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters,
-    }),
-    getMaterialFormsList(client, companyId),
-    getMaterialSubstancesList(client, companyId),
-  ]);
+  const [inventoryItems, inventoryItemsCount, forms, substances] =
+    await Promise.all([
+      getInventoryItems(client, locationId, companyId, {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters,
+      }),
+      getInventoryItemsCount(client, locationId, companyId, {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters,
+      }),
+      getMaterialFormsList(client, companyId),
+      getMaterialSubstancesList(client, companyId),
+    ]);
 
   if (inventoryItems.error) {
     redirect(
@@ -98,15 +96,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  if (items.error) {
-    throw redirect(
-      path.to.authenticatedRoot,
-      await flash(request, error(items.error, "Failed to fetch item count"))
-    );
-  }
-
   return json({
-    count: items.count ?? 0,
+    count: inventoryItemsCount.count ?? 0,
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
     locationId,
     forms: forms.data ?? [],
@@ -115,10 +106,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function QuantitiesRoute() {
-  const sharedData = useRouteData<{
-    locations: ListItem[];
-    unitOfMeasures: UnitOfMeasureListItem[];
-  }>(path.to.inventoryRoot);
   const { count, inventoryItems, locationId, forms, substances } =
     useLoaderData<typeof loader>();
 
@@ -137,8 +124,6 @@ export default function QuantitiesRoute() {
                 data={inventoryItems}
                 count={count}
                 locationId={locationId}
-                locations={sharedData?.locations ?? []}
-                unitOfMeasures={sharedData?.unitOfMeasures ?? []}
                 forms={forms}
                 substances={substances}
               />

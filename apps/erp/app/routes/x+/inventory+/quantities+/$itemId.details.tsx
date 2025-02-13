@@ -6,7 +6,6 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
-import type { UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItem,
   getItemQuantities,
@@ -145,23 +144,19 @@ export default function ItemInventoryRoute() {
     useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
-    locations: ListItem[];
     shelves: ListItem[];
-    unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.inventoryRoot);
 
   return (
     <InventoryDetails
       itemShelfQuantities={itemShelfQuantities}
       itemUnitOfMeasureCode={item.unitOfMeasureCode ?? "EA"}
-      locations={routeData?.locations ?? []}
       pickMethod={{
         ...pickMethod,
         defaultShelfId: pickMethod.defaultShelfId ?? undefined,
       }}
       quantities={quantities}
       shelves={routeData?.shelves ?? []}
-      unitOfMeasures={routeData?.unitOfMeasures ?? []}
     />
   );
 }

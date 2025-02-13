@@ -129,6 +129,19 @@ export const shelfValidator = z.object({
   locationId: z.string().min(1, { message: "Location ID is required" }),
 });
 
+export const shipmentStatusType = ["Draft", "Pending", "Posted"] as const;
+
+export const shipmentSourceDocumentType = [
+  "Sales Order",
+  // "Sales Invoice",
+  // "Sales Return Order",
+  // "Purchase Order",
+  // "Purchase Invoice",
+  // "Purchase Return Order",
+  // "Inbound Transfer",
+  // "Outbound Transfer",
+] as const;
+
 export const shippingCarrierType = [
   "UPS",
   "FedEx",
@@ -136,6 +149,20 @@ export const shippingCarrierType = [
   "DHL",
   "Other",
 ] as const;
+
+export const shipmentValidator = z.object({
+  id: z.string().min(1),
+  shipmentId: z.string().min(1, { message: "Receipt ID is required" }),
+  locationId: zfd.text(z.string().optional()),
+  sourceDocument: z.enum(shipmentSourceDocumentType).optional(),
+  sourceDocumentId: zfd.text(
+    z.string().min(1, { message: "Source Document ID is required" })
+  ),
+  trackingNumber: zfd.text(z.string().optional()),
+  shippingMethodId: zfd.text(z.string().optional()),
+  sourceDocumentReadableId: zfd.text(z.string().optional()),
+  customerId: zfd.text(z.string().optional()),
+});
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -147,4 +174,13 @@ export const shippingMethodValidator = z.object({
   }),
   carrierAccountId: zfd.text(z.string().optional()),
   trackingUrl: zfd.text(z.string().optional()),
+});
+
+export const splitValidator = z.object({
+  documentId: z.string().min(1, { message: "Document ID is required" }),
+  documentLineId: z
+    .string()
+    .min(1, { message: "Document Line ID is required" }),
+  locationId: z.string().min(1, { message: "Location ID is required" }),
+  quantity: zfd.numeric(z.number()),
 });

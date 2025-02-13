@@ -62,7 +62,7 @@ export default function InfiniteScroll<T extends { id: string }>({
 
   return (
     <div className="w-full">
-      <ul className="relative h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+      <ul className="relative h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent flex flex-col gap-2">
         {items.length === 0 ? (
           <div className="flex pt-16 justify-center">
             <Empty />

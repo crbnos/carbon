@@ -432,8 +432,11 @@ export async function getItemQuantities(
   locationId: string
 ) {
   return client
-    .rpc("get_item_quantities", { location_id: locationId })
-    .eq("itemId", itemId)
+    .rpc("get_inventory_quantities", {
+      location_id: locationId,
+      company_id: companyId,
+    })
+    .eq("id", itemId)
     .maybeSingle();
 }
 
@@ -456,12 +459,11 @@ export async function getItemShelfQuantities(
   companyId: string,
   locationId: string
 ) {
-  return client
-    .from("itemInventory")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("locationId", locationId);
+  return client.rpc("get_item_quantities_by_shelf_batch_serial", {
+    item_id: itemId,
+    company_id: companyId,
+    location_id: locationId,
+  });
 }
 
 export async function getItemUnitSalePrice(

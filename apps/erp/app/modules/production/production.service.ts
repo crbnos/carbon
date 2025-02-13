@@ -179,16 +179,15 @@ export async function getJobsList(
 export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,
+  companyId: string,
+  locationId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
   let query = client
     .from("jobMaterial")
-    .select(
-      "*, item(itemTrackingType,itemInventory(quantityOnHand, locationId, shelfId))",
-      {
-        count: "exact",
-      }
-    )
+    .select("id", {
+      count: "exact",
+    })
     .eq("jobId", jobId);
 
   if (args?.search) {
@@ -203,7 +202,26 @@ export async function getJobMaterialsWithQuantityOnHand(
     ]);
   }
 
-  return query;
+  const { data: jobMaterials, count, error } = await query;
+  const jobMaterialIds = new Set(jobMaterials?.map((material) => material.id));
+
+  if (error) return { error };
+
+  const jobQuantities = await client.rpc("get_job_quantity_on_hand", {
+    job_id: jobId,
+    company_id: companyId,
+    location_id: locationId,
+  });
+
+  return {
+    data: jobQuantities.error
+      ? null
+      : jobQuantities.data?.filter((material) =>
+          jobMaterialIds.has(material.id)
+        ) ?? [],
+    count: count,
+    error: jobQuantities.error,
+  };
 }
 
 export async function getJobMethodTree(

@@ -63,8 +63,9 @@ export async function action({ request }: ActionFunctionArgs) {
       case "Purchase Order":
         const purchaseOrderReceipt = await serviceRole.functions.invoke<{
           id: string;
-        }>("create-receipt-from-purchase-order", {
+        }>("create-inventory-document", {
           body: {
+            type: "receiptFromPurchaseOrder",
             companyId,
             locationId: data.locationId,
             purchaseOrderId: data.sourceDocumentId,
@@ -85,23 +86,23 @@ export async function action({ request }: ActionFunctionArgs) {
       default:
         throw new Error("Unsupported source document");
     }
-  }
+  } else {
+    const updateReceipt = await upsertReceipt(client, {
+      id,
+      ...data,
+      updatedBy: userId,
+      customFields: setCustomFields(formData),
+    });
 
-  const updateReceipt = await upsertReceipt(client, {
-    id,
-    ...data,
-    updatedBy: userId,
-    customFields: setCustomFields(formData),
-  });
-
-  if (updateReceipt.error) {
-    return json(
-      {},
-      await flash(
-        request,
-        error(updateReceipt.error, "Failed to update receipt")
-      )
-    );
+    if (updateReceipt.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(updateReceipt.error, "Failed to update receipt")
+        )
+      );
+    }
   }
 
   throw redirect(
@@ -130,7 +131,7 @@ export default function ReceiptDetailsRoute() {
     sourceDocument: (routeData.receipt.sourceDocument ??
       "Purchase Order") as "Purchase Order",
     sourceDocumentId: routeData.receipt.sourceDocumentId ?? undefined,
-    sourceDocumentReadbleId:
+    sourceDocumentReadableId:
       routeData.receipt.sourceDocumentReadableId ?? undefined,
     locationId: routeData.receipt.locationId ?? undefined,
     ...getCustomFields(routeData.receipt.customFields),
@@ -139,7 +140,7 @@ export default function ReceiptDetailsRoute() {
   return (
     <>
       <ReceiptForm
-        key={initialValues.receiptId}
+        key={initialValues.sourceDocumentId}
         // @ts-ignore
         initialValues={initialValues}
         status={routeData.receipt.status}

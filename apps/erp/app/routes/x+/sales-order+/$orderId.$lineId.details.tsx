@@ -25,6 +25,7 @@ import type {
 import {
   getOpportunityLineDocuments,
   getSalesOrderLine,
+  getSalesOrderLineShipments,
   salesOrderLineValidator,
   upsertSalesOrderLine,
 } from "~/modules/sales";
@@ -36,13 +37,14 @@ import {
   SalesOrderLineForm,
   SalesOrderLineJobs,
 } from "~/modules/sales/ui/SalesOrder";
+import { SalesOrderLineShipments } from "~/modules/sales/ui/SalesOrder/SalesOrderLineShipments";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
     view: "sales",
-    role: "employee",
+    bypassRls: true,
   });
 
   const { orderId, lineId } = params;
@@ -51,9 +53,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [line, jobs] = await Promise.all([
+  const [line, jobs, shipments] = await Promise.all([
     getSalesOrderLine(serviceRole, lineId),
     getJobsBySalesOrderLine(serviceRole, lineId),
+    getSalesOrderLineShipments(serviceRole, lineId),
   ]);
 
   if (line.error) {
@@ -71,6 +74,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         : Promise.resolve({ data: null }),
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId),
     jobs: jobs?.data ?? [],
+    shipments: shipments?.data ?? [],
   });
 }
 
@@ -128,7 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function EditSalesOrderLineRoute() {
-  const { line, jobs, itemReplenishment, files } =
+  const { line, jobs, itemReplenishment, files, shipments } =
     useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { orderId, lineId } = useParams();
@@ -174,6 +178,7 @@ export default function EditSalesOrderLineRoute() {
         // @ts-ignore
         initialValues={initialValues}
       />
+
       {line.methodType === "Make" && (
         <Suspense
           fallback={
@@ -205,6 +210,14 @@ export default function EditSalesOrderLineRoute() {
           </Await>
         </Suspense>
       )}
+
+      <SalesOrderLineShipments
+        salesOrder={orderData.salesOrder}
+        line={line}
+        opportunity={orderData.opportunity}
+        shipments={shipments}
+      />
+
       <OpportunityLineNotes
         id={line.id}
         table="salesOrderLine"

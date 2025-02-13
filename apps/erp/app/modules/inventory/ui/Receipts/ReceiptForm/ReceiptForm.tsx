@@ -58,7 +58,7 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
     supplierId,
     setLocationId,
     setSourceDocument,
-  } = useReceiptForm();
+  } = useReceiptForm({ status, initialValues });
 
   const isPosted = status === "Posted";
   const isEditing = initialValues.id !== undefined;

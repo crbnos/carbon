@@ -1,35 +1,46 @@
 import { useCarbon } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
-import { useRouteData, useUser } from "~/hooks";
-import type { Receipt, ReceiptSourceDocument } from "~/modules/inventory/types";
+import { z } from "zod";
+import { useUser } from "~/hooks";
+import { receiptStatusType } from "~/modules/inventory";
+import { receiptValidator } from "~/modules/inventory/inventory.models";
+import type { ReceiptSourceDocument } from "~/modules/inventory/types";
 import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
 
-export default function useReceiptForm() {
+export default function useReceiptForm({
+  status,
+  initialValues,
+}: {
+  initialValues: z.infer<typeof receiptValidator>;
+  status: (typeof receiptStatusType)[number];
+}) {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
-
-  const receiptData = useRouteData<{
-    receipt: Receipt;
-  }>(path.to.receipt(receiptId));
-  if (!receiptData) throw new Error("Could not find receiptData");
-  const receipt = receiptData.receipt;
 
   const user = useUser();
   const [error, setError] = useState<string | null>(null);
   const { carbon } = useCarbon();
 
   const [locationId, setLocationId] = useState<string | null>(
-    receipt.locationId ?? user.defaults.locationId ?? null
+    initialValues.locationId ?? user.defaults.locationId ?? null
   );
   const [supplierId, setSupplierId] = useState<string | null>(
-    receipt.supplierId ?? null
+    initialValues.supplierId ?? null
   );
 
-  const [sourceDocuments, setSourceDocuments] = useState<ListItem[]>([]);
+  const [sourceDocuments, setSourceDocuments] = useState<ListItem[]>(() => {
+    return status === "Posted"
+      ? [
+          {
+            id: initialValues.sourceDocumentId!,
+            name: initialValues.sourceDocumentReadableId!,
+          },
+        ]
+      : [];
+  });
   const [sourceDocument, setSourceDocument] = useState<ReceiptSourceDocument>(
-    receipt.sourceDocument ?? "Purchase Order"
+    initialValues.sourceDocument ?? "Purchase Order"
   );
 
   const fetchSourceDocuments = useCallback(() => {
@@ -61,8 +72,11 @@ export default function useReceiptForm() {
   }, [sourceDocument, carbon, user.company.id]);
 
   useEffect(() => {
-    fetchSourceDocuments();
-  }, [fetchSourceDocuments, sourceDocument]);
+    if (status !== "Posted") {
+      fetchSourceDocuments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceDocument, status]);
 
   return {
     error,

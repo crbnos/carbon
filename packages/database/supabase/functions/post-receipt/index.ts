@@ -49,14 +49,16 @@ serve(async (req: Request) => {
       companyId
     );
 
-    const [receipt, receiptLines] = await Promise.all([
+    const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
       client.from("receipt").select("*").eq("id", receiptId).single(),
+      client.from("receiptLine").select("*").eq("receiptId", receiptId),
       client
-        .from("receiptLine")
+        .from("itemTracking")
         .select(
-          "*, receiptLineTracking(id, quantity, serialNumber(number), batchNumber(number))"
+          "id, quantity, sourceDocumentLineId, sourceDocument, serialNumber(number), batchNumber(number)"
         )
-        .eq("receiptId", receiptId),
+        .eq("sourceDocument", "Receipt")
+        .eq("sourceDocumentId", receiptId),
     ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
@@ -141,10 +143,13 @@ serve(async (req: Request) => {
         >[] = [];
 
         const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
-          Record<string, Database["public"]["Tables"]["receiptLine"]["Row"]>
+          Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
         >((acc, receiptLine) => {
           if (receiptLine.lineId) {
-            acc[receiptLine.lineId] = receiptLine;
+            acc[receiptLine.lineId] = [
+              ...(acc[receiptLine.lineId] ?? []),
+              receiptLine,
+            ];
           }
           return acc;
         }, {});
@@ -155,17 +160,18 @@ serve(async (req: Request) => {
             Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
           >
         >((acc, purchaseOrderLine) => {
-          const receiptLine =
+          const receiptLines =
             receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
           if (
-            receiptLine &&
-            receiptLine.receivedQuantity &&
+            receiptLines &&
+            receiptLines.length > 0 &&
             purchaseOrderLine.purchaseQuantity &&
             purchaseOrderLine.purchaseQuantity > 0
           ) {
             const recivedQuantityInPurchaseUnit =
-              receiptLine.receivedQuantity /
-              (receiptLine.conversionFactor ?? 1);
+              receiptLines.reduce((acc, receiptLine) => {
+                return acc + (receiptLine.receivedQuantity ?? 0);
+              }, 0) / (receiptLines[0].conversionFactor ?? 1);
 
             const newQuantityReceived =
               (purchaseOrderLine.quantityReceived ?? 0) +
@@ -657,8 +663,11 @@ serve(async (req: Request) => {
               entryType: "Positive Adjmt.",
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
-              batchNumber:
-                receiptLine.receiptLineTracking?.[0]?.batchNumber?.number,
+              batchNumber: receiptLineTracking.data?.find(
+                (tracking) =>
+                  tracking.sourceDocument === "Receipt" &&
+                  tracking.sourceDocumentLineId === receiptLine.lineId
+              )?.batchNumber?.number,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
               createdBy: userId,
               companyId,
@@ -666,7 +675,13 @@ serve(async (req: Request) => {
           }
 
           if (receiptLine.requiresSerialTracking) {
-            receiptLine.receiptLineTracking.forEach((tracking) => {
+            const lineTracking = receiptLineTracking.data?.filter(
+              (tracking) =>
+                tracking.sourceDocument === "Receipt" &&
+                tracking.sourceDocumentLineId === receiptLine.id
+            );
+
+            lineTracking?.forEach((tracking) => {
               itemLedgerInserts.push({
                 postingDate: today,
                 itemId: receiptLine.itemId,
@@ -796,11 +811,11 @@ serve(async (req: Request) => {
             .execute();
 
           await trx
-            .updateTable("receiptLineTracking")
+            .updateTable("itemTracking")
             .set({
               posted: true,
             })
-            .where("receiptId", "=", receiptId)
+            .where("sourceDocumentId", "=", receiptId)
             .execute();
         });
         break;

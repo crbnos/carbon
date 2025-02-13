@@ -9,7 +9,6 @@ import {
   LuCirclePlus,
   LuFactory,
   LuGlassWater,
-  LuMapPin,
   LuPackage,
   LuRuler,
   LuShapes,
@@ -26,39 +25,28 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
-import type { UnitOfMeasureListItem } from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
-import type { InventoryItem } from "../../types";
+import { InventoryItem } from "../../types";
+import { useLocations } from "~/components/Form/Location";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 
 type InventoryTableProps = {
   data: InventoryItem[];
   count: number;
   locationId: string;
-  locations: ListItem[];
   forms: ListItem[];
   substances: ListItem[];
-  unitOfMeasures: UnitOfMeasureListItem[];
 };
 
 const InventoryTable = memo(
-  ({
-    data,
-    count,
-    locationId,
-    locations,
-    unitOfMeasures,
-    forms,
-    substances,
-  }: InventoryTableProps) => {
+  ({ data, count, locationId, forms, substances }: InventoryTableProps) => {
     const { hasFilters } = useFilters();
     const [params] = useUrlParams();
 
-    const locationOptions = locations.map((location) => ({
-      label: location.name,
-      value: location.id,
-    }));
+    const locations = useLocations();
+    const unitOfMeasures = useUnitOfMeasure();
 
     const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
       return [
@@ -76,9 +64,7 @@ const InventoryTable = memo(
 
               <VStack spacing={0}>
                 <Hyperlink
-                  to={`${path.to.inventoryItem(
-                    row.original.itemId!
-                  )}/?${params}`}
+                  to={`${path.to.inventoryItem(row.original.id!)}/?${params}`}
                 >
                   {row.original.readableId}
                 </Hyperlink>
@@ -92,15 +78,57 @@ const InventoryTable = memo(
             icon: <LuBookMarked />,
           },
         },
+
         {
-          accessorKey: "locationName",
-          header: "Location",
-          cell: ({ row }) => <Enumerable value={row.original.locationName} />,
+          accessorKey: "quantityOnHand",
+          header: "On Hand",
+          cell: ({ row }) => row.original.quantityOnHand,
           meta: {
-            icon: <LuMapPin />,
+            icon: <LuPackage />,
           },
         },
 
+        {
+          accessorKey: "quantityOnPurchaseOrder",
+          header: "On Purchase Order",
+          cell: ({ row }) => row.original.quantityOnPurchaseOrder,
+          meta: {
+            icon: <LuShoppingCart />,
+          },
+        },
+        {
+          accessorKey: "quantityOnProductionOrder",
+          header: "On Prod Order",
+          cell: ({ row }) => row.original.quantityOnProductionOrder,
+          meta: {
+            icon: <LuFactory />,
+          },
+        },
+        {
+          accessorKey: "quantityOnSalesOrder",
+          header: "On Sales Order",
+          cell: ({ row }) => row.original.quantityOnSalesOrder,
+          meta: {
+            icon: <LuShoppingBag />,
+          },
+        },
+        {
+          accessorKey: "unitOfMeasureCode",
+          header: "Unit of Measure",
+          cell: ({ row }) => {
+            const unitOfMeasure = unitOfMeasures.find(
+              (uom) => uom.value === row.original.unitOfMeasureCode
+            );
+            return (
+              <Enumerable
+                value={unitOfMeasure?.label ?? row.original.unitOfMeasureCode}
+              />
+            );
+          },
+          meta: {
+            icon: <LuRuler />,
+          },
+        },
         {
           accessorKey: "materialFormId",
           header: "Form",
@@ -139,56 +167,6 @@ const InventoryTable = memo(
               })),
             },
             icon: <LuGlassWater />,
-          },
-        },
-        {
-          accessorKey: "quantityOnHand",
-          header: "On Hand",
-          cell: ({ row }) => row.original.quantityOnHand,
-          meta: {
-            icon: <LuPackage />,
-          },
-        },
-
-        {
-          accessorKey: "quantityOnPurchaseOrder",
-          header: "On Purchase Order",
-          cell: ({ row }) => row.original.quantityOnPurchaseOrder,
-          meta: {
-            icon: <LuShoppingCart />,
-          },
-        },
-        {
-          accessorKey: "quantityOnProdOrder",
-          header: "On Prod Order",
-          cell: ({ row }) => row.original.quantityOnProdOrder,
-          meta: {
-            icon: <LuFactory />,
-          },
-        },
-        {
-          accessorKey: "quantityOnSalesOrder",
-          header: "On Sales Order",
-          cell: ({ row }) => row.original.quantityOnSalesOrder,
-          meta: {
-            icon: <LuShoppingBag />,
-          },
-        },
-        {
-          accessorKey: "unitOfMeasureCode",
-          header: "Unit of Measure",
-          cell: ({ row }) => {
-            const unitOfMeasure = unitOfMeasures.find(
-              (uom) => uom.code === row.original.unitOfMeasureCode
-            );
-            return (
-              <Enumerable
-                value={unitOfMeasure?.name ?? row.original.unitOfMeasureCode}
-              />
-            );
-          },
-          meta: {
-            icon: <LuRuler />,
           },
         },
         {
@@ -272,7 +250,7 @@ const InventoryTable = memo(
                   asButton
                   size="sm"
                   value={locationId}
-                  options={locationOptions}
+                  options={locations}
                   onChange={(selected) => {
                     // hard refresh because initialValues update has no effect otherwise
                     window.location.href = getLocationPath(selected);

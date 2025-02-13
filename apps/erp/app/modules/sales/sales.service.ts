@@ -340,14 +340,14 @@ export async function getCustomerContacts(
 
 export async function getCustomerLocation(
   client: SupabaseClient<Database>,
-  customerContactId: string
+  customerLocationId: string
 ) {
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
     )
-    .eq("id", customerContactId)
+    .eq("id", customerLocationId)
     .single();
 }
 
@@ -1134,6 +1134,16 @@ export async function getSalesOrderLine(
     .single();
 }
 
+export async function getSalesOrderLineShipments(
+  client: SupabaseClient<Database>,
+  salesOrderLineId: string
+) {
+  return client
+    .from("shipmentLine")
+    .select("*, shipment(*), shelf(id, name)")
+    .eq("lineId", salesOrderLineId);
+}
+
 export async function getSalesRFQ(
   client: SupabaseClient<Database>,
   id: string
@@ -1335,7 +1345,7 @@ export async function releaseSalesOrder(
   return client
     .from("salesOrder")
     .update({
-      status: "Confirmed",
+      status: "To Ship and Invoice",
       updatedAt: today(getLocalTimeZone()).toString(),
       updatedBy: userId,
     })

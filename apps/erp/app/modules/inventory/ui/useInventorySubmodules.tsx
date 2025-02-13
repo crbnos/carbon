@@ -1,4 +1,11 @@
-import { LuBox, LuGroup, LuHandCoins, LuTruck } from "react-icons/lu";
+import {
+  // LuBarcode,
+  LuBox,
+  LuGroup,
+  LuHandCoins,
+  LuTally5,
+  LuTruck,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -6,46 +13,14 @@ import { path } from "~/utils/path";
 
 const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
-    name: "Manage",
+    name: "Track",
     routes: [
       {
-        name: "Inventory",
+        name: "Quantities",
         to: path.to.inventory,
         role: "employee",
-        icon: <LuBox />,
+        icon: <LuTally5 />,
         table: "inventory",
-        // groups: [
-        //   {
-        //     name: "Parts",
-        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
-        //       "type:eq:Part"
-        //     )}`,
-        //   },
-        //   {
-        //     name: "Materials",
-        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
-        //       "type:eq:Material"
-        //     )}`,
-        //   },
-        //   {
-        //     name: "Tools",
-        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
-        //       "type:eq:Tool"
-        //     )}`,
-        //   },
-        //   {
-        //     name: "Consumables",
-        //     to: `${path.to.inventory}?filter=${encodeURIComponent(
-        //       "type:eq:Consumable"
-        //     )}`,
-        //   },
-        // ],
-      },
-      {
-        name: "Receipts",
-        to: path.to.receipts,
-        icon: <LuHandCoins />,
-        table: "receipt",
       },
       {
         name: "Batches",
@@ -54,16 +29,35 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         table: "batchNumber",
       },
       // {
-      //   name: "Shipments",
-      //   to: path.to.shipments,
+      //   name: "Serial Numbers",
+      //   to: path.to.serialNumbers,
+      //   icon: <LuBarcode />,
+      //   table: "serialNumber",
       // },
+    ],
+  },
+  {
+    name: "Manage",
+    routes: [
+      {
+        name: "Receipts",
+        to: path.to.receipts,
+        icon: <LuHandCoins />,
+        table: "receipt",
+      },
+      {
+        name: "Shipments",
+        to: path.to.shipments,
+        icon: <LuTruck />,
+        table: "shipment",
+      },
     ],
   },
   {
     name: "Configure",
     routes: [
       {
-        name: "Shipping",
+        name: "Shipping Methods",
         to: path.to.shippingMethods,
         role: "employee",
         icon: <LuTruck />,

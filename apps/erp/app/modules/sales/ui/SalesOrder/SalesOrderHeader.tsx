@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
   Heading,
@@ -15,7 +16,7 @@ import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuChevronDown,
-  LuCircleCheck,
+  LuCirclePlus,
   LuCircleStop,
   LuEllipsisVertical,
   LuEye,
@@ -24,19 +25,22 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
+  LuTruck,
 } from "react-icons/lu";
 
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { path } from "~/utils/path";
-import type { SalesOrder, SalesOrderLine } from "../../types";
+import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 
 import { useMemo } from "react";
 import { CSVLink } from "react-csv";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { useCustomers } from "~/stores/customers";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import SalesStatus from "./SalesStatus";
+import { useSalesOrder, useSalesOrderRelatedDocuments } from "./useSalesOrder";
 
 const SalesOrderHeader = () => {
   const { orderId } = useParams();
@@ -47,11 +51,18 @@ const SalesOrderHeader = () => {
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
     lines: SalesOrderLine[];
+    opportunity: Opportunity;
   }>(path.to.salesOrder(orderId));
+
+  if (!routeData?.salesOrder) throw new Error("Failed to load sales order");
 
   const permissions = usePermissions();
 
   const statusFetcher = useFetcher<typeof statusAction>();
+  const { ship } = useSalesOrder();
+  const { shipments } = useSalesOrderRelatedDocuments(
+    routeData?.opportunity?.id ?? ""
+  );
 
   const salesOrderToJobsModal = useDisclosure();
   const [customers] = useCustomers();
@@ -115,7 +126,9 @@ const SalesOrderHeader = () => {
               <DropdownMenuContent>
                 <DropdownMenuItem
                   disabled={
-                    routeData?.salesOrder?.status !== "Confirmed" ||
+                    !["To Ship and Invoice", "To Ship"].includes(
+                      routeData?.salesOrder?.status ?? ""
+                    ) ||
                     !permissions.can("create", "production") ||
                     !!routeData?.salesOrder?.jobs
                   }
@@ -179,7 +192,7 @@ const SalesOrderHeader = () => {
               method="post"
               action={path.to.salesOrderStatus(orderId)}
             >
-              <input type="hidden" name="status" value="Confirmed" />
+              <input type="hidden" name="status" value="To Ship" />
               <Button
                 isDisabled={
                   !["Draft", "Needs Approval"].includes(
@@ -190,48 +203,13 @@ const SalesOrderHeader = () => {
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Confirmed"
+                  statusFetcher.formData?.get("status") === "To Ship"
                 }
                 leftIcon={<LuCheckCheck />}
                 type="submit"
                 variant="secondary"
               >
                 Confirm
-              </Button>
-            </statusFetcher.Form>
-
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesOrderStatus(orderId)}
-            >
-              <input type="hidden" name="status" value="Completed" />
-              <Button
-                type="submit"
-                variant={
-                  ["Completed", "Invoiced"].includes(
-                    routeData?.salesOrder?.status ?? ""
-                  )
-                    ? "primary"
-                    : "secondary"
-                }
-                leftIcon={<LuCircleCheck />}
-                isDisabled={
-                  [
-                    "Draft",
-                    "Completed",
-                    "Cancelled",
-                    "Closed",
-                    "Invoiced",
-                  ].includes(routeData?.salesOrder?.status ?? "") ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Completed"
-                }
-              >
-                Complete
               </Button>
             </statusFetcher.Form>
 
@@ -259,6 +237,144 @@ const SalesOrderHeader = () => {
                 Cancel
               </Button>
             </statusFetcher.Form>
+
+            {shipments.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuTruck />}
+                    variant={
+                      ["To Ship", "To Ship and Invoice"].includes(
+                        routeData?.salesOrder?.status ?? ""
+                      )
+                        ? "primary"
+                        : "secondary"
+                    }
+                    rightIcon={<LuChevronDown />}
+                  >
+                    Shipments
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem
+                    disabled={
+                      ![
+                        "To Ship",
+                        "To Ship and Invoice",
+                        "To Invoice",
+                      ].includes(routeData?.salesOrder?.status ?? "")
+                    }
+                    onClick={() => {
+                      ship(routeData?.salesOrder);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuCirclePlus />} />
+                    New Shipment
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {shipments.map((shipment) => (
+                    <DropdownMenuItem key={shipment.id} asChild>
+                      <Link to={path.to.shipment(shipment.id)}>
+                        <DropdownMenuIcon icon={<LuTruck />} />
+                        <HStack spacing={8}>
+                          <span>{shipment.shipmentId}</span>
+                          <ShipmentStatus status={shipment.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                leftIcon={<LuTruck />}
+                isDisabled={
+                  !["To Ship", "To Ship and Invoice"].includes(
+                    routeData?.salesOrder?.status ?? ""
+                  )
+                }
+                variant={
+                  ["To Ship", "To Ship and Invoice"].includes(
+                    routeData?.salesOrder?.status ?? ""
+                  )
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() => {
+                  ship(routeData?.salesOrder);
+                }}
+              >
+                Ship
+              </Button>
+            )}
+            {/* 
+            {invoices?.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<LuCreditCard />}
+                    rightIcon={<LuChevronDown />}
+                    variant={
+                      ["To Invoice", "To Ship and Invoice"].includes(
+                        routeData?.salesOrder?.status ?? ""
+                      )
+                        ? "primary"
+                        : "secondary"
+                    }
+                  >
+                    Invoice
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    disabled={
+                      !["To Invoice", "To Ship and Invoice"].includes(
+                        routeData?.salesOrder?.status ?? ""
+                      )
+                    }
+                    onClick={() => {
+                      invoice(routeData?.salesOrder);
+                    }}
+                  >
+                    <DropdownMenuIcon icon={<LuCirclePlus />} />
+                    New Invoice
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  {invoices.map((invoice) => (
+                    <DropdownMenuItem key={invoice.id} asChild>
+                      <Link to={path.to.salesInvoice(invoice.id!)}>
+                        <DropdownMenuIcon icon={<LuCreditCard />} />
+                        <HStack spacing={8}>
+                          <span>{invoice.invoiceId}</span>
+                          <SalesInvoiceStatus status={invoice.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                leftIcon={<LuCreditCard />}
+                isDisabled={
+                  !["To Invoice", "To Ship and Invoice"].includes(
+                    routeData?.salesOrder?.status ?? ""
+                  )
+                }
+                variant={
+                  ["To Invoice", "To Ship and Invoice"].includes(
+                    routeData?.salesOrder?.status ?? ""
+                  )
+                    ? "primary"
+                    : "secondary"
+                }
+                onClick={() => {
+                  invoice(routeData?.salesOrder);
+                }}
+              >
+                Invoice
+              </Button>
+            )} */}
 
             <statusFetcher.Form
               method="post"

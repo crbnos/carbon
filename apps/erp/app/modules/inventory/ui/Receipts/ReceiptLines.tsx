@@ -12,6 +12,13 @@ import {
   HStack,
   IconButton,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   NumberField,
   NumberInput,
   toast,
@@ -21,6 +28,7 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
+import { ValidatedForm, Number, Submit } from "@carbon/form";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import {
   Await,
@@ -38,9 +46,10 @@ import {
   LuCalendar,
   LuCircleAlert,
   LuGroup,
+  LuSplit,
   LuX,
 } from "react-icons/lu";
-import { DocumentPreview } from "~/components";
+import { DocumentPreview, Empty } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import FileDropzone from "~/components/FileDropzone";
@@ -48,11 +57,12 @@ import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
-import type {
-  BatchProperty,
-  Receipt,
-  ReceiptLine,
-  ReceiptLineTracking,
+import {
+  splitValidator,
+  type BatchProperty,
+  type ItemTracking,
+  type Receipt,
+  type ReceiptLine,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
 import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
@@ -73,7 +83,7 @@ const ReceiptLines = () => {
     receipt: Receipt;
     receiptLines: ReceiptLine[];
     receiptFiles: PostgrestResponse<StorageItem>;
-    receiptLineTracking: ReceiptLineTracking[];
+    receiptLineTracking: ItemTracking[];
     batchProperties: PostgrestResponse<BatchProperty>;
   }>(path.to.receipt(receiptId));
 
@@ -99,7 +109,7 @@ const ReceiptLines = () => {
         [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
           const serialNumber = routeData?.receiptLineTracking.find(
             (t) =>
-              t.receiptLineId === line.id &&
+              t.sourceDocumentLineId === line.id &&
               t.serialNumber !== null &&
               t.index === index
           )?.serialNumber;
@@ -123,7 +133,7 @@ const ReceiptLines = () => {
             (_, index) => {
               const serialNumber = routeData?.receiptLineTracking.find(
                 (t) =>
-                  t.receiptLineId === line.id &&
+                  t.sourceDocumentLineId === line.id &&
                   t.serialNumber !== null &&
                   t.index === index
               )?.serialNumber;
@@ -186,41 +196,47 @@ const ReceiptLines = () => {
 
         <CardContent>
           <div className="border rounded-lg">
-            {receiptLines.map((line, index) => (
-              <ReceiptLineItem
-                key={line.id}
-                line={line}
-                receipt={routeData?.receipt}
-                isReadOnly={isPosted}
-                onUpdate={onUpdateReceiptLine}
-                files={routeData?.receiptFiles}
-                className={
-                  index === receiptLines.length - 1 ? "border-none" : ""
-                }
-                serialNumbers={serialNumbersByLineId[line.id] || []}
-                getPath={(file) => getPath(file, line.id)}
-                onSerialNumbersChange={(newSerialNumbers) => {
-                  setSerialNumbersByLineId((prev) => ({
-                    ...prev,
-                    [line.id]: newSerialNumbers,
-                  }));
-                }}
-                batchProperties={routeData?.batchProperties}
-                batchNumber={
-                  routeData?.receiptLineTracking.find(
-                    (t) => t.receiptLineId === line.id && t.batchNumber !== null
-                  )?.batchNumber ?? {
-                    id: "",
-                    number: "",
-                    manufacturingDate: null,
-                    expirationDate: null,
-                    properties: {},
+            {receiptLines.length === 0 ? (
+              <Empty className="py-6" />
+            ) : (
+              receiptLines.map((line, index) => (
+                <ReceiptLineItem
+                  key={line.id}
+                  line={line}
+                  receipt={routeData?.receipt}
+                  isReadOnly={isPosted}
+                  onUpdate={onUpdateReceiptLine}
+                  files={routeData?.receiptFiles}
+                  className={
+                    index === receiptLines.length - 1 ? "border-none" : ""
                   }
-                }
-                upload={(files) => upload(files, line.id)}
-                deleteFile={(file) => deleteFile(file, line.id)}
-              />
-            ))}
+                  serialNumbers={serialNumbersByLineId[line.id] || []}
+                  getPath={(file) => getPath(file, line.id)}
+                  onSerialNumbersChange={(newSerialNumbers) => {
+                    setSerialNumbersByLineId((prev) => ({
+                      ...prev,
+                      [line.id]: newSerialNumbers,
+                    }));
+                  }}
+                  batchProperties={routeData?.batchProperties}
+                  batchNumber={
+                    routeData?.receiptLineTracking.find(
+                      (t) =>
+                        t.sourceDocumentLineId === line.id &&
+                        t.batchNumber !== null
+                    )?.batchNumber ?? {
+                      id: "",
+                      number: "",
+                      manufacturingDate: null,
+                      expirationDate: null,
+                      properties: {},
+                    }
+                  }
+                  upload={(files) => upload(files, line.id)}
+                  deleteFile={(file) => deleteFile(file, line.id)}
+                />
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -283,9 +299,24 @@ function ReceiptLineItem({
   const [items] = useItems();
   const item = items.find((p) => p.id === line.itemId);
   const unitsOfMeasure = useUnitOfMeasure();
+  const splitDisclosure = useDisclosure();
 
   return (
-    <div className={cn("flex flex-col border-b p-6 gap-6", className)}>
+    <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
+      <div className="absolute top-4 right-6">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <IconButton
+              aria-label="Split shipment line"
+              icon={<LuSplit />}
+              variant="ghost"
+              size="sm"
+              onClick={splitDisclosure.onOpen}
+            />
+          </TooltipTrigger>
+          <TooltipContent>Split shipment line</TooltipContent>
+        </Tooltip>
+      </div>
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
@@ -455,6 +486,12 @@ function ReceiptLineItem({
             </Await>
           </Suspense>
           <FileDropzone onDrop={upload} />
+          {splitDisclosure.isOpen && (
+            <SplitReceiptLineModal
+              line={line}
+              onClose={splitDisclosure.onClose}
+            />
+          )}
         </>
       )}
     </div>
@@ -523,8 +560,7 @@ function BatchForm({
     let valuesToSubmit = newValues;
 
     if (batchMatch.data) {
-      // Just update the local state without triggering another database write
-      setValues({
+      valuesToSubmit = {
         ...newValues,
         manufacturingDate: batchMatch.data.manufacturingDate
           ? parseDate(batchMatch.data.manufacturingDate)
@@ -533,8 +569,10 @@ function BatchForm({
           ? parseDate(batchMatch.data.expirationDate)
           : undefined,
         properties: batchMatch.data.properties ?? {},
-      });
-      return;
+      };
+
+      // Just update the local state without triggering another database write
+      setValues(valuesToSubmit);
     }
 
     const formData = new FormData();
@@ -852,6 +890,63 @@ function SerialForm({
         ))}
       </div>
     </div>
+  );
+}
+
+function SplitReceiptLineModal({
+  line,
+  onClose,
+}: {
+  line: ReceiptLine;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<{ success: boolean }>();
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ValidatedForm
+          method="post"
+          action={path.to.receiptLineSplit}
+          validator={splitValidator}
+          fetcher={fetcher}
+        >
+          <ModalHeader>
+            <ModalTitle>Split Receipt Line</ModalTitle>
+            <ModalDescription>
+              Select the quantity that you'd like to split into a new line.
+            </ModalDescription>
+          </ModalHeader>
+
+          <ModalBody>
+            <input type="hidden" name="documentId" value={line.receiptId} />
+            <input type="hidden" name="documentLineId" value={line.id} />
+            <input
+              type="hidden"
+              name="locationId"
+              value={line.locationId ?? ""}
+            />
+            <Number
+              name="quantity"
+              label="Quantity"
+              maxValue={line.orderQuantity - 0.0001}
+              minValue={0.0001}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit>Split Line</Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
 

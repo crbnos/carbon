@@ -89,9 +89,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId
   );
 
-  const receiptLineIds = batch.data.receiptLineTracking.map(
-    (receiptLine) => receiptLine.receiptLineId
-  );
+  const receiptLineIds = batch.data.itemTracking
+    .filter((tracking) => tracking.sourceDocument === "Receipt")
+    .map((tracking) => tracking.sourceDocumentId);
 
   return defer({
     batch: batch.data,
@@ -245,20 +245,7 @@ function BatchTransactions() {
   const { batch } = routeData;
 
   // Combine all tracking types and sort by time
-  const allTransactions = [
-    ...batch.receiptLineTracking.map((tracking) => ({
-      ...tracking,
-      type: "received" as const,
-    })),
-    ...(batch.jobMaterialTracking || []).map((tracking) => ({
-      ...tracking,
-      type: "consumed" as const,
-    })),
-    ...(batch.jobProductionTracking || []).map((tracking) => ({
-      ...tracking,
-      type: "produced" as const,
-    })),
-  ].sort(
+  const allTransactions = batch.itemTracking.sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
@@ -287,101 +274,82 @@ function BatchTransactions() {
                   No transactions found
                 </Empty>
               ) : (
-                allTransactions.map((transaction) => {
-                  if (transaction.type === "received") {
-                    return (
-                      <ReceivedTransaction
-                        key={transaction.id}
-                        transaction={transaction}
-                      />
-                    );
-                  }
-                  if (transaction.type === "consumed") {
-                    return (
-                      <ConsumedTransaction
-                        key={transaction.id}
-                        transaction={transaction}
-                      />
-                    );
-                  }
-                  if (transaction.type === "produced") {
-                    return (
-                      <ProducedTransaction
-                        key={transaction.id}
-                        transaction={transaction}
-                      />
-                    );
-                  }
-                  return null;
-                })
+                allTransactions.map((transaction) => (
+                  <Transaction key={transaction.id} transaction={transaction} />
+                ))
               )}
             </VStack>
           </TabsContent>
           <TabsContent className="w-full" value="received">
             <VStack className="w-full" spacing={4}>
-              {batch.receiptLineTracking.length === 0 ? (
+              {batch.itemTracking.filter(
+                (tracking) => tracking.sourceDocument === "Receipt"
+              ).length === 0 ? (
                 <Empty className="text-sm text-muted-foreground">
                   No received transactions found
                 </Empty>
               ) : (
-                batch.receiptLineTracking.map((receiptLine) => (
-                  <ReceivedTransaction
-                    key={receiptLine.id}
-                    transaction={{
-                      ...receiptLine,
-                      type: "received",
-                      createdAt: receiptLine.createdAt,
-                    }}
-                  />
-                ))
+                batch.itemTracking
+                  .filter((tracking) => tracking.sourceDocument === "Receipt")
+                  .map((tracking) => (
+                    <Transaction key={tracking.id} transaction={tracking} />
+                  ))
               )}
             </VStack>
           </TabsContent>
           <TabsContent className="w-full" value="consumed">
             <VStack className="w-full" spacing={4}>
-              {!batch.jobMaterialTracking?.length ? (
+              {batch.itemTracking.filter(
+                (tracking) => tracking.sourceDocument === "Job Material"
+              ).length === 0 ? (
                 <Empty className="text-sm text-muted-foreground">
                   No consumed transactions found
                 </Empty>
               ) : (
-                batch.jobMaterialTracking.map((tracking) => (
-                  <ConsumedTransaction
-                    key={tracking.id}
-                    transaction={{
-                      ...tracking,
-                      type: "consumed",
-                      createdAt: tracking.createdAt,
-                    }}
-                  />
-                ))
+                batch.itemTracking
+                  .filter(
+                    (tracking) => tracking.sourceDocument === "Job Material"
+                  )
+                  .map((tracking) => (
+                    <Transaction key={tracking.id} transaction={tracking} />
+                  ))
               )}
             </VStack>
           </TabsContent>
           <TabsContent className="w-full" value="produced">
             <VStack className="w-full" spacing={4}>
-              {!batch.jobProductionTracking?.length ? (
+              {batch.itemTracking.filter(
+                (tracking) => tracking.sourceDocument === "Job Production"
+              ).length === 0 ? (
                 <Empty className="text-sm text-muted-foreground">
                   No produced transactions found
                 </Empty>
               ) : (
-                batch.jobProductionTracking.map((tracking) => (
-                  <ProducedTransaction
-                    key={tracking.id}
-                    transaction={{
-                      ...tracking,
-                      type: "produced",
-                      createdAt: tracking.createdAt,
-                    }}
-                  />
-                ))
+                batch.itemTracking
+                  .filter(
+                    (tracking) => tracking.sourceDocument === "Job Production"
+                  )
+                  .map((tracking) => (
+                    <Transaction key={tracking.id} transaction={tracking} />
+                  ))
               )}
             </VStack>
           </TabsContent>
           <TabsContent className="w-full" value="shipped">
-            <VStack>
-              <Empty className="text-sm text-muted-foreground">
-                No shipped transactions found
-              </Empty>
+            <VStack className="w-full" spacing={4}>
+              {batch.itemTracking.filter(
+                (tracking) => tracking.sourceDocument === "Shipment"
+              ).length === 0 ? (
+                <Empty className="text-sm text-muted-foreground">
+                  No shipped transactions found
+                </Empty>
+              ) : (
+                batch.itemTracking
+                  .filter((tracking) => tracking.sourceDocument === "Shipment")
+                  .map((tracking) => (
+                    <Transaction key={tracking.id} transaction={tracking} />
+                  ))
+              )}
             </VStack>
           </TabsContent>
         </CardContent>
@@ -390,28 +358,66 @@ function BatchTransactions() {
   );
 }
 
-function ReceivedTransaction({
+function Transaction({
   transaction,
 }: {
-  transaction: BatchDetails["receiptLineTracking"][number] & {
-    type: "received";
-  };
+  transaction: BatchDetails["itemTracking"][number];
 }) {
+  const getTransactionDetails = () => {
+    switch (transaction.sourceDocument) {
+      case "Receipt":
+        return {
+          link: path.to.receipt(transaction.sourceDocumentId),
+          description: `Received from ${transaction.sourceDocumentReadableId}`,
+          showMoreMenu: true,
+        };
+      case "Job Material":
+        return {
+          link: path.to.jobMaterials(transaction.sourceDocumentId),
+          description: "Consumed by Job",
+          showMoreMenu: true,
+        };
+      case "Job Production":
+        return {
+          link: path.to.job(transaction.sourceDocumentId),
+          description: "Job Production",
+          showMoreMenu: false,
+        };
+      case "Shipment":
+        return {
+          link: path.to.shipment(transaction.sourceDocumentId),
+          description: "Shipped",
+          showMoreMenu: false,
+        };
+      default:
+        return {
+          link: "null",
+          description: "",
+          showMoreMenu: false,
+        };
+    }
+  };
+
+  const { link, description, showMoreMenu } = getTransactionDetails();
+
   return (
     <div className="flex flex-col border p-6 w-full rounded-lg">
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
-            <TransactionIcon type="received" />
+            <TransactionIcon type={transaction.sourceDocument} />
             <VStack spacing={0}>
-              <Hyperlink
-                to={path.to.receipt(transaction.receipt.id)}
-                className="text-sm font-medium"
-              >
-                {transaction.receipt.receiptId}
-              </Hyperlink>
+              {link ? (
+                <Hyperlink to={link} className="text-sm font-medium">
+                  {transaction.sourceDocumentReadableId}
+                </Hyperlink>
+              ) : (
+                <span className="text-sm font-medium">
+                  {transaction.sourceDocumentReadableId}
+                </span>
+              )}
               <span className="text-xs text-muted-foreground">
-                {`Received from ${transaction.receipt.sourceDocumentReadableId}`}
+                {description}
               </span>
             </VStack>
             <span className="text-base text-muted-foreground text-right">
@@ -429,122 +435,37 @@ function ReceivedTransaction({
               withName={false}
             />
           </HStack>
-          <MoreMenu link={path.to.receipt(transaction.receipt.id)} />
+          {showMoreMenu && <MoreMenu link={link} />}
         </div>
       </div>
     </div>
   );
 }
 
-function ConsumedTransaction({
-  transaction,
+function TransactionIcon({
+  type,
 }: {
-  transaction: BatchDetails["jobMaterialTracking"][number] & {
-    type: "consumed";
-  };
+  type: BatchDetails["itemTracking"][number]["sourceDocument"];
 }) {
-  return (
-    <div className="flex flex-col border p-6 w-full rounded-lg">
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4} className="flex-1">
-            <TransactionIcon type="consumed" />
-            <VStack spacing={0}>
-              <Hyperlink
-                to={path.to.jobMaterials(transaction.jobMaterial.job?.id)}
-                className="text-sm font-medium"
-              >
-                {transaction.jobMaterial.job?.jobId}
-              </Hyperlink>
-              <span className="text-xs text-muted-foreground">
-                Consumed by Job
-              </span>
-            </VStack>
-            <span className="text-base text-muted-foreground text-right">
-              {transaction.quantity}
-            </span>
-          </HStack>
-        </HStack>
-        <div className="flex items-center justify-end gap-2">
-          <HStack spacing={2}>
-            <span className="text-xs text-muted-foreground">
-              Created {formatRelativeTime(transaction.createdAt)}
-            </span>
-            <EmployeeAvatar
-              employeeId={transaction.createdBy}
-              withName={false}
-            />
-          </HStack>
-          <MoreMenu
-            link={path.to.jobMaterials(transaction.jobMaterial.job?.id)}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProducedTransaction({
-  transaction,
-}: {
-  transaction: BatchDetails["jobProductionTracking"][number] & {
-    type: "produced";
-  };
-}) {
-  return (
-    <div className="flex flex-col border p-6 w-full rounded-lg">
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4} className="flex-1">
-            <TransactionIcon type="produced" />
-            <VStack spacing={0}>
-              <span className="text-xs text-muted-foreground">
-                Job Production
-              </span>
-            </VStack>
-            <span className="text-base text-muted-foreground text-right">
-              {transaction.quantity}
-            </span>
-          </HStack>
-        </HStack>
-        <div className="flex items-center justify-end gap-2">
-          <HStack spacing={2}>
-            <span className="text-xs text-muted-foreground">
-              Created {formatRelativeTime(transaction.createdAt)}
-            </span>
-            <EmployeeAvatar
-              employeeId={transaction.createdBy}
-              withName={false}
-            />
-          </HStack>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-type TrasactionType = "received" | "consumed" | "produced" | "shipped";
-
-function TransactionIcon({ type }: { type: TrasactionType }) {
-  if (type === "received")
+  if (type === "Receipt")
     return (
       <div className="bg-blue-500 text-white border rounded-full flex items-center justify-center p-2">
         <LuHandCoins className="size-4" />
       </div>
     );
-  if (type === "consumed")
+  if (type === "Job Material")
     return (
       <div className="bg-orange-500 text-white border rounded-full flex items-center justify-center p-2">
         <LuFactory className="size-4" />
       </div>
     );
-  if (type === "produced")
+  if (type === "Job Production")
     return (
       <div className="bg-emerald-500 text-zinc-900 border rounded-full flex items-center justify-center p-2">
         <LuHammer className="size-4" />
       </div>
     );
-  if (type === "shipped")
+  if (type === "Shipment")
     return (
       <div className="bg-yellow-500 text-zinc-900 border rounded-full flex items-center justify-center p-2">
         <LuTruck className="size-4" />

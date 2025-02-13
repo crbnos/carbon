@@ -17,6 +17,8 @@ export const path = {
       assign: `${api}/assign`,
       autodeskToken: `${api}/autodesk/token`,
       autodeskUpload: `${api}/autodesk/upload`,
+      batchNumbers: (itemId: string) =>
+        generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
       countries: `${api}/countries`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
@@ -59,6 +61,10 @@ export const path = {
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
+      serialNumbers: (itemId: string, isReadOnly: boolean) =>
+        generatePath(
+          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}`
+        ),
       services: `${api}/items/services`,
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),
@@ -94,6 +100,7 @@ export const path = {
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
+      shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },
     legal: {
@@ -156,6 +163,7 @@ export const path = {
     bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
+    bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
@@ -346,7 +354,6 @@ export const path = {
       ),
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
-
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
@@ -361,6 +368,7 @@ export const path = {
       generatePath(`${x}/production/scrap-reasons/delete/${id}`),
     deleteShift: (id: string) =>
       generatePath(`${x}/people/shifts/delete/${id}`),
+    deleteShipment: (id: string) => generatePath(`${x}/shipment/${id}/delete`),
     deleteShippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/delete/${id}`),
     deleteSupplierContact: (supplierId: string, id: string) =>
@@ -592,13 +600,17 @@ export const path = {
     newQuoteMaterial: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
+    newSalesInvoice: `${x}/sales-invoice/new`,
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/new`),
+    newSalesOrderLineShipment: (id: string, lineId: string) =>
+      generatePath(`${x}/sales-order/${id}/${lineId}/shipment`),
     newSalesRFQ: `${x}/sales-rfq/new`,
     newSalesRFQLine: (id: string) => generatePath(`${x}/sales-rfq/${id}/new`),
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newShelf: `${x}/inventory/shelves/new`,
+    newShipment: `${x}/shipment/new`,
     newShift: `${x}/people/shifts/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
     newService: `${x}/service/new`,
@@ -771,6 +783,7 @@ export const path = {
     receipt: (id: string) => generatePath(`${x}/receipt/${id}`),
     receiptInvoice: (id: string) => generatePath(`${x}/receipt/${id}/invoice`),
     receiptDetails: (id: string) => generatePath(`${x}/receipt/${id}/details`),
+    receiptLineSplit: `${x}/receipt/lines/split`,
     receiptLines: (id: string) => generatePath(`${x}/receipt/${id}/lines`),
     receiptLinesTracking: (id: string) =>
       generatePath(`${x}/receipt/lines/tracking`),
@@ -785,6 +798,7 @@ export const path = {
     root: "/",
     routings: `${x}/items/routing`,
     sales: `${x}/sales`,
+    salesInvoice: (id: string) => generatePath(`${x}/sales-invoice/${id}`),
     salesInvoices: `${x}/invoicing/sales`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderShipment: (id: string) =>
@@ -852,6 +866,13 @@ export const path = {
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipments: `${x}/inventory/shipments`,
+    shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
+    shipmentDetails: (id: string) =>
+      generatePath(`${x}/shipment/${id}/details`),
+    shipmentLineSplit: `${x}/shipment/lines/split`,
+    shipmentLinesTracking: (id: string) =>
+      generatePath(`${x}/shipment/lines/tracking`),
+    shipmentPost: (id: string) => generatePath(`${x}/shipment/${id}/post`),
     shippingMethod: (id: string) =>
       generatePath(`${x}/inventory/shipping-methods/${id}`),
     shippingMethods: `${x}/inventory/shipping-methods`,

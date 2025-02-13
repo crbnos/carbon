@@ -20,6 +20,7 @@ import type {
   getQuotes,
   getQuoteShipment,
   getSalesOrderLines,
+  getSalesOrderLineShipments,
   getSalesOrders,
   getSalesRFQLines,
   getSalesRFQs,
@@ -141,6 +142,10 @@ export type SalesOrderJob = {
 
 export type SalesOrderLine = NonNullable<
   Awaited<ReturnType<typeof getSalesOrderLines>>["data"]
+>[number];
+
+export type SalesOrderLineShipment = NonNullable<
+  Awaited<ReturnType<typeof getSalesOrderLineShipments>>["data"]
 >[number];
 
 export type SalesOrderLineType = Omit<

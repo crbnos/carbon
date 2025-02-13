@@ -67,10 +67,10 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // Check if serial number already exists for this item
     const { data: existingSerial, error: queryError } = await client
       .from("serialNumber")
-      .select("id, receiptLineTracking(id)")
+      .select("id, itemTracking(id)")
       .eq("number", serialNumber)
       .eq("itemId", itemId)
-      .neq("receiptLineTracking.receiptLineId", receiptLineId)
+      .neq("itemTracking.sourceDocumentLineId", receiptLineId)
       .eq("companyId", companyId)
       .maybeSingle();
 
@@ -79,8 +79,8 @@ export async function action({ request, context }: ActionFunctionArgs) {
     }
 
     if (
-      Array.isArray(existingSerial?.receiptLineTracking) &&
-      existingSerial?.receiptLineTracking?.length > 0
+      Array.isArray(existingSerial?.itemTracking) &&
+      existingSerial?.itemTracking?.length > 0
     ) {
       return json(
         { error: "Serial number already exists for this item" },
