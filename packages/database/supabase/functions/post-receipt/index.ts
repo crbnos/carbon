@@ -161,11 +161,14 @@ serve(async (req: Request) => {
               Database["public"]["Tables"]["itemTracking"]["Update"]
             >
           >((acc, itemTracking) => {
-            const quantity =
-              receiptLines.data?.find(
-                (receiptLine) =>
-                  receiptLine.id === itemTracking.sourceDocumentLineId
-              )?.receivedQuantity ?? itemTracking.quantity;
+            const receiptLine = receiptLines.data?.find(
+              (receiptLine) =>
+                receiptLine.id === itemTracking.sourceDocumentLineId
+            );
+
+            const quantity = receiptLine?.requiresSerialTracking
+              ? 1
+              : receiptLine?.receivedQuantity ?? itemTracking.quantity;
 
             acc[itemTracking.id] = {
               posted: true,
