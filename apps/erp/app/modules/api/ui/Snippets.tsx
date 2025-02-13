@@ -130,7 +130,7 @@ curl '${endpoint}/rest/v1/' \\
       language: "js",
       code: `
 const SUPABASE_URL = "${endpoint}"
-const supabase = createClient(SUPABASE_URL, process.env.${
+const carbon = createClient(SUPABASE_URL, process.env.${
         keyName || "SUPABASE_KEY"
       });
 `,
@@ -191,7 +191,7 @@ else console.log(data)
     js: {
       language: "js",
       code: `
-const ${listenerName} = supabase.channel('custom-all-channel')
+const ${listenerName} = carbon.channel('custom-all-channel')
   .on(
     'postgres_changes',
     { event: '*', schema: 'public', table: '${resourceId}' },
@@ -211,7 +211,7 @@ const ${listenerName} = supabase.channel('custom-all-channel')
     js: {
       language: "js",
       code: `
-const ${listenerName} = supabase.channel('custom-insert-channel')
+const ${listenerName} = carbon.channel('custom-insert-channel')
   .on(
     'postgres_changes',
     { event: 'INSERT', schema: 'public', table: '${resourceId}' },
@@ -231,7 +231,7 @@ const ${listenerName} = supabase.channel('custom-insert-channel')
     js: {
       language: "js",
       code: `
-const ${listenerName} = supabase.channel('custom-update-channel')
+const ${listenerName} = carbon.channel('custom-update-channel')
   .on(
     'postgres_changes',
     { event: 'UPDATE', schema: 'public', table: '${resourceId}' },
@@ -251,7 +251,7 @@ const ${listenerName} = supabase.channel('custom-update-channel')
     js: {
       language: "js",
       code: `
-const ${listenerName} = supabase.channel('custom-delete-channel')
+const ${listenerName} = carbon.channel('custom-delete-channel')
   .on(
     'postgres_changes',
     { event: 'DELETE', schema: 'public', table: '${resourceId}' },
@@ -276,7 +276,7 @@ const ${listenerName} = supabase.channel('custom-delete-channel')
     js: {
       language: "js",
       code: `
-const ${listenerName} = supabase.channel('custom-filter-channel')
+const ${listenerName} = carbon.channel('custom-filter-channel')
   .on(
     'postgres_changes',
     { event: '*', schema: 'public', table: '${resourceId}', filter: '${columnName}=eq.${value}' },

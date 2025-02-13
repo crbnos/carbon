@@ -10,7 +10,7 @@ export const config = {
 };
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { userId, companyId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
   const validation = await validator(feedbackValidator).validate(formData);
@@ -26,7 +26,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const slackClient = getSlackClient();
 
-  const [user, insertFeedback] = await Promise.all([
+  const [company, user, insertFeedback] = await Promise.all([
+    serviceRole
+      .from("company")
+      .select("slackChannel")
+      .eq("id", companyId)
+      .single(),
     serviceRole
       .from("user")
       .select("firstName,lastName,email")
@@ -49,8 +54,16 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  let channel = "#feedback";
+  if (company.data?.slackChannel) {
+    channel = company.data.slackChannel;
+    if (!channel.startsWith("#")) {
+      channel = `#${channel}`;
+    }
+  }
+
   await slackClient.sendMessage({
-    channel: "#feedback",
+    channel,
     text: `New feedback submitted`,
     blocks: [
       {
