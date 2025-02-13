@@ -600,6 +600,7 @@ export const salesOrderLineValidator = z
       }),
     }),
     accountNumber: zfd.text(z.string().optional()),
+    shippingCost: zfd.numeric(z.number().optional()),
     addOnCost: zfd.numeric(z.number().optional()),
     assetId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),

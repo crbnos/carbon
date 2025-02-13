@@ -8,6 +8,7 @@ import type { PDF } from "../types";
 import {
   getLineDescription,
   getLineDescriptionDetails,
+  getLineTaxesAndFees,
   getLineTotal,
   getTotal,
 } from "../utils/sales-order";
@@ -224,10 +225,7 @@ const SalesOrderPDF = ({
                 <Text style={tw("w-1/6 text-right")}>
                   {line.salesOrderLineType === "Comment"
                     ? null
-                    : formatter.format(
-                        (line.convertedAddOnCost ?? 0) +
-                          (line.convertedShippingCost ?? 0)
-                      )}
+                    : formatter.format(getLineTaxesAndFees(line))}
                 </Text>
                 <Text style={tw("w-1/6 text-right")}>
                   {line.salesOrderLineType === "Comment"

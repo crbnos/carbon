@@ -49,6 +49,16 @@ export function getLineSubtotal(
   return 0;
 }
 
+export function getLineTaxesAndFees(
+  line: Database["public"]["Views"]["salesOrderLines"]["Row"]
+) {
+  const taxPercent = line.taxPercent ?? 0;
+  const tax = getLineSubtotal(line) * taxPercent;
+  const fees =
+    (line.convertedAddOnCost ?? 0) + (line.convertedShippingCost ?? 0);
+  return tax + fees;
+}
+
 export function getLineTotal(
   line: Database["public"]["Views"]["salesOrderLines"]["Row"]
 ) {
