@@ -1,13 +1,9 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { postTransactionTask } from "~/trigger/post-transaction";
 import { path } from "~/utils/path";
-
-export const config = { runtime: "nodejs" };
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -34,12 +30,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await tasks.trigger<typeof postTransactionTask>("post-transactions", {
-    type: "shipment",
-    documentId: shipmentId,
-    userId,
-    companyId,
-  });
+  try {
+    const serviceRole = await getCarbonServiceRole();
+    const postShipment = await serviceRole.functions.invoke("post-shipment", {
+      body: {
+        shipmentId: shipmentId,
+        userId: userId,
+        companyId: companyId,
+      },
+    });
+
+    if (postShipment.error) {
+      await client
+        .from("shipment")
+        .update({
+          status: "Draft",
+        })
+        .eq("id", shipmentId);
+
+      throw redirect(
+        path.to.shipments,
+        await flash(
+          request,
+          error(postShipment.error, "Failed to post shipment")
+        )
+      );
+    }
+  } catch (error) {
+    await client
+      .from("shipment")
+      .update({
+        status: "Draft",
+      })
+      .eq("id", shipmentId);
+  }
 
   throw redirect(path.to.shipments);
 }

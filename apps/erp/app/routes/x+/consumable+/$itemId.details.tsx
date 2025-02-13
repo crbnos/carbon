@@ -23,12 +23,8 @@ import {
   upsertConsumable,
 } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
-import type {
-  UsedInNode} from "~/modules/items/ui/Item/UsedIn";
-import {
-  UsedInSkeleton,
-  UsedInTree,
-} from "~/modules/items/ui/Item/UsedIn";
+import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
+import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
 
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -116,6 +112,8 @@ export default function ConsumableDetailsRoute() {
                       purchaseOrderLines,
                       receiptLines,
                       quoteMaterials,
+                      salesOrderLines,
+                      shipmentLines,
                     } = resolvedUsedIn;
 
                     const tree: UsedInNode[] = [
@@ -157,6 +155,21 @@ export default function ConsumableDetailsRoute() {
                         children: quoteMaterials?.map((qm) => ({
                           ...qm,
                           documentReadableId: qm.documentReadableId ?? "",
+                        })),
+                      },
+                      {
+                        key: "salesOrderLines",
+                        name: "Sales Orders",
+                        module: "sales",
+                        children: salesOrderLines,
+                      },
+                      {
+                        key: "shipmentLines",
+                        name: "Shipments",
+                        module: "inventory",
+                        children: shipmentLines.map((shipment) => ({
+                          ...shipment,
+                          methodType: "Shipment",
                         })),
                       },
                     ];

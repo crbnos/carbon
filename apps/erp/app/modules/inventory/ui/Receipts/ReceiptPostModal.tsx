@@ -16,7 +16,7 @@ import {
   toast,
   useMount,
 } from "@carbon/react";
-import { Form, useNavigation, useParams } from "@remix-run/react";
+import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
@@ -109,6 +109,8 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     getReceiptLines();
   });
 
+  const fetcher = useFetcher<{}>();
+
   return (
     <Modal
       open={true}
@@ -152,9 +154,11 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             <Button variant="solid" onClick={onClose}>
               Cancel
             </Button>
-            <Form action={path.to.receiptPost(receiptId)} method="post">
+            <fetcher.Form action={path.to.receiptPost(receiptId)} method="post">
               <Button
+                isLoading={fetcher.state !== "idle"}
                 isDisabled={
+                  fetcher.state !== "idle" ||
                   navigation.state !== "idle" ||
                   !validated ||
                   validationErrors.length > 0
@@ -163,7 +167,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
               >
                 Post Receipt
               </Button>
-            </Form>
+            </fetcher.Form>
           </HStack>
         </ModalFooter>
       </ModalContent>

@@ -490,6 +490,8 @@ export async function getMaterialUsedIn(
     purchaseOrderLines,
     receiptLines,
     quoteMaterials,
+    salesOrderLines,
+    shipmentLines,
   ] = await Promise.all([
     client
       .from("jobMaterial")
@@ -522,6 +524,18 @@ export async function getMaterialUsedIn(
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
+    client
+      .from("salesOrderLine")
+      .select(
+        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("shipmentLine")
+      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
   ]);
 
   return {
@@ -530,6 +544,8 @@ export async function getMaterialUsedIn(
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     receiptLines: receiptLines.data ?? [],
     quoteMaterials: quoteMaterials.data ?? [],
+    salesOrderLines: salesOrderLines.data ?? [],
+    shipmentLines: shipmentLines.data ?? [],
   };
 }
 
@@ -547,6 +563,7 @@ export async function getPartUsedIn(
     quoteLines,
     quoteMaterials,
     salesOrderLines,
+    shipmentLines,
   ] = await Promise.all([
     client
       .from("jobMaterial")
@@ -598,6 +615,11 @@ export async function getPartUsedIn(
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
+    client
+      .from("shipmentLine")
+      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
   ]);
 
   return {
@@ -609,6 +631,7 @@ export async function getPartUsedIn(
     quoteLines: quoteLines.data ?? [],
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
+    shipmentLines: shipmentLines.data ?? [],
   };
 }
 

@@ -51,8 +51,9 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import {
+  splitValidator} from "~/modules/inventory";
+import type {
   getBatchNumbersForItem,
-  splitValidator,
   type BatchProperty,
   type getSerialNumbersForItem,
   type Shipment,
@@ -320,7 +321,7 @@ function ShipmentLineItem({
               </div>
             </VStack>
             <VStack spacing={1}>
-              <label className="text-xs text-muted-foreground">Received</label>
+              <label className="text-xs text-muted-foreground">Shipped</label>
 
               <NumberField
                 value={line.shippedQuantity}

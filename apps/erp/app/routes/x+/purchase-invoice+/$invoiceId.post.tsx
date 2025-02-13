@@ -1,10 +1,8 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { postTransactionTask } from "~/trigger/post-transaction";
 import { path } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };
@@ -34,12 +32,70 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await tasks.trigger<typeof postTransactionTask>("post-transactions", {
-    type: "purchase-invoice",
-    documentId: invoiceId,
-    userId,
-    companyId,
-  });
+  try {
+    const serviceRole = await getCarbonServiceRole();
+    const postPurchaseInvoice = await serviceRole.functions.invoke(
+      "post-purchase-invoice",
+      {
+        body: {
+          invoiceId: invoiceId,
+          userId: userId,
+          companyId: companyId,
+        },
+      }
+    );
+
+    if (postPurchaseInvoice.error) {
+      await client
+        .from("purchaseInvoice")
+        .update({
+          status: "Draft",
+        })
+        .eq("id", invoiceId);
+
+      throw redirect(
+        path.to.purchaseInvoices,
+        await flash(
+          request,
+          error(postPurchaseInvoice.error, "Failed to post purchase invoice")
+        )
+      );
+    }
+
+    const priceUpdate = await serviceRole.functions.invoke(
+      "update-purchased-prices",
+      {
+        body: {
+          invoiceId: invoiceId,
+          companyId: companyId,
+        },
+      }
+    );
+
+    if (priceUpdate.error) {
+      await client
+        .from("purchaseInvoice")
+        .update({
+          status: "Draft",
+        })
+        .eq("id", invoiceId);
+
+      throw redirect(
+        path.to.purchaseInvoices,
+        await flash(
+          request,
+          error(priceUpdate.error, "Failed to update prices")
+        )
+      );
+    }
+  } catch (error) {
+    await client
+      .from("purchaseInvoice")
+      .update({
+        status: "Draft",
+      })
+      .eq("id", invoiceId);
+  }
 
   throw redirect(path.to.purchaseInvoices);
 }

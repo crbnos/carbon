@@ -9,11 +9,11 @@ import {
   Count,
 } from "@carbon/react";
 import { useState } from "react";
-import { LuSearch, LuChevronRight } from "react-icons/lu";
+import { LuSearch, LuChevronRight, LuShip } from "react-icons/lu";
 import { MethodIcon, Hyperlink } from "~/components";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
-import { MethodItemType } from "~/modules/shared";
+import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getLinkToItemManufacturing } from "./ItemForm";
 
@@ -36,7 +36,8 @@ export type UsedInKey =
   | "receiptLines"
   | "quoteLines"
   | "quoteMaterials"
-  | "salesOrderLines";
+  | "salesOrderLines"
+  | "shipmentLines";
 
 export type UsedInNode = {
   key: UsedInKey;
@@ -147,10 +148,14 @@ export function UsedInItem({
                 className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium"
               >
                 <LevelLine isSelected={false} className="mr-2" />
-                <MethodIcon
-                  type={child.methodType ?? "Method"}
-                  className="mr-2"
-                />
+                {child.methodType === "Shipment" ? (
+                  <LuShip className="mr-2" />
+                ) : (
+                  <MethodIcon
+                    type={child.methodType ?? "Method"}
+                    className="mr-2"
+                  />
+                )}
                 {child.documentReadableId}
               </Hyperlink>
             ))
