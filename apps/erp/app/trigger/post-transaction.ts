@@ -84,6 +84,7 @@ export const postTransactionTask = task({
       case "shipment":
         console.info(`📫 Posting shipment ${payload.documentId}`);
         console.info(payload);
+
         const postShipment = await serviceRole.functions.invoke(
           "post-shipment",
           {

@@ -31,4 +31,4 @@ jobs:
           TRIGGER_ACCESS_TOKEN: ${{ secrets.TRIGGER_ACCESS_TOKEN }}
         run: |
           cd apps/erp
-          npx trigger.dev@3.0.12 deploy
+          npx trigger.dev@3.3.12 deploy
