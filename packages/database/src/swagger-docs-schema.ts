@@ -159,186 +159,6 @@ export default {
         tags: ["purchaseInvoiceStatusHistory"],
       },
     },
-    "/itemInventory": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.shelfId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnHand",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnPurchase",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnSalesOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.tags",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/itemInventory",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["itemInventory"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.itemInventory",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["itemInventory"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.shelfId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnHand",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnPurchase",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnSalesOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.tags",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["itemInventory"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.itemId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.locationId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.shelfId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.companyId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnHand",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnPurchase",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnSalesOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.quantityOnProductionOrder",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemInventory.tags",
-          },
-          {
-            $ref: "#/parameters/body.itemInventory",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["itemInventory"],
-      },
-    },
     "/userPermission": {
       get: {
         parameters: [
@@ -22803,6 +22623,111 @@ export default {
         tags: ["quoteOperationsWithMakeMethods"],
       },
     },
+    "/shipmentLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.shipmentId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.lineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.outstandingQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.shippedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLines.description",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/shipmentLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["shipmentLines"],
+      },
+    },
     "/oauthToken": {
       get: {
         parameters: [
@@ -42507,6 +42432,85 @@ export default {
         tags: ["(rpc) get_active_job_operations_by_location"],
       },
     },
+    "/rpc/get_job_quantity_on_hand": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "job_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_quantity_on_hand"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                job_id: {
+                  format: "text",
+                  type: "string",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["job_id", "company_id", "location_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_job_quantity_on_hand"],
+      },
+    },
     "/rpc/get_companies_with_employee_role": {
       get: {
         produces: [
@@ -42659,6 +42663,85 @@ export default {
           },
         },
         tags: ["(rpc) xid_machine"],
+      },
+    },
+    "/rpc/get_item_quantities_by_shelf_batch_serial": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_item_quantities_by_shelf_batch_serial"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                item_id: {
+                  format: "text",
+                  type: "string",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["item_id", "company_id", "location_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_item_quantities_by_shelf_batch_serial"],
       },
     },
     "/rpc/get_custom_field_unique_values": {
@@ -44329,6 +44412,74 @@ export default {
         tags: ["(rpc) is_claims_admin"],
       },
     },
+    "/rpc/get_inventory_quantities": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_inventory_quantities"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["company_id", "location_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_inventory_quantities"],
+      },
+    },
     "/rpc/get_job_method": {
       get: {
         parameters: [
@@ -44780,63 +44931,6 @@ export default {
           },
         },
         tags: ["(rpc) create_rfq_from_models_v1"],
-      },
-    },
-    "/rpc/get_item_quantities": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "location_id",
-            required: true,
-            type: "string",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) get_item_quantities"],
-      },
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                location_id: {
-                  format: "text",
-                  type: "string",
-                },
-              },
-              required: ["location_id"],
-              type: "object",
-            },
-          },
-          {
-            $ref: "#/parameters/preferParams",
-          },
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json",
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-          },
-        },
-        tags: ["(rpc) get_item_quantities"],
       },
     },
     "/rpc/get_job_operations_by_work_center": {
@@ -45310,77 +45404,6 @@ export default {
           default: "now()",
           format: "timestamp with time zone",
           type: "string",
-        },
-      },
-      type: "object",
-    },
-    itemInventory: {
-      required: [
-        "id",
-        "itemId",
-        "companyId",
-        "quantityOnHand",
-        "quantityOnPurchase",
-        "quantityOnSalesOrder",
-        "quantityOnProductionOrder",
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        locationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        shelfId: {
-          description:
-            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        quantityOnHand: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnPurchase: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnSalesOrder: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        quantityOnProductionOrder: {
-          default: 0,
-          format: "numeric",
-          type: "number",
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
         },
       },
       type: "object",
@@ -55924,6 +55947,108 @@ export default {
       },
       type: "object",
     },
+    shipmentLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        shipmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shipment.id`.<fk table='shipment' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        lineId: {
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        orderQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        outstandingQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        shippedQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        requiresSerialTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresBatchTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     oauthToken: {
       required: [
         "id",
@@ -64622,85 +64747,6 @@ export default {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
-      in: "query",
-      type: "string",
-    },
-    "body.itemInventory": {
-      name: "itemInventory",
-      description: "itemInventory",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/itemInventory",
-      },
-    },
-    "rowFilter.itemInventory.id": {
-      name: "id",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.itemId": {
-      name: "itemId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.locationId": {
-      name: "locationId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.shelfId": {
-      name: "shelfId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.companyId": {
-      name: "companyId",
-      required: false,
-      format: "text",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.quantityOnHand": {
-      name: "quantityOnHand",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.quantityOnPurchase": {
-      name: "quantityOnPurchase",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.quantityOnSalesOrder": {
-      name: "quantityOnSalesOrder",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.quantityOnProductionOrder": {
-      name: "quantityOnProductionOrder",
-      required: false,
-      format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemInventory.tags": {
-      name: "tags",
-      required: false,
-      format: "text[]",
       in: "query",
       type: "string",
     },
@@ -78329,6 +78375,162 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.shipmentLines": {
+      name: "shipmentLines",
+      description: "shipmentLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/shipmentLines",
+      },
+    },
+    "rowFilter.shipmentLines.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.shipmentId": {
+      name: "shipmentId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.lineId": {
+      name: "lineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.orderQuantity": {
+      name: "orderQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.outstandingQuantity": {
+      name: "outstandingQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.shippedQuantity": {
+      name: "shippedQuantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.shelfId": {
+      name: "shelfId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.requiresSerialTracking": {
+      name: "requiresSerialTracking",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.requiresBatchTracking": {
+      name: "requiresBatchTracking",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLines.description": {
+      name: "description",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

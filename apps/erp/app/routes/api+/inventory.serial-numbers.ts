@@ -15,5 +15,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return json(await getSerialNumbersForItem(client, companyId, itemId));
+  const isReadOnly = url.searchParams.get("isReadOnly") === "true";
+
+  return json(
+    await getSerialNumbersForItem(client, companyId, itemId, isReadOnly)
+  );
 }

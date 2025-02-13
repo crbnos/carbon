@@ -59,7 +59,7 @@ const ShipmentForm = ({ initialValues, status }: ShipmentFormProps) => {
     customerId,
     setLocationId,
     setSourceDocument,
-  } = useShipmentForm();
+  } = useShipmentForm({ status, initialValues });
 
   const isPosted = status === "Posted";
   const isEditing = initialValues.id !== undefined;

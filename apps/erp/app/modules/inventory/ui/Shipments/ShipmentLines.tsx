@@ -43,9 +43,8 @@ import {
   LuCircleAlert,
   LuGroup,
   LuSplit,
-  LuX,
 } from "react-icons/lu";
-import { DocumentPreview, Empty } from "~/components";
+import { Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
@@ -690,7 +689,7 @@ function SerialForm({
   ) => void;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
-  const { options } = useSerialNumbers(line.itemId);
+  const { options } = useSerialNumbers(line.itemId, isReadOnly);
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
@@ -933,13 +932,13 @@ const usePendingShipmentLines = () => {
 
 export default ShipmentLines;
 
-export function useSerialNumbers(itemId?: string) {
+export function useSerialNumbers(itemId?: string, isReadOnly = false) {
   const serialNumbersFetcher =
     useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
 
   useEffect(() => {
     if (itemId) {
-      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId));
+      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId, isReadOnly));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);

@@ -1,5 +1,6 @@
 import {
   Button,
+  DropdownMenu,
   HStack,
   Heading,
   IconButton,
@@ -8,6 +9,7 @@ import {
 import { Link, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
+  LuFile,
   LuPanelLeft,
   LuPanelRight,
   LuShoppingCart,
@@ -61,6 +63,17 @@ const ShipmentHeader = () => {
             <ShipmentStatus status={routeData?.shipment?.status} />
           </HStack>
           <HStack>
+            <DropdownMenu>
+              <Button variant="secondary" leftIcon={<LuFile />} asChild>
+                <a
+                  target="_blank"
+                  href={path.to.file.shipment(shipmentId)}
+                  rel="noreferrer"
+                >
+                  Packing Slip
+                </a>
+              </Button>
+            </DropdownMenu>
             <SourceDocumentLink
               sourceDocument={routeData.shipment.sourceDocument ?? undefined}
               sourceDocumentId={

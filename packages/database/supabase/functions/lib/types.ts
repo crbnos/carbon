@@ -6888,95 +6888,6 @@ export type Database = {
           },
         ]
       }
-      itemInventory: {
-        Row: {
-          companyId: string
-          id: string
-          itemId: string
-          locationId: string | null
-          quantityOnHand: number
-          quantityOnProductionOrder: number
-          quantityOnPurchase: number
-          quantityOnSalesOrder: number
-          shelfId: string | null
-          tags: string[] | null
-        }
-        Insert: {
-          companyId: string
-          id?: string
-          itemId: string
-          locationId?: string | null
-          quantityOnHand?: number
-          quantityOnProductionOrder?: number
-          quantityOnPurchase?: number
-          quantityOnSalesOrder?: number
-          shelfId?: string | null
-          tags?: string[] | null
-        }
-        Update: {
-          companyId?: string
-          id?: string
-          itemId?: string
-          locationId?: string | null
-          quantityOnHand?: number
-          quantityOnProductionOrder?: number
-          quantityOnPurchase?: number
-          quantityOnSalesOrder?: number
-          shelfId?: string | null
-          tags?: string[] | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemInventory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemInventory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemInventory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemInventory_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemInventory_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemInventory_locationId_fkey"
-            columns: ["locationId"]
-            isOneToOne: false
-            referencedRelation: "location"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemInventory_shelfId_fkey"
-            columns: ["shelfId"]
-            isOneToOne: false
-            referencedRelation: "shelf"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       itemLedger: {
         Row: {
           batchNumber: string | null
@@ -31738,14 +31649,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32680,6 +32591,131 @@ export type Database = {
           },
           {
             foreignKeyName: "shifts_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      shipmentLines: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          description: string | null
+          id: string | null
+          itemId: string | null
+          itemReadableId: string | null
+          lineId: string | null
+          locationId: string | null
+          orderQuantity: number | null
+          outstandingQuantity: number | null
+          requiresBatchTracking: boolean | null
+          requiresSerialTracking: boolean | null
+          shelfId: string | null
+          shipmentId: string | null
+          shippedQuantity: number | null
+          thumbnailPath: string | null
+          unitOfMeasure: string | null
+          unitPrice: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -34578,21 +34614,6 @@ export type Database = {
           _xid: unknown
         }
         Returns: string
-      }
-      your_function_name: {
-        Args: {
-          item_id: string
-          company_id: string
-          location_id: string
-        }
-        Returns: {
-          itemId: string
-          shelfId: string
-          shelfName: string
-          batchNumber: string
-          serialNumber: string
-          quantity: number
-        }[]
       }
     }
     Enums: {

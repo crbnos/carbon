@@ -1,38 +1,45 @@
 import { useCarbon } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
-import { useRouteData, useUser } from "~/hooks";
-import type {
-  Shipment,
-  ShipmentSourceDocument,
-} from "~/modules/inventory/types";
+import { useUser } from "~/hooks";
+import type { z } from "zod";
+import type { ShipmentSourceDocument } from "~/modules/inventory/types";
+import { shipmentStatusType, shipmentValidator } from "~/modules/inventory";
 import type { ListItem } from "~/types";
-import { path } from "~/utils/path";
 
-export default function useShipmentForm() {
+export default function useShipmentForm({
+  status,
+  initialValues,
+}: {
+  initialValues: z.infer<typeof shipmentValidator>;
+  status: (typeof shipmentStatusType)[number];
+}) {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
-
-  const shipmentData = useRouteData<{
-    shipment: Shipment;
-  }>(path.to.shipment(shipmentId));
-  if (!shipmentData) throw new Error("Could not find shipmentData");
-  const shipment = shipmentData.shipment;
 
   const user = useUser();
   const [error, setError] = useState<string | null>(null);
   const { carbon } = useCarbon();
 
   const [locationId, setLocationId] = useState<string | null>(
-    shipment.locationId ?? user.defaults.locationId ?? null
+    initialValues.locationId ?? user.defaults.locationId ?? null
   );
-  const [customerId, setSupplierId] = useState<string | null>(
-    shipment.customerId ?? null
+  const [customerId, setCustomerId] = useState<string | null>(
+    initialValues.customerId ?? null
   );
 
-  const [sourceDocuments, setSourceDocuments] = useState<ListItem[]>([]);
+  const [sourceDocuments, setSourceDocuments] = useState<ListItem[]>(() => {
+    return status === "Posted"
+      ? [
+          {
+            id: initialValues.sourceDocumentId!,
+            name: initialValues.sourceDocumentReadableId!,
+          },
+        ]
+      : [];
+  });
   const [sourceDocument, setSourceDocument] = useState<ShipmentSourceDocument>(
-    shipment.sourceDocument ?? "Sales Order"
+    initialValues.sourceDocument ?? "Sales Order"
   );
 
   const fetchSourceDocuments = useCallback(() => {
@@ -64,8 +71,11 @@ export default function useShipmentForm() {
   }, [sourceDocument, carbon, user.company.id]);
 
   useEffect(() => {
-    fetchSourceDocuments();
-  }, [fetchSourceDocuments, sourceDocument]);
+    if (status !== "Posted") {
+      fetchSourceDocuments();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sourceDocument, status]);
 
   return {
     error,
@@ -74,6 +84,6 @@ export default function useShipmentForm() {
     sourceDocuments,
     setLocationId,
     setSourceDocument,
-    setSupplierId,
+    setCustomerId,
   };
 }

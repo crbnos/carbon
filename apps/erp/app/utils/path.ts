@@ -61,8 +61,10 @@ export const path = {
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
-      serialNumbers: (itemId: string) =>
-        generatePath(`${api}/inventory/serial-numbers?itemId=${itemId}`),
+      serialNumbers: (itemId: string, isReadOnly: boolean) =>
+        generatePath(
+          `${api}/inventory/serial-numbers?itemId=${itemId}&isReadOnly=${isReadOnly}`
+        ),
       services: `${api}/items/services`,
       shifts: (id: string) =>
         generatePath(`${api}/people/shifts?location=${id}`),
@@ -98,6 +100,7 @@ export const path = {
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
+      shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },
     legal: {

@@ -340,14 +340,14 @@ export async function getCustomerContacts(
 
 export async function getCustomerLocation(
   client: SupabaseClient<Database>,
-  customerContactId: string
+  customerLocationId: string
 ) {
   return client
     .from("customerLocation")
     .select(
-      "*, address(id, addressLine1, addressLine2, city, stateProvince, country(alpha2, name), postalCode)"
+      "*, address(id, addressLine1, addressLine2, city, stateProvince, countryCode, country(alpha2, name), postalCode)"
     )
-    .eq("id", customerContactId)
+    .eq("id", customerLocationId)
     .single();
 }
 

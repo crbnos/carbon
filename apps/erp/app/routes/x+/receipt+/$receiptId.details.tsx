@@ -131,7 +131,7 @@ export default function ReceiptDetailsRoute() {
     sourceDocument: (routeData.receipt.sourceDocument ??
       "Purchase Order") as "Purchase Order",
     sourceDocumentId: routeData.receipt.sourceDocumentId ?? undefined,
-    sourceDocumentReadbleId:
+    sourceDocumentReadableId:
       routeData.receipt.sourceDocumentReadableId ?? undefined,
     locationId: routeData.receipt.locationId ?? undefined,
     ...getCustomFields(routeData.receipt.customFields),

@@ -664,3 +664,20 @@ WHERE
   jm."jobId" = job_id;
   END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP VIEW IF EXISTS "shipmentLines";
+CREATE OR REPLACE VIEW "shipmentLines" WITH(SECURITY_INVOKER=true) AS
+  SELECT
+    sl.*,
+    CASE
+      WHEN i."thumbnailPath" IS NULL AND mu."thumbnailPath" IS NOT NULL THEN mu."thumbnailPath"
+      ELSE i."thumbnailPath"
+    END AS "thumbnailPath",
+    i."name" as "description"
+  FROM "shipmentLine" sl
+  INNER JOIN "item" i ON i."id" = sl."itemId"
+  LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId";
+
+DROP TABLE IF EXISTS "itemInventory";
+
+UPDATE "salesOrder" SET "status" = 'To Ship' WHERE "status" = 'Confirmed';

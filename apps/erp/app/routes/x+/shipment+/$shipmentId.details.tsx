@@ -134,7 +134,7 @@ export default function ShipmentDetailsRoute() {
     sourceDocument: (routeData.shipment.sourceDocument ??
       "Sales Order") as "Sales Order",
     sourceDocumentId: routeData.shipment.sourceDocumentId ?? undefined,
-    sourceDocumentReadbleId:
+    sourceDocumentReadableId:
       routeData.shipment.sourceDocumentReadableId ?? undefined,
     locationId: routeData.shipment.locationId ?? undefined,
     ...getCustomFields(routeData.shipment.customFields),

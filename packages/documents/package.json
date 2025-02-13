@@ -1,6 +1,7 @@
 {
   "name": "@carbon/documents",
   "dependencies": {
+    "@bwip-js/node": "^4.5.1",
     "@hookform/resolvers": "^3.3.4",
     "@react-email/components": "0.0.16",
     "@react-pdf/renderer": "^3.1.14",

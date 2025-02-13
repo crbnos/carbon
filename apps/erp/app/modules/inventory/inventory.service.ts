@@ -344,14 +344,20 @@ export async function getReceiptFiles(
 export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
   companyId: string,
-  itemId: string
+  itemId: string,
+  includeUnavailable: boolean
 ) {
-  return client
+  let query = client
     .from("serialNumbers")
     .select("*")
     .eq("companyId", companyId)
-    .eq("itemId", itemId)
-    .eq("status", "Available");
+    .eq("itemId", itemId);
+
+  if (!includeUnavailable) {
+    query = query.eq("status", "Available");
+  }
+
+  return query;
 }
 
 export async function getShelvesList(
@@ -419,6 +425,13 @@ export async function getShipmentLines(
   shipmentId: string
 ) {
   return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
+}
+
+export async function getShipmentLinesWithDetails(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  return client.from("shipmentLines").select("*").eq("shipmentId", shipmentId);
 }
 
 export async function getShipmentLineTracking(
