@@ -89,17 +89,19 @@ const InventoryShelves = ({
               </Tr>
             </Thead>
             <Tbody>
-              {itemShelfQuantities.map((item, index) => (
-                <Tr key={index}>
-                  <Td>
-                    {shelves.find((s) => s.id === item.shelfId)?.name ||
-                      item.shelfId}
-                  </Td>
-                  <Td>{item.batchNumber}</Td>
-                  <Td>{item.serialNumber}</Td>
-                  <Td>{item.quantity}</Td>
-                </Tr>
-              ))}
+              {itemShelfQuantities
+                .filter((item) => item.quantity !== 0)
+                .map((item, index) => (
+                  <Tr key={index}>
+                    <Td>
+                      {shelves.find((s) => s.id === item.shelfId)?.name ||
+                        item.shelfId}
+                    </Td>
+                    <Td>{item.batchNumber}</Td>
+                    <Td>{item.serialNumber}</Td>
+                    <Td>{item.quantity}</Td>
+                  </Tr>
+                ))}
             </Tbody>
           </Table>
         </CardContent>
