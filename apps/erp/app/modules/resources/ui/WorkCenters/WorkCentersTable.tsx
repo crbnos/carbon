@@ -5,7 +5,6 @@ import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
-  LuCircleCheck,
   LuCog,
   LuDollarSign,
   LuPencil,
@@ -83,13 +82,6 @@ const WorkCentersTable = memo(
                     <span>{row.original.name}</span>
                   </HStack>
                 </Hyperlink>
-              )}
-
-              {row.original.requiredAbilityId && (
-                <LuCircleCheck
-                  className="text-emerald-500"
-                  title="Requires ability"
-                />
               )}
             </HStack>
           ),

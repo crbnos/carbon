@@ -17,7 +17,7 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import type { z } from "zod";
 import {
-  Ability,
+  // Ability,
   CustomFormFields,
   Hidden,
   Input,
@@ -138,11 +138,11 @@ const WorkCenterForm = ({
                   label="Default Unit"
                   value={initialValues.defaultStandardFactor}
                 />
-                <Ability
+                {/* <Ability
                   name="requiredAbilityId"
                   label="Required Ability"
                   isClearable
-                />
+                /> */}
                 <CustomFormFields table="workCenter" />
               </VStack>
             </ModalDrawerBody>

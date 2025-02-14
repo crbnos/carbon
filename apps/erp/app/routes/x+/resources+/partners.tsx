@@ -32,7 +32,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const [partners, abilities] = await Promise.all([
+  const [partners] = await Promise.all([
     getPartners(client, companyId, {
       search,
       limit,
@@ -52,17 +52,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json({
     partners: partners.data ?? [],
-    abilities: abilities.data ?? [],
     count: partners.count ?? 0,
   });
 }
 
 export default function Route() {
-  const { partners, abilities, count } = useLoaderData<typeof loader>();
+  const { partners, count } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <PartnersTable data={partners} count={count} abilities={abilities} />
+      <PartnersTable data={partners} count={count} />
       <Outlet />
     </VStack>
   );
