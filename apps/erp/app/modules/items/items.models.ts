@@ -160,10 +160,8 @@ export const getMethodValidator = z.object({
 export const materialValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Material ID is required" }).max(255),
-    materialSubstanceId: z
-      .string()
-      .min(1, { message: "Substance is required" }),
-    materialFormId: z.string().min(1, { message: "Form is required" }),
+    materialSubstanceId: zfd.text(z.string().optional()),
+    materialFormId: zfd.text(z.string().optional()),
     finish: z.string().optional(),
     grade: z.string().optional(),
     dimensions: z.string().optional(),
