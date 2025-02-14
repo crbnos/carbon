@@ -5,7 +5,7 @@ import {
   LuCalendar,
   LuCaseSensitive,
   LuContainer,
-  LuEuro,
+  LuHash,
   LuList,
   LuSquareUser,
   LuToggleLeft,
@@ -177,7 +177,7 @@ function ColumnIcon({ dataTypeId }: { dataTypeId: DataType }) {
     case DataType.List:
       return <LuList />;
     case DataType.Numeric:
-      return <LuEuro />;
+      return <LuHash />;
     case DataType.Text:
       return <LuCaseSensitive />;
     case DataType.User:

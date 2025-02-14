@@ -129,7 +129,11 @@ function makeItem(
 ): ItemWithData {
   return {
     id: operation.id!,
-    title: <h3 className="font-semibold truncate">{operation.description}</h3>,
+    title: (
+      <h3 className="font-semibold truncate cursor-pointer">
+        {operation.description}
+      </h3>
+    ),
     checked: false,
     order: operation.operationOrder,
     details: (

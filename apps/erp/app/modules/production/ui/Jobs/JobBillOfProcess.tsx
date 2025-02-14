@@ -138,7 +138,9 @@ function makeItem(
     id: operation.id!,
     title: (
       <HStack>
-        <h3 className="font-semibold truncate">{operation.description}</h3>
+        <h3 className="font-semibold truncate cursor-pointer">
+          {operation.description}
+        </h3>
       </HStack>
     ),
     checked: false,

@@ -114,17 +114,17 @@ function SortableListItem<T>({
                       {getParallelizedOrder(order, item, items)}
                     </p>
 
-                    {/* List Title */}
                     <div
                       key={`${item.checked}`}
-                      className="px-1 flex flex-grow truncate cursor-pointer"
+                      className="px-1 flex flex-grow truncate"
                       role="button"
                     >
-                      <HStack className="w-full justify-between">
+                      <HStack className="w-full justify-between cursor-grab">
+                        {/* List Title */}
                         {typeof item.title === "string" ? (
                           <span
                             className={cn(
-                              "flex font-medium text-sm md:text-base truncate hover:underline",
+                              "flex font-medium text-sm md:text-base truncate hover:underline cursor-pointer",
                               item.checked ? "text-red-400" : "text-foreground"
                             )}
                             onClick={(e) => {
