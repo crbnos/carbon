@@ -160,7 +160,7 @@ const PackingSlipPDF = ({
                   </Text>
                 </View>
                 <Text style={tw("w-1/4 text-center")}>
-                  {line.shippedQuantity} {line.unitOfMeasure}
+                  {getLineQuantity(line)}
                 </Text>
                 <Image style={tw("w-1/4 text-right")} src={barcodeDataUrl} />
               </View>
@@ -178,6 +178,15 @@ const PackingSlipPDF = ({
     </Template>
   );
 };
+
+function getLineQuantity(
+  line: Database["public"]["Tables"]["shipmentLine"]["Row"]
+) {
+  if (line.shippedQuantity === line.orderQuantity) {
+    return `${line.shippedQuantity} ${line.unitOfMeasure}`;
+  }
+  return `${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`;
+}
 
 function getLineDescription(
   line: Database["public"]["Tables"]["shipmentLine"]["Row"]

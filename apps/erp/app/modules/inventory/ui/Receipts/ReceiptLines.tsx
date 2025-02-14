@@ -166,9 +166,6 @@ const ReceiptLines = () => {
           field: "shelfId";
           value: string;
         }) => {
-      if (value === receiptLines.find((l) => l.id === lineId)?.[field]) {
-        return;
-      }
       const formData = new FormData();
 
       formData.append("ids", lineId);

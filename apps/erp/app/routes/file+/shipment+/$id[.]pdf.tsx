@@ -12,6 +12,7 @@ import {
 import {
   getCustomerLocation,
   getSalesOrder,
+  getSalesOrderShipment,
   getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
@@ -66,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     case "Sales Order":
       const [salesOrder, salesOrderShipment] = await Promise.all([
         getSalesOrder(client, shipment.data.sourceDocumentId),
-        getShipment(client, shipment.data.sourceDocumentId),
+        getSalesOrderShipment(client, shipment.data.sourceDocumentId),
       ]);
 
       const [customer, customerLocation, paymentTerm, shippingMethod] =

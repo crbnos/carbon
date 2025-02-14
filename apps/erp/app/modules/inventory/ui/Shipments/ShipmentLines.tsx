@@ -50,8 +50,7 @@ import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
-import {
-  splitValidator} from "~/modules/inventory";
+import { splitValidator } from "~/modules/inventory";
 import type {
   getBatchNumbersForItem,
   type BatchProperty,
@@ -161,9 +160,6 @@ const ShipmentLines = () => {
           field: "shelfId";
           value: string;
         }) => {
-      if (value === shipmentLines.find((l) => l.id === lineId)?.[field]) {
-        return;
-      }
       const formData = new FormData();
 
       formData.append("ids", lineId);
