@@ -667,7 +667,7 @@ function MaterialForm({
           <InputControlled
             name="description"
             label="Description"
-            isReadOnly
+            isDisabled
             value={itemData.description}
             isConfigured={rulesByField.has(key("description"))}
             onConfigure={

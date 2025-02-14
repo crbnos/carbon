@@ -1,8 +1,8 @@
 import { useParams } from "@remix-run/react";
 
-import { BiListCheck } from "react-icons/bi";
 import {
   LuBox,
+  LuFactory,
   LuFileText,
   LuReceipt,
   LuShoppingCart,
@@ -49,7 +49,7 @@ export function usePartNavigation() {
       to: path.to.partManufacturing(itemId),
       isDisabled: replenishment === "Buy",
       role: ["employee"],
-      icon: BiListCheck,
+      icon: LuFactory,
       shortcut: "Command+Shift+m",
     },
     {

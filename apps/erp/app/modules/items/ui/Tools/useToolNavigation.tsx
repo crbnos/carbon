@@ -1,7 +1,12 @@
 import { useParams } from "@remix-run/react";
 
-import { BiListCheck } from "react-icons/bi";
-import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
+import {
+  LuBox,
+  LuFactory,
+  LuFileText,
+  LuShoppingCart,
+  LuTags,
+} from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -43,7 +48,7 @@ export function useToolNavigation() {
       to: path.to.toolManufacturing(itemId),
       isDisabled: replenishment === "Buy",
       role: ["employee"],
-      icon: BiListCheck,
+      icon: LuFactory,
       shortcut: "Command+Shift+m",
     },
     {
