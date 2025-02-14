@@ -54,6 +54,7 @@ import { path } from "~/utils/path";
 import { AdjustInventory } from "./AdjustInventory";
 import { EndShift } from "./EndShift";
 import Feedback from "./Feedback";
+import { BsFillHexagonFill } from "react-icons/bs";
 
 export function AppSidebar({
   activeEvents,
@@ -119,11 +120,15 @@ export function TeamSwitcher({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-sidebar-primary-foreground">
-                <Avatar
-                  src={companyLogo ?? undefined}
-                  name={company.name ?? ""}
-                  className="rounded-lg"
-                />
+                {companyLogo ? (
+                  <img
+                    src={companyLogo}
+                    alt={`${company.name} logo`}
+                    className="h-full w-full rounded object-contain"
+                  />
+                ) : (
+                  <BsFillHexagonFill />
+                )}
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{company.name}</span>
@@ -147,13 +152,14 @@ export function TeamSwitcher({
                   key={c.companyId}
                   method="post"
                   action={path.to.companySwitch(c.companyId!)}
+                  className="w-full"
                 >
                   <DropdownMenuItem key={c.name} className="gap-2 p-2" asChild>
-                    <button type="submit">
+                    <button type="submit" className="w-full">
                       <Avatar
                         src={logo ?? undefined}
                         name={c.name ?? ""}
-                        className="rounded-md"
+                        className="rounded-md object-contain bg-transparent border-none"
                       />
                       {c.name}
                     </button>
