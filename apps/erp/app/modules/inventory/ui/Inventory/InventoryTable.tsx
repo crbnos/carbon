@@ -1,12 +1,10 @@
-import { Button, Checkbox, Combobox, HStack, VStack } from "@carbon/react";
-import { Link } from "@remix-run/react";
+import { Checkbox, Combobox, HStack, VStack } from "@carbon/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuBox,
   LuCheck,
-  LuCirclePlus,
   LuFactory,
   LuGlassWater,
   LuPackage,
@@ -14,7 +12,6 @@ import {
   LuShapes,
   LuShoppingBag,
   LuShoppingCart,
-  LuTriangleAlert,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -23,12 +20,11 @@ import {
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
-import { InventoryItem } from "../../types";
+import type { InventoryItem } from "../../types";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 
@@ -42,7 +38,6 @@ type InventoryTableProps = {
 
 const InventoryTable = memo(
   ({ data, count, locationId, forms, substances }: InventoryTableProps) => {
-    const { hasFilters } = useFilters();
     const [params] = useUrlParams();
 
     const locations = useLocations();
@@ -224,47 +219,29 @@ const InventoryTable = memo(
     };
 
     return (
-      <>
-        {count === 0 && !hasFilters ? (
-          <div className="flex flex-col w-full h-full items-center justify-center gap-4">
-            <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-              <LuTriangleAlert className="h-6 w-6" />
-            </div>
-            <span className="text-xs font-mono font-light text-foreground uppercase">
-              No inventory items exists
-            </span>
-            <Button leftIcon={<LuCirclePlus />} asChild>
-              <Link to={path.to.newPart}>New Part</Link>
-            </Button>
-          </div>
-        ) : (
-          <>
-            <Table<InventoryItem>
-              count={count}
-              columns={columns}
-              data={data}
-              defaultColumnVisibility={defaultColumnVisibility}
-              defaultColumnPinning={defaultColumnPinning}
-              primaryAction={
-                <Combobox
-                  asButton
-                  size="sm"
-                  value={locationId}
-                  options={locations}
-                  onChange={(selected) => {
-                    // hard refresh because initialValues update has no effect otherwise
-                    window.location.href = getLocationPath(selected);
-                  }}
-                  className="w-64"
-                />
-              }
-              title="Inventory"
-              table="inventory"
-              withSavedView
-            />
-          </>
-        )}
-      </>
+      <Table<InventoryItem>
+        count={count}
+        columns={columns}
+        data={data}
+        defaultColumnVisibility={defaultColumnVisibility}
+        defaultColumnPinning={defaultColumnPinning}
+        primaryAction={
+          <Combobox
+            asButton
+            size="sm"
+            value={locationId}
+            options={locations}
+            onChange={(selected) => {
+              // hard refresh because initialValues update has no effect otherwise
+              window.location.href = getLocationPath(selected);
+            }}
+            className="w-64"
+          />
+        }
+        title="Inventory"
+        table="inventory"
+        withSavedView
+      />
     );
   }
 );
