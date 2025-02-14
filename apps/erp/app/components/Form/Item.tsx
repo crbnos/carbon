@@ -74,36 +74,35 @@ const Item = ({
   const [items] = useItems();
 
   const options = useMemo(() => {
-    const results =
-      (props?.replenishmentSystem || props?.includeInactive !== true
-        ? items.filter(
-            (item) =>
-              (type === item.type ||
-                (type === "Item" &&
-                  (validItemTypes === undefined ||
-                    // @ts-ignore
-                    validItemTypes?.includes(item.type)))) &&
-              (props.replenishmentSystem === undefined ||
-                item.replenishmentSystem === props.replenishmentSystem ||
-                item.replenishmentSystem === "Buy and Make" ||
-                props.replenishmentSystem === item.replenishmentSystem) &&
-              (item.active === true || props?.includeInactive === true)
-          )
-        : items
-      )
-        .filter(
-          (item) =>
-            item.type === type ||
-            (type === "Item" &&
-              (validItemTypes === undefined ||
-                // @ts-ignore
-                validItemTypes?.includes(item.type)))
-        )
-        .map((item) => ({
-          value: item.id,
-          label: item.readableId,
-          helper: item.name,
-        })) ?? [];
+    const results = items
+      .filter((item) => {
+        // Filter by type
+        // @ts-ignore
+        if (validItemTypes && !validItemTypes.includes(item.type)) return false;
+
+        if (type !== "Item" && type !== item.type) return false;
+
+        // Filter by active status
+        // Filter by active status
+        if (!props.includeInactive && !item.active) return false;
+
+        // Filter by replenishment system
+        if (props.replenishmentSystem) {
+          const systemMatches =
+            item.replenishmentSystem === props.replenishmentSystem ||
+            item.replenishmentSystem === "Buy and Make" ||
+            props.replenishmentSystem === item.replenishmentSystem;
+
+          if (!systemMatches) return false;
+        }
+
+        return true;
+      })
+      .map((item) => ({
+        value: item.id,
+        label: item.readableId,
+        helper: item.name,
+      }));
 
     if (props.disabledItems) {
       return results.filter(

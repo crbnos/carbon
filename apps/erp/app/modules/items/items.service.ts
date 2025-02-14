@@ -1147,15 +1147,6 @@ export async function getTools(
     })
     .eq("companyId", companyId);
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
-
   if (args.search) {
     query = query.or(
       `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
