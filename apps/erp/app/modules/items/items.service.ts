@@ -245,15 +245,6 @@ export async function getConsumables(
     })
     .eq("companyId", companyId);
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
-
   if (args.search) {
     query = query.or(
       `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
@@ -676,15 +667,6 @@ export async function getMaterials(
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
-
   if (args.search) {
     query = query.or(
       `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
@@ -987,15 +969,6 @@ export async function getParts(
     })
     .eq("companyId", companyId);
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
-
   if (args.search) {
     query = query.or(
       `id.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%,supplierIds.ilike.%${args.search}%`
@@ -1070,15 +1043,6 @@ export async function getServices(
     })
     .eq("companyId", companyId);
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
   if (args.search) {
     query = query.or(
       `name.ilike.%${args.search}%,description.ilike.%${args.search}%`

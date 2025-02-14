@@ -199,15 +199,6 @@ export async function getInventoryItems(
     );
   }
 
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
-  }
-
   query = setGenericQueryFilters(query, args);
 
   return query;
@@ -233,15 +224,6 @@ export async function getInventoryItemsCount(
     query = query.or(
       `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
     );
-  }
-
-  const includeInactive = args?.filters?.some(
-    (filter) =>
-      (filter.column === "active" && filter.value === "false") ||
-      (filter.column === "active" && filter.operator === "in")
-  );
-  if (!includeInactive) {
-    query = query.eq("active", true);
   }
 
   query = setGenericQueryFilters(query, args);
