@@ -129,7 +129,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
             unitOfMeasureCode: "EA",
             replenishmentSystem: "Buy",
             defaultMethodType: "Buy",
-            active: props?.includeInactive === undefined,
+            active: true,
             unitCost: 0,
             tags: [],
           }}
