@@ -16,7 +16,6 @@ import { useLocation, useNavigate } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Abilities,
   CustomFormFields,
   Number,
   Submit,
@@ -85,7 +84,7 @@ const ContractorForm = ({ initialValues }: ContractorFormProps) => {
                 supplier={supplier ?? undefined}
                 isReadOnly={isEditing}
               />
-              <Abilities name="abilities" label="Abilities" />
+              {/* <Abilities name="abilities" label="Abilities" /> */}
               <Number
                 name="hoursPerWeek"
                 label="Hours per Week"

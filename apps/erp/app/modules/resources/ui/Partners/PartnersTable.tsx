@@ -4,20 +4,19 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Ability, Partner } from "~/modules/resources";
+import type { Partner } from "~/modules/resources";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 
 type PartnersTableProps = {
   data: Partner[];
   count: number;
-  abilities: Partial<Ability>[];
+  // abilities: Partial<Ability>[];
 };
 
-const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
+const PartnersTable = memo(({ data, count }: PartnersTableProps) => {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
@@ -57,20 +56,20 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
         header: "Location",
         cell: ({ row }) => `${row.original.city}, ${row.original.state}`,
       },
-      {
-        accessorKey: "abilityName",
-        header: "Ability",
-        cell: (item) => <Enumerable value={item.getValue<string>()} />,
-        meta: {
-          filter: {
-            type: "static",
-            options: abilities.map((ability) => ({
-              value: ability.name!,
-              label: <Enumerable value={ability.name!} />,
-            })),
-          },
-        },
-      },
+      // {
+      //   accessorKey: "abilityName",
+      //   header: "Ability",
+      //   cell: (item) => <Enumerable value={item.getValue<string>()} />,
+      //   meta: {
+      //     filter: {
+      //       type: "static",
+      //       options: abilities.map((ability) => ({
+      //         value: ability.name!,
+      //         label: <Enumerable value={ability.name!} />,
+      //       })),
+      //     },
+      //   },
+      // },
       {
         accessorKey: "hoursPerWeek",
         header: "Hours per Week",
@@ -79,7 +78,7 @@ const PartnersTable = memo(({ data, count, abilities }: PartnersTableProps) => {
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, suppliers, abilities]);
+  }, [params, customColumns, suppliers]);
 
   const renderContextMenu = useCallback(
     (row: Partner) => {

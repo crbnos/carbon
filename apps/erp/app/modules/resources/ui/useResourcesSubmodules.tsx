@@ -1,4 +1,4 @@
-import { LuHammer, LuMapPin } from "react-icons/lu";
+import { LuMapPin } from "react-icons/lu";
 import { TbRoute } from "react-icons/tb";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
@@ -8,12 +8,6 @@ const resourcesRoutes: RouteGroup[] = [
   {
     name: "Manage",
     routes: [
-      {
-        name: "Abilities",
-        to: path.to.abilities,
-        icon: <LuHammer />,
-        table: "ability",
-      },
       {
         name: "Locations",
         to: path.to.locations,

@@ -41,9 +41,9 @@ export const contractorValidator = z.object({
   hoursPerWeek: zfd.numeric(
     z.number().min(0, { message: "Hours are required" })
   ),
-  abilities: z
-    .array(z.string().min(20, { message: "Invalid ability" }))
-    .optional(),
+  // abilities: z
+  //   .array(z.string().min(20, { message: "Invalid ability" }))
+  //   .optional(),
   assignee: zfd.text(z.string().optional()),
 });
 
@@ -85,7 +85,7 @@ export const partnerValidator = z.object({
   hoursPerWeek: zfd.numeric(
     z.number().min(0, { message: "Hours are required" })
   ),
-  abilityId: z.string().min(20, { message: "Invalid ability" }),
+  // abilityId: z.string().min(20, { message: "Invalid ability" }),
 });
 
 export const processValidator = z
@@ -131,5 +131,5 @@ export const workCenterValidator = z.object({
   processes: z
     .array(z.string().min(20, { message: "Invalid process" }))
     .optional(),
-  requiredAbilityId: zfd.text(z.string().optional()),
+  // requiredAbilityId: zfd.text(z.string().optional()),
 });
