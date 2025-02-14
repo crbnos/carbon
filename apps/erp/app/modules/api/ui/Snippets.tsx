@@ -169,7 +169,9 @@ const carbon = createClient(SUPABASE_URL, process.env.${
         code: `
 curl -X POST '${endpoint}/rest/v1/rpc/${rpcName}' \\${bashParams}
 -H "Content-Type: application/json" \\
--H "carbon-key: <your_api_key_here>"`,
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"`,
       },
       js: {
         language: "js",
@@ -293,7 +295,9 @@ const ${listenerName} = carbon.channel('custom-filter-channel')
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
--H "carbon-key: <your_api_key_here>"`,
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"`,
     },
     js: {
       language: "js",
@@ -322,7 +326,9 @@ let { data: ${resourceId}, error } = await carbon
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=${columnName}' \\
--H "carbon-key: <your_api_key_here>"`,
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"`,
     },
     js: {
       language: "js",
@@ -343,7 +349,9 @@ let { data: ${resourceId}, error } = await carbon
       language: "bash",
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=some_column,other_table(foreign_key)' \\
--H "carbon-key: <your_api_key_here>"`,
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"`,
     },
     js: {
       language: "js",
@@ -366,6 +374,8 @@ let { data: ${resourceId}, error } = await carbon
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?select=*' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Range: 0-9"
 `,
     },
@@ -386,6 +396,8 @@ let { data: ${resourceId}, error } = await carbon
       code: `
 curl '${endpoint}/rest/v1/${resourceId}?id=eq.1&select=*' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Range: 0-9"
 `,
     },
@@ -419,6 +431,8 @@ let { data: ${resourceId}, error } = await carbon
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: return=minimal" \\
 -d '{ "some_column": "someValue", "other_column": "otherValue" }'
@@ -443,6 +457,8 @@ const { data, error } = await carbon
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '[{ "some_column": "someValue" }, { "other_column": "otherValue" }]'
 `,
@@ -467,6 +483,8 @@ const { data, error } = await carbon
       code: `
 curl -X POST '${endpoint}/rest/v1/${resourceId}' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: resolution=merge-duplicates" \\
 -d '{ "some_column": "someValue", "other_column": "otherValue" }'
@@ -489,6 +507,8 @@ const { data, error } = await carbon
       code: `
 curl -X PATCH '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -H "Prefer: return=minimal" \\
 -d '{ "other_column": "otherValue" }'
@@ -511,7 +531,9 @@ const { data, error } = await carbon
       language: "bash",
       code: `
 curl -X DELETE '${endpoint}/rest/v1/${resourceId}?some_column=eq.someValue' \\
--H "carbon-key: <your_api_key_here>"`,
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"`,
     },
     js: {
       language: "js",
@@ -530,6 +552,8 @@ const { error } = await carbon
       code: `
 curl -X POST '${endpoint}/auth/v1/signup' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -554,6 +578,8 @@ let { data, error } = await carbon.auth.signUp({
       code: `
 curl -X POST '${endpoint}/auth/v1/token?grant_type=password' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -578,6 +604,8 @@ let { data, error } = await carbon.auth.signInWithPassword({
       code: `
 curl -X POST '${endpoint}/auth/v1/magiclink' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com"
@@ -600,6 +628,8 @@ let { data, error } = await carbon.auth.signInWithOtp({
       code: `
 curl -X POST '${endpoint}/auth/v1/signup' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "phone": "+13334445555",
@@ -624,6 +654,8 @@ let { data, error } = await carbon.auth.signUp({
       code: `
 curl -X POST '${endpoint}/auth/v1/otp' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "phone": "+13334445555"
@@ -712,7 +744,9 @@ let { data, error } = await carbon.auth.signInWithOAuth({
       language: "bash",
       code: `
 curl -X GET '${endpoint}/auth/v1/user' \\
--H "carbon-key: <your_api_key_here>"
+-H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY"
 `,
     },
     js: {
@@ -729,6 +763,8 @@ const { data: { user } } = await carbon.auth.getUser()
       code: `
       curl -X POST '${endpoint}/auth/v1/recover' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com"
@@ -749,6 +785,8 @@ let { data, error } = await carbon.auth.resetPasswordForEmail(email)
       code: `
       curl -X PUT '${endpoint}/auth/v1/user' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -d '{
   "email": "someone@email.com",
@@ -777,6 +815,8 @@ const { data, error } = await carbon.auth.updateUser({
       code: `
 curl -X POST '${endpoint}/auth/v1/logout' \\
 -H "carbon-key: <your_api_key_here>" \\
+-H "apiKey: CARBON_PUBLIC_KEY" \\
+-H "Authorization: Bearer CARBON_PUBLIC_KEY" \\
 -H "Content-Type: application/json" \\
 -H "Authorization: Bearer USER_TOKEN"
 `,

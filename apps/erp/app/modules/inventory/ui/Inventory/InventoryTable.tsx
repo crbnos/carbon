@@ -93,7 +93,7 @@ const InventoryTable = memo(
         },
         {
           accessorKey: "quantityOnProductionOrder",
-          header: "On Prod Order",
+          header: "On Jobs",
           cell: ({ row }) => row.original.quantityOnProductionOrder,
           meta: {
             icon: <LuFactory />,
