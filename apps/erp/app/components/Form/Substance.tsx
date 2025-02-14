@@ -6,10 +6,21 @@ import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialSubstancesList } from "~/modules/items";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
-
+import { Enumerable } from "../Enumerable";
 import { path } from "~/utils/path";
 
-type SubstanceSelectProps = Omit<ComboboxProps, "options">;
+type SubstanceSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
+  inline?: boolean;
+};
+
+const SubstancePreview = (
+  value: string,
+  options: { value: string; label: string | JSX.Element }[]
+) => {
+  const substance = options.find((o) => o.value === value);
+  // @ts-ignore
+  return <Enumerable value={substance?.label ?? null} />;
+};
 
 const Substance = (props: SubstanceSelectProps) => {
   const options = useSubstance();
@@ -25,6 +36,7 @@ const Substance = (props: SubstanceSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? SubstancePreview : undefined}
         label={props?.label ?? "Substance"}
         onCreateOption={(option) => {
           newSubstanceModal.onOpen();
@@ -49,6 +61,7 @@ const Substance = (props: SubstanceSelectProps) => {
     <Combobox
       options={options}
       {...props}
+      inline={props.inline ? SubstancePreview : undefined}
       label={props?.label ?? "Substance"}
     />
   );

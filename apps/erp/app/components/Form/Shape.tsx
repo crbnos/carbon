@@ -6,10 +6,21 @@ import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
-
+import { Enumerable } from "../Enumerable";
 import { path } from "~/utils/path";
 
-type ShapeSelectProps = Omit<ComboboxProps, "options">;
+type ShapeSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
+  inline?: boolean;
+};
+
+const ShapePreview = (
+  value: string,
+  options: { value: string; label: string | JSX.Element }[]
+) => {
+  const shape = options.find((o) => o.value === value);
+  // @ts-ignore
+  return <Enumerable value={shape?.label ?? null} />;
+};
 
 const Shape = (props: ShapeSelectProps) => {
   const options = useShape();
@@ -25,6 +36,7 @@ const Shape = (props: ShapeSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? ShapePreview : undefined}
         label={props?.label ?? "Shape"}
         onCreateOption={(option) => {
           newShapeModal.onOpen();
@@ -46,7 +58,12 @@ const Shape = (props: ShapeSelectProps) => {
       )}
     </>
   ) : (
-    <Combobox options={options} {...props} label={props?.label ?? "Form"} />
+    <Combobox
+      options={options}
+      {...props}
+      inline={props.inline ? ShapePreview : undefined}
+      label={props?.label ?? "Form"}
+    />
   );
 };
 

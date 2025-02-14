@@ -22,7 +22,6 @@ import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
@@ -36,6 +35,8 @@ import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
 import type { ItemFile, Material, PickMethod, SupplierPart } from "../../types";
 import { FileBadge } from "../Item";
+import Substance from "~/components/Form/Substance";
+import Shape from "~/components/Form/Shape";
 
 const MaterialProperties = () => {
   const { itemId } = useParams();
@@ -80,7 +81,9 @@ const MaterialProperties = () => {
         | "defaultMethodType"
         | "itemTrackingType"
         | "active"
-        | "unitOfMeasureCode",
+        | "unitOfMeasureCode"
+        | "materialFormId"
+        | "materialSubstanceId",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -311,17 +314,45 @@ const MaterialProperties = () => {
         </DropdownMenu>
       </VStack>
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Shape</h3>
-        <Enumerable value={routeData?.materialSummary?.materialForm ?? null} />
-      </VStack>
-
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">Substance</h3>
-        <Enumerable
-          value={routeData?.materialSummary?.materialSubstance ?? null}
+      <ValidatedForm
+        defaultValues={{
+          materialFormId:
+            routeData?.materialSummary?.materialFormId ?? undefined,
+        }}
+        validator={z.object({
+          materialFormId: z.string().nullable(),
+        })}
+        className="w-full"
+      >
+        <Shape
+          label="Shape"
+          name="materialFormId"
+          inline
+          onChange={(value) => {
+            onUpdate("materialFormId", value?.value ?? null);
+          }}
         />
-      </VStack>
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          materialSubstanceId:
+            routeData?.materialSummary?.materialSubstanceId ?? undefined,
+        }}
+        validator={z.object({
+          materialSubstanceId: z.string().nullable(),
+        })}
+        className="w-full"
+      >
+        <Substance
+          label="Substance"
+          name="materialSubstanceId"
+          inline
+          onChange={(value) => {
+            onUpdate("materialSubstanceId", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
 
       <ValidatedForm
         defaultValues={{

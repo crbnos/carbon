@@ -34,11 +34,14 @@ export async function action({ request }: ActionFunctionArgs) {
     case "materialFormId":
     case "materialSubstanceId":
       return json(
-        await client.from("material").update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString(),
-        })
+        await client
+          .from("material")
+          .update({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString(),
+          })
+          .in("itemId", items as string[])
       );
     case "active":
       return json(
