@@ -553,7 +553,8 @@ export async function insertManualInventoryAdjustment(
   );
 
   const currentQuantity = shelfQuantities?.data?.find(
-    (quantity) => quantity.shelfId === data.shelfId
+    // null == undefined - so we use a == instead of === here
+    (quantity) => quantity.shelfId == data.shelfId
   );
 
   const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
