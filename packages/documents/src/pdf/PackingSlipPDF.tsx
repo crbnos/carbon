@@ -9,6 +9,8 @@ import { Header, Note, Summary, Template } from "./components";
 
 interface PackingSlipProps extends PDF {
   customer: Database["public"]["Tables"]["customer"]["Row"];
+  purchaseOrder?: string;
+  salesOrder?: string;
   shipment: Database["public"]["Tables"]["shipment"]["Row"];
   shipmentLines: Database["public"]["Views"]["shipmentLines"]["Row"][];
   shippingAddress: Database["public"]["Tables"]["address"]["Row"] | null;
@@ -37,6 +39,8 @@ const PackingSlipPDF = ({
   company,
   customer,
   meta,
+  purchaseOrder,
+  salesOrder,
   shipment,
   shipmentLines,
   shippingAddress,
@@ -54,6 +58,31 @@ const PackingSlipPDF = ({
     countryCode,
   } = shippingAddress ?? {};
 
+  const details = [
+    {
+      label: "Date",
+      value: shipment?.postingDate,
+    },
+    {
+      label: "Shipment",
+      value: shipment?.shipmentId,
+    },
+  ];
+
+  if (purchaseOrder) {
+    details.push({
+      label: "Purchase Order",
+      value: purchaseOrder,
+    });
+  }
+
+  if (salesOrder) {
+    details.push({
+      label: "Sales Order",
+      value: salesOrder,
+    });
+  }
+
   return (
     <Template
       title={title}
@@ -65,19 +94,7 @@ const PackingSlipPDF = ({
     >
       <View>
         <Header title={title} company={company} />
-        <Summary
-          company={company}
-          items={[
-            {
-              label: "Date",
-              value: shipment?.postingDate,
-            },
-            {
-              label: "Shipment #",
-              value: shipment?.shipmentId,
-            },
-          ]}
-        />
+        <Summary company={company} items={details} />
         {shipment?.trackingNumber && (
           <View style={tw("flex flex-col gap-2 justify-between mb-5")}>
             <Text style={tw("text-gray-500 text-xs")}>Tracking Number</Text>

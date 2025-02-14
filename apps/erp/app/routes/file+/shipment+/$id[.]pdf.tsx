@@ -99,6 +99,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             keywords: "packing slip",
             subject: "Packing Slip",
           }}
+          purchaseOrder={salesOrder.data?.customerReference ?? undefined}
+          salesOrder={salesOrder.data?.salesOrderId ?? undefined}
           shipment={shipment.data}
           shipmentLines={shipmentLines.data ?? []}
           // @ts-ignore

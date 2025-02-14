@@ -9,10 +9,9 @@ import {
 import { Link, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
-  LuFile,
+  LuBarcode,
   LuPanelLeft,
   LuPanelRight,
-  LuShoppingCart,
 } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -21,6 +20,7 @@ import type { Shipment, ShipmentLine } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import ShipmentStatus from "./ShipmentStatus";
 import ShipmentPostModal from "./ShipmentPostModal";
+import { RiProgress8Line } from "react-icons/ri";
 
 const ShipmentHeader = () => {
   const { shipmentId } = useParams();
@@ -64,7 +64,7 @@ const ShipmentHeader = () => {
           </HStack>
           <HStack>
             <DropdownMenu>
-              <Button variant="secondary" leftIcon={<LuFile />} asChild>
+              <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
                 <a
                   target="_blank"
                   href={path.to.file.shipment(shipmentId)}
@@ -116,12 +116,15 @@ function SourceDocumentLink({
   sourceDocumentId?: string;
   sourceDocumentReadableId?: string;
 }) {
+  const permissions = usePermissions();
+
   if (!sourceDocument || !sourceDocumentId || !sourceDocumentReadableId)
     return null;
   switch (sourceDocument) {
     case "Sales Order":
+      if (!permissions.can("view", "sales")) return null;
       return (
-        <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+        <Button variant="secondary" leftIcon={<RiProgress8Line />} asChild>
           <Link to={path.to.salesOrderDetails(sourceDocumentId!)}>
             Sales Order
           </Link>
