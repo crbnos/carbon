@@ -1,13 +1,14 @@
-import { Badge, MenuIcon, MenuItem } from "@carbon/react";
+import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuBookMarked, LuGlobe, LuPencil, LuTrash } from "react-icons/lu";
+import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { Substance } from "../../types";
+import { Enumerable } from "~/components/Enumerable";
 
 type MaterialSubstancesTableProps = {
   data: Substance[];
@@ -37,25 +38,11 @@ const MaterialSubstancesTable = memo(
                   row.original.id
                 )}?${params.toString()}`}
               >
-                {row.original.name}
+                <Enumerable value={row.original.name} />
               </Hyperlink>
             ),
           meta: {
             icon: <LuBookMarked />,
-          },
-        },
-        {
-          header: "Type",
-          cell: ({ row }) =>
-            row.original.companyId === null ? (
-              <Badge className="border-dashed" variant="outline">
-                Global
-              </Badge>
-            ) : (
-              <Badge>Company</Badge>
-            ),
-          meta: {
-            icon: <LuGlobe />,
           },
         },
       ];
