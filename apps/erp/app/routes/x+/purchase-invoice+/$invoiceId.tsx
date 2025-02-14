@@ -1,7 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ClientOnly, VStack } from "@carbon/react";
+import { VStack } from "@carbon/react";
 import { Outlet, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -88,21 +88,17 @@ export default function PurchaseInvoiceRoute() {
         <PurchaseInvoiceHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanels
-                  explorer={<PurchaseInvoiceExplorer />}
-                  content={
-                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                      <VStack spacing={2} className="p-2">
-                        <Outlet />
-                      </VStack>
-                    </div>
-                  }
-                  properties={<PurchaseInvoiceProperties />}
-                />
-              )}
-            </ClientOnly>
+            <ResizablePanels
+              explorer={<PurchaseInvoiceExplorer />}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={2} className="p-2">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={<PurchaseInvoiceProperties />}
+            />
           </div>
         </div>
       </div>

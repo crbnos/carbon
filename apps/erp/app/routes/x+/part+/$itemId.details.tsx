@@ -4,7 +4,6 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
-  ClientOnly,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -90,162 +89,158 @@ export default function PartDetailsRoute() {
 
   return (
     <div className="flex flex-grow overflow-hidden">
-      <ClientOnly fallback={null}>
-        {() => (
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel
-              order={1}
-              minSize={10}
-              defaultSize={20}
-              className="bg-card"
-            >
-              <ScrollArea className="h-[calc(100dvh-99px)]">
-                <div className="grid h-full overflow-hidden p-2">
-                  <Suspense fallback={<UsedInSkeleton />}>
-                    <Await resolve={usedIn}>
-                      {(resolvedUsedIn) => {
-                        const {
-                          jobMaterials,
-                          jobs,
-                          methodMaterials,
-                          purchaseOrderLines,
-                          receiptLines,
-                          quoteLines,
-                          quoteMaterials,
-                          salesOrderLines,
-                          shipmentLines,
-                        } = resolvedUsedIn;
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel
+          order={1}
+          minSize={10}
+          defaultSize={20}
+          className="bg-card"
+        >
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <div className="grid h-full overflow-hidden p-2">
+              <Suspense fallback={<UsedInSkeleton />}>
+                <Await resolve={usedIn}>
+                  {(resolvedUsedIn) => {
+                    const {
+                      jobMaterials,
+                      jobs,
+                      methodMaterials,
+                      purchaseOrderLines,
+                      receiptLines,
+                      quoteLines,
+                      quoteMaterials,
+                      salesOrderLines,
+                      shipmentLines,
+                    } = resolvedUsedIn;
 
-                        const tree: UsedInNode[] = [
-                          {
-                            key: "jobs",
-                            name: "Jobs",
-                            module: "production",
-                            children: jobs.map((job) => ({
-                              ...job,
-                              methodType: "Make",
-                            })),
-                          },
-                          {
-                            key: "jobMaterials",
-                            name: "Job Materials",
-                            module: "production",
-                            children: jobMaterials,
-                          },
-                          {
-                            key: "methodMaterials",
-                            name: "Method Materials",
-                            module: "parts",
-                            // @ts-expect-error
-                            children: methodMaterials,
-                          },
-                          {
-                            key: "purchaseOrderLines",
-                            name: "Purchase Orders",
-                            module: "purchasing",
-                            children: purchaseOrderLines.map((po) => ({
-                              ...po,
-                              methodType: "Buy",
-                            })),
-                          },
-                          {
-                            key: "receiptLines",
-                            name: "Receipts",
-                            module: "inventory",
-                            children: receiptLines.map((receipt) => ({
-                              ...receipt,
-                              methodType: "Pick",
-                            })),
-                          },
-                          {
-                            key: "quoteLines",
-                            name: "Quotes",
-                            module: "sales",
-                            children: quoteLines,
-                          },
-                          {
-                            key: "quoteMaterials",
-                            name: "Quote Materials",
-                            module: "sales",
-                            children: quoteMaterials?.map((qm) => ({
-                              ...qm,
-                              documentReadableId: qm.documentReadableId ?? "",
-                            })),
-                          },
-                          {
-                            key: "salesOrderLines",
-                            name: "Sales Orders",
-                            module: "sales",
-                            children: salesOrderLines,
-                          },
-                          {
-                            key: "shipmentLines",
-                            name: "Shipments",
-                            module: "inventory",
-                            children: shipmentLines.map((shipment) => ({
-                              ...shipment,
-                              methodType: "Shipment",
-                            })),
-                          },
-                        ];
+                    const tree: UsedInNode[] = [
+                      {
+                        key: "jobs",
+                        name: "Jobs",
+                        module: "production",
+                        children: jobs.map((job) => ({
+                          ...job,
+                          methodType: "Make",
+                        })),
+                      },
+                      {
+                        key: "jobMaterials",
+                        name: "Job Materials",
+                        module: "production",
+                        children: jobMaterials,
+                      },
+                      {
+                        key: "methodMaterials",
+                        name: "Method Materials",
+                        module: "parts",
+                        // @ts-expect-error
+                        children: methodMaterials,
+                      },
+                      {
+                        key: "purchaseOrderLines",
+                        name: "Purchase Orders",
+                        module: "purchasing",
+                        children: purchaseOrderLines.map((po) => ({
+                          ...po,
+                          methodType: "Buy",
+                        })),
+                      },
+                      {
+                        key: "receiptLines",
+                        name: "Receipts",
+                        module: "inventory",
+                        children: receiptLines.map((receipt) => ({
+                          ...receipt,
+                          methodType: "Pick",
+                        })),
+                      },
+                      {
+                        key: "quoteLines",
+                        name: "Quotes",
+                        module: "sales",
+                        children: quoteLines,
+                      },
+                      {
+                        key: "quoteMaterials",
+                        name: "Quote Materials",
+                        module: "sales",
+                        children: quoteMaterials?.map((qm) => ({
+                          ...qm,
+                          documentReadableId: qm.documentReadableId ?? "",
+                        })),
+                      },
+                      {
+                        key: "salesOrderLines",
+                        name: "Sales Orders",
+                        module: "sales",
+                        children: salesOrderLines,
+                      },
+                      {
+                        key: "shipmentLines",
+                        name: "Shipments",
+                        module: "inventory",
+                        children: shipmentLines.map((shipment) => ({
+                          ...shipment,
+                          methodType: "Shipment",
+                        })),
+                      },
+                    ];
 
-                        return (
-                          <UsedInTree
-                            tree={tree}
-                            itemReadableId={partData.partSummary?.id ?? ""}
-                          />
-                        );
-                      }}
+                    return (
+                      <UsedInTree
+                        tree={tree}
+                        itemReadableId={partData.partSummary?.id ?? ""}
+                      />
+                    );
+                  }}
+                </Await>
+              </Suspense>
+            </div>
+          </ScrollArea>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel order={2} minSize={40} defaultSize={60}>
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <VStack spacing={2} className="p-2">
+              <ItemNotes
+                id={partData.partSummary?.itemId ?? null}
+                title={partData.partSummary?.name ?? ""}
+                subTitle={partData.partSummary?.id ?? ""}
+                notes={partData.partSummary?.notes as JSONContent}
+              />
+              {permissions.is("employee") && (
+                <>
+                  <Suspense
+                    fallback={
+                      <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+                        <Spinner className="h-10 w-10" />
+                      </div>
+                    }
+                  >
+                    <Await resolve={partData?.files}>
+                      {(resolvedFiles) => (
+                        <ItemDocuments
+                          files={resolvedFiles}
+                          itemId={itemId}
+                          modelUpload={partData.partSummary ?? undefined}
+                          type="Part"
+                        />
+                      )}
                     </Await>
                   </Suspense>
-                </div>
-              </ScrollArea>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel order={2} minSize={40} defaultSize={60}>
-              <ScrollArea className="h-[calc(100dvh-99px)]">
-                <VStack spacing={2} className="p-2">
-                  <ItemNotes
-                    id={partData.partSummary?.itemId ?? null}
-                    title={partData.partSummary?.name ?? ""}
-                    subTitle={partData.partSummary?.id ?? ""}
-                    notes={partData.partSummary?.notes as JSONContent}
-                  />
-                  {permissions.is("employee") && (
-                    <>
-                      <Suspense
-                        fallback={
-                          <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-                            <Spinner className="h-10 w-10" />
-                          </div>
-                        }
-                      >
-                        <Await resolve={partData?.files}>
-                          {(resolvedFiles) => (
-                            <ItemDocuments
-                              files={resolvedFiles}
-                              itemId={itemId}
-                              modelUpload={partData.partSummary ?? undefined}
-                              type="Part"
-                            />
-                          )}
-                        </Await>
-                      </Suspense>
 
-                      <CadModel
-                        isReadOnly={!permissions.can("update", "parts")}
-                        metadata={{ itemId }}
-                        modelPath={partData?.partSummary?.modelPath ?? null}
-                        title="CAD Model"
-                      />
-                    </>
-                  )}
-                </VStack>
-              </ScrollArea>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        )}
-      </ClientOnly>
+                  <CadModel
+                    isReadOnly={!permissions.can("update", "parts")}
+                    metadata={{ itemId }}
+                    modelPath={partData?.partSummary?.modelPath ?? null}
+                    title="CAD Model"
+                  />
+                </>
+              )}
+            </VStack>
+          </ScrollArea>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

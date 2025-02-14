@@ -1,9 +1,4 @@
-import {
-  ClientOnly,
-  supportedModelTypes,
-  VStack,
-  type JSONContent,
-} from "@carbon/react";
+import { supportedModelTypes, VStack, type JSONContent } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { DndContext } from "@dnd-kit/core";
 import { Outlet, useParams, useSubmit } from "@remix-run/react";
@@ -152,21 +147,17 @@ export default function SalesRFQRoute() {
           <SalesRFQHeader />
           <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
             <div className="flex flex-grow overflow-hidden">
-              <ClientOnly fallback={null}>
-                {() => (
-                  <ResizablePanels
-                    explorer={<SalesRFQExplorer />}
-                    content={
-                      <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                        <VStack spacing={2} className="p-2">
-                          <Outlet />
-                        </VStack>
-                      </div>
-                    }
-                    properties={<SalesRFQProperties />}
-                  />
-                )}
-              </ClientOnly>
+              <ResizablePanels
+                explorer={<SalesRFQExplorer />}
+                content={
+                  <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                    <VStack spacing={2} className="p-2">
+                      <Outlet />
+                    </VStack>
+                  </div>
+                }
+                properties={<SalesRFQProperties />}
+              />
             </div>
           </div>
         </div>

@@ -1,6 +1,5 @@
 import type { JSONContent } from "@carbon/react";
 import {
-  ClientOnly,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -115,34 +114,30 @@ export default function ToolManufacturing() {
 
   return (
     <div className="flex flex-grow overflow-hidden">
-      <ClientOnly fallback={null}>
-        {() => (
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel
-              order={1}
-              minSize={10}
-              defaultSize={20}
-              className="bg-card"
-            >
-              <ScrollArea className="h-[calc(100dvh-99px)]">
-                <div className="grid h-full overflow-hidden p-2">
-                  <BoMExplorer
-                    itemType="Tool"
-                    // @ts-ignore
-                    methods={methods}
-                  />
-                </div>
-              </ScrollArea>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel order={2} minSize={40} defaultSize={60}>
-              <ScrollArea className="h-[calc(100dvh-99px)]">
-                <Outlet key={JSON.stringify(params)} />
-              </ScrollArea>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-        )}
-      </ClientOnly>
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel
+          order={1}
+          minSize={10}
+          defaultSize={20}
+          className="bg-card"
+        >
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <div className="grid h-full overflow-hidden p-2">
+              <BoMExplorer
+                itemType="Tool"
+                // @ts-ignore
+                methods={methods}
+              />
+            </div>
+          </ScrollArea>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel order={2} minSize={40} defaultSize={60}>
+          <ScrollArea className="h-[calc(100dvh-99px)]">
+            <Outlet key={JSON.stringify(params)} />
+          </ScrollArea>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }

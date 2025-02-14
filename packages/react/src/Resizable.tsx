@@ -4,18 +4,23 @@ import { LuGripVertical } from "react-icons/lu";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "./utils/cn";
+import { ClientOnly } from "./ClientOnly";
 
 const ResizablePanelGroup = ({
   className,
   ...props
 }: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => (
-  <ResizablePrimitive.PanelGroup
-    className={cn(
-      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-      className
+  <ClientOnly fallback={null}>
+    {() => (
+      <ResizablePrimitive.PanelGroup
+        className={cn(
+          "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+          className
+        )}
+        {...props}
+      />
     )}
-    {...props}
-  />
+  </ClientOnly>
 );
 
 const ResizablePanel = ResizablePrimitive.Panel;

@@ -1,7 +1,7 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ClientOnly, VStack } from "@carbon/react";
+import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
@@ -140,21 +140,17 @@ export default function QuoteRoute() {
         <QuoteHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanels
-                  explorer={<QuoteExplorer methods={methods} />}
-                  content={
-                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                      <VStack spacing={2} className="p-2">
-                        <Outlet />
-                      </VStack>
-                    </div>
-                  }
-                  properties={<QuoteProperties />}
-                />
-              )}
-            </ClientOnly>
+            <ResizablePanels
+              explorer={<QuoteExplorer methods={methods} />}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={2} className="p-2">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={<QuoteProperties />}
+            />
           </div>
         </div>
       </div>

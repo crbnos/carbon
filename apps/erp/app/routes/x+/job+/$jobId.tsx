@@ -1,7 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ClientOnly } from "@carbon/react";
 import {
   Await,
   defer,
@@ -88,38 +87,34 @@ export default function JobRoute() {
         <JobHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
-            <ClientOnly fallback={null}>
-              {() => (
-                <ResizablePanels
-                  explorer={
-                    <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
-                      <Suspense fallback={<ExplorerSkeleton />}>
-                        <Await
-                          resolve={method}
-                          errorElement={
-                            <div className="p-2 text-red-500">
-                              Error loading job tree.
-                            </div>
-                          }
-                        >
-                          {(resolvedMethod) => (
-                            <JobBoMExplorerWrapper
-                              method={resolvedMethod.data ?? []}
-                            />
-                          )}
-                        </Await>
-                      </Suspense>
-                    </div>
-                  }
-                  content={
-                    <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                      <Outlet />
-                    </div>
-                  }
-                  properties={<JobProperties />}
-                />
-              )}
-            </ClientOnly>
+            <ResizablePanels
+              explorer={
+                <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
+                  <Suspense fallback={<ExplorerSkeleton />}>
+                    <Await
+                      resolve={method}
+                      errorElement={
+                        <div className="p-2 text-red-500">
+                          Error loading job tree.
+                        </div>
+                      }
+                    >
+                      {(resolvedMethod) => (
+                        <JobBoMExplorerWrapper
+                          method={resolvedMethod.data ?? []}
+                        />
+                      )}
+                    </Await>
+                  </Suspense>
+                </div>
+              }
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <Outlet />
+                </div>
+              }
+              properties={<JobProperties />}
+            />
           </div>
         </div>
       </div>

@@ -1,12 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  ClientOnly,
-  ResizablePanel,
-  ResizablePanelGroup,
-  VStack,
-} from "@carbon/react";
+import { ResizablePanel, ResizablePanelGroup, VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -111,27 +106,23 @@ export default function QuantitiesRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ClientOnly>
-        {() => (
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel
-              defaultSize={50}
-              maxSize={70}
-              minSize={25}
-              className="bg-background"
-            >
-              <InventoryTable
-                data={inventoryItems}
-                count={count}
-                locationId={locationId}
-                forms={forms}
-                substances={substances}
-              />
-            </ResizablePanel>
-            <Outlet />
-          </ResizablePanelGroup>
-        )}
-      </ClientOnly>
+      <ResizablePanelGroup direction="horizontal">
+        <ResizablePanel
+          defaultSize={50}
+          maxSize={70}
+          minSize={25}
+          className="bg-background"
+        >
+          <InventoryTable
+            data={inventoryItems}
+            count={count}
+            locationId={locationId}
+            forms={forms}
+            substances={substances}
+          />
+        </ResizablePanel>
+        <Outlet />
+      </ResizablePanelGroup>
     </VStack>
   );
 }
