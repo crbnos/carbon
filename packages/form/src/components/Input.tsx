@@ -12,12 +12,13 @@ import {
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
 import { useField } from "../hooks";
-import { ValidationBehaviorOptions } from "src/internal/getInputProps";
+import type { ValidationBehaviorOptions } from "src/internal/getInputProps";
 
 type FormInputProps = InputProps & {
   name: string;
   label?: ReactNode;
   isConfigured?: boolean;
+  isOptional?: boolean;
   isRequired?: boolean;
   helperText?: string;
   prefix?: string;
@@ -32,6 +33,7 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
       name,
       label,
       isConfigured,
+      isOptional,
       isRequired,
       helperText,
       prefix,
@@ -48,6 +50,7 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
         {label && (
           <FormLabel
             htmlFor={name}
+            isOptional={isOptional}
             isConfigured={isConfigured}
             onConfigure={onConfigure}
           >
