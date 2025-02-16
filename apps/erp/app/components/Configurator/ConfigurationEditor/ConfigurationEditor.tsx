@@ -408,7 +408,7 @@ export default function Configurator({
                   Save & Close
                 </Button>
 
-                <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] whitespace-pre-wrap">
+                <div className="font-mono mt-4 p-2 bg-accent rounded min-h-[100px] max-h-[300px] max-w-[395px] overflow-auto whitespace-pre-wrap">
                   {output}
                 </div>
               </div>

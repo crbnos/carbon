@@ -4,6 +4,7 @@ import type { StorageItem } from "~/types";
 import type {
   methodItemType,
   methodType,
+  operationParameterValidator,
   operationToolValidator,
   standardFactorType,
 } from "./shared.models";
@@ -53,6 +54,12 @@ export type OperationTool = z.infer<typeof operationToolValidator> & {
   updatedAt: string | null;
 };
 
+export type OperationParameter = z.infer<typeof operationParameterValidator> & {
+  createdBy: string;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string | null;
+};
 export type OptimisticFileObject = Omit<
   StorageItem,
   "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"

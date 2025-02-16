@@ -8,7 +8,7 @@ import useMeasure from "react-use-measure";
 
 type Tab = {
   id: number;
-  label: string;
+  label: string | ReactNode;
   content: ReactNode;
   disabled?: boolean;
 };

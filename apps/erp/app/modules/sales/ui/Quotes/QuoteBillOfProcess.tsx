@@ -1,6 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -13,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Count,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -34,6 +35,7 @@ import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
+  LuActivity,
   LuChevronDown,
   LuCirclePlus,
   LuDollarSign,
@@ -56,7 +58,6 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
-  Tags,
   Tool,
   UnitHint,
   WorkCenter,
@@ -67,15 +68,17 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { useTags } from "~/hooks/useTags";
-import type { OperationTool } from "~/modules/shared";
+import type { OperationParameter, OperationTool } from "~/modules/shared";
 import {
   methodOperationOrders,
+  operationParameterValidator,
   operationToolValidator,
   operationTypes,
 } from "~/modules/shared";
 import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
+import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
 import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
+import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
@@ -86,17 +89,16 @@ export type Operation = z.infer<typeof quoteOperationValidator> & {
   tags: string[];
 };
 
-type OperationWithTools = Operation & {
-  quoteOperationTool: OperationTool[];
-};
-
 type ItemWithData = Item & {
   data: Operation;
 };
 
 type QuoteBillOfProcessProps = {
   quoteMakeMethodId: string;
-  operations: OperationWithTools[];
+  operations: (Operation & {
+    quoteOperationTool: OperationTool[];
+    quoteOperationParameter: OperationParameter[];
+  })[];
   tags: { name: string }[];
 };
 
@@ -451,6 +453,12 @@ const QuoteBillOfProcess = ({
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === selectedItemId;
+    const tools =
+      initialOperations.find((o) => o.id === item.id)?.quoteOperationTool ?? [];
+    const parameters =
+      initialOperations.find((o) => o.id === item.id)
+        ?.quoteOperationParameter ?? [];
+
     const tabs = [
       {
         id: 0,
@@ -517,14 +525,36 @@ const QuoteBillOfProcess = ({
       },
       {
         id: 2,
-        label: "Tools",
+        label: (
+          <span className="flex items-center gap-2">
+            <span>Tools</span>
+            {tools.length > 0 && <Count count={tools.length} />}
+          </span>
+        ),
         content: (
           <div className="flex w-full flex-col py-4">
             <ToolsForm
-              tools={
-                operations.find((o) => o.id === item.id)?.quoteOperationTool ??
-                []
+              tools={tools}
+              operationId={item.id!}
+              isDisabled={
+                selectedItemId === null || isTemporaryId(selectedItemId!)
               }
+            />
+          </div>
+        ),
+      },
+      {
+        id: 3,
+        label: (
+          <span className="flex items-center gap-2">
+            <span>Parameters</span>
+            {parameters.length > 0 && <Count count={parameters.length} />}
+          </span>
+        ),
+        content: (
+          <div className="flex w-full flex-col py-4">
+            <ParametersForm
+              parameters={parameters}
               operationId={item.id!}
               isDisabled={
                 selectedItemId === null || isTemporaryId(selectedItemId!)
@@ -680,6 +710,217 @@ export default QuoteBillOfProcess;
 
 export function isTemporaryId(id: string) {
   return id.length < 20;
+}
+
+function ParametersForm({
+  operationId,
+  isDisabled,
+  parameters,
+}: {
+  operationId: string;
+  isDisabled: boolean;
+  parameters: OperationParameter[];
+}) {
+  const fetcher = useFetcher<typeof newQuoteOperationParameterAction>();
+
+  if (isDisabled && isTemporaryId(operationId)) {
+    return (
+      <Alert className="max-w-[420px] mx-auto my-8">
+        <LuTriangleAlert />
+        <AlertTitle>Cannot add parameters to unsaved operation</AlertTitle>
+        <AlertDescription>
+          Please save the operation before adding parameters.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="p-6 border rounded-lg">
+        <ValidatedForm
+          action={path.to.newQuoteOperationParameter}
+          method="post"
+          validator={operationParameterValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          defaultValues={{
+            id: undefined,
+            key: "",
+            value: "",
+            operationId,
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <Input
+                name="key"
+                label="Key"
+                autoFocus={parameters.length === 0}
+              />
+              <Input name="value" label="Value" />
+            </div>
+            <Submit
+              leftIcon={<LuCirclePlus />}
+              isDisabled={isDisabled || fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
+            >
+              Add Parameter
+            </Submit>
+          </VStack>
+        </ValidatedForm>
+      </div>
+
+      {parameters.length > 0 && (
+        <div className="border rounded-lg">
+          {[...parameters]
+            .sort((a, b) =>
+              String(a.id ?? "").localeCompare(String(b.id ?? ""))
+            )
+            .map((p, index) => (
+              <ParametersListItem
+                key={p.id}
+                parameter={p}
+                operationId={operationId}
+                className={index === parameters.length - 1 ? "border-none" : ""}
+              />
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ParametersListItem({
+  parameter: { key, value, id, updatedBy, updatedAt, createdBy, createdAt },
+  operationId,
+  className,
+}: {
+  parameter: OperationParameter;
+  operationId: string;
+  className?: string;
+}) {
+  const disclosure = useDisclosure();
+  const deleteModalDisclosure = useDisclosure();
+  const submitted = useRef(false);
+  const fetcher = useFetcher<typeof editQuoteOperationParameterAction>();
+
+  useEffect(() => {
+    if (submitted.current && fetcher.state === "idle") {
+      disclosure.onClose();
+      submitted.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
+
+  const isUpdated = updatedBy !== null;
+  const person = isUpdated ? updatedBy : createdBy;
+  const date = updatedAt ?? createdAt;
+
+  if (!id) return null;
+
+  return (
+    <div className={cn("border-b p-6", className)}>
+      {disclosure.isOpen ? (
+        <ValidatedForm
+          action={path.to.quoteOperationParameter(id)}
+          method="post"
+          validator={operationParameterValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          onSubmit={() => {
+            disclosure.onClose();
+          }}
+          defaultValues={{
+            id: id,
+            key: key ?? "",
+            value: value ?? "",
+            operationId,
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <Input name="key" label="Key" />
+              <Input name="value" label="Value" />
+            </div>
+            <HStack className="w-full justify-end" spacing={2}>
+              <Button variant="secondary" onClick={disclosure.onClose}>
+                Cancel
+              </Button>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Save
+              </Submit>
+            </HStack>
+          </VStack>
+        </ValidatedForm>
+      ) : (
+        <div className="flex flex-1 justify-between items-center w-full">
+          <HStack spacing={4} className="w-1/2">
+            <HStack spacing={4} className="flex-1">
+              <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                <LuActivity className="size-4" />
+              </div>
+              <VStack spacing={0}>
+                <span className="text-sm font-medium">{key}</span>
+              </VStack>
+              <span className="text-base text-muted-foreground text-right">
+                {value}
+              </span>
+            </HStack>
+          </HStack>
+          <div className="flex items-center justify-end gap-2">
+            <HStack spacing={2}>
+              <span className="text-xs text-muted-foreground">
+                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+              </span>
+              <EmployeeAvatar employeeId={person} withName={false} />
+            </HStack>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="Open menu"
+                  icon={<LuEllipsisVertical />}
+                  variant="ghost"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={disclosure.onOpen}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  destructive
+                  onClick={deleteModalDisclosure.onOpen}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
+      {deleteModalDisclosure.isOpen && (
+        <ConfirmDelete
+          action={path.to.deleteQuoteOperationParameter(id)}
+          isOpen={deleteModalDisclosure.isOpen}
+          name={key}
+          text={`Are you sure you want to delete the ${key} parameter from this operation? This cannot be undone.`}
+          onCancel={() => {
+            deleteModalDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            deleteModalDisclosure.onClose();
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 function OperationForm({
@@ -1586,39 +1827,5 @@ function ToolsForm({
         </div>
       )}
     </div>
-  );
-}
-
-export function QuoteOperationTags({
-  operation,
-  availableTags,
-}: {
-  operation: Operation;
-  availableTags: { name: string }[];
-}) {
-  const { onUpdateTags } = useTags({
-    id: operation.id,
-    table: "quoteOperation",
-  });
-
-  return (
-    <ValidatedForm
-      defaultValues={{
-        tags: operation.tags ?? [],
-      }}
-      validator={z.object({
-        tags: z.array(z.string()).optional(),
-      })}
-    >
-      <Tags
-        availableTags={availableTags}
-        label=""
-        name="tags"
-        table="operation"
-        inline
-        maxPreview={3}
-        onChange={onUpdateTags}
-      />
-    </ValidatedForm>
   );
 }

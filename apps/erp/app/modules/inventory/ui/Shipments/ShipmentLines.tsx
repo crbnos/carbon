@@ -53,11 +53,11 @@ import { useRouteData } from "~/hooks";
 import { splitValidator } from "~/modules/inventory";
 import type {
   getBatchNumbersForItem,
-  type BatchProperty,
-  type getSerialNumbersForItem,
-  type Shipment,
-  type ShipmentLine,
-  type ShipmentLineTracking,
+  BatchProperty,
+  getSerialNumbersForItem,
+  Shipment,
+  ShipmentLine,
+  ShipmentLineTracking,
 } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
