@@ -222,6 +222,12 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
             <ModalCardBody>
               <Hidden name="type" value={type} />
               <Hidden name="modelUploadId" value={modelUploadId ?? ""} />
+              {!isEditing && replenishmentSystem === "Make" && (
+                <Hidden name="unitCost" value={initialValues.unitCost} />
+              )}
+              {!isEditing && replenishmentSystem === "Buy" && (
+                <Hidden name="lotSize" value={initialValues.lotSize} />
+              )}
               <div
                 className={cn(
                   "grid w-full gap-x-8 gap-y-4",
@@ -285,17 +291,19 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Unit of Measure"
                 />
 
-                {!isEditing && (
+                {!isEditing && replenishmentSystem !== "Make" && (
                   <Number
                     name="unitCost"
                     label="Unit Cost"
-                    isReadOnly={replenishmentSystem === "Make"}
                     formatOptions={{
                       style: "currency",
                       currency: baseCurrency,
                     }}
                     minValue={0}
                   />
+                )}
+                {!isEditing && replenishmentSystem !== "Buy" && (
+                  <Number name="lotSize" label="Lot Size" minValue={0} />
                 )}
                 <Boolean name="active" label="Active" />
                 <CustomFormFields table="part" tags={initialValues.tags} />

@@ -12,6 +12,7 @@ import {
   upsertJobMethod,
 } from "../modules/production/production.service";
 import type { recalculateTask } from "./recalculate";
+import { getItemManufacturing } from "~/modules/items";
 
 const salesOrderToJobsSchema = z.object({
   orderId: z.string(),
@@ -31,6 +32,11 @@ export const salesOrderToJobsTask = task({
       getSalesOrderLines(serviceRole, orderId),
       getOpportunityBySalesOrder(serviceRole, orderId),
     ]);
+
+    if (companyId !== salesOrder.data?.companyId) {
+      console.error("Company ID mismatch");
+      return;
+    }
 
     if (salesOrder.error) {
       console.error("Failed to get sales order");
@@ -52,83 +58,112 @@ export const salesOrderToJobsTask = task({
 
     for await (const line of lines) {
       if (line.methodType === "Make" && line.itemId) {
-        const nextSequence = await getNextSequence(
+        const itemManufacturing = await getItemManufacturing(
           serviceRole,
-          "job",
+          line.itemId,
           companyId
         );
-        if (!nextSequence.data) {
-          console.error("Failed to get next job id");
-          continue;
-        }
 
-        const data = {
-          customerId: salesOrder.data?.customerId ?? undefined,
-          deadlineType: "Hard Deadline" as const,
-          dueDate: line.promisedDate ?? undefined,
-          itemId: line.itemId,
-          locationId: line.locationId ?? "",
-          modelUploadId: line.modelUploadId ?? undefined,
-          quantity: line.saleQuantity ?? 0,
-          quoteId: opportunity.data?.quoteId ?? undefined,
-          quoteLineId: opportunity.data?.quoteId ? line.id : undefined,
-          salesOrderId: opportunity.data?.salesOrderId ?? undefined,
-          salesOrderLineId: line.id,
-          scrapQuantity: 0,
-          unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
-        };
+        const lotSize = itemManufacturing.data?.lotSize ?? 0;
+        const totalQuantity = line.saleQuantity ?? 0;
+        // If lotSize is 0, create a single job with the total quantity
+        const totalJobs = lotSize > 0 ? Math.ceil(totalQuantity / lotSize) : 1;
 
-        const createJob = await upsertJob(serviceRole, {
-          ...data,
-          jobId: nextSequence.data,
-          companyId,
-          createdBy: userId,
-        });
+        // Ensure totalJobs is at least 1 to avoid invalid array length
+        const jobsToCreate = Math.max(1, totalJobs);
 
-        if (createJob.error) {
-          console.error("Failed to create job");
-          console.error(createJob.error);
-          continue;
-        }
-
-        if (opportunity.data?.quoteId) {
-          const upsertMethod = await upsertJobMethod(
+        for await (const index of Array.from({ length: jobsToCreate }).keys()) {
+          const nextSequence = await getNextSequence(
             serviceRole,
-            "quoteLineToJob",
-            {
-              sourceId: `${opportunity.data.quoteId}:${line.id}`,
-              targetId: createJob.data.id,
-              companyId,
-              userId,
-            }
+            "job",
+            companyId
           );
-
-          if (upsertMethod.error) {
-            console.error("Failed to create job method");
-            console.error(upsertMethod.error);
+          if (!nextSequence.data) {
+            console.error("Failed to get next job id");
             continue;
           }
-        } else {
-          const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
-            sourceId: data.itemId,
-            targetId: createJob.data.id,
+
+          // Calculate quantity for this job
+          const isLastJob = index === jobsToCreate - 1;
+          const jobQuantity =
+            lotSize > 0
+              ? isLastJob
+                ? totalQuantity - lotSize * (jobsToCreate - 1) // Remainder for last job
+                : lotSize
+              : totalQuantity; // If no lotSize, use total quantity
+
+          const data = {
+            customerId: salesOrder.data?.customerId ?? undefined,
+            deadlineType: "Hard Deadline" as const,
+            dueDate: line.promisedDate ?? undefined,
+            itemId: line.itemId,
+            locationId: line.locationId ?? "",
+            modelUploadId: line.modelUploadId ?? undefined,
+            quantity: jobQuantity,
+            quoteId: opportunity.data?.quoteId ?? undefined,
+            quoteLineId: opportunity.data?.quoteId ? line.id : undefined,
+            salesOrderId: opportunity.data?.salesOrderId ?? undefined,
+            salesOrderLineId: line.id,
+            scrapQuantity: 0,
+            unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
+          };
+
+          const createJob = await upsertJob(serviceRole, {
+            ...data,
+            jobId: nextSequence.data,
+            companyId,
+            createdBy: userId,
+          });
+
+          if (createJob.error) {
+            console.error("Failed to create job");
+            console.error(createJob.error);
+            continue;
+          }
+
+          if (opportunity.data?.quoteId) {
+            const upsertMethod = await upsertJobMethod(
+              serviceRole,
+              "quoteLineToJob",
+              {
+                sourceId: `${opportunity.data.quoteId}:${line.id}`,
+                targetId: createJob.data.id,
+                companyId,
+                userId,
+              }
+            );
+
+            if (upsertMethod.error) {
+              console.error("Failed to create job method");
+              console.error(upsertMethod.error);
+              continue;
+            }
+          } else {
+            const upsertMethod = await upsertJobMethod(
+              serviceRole,
+              "itemToJob",
+              {
+                sourceId: data.itemId,
+                targetId: createJob.data.id,
+                companyId,
+                userId,
+              }
+            );
+
+            if (upsertMethod.error) {
+              console.error("Failed to create job method");
+              console.error(upsertMethod.error);
+              continue;
+            }
+          }
+
+          await tasks.trigger<typeof recalculateTask>("recalculate", {
+            type: "jobRequirements",
+            id: createJob.data.id,
             companyId,
             userId,
           });
-
-          if (upsertMethod.error) {
-            console.error("Failed to create job method");
-            console.error(upsertMethod.error);
-            continue;
-          }
         }
-
-        await tasks.trigger<typeof recalculateTask>("recalculate", {
-          type: "jobRequirements",
-          id: createJob.data.id,
-          companyId,
-          userId,
-        });
       }
     }
   },

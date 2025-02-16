@@ -54,6 +54,8 @@ const Part = ({ itemReplenishmentSystem, ...props }: PartSelectProps) => {
             replenishmentSystem: itemReplenishmentSystem ?? "Buy and Make",
             defaultMethodType: "Buy",
             unitOfMeasureCode: "EA",
+            unitCost: 0,
+            lotSize: 0,
             active: true,
           }}
         />

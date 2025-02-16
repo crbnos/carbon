@@ -2,10 +2,11 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { Outlet, useParams } from "@remix-run/react";
+import { Outlet, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
+import { useRealtime } from "~/hooks/useRealtime";
 import {
   getCustomer,
   getOpportunityBySalesOrder,
@@ -80,6 +81,13 @@ export default function SalesOrderRoute() {
   const params = useParams();
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
+
+  const { lines } = useLoaderData<typeof loader>();
+
+  useRealtime(
+    "job",
+    `salesOrderLineId=in.(${lines.map((line) => line.id).join(",")})`
+  );
 
   return (
     <PanelProvider>

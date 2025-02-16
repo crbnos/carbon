@@ -80,6 +80,7 @@ export default function PartsNewRoute() {
     defaultMethodType: "Buy" as "Buy",
     unitOfMeasureCode: "EA",
     unitCost: 0,
+    lotSize: 0,
     active: true,
   };
 

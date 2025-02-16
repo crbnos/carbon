@@ -454,6 +454,7 @@ export const partValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Part ID is required" }).max(255),
     modelUploadId: zfd.text(z.string().optional()),
+    lotSize: zfd.numeric(z.number().min(0).optional()),
   })
 );
 
@@ -500,6 +501,7 @@ export const toolValidator = itemValidator.merge(
     unitOfMeasureCode: z
       .string()
       .min(1, { message: "Unit of Measure is required" }),
+    lotSize: zfd.numeric(z.number().min(0).optional()),
   })
 );
 

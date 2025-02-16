@@ -340,6 +340,7 @@ const Item = ({
               props?.replenishmentSystem === "Buy" ? "Pick" : "Make",
             active: true,
             unitCost: 0,
+            lotSize: 0,
             tags: [],
           }}
         />

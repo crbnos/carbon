@@ -1559,14 +1559,23 @@ export async function upsertPart(
 
     if (partInsert.error) return partInsert;
 
-    const costUpdate = await client
-      .from("itemCost")
-      .update({ unitCost: part.unitCost })
-      .eq("itemId", itemId)
-      .select("*")
-      .single();
+    if (part.replenishmentSystem !== "Make") {
+      const costUpdate = await client
+        .from("itemCost")
+        .update({ unitCost: part.unitCost })
+        .eq("itemId", itemId);
 
-    if (costUpdate.error) return costUpdate;
+      if (costUpdate.error) return costUpdate;
+    }
+
+    if (part.replenishmentSystem !== "Buy") {
+      const itemReplenishmentInsert = await client
+        .from("itemReplenishment")
+        .update({ lotSize: part.lotSize })
+        .eq("itemId", itemId);
+
+      if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
+    }
 
     return partInsert;
   }

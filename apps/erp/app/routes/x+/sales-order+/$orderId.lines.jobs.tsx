@@ -5,7 +5,7 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import type { salesOrderToJobsTask } from "~/trigger/sales-order-to-jobs";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };
 
@@ -28,7 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   throw redirect(
-    path.to.salesOrder(orderId),
-    await flash(request, success("Jobs created"))
+    requestReferrer(request) ?? path.to.salesOrder(orderId),
+    await flash(request, success("Jobs queued for creation"))
   );
 }
