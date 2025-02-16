@@ -7,7 +7,10 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting";
-import type { operationToolValidator } from "../shared";
+import type {
+  operationParameterValidator,
+  operationToolValidator,
+} from "../shared";
 import { upsertExternalLink } from "../shared/shared.service";
 import type {
   customerAccountingValidator,
@@ -214,6 +217,13 @@ export async function deleteQuoteOperation(
   quoteOperationId: string
 ) {
   return client.from("quoteOperation").delete().eq("id", quoteOperationId);
+}
+
+export async function deleteQuoteOperationParameter(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("quoteOperationParameter").delete().eq("id", id);
 }
 
 export async function deleteQuoteOperationTool(
@@ -969,9 +979,7 @@ export async function getQuoteOperationsByMethodId(
 ) {
   return client
     .from("quoteOperation")
-    .select(
-      "*, quoteOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-    )
+    .select("*, quoteOperationTool(*), quoteOperationParameter(*)")
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -2164,6 +2172,35 @@ export async function upsertQuoteOperation(
   return client
     .from("quoteOperation")
     .insert([operation])
+    .select("id")
+    .single();
+}
+
+export async function upsertQuoteOperationParameter(
+  client: SupabaseClient<Database>,
+  quoteOperationParameter:
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in quoteOperationParameter) {
+    return client
+      .from("quoteOperationParameter")
+      .insert(quoteOperationParameter)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("quoteOperationParameter")
+    .update(sanitize(quoteOperationParameter))
+    .eq("id", quoteOperationParameter.id)
     .select("id")
     .single();
 }

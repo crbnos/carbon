@@ -5,7 +5,10 @@ import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import type { operationToolValidator } from "../shared";
+import type {
+  operationParameterValidator,
+  operationToolValidator,
+} from "../shared";
 import type {
   jobMaterialValidator,
   jobOperationStatus,
@@ -37,6 +40,13 @@ export async function deleteJobOperation(
   jobOperationId: string
 ) {
   return client.from("jobOperation").delete().eq("id", jobOperationId);
+}
+
+export async function deleteJobOperationParameter(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("jobOperationParameter").delete().eq("id", id);
 }
 
 export async function deleteJobOperationTool(
@@ -387,9 +397,7 @@ export async function getJobOperationsByMethodId(
 ) {
   return client
     .from("jobOperation")
-    .select(
-      "*, jobOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-    )
+    .select("*, jobOperationTool(*), jobOperationParameter(*)")
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -841,6 +849,35 @@ export async function upsertJobOperation(
   return client
     .from("jobOperation")
     .insert([jobOperation])
+    .select("id")
+    .single();
+}
+
+export async function upsertJobOperationParameter(
+  client: SupabaseClient<Database>,
+  jobOperationParameter:
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in jobOperationParameter) {
+    return client
+      .from("jobOperationParameter")
+      .insert(jobOperationParameter)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("jobOperationParameter")
+    .update(sanitize(jobOperationParameter))
+    .eq("id", jobOperationParameter.id)
     .select("id")
     .single();
 }

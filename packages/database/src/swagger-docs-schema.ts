@@ -11131,6 +11131,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.logoLight",
           },
           {
+            $ref: "#/parameters/rowFilter.company.slackChannel",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -11247,6 +11250,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.logoLight",
           },
           {
+            $ref: "#/parameters/rowFilter.company.slackChannel",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -11315,6 +11321,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.logoLight",
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.slackChannel",
           },
           {
             $ref: "#/parameters/body.company",
@@ -18850,6 +18859,177 @@ export default {
           },
         },
         tags: ["accountCategories"],
+      },
+    },
+    "/jobOperationParameter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationParameter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationParameter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationParameter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationParameter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationParameter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationParameter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationParameter"],
       },
     },
     "/quotePayment": {
@@ -33912,6 +34092,177 @@ export default {
         tags: ["documentFavorite"],
       },
     },
+    "/quoteOperationParameter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteOperationParameter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteOperationParameter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quoteOperationParameter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quoteOperationParameter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationParameter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.quoteOperationParameter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationParameter"],
+      },
+    },
     "/partner": {
       get: {
         parameters: [
@@ -34099,6 +34450,177 @@ export default {
           },
         },
         tags: ["partner"],
+      },
+    },
+    "/methodOperationParameter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/methodOperationParameter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["methodOperationParameter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.methodOperationParameter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["methodOperationParameter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationParameter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.methodOperationParameter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationParameter"],
       },
     },
     "/address": {
@@ -50563,6 +51085,10 @@ export default {
           format: "text",
           type: "string",
         },
+        slackChannel: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -54124,6 +54650,65 @@ export default {
         subCategoriesCount: {
           format: "bigint",
           type: "integer",
+        },
+      },
+      type: "object",
+    },
+    jobOperationParameter: {
+      required: [
+        "id",
+        "key",
+        "value",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        value: {
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -60900,6 +61485,65 @@ export default {
       },
       type: "object",
     },
+    quoteOperationParameter: {
+      required: [
+        "id",
+        "key",
+        "value",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        value: {
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteOperation.id`.<fk table='quoteOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     partner: {
       required: [
         "id",
@@ -60969,6 +61613,65 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    methodOperationParameter: {
+      required: [
+        "id",
+        "key",
+        "value",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        value: {
+          format: "text",
+          type: "string",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `methodOperation.id`.<fk table='methodOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -71346,6 +72049,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.company.slackChannel": {
+      name: "slackChannel",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.jobOperationTool": {
       name: "jobOperationTool",
       description: "jobOperationTool",
@@ -76125,6 +76835,78 @@ export default {
       name: "subCategoriesCount",
       required: false,
       format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "body.jobOperationParameter": {
+      name: "jobOperationParameter",
+      description: "jobOperationParameter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationParameter",
+      },
+    },
+    "rowFilter.jobOperationParameter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.value": {
+      name: "value",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationParameter.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -84873,6 +85655,78 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.quoteOperationParameter": {
+      name: "quoteOperationParameter",
+      description: "quoteOperationParameter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteOperationParameter",
+      },
+    },
+    "rowFilter.quoteOperationParameter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.value": {
+      name: "value",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationParameter.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.partner": {
       name: "partner",
       description: "partner",
@@ -84956,6 +85810,78 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.methodOperationParameter": {
+      name: "methodOperationParameter",
+      description: "methodOperationParameter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/methodOperationParameter",
+      },
+    },
+    "rowFilter.methodOperationParameter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.value": {
+      name: "value",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationParameter.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

@@ -91,9 +91,7 @@ serve(async (req: Request) => {
             .eq("makeMethodId", sourceMakeMethod.data.id),
           client
             .from("methodOperation")
-            .select(
-              "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-            )
+            .select("*, methodOperationTool(*), methodOperationParameter(*)")
             .eq("makeMethodId", sourceMakeMethod.data.id),
         ]);
 
@@ -151,7 +149,8 @@ serve(async (req: Request) => {
               index,
               operation,
             ] of sourceOperations.data.entries()) {
-              const { methodOperationTool } = operation;
+              const { methodOperationTool, methodOperationParameter } =
+                operation;
               const operationId = operationIds[index].id;
 
               if (
@@ -166,6 +165,24 @@ serve(async (req: Request) => {
                       toolId: tool.toolId,
                       quantity: tool.quantity,
                       operationId,
+                      companyId,
+                      createdBy: userId,
+                    }))
+                  )
+                  .execute();
+              }
+
+              if (
+                Array.isArray(methodOperationParameter) &&
+                methodOperationParameter.length > 0
+              ) {
+                await trx
+                  .insertInto("methodOperationParameter")
+                  .values(
+                    methodOperationParameter.map((param) => ({
+                      operationId: operationId!,
+                      key: param.key,
+                      value: param.value,
                       companyId,
                       createdBy: userId,
                     }))
@@ -272,12 +289,13 @@ serve(async (req: Request) => {
             field: string;
             defaultValue: T;
           }): Promise<T> {
-            const configurationKey = `${id}:${field}`;
+            if (!configurationCodeByField) return defaultValue;
+            const fieldKey = getFieldKey(field, id);
 
-            if (configurationCodeByField?.[configurationKey]) {
+            if (configurationCodeByField?.[fieldKey]) {
               try {
                 const mod = await importTypeScript(
-                  configurationCodeByField[configurationKey]
+                  configurationCodeByField[fieldKey]
                 );
                 const result = await mod.configure(configuration);
                 return (result ?? defaultValue) as T;
@@ -304,9 +322,7 @@ serve(async (req: Request) => {
 
             const relatedOperations = await client
               .from("methodOperation")
-              .select(
-                "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-              )
+              .select("*, methodOperationTool(*), methodOperationParameter(*)")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             let jobOperationsInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
@@ -451,7 +467,9 @@ serve(async (req: Request) => {
                 const operationId = operationIds[index].id;
 
                 if (operationId) {
-                  const { methodOperationTool } = operation;
+                  const { methodOperationTool, methodOperationParameter } =
+                    operation;
+
                   if (
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
@@ -467,6 +485,30 @@ serve(async (req: Request) => {
                           createdBy: userId,
                         }))
                       )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(methodOperationParameter) &&
+                    methodOperationParameter.length > 0
+                  ) {
+                    const parameters = await Promise.all(
+                      methodOperationParameter.map(async (param) => ({
+                        operationId,
+                        key: param.key,
+                        value: await getConfiguredValue({
+                          id: operation.id,
+                          field: `parameter:${param.id}:value`,
+                          defaultValue: param.value,
+                        }),
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    );
+
+                    await trx
+                      .insertInto("jobOperationParameter")
+                      .values(parameters)
                       .execute();
                   }
                 }
@@ -722,9 +764,7 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select(
-                "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-              )
+              .select("*, methodOperationTool(*), methodOperationParameter(*)")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             const jobOperationsInserts =
@@ -770,7 +810,8 @@ serve(async (req: Request) => {
                 const operationId = operationIds[index].id;
 
                 if (operationId) {
-                  const { methodOperationTool } = operation;
+                  const { methodOperationTool, methodOperationParameter } =
+                    operation;
                   if (
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
@@ -782,6 +823,24 @@ serve(async (req: Request) => {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(methodOperationParameter) &&
+                    methodOperationParameter.length > 0
+                  ) {
+                    await trx
+                      .insertInto("jobOperationParameter")
+                      .values(
+                        methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
                           companyId,
                           createdBy: userId,
                         }))
@@ -978,6 +1037,7 @@ serve(async (req: Request) => {
             if (!configurationCodeByField) return defaultValue;
 
             const fieldKey = getFieldKey(field, id);
+
             if (configurationCodeByField[fieldKey]) {
               try {
                 const code = configurationCodeByField[fieldKey];
@@ -1004,9 +1064,7 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select(
-                "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-              )
+              .select("*, methodOperationTool(*), methodOperationParameter(*)")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
@@ -1157,7 +1215,9 @@ serve(async (req: Request) => {
                 const operationId = operationIds[index].id;
 
                 if (operationId) {
-                  const { methodOperationTool } = operation;
+                  const { methodOperationTool, methodOperationParameter } =
+                    operation;
+
                   if (
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
@@ -1173,6 +1233,30 @@ serve(async (req: Request) => {
                           createdBy: userId,
                         }))
                       )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(methodOperationParameter) &&
+                    methodOperationParameter.length > 0
+                  ) {
+                    const parameters = await Promise.all(
+                      methodOperationParameter.map(async (param) => ({
+                        operationId,
+                        key: param.key,
+                        value: await getConfiguredValue({
+                          id: operation.id,
+                          field: `parameter:${param.id}:value`,
+                          defaultValue: param.value,
+                        }),
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    );
+
+                    await trx
+                      .insertInto("quoteOperationParameter")
+                      .values(parameters)
                       .execute();
                   }
                 }
@@ -1431,9 +1515,7 @@ serve(async (req: Request) => {
           ) {
             const relatedOperations = await client
               .from("methodOperation")
-              .select(
-                "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-              )
+              .select("*, methodOperationTool(*), methodOperationParameter(*)")
               .eq("makeMethodId", node.data.materialMakeMethodId);
 
             const quoteOperationInserts =
@@ -1480,7 +1562,8 @@ serve(async (req: Request) => {
                 const operationId = operationIds[index].id;
 
                 if (operationId) {
-                  const { methodOperationTool } = operation;
+                  const { methodOperationTool, methodOperationParameter } =
+                    operation;
                   if (
                     Array.isArray(methodOperationTool) &&
                     methodOperationTool.length > 0
@@ -1492,6 +1575,24 @@ serve(async (req: Request) => {
                           toolId: tool.toolId,
                           quantity: tool.quantity,
                           operationId,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(methodOperationParameter) &&
+                    methodOperationParameter.length > 0
+                  ) {
+                    await trx
+                      .insertInto("quoteOperationParameter")
+                      .values(
+                        methodOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
                           companyId,
                           createdBy: userId,
                         }))
@@ -1610,9 +1711,7 @@ serve(async (req: Request) => {
         const [jobOperations] = await Promise.all([
           client
             .from("jobOperationsWithMakeMethods")
-            .select(
-              "*, jobOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-            )
+            .select("*, jobOperationTool(*), jobOperationParameter(*)")
             .eq("jobId", jobMakeMethod.data.jobId),
         ]);
 
@@ -1773,7 +1872,8 @@ serve(async (req: Request) => {
             ).entries()) {
               const operationId = operationIds[index].id;
               if (operationId) {
-                const { jobOperationTool } = operation;
+                const { jobOperationTool, jobOperationParameter } = operation;
+
                 if (
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
@@ -1785,6 +1885,24 @@ serve(async (req: Request) => {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(jobOperationParameter) &&
+                  jobOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
                         companyId,
                         createdBy: userId,
                       }))
@@ -1815,9 +1933,7 @@ serve(async (req: Request) => {
             .single(),
           client
             .from("jobOperationsWithMakeMethods")
-            .select(
-              "*, jobOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-            )
+            .select("*, jobOperationTool(*), jobOperationParameter(*)")
             .eq("jobId", jobId),
         ]);
 
@@ -1979,7 +2095,8 @@ serve(async (req: Request) => {
             ).entries()) {
               const operationId = operationIds[index].id;
               if (operationId) {
-                const { jobOperationTool } = operation;
+                const { jobOperationTool, jobOperationParameter } = operation;
+
                 if (
                   Array.isArray(jobOperationTool) &&
                   jobOperationTool.length > 0
@@ -1991,6 +2108,24 @@ serve(async (req: Request) => {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(jobOperationParameter) &&
+                  jobOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      jobOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
                         companyId,
                         createdBy: userId,
                       }))
@@ -2022,9 +2157,7 @@ serve(async (req: Request) => {
               .single(),
             client
               .from("quoteOperationsWithMakeMethods")
-              .select(
-                "*, quoteOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-              )
+              .select("*, quoteOperationTool(*), quoteOperationParameter(*)")
               .eq("quoteLineId", quoteLineId),
           ]);
 
@@ -2193,7 +2326,9 @@ serve(async (req: Request) => {
             ).entries()) {
               const operationId = operationIds[index].id;
               if (operationId) {
-                const { quoteOperationTool } = operation;
+                const { quoteOperationTool, quoteOperationParameter } =
+                  operation;
+
                 if (
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
@@ -2205,6 +2340,24 @@ serve(async (req: Request) => {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(quoteOperationParameter) &&
+                  quoteOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
                         companyId,
                         createdBy: userId,
                       }))
@@ -2253,9 +2406,7 @@ serve(async (req: Request) => {
             .eq("quoteLineId", quoteLineId),
           client
             .from("quoteOperation")
-            .select(
-              "*, quoteOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-            )
+            .select("*, quoteOperationTool(*), quoteOperationParameter(*)")
             .eq("quoteLineId", quoteLineId),
         ]);
 
@@ -2415,7 +2566,9 @@ serve(async (req: Request) => {
             ).entries()) {
               const operationId = operationIds[index].id;
               if (operationId) {
-                const { quoteOperationTool } = operation;
+                const { quoteOperationTool, quoteOperationParameter } =
+                  operation;
+
                 if (
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
@@ -2427,6 +2580,24 @@ serve(async (req: Request) => {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(quoteOperationParameter) &&
+                  quoteOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("jobOperationParameter")
+                    .values(
+                      quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
                         companyId,
                         createdBy: userId,
                       }))
@@ -2464,9 +2635,7 @@ serve(async (req: Request) => {
         const [quoteOperations] = await Promise.all([
           client
             .from("quoteOperationsWithMakeMethods")
-            .select(
-              "*, quoteOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-            )
+            .select("*, quoteOperationTool(*), quoteOperationParameter(*)")
             .eq("quoteLineId", quoteMakeMethod.data.quoteLineId),
         ]);
 
@@ -2631,7 +2800,9 @@ serve(async (req: Request) => {
             ).entries()) {
               const operationId = operationIds[index].id;
               if (operationId) {
-                const { quoteOperationTool } = operation;
+                const { quoteOperationTool, quoteOperationParameter } =
+                  operation;
+
                 if (
                   Array.isArray(quoteOperationTool) &&
                   quoteOperationTool.length > 0
@@ -2643,6 +2814,24 @@ serve(async (req: Request) => {
                         toolId: tool.toolId,
                         quantity: tool.quantity,
                         operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(quoteOperationParameter) &&
+                  quoteOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      quoteOperationParameter.map((param) => ({
+                        operationId,
+                        key: param.key,
+                        value: param.value,
                         companyId,
                         createdBy: userId,
                       }))

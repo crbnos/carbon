@@ -91,6 +91,13 @@ export const operationToolValidator = z.object({
   ),
 });
 
+export const operationParameterValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  operationId: z.string().min(1, { message: "Operation is required" }),
+  key: z.string().min(1, { message: "Key is required" }),
+  value: z.string().min(1, { message: "Value is required" }),
+});
+
 export const savedViewValidator = z.object({
   id: zfd.text(z.string().optional()),
   table: z.string(),

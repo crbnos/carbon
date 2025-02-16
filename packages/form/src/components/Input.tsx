@@ -12,27 +12,45 @@ import {
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
 import { useField } from "../hooks";
+import { ValidationBehaviorOptions } from "src/internal/getInputProps";
 
 type FormInputProps = InputProps & {
   name: string;
   label?: ReactNode;
-  isOptional?: boolean;
+  isConfigured?: boolean;
+  isRequired?: boolean;
   helperText?: string;
   prefix?: string;
   suffix?: string;
+  validationBehavior?: ValidationBehaviorOptions;
+  onConfigure?: () => void;
 };
 
 const Input = forwardRef<HTMLInputElement, FormInputProps>(
   (
-    { name, label, isOptional = false, helperText, prefix, suffix, ...rest },
+    {
+      name,
+      label,
+      isConfigured,
+      isRequired,
+      helperText,
+      prefix,
+      suffix,
+      onConfigure,
+      ...rest
+    },
     ref
   ) => {
     const { getInputProps, error } = useField(name);
 
     return (
-      <FormControl isInvalid={!!error}>
+      <FormControl isInvalid={!!error} isRequired={isRequired}>
         {label && (
-          <FormLabel htmlFor={name} isOptional={isOptional}>
+          <FormLabel
+            htmlFor={name}
+            isConfigured={isConfigured}
+            onConfigure={onConfigure}
+          >
             {label}
           </FormLabel>
         )}

@@ -6,7 +6,10 @@ import { type z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import type { operationToolValidator } from "../shared";
+import type {
+  operationParameterValidator,
+  operationToolValidator,
+} from "../shared";
 import type {
   configurationParameterGroupOrderValidator,
   configurationParameterGroupValidator,
@@ -153,6 +156,13 @@ export async function deleteMethodMaterial(
   id: string
 ) {
   return client.from("methodMaterial").delete().eq("id", id);
+}
+
+export async function deleteMethodOperationParameter(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("methodOperationParameter").delete().eq("id", id);
 }
 
 export async function deleteMethodOperationTool(
@@ -862,9 +872,7 @@ export async function getMethodOperationsByMakeMethodId(
 ) {
   return client
     .from("methodOperation")
-    .select(
-      "*, methodOperationTool(id, operationId, toolId, quantity, createdBy, createdAt, updatedBy, updatedAt)"
-    )
+    .select("*, methodOperationTool(*), methodOperationParameter(*)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
@@ -1873,6 +1881,35 @@ export async function upsertMethodOperation(
     .from("methodOperation")
     .update(sanitize(methodOperation))
     .eq("id", methodOperation.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertMethodOperationParameter(
+  client: SupabaseClient<Database>,
+  methodOperationParameter:
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in methodOperationParameter) {
+    return client
+      .from("methodOperationParameter")
+      .insert(methodOperationParameter)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("methodOperationParameter")
+    .update(sanitize(methodOperationParameter))
+    .eq("id", methodOperationParameter.id)
     .select("id")
     .single();
 }
