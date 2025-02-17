@@ -135,6 +135,10 @@ export const inputVariants = cva(
         true: "bg-muted text-muted-foreground",
         false: "",
       },
+      borderless: {
+        true: "border-none px-0 outline-none ring-transparent focus:ring-transparent focus:ring-offset-0 focus-visible:ring-transparent focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none",
+        false: "",
+      },
     },
     compoundVariants: [
       {
@@ -159,6 +163,7 @@ export const inputVariants = cva(
       isFirstChild: false,
       isLastChild: false,
       isInvalid: false,
+      borderless: false,
     },
   }
 );
@@ -171,6 +176,7 @@ export interface InputProps
   isInvalid?: boolean;
   isDisabled?: boolean;
   isReadOnly?: boolean;
+  borderless?: boolean;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
@@ -183,6 +189,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       isInvalid = false,
       isDisabled = false,
       isReadOnly = false,
+      borderless = false,
       type = "text",
       ...props
     },
@@ -201,6 +208,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             isInvalid,
             isReadOnly,
             isDisabled,
+            borderless,
           }),
           className
         )}

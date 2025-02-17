@@ -13,13 +13,14 @@ import { useCallback, useEffect } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { Process } from "~/components/Form";
-import { useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import { Procedure } from "../../types";
+import type { Procedure } from "../../types";
 import ProcedureStatus from "./ProcedureStatus";
 import { procedureStatus } from "../../production.models";
+import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 
 const ProcedureProperties = () => {
   const { id } = useParams();
@@ -52,6 +53,17 @@ const ProcedureProperties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [id]
   );
+
+  const optimisticAssignment = useOptimisticAssignment({
+    id: id,
+    table: "procedure",
+  });
+  const assignee =
+    optimisticAssignment !== undefined
+      ? optimisticAssignment
+      : routeData?.procedure?.assignee;
+
+  const permissions = usePermissions();
 
   return (
     <VStack
@@ -124,6 +136,15 @@ const ProcedureProperties = () => {
           {routeData?.procedure?.name}
         </span>
       </VStack>
+
+      <Assignee
+        id={id}
+        table="procedure"
+        value={assignee ?? ""}
+        variant="inline"
+        isReadOnly={!permissions.can("update", "production")}
+      />
+
       <ValidatedForm
         defaultValues={{
           status: routeData?.procedure?.status ?? undefined,

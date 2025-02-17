@@ -158,13 +158,15 @@ const TableHeader = <T extends object>({
                 name="name"
                 placeholder="My Saved View"
                 label=""
-                className="border-none p-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium text-base shadow-none"
+                className="font-medium text-base"
+                borderless
               />
               <Input
                 name="description"
                 label=""
                 placeholder="Description (optional)"
-                className="border-none p-0 ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 text-sm shadow-none"
+                className="text-sm"
+                borderless
               />
             </CardContent>
             <CardFooter className="border-t bg-muted/30 p-4">

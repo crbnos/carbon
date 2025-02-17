@@ -1,25 +1,26 @@
 import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { Input, JSONContent, toast, useDebounce } from "@carbon/react";
-import { generateHTML } from "@carbon/react/Editor";
-import { Editor } from "@carbon/react/Editor";
-import { today } from "@internationalized/date";
-import { getLocalTimeZone } from "@internationalized/date";
+import type { JSONContent} from "@carbon/react";
+import { Input, toast, useDebounce } from "@carbon/react";
+import { generateHTML , Editor } from "@carbon/react/Editor";
+import { today , getLocalTimeZone } from "@internationalized/date";
 import { Outlet, useFetcher, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import type {
+  Procedure} from "~/modules/production";
 import {
   getProcedure,
-  getProcedureVersions,
-  Procedure,
+  getProcedureVersions
 } from "~/modules/production";
+import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import type { action } from "~/routes/x+/procedure+/update";
-import { Handle } from "~/utils/handle";
+import type { Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
 
 export const handle: Handle = {
@@ -49,13 +50,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     procedure: procedure.data,
-    versions: getProcedureVersions(client, procedure.data.name, companyId),
+    versions: getProcedureVersions(client, procedure.data, companyId),
   });
 }
 
 export default function ProcedureRoute() {
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+      <ProcedureHeader />
       <div className="flex h-[calc(100dvh-49px)] w-full">
         <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
           <ProcedureEditor />
@@ -102,7 +104,7 @@ function ProcedureEditor() {
         })
         .eq("id", id!);
     },
-    300,
+    500,
     true
   );
 
@@ -121,7 +123,7 @@ function ProcedureEditor() {
         action: path.to.bulkUpdateProcedure,
       });
     },
-    2500,
+    1000,
     true
   );
 
@@ -146,8 +148,9 @@ function ProcedureEditor() {
   return (
     <div className="flex flex-col gap-6 w-full h-full p-6">
       <Input
-        className="border-none px-0 outline-none md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground ring-transparent focus:ring-transparent focus:ring-offset-0 focus-visible:ring-transparent focus:outline-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
         value={procedureName}
+        borderless
         onChange={(e) => {
           setProcedureName(e.target.value);
           updateProcedureName(e.target.value);
