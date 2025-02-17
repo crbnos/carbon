@@ -52,6 +52,8 @@ export const jobOperationStatus = [
   "Canceled",
 ] as const;
 
+export const procedureStatus = ["Draft", "Active", "Archived"] as const;
+
 const baseJobValidator = z.object({
   id: zfd.text(z.string().optional()),
   jobId: zfd.text(z.string().optional()),
@@ -405,6 +407,13 @@ export const getJobMethodValidator = z.object({
 //   jobMaterialId: z.string().min(1, { message: "Quote Material is required" }),
 //   itemId: z.string().min(1, { message: "Please select a source method" }),
 // });
+
+export const procedureValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  version: zfd.numeric(z.number().min(0)),
+  processId: zfd.text(z.string().optional()),
+});
 
 export const productionEventValidator = z
   .object({

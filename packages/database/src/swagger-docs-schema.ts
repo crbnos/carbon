@@ -20013,6 +20013,249 @@ export default {
         tags: ["supplier"],
       },
     },
+    "/procedureAttribute": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/procedureAttribute",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["procedureAttribute"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.procedureAttribute",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["procedureAttribute"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedureAttribute"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.procedureAttribute",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedureAttribute"],
+      },
+    },
     "/customFieldTable": {
       get: {
         parameters: [
@@ -27090,6 +27333,213 @@ export default {
         tags: ["groups"],
       },
     },
+    "/procedure": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedure.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/procedure",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["procedure"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.procedure",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["procedure"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedure.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedure"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedure.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.content",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedure.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.procedure",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedure"],
+      },
+    },
     "/purchaseOrderDelivery": {
       get: {
         parameters: [
@@ -33793,6 +34243,72 @@ export default {
           },
         },
         tags: ["userAttributeValue"],
+      },
+    },
+    "/procedures": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedures.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedures.versions",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/procedures",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["procedures"],
       },
     },
     "/unitOfMeasure": {
@@ -55220,6 +55736,116 @@ export default {
       },
       type: "object",
     },
+    procedureAttribute: {
+      required: [
+        "id",
+        "procedureId",
+        "name",
+        "sortOrder",
+        "type",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        required: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        type: {
+          enum: [
+            "Value",
+            "Measurement",
+            "Checkbox",
+            "Timestamp",
+            "Person",
+            "List",
+            "File",
+          ],
+          format: 'public."procedureAttributeType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        minValue: {
+          format: "numeric",
+          type: "number",
+        },
+        maxValue: {
+          format: "numeric",
+          type: "number",
+        },
+        listValues: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        fileTypes: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     customFieldTable: {
       required: ["table", "module", "name"],
       properties: {
@@ -58474,6 +59100,79 @@ export default {
       },
       type: "object",
     },
+    procedure: {
+      required: ["id", "name", "version", "status", "createdAt", "createdBy"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        version: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."procedureStatus"',
+          type: "string",
+        },
+        content: {
+          format: "json",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseOrderDelivery: {
       required: ["id", "dropShipment", "companyId", "supplierShippingCost"],
       properties: {
@@ -61393,6 +62092,50 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+      },
+      type: "object",
+    },
+    procedures: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        version: {
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."procedureStatus"',
+          type: "string",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        versions: {
+          format: "jsonb",
         },
       },
       type: "object",
@@ -77578,6 +78321,134 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.procedureAttribute": {
+      name: "procedureAttribute",
+      description: "procedureAttribute",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/procedureAttribute",
+      },
+    },
+    "rowFilter.procedureAttribute.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.required": {
+      name: "required",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.type": {
+      name: "type",
+      required: false,
+      format: 'public."procedureAttributeType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.minValue": {
+      name: "minValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.maxValue": {
+      name: "maxValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.listValues": {
+      name: "listValues",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.fileTypes": {
+      name: "fileTypes",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.customFieldTable": {
       name: "customFieldTable",
       description: "customFieldTable",
@@ -81800,6 +82671,106 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.procedure": {
+      name: "procedure",
+      description: "procedure",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/procedure",
+      },
+    },
+    "rowFilter.procedure.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.version": {
+      name: "version",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.status": {
+      name: "status",
+      required: false,
+      format: 'public."procedureStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.content": {
+      name: "content",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.assignee": {
+      name: "assignee",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedure.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderDelivery": {
       name: "purchaseOrderDelivery",
       description: "purchaseOrderDelivery",
@@ -85543,6 +86514,71 @@ export default {
       name: "updatedBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.procedures": {
+      name: "procedures",
+      description: "procedures",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/procedures",
+      },
+    },
+    "rowFilter.procedures.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.version": {
+      name: "version",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.status": {
+      name: "status",
+      required: false,
+      format: 'public."procedureStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.assignee": {
+      name: "assignee",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.processId": {
+      name: "processId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedures.versions": {
+      name: "versions",
+      required: false,
+      format: "jsonb",
       in: "query",
       type: "string",
     },
