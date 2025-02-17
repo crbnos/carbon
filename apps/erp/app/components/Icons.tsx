@@ -5,21 +5,28 @@ import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
   LuBarcode,
+  LuBeaker,
   LuBox,
   LuCircle,
   LuCircleCheck,
   LuCircleX,
+  LuClock,
   LuClock3,
   LuExternalLink,
+  LuFile,
   LuGroup,
   LuHammer,
   LuHardHat,
   LuHeadphones,
+  LuList,
   LuPizza,
   LuShoppingCart,
   LuSquare,
   LuSwords,
   LuTimer,
+  LuToggleLeft,
+  LuType,
+  LuUser,
 } from "react-icons/lu";
 
 import { RxCodesandboxLogo } from "react-icons/rx";
@@ -167,6 +174,31 @@ export const QuoteLineStatusIcon = ({
       return <LuClock3 size={12} className="text-yellow-600" />;
     default:
       return null;
+  }
+};
+
+export const ProcedureAttributeTypeIcon = ({
+  type,
+  className,
+}: {
+  type: Database["public"]["Enums"]["procedureAttributeType"];
+  className?: string;
+}) => {
+  switch (type) {
+    case "Value":
+      return <LuType className={cn("text-emerald-600", className)} />;
+    case "Measurement":
+      return <LuBeaker className={cn("text-blue-600", className)} />;
+    case "Checkbox":
+      return <LuToggleLeft className={cn("text-purple-600", className)} />;
+    case "Timestamp":
+      return <LuClock className={cn("text-red-600", className)} />;
+    case "Person":
+      return <LuUser className={cn("text-yellow-600", className)} />;
+    case "List":
+      return <LuList className={cn("text-orange-600", className)} />;
+    case "File":
+      return <LuFile className={cn("text-foreground", className)} />;
   }
 };
 

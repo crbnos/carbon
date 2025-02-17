@@ -335,7 +335,9 @@ export const path = {
     deletePaymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
     deleteProcedure: (id: string) =>
-      generatePath(`${x}/procedures/delete/${id}`),
+      generatePath(`${x}/procedure/delete/${id}`),
+    deleteProcedureAttribute: (id: string, attributeId: string) =>
+      generatePath(`${x}/procedure/${id}/attributes/delete/${attributeId}`),
     deleteProcess: (id: string) =>
       generatePath(`${x}/resources/processes/delete/${id}`),
     deleteProductionEvent: (id: string) =>
@@ -589,6 +591,8 @@ export const path = {
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newProcedure: `${x}/production/procedures/new`,
+    newProcedureAttribute: (id: string) =>
+      generatePath(`${x}/procedure/${id}/attributes/new`),
     newItemPostingGroup: `${x}/items/groups/new`,
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
@@ -696,6 +700,10 @@ export const path = {
     personDetails: (id: string) => generatePath(`${x}/person/${id}/details`),
     personJob: (id: string) => generatePath(`${x}/person/${id}/job`),
     procedure: (id: string) => generatePath(`${x}/procedure/${id}`),
+    procedureAttribute: (id: string, attributeId: string) =>
+      generatePath(`${x}/procedure/${id}/attributes/${attributeId}`),
+    procedureAttributeOrder: (id: string) =>
+      generatePath(`${x}/procedure/${id}/attributes/order`),
     procedures: `${x}/production/procedures`,
     process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
     processes: `${x}/resources/processes`,
