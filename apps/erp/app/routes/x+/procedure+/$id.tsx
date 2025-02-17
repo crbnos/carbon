@@ -1,22 +1,18 @@
 import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { JSONContent} from "@carbon/react";
+import type { JSONContent } from "@carbon/react";
 import { Input, toast, useDebounce } from "@carbon/react";
-import { generateHTML , Editor } from "@carbon/react/Editor";
-import { today , getLocalTimeZone } from "@internationalized/date";
+import { generateHTML, Editor } from "@carbon/react/Editor";
+import { today, getLocalTimeZone } from "@internationalized/date";
 import { Outlet, useFetcher, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type {
-  Procedure} from "~/modules/production";
-import {
-  getProcedure,
-  getProcedureVersions
-} from "~/modules/production";
+import type { Procedure } from "~/modules/production";
+import { getProcedure, getProcedureVersions } from "~/modules/production";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import type { action } from "~/routes/x+/procedure+/update";
@@ -110,22 +106,17 @@ function ProcedureEditor() {
 
   const fetcher = useFetcher<typeof action>();
 
-  const updateProcedureName = useDebounce(
-    async (name: string) => {
-      const formData = new FormData();
+  const updateProcedureName = async (name: string) => {
+    const formData = new FormData();
+    formData.append("ids", id);
+    formData.append("field", "name");
+    formData.append("value", name);
 
-      formData.append("ids", id);
-      formData.append("field", "name");
-
-      formData.append("value", name);
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.bulkUpdateProcedure,
-      });
-    },
-    1000,
-    true
-  );
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.bulkUpdateProcedure,
+    });
+  };
 
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
@@ -151,10 +142,8 @@ function ProcedureEditor() {
         className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
         value={procedureName}
         borderless
-        onChange={(e) => {
-          setProcedureName(e.target.value);
-          updateProcedureName(e.target.value);
-        }}
+        onChange={(e) => setProcedureName(e.target.value)}
+        onBlur={(e) => updateProcedureName(e.target.value)}
       />
 
       {permissions.can("update", "production") ? (

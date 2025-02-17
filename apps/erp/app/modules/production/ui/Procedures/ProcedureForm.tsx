@@ -20,12 +20,14 @@ import { procedureValidator } from "../../production.models";
 
 type ProcedureFormProps = {
   initialValues: z.infer<typeof procedureValidator>;
+  type: "new" | "copy";
   open?: boolean;
   onClose: (data?: { id: string; name: string }) => void;
 };
 
 const ProcedureForm = ({
   initialValues,
+  type = "new",
   open = true,
   onClose,
 }: ProcedureFormProps) => {
@@ -60,25 +62,43 @@ const ProcedureForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Procedure
+                {type === "copy" ? "Copy" : "New"} Procedure
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
+              {type === "copy" && (
+                <>
+                  <Hidden name="name" />
+                  <Hidden name="processId" />
+                  <Hidden name="content" />
+                </>
+              )}
               <VStack spacing={4}>
-                <Input name="name" label="Name" />
+                {type === "new" && <Input name="name" label="Name" />}
                 <Number
                   name="version"
-                  label="Version"
+                  label={type === "copy" ? "New Version" : "Version"}
                   minValue={0}
-                  helperText="The version of the procedure"
+                  helperText={
+                    type === "copy"
+                      ? "The new version number of the procedure"
+                      : "The version of the new procedure"
+                  }
                 />
-                <Process name="processId" label="Process" isOptional />
+                {type === "new" && (
+                  <Process name="processId" label="Process" isOptional />
+                )}
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>Save</Submit>
+                <Submit
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle" || isDisabled}
+                >
+                  Save
+                </Submit>
               </HStack>
             </ModalDrawerFooter>
           </ValidatedForm>
