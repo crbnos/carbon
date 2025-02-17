@@ -5,14 +5,19 @@ import type { JSONContent } from "@carbon/react";
 import { Input, toast, useDebounce } from "@carbon/react";
 import { generateHTML, Editor } from "@carbon/react/Editor";
 import { today, getLocalTimeZone } from "@internationalized/date";
-import { Outlet, useFetcher, useParams } from "@remix-run/react";
+import { Outlet, useFetcher, useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { Procedure } from "~/modules/production";
-import { getProcedure, getProcedureVersions } from "~/modules/production";
+import { ResizablePanels , PanelProvider } from "~/components/Layout/Panels";
+import { usePermissions, useUser } from "~/hooks";
+import {
+  getProcedure,
+  getProcedureAttributes,
+  getProcedureVersions,
+} from "~/modules/production";
+import ProcedureAttributesExplorer from "~/modules/production/ui/Procedures/ProcedureAttributesExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import type { action } from "~/routes/x+/procedure+/update";
@@ -35,7 +40,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const procedure = await getProcedure(client, id);
+  const [procedure, attributes] = await Promise.all([
+    getProcedure(client, id),
+    getProcedureAttributes(client, id),
+  ]);
 
   if (procedure.error) {
     throw redirect(
@@ -46,22 +54,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     procedure: procedure.data,
+    attributes: attributes.data,
     versions: getProcedureVersions(client, procedure.data, companyId),
   });
 }
 
 export default function ProcedureRoute() {
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-      <ProcedureHeader />
-      <div className="flex h-[calc(100dvh-49px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
-          <ProcedureEditor />
-          <Outlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <ProcedureHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorer={<ProcedureAttributesExplorer />}
+              content={
+                <div className="bg-background h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <ProcedureEditor />
+                  <Outlet />
+                </div>
+              }
+              properties={<ProcedureProperties />}
+            />
+          </div>
         </div>
-        <ProcedureProperties />
       </div>
-    </div>
+    </PanelProvider>
   );
 }
 
@@ -71,16 +89,14 @@ function ProcedureEditor() {
 
   const permissions = usePermissions();
 
-  const routeData = useRouteData<{
-    procedure: Procedure;
-  }>(path.to.procedure(id));
+  const loaderData = useLoaderData<typeof loader>();
 
   const [procedureName, setProcedureName] = useState(
-    routeData?.procedure?.name ?? ""
+    loaderData?.procedure?.name ?? ""
   );
 
   const [content, setContent] = useState<JSONContent>(
-    (routeData?.procedure?.content ?? {}) as JSONContent
+    (loaderData?.procedure?.content ?? {}) as JSONContent
   );
 
   const { carbon } = useCarbon();
@@ -108,7 +124,15 @@ function ProcedureEditor() {
 
   const updateProcedureName = async (name: string) => {
     const formData = new FormData();
+
+    const versions = await Promise.resolve(loaderData?.versions);
+
     formData.append("ids", id);
+    if (Array.isArray(versions?.data) && versions.data.length > 0) {
+      versions.data.forEach((version) => {
+        formData.append("ids", version.id);
+      });
+    }
     formData.append("field", "name");
     formData.append("value", name);
 
@@ -142,11 +166,20 @@ function ProcedureEditor() {
         className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
         value={procedureName}
         borderless
-        onChange={(e) => setProcedureName(e.target.value)}
-        onBlur={(e) => updateProcedureName(e.target.value)}
+        onChange={
+          loaderData?.procedure?.status === "Draft"
+            ? (e) => setProcedureName(e.target.value)
+            : undefined
+        }
+        onBlur={
+          loaderData?.procedure?.status === "Draft"
+            ? (e) => updateProcedureName(e.target.value)
+            : undefined
+        }
       />
 
-      {permissions.can("update", "production") ? (
+      {permissions.can("update", "production") &&
+      loaderData?.procedure?.status === "Draft" ? (
         <Editor
           initialValue={content}
           onUpload={onUploadImage}

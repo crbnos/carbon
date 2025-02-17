@@ -5,10 +5,11 @@ import {
   HoverCardTrigger,
   MenuIcon,
   MenuItem,
+  useDisclosure,
 } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -20,13 +21,15 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { Procedures } from "../../types";
+import type { Procedures } from "../../types";
 import ProcedureStatus from "./ProcedureStatus";
 import { Enumerable } from "~/components/Enumerable";
 import { TbRoute } from "react-icons/tb";
 import { useProcesses } from "~/components/Form/Process";
+import { flushSync } from "react-dom";
+import { ConfirmDelete } from "~/components/Modals";
 
 type ProceduresTableProps = {
   data: Procedures[];
@@ -34,10 +37,13 @@ type ProceduresTableProps = {
 };
 
 const ProceduresTable = memo(({ data, count }: ProceduresTableProps) => {
-  const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const processes = useProcesses();
+  const deleteDisclosure = useDisclosure();
+  const [selectedProcedure, setSelectedProcedure] = useState<Procedures | null>(
+    null
+  );
 
   const columns = useMemo<ColumnDef<Procedures>[]>(() => {
     const defaultColumns: ColumnDef<Procedures>[] = [
@@ -161,11 +167,13 @@ const ProceduresTable = memo(({ data, count }: ProceduresTableProps) => {
             Edit Procedure
           </MenuItem>
           <MenuItem
+            destructive
             disabled={!permissions.can("delete", "production")}
             onClick={() => {
-              navigate(
-                `${path.to.deleteProcedure(row.id!)}?${params.toString()}`
-              );
+              flushSync(() => {
+                setSelectedProcedure(row);
+              });
+              deleteDisclosure.onOpen();
             }}
           >
             <MenuIcon icon={<LuTrash />} />
@@ -174,24 +182,42 @@ const ProceduresTable = memo(({ data, count }: ProceduresTableProps) => {
         </>
       );
     },
-    [navigate, params, permissions]
+    [navigate, permissions, deleteDisclosure]
   );
 
   return (
-    <Table<Procedures>
-      data={data}
-      columns={columns}
-      count={count}
-      primaryAction={
-        permissions.can("create", "production") && (
-          <New label="Procedure" to={path.to.newProcedure} />
-        )
-      }
-      renderContextMenu={renderContextMenu}
-      title="Procedures"
-      table="procedure"
-      withSavedView
-    />
+    <>
+      <Table<Procedures>
+        data={data}
+        columns={columns}
+        count={count}
+        primaryAction={
+          permissions.can("create", "production") && (
+            <New label="Procedure" to={path.to.newProcedure} />
+          )
+        }
+        renderContextMenu={renderContextMenu}
+        title="Procedures"
+        table="procedure"
+        withSavedView
+      />
+      {deleteDisclosure.isOpen && selectedProcedure && (
+        <ConfirmDelete
+          action={path.to.deleteProcedure(selectedProcedure.id!)}
+          isOpen
+          onCancel={() => {
+            setSelectedProcedure(null);
+            deleteDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            setSelectedProcedure(null);
+            deleteDisclosure.onClose();
+          }}
+          name={selectedProcedure.name ?? "procedure"}
+          text="Are you sure you want to delete this procedure?"
+        />
+      )}
+    </>
   );
 });
 

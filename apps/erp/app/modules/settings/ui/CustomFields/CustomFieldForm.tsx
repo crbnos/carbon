@@ -11,7 +11,7 @@ import {
   VStack,
 } from "@carbon/react";
 
-import { ValidatedForm } from "@carbon/form";
+import { SelectControlled, ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import {
@@ -25,7 +25,7 @@ import {
   LuUser,
 } from "react-icons/lu";
 import type { z } from "zod";
-import { Array, Hidden, Input, Select, Submit, Tags } from "~/components/Form";
+import { Array, Hidden, Input, Submit, Tags } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import { customFieldValidator } from "~/modules/settings";
@@ -67,20 +67,10 @@ const CustomFieldForm = ({
     ? !permissions.can("update", "resources")
     : !permissions.can("create", "resources");
 
-  const [isList, setIsList] = useState(
-    initialValues.dataTypeId.toString() === DataType.List.toString()
+  const [dataType, setDataType] = useState<string>(
+    initialValues.dataTypeId.toString()
   );
-
-  const onChangeCheckForListType = (
-    selected: {
-      value: string;
-      label: string | JSX.Element;
-    } | null
-  ) => {
-    setIsList(
-      selected === null ? false : Number(selected.value) === DataType.List
-    );
-  };
+  const isList = Number(dataType) === DataType.List;
 
   return (
     <Drawer
@@ -110,7 +100,7 @@ const CustomFieldForm = ({
               <Input name="name" label="Name" />
               <Hidden name="table" />
 
-              <Select
+              <SelectControlled
                 name="dataTypeId"
                 label="Data Type"
                 isReadOnly={isEditing}
@@ -118,7 +108,12 @@ const CustomFieldForm = ({
                   isEditing ? "Data type cannot be changed" : undefined
                 }
                 options={options}
-                onChange={onChangeCheckForListType}
+                value={dataType.toString()}
+                onChange={(option) => {
+                  if (option) {
+                    setDataType(option.value);
+                  }
+                }}
               />
               {isList && <Array name="listOptions" label="List Options" />}
 
@@ -161,7 +156,7 @@ function CustomFieldDataTypeIcon({
     case DataType.Numeric:
       return <LuHash className={cn("w-4 h-4 text-blue-600", className)} />;
     case DataType.Text:
-      return <LuType className={cn("w-4 h-4 text-green-600", className)} />;
+      return <LuType className={cn("w-4 h-4 text-emerald-600", className)} />;
     case DataType.Boolean:
       return (
         <LuToggleLeft className={cn("w-4 h-4 text-purple-600", className)} />

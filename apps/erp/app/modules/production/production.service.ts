@@ -15,6 +15,7 @@ import type {
   jobOperationValidator,
   jobStatus,
   jobValidator,
+  procedureAttributeValidator,
   procedureValidator,
   productionEventValidator,
   productionQuantityValidator,
@@ -55,6 +56,25 @@ export async function deleteJobOperationTool(
   id: string
 ) {
   return client.from("jobOperationTool").delete().eq("id", id);
+}
+
+export async function deleteProcedure(
+  client: SupabaseClient<Database>,
+  procedureId: string
+) {
+  return client.from("procedure").delete().eq("id", procedureId);
+}
+
+export async function deleteProcedureAttribute(
+  client: SupabaseClient<Database>,
+  procedureAttributeId: string,
+  companyId: string
+) {
+  return client
+    .from("procedureAttribute")
+    .delete()
+    .eq("id", procedureAttributeId)
+    .eq("companyId", companyId);
 }
 
 export async function deleteProductionEvent(
@@ -410,6 +430,16 @@ export async function getProcedure(
   return client.from("procedure").select("*").eq("id", id).single();
 }
 
+export async function getProcedureAttributes(
+  client: SupabaseClient<Database>,
+  procedureId: string
+) {
+  return client
+    .from("procedureAttribute")
+    .select("*")
+    .eq("procedureId", procedureId);
+}
+
 export async function getProcedureVersions(
   client: SupabaseClient<Database>,
   procedure: { name: string; version: number },
@@ -747,6 +777,23 @@ export async function updateJobOperationStatus(
     .eq("id", id)
     .select()
     .single();
+}
+
+export async function updateProcedureAttributeOrder(
+  client: SupabaseClient<Database>,
+  updates: {
+    id: string;
+    sortOrder: number;
+    updatedBy: string;
+  }[]
+) {
+  const updatePromises = updates.map(({ id, sortOrder, updatedBy }) =>
+    client
+      .from("procedureAttribute")
+      .update({ sortOrder, updatedBy })
+      .eq("id", id)
+  );
+  return Promise.all(updatePromises);
 }
 
 export async function upsertProductionEvent(
@@ -1094,6 +1141,33 @@ export async function upsertProcedure(
       .single();
   }
   return client.from("procedure").insert([procedure]).select("id").single();
+}
+
+export async function upsertProcedureAttribute(
+  client: SupabaseClient<Database>,
+  procedureAttribute:
+    | (Omit<z.infer<typeof procedureAttributeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof procedureAttributeValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("id" in procedureAttribute) {
+    return client
+      .from("procedureAttribute")
+      .update(sanitize(procedureAttribute))
+      .eq("id", procedureAttribute.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("procedureAttribute")
+    .insert([procedureAttribute])
+    .select("id")
+    .single();
 }
 
 export async function upsertScrapReason(
