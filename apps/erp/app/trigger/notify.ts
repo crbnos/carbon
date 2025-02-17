@@ -49,6 +49,7 @@ export const notifyTask = task({
       switch (type) {
         case NotificationEvent.JobAssignment:
         case NotificationEvent.JobOperationAssignment:
+        case NotificationEvent.ProcedureAssignment:
         case NotificationEvent.PurchaseInvoiceAssignment:
         case NotificationEvent.PurchaseOrderAssignment:
         case NotificationEvent.QuoteAssignment:
@@ -146,6 +147,20 @@ export const notifyTask = task({
           } else if (type === NotificationEvent.JobOperationMessage) {
             return `New message on ${jobOperation?.data?.job?.jobId} operation: ${jobOperation?.data?.description}`;
           }
+
+        case NotificationEvent.ProcedureAssignment:
+          const procedure = await client
+            .from("procedure")
+            .select("*")
+            .eq("id", documentId)
+            .single();
+
+          if (procedure.error) {
+            console.error("Failed to get procedure", procedure.error);
+            throw procedure.error;
+          }
+
+          return `Procedure ${procedure?.data?.name} version ${procedure?.data?.version} assigned to you`;
 
         case NotificationEvent.DigitalQuoteResponse:
           const digitalQuote = await client

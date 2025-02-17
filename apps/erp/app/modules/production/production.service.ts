@@ -412,14 +412,15 @@ export async function getProcedure(
 
 export async function getProcedureVersions(
   client: SupabaseClient<Database>,
-  name: string,
+  procedure: { name: string; version: number },
   companyId: string
 ) {
   return client
     .from("procedure")
     .select("*")
-    .eq("name", name)
+    .eq("name", procedure.name)
     .eq("companyId", companyId)
+    .neq("version", procedure.version)
     .order("version", { ascending: false });
 }
 

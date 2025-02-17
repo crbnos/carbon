@@ -26,6 +26,7 @@ import {
   LuMailCheck,
   LuMessageSquare,
   LuShoppingCart,
+  LuWaypoints,
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -157,6 +158,14 @@ function GenericNotification({
             )
           }
           to={`${link}?selectedOperation=${operationId}`}
+          {...props}
+        />
+      );
+    case NotificationEvent.ProcedureAssignment:
+      return (
+        <Notification
+          icon={<LuWaypoints />}
+          to={path.to.procedure(id)}
           {...props}
         />
       );
