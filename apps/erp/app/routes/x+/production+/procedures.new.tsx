@@ -23,7 +23,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "production",
   });
-
   const formData = await request.formData();
   const validation = await validator(procedureValidator).validate(formData);
 
@@ -31,13 +30,31 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { id, ...data } = validation.data;
+  const { id, content, ...data } = validation.data;
+
+  let contentJSON;
+  try {
+    contentJSON = content ? JSON.parse(content) : undefined;
+  } catch (e) {
+    return json(
+      {},
+      await flash(
+        request,
+        error(
+          "Invalid procedure content format",
+          "Failed to parse procedure content"
+        )
+      )
+    );
+  }
 
   const insertProcedure = await upsertProcedure(client, {
     ...data,
+    content: contentJSON,
     companyId,
     createdBy: userId,
   });
+
   if (insertProcedure.error || !insertProcedure.data?.id) {
     return json(
       {},
@@ -63,6 +80,10 @@ export default function NewProcedureRoute() {
   };
 
   return (
-    <ProcedureForm initialValues={initialValues} onClose={() => navigate(-1)} />
+    <ProcedureForm
+      initialValues={initialValues}
+      type="new"
+      onClose={() => navigate(-1)}
+    />
   );
 }

@@ -413,6 +413,7 @@ export const procedureValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
   processId: zfd.text(z.string().optional()),
+  content: zfd.text(z.string().optional()),
 });
 
 export const productionEventValidator = z
