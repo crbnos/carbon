@@ -96,25 +96,24 @@ const CustomFieldCategoryDetail = ({
   );
 
   useEffect(() => {
-    setSortOrder(
-      Array.isArray(customFieldTable.fields)
-        ? customFieldTable.fields
-            .sort(
-              (a, b) =>
-                (a as CustomField).sortOrder - (b as CustomField).sortOrder
-            )
-            .map((field) => (field as CustomField).id)
-        : []
-    );
-  }, [customFieldTable.fields, getAttributeDataType]);
+    if (Array.isArray(customFieldTable.fields)) {
+      const sorted = [...customFieldTable.fields]
+        .sort(
+          (a, b) => (a as CustomField).sortOrder - (b as CustomField).sortOrder
+        )
+        .map((field) => (field as CustomField).id);
+      setSortOrder(sorted);
+    }
+  }, [customFieldTable.fields]);
 
   const onReorder = (newOrder: string[]) => {
-    let updates: Record<string, number> = {};
+    const updates: Record<string, number> = {};
+
+    // Update all positions to ensure consistent ordering
     newOrder.forEach((id, index) => {
-      if (id !== sortOrder[index]) {
-        updates[id] = index + 1;
-      }
+      updates[id] = index + 1;
     });
+
     setSortOrder(newOrder);
     updateSortOrder(updates);
   };
@@ -125,7 +124,7 @@ const CustomFieldCategoryDetail = ({
       formData.append("updates", JSON.stringify(updates));
       sortOrderFetcher.submit(formData, { method: "post" });
     },
-    1000,
+    2500,
     true
   );
 

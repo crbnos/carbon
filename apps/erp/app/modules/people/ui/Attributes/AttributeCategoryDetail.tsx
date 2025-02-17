@@ -69,22 +69,22 @@ const AttributeCategoryDetail = ({
   );
 
   useEffect(() => {
-    setSortOrder(
-      Array.isArray(attributeCategory.userAttribute)
-        ? attributeCategory.userAttribute
-            .sort((a, b) => a.sortOrder - b.sortOrder)
-            .map((attribute) => attribute.id)
-        : []
-    );
+    if (Array.isArray(attributeCategory.userAttribute)) {
+      const sorted = [...attributeCategory.userAttribute]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((attribute) => attribute.id);
+      setSortOrder(sorted);
+    }
   }, [attributeCategory.userAttribute]);
 
   const onReorder = (newOrder: string[]) => {
-    let updates: Record<string, number> = {};
+    const updates: Record<string, number> = {};
+
+    // Update all positions to ensure consistent ordering
     newOrder.forEach((id, index) => {
-      if (id !== sortOrder[index]) {
-        updates[id] = index + 1;
-      }
+      updates[id] = index + 1;
     });
+
     setSortOrder(newOrder);
     updateSortOrder(updates);
   };
