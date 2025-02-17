@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", shipmentId);
 
       throw redirect(
-        path.to.shipments,
+        path.to.shipmentDetails(shipmentId),
         await flash(
           request,
           error(postShipment.error, "Failed to post shipment")
@@ -65,5 +65,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", shipmentId);
   }
 
-  throw redirect(path.to.shipments);
+  throw redirect(path.to.shipmentDetails(shipmentId));
 }

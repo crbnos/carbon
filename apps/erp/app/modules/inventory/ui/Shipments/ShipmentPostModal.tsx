@@ -17,7 +17,7 @@ import {
   useMount,
 } from "@carbon/react";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
@@ -110,6 +110,13 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   });
 
   const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
 
   return (
     <Modal
@@ -157,6 +164,9 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
             <fetcher.Form
               action={path.to.shipmentPost(shipmentId)}
               method="post"
+              onSubmit={() => {
+                submitted.current = true;
+              }}
             >
               <Button
                 isLoading={fetcher.state !== "idle"}

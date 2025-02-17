@@ -394,7 +394,7 @@ const SalesOrderProperties = () => {
         table="salesOrder"
         tags={[]}
         onUpdate={onUpdateCustomFields}
-        isDisabled={isDisabled}
+        // isDisabled={isDisabled}
       />
     </VStack>
   );
