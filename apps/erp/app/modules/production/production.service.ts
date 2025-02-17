@@ -15,6 +15,7 @@ import type {
   jobOperationValidator,
   jobStatus,
   jobValidator,
+  procedureValidator,
   productionEventValidator,
   productionQuantityValidator,
   scrapReasonValidator,
@@ -400,6 +401,51 @@ export async function getJobOperationsByMethodId(
     .select("*, jobOperationTool(*), jobOperationParameter(*)")
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
+}
+
+export async function getProcedure(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("procedure").select("*").eq("id", id).single();
+}
+
+export async function getProcedureVersions(
+  client: SupabaseClient<Database>,
+  name: string,
+  companyId: string
+) {
+  return client
+    .from("procedure")
+    .select("*")
+    .eq("name", name)
+    .eq("companyId", companyId)
+    .order("version", { ascending: false });
+}
+
+export async function getProcedures(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: { search: string | null } & GenericQueryFilters
+) {
+  let query = client
+    .from("procedures")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getProductionEvent(
@@ -1024,6 +1070,29 @@ export async function upsertMakeMethodFromJobMethod(
   }
 
   return { data: null, error: null };
+}
+
+export async function upsertProcedure(
+  client: SupabaseClient<Database>,
+  procedure:
+    | (Omit<z.infer<typeof procedureValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof procedureValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("id" in procedure) {
+    return client
+      .from("procedure")
+      .update(sanitize(procedure))
+      .eq("id", procedure.id)
+      .select("id")
+      .single();
+  }
+  return client.from("procedure").insert([procedure]).select("id").single();
 }
 
 export async function upsertScrapReason(

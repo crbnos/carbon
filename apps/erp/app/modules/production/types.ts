@@ -4,6 +4,8 @@ import type {
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOperations,
+  getProcedure,
+  getProcedures,
   getProductionEvents,
   getProductionQuantities,
   getScrapReasons,
@@ -34,6 +36,14 @@ export type ProductionEvent = NonNullable<
 export type ProductionQuantity = NonNullable<
   Awaited<ReturnType<typeof getProductionQuantities>>["data"]
 >[number];
+
+export type Procedures = NonNullable<
+  Awaited<ReturnType<typeof getProcedures>>["data"]
+>[number];
+
+export type Procedure = NonNullable<
+  Awaited<ReturnType<typeof getProcedure>>["data"]
+>;
 
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]

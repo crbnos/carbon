@@ -156,6 +156,7 @@ export const path = {
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
+    bulkUpdateProcedure: `${x}/procedure/update`,
     bulkUpdateJob: `${x}/job/update`,
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
@@ -333,6 +334,8 @@ export const path = {
       generatePath(`${x}/resources/partners/delete/${id}`),
     deletePaymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
+    deleteProcedure: (id: string) =>
+      generatePath(`${x}/procedures/delete/${id}`),
     deleteProcess: (id: string) =>
       generatePath(`${x}/resources/processes/delete/${id}`),
     deleteProductionEvent: (id: string) =>
@@ -585,6 +588,7 @@ export const path = {
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
+    newProcedure: `${x}/production/procedures/new`,
     newItemPostingGroup: `${x}/items/groups/new`,
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
@@ -691,6 +695,8 @@ export const path = {
     person: (id: string) => generatePath(`${x}/person/${id}`),
     personDetails: (id: string) => generatePath(`${x}/person/${id}/details`),
     personJob: (id: string) => generatePath(`${x}/person/${id}/job`),
+    procedure: (id: string) => generatePath(`${x}/procedure/${id}`),
+    procedures: `${x}/production/procedures`,
     process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
     processes: `${x}/resources/processes`,
     production: `${x}/production`,

@@ -6,10 +6,20 @@ import { useMemo, useRef, useState } from "react";
 import type { getProcessesList } from "~/modules/resources";
 import ProcessForm from "~/modules/resources/ui/Processes/ProcessForm";
 import { path } from "~/utils/path";
+import { Enumerable } from "../Enumerable";
 
-type ProcessSelectProps = Omit<ComboboxProps, "options"> & {
+type ProcessSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   isConfigured?: boolean;
   onConfigure?: () => void;
+  inline?: boolean;
+};
+
+const ProcessPreview = (
+  value: string,
+  options: { value: string; label: string }[]
+) => {
+  const process = options.find((o) => o.value === value);
+  return <Enumerable value={process?.label ?? null} />;
 };
 
 const Process = (props: ProcessSelectProps) => {
@@ -25,6 +35,7 @@ const Process = (props: ProcessSelectProps) => {
         ref={triggerRef}
         options={options}
         {...props}
+        inline={props.inline ? ProcessPreview : undefined}
         label={props?.label ?? "Work Center"}
         onCreateOption={(option) => {
           newProcessModal.onOpen();
