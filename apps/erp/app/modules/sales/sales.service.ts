@@ -8,6 +8,7 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting";
 import type {
+  operationAttributeValidator,
   operationParameterValidator,
   operationToolValidator,
 } from "../shared";
@@ -217,6 +218,13 @@ export async function deleteQuoteOperation(
   quoteOperationId: string
 ) {
   return client.from("quoteOperation").delete().eq("id", quoteOperationId);
+}
+
+export async function deleteQuoteOperationAttribute(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("quoteOperationAttribute").delete().eq("id", id);
 }
 
 export async function deleteQuoteOperationParameter(
@@ -979,7 +987,9 @@ export async function getQuoteOperationsByMethodId(
 ) {
   return client
     .from("quoteOperation")
-    .select("*, quoteOperationTool(*), quoteOperationParameter(*)")
+    .select(
+      "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationAttribute(*)"
+    )
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -2172,6 +2182,35 @@ export async function upsertQuoteOperation(
   return client
     .from("quoteOperation")
     .insert([operation])
+    .select("id")
+    .single();
+}
+
+export async function upsertQuoteOperationAttribute(
+  client: SupabaseClient<Database>,
+  quoteOperationAttribute:
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in quoteOperationAttribute) {
+    return client
+      .from("quoteOperationAttribute")
+      .insert(quoteOperationAttribute)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("quoteOperationAttribute")
+    .update(sanitize(quoteOperationAttribute))
+    .eq("id", quoteOperationAttribute.id)
     .select("id")
     .single();
 }

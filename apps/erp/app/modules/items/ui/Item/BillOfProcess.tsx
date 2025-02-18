@@ -76,7 +76,11 @@ import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 
-import type { OperationParameter, OperationTool } from "~/modules/shared";
+import type {
+  OperationAttribute,
+  OperationParameter,
+  OperationTool,
+} from "~/modules/shared";
 import {
   methodOperationOrders,
   operationParameterValidator,
@@ -110,6 +114,7 @@ type BillOfProcessProps = {
   operations: (Operation & {
     methodOperationTool: OperationTool[];
     methodOperationParameter: OperationParameter[];
+    methodOperationAttribute: OperationAttribute[];
   })[];
   parameters?: ConfigurationParameter[];
   tags: { name: string }[];
@@ -390,6 +395,9 @@ const BillOfProcess = ({
     const parameters =
       initialOperations.find((o) => o.id === item.id)
         ?.methodOperationParameter ?? [];
+    const attributes =
+      initialOperations.find((o) => o.id === item.id)
+        ?.methodOperationAttribute ?? [];
 
     const tabs = [
       {
@@ -499,6 +507,16 @@ const BillOfProcess = ({
             />
           </div>
         ),
+      },
+      {
+        id: 4,
+        label: (
+          <span className="flex items-center gap-2">
+            <span>Attributes</span>
+            {attributes.length > 0 && <Count count={attributes.length} />}
+          </span>
+        ),
+        content: <div>Attributes</div>,
       },
     ];
 

@@ -5,7 +5,6 @@ import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
   LuBarcode,
-  LuBeaker,
   LuBox,
   LuCircle,
   LuCircleCheck,
@@ -20,12 +19,13 @@ import {
   LuHeadphones,
   LuList,
   LuPizza,
+  LuQrCode,
+  LuRuler,
   LuShoppingCart,
   LuSquare,
   LuSwords,
   LuTimer,
   LuToggleLeft,
-  LuType,
   LuUser,
 } from "react-icons/lu";
 
@@ -186,9 +186,9 @@ export const ProcedureAttributeTypeIcon = ({
 }) => {
   switch (type) {
     case "Value":
-      return <LuType className={cn("text-emerald-600", className)} />;
+      return <LuQrCode className={cn("text-emerald-600", className)} />;
     case "Measurement":
-      return <LuBeaker className={cn("text-blue-600", className)} />;
+      return <LuRuler className={cn("text-blue-600", className)} />;
     case "Checkbox":
       return <LuToggleLeft className={cn("text-purple-600", className)} />;
     case "Timestamp":

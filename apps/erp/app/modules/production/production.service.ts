@@ -6,6 +6,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  operationAttributeValidator,
   operationParameterValidator,
   operationToolValidator,
 } from "../shared";
@@ -42,6 +43,13 @@ export async function deleteJobOperation(
   jobOperationId: string
 ) {
   return client.from("jobOperation").delete().eq("id", jobOperationId);
+}
+
+export async function deleteJobOperationAttribute(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("jobOperationAttribute").delete().eq("id", id);
 }
 
 export async function deleteJobOperationParameter(
@@ -943,6 +951,35 @@ export async function upsertJobOperation(
   return client
     .from("jobOperation")
     .insert([jobOperation])
+    .select("id")
+    .single();
+}
+
+export async function upsertJobOperationAttribute(
+  client: SupabaseClient<Database>,
+  jobOperationAttribute:
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in jobOperationAttribute) {
+    return client
+      .from("jobOperationAttribute")
+      .insert(jobOperationAttribute)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("jobOperationAttribute")
+    .update(sanitize(jobOperationAttribute))
+    .eq("id", jobOperationAttribute.id)
     .select("id")
     .single();
 }

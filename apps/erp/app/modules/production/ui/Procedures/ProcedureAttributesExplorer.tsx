@@ -33,6 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   useDebounce,
+  cn,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useFetcher, useParams } from "@remix-run/react";
@@ -50,15 +51,13 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Procedure, ProcedureAttribute } from "../../types";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  procedureAttributeType,
-  procedureAttributeValidator,
-} from "../../production.models";
+import { procedureAttributeValidator } from "../../production.models";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { UnitOfMeasure } from "~/components/Form";
 import type { z } from "zod";
 import { Reorder } from "framer-motion";
 import { flushSync } from "react-dom";
+import { procedureAttributeType } from "~/modules/shared";
 
 export default function ProcedureAttributesExplorer() {
   const { id } = useParams();
@@ -197,7 +196,6 @@ export default function ProcedureAttributesExplorer() {
                 <Reorder.Item
                   key={sortId}
                   value={sortId}
-                  className="rounded-lg w-full"
                   dragListener={!isDisabled}
                 >
                   <ProcedureAttributeItem
@@ -298,9 +296,10 @@ function ProcedureAttributeItem({
 
   return (
     <HStack
-      className={`group w-full p-2 items-center hover:bg-accent/30 relative border-b ${
+      className={cn(
+        "group w-full p-2 items-center hover:bg-accent/30 relative border-b bg-card",
         !isDisabled ? "cursor-pointer" : ""
-      }`}
+      )}
     >
       <IconButton
         aria-label="Drag handle"

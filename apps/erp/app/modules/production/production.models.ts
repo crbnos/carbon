@@ -5,6 +5,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  procedureAttributeType,
   standardFactorType,
 } from "../shared";
 
@@ -53,16 +54,6 @@ export const jobOperationStatus = [
 ] as const;
 
 export const procedureStatus = ["Draft", "Active", "Archived"] as const;
-
-export const procedureAttributeType = [
-  "Value",
-  "Measurement",
-  "Checkbox",
-  "Timestamp",
-  "Person",
-  "List",
-  "File",
-] as const;
 
 const baseJobValidator = z.object({
   id: zfd.text(z.string().optional()),
