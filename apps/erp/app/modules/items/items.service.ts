@@ -7,6 +7,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  operationAttributeValidator,
   operationParameterValidator,
   operationToolValidator,
 } from "../shared";
@@ -156,6 +157,13 @@ export async function deleteMethodMaterial(
   id: string
 ) {
   return client.from("methodMaterial").delete().eq("id", id);
+}
+
+export async function deleteMethodOperationAttribute(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("methodOperationAttribute").delete().eq("id", id);
 }
 
 export async function deleteMethodOperationParameter(
@@ -872,7 +880,9 @@ export async function getMethodOperationsByMakeMethodId(
 ) {
   return client
     .from("methodOperation")
-    .select("*, methodOperationTool(*), methodOperationParameter(*)")
+    .select(
+      "*, methodOperationTool(*), methodOperationParameter(*), methodOperationAttribute(*)"
+    )
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
@@ -1890,6 +1900,35 @@ export async function upsertMethodOperation(
     .from("methodOperation")
     .update(sanitize(methodOperation))
     .eq("id", methodOperation.id)
+    .select("id")
+    .single();
+}
+
+export async function upsertMethodOperationAttribute(
+  client: SupabaseClient<Database>,
+  methodOperationAttribute:
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        updatedAt: string;
+      })
+) {
+  if ("createdBy" in methodOperationAttribute) {
+    return client
+      .from("methodOperationAttribute")
+      .insert(methodOperationAttribute)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("methodOperationAttribute")
+    .update(sanitize(methodOperationAttribute))
+    .eq("id", methodOperationAttribute.id)
     .select("id")
     .single();
 }

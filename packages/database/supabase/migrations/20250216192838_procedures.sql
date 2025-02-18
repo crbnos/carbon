@@ -189,3 +189,216 @@ CREATE OR REPLACE VIEW "procedures" WITH(SECURITY_INVOKER=true) AS
   GROUP BY p1."id", p1."name", p1."version", p1."status", p1."assignee", p1."companyId", p1."processId";
 
   
+CREATE TABLE "methodOperationAttribute" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "required" BOOLEAN DEFAULT FALSE,
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
+  "type" "procedureAttributeType" NOT NULL,
+  "unitOfMeasureCode" TEXT,
+  "minValue" DECIMAL,
+  "maxValue" DECIMAL,
+  "listValues" TEXT[],
+  "fileTypes" TEXT[],
+  "operationId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "methodOperationAttribute_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "methodOperationAttribute_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "methodOperation"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "methodOperationAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "methodOperationAttribute_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "methodOperationAttribute_companyId_idx" ON "methodOperationAttribute"("companyId");
+CREATE INDEX "methodOperationAttribute_operationId_idx" ON "methodOperationAttribute"("operationId");
+
+ALTER TABLE "methodOperationAttribute" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "SELECT" ON "public"."methodOperationAttribute"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."methodOperationAttribute"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."methodOperationAttribute"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."methodOperationAttribute"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_delete')
+    )::text[]
+  )
+);
+
+CREATE TABLE "quoteOperationAttribute" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "required" BOOLEAN DEFAULT FALSE,
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
+  "type" "procedureAttributeType" NOT NULL,
+  "unitOfMeasureCode" TEXT,
+  "minValue" DECIMAL,
+  "maxValue" DECIMAL,
+  "listValues" TEXT[],
+  "fileTypes" TEXT[],
+  "operationId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "quoteOperationAttribute_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "quoteOperationAttribute_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "quoteOperation"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "quoteOperationAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "quoteOperationAttribute_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "quoteOperationAttribute_companyId_idx" ON "quoteOperationAttribute"("companyId");
+CREATE INDEX "quoteOperationAttribute_operationId_idx" ON "quoteOperationAttribute"("operationId");
+
+ALTER TABLE "quoteOperationAttribute" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "SELECT" ON "public"."quoteOperationAttribute"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."quoteOperationAttribute"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."quoteOperationAttribute"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."quoteOperationAttribute"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('parts_delete')
+    )::text[]
+  )
+);
+
+
+CREATE TABLE "jobOperationAttribute" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "description" TEXT,
+  "required" BOOLEAN DEFAULT FALSE,
+  "sortOrder" DOUBLE PRECISION NOT NULL DEFAULT 1,
+  "type" "procedureAttributeType" NOT NULL,
+  "unitOfMeasureCode" TEXT,
+  "minValue" DECIMAL,
+  "maxValue" DECIMAL,
+  "listValues" TEXT[],
+  "fileTypes" TEXT[],
+  "operationId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "jobOperationAttribute_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "jobOperationAttribute_operationId_fkey" FOREIGN KEY ("operationId") REFERENCES "jobOperation"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttribute_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "jobOperationAttribute_companyId_idx" ON "jobOperationAttribute"("companyId");
+CREATE INDEX "jobOperationAttribute_operationId_idx" ON "jobOperationAttribute"("operationId");
+
+ALTER TABLE "jobOperationAttribute" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "SELECT" ON "public"."jobOperationAttribute"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."jobOperationAttribute"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."jobOperationAttribute"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."jobOperationAttribute"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_delete')
+    )::text[]
+  )
+);
