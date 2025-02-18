@@ -12,11 +12,11 @@ import {
   LuClock,
   LuClock3,
   LuExternalLink,
-  LuFile,
   LuGroup,
   LuHammer,
   LuHardHat,
   LuHeadphones,
+  LuImage,
   LuList,
   LuPizza,
   LuQrCode,
@@ -186,7 +186,7 @@ export const ProcedureAttributeTypeIcon = ({
 }) => {
   switch (type) {
     case "Value":
-      return <LuQrCode className={cn("text-emerald-600", className)} />;
+      return <LuQrCode className={cn("text-foreground", className)} />;
     case "Measurement":
       return <LuRuler className={cn("text-blue-600", className)} />;
     case "Checkbox":
@@ -198,7 +198,7 @@ export const ProcedureAttributeTypeIcon = ({
     case "List":
       return <LuList className={cn("text-orange-600", className)} />;
     case "File":
-      return <LuFile className={cn("text-foreground", className)} />;
+      return <LuImage className={cn("text-emerald-600", className)} />;
   }
 };
 

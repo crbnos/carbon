@@ -1,6 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
-import { Input, ValidatedForm } from "@carbon/form";
+import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -21,6 +21,11 @@ import {
   HStack,
   IconButton,
   Label,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack,
   cn,
   useDebounce,
@@ -33,7 +38,7 @@ import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuActivity,
   LuChevronDown,
@@ -41,6 +46,10 @@ import {
   LuDollarSign,
   LuEllipsisVertical,
   LuHammer,
+  LuInfo,
+  LuList,
+  LuMaximize2,
+  LuMinimize2,
   LuSettings2,
   LuTriangleAlert,
   LuX,
@@ -68,21 +77,34 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { OperationParameter, OperationTool } from "~/modules/shared";
+import type {
+  OperationAttribute,
+  OperationParameter,
+  OperationTool,
+} from "~/modules/shared";
 import {
   methodOperationOrders,
   operationParameterValidator,
   operationToolValidator,
   operationTypes,
+  operationAttributeValidator,
+  procedureAttributeType,
 } from "~/modules/shared";
+
+import type { action as editQuoteOperationAttributeAction } from "~/routes/x+/quote+/methods+/operation.attribute.$id";
 import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
 import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
 import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
+
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
+import UnitOfMeasure, {
+  useUnitOfMeasure,
+} from "~/components/Form/UnitOfMeasure";
+import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 
 export type Operation = z.infer<typeof quoteOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -98,6 +120,7 @@ type QuoteBillOfProcessProps = {
   operations: (Operation & {
     quoteOperationTool: OperationTool[];
     quoteOperationParameter: OperationParameter[];
+    quoteOperationAttribute: OperationAttribute[];
   })[];
   tags: { name: string }[];
 };
@@ -458,6 +481,9 @@ const QuoteBillOfProcess = ({
     const parameters =
       initialOperations.find((o) => o.id === item.id)
         ?.quoteOperationParameter ?? [];
+    const attributes =
+      initialOperations.find((o) => o.id === item.id)
+        ?.quoteOperationAttribute ?? [];
 
     const tabs = [
       {
@@ -535,6 +561,26 @@ const QuoteBillOfProcess = ({
           <div className="flex w-full flex-col py-4">
             <ParametersForm
               parameters={parameters}
+              operationId={item.id!}
+              isDisabled={
+                selectedItemId === null || isTemporaryId(selectedItemId!)
+              }
+            />
+          </div>
+        ),
+      },
+      {
+        id: 3,
+        label: (
+          <span className="flex items-center gap-2">
+            <span>Attributes</span>
+            {attributes.length > 0 && <Count count={attributes.length} />}
+          </span>
+        ),
+        content: (
+          <div className="flex w-full flex-col py-4">
+            <AttributesForm
+              attributes={attributes}
               operationId={item.id!}
               isDisabled={
                 selectedItemId === null || isTemporaryId(selectedItemId!)
@@ -710,6 +756,439 @@ export default QuoteBillOfProcess;
 
 export function isTemporaryId(id: string) {
   return id.length < 20;
+}
+
+function AttributesForm({
+  operationId,
+  isDisabled,
+  attributes,
+}: {
+  operationId: string;
+  isDisabled: boolean;
+  attributes: OperationAttribute[];
+}) {
+  const fetcher = useFetcher<typeof newQuoteOperationParameterAction>();
+  const [type, setType] = useState<OperationAttribute["type"]>("Value");
+  const [numericControls, setNumericControls] = useState<string[]>([]);
+  const typeOptions = useMemo(
+    () =>
+      procedureAttributeType.map((type) => ({
+        label: (
+          <HStack>
+            <ProcedureAttributeTypeIcon type={type} className="mr-2" />
+            {type}
+          </HStack>
+        ),
+        value: type,
+      })),
+    []
+  );
+
+  if (isDisabled && isTemporaryId(operationId)) {
+    return (
+      <Alert className="max-w-[420px] mx-auto my-8">
+        <LuTriangleAlert />
+        <AlertTitle>Cannot add attributes to unsaved operation</AlertTitle>
+        <AlertDescription>
+          Please save the operation before adding attributes.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="p-6 border rounded-lg">
+        <ValidatedForm
+          action={path.to.newQuoteOperationAttribute}
+          method="post"
+          validator={operationAttributeValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          defaultValues={{
+            id: undefined,
+            name: "",
+            description: "",
+            type: "Value",
+            unitOfMeasureCode: "",
+            minValue: 0,
+            maxValue: 0,
+            listValues: [],
+            sortOrder:
+              attributes.reduce(
+                (acc, a) => Math.max(acc, a.sortOrder ?? 0),
+                0
+              ) + 1,
+            operationId,
+          }}
+          onSubmit={() => {
+            setType("Value");
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <Hidden name="sortOrder" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <SelectControlled
+                name="type"
+                label="Type"
+                options={typeOptions}
+                value={type}
+                onChange={(option) => {
+                  if (option) {
+                    setType(option.value as OperationAttribute["type"]);
+                  }
+                }}
+              />
+              <Input name="name" label="Name" />
+            </div>
+
+            {type === "Measurement" && (
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <UnitOfMeasure
+                  name="unitOfMeasureCode"
+                  label="Unit of Measure"
+                />
+
+                <ToggleGroup
+                  type="multiple"
+                  value={numericControls}
+                  onValueChange={setNumericControls}
+                  className="justify-start items-start mt-6"
+                >
+                  <ToggleGroupItem size="sm" value="min">
+                    <LuMinimize2 className="mr-2" />
+                    Minimum
+                  </ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="max">
+                    <LuMaximize2 className="mr-2" />
+                    Maximum
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                {numericControls.includes("min") && (
+                  <Number
+                    name="minValue"
+                    label="Minimum"
+                    formatOptions={{
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 10,
+                    }}
+                  />
+                )}
+                {numericControls.includes("max") && (
+                  <Number
+                    name="maxValue"
+                    label="Maximum"
+                    formatOptions={{
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 10,
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            {type === "List" && (
+              <ArrayInput name="listValues" label="List Options" />
+            )}
+
+            <Submit
+              leftIcon={<LuCirclePlus />}
+              isDisabled={isDisabled || fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
+            >
+              Add Attribute
+            </Submit>
+          </VStack>
+        </ValidatedForm>
+      </div>
+
+      {attributes.length > 0 && (
+        <div className="border rounded-lg">
+          {[...attributes]
+            .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .map((a, index) => (
+              <AttributesListItem
+                key={a.id}
+                attribute={a}
+                operationId={operationId}
+                typeOptions={typeOptions}
+                className={index === attributes.length - 1 ? "border-none" : ""}
+              />
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AttributesListItem({
+  attribute,
+  operationId,
+  typeOptions,
+  className,
+}: {
+  attribute: OperationAttribute;
+  operationId: string;
+  typeOptions: { label: JSX.Element; value: string }[];
+  className?: string;
+}) {
+  const {
+    name,
+    unitOfMeasureCode,
+    minValue,
+    maxValue,
+    id,
+    updatedBy,
+    updatedAt,
+    createdBy,
+    createdAt,
+  } = attribute;
+
+  const disclosure = useDisclosure();
+  const deleteModalDisclosure = useDisclosure();
+  const submitted = useRef(false);
+  const fetcher = useFetcher<typeof editQuoteOperationAttributeAction>();
+
+  useEffect(() => {
+    if (submitted.current && fetcher.state === "idle") {
+      disclosure.onClose();
+      submitted.current = false;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
+
+  const [type, setType] = useState<OperationAttribute["type"]>(attribute.type);
+  const [numericControls, setNumericControls] = useState<string[]>(() => {
+    const controls = [];
+    if (type === "Measurement") {
+      if (minValue !== null) {
+        controls.push("min");
+      }
+      if (maxValue !== null) {
+        controls.push("max");
+      }
+    }
+    return controls;
+  });
+
+  const isUpdated = updatedBy !== null;
+  const person = isUpdated ? updatedBy : createdBy;
+  const date = updatedAt ?? createdAt;
+
+  const unitOfMeasures = useUnitOfMeasure();
+
+  if (!id) return null;
+
+  return (
+    <div className={cn("border-b p-6", className)}>
+      {disclosure.isOpen ? (
+        <ValidatedForm
+          action={path.to.quoteOperationAttribute(id)}
+          method="post"
+          validator={operationAttributeValidator}
+          fetcher={fetcher}
+          resetAfterSubmit
+          onSubmit={() => {
+            disclosure.onClose();
+          }}
+          defaultValues={{
+            ...attribute,
+            operationId,
+          }}
+          className="w-full"
+        >
+          <Hidden name="operationId" />
+          <VStack spacing={4}>
+            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+              <SelectControlled
+                name="type"
+                label="Type"
+                options={typeOptions}
+                onChange={(option) => {
+                  if (option) {
+                    setType(option.value as OperationAttribute["type"]);
+                  }
+                }}
+              />
+              <Input name="name" label="Name" />
+            </div>
+            <Input name="description" label="Description" />
+            {type === "Measurement" && (
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <UnitOfMeasure
+                  name="unitOfMeasureCode"
+                  label="Unit of Measure"
+                />
+
+                <ToggleGroup
+                  type="multiple"
+                  value={numericControls}
+                  onValueChange={setNumericControls}
+                  className="justify-start items-start mt-6"
+                >
+                  <ToggleGroupItem size="sm" value="min">
+                    <LuMinimize2 className="mr-2" />
+                    Minimum
+                  </ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="max">
+                    <LuMaximize2 className="mr-2" />
+                    Maximum
+                  </ToggleGroupItem>
+                </ToggleGroup>
+
+                {numericControls.includes("min") && (
+                  <Number
+                    name="minValue"
+                    label="Minimum"
+                    formatOptions={{
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 10,
+                    }}
+                  />
+                )}
+                {numericControls.includes("max") && (
+                  <Number
+                    name="maxValue"
+                    label="Maximum"
+                    formatOptions={{
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 10,
+                    }}
+                  />
+                )}
+              </div>
+            )}
+            {type === "List" && (
+              <ArrayInput name="listValues" label="List Options" />
+            )}
+            <HStack className="w-full justify-end" spacing={2}>
+              <Button variant="secondary" onClick={disclosure.onClose}>
+                Cancel
+              </Button>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Save
+              </Submit>
+            </HStack>
+          </VStack>
+        </ValidatedForm>
+      ) : (
+        <div className="flex flex-1 justify-between items-center w-full">
+          <HStack spacing={4} className="w-1/2">
+            <HStack spacing={4} className="flex-1">
+              <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+                <ProcedureAttributeTypeIcon type={type} />
+              </div>
+              <VStack spacing={0}>
+                <HStack>
+                  <p className="text-foreground text-sm font-medium">
+                    {attribute.name}
+                  </p>
+                  {attribute.description && (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <LuInfo className="text-muted-foreground size-3" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p className="text-foreground text-sm">
+                          {attribute.description}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </HStack>
+                {attribute.type === "Measurement" && (
+                  <span className="text-xs text-muted-foreground text-right">
+                    {attribute.minValue !== null && attribute.maxValue !== null
+                      ? `Must be between ${attribute.minValue} and ${
+                          attribute.maxValue
+                        } ${
+                          unitOfMeasures.find(
+                            (u) => u.value === unitOfMeasureCode
+                          )?.label
+                        }`
+                      : attribute.minValue !== null
+                      ? `Must be > ${attribute.minValue} ${
+                          unitOfMeasures.find(
+                            (u) => u.value === unitOfMeasureCode
+                          )?.label
+                        }`
+                      : `Must be < ${attribute.maxValue} ${
+                          unitOfMeasures.find(
+                            (u) => u.value === unitOfMeasureCode
+                          )?.label
+                        }`}
+                  </span>
+                )}
+              </VStack>
+
+              {attribute.type === "List" &&
+                Array.isArray(attribute.listValues) && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <LuList className="size-4 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {attribute.listValues.map((value) => (
+                        <p key={value} className="text-foreground text-sm">
+                          {value}
+                        </p>
+                      ))}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+            </HStack>
+          </HStack>
+          <div className="flex items-center justify-end gap-2">
+            <HStack spacing={2}>
+              <span className="text-xs text-muted-foreground">
+                {isUpdated ? "Updated" : "Created"} {formatRelativeTime(date)}
+              </span>
+              <EmployeeAvatar employeeId={person} withName={false} />
+            </HStack>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="Open menu"
+                  icon={<LuEllipsisVertical />}
+                  variant="ghost"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={disclosure.onOpen}>
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  destructive
+                  onClick={deleteModalDisclosure.onOpen}
+                >
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      )}
+      {deleteModalDisclosure.isOpen && (
+        <ConfirmDelete
+          action={path.to.deleteQuoteOperationAttribute(id)}
+          isOpen={deleteModalDisclosure.isOpen}
+          name={name}
+          text={`Are you sure you want to delete the ${name} attribute from this operation? This cannot be undone.`}
+          onCancel={() => {
+            deleteModalDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            deleteModalDisclosure.onClose();
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 function ParametersForm({

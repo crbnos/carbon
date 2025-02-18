@@ -426,7 +426,9 @@ export async function getJobOperationsByMethodId(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobOperationTool(*), jobOperationParameter(*)")
+    .select(
+      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationAttribute(*)"
+    )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
 }
@@ -962,8 +964,13 @@ export async function upsertJobOperationAttribute(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationAttributeValidator>,
+        "id" | "minValue" | "maxValue"
+      > & {
         id: string;
+        minValue: number | null;
+        maxValue: number | null;
         updatedBy: string;
         updatedAt: string;
       })

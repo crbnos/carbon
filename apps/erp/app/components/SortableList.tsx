@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Checkbox, HStack, cn } from "@carbon/react";
 import { flushSync } from "react-dom";
 import { LuTrash } from "react-icons/lu";
+import Empty from "./Empty";
 
 export interface Item {
   checked: boolean;
@@ -48,10 +49,11 @@ function SortableListItem<T>({
   className,
 }: SortableListItemProps<T>) {
   const [isDragging, setIsDragging] = useState(false);
-  const [isDraggable] = useState(true);
+  const [isDraggable] = useState(!isExpanded);
   const dragControls = useDragControls();
 
   const handleDragStart = (event: any) => {
+    if (isExpanded) return;
     flushSync(() => setIsDragging(true));
     dragControls.start(event, { snapToCursor: true });
     handleDrag();
@@ -69,12 +71,12 @@ function SortableListItem<T>({
           className={cn(
             "relative z-auto grow",
             "h-full rounded-md bg-muted/30",
-            "border border-border rounded-lg",
-            item.checked ? "cursor-not-allowed" : "cursor-grab",
+            "border border-border rounded-lg ",
+            !isExpanded && "cursor-grab",
             item.checked && !isDragging ? "w-7/10" : "w-full"
           )}
           key={item.id}
-          dragListener={!item.checked}
+          dragListener={!item.checked && !isExpanded}
           dragControls={dragControls}
           onDragEnd={handleDragEnd}
           style={
@@ -215,7 +217,7 @@ function SortableList<T extends Item>({
   onReorder,
   renderItem,
 }: SortableListProps<T>) {
-  if (items) {
+  if (items && Array.isArray(items) && items.length > 0) {
     return (
       <LayoutGroup>
         <Reorder.Group
@@ -236,8 +238,9 @@ function SortableList<T extends Item>({
         </Reorder.Group>
       </LayoutGroup>
     );
+  } else {
+    return <Empty />;
   }
-  return null;
 }
 
 SortableList.displayName = "SortableList";

@@ -2193,8 +2193,13 @@ export async function upsertQuoteOperationAttribute(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationAttributeValidator>,
+        "id" | "minValue" | "maxValue"
+      > & {
         id: string;
+        minValue: number | null;
+        maxValue: number | null;
         updatedBy: string;
         updatedAt: string;
       })

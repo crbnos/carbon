@@ -10,14 +10,14 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { useState } from "react";
-import { ResizablePanels , PanelProvider } from "~/components/Layout/Panels";
+import { ResizablePanels, PanelProvider } from "~/components/Layout/Panels";
 import { usePermissions, useUser } from "~/hooks";
 import {
   getProcedure,
   getProcedureAttributes,
   getProcedureVersions,
 } from "~/modules/production";
-import ProcedureAttributesExplorer from "~/modules/production/ui/Procedures/ProcedureAttributesExplorer";
+import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
 import type { action } from "~/routes/x+/procedure+/update";
@@ -67,7 +67,7 @@ export default function ProcedureRoute() {
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorer={<ProcedureAttributesExplorer />}
+              explorer={<ProcedureExplorer />}
               content={
                 <div className="bg-background h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <ProcedureEditor />
