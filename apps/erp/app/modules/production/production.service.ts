@@ -17,6 +17,7 @@ import type {
   jobStatus,
   jobValidator,
   procedureAttributeValidator,
+  procedureParameterValidator,
   procedureValidator,
   productionEventValidator,
   productionQuantityValidator,
@@ -82,6 +83,18 @@ export async function deleteProcedureAttribute(
     .from("procedureAttribute")
     .delete()
     .eq("id", procedureAttributeId)
+    .eq("companyId", companyId);
+}
+
+export async function deleteProcedureParameter(
+  client: SupabaseClient<Database>,
+  procedureParameterId: string,
+  companyId: string
+) {
+  return client
+    .from("procedureParameter")
+    .delete()
+    .eq("id", procedureParameterId)
     .eq("companyId", companyId);
 }
 
@@ -437,7 +450,11 @@ export async function getProcedure(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("procedure").select("*").eq("id", id).single();
+  return client
+    .from("procedure")
+    .select("*, procedureAttribute(*), procedureParameter(*)")
+    .eq("id", id)
+    .single();
 }
 
 export async function getProcedureAttributes(
@@ -446,6 +463,16 @@ export async function getProcedureAttributes(
 ) {
   return client
     .from("procedureAttribute")
+    .select("*")
+    .eq("procedureId", procedureId);
+}
+
+export async function getProcedureParameters(
+  client: SupabaseClient<Database>,
+  procedureId: string
+) {
+  return client
+    .from("procedureParameter")
     .select("*")
     .eq("procedureId", procedureId);
 }
@@ -1210,6 +1237,33 @@ export async function upsertProcedureAttribute(
   return client
     .from("procedureAttribute")
     .insert([procedureAttribute])
+    .select("id")
+    .single();
+}
+
+export async function upsertProcedureParameter(
+  client: SupabaseClient<Database>,
+  procedureParameter:
+    | (Omit<z.infer<typeof procedureParameterValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof procedureParameterValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("id" in procedureParameter) {
+    return client
+      .from("procedureParameter")
+      .update(sanitize(procedureParameter))
+      .eq("id", procedureParameter.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("procedureParameter")
+    .insert([procedureParameter])
     .select("id")
     .single();
 }

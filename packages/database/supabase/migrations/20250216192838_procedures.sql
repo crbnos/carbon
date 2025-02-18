@@ -402,3 +402,68 @@ FOR DELETE USING (
     )::text[]
   )
 );
+
+
+CREATE TABLE "procedureParameter" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "procedureId" TEXT NOT NULL,
+  "key" TEXT NOT NULL,
+  "value" TEXT NOT NULL,
+  "companyId" TEXT,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "procedureParameter_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "procedureParameter_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "procedureParameter_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "procedureParameter_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "procedureParameter_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "procedureParameter_procedureId_idx" ON "procedureParameter" ("procedureId");
+CREATE INDEX "procedureParameter_companyId_idx" ON "procedureParameter" ("companyId");
+
+ALTER TABLE "procedureParameter" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "SELECT" ON "public"."procedureParameter"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."procedureParameter"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."procedureParameter"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."procedureParameter"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_delete')
+    )::text[]
+  )
+);

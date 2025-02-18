@@ -12,11 +12,7 @@ import { nanoid } from "nanoid";
 import { useState } from "react";
 import { ResizablePanels, PanelProvider } from "~/components/Layout/Panels";
 import { usePermissions, useUser } from "~/hooks";
-import {
-  getProcedure,
-  getProcedureAttributes,
-  getProcedureVersions,
-} from "~/modules/production";
+import { getProcedure, getProcedureVersions } from "~/modules/production";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
 import ProcedureProperties from "~/modules/production/ui/Procedures/ProcedureProperties";
@@ -40,10 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [procedure, attributes] = await Promise.all([
-    getProcedure(client, id),
-    getProcedureAttributes(client, id),
-  ]);
+  const [procedure] = await Promise.all([getProcedure(client, id)]);
 
   if (procedure.error) {
     throw redirect(
@@ -54,7 +47,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     procedure: procedure.data,
-    attributes: attributes.data,
     versions: getProcedureVersions(client, procedure.data, companyId),
   });
 }

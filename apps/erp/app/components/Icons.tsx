@@ -12,6 +12,7 @@ import {
   LuClock,
   LuClock3,
   LuExternalLink,
+  LuFlaskConical,
   LuGroup,
   LuHammer,
   LuHardHat,
@@ -20,7 +21,6 @@ import {
   LuList,
   LuPizza,
   LuQrCode,
-  LuRuler,
   LuShoppingCart,
   LuSquare,
   LuSwords,
@@ -188,17 +188,17 @@ export const ProcedureAttributeTypeIcon = ({
     case "Value":
       return <LuQrCode className={cn("text-foreground", className)} />;
     case "Measurement":
-      return <LuRuler className={cn("text-blue-600", className)} />;
+      return <LuFlaskConical className={cn("text-emerald-500", className)} />;
     case "Checkbox":
       return <LuToggleLeft className={cn("text-purple-600", className)} />;
     case "Timestamp":
-      return <LuClock className={cn("text-red-600", className)} />;
+      return <LuClock className={cn("text-blue-500", className)} />;
     case "Person":
       return <LuUser className={cn("text-yellow-600", className)} />;
     case "List":
       return <LuList className={cn("text-orange-600", className)} />;
     case "File":
-      return <LuImage className={cn("text-emerald-600", className)} />;
+      return <LuImage className={cn("text-indigo-500", className)} />;
   }
 };
 

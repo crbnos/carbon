@@ -473,6 +473,13 @@ export const procedureAttributeValidator = z
     }
   );
 
+export const procedureParameterValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  procedureId: z.string().min(1, { message: "Procedure is required" }),
+  key: z.string().min(1, { message: "Key is required" }),
+  value: z.string().min(1, { message: "Value is required" }),
+});
+
 export const productionEventValidator = z
   .object({
     id: zfd.text(z.string().optional()),
