@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { upsertMethodOperationParameter } from "~/modules/items";
-import { operationParameterValidator } from "~/modules/shared";
+import { upsertMethodOperationAttribute } from "~/modules/items";
+import { operationAttributeValidator } from "~/modules/shared";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -13,7 +13,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(operationParameterValidator).validate(
+  const validation = await validator(operationAttributeValidator).validate(
     formData
   );
 
@@ -21,7 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const insert = await upsertMethodOperationParameter(client, {
+  const insert = await upsertMethodOperationAttribute(client, {
     ...validation.data,
     companyId,
     createdBy: userId,
@@ -33,23 +33,23 @@ export async function action({ request }: ActionFunctionArgs) {
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert method operation parameter")
+        error(insert.error, "Failed to insert method operation attribute")
       )
     );
   }
 
-  const methodOperationParameterId = insert.data?.id;
-  if (!methodOperationParameterId) {
+  const methodOperationAttributeId = insert.data?.id;
+  if (!methodOperationAttributeId) {
     return json(
       {
         id: null,
       },
       await flash(
         request,
-        error(insert.error, "Failed to insert method operation parameter")
+        error(insert.error, "Failed to insert method operation attribute")
       )
     );
   }
 
-  return json({ id: methodOperationParameterId });
+  return json({ id: methodOperationAttributeId });
 }

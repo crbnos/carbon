@@ -1911,7 +1911,7 @@ export async function upsertMethodOperationAttribute(
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationParameterValidator>, "id"> & {
+    | (Omit<z.infer<typeof operationAttributeValidator>, "id"> & {
         id: string;
         updatedBy: string;
         updatedAt: string;

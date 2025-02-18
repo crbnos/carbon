@@ -547,7 +547,7 @@ function ProcedureAttributeForm({
                 </>
               )}
               {type === "List" && (
-                <ArrayInput name="listOptions" label="List Options" />
+                <ArrayInput name="listValues" label="List Options" />
               )}
             </VStack>
           </DrawerBody>

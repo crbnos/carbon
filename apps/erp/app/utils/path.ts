@@ -313,6 +313,8 @@ export const path = {
     deleteJob: (id: string) => generatePath(`${x}/job/${id}/delete`),
     deleteJobMaterial: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/material/delete/${id}`),
+    deleteJobOperationAttribute: (id: string) =>
+      generatePath(`${x}/job/methods/operation/attribute/delete/${id}`),
     deleteJobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/delete/${id}`),
     deleteJobOperationTool: (id: string) =>
@@ -323,6 +325,8 @@ export const path = {
       generatePath(`${x}/items/substances/delete/${id}`),
     deleteMethodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/delete/${id}`),
+    deleteMethodOperationAttribute: (id: string) =>
+      generatePath(`${x}/items/methods/operation/attribute/delete/${id}`),
     deleteMethodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
@@ -361,6 +365,8 @@ export const path = {
       generatePath(
         `${x}/quote/methods/${quoteId}/${lineId}/material/delete/${id}`
       ),
+    deleteQuoteOperationAttribute: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/attribute/delete/${id}`),
     deleteQuoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/delete/${id}`),
     deleteQuoteOperationTool: (id: string) =>
@@ -475,6 +481,8 @@ export const path = {
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
     jobOperationsOrder: `${x}/job/methods/operation/order`,
     jobOperationsDelete: `${x}/job/methods/operation/delete`,
+    jobOperationAttribute: (id: string) =>
+      generatePath(`${x}/job/methods/operation/attribute/${id}`),
     jobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/${id}`),
     jobOperationTool: (id: string) =>
@@ -531,6 +539,8 @@ export const path = {
     methodOperations: `${x}/items/methods/operations`,
     methodOperationsOrder: `${x}/items/methods/operation/order`,
     methodOperationsDelete: `${x}/items/methods/operation/delete`,
+    methodOperationAttribute: (id: string) =>
+      generatePath(`${x}/items/methods/operation/attribute/${id}`),
     methodOperationParameter: (id: string) =>
       generatePath(`${x}/items/methods/operation/parameter/${id}`),
     methodOperationTool: (id: string) =>
@@ -580,12 +590,14 @@ export const path = {
       generatePath(`${x}/job/methods/${jobId}/material/new`),
     newJobOperation: (jobId: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/new`),
+    newJobOperationAttribute: `${x}/job/methods/operation/attribute/new`,
     newJobOperationParameter: `${x}/job/methods/operation/parameter/new`,
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newLocation: `${x}/resources/locations/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
     newMethodOperation: `${x}/items/methods/operation/new`,
+    newMethodOperationAttribute: `${x}/items/methods/operation/attribute/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
     newNote: `${x}/shared/notes/new`,
@@ -616,6 +628,7 @@ export const path = {
       generatePath(`${x}/quote/${id}/${lineId}/cost/new`),
     newQuoteOperation: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/new`),
+    newQuoteOperationAttribute: `${x}/quote/methods/operation/attribute/new`,
     newQuoteOperationParameter: `${x}/quote/methods/operation/parameter/new`,
     newQuoteOperationTool: `${x}/quote/methods/operation/tool/new`,
     newQuoteMaterial: (quoteId: string, lineId: string) =>
@@ -801,6 +814,8 @@ export const path = {
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/operation/${id}`),
     quoteOperationsOrder: `${x}/quote/methods/operation/order`,
     quoteOperationsDelete: `${x}/quote/methods/operation/delete`,
+    quoteOperationAttribute: (id: string) =>
+      generatePath(`${x}/quote/methods/operation/attribute/${id}`),
     quoteOperationParameter: (id: string) =>
       generatePath(`${x}/quote/methods/operation/parameter/${id}`),
     quoteOperationTool: (id: string) =>
