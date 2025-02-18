@@ -342,6 +342,8 @@ export const path = {
       generatePath(`${x}/procedure/delete/${id}`),
     deleteProcedureAttribute: (id: string, attributeId: string) =>
       generatePath(`${x}/procedure/${id}/attributes/delete/${attributeId}`),
+    deleteProcedureParameter: (id: string, parameterId: string) =>
+      generatePath(`${x}/procedure/${id}/parameters/delete/${parameterId}`),
     deleteProcess: (id: string) =>
       generatePath(`${x}/resources/processes/delete/${id}`),
     deleteProductionEvent: (id: string) =>
@@ -605,6 +607,8 @@ export const path = {
     newProcedure: `${x}/production/procedures/new`,
     newProcedureAttribute: (id: string) =>
       generatePath(`${x}/procedure/${id}/attributes/new`),
+    newProcedureParameter: (id: string) =>
+      generatePath(`${x}/procedure/${id}/parameters/new`),
     newItemPostingGroup: `${x}/items/groups/new`,
     newMaterialForm: `${x}/items/forms/new`,
     newMaterialSubstance: `${x}/items/substances/new`,
@@ -717,6 +721,8 @@ export const path = {
       generatePath(`${x}/procedure/${id}/attributes/${attributeId}`),
     procedureAttributeOrder: (id: string) =>
       generatePath(`${x}/procedure/${id}/attributes/order`),
+    procedureParameter: (id: string, parameterId: string) =>
+      generatePath(`${x}/procedure/${id}/parameters/${parameterId}`),
     procedures: `${x}/production/procedures`,
     process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
     processes: `${x}/resources/processes`,

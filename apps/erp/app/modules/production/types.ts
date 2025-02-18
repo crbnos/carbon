@@ -6,6 +6,7 @@ import type {
   getJobOperations,
   getProcedure,
   getProcedureAttributes,
+  getProcedureParameters,
   getProcedures,
   getProductionEvents,
   getProductionQuantities,
@@ -44,6 +45,10 @@ export type Procedures = NonNullable<
 
 export type ProcedureAttribute = NonNullable<
   Awaited<ReturnType<typeof getProcedureAttributes>>["data"]
+>[number];
+
+export type ProcedureParameter = NonNullable<
+  Awaited<ReturnType<typeof getProcedureParameters>>["data"]
 >[number];
 
 export type Procedure = NonNullable<
