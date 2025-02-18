@@ -6,6 +6,11 @@ import {
   LuMapPin,
   LuTruck,
 } from "react-icons/lu";
+import {
+  RiProgress2Line,
+  RiProgress4Line,
+  RiProgress8Line,
+} from "react-icons/ri";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -55,6 +60,24 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <LuTruck />,
       shortcut: "Command+Shift+s",
+    },
+    {
+      name: "RFQs",
+      to: `${path.to.salesRfqs}?filter=customerId:eq:${customerId}`,
+      role: ["employee"],
+      icon: <RiProgress2Line />,
+    },
+    {
+      name: "Quotes",
+      to: `${path.to.quotes}?filter=customerId:eq:${customerId}`,
+      role: ["employee"],
+      icon: <RiProgress4Line />,
+    },
+    {
+      name: "Orders",
+      to: `${path.to.salesOrders}?filter=customerId:eq:${customerId}`,
+      role: ["employee"],
+      icon: <RiProgress8Line />,
     },
     // {
     //   name: "Accounting",

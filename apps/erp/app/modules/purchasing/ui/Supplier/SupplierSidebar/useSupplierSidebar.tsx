@@ -1,5 +1,12 @@
 import { useParams } from "@remix-run/react";
-import { LuBuilding, LuContact, LuCreditCard, LuMapPin } from "react-icons/lu";
+import {
+  LuBuilding,
+  LuContact,
+  LuCreditCard,
+  LuLayoutList,
+  LuMapPin,
+  LuPackageSearch,
+} from "react-icons/lu";
 import { TbRoute } from "react-icons/tb";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
@@ -51,6 +58,22 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <TbRoute />,
       shortcut: "Command+Shift+r",
+    },
+    {
+      name: "Quotes",
+      to: `${path.to.supplierQuotes}?filter=supplierId:eq:${supplierId}`,
+
+      icon: <LuPackageSearch />,
+    },
+    {
+      name: "Orders",
+      to: `${path.to.purchaseOrders}?filter=supplierId:eq:${supplierId}`,
+      icon: <LuLayoutList />,
+    },
+    {
+      name: "Invoices",
+      to: `${path.to.purchaseInvoices}?filter=supplierId:eq:${supplierId}`,
+      icon: <LuCreditCard />,
     },
     // {
     //   name: "Shipping",
