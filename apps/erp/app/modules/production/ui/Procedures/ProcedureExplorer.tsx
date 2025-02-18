@@ -59,7 +59,7 @@ import { Reorder } from "framer-motion";
 import { flushSync } from "react-dom";
 import { procedureAttributeType } from "~/modules/shared";
 
-export default function ProcedureAttributesExplorer() {
+export default function ProcedureExplorer() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const procedureData = useRouteData<{
@@ -499,6 +499,7 @@ function ProcedureAttributeForm({
                 name="type"
                 label="Type"
                 options={typeOptions}
+                value={type}
                 onChange={(option) => {
                   if (option) {
                     setType(option.value as ProcedureAttribute["type"]);

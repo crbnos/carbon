@@ -48,6 +48,8 @@ import {
   LuHammer,
   LuInfo,
   LuList,
+  LuMinimize2,
+  LuMaximize2,
   LuSettings2,
   LuSquareFunction,
   LuTriangleAlert,
@@ -110,7 +112,6 @@ import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
-import type { ProcedureAttribute } from "~/modules/production";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
@@ -1512,9 +1513,10 @@ function AttributesForm({
                 name="type"
                 label="Type"
                 options={typeOptions}
+                value={type}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as ProcedureAttribute["type"]);
+                    setType(option.value as OperationAttribute["type"]);
                   }
                 }}
               />
@@ -1534,8 +1536,14 @@ function AttributesForm({
                   onValueChange={setNumericControls}
                   className="justify-start items-start mt-6"
                 >
-                  <ToggleGroupItem value="min">Minimum</ToggleGroupItem>
-                  <ToggleGroupItem value="max">Maximum</ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="min">
+                    <LuMinimize2 className="mr-2" />
+                    Minimum
+                  </ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="max">
+                    <LuMaximize2 className="mr-2" />
+                    Maximum
+                  </ToggleGroupItem>
                 </ToggleGroup>
 
                 {numericControls.includes("min") && (
@@ -1694,7 +1702,7 @@ function AttributesListItem({
                 options={typeOptions}
                 onChange={(option) => {
                   if (option) {
-                    setType(option.value as ProcedureAttribute["type"]);
+                    setType(option.value as OperationAttribute["type"]);
                   }
                 }}
               />
@@ -1714,8 +1722,14 @@ function AttributesListItem({
                   onValueChange={setNumericControls}
                   className="justify-start items-start mt-6"
                 >
-                  <ToggleGroupItem value="min">Minimum</ToggleGroupItem>
-                  <ToggleGroupItem value="max">Maximum</ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="min">
+                    <LuMinimize2 className="mr-2" />
+                    Minimum
+                  </ToggleGroupItem>
+                  <ToggleGroupItem size="sm" value="max">
+                    <LuMaximize2 className="mr-2" />
+                    Maximum
+                  </ToggleGroupItem>
                 </ToggleGroup>
 
                 {numericControls.includes("min") && (
@@ -1726,6 +1740,32 @@ function AttributesListItem({
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 10,
                     }}
+                    isConfigured={rulesByField.has(
+                      getFieldKey(`attribute:${id}:minValue`, operationId)
+                    )}
+                    onConfigure={
+                      configurable && typeof onConfigure === "function"
+                        ? () => {
+                            onConfigure({
+                              label: "Minimum",
+                              field: getFieldKey(
+                                `attribute:${id}:minValue`,
+                                operationId
+                              ),
+                              code: rulesByField.get(
+                                getFieldKey(
+                                  `attribute:${id}:minValue`,
+                                  operationId
+                                )
+                              )?.code,
+                              defaultValue: minValue ?? 0,
+                              returnType: {
+                                type: "numeric",
+                              },
+                            });
+                          }
+                        : undefined
+                    }
                   />
                 )}
                 {numericControls.includes("max") && (
@@ -1736,6 +1776,32 @@ function AttributesListItem({
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 10,
                     }}
+                    isConfigured={rulesByField.has(
+                      getFieldKey(`attribute:${id}:maxValue`, operationId)
+                    )}
+                    onConfigure={
+                      configurable && typeof onConfigure === "function"
+                        ? () => {
+                            onConfigure({
+                              label: "Maximum",
+                              field: getFieldKey(
+                                `attribute:${id}:maxValue`,
+                                operationId
+                              ),
+                              code: rulesByField.get(
+                                getFieldKey(
+                                  `attribute:${id}:maxValue`,
+                                  operationId
+                                )
+                              )?.code,
+                              defaultValue: maxValue ?? 0,
+                              returnType: {
+                                type: "numeric",
+                              },
+                            });
+                          }
+                        : undefined
+                    }
                   />
                 )}
               </div>
@@ -1808,14 +1874,19 @@ function AttributesListItem({
               {isConfigured && (
                 <Tooltip>
                   <TooltipTrigger>
-                    <LuSquareFunction
-                      aria-label="Configured"
-                      className="size-4 text-emerald-500"
-                    />
+                    <div className="flex flex-col items-center justify-center gap-1 text-emerald-500">
+                      <LuSquareFunction
+                        aria-label="Configured"
+                        className="size-4 "
+                      />
+                      <span className="text-xxs font-mono uppercase">
+                        Configured
+                      </span>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-foreground text-sm">
-                      This attribute is configured for this operation.
+                      This attribute is configured
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -2091,14 +2162,19 @@ function ParametersListItem({
               {isConfigured ? (
                 <Tooltip>
                   <TooltipTrigger>
-                    <LuSquareFunction
-                      aria-label="Configured"
-                      className="size-4 text-emerald-500"
-                    />
+                    <div className="flex flex-col items-center justify-center gap-1 text-emerald-500">
+                      <LuSquareFunction
+                        aria-label="Configured"
+                        className="size-4 "
+                      />
+                      <span className="text-xxs font-mono uppercase">
+                        Configured
+                      </span>
+                    </div>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p className="text-foreground text-sm">
-                      This value is configured for this operation.
+                      This value is configured
                     </p>
                   </TooltipContent>
                 </Tooltip>

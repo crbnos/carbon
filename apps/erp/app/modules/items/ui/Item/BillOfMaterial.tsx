@@ -492,8 +492,6 @@ function MaterialForm({
   configurable,
   item,
   methodOperations,
-  orderState,
-  temporaryItems,
   rulesByField,
   onConfigure,
   setOrderState,
