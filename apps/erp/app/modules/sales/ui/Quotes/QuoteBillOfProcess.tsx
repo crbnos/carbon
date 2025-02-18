@@ -45,7 +45,7 @@ import {
   LuTriangleAlert,
   LuX,
 } from "react-icons/lu";
-import { z } from "zod";
+import type { z } from "zod";
 import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
 import {
   Hidden,
@@ -527,14 +527,14 @@ const QuoteBillOfProcess = ({
         id: 2,
         label: (
           <span className="flex items-center gap-2">
-            <span>Tools</span>
-            {tools.length > 0 && <Count count={tools.length} />}
+            <span>Parameters</span>
+            {parameters.length > 0 && <Count count={parameters.length} />}
           </span>
         ),
         content: (
           <div className="flex w-full flex-col py-4">
-            <ToolsForm
-              tools={tools}
+            <ParametersForm
+              parameters={parameters}
               operationId={item.id!}
               isDisabled={
                 selectedItemId === null || isTemporaryId(selectedItemId!)
@@ -544,17 +544,17 @@ const QuoteBillOfProcess = ({
         ),
       },
       {
-        id: 3,
+        id: 4,
         label: (
           <span className="flex items-center gap-2">
-            <span>Parameters</span>
-            {parameters.length > 0 && <Count count={parameters.length} />}
+            <span>Tools</span>
+            {tools.length > 0 && <Count count={tools.length} />}
           </span>
         ),
         content: (
           <div className="flex w-full flex-col py-4">
-            <ParametersForm
-              parameters={parameters}
+            <ToolsForm
+              tools={tools}
               operationId={item.id!}
               isDisabled={
                 selectedItemId === null || isTemporaryId(selectedItemId!)

@@ -681,26 +681,6 @@ const JobBillOfProcess = ({
         id: 2,
         label: (
           <span className="flex items-center gap-2">
-            <span>Tools</span>
-            {tools.length > 0 && <Count count={tools.length} />}
-          </span>
-        ),
-        content: (
-          <div className="flex w-full flex-col py-4">
-            <ToolsForm
-              tools={tools}
-              operationId={item.id!}
-              isDisabled={
-                selectedItemId === null || isTemporaryId(selectedItemId!)
-              }
-            />
-          </div>
-        ),
-      },
-      {
-        id: 3,
-        label: (
-          <span className="flex items-center gap-2">
             <span>Parameters</span>
             {parameters.length > 0 && <Count count={parameters.length} />}
           </span>
@@ -719,6 +699,26 @@ const JobBillOfProcess = ({
       },
       {
         id: 4,
+        label: (
+          <span className="flex items-center gap-2">
+            <span>Tools</span>
+            {tools.length > 0 && <Count count={tools.length} />}
+          </span>
+        ),
+        content: (
+          <div className="flex w-full flex-col py-4">
+            <ToolsForm
+              tools={tools}
+              operationId={item.id!}
+              isDisabled={
+                selectedItemId === null || isTemporaryId(selectedItemId!)
+              }
+            />
+          </div>
+        ),
+      },
+      {
+        id: 5,
         label: "Events",
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
@@ -743,7 +743,7 @@ const JobBillOfProcess = ({
         ),
       },
       {
-        id: 5,
+        id: 6,
         label: "Chat",
         content: <OperationChat jobOperationId={item.id} />,
       },
