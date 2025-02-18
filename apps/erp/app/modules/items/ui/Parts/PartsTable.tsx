@@ -263,7 +263,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: "Created At",
+        header: "Updated At",
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />,

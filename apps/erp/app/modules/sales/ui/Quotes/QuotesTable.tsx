@@ -257,7 +257,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: "Created At",
+        header: "Updated At",
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />,

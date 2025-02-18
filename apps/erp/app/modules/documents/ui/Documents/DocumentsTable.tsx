@@ -372,7 +372,7 @@ const DocumentsTable = memo(
         },
         {
           accessorKey: "updatedAt",
-          header: "Created At",
+          header: "Updated At",
           cell: (item) => formatDate(item.getValue<string>()),
           meta: {
             icon: <LuFileText />,

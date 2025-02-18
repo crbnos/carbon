@@ -28,7 +28,7 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople, useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 import ShipmentStatus from "./ShipmentStatus";
-import { Shipment } from "../../types";
+import type { Shipment } from "../../types";
 import {
   shipmentSourceDocumentType,
   shipmentStatusType,
@@ -251,7 +251,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: "Created At",
+        header: "Updated At",
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />,

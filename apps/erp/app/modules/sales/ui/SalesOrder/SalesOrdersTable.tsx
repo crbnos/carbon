@@ -14,9 +14,8 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -393,7 +392,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       },
       {
         accessorKey: "updatedAt",
-        header: "Created At",
+        header: "Updated At",
         cell: (item) => formatDate(item.getValue<string>()),
         meta: {
           icon: <LuCalendar />,
