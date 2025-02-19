@@ -128,6 +128,33 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
   return "Other";
 }
 
+export async function getJobAttributesByOperationId(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  return client
+    .from("jobOperationAttribute")
+    .select("*")
+    .eq("operationId", operationId);
+}
+
+export async function getJobByOperationId(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  const operation = await client
+    .from("jobOperation")
+    .select("jobId")
+    .eq("id", operationId)
+    .single();
+  if (operation.error) return operation;
+  return client
+    .from("jobs")
+    .select("*")
+    .eq("id", operation.data.jobId)
+    .single();
+}
+
 export async function getJobFiles(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -211,21 +238,14 @@ export async function getJobOperationsByWorkCenter(
   });
 }
 
-export async function getJobByOperationId(
+export async function getJobParametersByOperationId(
   client: SupabaseClient<Database>,
   operationId: string
 ) {
-  const operation = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", operationId)
-    .single();
-  if (operation.error) return operation;
   return client
-    .from("jobs")
+    .from("jobOperationParameter")
     .select("*")
-    .eq("id", operation.data.jobId)
-    .single();
+    .eq("operationId", operationId);
 }
 
 export async function getLocationsByCompany(
