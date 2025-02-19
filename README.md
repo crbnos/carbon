@@ -161,3 +161,17 @@ For example, to run test command in the `@carbon/react` package you can run:
 ```
 $ npm run test -w @carbon/react
 ```
+
+## Restoring a Production Database Locally
+
+1. Download the production database backup from Supabase
+2. Rename the migrations folder to `_migrations`
+3. Restore the database using the following command:
+
+```bash
+npm run db:build # this should error out at the seed step
+PGPASSWORD=postgres psql -h localhost -p 54322 -U supabase_admin -d postgres < ~/Downloads/db_cluster-15-02-2025@04-37-58.backup
+npm run dev
+```
+
+4. Rename the `_migrations` folder back to `migrations`
