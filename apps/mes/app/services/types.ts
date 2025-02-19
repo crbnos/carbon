@@ -1,9 +1,11 @@
 import type { FileObject } from "@supabase/storage-js";
 import type {
+  getJobAttributesByOperationId,
   getJobByOperationId,
   getJobMaterialsByOperationId,
   getJobOperationById,
   getJobOperationsByWorkCenter,
+  getJobParametersByOperationId,
   getLocationsByCompany,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
@@ -35,6 +37,14 @@ export type Job = NonNullable<
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>["data"]
+>[number];
+
+export type JobOperationAttribute = NonNullable<
+  Awaited<ReturnType<typeof getJobAttributesByOperationId>>["data"]
+>[number];
+
+export type JobOperationParameter = NonNullable<
+  Awaited<ReturnType<typeof getJobParametersByOperationId>>["data"]
 >[number];
 
 export type Operation = BaseOperation & Durations;

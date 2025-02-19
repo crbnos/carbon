@@ -8,10 +8,12 @@ import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import {
+  getJobAttributesByOperationId,
   getJobByOperationId,
   getJobFiles,
   getJobMaterialsByOperationId,
   getJobOperationById,
+  getJobParametersByOperationId,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
@@ -66,6 +68,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   return defer({
+    attributes: getJobAttributesByOperationId(
+      serviceRole,
+      operation.data?.[0].id
+    ),
     events: events.data ?? [],
     quantities: (quantities.data ?? []).reduce(
       (acc, curr) => {
@@ -89,6 +95,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     materials: getJobMaterialsByOperationId(serviceRole, operation.data?.[0]),
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
+    parameters: getJobParametersByOperationId(
+      serviceRole,
+      operation.data?.[0].id
+    ),
     workCenter: getWorkCenter(serviceRole, operation.data?.[0].workCenterId),
     thumbnailPath,
   });
@@ -99,21 +109,25 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    attributes,
     events,
     job,
     files,
     materials,
     operation,
+    parameters,
     workCenter,
     thumbnailPath,
   } = useLoaderData<typeof loader>();
 
   return (
     <JobOperation
+      attributes={attributes}
       events={events}
       files={files}
       materials={materials}
       operation={operation}
+      parameters={parameters}
       job={job}
       thumbnailPath={thumbnailPath}
       workCenter={workCenter}

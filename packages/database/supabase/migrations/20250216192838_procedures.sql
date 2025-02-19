@@ -467,3 +467,15 @@ FOR DELETE USING (
     )::text[]
   )
 );
+
+ALTER TABLE "methodOperation" ADD COLUMN "procedureId" TEXT;
+ALTER TABLE "methodOperation" ADD CONSTRAINT "methodOperation_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "jobOperation" ADD COLUMN "procedureId" TEXT;
+ALTER TABLE "jobOperation" ADD CONSTRAINT "jobOperation_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+ALTER TABLE "quoteOperation" ADD COLUMN "procedureId" TEXT;
+ALTER TABLE "quoteOperation" ADD CONSTRAINT "quoteOperation_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+
+

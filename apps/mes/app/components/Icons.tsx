@@ -5,11 +5,18 @@ import {
   LuAtom,
   LuCircleCheck,
   LuCircleX,
+  LuClock,
+  LuFlaskConical,
   LuHammer,
   LuHeadphones,
+  LuImage,
+  LuList,
   LuPizza,
+  LuQrCode,
   LuShoppingCart,
   LuSquare,
+  LuToggleLeft,
+  LuUser,
 } from "react-icons/lu";
 
 import {
@@ -33,6 +40,7 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type { documentTypes } from "~/services/models";
 import type { Operation } from "~/services/types";
+import { Database } from "../../../../packages/database/src/types";
 
 type FileIconProps = {
   type: (typeof documentTypes)[number];
@@ -40,6 +48,29 @@ type FileIconProps = {
 };
 
 const documentIconBaseClase = "w-6 h-6 flex-shrink-0";
+
+export function DeadlineIcon({
+  deadlineType,
+  overdue,
+}: {
+  deadlineType: Operation["jobDeadlineType"];
+  overdue: boolean;
+}) {
+  switch (deadlineType) {
+    case "ASAP":
+      return <BsExclamationSquareFill className="text-red-500" />;
+    case "Hard Deadline":
+      return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
+    case "Soft Deadline":
+      return (
+        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
+      );
+    case "No Deadline":
+      return <LowPriorityIcon />;
+    default:
+      return null;
+  }
+}
 
 export const FileIcon = ({ type, className }: FileIconProps) => {
   switch (type) {
@@ -170,25 +201,27 @@ export function OperationStatusIcon({
   }
 }
 
-export function DeadlineIcon({
-  deadlineType,
-  overdue,
+export const ProcedureAttributeTypeIcon = ({
+  type,
+  className,
 }: {
-  deadlineType: Operation["jobDeadlineType"];
-  overdue: boolean;
-}) {
-  switch (deadlineType) {
-    case "ASAP":
-      return <BsExclamationSquareFill className="text-red-500" />;
-    case "Hard Deadline":
-      return <HighPriorityIcon className={cn(overdue ? "text-red-500" : "")} />;
-    case "Soft Deadline":
-      return (
-        <MediumPriorityIcon className={cn(overdue ? "text-red-500" : "")} />
-      );
-    case "No Deadline":
-      return <LowPriorityIcon />;
-    default:
-      return null;
+  type: Database["public"]["Enums"]["procedureAttributeType"];
+  className?: string;
+}) => {
+  switch (type) {
+    case "Value":
+      return <LuQrCode className={cn("text-foreground", className)} />;
+    case "Measurement":
+      return <LuFlaskConical className={cn("text-emerald-500", className)} />;
+    case "Checkbox":
+      return <LuToggleLeft className={cn("text-purple-600", className)} />;
+    case "Timestamp":
+      return <LuClock className={cn("text-blue-500", className)} />;
+    case "Person":
+      return <LuUser className={cn("text-yellow-600", className)} />;
+    case "List":
+      return <LuList className={cn("text-orange-600", className)} />;
+    case "File":
+      return <LuImage className={cn("text-indigo-500", className)} />;
   }
-}
+};

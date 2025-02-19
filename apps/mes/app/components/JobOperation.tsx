@@ -88,6 +88,8 @@ import {
 import type {
   Job,
   JobMaterial,
+  JobOperationParameter,
+  JobOperationAttribute,
   OperationWithDetails,
   ProductionEvent,
   ProductionQuantity,
@@ -128,6 +130,7 @@ import { flushSync } from "react-dom";
 import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
+  LuActivity,
   LuAxis3D,
   LuChevronLeft,
   LuClipboardCheck,
@@ -136,32 +139,42 @@ import {
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
+  LuInfo,
+  LuList,
   LuSend,
   LuTimer,
   LuTriangleAlert,
 } from "react-icons/lu";
-import { MethodIcon, MethodItemTypeIcon } from "~/components/Icons";
+import {
+  MethodIcon,
+  MethodItemTypeIcon,
+  ProcedureAttributeTypeIcon,
+} from "~/components/Icons";
 import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 
 type JobOperationProps = {
+  attributes: Promise<PostgrestResponse<JobOperationAttribute>>;
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
   materials: Promise<PostgrestResponse<JobMaterial>>;
   operation: OperationWithDetails;
+  parameters: Promise<PostgrestResponse<JobOperationParameter>>;
   job: Job;
   thumbnailPath: string | null;
   workCenter: Promise<PostgrestSingleResponse<{ name: string }>>;
 };
 
 export const JobOperation = ({
+  attributes,
   events,
   files,
   job,
   materials,
   operation: originalOperation,
+  parameters,
   thumbnailPath,
   workCenter,
 }: JobOperationProps) => {
@@ -261,7 +274,7 @@ export const JobOperation = ({
                   }
                   value="instructions"
                 >
-                  Instructions
+                  Procedure
                 </TabsTrigger>
                 <TabsTrigger variant="primary" value="chat">
                   Chat
@@ -421,8 +434,8 @@ export const JobOperation = ({
                 </div>
               </div>
             </div>
-            <Separator />
 
+            <Separator />
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
                 <HStack className="justify-between w-full">
@@ -533,6 +546,84 @@ export const JobOperation = ({
                 </Suspense>
               </div>
             </div>
+
+            <Suspense key={operationId} fallback={<TableSkeleton />}>
+              <Await resolve={attributes}>
+                {(resolvedAttributes) =>
+                  Array.isArray(resolvedAttributes?.data) &&
+                  resolvedAttributes?.data.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="flex flex-col items-start justify-between w-full">
+                        <div className="flex flex-col gap-4 p-4 w-full">
+                          <HStack className="justify-between w-full">
+                            <Heading size="h3">Attributes</Heading>
+                          </HStack>
+                          <div className="border rounded-lg">
+                            {resolvedAttributes.data
+                              .sort(
+                                (a, b) =>
+                                  (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+                              )
+                              .map((a, index) => (
+                                <AttributesListItem
+                                  key={a.id}
+                                  attribute={a}
+                                  operationId={operationId}
+                                  className={
+                                    index === resolvedAttributes.data.length - 1
+                                      ? "border-none"
+                                      : ""
+                                  }
+                                />
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )
+                }
+              </Await>
+            </Suspense>
+
+            <Suspense key={operationId} fallback={<TableSkeleton />}>
+              <Await resolve={parameters}>
+                {(resolvedParameters) =>
+                  Array.isArray(resolvedParameters?.data) &&
+                  resolvedParameters?.data.length > 0 && (
+                    <>
+                      <Separator />
+                      <div className="flex flex-col items-start justify-between w-full">
+                        <div className="flex flex-col gap-4 p-4 w-full">
+                          <HStack className="justify-between w-full">
+                            <Heading size="h3">Parameters</Heading>
+                          </HStack>
+                          <div className="border rounded-lg">
+                            {resolvedParameters.data
+                              .sort((a, b) =>
+                                (a.key ?? "").localeCompare(b.key ?? "")
+                              )
+                              .map((p, index) => (
+                                <ParametersListItem
+                                  key={p.id}
+                                  parameter={p}
+                                  operationId={operationId}
+                                  className={
+                                    index === resolvedParameters.data.length - 1
+                                      ? "border-none"
+                                      : ""
+                                  }
+                                />
+                              ))}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )
+                }
+              </Await>
+            </Suspense>
+
             <Separator />
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 w-full">
@@ -2081,5 +2172,115 @@ function IssueModal({
         </ValidatedForm>
       </ModalContent>
     </Modal>
+  );
+}
+
+const unitOfMeasures = [
+  { label: "Ohms", value: "OHM" },
+  { label: "Amps", value: "AMP" },
+  { label: "Volts", value: "VOLT" },
+  { label: "Hertz", value: "HZ" },
+];
+
+function AttributesListItem({
+  attribute,
+  operationId,
+  className,
+}: {
+  attribute: JobOperationAttribute;
+  operationId?: string;
+  className: string;
+}) {
+  const {
+    id,
+    name,
+    description,
+    type,
+    unitOfMeasureCode,
+    minValue,
+    maxValue,
+    listValues,
+  } = attribute;
+
+  const fetcher = useFetcher<{ success: boolean }>();
+
+  if (!operationId) return null;
+  return (
+    <div className={cn("border-b p-6", className)}>
+      <div className="flex flex-1 justify-between items-center w-full">
+        <HStack spacing={4} className="w-1/2">
+          <HStack spacing={4} className="flex-1">
+            <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+              <ProcedureAttributeTypeIcon type={type} />
+            </div>
+            <VStack spacing={0}>
+              <HStack>
+                <span className="text-foreground text-sm font-medium">
+                  {name}
+                </span>
+                {description && (
+                  <span className="text-muted-foreground text-sm">
+                    {description}
+                  </span>
+                )}
+              </HStack>
+              {type === "Measurement" && (
+                <span className="text-xs text-muted-foreground text-right">
+                  {minValue !== null && maxValue !== null
+                    ? `Must be between ${minValue} and ${maxValue} ${
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }`
+                    : minValue !== null
+                    ? `Must be > ${minValue} ${
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }`
+                    : `Must be < ${maxValue} ${
+                        unitOfMeasures.find(
+                          (u) => u.value === unitOfMeasureCode
+                        )?.label
+                      }`}
+                </span>
+              )}
+            </VStack>
+          </HStack>
+        </HStack>
+        <div className="flex items-center justify-end gap-2"></div>
+      </div>
+    </div>
+  );
+}
+
+function ParametersListItem({
+  parameter,
+  operationId,
+  className,
+}: {
+  parameter: JobOperationParameter;
+  operationId?: string;
+  className: string;
+}) {
+  const { key, value } = parameter;
+
+  if (!operationId) return null;
+  return (
+    <div className={cn("border-b p-6", className)}>
+      <div className="flex flex-1 justify-between items-center w-full">
+        <HStack spacing={4} className="w-1/2">
+          <HStack spacing={4} className="flex-1">
+            <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+              <LuActivity />
+            </div>
+            <p className="text-foreground text-sm font-medium">{key}</p>
+          </HStack>
+        </HStack>
+        <div className="flex items-center justify-end gap-2">
+          <p className="text-foreground text-sm">{value}</p>
+        </div>
+      </div>
+    </div>
   );
 }
