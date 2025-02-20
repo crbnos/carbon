@@ -458,7 +458,7 @@ function DeleteWorkCenterModal({
               }
               type="submit"
             >
-              Delete
+              Deactivate
             </Button>
           </fetcher.Form>
         </ModalFooter>
