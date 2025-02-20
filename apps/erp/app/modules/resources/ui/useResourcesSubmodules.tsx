@@ -1,5 +1,4 @@
-import { LuMapPin } from "react-icons/lu";
-import { TbRoute } from "react-icons/tb";
+import { LuMapPin, LuWrench , LuCog } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -17,13 +16,13 @@ const resourcesRoutes: RouteGroup[] = [
       {
         name: "Processes",
         to: path.to.processes,
-        icon: <TbRoute />,
+        icon: <LuCog />,
         table: "process",
       },
       {
         name: "Work Centers",
         to: path.to.workCenters,
-        icon: <LuMapPin />,
+        icon: <LuWrench />,
         table: "workCenter",
       },
     ],

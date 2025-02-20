@@ -1,10 +1,17 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  Checkbox,
+  HStack,
+  MenuIcon,
+  MenuItem,
+  useDisclosure,
+} from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
+  LuCheck,
   LuCog,
   LuDollarSign,
   LuPencil,
@@ -15,7 +22,7 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { ConfirmDelete } from "~/components/Modals";
+import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { WorkCenter } from "~/modules/resources";
@@ -45,19 +52,26 @@ const WorkCentersTable = memo(
 
     const permissions = usePermissions();
     const deleteModal = useDisclosure();
+    const activateModal = useDisclosure();
     const [selectedWorkCenter, setSelectedWorkCenter] =
       useState<WorkCenter | null>(null);
 
     const formatter = useCurrencyFormatter();
+
+    const onActivate = (data: WorkCenter) => {
+      setSelectedWorkCenter(data);
+      activateModal.onOpen();
+    };
 
     const onDelete = (data: WorkCenter) => {
       setSelectedWorkCenter(data);
       deleteModal.onOpen();
     };
 
-    const onDeleteCancel = () => {
+    const onCancel = () => {
       setSelectedWorkCenter(null);
       deleteModal.onClose();
+      activateModal.onClose();
     };
 
     const customColumns = useCustomColumns<WorkCenter>("workCenter");
@@ -123,6 +137,22 @@ const WorkCentersTable = memo(
                 label: <Enumerable value={name} />,
               })),
             },
+          },
+        },
+        {
+          accessorKey: "active",
+          header: "Active",
+          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+          meta: {
+            filter: {
+              type: "static",
+              options: [
+                { value: "true", label: "Active" },
+                { value: "false", label: "Inactive" },
+              ],
+            },
+            pluralHeader: "Active Statuses",
+            icon: <LuCheck />,
           },
         },
         {
@@ -217,14 +247,24 @@ const WorkCentersTable = memo(
             <MenuIcon icon={<LuPencil />} />
             Edit Work Center
           </MenuItem>
-          <MenuItem
-            destructive
-            disabled={!permissions.can("delete", "resources")}
-            onClick={() => onDelete(row)}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            Delete Work Center
-          </MenuItem>
+          {row.active ? (
+            <MenuItem
+              destructive
+              disabled={!permissions.can("delete", "resources")}
+              onClick={() => onDelete(row)}
+            >
+              <MenuIcon icon={<LuTrash />} />
+              Deactivate Work Center
+            </MenuItem>
+          ) : (
+            <MenuItem
+              disabled={!permissions.can("delete", "resources")}
+              onClick={() => onActivate(row)}
+            >
+              <MenuIcon icon={<LuCheck />} />
+              Activate Work Center
+            </MenuItem>
+          )}
         </>
       ),
       // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -255,8 +295,20 @@ const WorkCentersTable = memo(
             name={selectedWorkCenter?.name ?? ""}
             text={`Are you sure you want to deactivate the ${selectedWorkCenter?.name} work center?`}
             isOpen={deleteModal.isOpen}
-            onCancel={onDeleteCancel}
-            onSubmit={onDeleteCancel}
+            onCancel={onCancel}
+            onSubmit={onCancel}
+          />
+        )}
+
+        {selectedWorkCenter && selectedWorkCenter.id && (
+          <Confirm
+            action={path.to.workCenterActivate(selectedWorkCenter.id)}
+            title={`Activate ${selectedWorkCenter?.name} Work Center`}
+            text={`Are you sure you want to activate the ${selectedWorkCenter?.name} work center?`}
+            confirmText="Activate"
+            isOpen={activateModal.isOpen}
+            onCancel={onCancel}
+            onSubmit={onCancel}
           />
         )}
       </>

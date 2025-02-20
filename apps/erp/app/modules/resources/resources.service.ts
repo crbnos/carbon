@@ -11,6 +11,13 @@ import type {
   workCenterValidator,
 } from "./resources.models";
 
+export async function activateWorkCenter(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("workCenter").update({ active: true }).eq("id", id);
+}
+
 export async function deleteAbility(
   client: SupabaseClient<Database>,
   abilityId: string,
@@ -341,8 +348,7 @@ export async function getWorkCenters(
     .select("*", {
       count: "exact",
     })
-    .eq("companyId", companyId)
-    .eq("active", true);
+    .eq("companyId", companyId);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);

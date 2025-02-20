@@ -55,19 +55,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...data } = validation.data;
   if (!id) throw new Error("ID is was not found");
 
-  const updateCategory = await upsertWorkCenter(client, {
+  const updateWorkCenter = await upsertWorkCenter(client, {
     id,
     ...data,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updateCategory.error) {
+  if (updateWorkCenter.error) {
     throw redirect(
       path.to.workCenters,
       await flash(
         request,
-        error(updateCategory.error, "Failed to update work center")
+        error(updateWorkCenter.error, "Failed to update work center")
       )
     );
   }
