@@ -1,13 +1,27 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Checkbox,
   HStack,
   MenuIcon,
   MenuItem,
+  ModalHeader,
+  ModalContent,
+  ModalOverlay,
+  Modal,
   useDisclosure,
+  Button,
+  ModalBody,
+  ModalFooter,
+  ModalTitle,
+  toast,
+  useMount,
+  Alert,
+  AlertDescription,
+  AlertTitle,
 } from "@carbon/react";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuAlignLeft,
   LuBuilding2,
@@ -22,8 +36,13 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { Confirm } from "~/components/Modals";
+import {
+  useCurrencyFormatter,
+  usePermissions,
+  useUrlParams,
+  useUser,
+} from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { WorkCenter } from "~/modules/resources";
 import { usePeople } from "~/stores";
@@ -290,10 +309,8 @@ const WorkCentersTable = memo(
         />
 
         {selectedWorkCenter && selectedWorkCenter.id && (
-          <ConfirmDelete
-            action={path.to.deleteWorkCenter(selectedWorkCenter.id)}
-            name={selectedWorkCenter?.name ?? ""}
-            text={`Are you sure you want to deactivate the ${selectedWorkCenter?.name} work center?`}
+          <DeleteWorkCenterModal
+            workCenter={selectedWorkCenter}
             isOpen={deleteModal.isOpen}
             onCancel={onCancel}
             onSubmit={onCancel}
@@ -318,3 +335,134 @@ const WorkCentersTable = memo(
 
 WorkCentersTable.displayName = "WorkCentersTable";
 export default WorkCentersTable;
+
+function DeleteWorkCenterModal({
+  workCenter,
+  isOpen,
+  onCancel,
+  onSubmit,
+}: {
+  workCenter: WorkCenter;
+  isOpen: boolean;
+  onCancel: () => void;
+  onSubmit: () => void;
+}) {
+  const [hasNoActiveOperations, setHasNoActiveOperations] = useState(false);
+  const [jobsWithActiveOperations, setJobsWithActiveOperations] = useState<
+    {
+      jobId: string;
+      id: string;
+    }[]
+  >([]);
+
+  const uniqueJobsWithActiveOperations = useMemo(() => {
+    return jobsWithActiveOperations.filter(
+      (job, index, self) =>
+        index === self.findIndex((t) => t.jobId === job.jobId)
+    );
+  }, [jobsWithActiveOperations]);
+
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+
+  const getActiveOperations = async () => {
+    if (!carbon) return;
+    const { data, error } = await carbon
+      .from("jobOperation")
+      .select("job(jobId, id, status)")
+      .in("job.status", ["Ready", "In Progress", "Paused"])
+      .neq("status", "Done")
+      .eq("workCenterId", workCenter.id!)
+      .eq("companyId", company?.id);
+    if (error) {
+      console.error(error);
+    }
+
+    if (data) {
+      setJobsWithActiveOperations(
+        data.map((job) => job.job).filter((job) => Boolean(job))
+      );
+      setHasNoActiveOperations(data.length === 0);
+    } else {
+      toast.error("Failed to check active operations");
+    }
+  };
+
+  const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onSubmit?.();
+      submitted.current = false;
+    }
+  }, [fetcher.state, onSubmit]);
+
+  useMount(() => {
+    getActiveOperations();
+  });
+
+  return (
+    <Modal
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Deactivate {workCenter.name}</ModalTitle>
+        </ModalHeader>
+
+        <ModalBody>
+          {uniqueJobsWithActiveOperations.length > 0 ? (
+            <Alert variant="destructive">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>
+                Theses jobs have operations assigned to this work center:
+              </AlertTitle>
+              <AlertDescription>
+                <ul className="list-disc pl-4 mt-2 space-y-1">
+                  {uniqueJobsWithActiveOperations.map((job, index) => (
+                    <li key={index} className="text-sm font-medium flex gap-2">
+                      <Hyperlink to={path.to.jobDetails(job.id)}>
+                        {job.jobId}
+                      </Hyperlink>
+                    </li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <p>
+              Are you sure you want to deactivate the {workCenter.name} work
+              center?
+            </p>
+          )}
+        </ModalBody>
+
+        <ModalFooter>
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+          <fetcher.Form
+            method="post"
+            action={path.to.deleteWorkCenter(workCenter.id!)}
+            onSubmit={() => (submitted.current = true)}
+          >
+            <Button
+              variant="destructive"
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={
+                fetcher.state !== "idle" || hasNoActiveOperations === false
+              }
+              type="submit"
+            >
+              Delete
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
