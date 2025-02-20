@@ -477,5 +477,76 @@ ALTER TABLE "jobOperation" ADD CONSTRAINT "jobOperation_procedureId_fkey" FOREIG
 ALTER TABLE "quoteOperation" ADD COLUMN "procedureId" TEXT;
 ALTER TABLE "quoteOperation" ADD CONSTRAINT "quoteOperation_procedureId_fkey" FOREIGN KEY ("procedureId") REFERENCES "procedure"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- DROP TABLE IF EXISTS "jobOperationAttributeRecord";
+CREATE TABLE "jobOperationAttributeRecord" (
+  "jobOperationAttributeId" TEXT NOT NULL,
+  "value" TEXT,
+  "numericValue" NUMERIC,
+  "booleanValue" BOOLEAN,
+  "userValue" TEXT,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
 
+  CONSTRAINT "jobOperationAttributeRecord_pkey" PRIMARY KEY ("jobOperationAttributeId"),
+  CONSTRAINT "jobOperationAttributeRecord_jobOperationAttributeId_fkey" FOREIGN KEY ("jobOperationAttributeId") REFERENCES "jobOperationAttribute"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttributeRecord_userValue_fkey" FOREIGN KEY ("userValue") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttributeRecord_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttributeRecord_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "jobOperationAttributeRecord_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
 
+CREATE INDEX "jobOperationAttributeRecord_companyId_idx" ON "jobOperationAttributeRecord"("companyId");
+CREATE INDEX "jobOperationAttributeRecord_jobOperationAttributeId_idx" ON "jobOperationAttributeRecord"("jobOperationAttributeId");
+
+ALTER TABLE "jobOperationAttributeRecord" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."jobOperationAttributeRecord"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."jobOperationAttributeRecord"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."jobOperationAttributeRecord"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."jobOperationAttributeRecord"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('production_delete')
+    )::text[]
+  )
+);
+
+DROP POLICY IF EXISTS "Job documents insert requires employee role" ON storage.objects;
+CREATE POLICY "Job documents insert requires employee role" ON storage.objects 
+FOR INSERT WITH CHECK (
+    bucket_id = 'private'
+    AND has_role('employee', (storage.foldername(name))[1])
+    AND (storage.foldername(name))[2] = 'job'
+);

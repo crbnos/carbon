@@ -17,8 +17,6 @@ export async function action({ request }: ActionFunctionArgs) {
     formData
   );
 
-  console.log({ validation });
-
   if (validation.error) {
     return validationError(validation.error);
   }
@@ -28,8 +26,6 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
     createdBy: userId,
   });
-
-  console.log({ insert });
 
   if (insert.error) {
     return json(

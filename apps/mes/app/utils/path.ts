@@ -40,6 +40,8 @@ export const path = {
     operations: `${x}/operations?saved=1`,
     productionEvent: `${x}/event`,
     recent: `${x}/recent`,
+    record: `${x}/record`,
+    recordDelete: (id: string) => generatePath(`${x}/record/${id}/delete`),
     refreshSession: "/refresh-session",
     requestAccess: "/request-access",
     rework: `${x}/rework`,
