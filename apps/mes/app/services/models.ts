@@ -40,6 +40,32 @@ export const jobOperationStatus = [
   "Canceled",
 ] as const;
 
+export const attributeRecordValidator = z
+  .object({
+    jobOperationAttributeId: z.string(),
+    value: zfd.text(z.string().optional()),
+    numericValue: zfd.numeric(z.number().optional()),
+    booleanValue: zfd.checkbox().optional(),
+    userValue: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => {
+      if (
+        data.value === undefined &&
+        data.numericValue === undefined &&
+        data.booleanValue === undefined &&
+        data.userValue === undefined
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      path: ["value", "numericValue"],
+      message: "Value is required",
+    }
+  );
+
 export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),

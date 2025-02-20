@@ -3,12 +3,25 @@ import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
 import type {
+  attributeRecordValidator,
   documentTypes,
   nonScrapQuantityValidator,
   productionEventValidator,
   scrapQuantityValidator,
 } from "./models";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
+
+export async function deleteAttributeRecord(
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+) {
+  return client
+    .from("jobOperationAttributeRecord")
+    .delete()
+    .eq("jobOperationAttributeId", args.id)
+    .eq("companyId", args.companyId)
+    .eq("createdBy", args.userId);
+}
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
@@ -128,13 +141,34 @@ export function getFileType(fileName: string): (typeof documentTypes)[number] {
   return "Other";
 }
 
+export async function getJobOperationProcedure(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  const [attributes, parameters] = await Promise.all([
+    client
+      .from("jobOperationAttribute")
+      .select("*, jobOperationAttributeRecord(*)")
+      .eq("operationId", operationId),
+    client
+      .from("jobOperationParameter")
+      .select("*")
+      .eq("operationId", operationId),
+  ]);
+
+  return {
+    attributes: attributes.data ?? [],
+    parameters: parameters.data ?? [],
+  };
+}
+
 export async function getJobAttributesByOperationId(
   client: SupabaseClient<Database>,
   operationId: string
 ) {
   return client
     .from("jobOperationAttribute")
-    .select("*")
+    .select("*, jobOperationAttributeRecord(*)")
     .eq("operationId", operationId);
 }
 
@@ -375,6 +409,19 @@ export async function getWorkCentersByCompany(
     .select("*")
     .eq("companyId", companyId)
     .order("name", { ascending: true });
+}
+
+export async function insertAttributeRecord(
+  client: SupabaseClient<Database>,
+  data: z.infer<typeof attributeRecordValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("jobOperationAttributeRecord").upsert(data, {
+    onConflict: "jobOperationAttributeId",
+    ignoreDuplicates: false,
+  });
 }
 
 export async function insertReworkQuantity(

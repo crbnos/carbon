@@ -6220,6 +6220,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6390,6 +6393,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6512,6 +6518,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.procedureId",
           },
           {
             $ref: "#/parameters/body.jobOperation",
@@ -20653,6 +20662,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -20781,6 +20793,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20861,6 +20876,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.procedureId",
           },
           {
             $ref: "#/parameters/body.methodOperation",
@@ -23044,6 +23062,177 @@ export default {
           },
         },
         tags: ["quoteOperationsWithMakeMethods"],
+      },
+    },
+    "/procedureParameter": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/procedureParameter",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["procedureParameter"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.procedureParameter",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["procedureParameter"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedureParameter"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.key",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureParameter.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.procedureParameter",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["procedureParameter"],
       },
     },
     "/shipmentLines": {
@@ -27792,6 +27981,492 @@ export default {
         tags: ["purchaseOrderDelivery"],
       },
     },
+    "/methodOperationAttribute": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/methodOperationAttribute",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["methodOperationAttribute"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.methodOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["methodOperationAttribute"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationAttribute"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.methodOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["methodOperationAttribute"],
+      },
+    },
+    "/quoteOperationAttribute": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteOperationAttribute",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteOperationAttribute"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.quoteOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["quoteOperationAttribute"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationAttribute"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.quoteOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["quoteOperationAttribute"],
+      },
+    },
     "/warehouse": {
       get: {
         parameters: [
@@ -28909,6 +29584,249 @@ export default {
           },
         },
         tags: ["integrations"],
+      },
+    },
+    "/jobOperationAttribute": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationAttribute",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationAttribute"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationAttribute"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationAttribute"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.minValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.maxValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.listValues",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.fileTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationAttribute",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationAttribute"],
       },
     },
     "/groups_recursive": {
@@ -32425,6 +33343,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32577,6 +33498,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperation.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteOperation.procedureId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32681,6 +33605,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperation.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperation.procedureId",
           },
           {
             $ref: "#/parameters/body.quoteOperation",
@@ -49199,6 +50126,12 @@ export default {
           },
           type: "array",
         },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -56142,6 +57075,12 @@ export default {
           },
           type: "array",
         },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -57154,6 +58093,59 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    procedureParameter: {
+      required: ["id", "procedureId", "key", "value", "createdAt", "createdBy"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        key: {
+          format: "text",
+          type: "string",
+        },
+        value: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -59268,6 +60260,224 @@ export default {
       },
       type: "object",
     },
+    methodOperationAttribute: {
+      required: [
+        "id",
+        "name",
+        "sortOrder",
+        "type",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        required: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        type: {
+          enum: [
+            "Value",
+            "Measurement",
+            "Checkbox",
+            "Timestamp",
+            "Person",
+            "List",
+            "File",
+          ],
+          format: 'public."procedureAttributeType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        minValue: {
+          format: "numeric",
+          type: "number",
+        },
+        maxValue: {
+          format: "numeric",
+          type: "number",
+        },
+        listValues: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        fileTypes: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `methodOperation.id`.<fk table='methodOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    quoteOperationAttribute: {
+      required: [
+        "id",
+        "name",
+        "sortOrder",
+        "type",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        required: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        type: {
+          enum: [
+            "Value",
+            "Measurement",
+            "Checkbox",
+            "Timestamp",
+            "Person",
+            "List",
+            "File",
+          ],
+          format: 'public."procedureAttributeType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        minValue: {
+          format: "numeric",
+          type: "number",
+        },
+        maxValue: {
+          format: "numeric",
+          type: "number",
+        },
+        listValues: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        fileTypes: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quoteOperation.id`.<fk table='quoteOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     warehouse: {
       required: [
         "id",
@@ -59694,6 +60904,115 @@ export default {
         active: {
           format: "boolean",
           type: "boolean",
+        },
+      },
+      type: "object",
+    },
+    jobOperationAttribute: {
+      required: [
+        "id",
+        "name",
+        "sortOrder",
+        "type",
+        "operationId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        required: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        sortOrder: {
+          default: 1,
+          format: "double precision",
+          type: "number",
+        },
+        type: {
+          enum: [
+            "Value",
+            "Measurement",
+            "Checkbox",
+            "Timestamp",
+            "Person",
+            "List",
+            "File",
+          ],
+          format: 'public."procedureAttributeType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        minValue: {
+          format: "numeric",
+          type: "number",
+        },
+        maxValue: {
+          format: "numeric",
+          type: "number",
+        },
+        listValues: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        fileTypes: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        operationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -61456,6 +62775,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -69684,6 +71009,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperation.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -78749,6 +80081,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.methodOperation.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderPayment": {
       name: "salesOrderPayment",
       description: "salesOrderPayment",
@@ -80028,6 +81367,78 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.procedureParameter": {
+      name: "procedureParameter",
+      description: "procedureParameter",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/procedureParameter",
+      },
+    },
+    "rowFilter.procedureParameter.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.key": {
+      name: "key",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.value": {
+      name: "value",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureParameter.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -82906,6 +84317,262 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.methodOperationAttribute": {
+      name: "methodOperationAttribute",
+      description: "methodOperationAttribute",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/methodOperationAttribute",
+      },
+    },
+    "rowFilter.methodOperationAttribute.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.required": {
+      name: "required",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.type": {
+      name: "type",
+      required: false,
+      format: 'public."procedureAttributeType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.minValue": {
+      name: "minValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.maxValue": {
+      name: "maxValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.listValues": {
+      name: "listValues",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.fileTypes": {
+      name: "fileTypes",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "body.quoteOperationAttribute": {
+      name: "quoteOperationAttribute",
+      description: "quoteOperationAttribute",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteOperationAttribute",
+      },
+    },
+    "rowFilter.quoteOperationAttribute.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.required": {
+      name: "required",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.type": {
+      name: "type",
+      required: false,
+      format: 'public."procedureAttributeType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.minValue": {
+      name: "minValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.maxValue": {
+      name: "maxValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.listValues": {
+      name: "listValues",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.fileTypes": {
+      name: "fileTypes",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -83407,6 +85074,134 @@ export default {
       name: "active",
       required: false,
       format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "body.jobOperationAttribute": {
+      name: "jobOperationAttribute",
+      description: "jobOperationAttribute",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationAttribute",
+      },
+    },
+    "rowFilter.jobOperationAttribute.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.name": {
+      name: "name",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.required": {
+      name: "required",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      format: "double precision",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.type": {
+      name: "type",
+      required: false,
+      format: 'public."procedureAttributeType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.minValue": {
+      name: "minValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.maxValue": {
+      name: "maxValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.listValues": {
+      name: "listValues",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.fileTypes": {
+      name: "fileTypes",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.operationId": {
+      name: "operationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -85663,6 +87458,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperation.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },

@@ -5,6 +5,7 @@ import {
   Avatar,
   Badge,
   Button,
+  Checkbox,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -79,6 +80,7 @@ import {
 import { useMode, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import {
+  attributeRecordValidator,
   finishValidator,
   issueValidator,
   nonScrapQuantityValidator,
@@ -99,11 +101,15 @@ import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
 import {
+  Boolean,
   Combobox,
+  DateTimePicker,
   Hidden,
+  Input as InputField,
   Number,
   NumberControlled,
   Select,
+  Submit,
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
@@ -111,6 +117,7 @@ import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDate,
+  formatDateTime,
   formatDurationMilliseconds,
   formatRelativeTime,
 } from "@carbon/utils";
@@ -133,16 +140,18 @@ import {
   LuActivity,
   LuAxis3D,
   LuChevronLeft,
+  LuCircleCheck,
   LuClipboardCheck,
   LuDownload,
   LuEllipsisVertical,
+  LuFile,
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
-  LuInfo,
-  LuList,
+  LuPaperclip,
   LuSend,
   LuTimer,
+  LuTrash,
   LuTriangleAlert,
 } from "react-icons/lu";
 import {
@@ -154,33 +163,42 @@ import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
+import FileDropzone from "./FileDropzone";
+import { useNumberFormatter } from "@react-aria/i18n";
 
 type JobOperationProps = {
-  attributes: Promise<PostgrestResponse<JobOperationAttribute>>;
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
   materials: Promise<PostgrestResponse<JobMaterial>>;
   operation: OperationWithDetails;
-  parameters: Promise<PostgrestResponse<JobOperationParameter>>;
+  procedure: Promise<{
+    attributes: JobOperationAttribute[];
+    parameters: JobOperationParameter[];
+  }>;
   job: Job;
   thumbnailPath: string | null;
   workCenter: Promise<PostgrestSingleResponse<{ name: string }>>;
 };
 
 export const JobOperation = ({
-  attributes,
   events,
   files,
   job,
   materials,
   operation: originalOperation,
-  parameters,
+  procedure,
   thumbnailPath,
   workCenter,
 }: JobOperationProps) => {
   const navigate = useNavigate();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
+
+  const attributeRecordModal = useDisclosure();
+  const attributeRecordDeleteModal = useDisclosure();
+
+  const isModalOpen =
+    attributeRecordModal.isOpen || attributeRecordDeleteModal.isOpen;
 
   const {
     active,
@@ -202,7 +220,7 @@ export const JobOperation = ({
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
-  } = useOperation(originalOperation, events);
+  } = useOperation(originalOperation, events, isModalOpen);
 
   const controlsHeight = useMemo(() => {
     let operations = 1;
@@ -229,10 +247,33 @@ export const JobOperation = ({
         }
       : null;
 
+  const [selectedAttribute, setSelectedAttribute] =
+    useState<JobOperationAttribute | null>(null);
+
+  const onRecordAttributeRecord = (attribute: JobOperationAttribute) => {
+    flushSync(() => {
+      setSelectedAttribute(attribute);
+    });
+    attributeRecordModal.onOpen();
+  };
+
+  const onDeleteAttributeRecord = (attribute: JobOperationAttribute) => {
+    flushSync(() => {
+      setSelectedAttribute(attribute);
+    });
+    attributeRecordDeleteModal.onOpen();
+  };
+
+  const onDeselectAttribute = () => {
+    setSelectedAttribute(null);
+    attributeRecordModal.onClose();
+    attributeRecordDeleteModal.onClose();
+  };
+
   return (
     <>
       <Tabs
-        key={operation.id}
+        key={`operation-${operation.id}`}
         value={activeTab}
         onValueChange={setActiveTab}
         className="w-full h-screen bg-card relative"
@@ -272,7 +313,7 @@ export const JobOperation = ({
                     !operation.workInstruction ||
                     Object.keys(operation.workInstruction).length === 0
                   }
-                  value="instructions"
+                  value="procedure"
                 >
                   Procedure
                 </TabsTrigger>
@@ -284,7 +325,7 @@ export const JobOperation = ({
           </HStack>
         </header>
 
-        <div className="hidden md:flex items-center justify-between px-4 py-2 h-[var(--header-height)] bg-background gap-4 max-w-[100vw] overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <div className="hidden md:flex items-center justify-between px-4 lg:pl-6 py-2 h-[var(--header-height)] bg-background gap-4 max-w-[100vw] overflow-x-hidden scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
           <Heading size="h4">{operation.jobReadableId}</Heading>
 
           <HStack className="justify-end items-center gap-2">
@@ -349,7 +390,7 @@ export const JobOperation = ({
 
         <TabsContent value="details" className="flex-col hidden md:flex">
           <ScrollArea className="w-full pr-[calc(var(--controls-width))] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-            <div className="flex items-start justify-between p-4">
+            <div className="flex items-start justify-between p-4 lg:p-6">
               <HStack>
                 {thumbnailPath && (
                   <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
@@ -371,14 +412,14 @@ export const JobOperation = ({
               </div>
             </div>
             <Separator />
-            <div className="flex items-start p-4">
+            <div className="flex items-start p-4 lg:p-6">
               <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-3 w-full">
                 <div className="rounded-xl border bg-card text-card-foreground shadow">
                   <div className="p-6 flex flex-row items-center justify-between space-y-0 pb-2">
                     <h3 className="tracking-tight text-sm font-medium">
                       Completed
                     </h3>
-                    <FaCheck className="h-3 w-3 text-muted-foreground" />
+                    <FaCheck className="h-3 w-3 text-emerald-500" />
                   </div>
                   <div className="p-6 pt-0">
                     <Heading size="h1">{operation.quantityComplete}</Heading>
@@ -389,7 +430,7 @@ export const JobOperation = ({
                     <h3 className="tracking-tight text-sm font-medium">
                       Scrapped
                     </h3>
-                    <FaTrash className="h-3 w-3 text-muted-foreground" />
+                    <FaTrash className="h-3 w-3 text-red-500" />
                   </div>
                   <div className="p-6 pt-0">
                     <Heading size="h1">{operation.quantityScrapped}</Heading>
@@ -437,7 +478,7 @@ export const JobOperation = ({
 
             <Separator />
             <div className="flex flex-col items-start justify-between w-full">
-              <div className="flex flex-col gap-4 p-4 w-full">
+              <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
                 <HStack className="justify-between w-full">
                   <Heading size="h3">Materials</Heading>
                   <Button
@@ -454,7 +495,10 @@ export const JobOperation = ({
                     Issue Material
                   </Button>
                 </HStack>
-                <Suspense key={operationId} fallback={<TableSkeleton />}>
+                <Suspense
+                  key={`materials-${operationId}`}
+                  fallback={<TableSkeleton />}
+                >
                   <Await resolve={materials}>
                     {(resolvedMaterials) => (
                       <Table className="w-full">
@@ -480,7 +524,7 @@ export const JobOperation = ({
                           ) : (
                             resolvedMaterials?.data?.map((material) => (
                               <Tr
-                                key={material.id}
+                                key={`material-${material.id}`}
                                 className={cn(
                                   material.jobOperationId !== operationId &&
                                     "opacity-50 hover:opacity-100"
@@ -547,91 +591,93 @@ export const JobOperation = ({
               </div>
             </div>
 
-            <Suspense key={operationId} fallback={<TableSkeleton />}>
-              <Await resolve={attributes}>
-                {(resolvedAttributes) =>
-                  Array.isArray(resolvedAttributes?.data) &&
-                  resolvedAttributes?.data.length > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex flex-col items-start justify-between w-full">
-                        <div className="flex flex-col gap-4 p-4 w-full">
-                          <HStack className="justify-between w-full">
-                            <Heading size="h3">Attributes</Heading>
-                          </HStack>
-                          <div className="border rounded-lg">
-                            {resolvedAttributes.data
-                              .sort(
-                                (a, b) =>
-                                  (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                              )
-                              .map((a, index) => (
-                                <AttributesListItem
-                                  key={a.id}
-                                  attribute={a}
-                                  operationId={operationId}
-                                  className={
-                                    index === resolvedAttributes.data.length - 1
-                                      ? "border-none"
-                                      : ""
-                                  }
-                                />
-                              ))}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )
-                }
-              </Await>
-            </Suspense>
+            <Suspense key={`attributes-${operationId}`}>
+              <Await resolve={procedure}>
+                {(resolvedProcedure) => {
+                  const { attributes, parameters } = resolvedProcedure;
 
-            <Suspense key={operationId} fallback={<TableSkeleton />}>
-              <Await resolve={parameters}>
-                {(resolvedParameters) =>
-                  Array.isArray(resolvedParameters?.data) &&
-                  resolvedParameters?.data.length > 0 && (
+                  return (
                     <>
-                      <Separator />
-                      <div className="flex flex-col items-start justify-between w-full">
-                        <div className="flex flex-col gap-4 p-4 w-full">
-                          <HStack className="justify-between w-full">
-                            <Heading size="h3">Parameters</Heading>
-                          </HStack>
-                          <div className="border rounded-lg">
-                            {resolvedParameters.data
-                              .sort((a, b) =>
-                                (a.key ?? "").localeCompare(b.key ?? "")
-                              )
-                              .map((p, index) => (
-                                <ParametersListItem
-                                  key={p.id}
-                                  parameter={p}
-                                  operationId={operationId}
-                                  className={
-                                    index === resolvedParameters.data.length - 1
-                                      ? "border-none"
-                                      : ""
-                                  }
-                                />
-                              ))}
+                      {attributes.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="flex flex-col items-start justify-between w-full">
+                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                              <HStack className="justify-between w-full">
+                                <Heading size="h3">Quality Attributes</Heading>
+                              </HStack>
+                              <div className="border rounded-lg">
+                                {attributes
+                                  .sort(
+                                    (a, b) =>
+                                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+                                  )
+                                  .map((a, index) => (
+                                    <AttributesListItem
+                                      key={`attribute-${a.id}`}
+                                      attribute={a}
+                                      onRecord={onRecordAttributeRecord}
+                                      onDelete={onDeleteAttributeRecord}
+                                      operationId={operationId}
+                                      className={
+                                        index === attributes.length - 1
+                                          ? "border-none"
+                                          : ""
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        </>
+                      )}
+                      {parameters.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="flex flex-col items-start justify-between w-full">
+                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                              <HStack className="justify-between w-full">
+                                <Heading size="h3">Process Parameters</Heading>
+                              </HStack>
+                              <div className="border rounded-lg">
+                                {parameters
+                                  .sort((a, b) =>
+                                    (a.key ?? "").localeCompare(b.key ?? "")
+                                  )
+                                  .map((p, index) => (
+                                    <ParametersListItem
+                                      key={`parameter-${p.id}`}
+                                      parameter={p}
+                                      operationId={operationId}
+                                      className={
+                                        index === parameters.length - 1
+                                          ? "border-none"
+                                          : ""
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </>
-                  )
-                }
+                  );
+                }}
               </Await>
             </Suspense>
 
             <Separator />
             <div className="flex flex-col items-start justify-between w-full">
-              <div className="flex flex-col gap-4 p-4 w-full">
+              <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
                 <Heading size="h3">Files</Heading>
                 <p className="text-muted-foreground text-sm -mt-2">
                   Files related to the job and the opportunity line.
                 </p>
-                <Suspense key={operationId} fallback={<TableSkeleton />}>
+                <Suspense
+                  key={`files-${operationId}`}
+                  fallback={<TableSkeleton />}
+                >
                   <Await resolve={files}>
                     {(resolvedFiles) => (
                       <Table className="w-full">
@@ -701,7 +747,7 @@ export const JobOperation = ({
                               {resolvedFiles.map((file) => {
                                 const type = getFileType(file.name);
                                 return (
-                                  <Tr key={file.id}>
+                                  <Tr key={`file-${file.id}`}>
                                     <Td>
                                       <HStack>
                                         <FileIcon type={type} />
@@ -769,7 +815,7 @@ export const JobOperation = ({
           <div className="w-full h-[calc(100dvh-var(--header-height)*2)] p-0">
             <ModelViewer
               file={null}
-              key={operation.itemModelPath ?? job.modelPath}
+              key={`model-${operation.itemModelPath ?? job.modelPath}`}
               url={`/file/preview/private/${
                 operation.itemModelPath ?? job.modelPath
               }`}
@@ -778,22 +824,134 @@ export const JobOperation = ({
             />
           </div>
         </TabsContent>
-        <TabsContent value="instructions" className="flex flex-grow">
-          <ScrollArea className="w-full h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent p-4">
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(
-                  (operation.workInstruction ?? {}) as JSONContent
-                ),
-              }}
-            />
-          </ScrollArea>
+        <TabsContent value="procedure" className="flex flex-grow">
+          <div className="flex h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] w-full">
+            <Suspense key={`procedure-${operationId}`}>
+              <Await resolve={procedure}>
+                {(resolvedProcedure) => {
+                  const { attributes, parameters } = resolvedProcedure;
+                  if (attributes.length === 0 && parameters.length === 0)
+                    return null;
+
+                  return (
+                    <ScrollArea className="hidden lg:block w-1/3 border-r shrink-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                      <Tabs
+                        defaultValue="attributes"
+                        className="w-full flex-1 h-full flex flex-col"
+                      >
+                        <div className="w-full py-2 px-4 sticky top-0 z-10">
+                          <TabsList className="w-full grid grid-cols-2">
+                            <TabsTrigger value="attributes">
+                              Attributes
+                            </TabsTrigger>
+                            <TabsTrigger value="parameters">
+                              Parameters
+                            </TabsTrigger>
+                          </TabsList>
+                        </div>
+                        <TabsContent
+                          value="attributes"
+                          className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
+                        >
+                          <VStack
+                            className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+                            spacing={0}
+                          >
+                            {attributes.length > 0 && (
+                              <>
+                                <div className="flex flex-col items-start justify-between w-full">
+                                  <div className="flex flex-col w-full">
+                                    <div>
+                                      {attributes
+                                        .sort(
+                                          (a, b) =>
+                                            (a.sortOrder ?? 0) -
+                                            (b.sortOrder ?? 0)
+                                        )
+                                        .map((a, index) => (
+                                          <AttributesListItem
+                                            key={`attribute-${a.id}`}
+                                            attribute={a}
+                                            compact={true}
+                                            onRecord={onRecordAttributeRecord}
+                                            onDelete={onDeleteAttributeRecord}
+                                            operationId={operationId}
+                                            className={
+                                              index === attributes.length - 1
+                                                ? "border-none"
+                                                : ""
+                                            }
+                                          />
+                                        ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </VStack>
+                        </TabsContent>
+                        <TabsContent
+                          value="parameters"
+                          className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
+                        >
+                          <VStack
+                            className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+                            spacing={0}
+                          >
+                            {parameters.length > 0 && (
+                              <>
+                                <Separator />
+                                <div className="flex flex-col items-start justify-between w-full">
+                                  <div className="flex flex-col gap-4 w-full">
+                                    <div>
+                                      {parameters
+                                        .sort((a, b) =>
+                                          (a.key ?? "").localeCompare(
+                                            b.key ?? ""
+                                          )
+                                        )
+                                        .map((p, index) => (
+                                          <ParametersListItem
+                                            key={`parameter-${p.id}`}
+                                            parameter={p}
+                                            operationId={operationId}
+                                            className={
+                                              index === parameters.length - 1
+                                                ? "border-none"
+                                                : ""
+                                            }
+                                          />
+                                        ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </VStack>
+                        </TabsContent>
+                      </Tabs>
+                    </ScrollArea>
+                  );
+                }}
+              </Await>
+            </Suspense>
+
+            <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+              <div
+                className="prose dark:prose-invert"
+                dangerouslySetInnerHTML={{
+                  __html: generateHTML(
+                    (operation.workInstruction ?? {}) as JSONContent
+                  ),
+                }}
+              />
+            </ScrollArea>
+          </div>
         </TabsContent>
         <TabsContent value="chat">
           <OperationChat operation={operation} />
         </TabsContent>
-        {!["instructions", "chat"].includes(activeTab) && (
+        {!["chat", "procedure"].includes(activeTab) && (
           <Controls>
             <div className="flex flex-col items-center gap-2 p-4">
               <VStack spacing={2}>
@@ -930,7 +1088,7 @@ export const JobOperation = ({
         )}
         {!["chat"].includes(activeTab) && (
           <Times>
-            <div className="flex items-start p-4">
+            <div className=" lg:p-6">
               <div className="flex flex-col w-full gap-2">
                 {operation.setupDuration > 0 && (
                   <HStack>
@@ -1060,14 +1218,27 @@ export const JobOperation = ({
       )}
       {/* @ts-ignore */}
       {finishModal.isOpen && (
-        <QuantityModal
-          type="finish"
-          operation={operation}
-          setupProductionEvent={setupProductionEvent}
-          laborProductionEvent={laborProductionEvent}
-          machineProductionEvent={machineProductionEvent}
-          onClose={finishModal.onClose}
-        />
+        <Suspense key={`finish-modal-${operationId}`}>
+          <Await resolve={procedure}>
+            {(resolvedProcedure) => {
+              const { attributes } = resolvedProcedure;
+              const allAttributesRecorded = attributes.every(
+                (a) => a.jobOperationAttributeRecord !== null
+              );
+              return (
+                <QuantityModal
+                  allAttributesRecorded={allAttributesRecorded}
+                  type="finish"
+                  operation={operation}
+                  setupProductionEvent={setupProductionEvent}
+                  laborProductionEvent={laborProductionEvent}
+                  machineProductionEvent={machineProductionEvent}
+                  onClose={finishModal.onClose}
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
       )}
       {issueModal.isOpen && (
         <IssueModal
@@ -1077,6 +1248,22 @@ export const JobOperation = ({
             setSelectedMaterial(null);
             issueModal.onClose();
           }}
+        />
+      )}
+      {attributeRecordModal.isOpen && selectedAttribute ? (
+        <RecordModal
+          key={selectedAttribute.id}
+          attribute={selectedAttribute}
+          onClose={onDeselectAttribute}
+        />
+      ) : null}
+
+      {attributeRecordDeleteModal.isOpen && selectedAttribute && (
+        <DeleteAttributeRecordModal
+          onClose={onDeselectAttribute}
+          id={selectedAttribute.id}
+          title="Delete Attribute Record"
+          description="Are you sure you want to delete this attribute record?"
         />
       )}
     </>
@@ -1236,7 +1423,7 @@ function OperationChat({ operation }: { operation: OperationWithDetails }) {
               const isUser = m.createdBy === user.id;
               return (
                 <div
-                  key={m.id}
+                  key={`message-${m.id}`}
                   className={cn(
                     "flex gap-2 items-end",
                     isUser && "flex-row-reverse"
@@ -1304,7 +1491,8 @@ function OperationChat({ operation }: { operation: OperationWithDetails }) {
 
 function useOperation(
   operation: OperationWithDetails,
-  events: ProductionEvent[]
+  events: ProductionEvent[],
+  pauseInterval: boolean
 ) {
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
@@ -1316,6 +1504,15 @@ function useOperation(
   const completeModal = useDisclosure();
   const finishModal = useDisclosure();
   const issueModal = useDisclosure();
+
+  // we do this to avoid re-rendering when the modal is open
+  const isAnyModalOpen =
+    pauseInterval ||
+    scrapModal.isOpen ||
+    reworkModal.isOpen ||
+    completeModal.isOpen ||
+    finishModal.isOpen ||
+    issueModal.isOpen;
 
   const [selectedMaterial, setSelectedMaterial] = useState<JobMaterial | null>(
     null
@@ -1507,7 +1704,9 @@ function useOperation(
     () => {
       setProgress(getProgress());
     },
-    active.setup || active.labor || active.machine ? 1000 : null
+    (active.setup || active.labor || active.machine) && !isAnyModalOpen
+      ? 1000
+      : null
   );
 
   return {
@@ -1631,7 +1830,7 @@ function TableSkeleton() {
       </Thead>
       <Tbody>
         {[...Array(5)].map((_, index) => (
-          <Tr key={index}>
+          <Tr key={`skeleton-${index}`}>
             <Td>
               <Skeleton className="h-4 w-full" />
             </Td>
@@ -1934,6 +2133,7 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
 }
 
 function QuantityModal({
+  allAttributesRecorded = true,
   operation,
   setupProductionEvent,
   laborProductionEvent,
@@ -1941,6 +2141,7 @@ function QuantityModal({
   onClose,
   type,
 }: {
+  allAttributesRecorded?: boolean;
   operation: OperationWithDetails;
   setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
@@ -2034,6 +2235,16 @@ function QuantityModal({
                   <AlertDescription>
                     The completed quantity for this operation is less than the
                     required quantity of {operation.operationQuantity}.
+                  </AlertDescription>
+                </Alert>
+              )}
+              {type === "finish" && !allAttributesRecorded && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Attributes are missing</AlertTitle>
+                  <AlertDescription>
+                    Please record all attributes for this operation before
+                    closing.
                   </AlertDescription>
                 </Alert>
               )}
@@ -2177,38 +2388,35 @@ function IssueModal({
 
 const unitOfMeasures = [
   { label: "Ohms", value: "OHM" },
-  { label: "Amps", value: "AMP" },
+  { label: "Degrees (F)", value: "F" },
   { label: "Volts", value: "VOLT" },
   { label: "Hertz", value: "HZ" },
 ];
 
 function AttributesListItem({
   attribute,
+  compact = false,
   operationId,
   className,
+  onRecord,
+  onDelete,
 }: {
   attribute: JobOperationAttribute;
+  compact?: boolean;
   operationId?: string;
   className: string;
+  onRecord: (attribute: JobOperationAttribute) => void;
+  onDelete: (attribute: JobOperationAttribute) => void;
 }) {
-  const {
-    id,
-    name,
-    description,
-    type,
-    unitOfMeasureCode,
-    minValue,
-    maxValue,
-    listValues,
-  } = attribute;
-
-  const fetcher = useFetcher<{ success: boolean }>();
+  const user = useUser();
+  const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
+    attribute;
 
   if (!operationId) return null;
   return (
-    <div className={cn("border-b p-6", className)}>
-      <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
+    <div className={cn("border-b hover:bg-muted/30 p-6", className)}>
+      <div className="flex flex-1 justify-between items-center w-full gap-2">
+        <HStack spacing={4} className="w-2/3">
           <HStack spacing={4} className="flex-1">
             <div className="bg-muted border rounded-full flex items-center justify-center p-2">
               <ProcedureAttributeTypeIcon type={type} />
@@ -2225,7 +2433,7 @@ function AttributesListItem({
                 )}
               </HStack>
               {type === "Measurement" && (
-                <span className="text-xs text-muted-foreground text-right">
+                <span className="text-xs text-muted-foreground">
                   {minValue !== null && maxValue !== null
                     ? `Must be between ${minValue} and ${maxValue} ${
                         unitOfMeasures.find(
@@ -2246,10 +2454,145 @@ function AttributesListItem({
                 </span>
               )}
             </VStack>
+            {!compact && <PreviewAttributeRecord attribute={attribute} />}
           </HStack>
         </HStack>
-        <div className="flex items-center justify-end gap-2"></div>
+        <div className="flex items-center justify-end gap-2">
+          {attribute.jobOperationAttributeRecord ? (
+            <div className="flex items-center gap-2">
+              {compact ? (
+                <IconButton
+                  aria-label="Update attribute"
+                  variant="secondary"
+                  icon={<LuCircleCheck />}
+                  isDisabled={
+                    attribute.jobOperationAttributeRecord?.createdBy !==
+                    user?.id
+                  }
+                  onClick={() => onRecord(attribute)}
+                  className={cn(
+                    "text-emerald-500",
+                    attribute.minValue !== null &&
+                      attribute.jobOperationAttributeRecord?.numericValue !=
+                        null &&
+                      attribute.jobOperationAttributeRecord.numericValue <
+                        attribute.minValue &&
+                      "text-red-500",
+                    attribute.maxValue !== null &&
+                      attribute.jobOperationAttributeRecord?.numericValue !=
+                        null &&
+                      attribute.jobOperationAttributeRecord.numericValue >
+                        attribute.maxValue &&
+                      "text-red-500"
+                  )}
+                />
+              ) : (
+                <Button
+                  variant="secondary"
+                  rightIcon={<LuCircleCheck />}
+                  onClick={() => onRecord(attribute)}
+                >
+                  Update
+                </Button>
+              )}
+              <IconButton
+                aria-label="Delete attribute"
+                variant="secondary"
+                icon={<LuTrash />}
+                isDisabled={attribute.createdBy !== user?.id}
+                onClick={() => onDelete(attribute)}
+              />
+            </div>
+          ) : compact ? (
+            <IconButton
+              aria-label="Record attribute"
+              variant="secondary"
+              icon={<LuCircleCheck />}
+              onClick={() => onRecord(attribute)}
+            />
+          ) : (
+            <Button
+              variant="secondary"
+              rightIcon={<LuCircleCheck />}
+              onClick={() => onRecord(attribute)}
+            >
+              Record
+            </Button>
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function PreviewAttributeRecord({
+  attribute,
+}: {
+  attribute: JobOperationAttribute;
+}) {
+  const [employees] = usePeople();
+  const numberFormatter = useNumberFormatter();
+
+  if (!attribute.jobOperationAttributeRecord) return null;
+  return (
+    <div className="min-w-[200px] truncate text-right font-medium">
+      {attribute.type === "Checkbox" && (
+        <Checkbox
+          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+        />
+      )}
+      {attribute.type === "Value" && (
+        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+      )}
+      {attribute.type === "Measurement" &&
+        typeof attribute.jobOperationAttributeRecord?.numericValue ===
+          "number" && (
+          <p
+            className={cn(
+              "text-sm",
+              attribute.minValue !== null &&
+                attribute.jobOperationAttributeRecord.numericValue <
+                  attribute.minValue &&
+                "text-red-500",
+              attribute.maxValue !== null &&
+                attribute.jobOperationAttributeRecord.numericValue >
+                  attribute.maxValue &&
+                "text-red-500"
+            )}
+          >
+            {numberFormatter.format(
+              attribute.jobOperationAttributeRecord.numericValue
+            )}{" "}
+            {
+              unitOfMeasures.find(
+                (u) => u.value === attribute.unitOfMeasureCode
+              )?.label
+            }
+          </p>
+        )}
+      {attribute.type === "Timestamp" && (
+        <p className="text-sm">
+          {formatDateTime(attribute.jobOperationAttributeRecord.value ?? "")}
+        </p>
+      )}
+      {attribute.type === "List" && (
+        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+      )}
+      {attribute.type === "Person" && (
+        <p className="text-sm">
+          {
+            employees.find(
+              (e) => e.id === attribute.jobOperationAttributeRecord?.userValue
+            )?.name
+          }
+        </p>
+      )}
+      {attribute.type === "File" &&
+        attribute.jobOperationAttributeRecord?.value && (
+          <div className="flex justify-end gap-2 text-sm">
+            <LuPaperclip className="size-4 text-muted-foreground" />
+          </div>
+        )}
     </div>
   );
 }
@@ -2267,9 +2610,9 @@ function ParametersListItem({
 
   if (!operationId) return null;
   return (
-    <div className={cn("border-b p-6", className)}>
+    <div className={cn("border-b p-6 hover:bg-muted/30", className)}>
       <div className="flex flex-1 justify-between items-center w-full">
-        <HStack spacing={4} className="w-1/2">
+        <HStack spacing={4} className="w-2/3">
           <HStack spacing={4} className="flex-1">
             <div className="bg-muted border rounded-full flex items-center justify-center p-2">
               <LuActivity />
@@ -2278,9 +2621,222 @@ function ParametersListItem({
           </HStack>
         </HStack>
         <div className="flex items-center justify-end gap-2">
-          <p className="text-foreground text-sm">{value}</p>
+          <p
+            className={cn(
+              "text-foreground",
+              value?.length > 8
+                ? "text-sm"
+                : "text-2xl font-semibold tracking-tight"
+            )}
+          >
+            {value}
+          </p>
         </div>
       </div>
     </div>
+  );
+}
+
+function RecordModal({
+  attribute,
+  onClose,
+}: {
+  attribute: JobOperationAttribute;
+  onClose: () => void;
+}) {
+  const [employees] = usePeople();
+  const employeeOptions = useMemo(() => {
+    return employees.map((employee) => ({
+      label: employee.name,
+      value: employee.id,
+    }));
+  }, [employees]);
+
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [file, setFile] = useState<File | null>(null);
+  const [filePath, setFilePath] = useState<string | null>(null);
+
+  const fetcher = useFetcher<{ success: boolean }>();
+
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (!acceptedFiles[0] || !carbon) return;
+    const fileUpload = acceptedFiles[0];
+
+    setFile(fileUpload);
+    toast.info(`Uploading ${fileUpload.name}`);
+
+    const fileName = `${company.id}/job/${attribute.operationId}/${fileUpload.name}`;
+
+    const upload = await carbon?.storage
+      .from("private")
+      .upload(fileName, fileUpload, {
+        cacheControl: `${12 * 60 * 60}`,
+        upsert: true,
+      });
+
+    if (upload.error) {
+      toast.error(`Failed to upload file: ${fileUpload.name}`);
+    } else if (upload.data?.path) {
+      toast.success(`Uploaded: ${fileUpload.name}`);
+      setFilePath(upload.data.path);
+    }
+  };
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ValidatedForm
+          method="post"
+          validator={attributeRecordValidator}
+          action={path.to.record}
+          onSubmit={onClose}
+          defaultValues={{
+            jobOperationAttributeId: attribute.id,
+            value:
+              attribute?.jobOperationAttributeRecord?.value ??
+              (attribute.type === "Timestamp" ? new Date().toISOString() : ""),
+            numericValue:
+              attribute?.jobOperationAttributeRecord?.numericValue ?? 0,
+            userValue: attribute?.jobOperationAttributeRecord?.userValue ?? "",
+            booleanValue:
+              attribute?.jobOperationAttributeRecord?.booleanValue ?? false,
+          }}
+          fetcher={fetcher}
+        >
+          <ModalHeader>
+            <ModalTitle>{attribute.name}</ModalTitle>
+            <ModalDescription>{attribute.description}</ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="jobOperationAttributeId" />
+            {attribute.type === "File" && (
+              <Hidden name="value" value={filePath ?? ""} />
+            )}
+            <VStack spacing={4}>
+              {attribute.type === "Value" && (
+                <InputField name="value" label="" />
+              )}
+              {attribute.type === "Measurement" && (
+                <Number name="numericValue" label="" />
+              )}
+              {attribute.type === "Timestamp" && (
+                <DateTimePicker name="value" label="" />
+              )}
+              {attribute.type === "Checkbox" && (
+                <Boolean name="booleanValue" label="" />
+              )}
+              {attribute.type === "Person" && (
+                <Combobox name="userValue" label="" options={employeeOptions} />
+              )}
+              {attribute.type === "List" && (
+                <Select
+                  name="value"
+                  label=""
+                  options={(attribute.listValues ?? []).map((value) => ({
+                    label: value,
+                    value,
+                  }))}
+                />
+              )}
+              {attribute.type === "File" &&
+                (file ? (
+                  <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
+                    <LuFile className="size-10 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">{file.name}</p>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        setFile(null);
+                        setFilePath(null);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <FileDropzone onDrop={onDrop} />
+                ))}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={
+                fetcher.state !== "idle" ||
+                (attribute.type === "File" && !filePath)
+              }
+              rightIcon={<LuCircleCheck />}
+              type="submit"
+            >
+              Record
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function DeleteAttributeRecordModal({
+  onClose,
+  id,
+  title,
+  description,
+}: {
+  onClose: () => void;
+  id: string;
+  title: string;
+  description: string;
+}) {
+  const fetcher = useFetcher<{ success: boolean }>();
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal open={true} onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>{title}</ModalTitle>
+          <ModalDescription>{description}</ModalDescription>
+        </ModalHeader>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <fetcher.Form method="post" action={path.to.recordDelete(id)}>
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              type="submit"
+              variant="destructive"
+            >
+              Delete
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 }
