@@ -25,6 +25,12 @@ import {
   Input as InputField,
   Label,
   Loading,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   ScrollArea,
   ToggleGroup,
   ToggleGroupItem,
@@ -36,6 +42,7 @@ import {
   useDebounce,
   useDisclosure,
   useMount,
+  Checkbox,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import {
@@ -53,18 +60,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
-  LuChevronDown,
+  LuChevronRight,
   LuCirclePlus,
   LuDollarSign,
   LuEllipsisVertical,
   LuHammer,
   LuInfo,
-  LuList,
   LuMaximize2,
+  LuPaperclip,
   LuMinimize2,
+  LuRefreshCcw,
   LuSend,
   LuSettings2,
   LuTriangleAlert,
+  LuWaypoints,
   LuX,
 } from "react-icons/lu";
 import { z } from "zod";
@@ -121,7 +130,10 @@ import type { action as newJobOperationToolAction } from "~/routes/x+/job+/metho
 
 import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
-import { jobOperationValidator } from "../../production.models";
+import {
+  jobOperationValidator,
+  procedureSyncValidator,
+} from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
 import UnitOfMeasure, {
@@ -129,6 +141,8 @@ import UnitOfMeasure, {
 } from "~/components/Form/UnitOfMeasure";
 import { JobOperationStatus } from "./JobOperationStatus";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
+import Procedure from "~/components/Form/Procedure";
+import { useNumberFormatter } from "@react-aria/i18n";
 
 export type Operation = z.infer<typeof jobOperationValidator> & {
   assignee: string | null;
@@ -141,13 +155,19 @@ type ItemWithData = Item & {
   data: Operation;
 };
 
+type JobOperationAttribute = OperationAttribute & {
+  jobOperationAttributeRecord?:
+    | Database["public"]["Tables"]["jobOperationAttributeRecord"]["Row"]
+    | null;
+};
+
 type JobBillOfProcessProps = {
   jobMakeMethodId: string;
   locationId: string;
   operations: (Operation & {
     jobOperationTool: OperationTool[];
     jobOperationParameter: OperationParameter[];
-    jobOperationAttribute: OperationAttribute[];
+    jobOperationAttribute: JobOperationAttribute[];
   })[];
   tags: { name: string }[];
 };
@@ -239,6 +259,7 @@ const initialOperation: Omit<
   operationType: "Inside",
   overheadRate: 0,
   processId: "",
+  procedureId: "",
   setupTime: 0,
   setupUnit: "Total Minutes",
   status: "Todo",
@@ -325,6 +346,7 @@ const JobBillOfProcess = ({
         return acc;
       }, {} as PendingWorkInstructions);
     });
+
   const [checkedState, setCheckedState] = useState<CheckedState>({});
   const [orderState, setOrderState] = useState<OrderState>(() => {
     return initialOperations.reduce((acc, op) => {
@@ -620,6 +642,19 @@ const JobBillOfProcess = ({
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
 
+  useEffect(() => {
+    if (initialOperations) {
+      setWorkInstructions(
+        initialOperations.reduce((acc, operation) => {
+          if (operation.workInstruction && operation.id) {
+            acc[operation.id] = operation.workInstruction;
+          }
+          return acc;
+        }, {} as PendingWorkInstructions)
+      );
+    }
+  }, [initialOperations]);
+
   const renderListItem = ({
     item,
     items,
@@ -707,7 +742,7 @@ const JobBillOfProcess = ({
         id: 2,
         label: (
           <span className="flex items-center gap-2">
-            <span>Parameters</span>
+            <span>Params</span>
             {parameters.length > 0 && <Count count={parameters.length} />}
           </span>
         ),
@@ -949,7 +984,7 @@ function AttributesForm({
 }: {
   operationId: string;
   isDisabled: boolean;
-  attributes: OperationAttribute[];
+  attributes: JobOperationAttribute[];
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
   const [type, setType] = useState<OperationAttribute["type"]>("Value");
@@ -1113,7 +1148,7 @@ function AttributesListItem({
   typeOptions,
   className,
 }: {
-  attribute: OperationAttribute;
+  attribute: JobOperationAttribute;
   operationId: string;
   typeOptions: { label: JSX.Element; value: string }[];
   className?: string;
@@ -1286,7 +1321,7 @@ function AttributesListItem({
                   )}
                 </HStack>
                 {attribute.type === "Measurement" && (
-                  <span className="text-xs text-muted-foreground text-right">
+                  <span className="text-xs text-muted-foreground">
                     {attribute.minValue !== null && attribute.maxValue !== null
                       ? `Must be between ${attribute.minValue} and ${
                           attribute.maxValue
@@ -1309,22 +1344,9 @@ function AttributesListItem({
                   </span>
                 )}
               </VStack>
-
-              {attribute.type === "List" &&
-                Array.isArray(attribute.listValues) && (
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <LuList className="size-4 text-muted-foreground" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {attribute.listValues.map((value) => (
-                        <p key={value} className="text-foreground text-sm">
-                          {value}
-                        </p>
-                      ))}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
+              {attribute.jobOperationAttributeRecord && (
+                <PreviewAttributeRecord attribute={attribute} />
+              )}
             </HStack>
           </HStack>
           <div className="flex items-center justify-end gap-2">
@@ -1371,6 +1393,88 @@ function AttributesListItem({
           }}
         />
       )}
+    </div>
+  );
+}
+
+function PreviewAttributeRecord({
+  attribute,
+}: {
+  attribute: JobOperationAttribute;
+}) {
+  const unitOfMeasures = useUnitOfMeasure();
+  const [employees] = usePeople();
+  const numberFormatter = useNumberFormatter();
+
+  if (!attribute.jobOperationAttributeRecord) return null;
+  return (
+    <div className="min-w-[200px] truncate text-right font-medium">
+      {attribute.type === "Checkbox" && (
+        <Checkbox
+          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+        />
+      )}
+      {attribute.type === "Value" && (
+        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+      )}
+      {attribute.type === "Measurement" &&
+        typeof attribute.jobOperationAttributeRecord?.numericValue ===
+          "number" && (
+          <p
+            className={cn(
+              "text-sm",
+              attribute.minValue !== null &&
+                attribute.minValue !== undefined &&
+                attribute.jobOperationAttributeRecord.numericValue <
+                  attribute.minValue &&
+                "text-red-500",
+              attribute.maxValue !== null &&
+                attribute.maxValue !== undefined &&
+                attribute.jobOperationAttributeRecord.numericValue >
+                  attribute.maxValue &&
+                "text-red-500"
+            )}
+          >
+            {numberFormatter.format(
+              attribute.jobOperationAttributeRecord.numericValue
+            )}{" "}
+            {
+              unitOfMeasures.find(
+                (u) => u.value === attribute.unitOfMeasureCode
+              )?.label
+            }
+          </p>
+        )}
+      {attribute.type === "Timestamp" && (
+        <p className="text-sm">
+          {formatDateTime(attribute.jobOperationAttributeRecord.value ?? "")}
+        </p>
+      )}
+      {attribute.type === "List" && (
+        <p className="text-sm">{attribute.jobOperationAttributeRecord.value}</p>
+      )}
+      {attribute.type === "Person" && (
+        <p className="text-sm">
+          {
+            employees.find(
+              (e) => e.id === attribute.jobOperationAttributeRecord?.userValue
+            )?.name
+          }
+        </p>
+      )}
+      {attribute.type === "File" &&
+        attribute.jobOperationAttributeRecord?.value && (
+          <div className="flex justify-end gap-2 text-sm">
+            <LuPaperclip className="size-4 text-muted-foreground" />
+            <a
+              href={getPrivateUrl(attribute.jobOperationAttributeRecord.value)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View File
+            </a>
+          </div>
+        )}
     </div>
   );
 }
@@ -1533,9 +1637,7 @@ function ParametersListItem({
               <VStack spacing={0}>
                 <span className="text-sm font-medium">{key}</span>
               </VStack>
-              <span className="text-base text-muted-foreground text-right">
-                {value}
-              </span>
+              <span className="text-base text-muted-foreground">{value}</span>
             </HStack>
           </HStack>
           <div className="flex items-center justify-end gap-2">
@@ -1616,28 +1718,12 @@ function OperationForm({
     // replace the temporary id with the actual id
     if (fetcher.data && fetcher.data.id) {
       if (isTemporaryId(item.id) && carbon && !addingWorkInstruction.current) {
-        addingWorkInstruction.current = true;
-        carbon
-          .from("jobOperation")
-          .update({
-            workInstruction: workInstruction,
-            createdAt: today(getLocalTimeZone()).toString(),
-            updatedBy: userId,
-          })
-          .eq("id", fetcher.data.id)
-          .then(() => {
-            setWorkInstructions((prev) => ({
-              ...prev,
-              [fetcher.data?.id!]: workInstruction,
-            }));
-            setSelectedItemId(null);
-            // Clear temporary item after successful save
-            setTemporaryItems((prev) => {
-              const { [item.id]: _, ...rest } = prev;
-              return rest;
-            });
-            addingWorkInstruction.current = false;
-          });
+        setSelectedItemId(null);
+        // Clear temporary item after successful save
+        setTemporaryItems((prev) => {
+          const { [item.id]: _, ...rest } = prev;
+          return rest;
+        });
       } else {
         setSelectedItemId(null);
       }
@@ -1654,10 +1740,13 @@ function OperationForm({
     setTemporaryItems,
   ]);
 
-  const [showMachine, setShowMachine] = useState(false);
-  const [showLabor, setShowLabor] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
-  const [showCost, setShowCost] = useState(false);
+  const machineDisclosure = useDisclosure();
+  const laborDisclosure = useDisclosure();
+  const setupDisclosure = useDisclosure();
+  const costingDisclosure = useDisclosure();
+  const procedureDisclosure = useDisclosure();
+  const [procedureWasChanged, setProcedureWasChanged] = useState(false);
+  const procedureSyncDisclosure = useDisclosure();
 
   const [processData, setProcessData] = useState<{
     description: string;
@@ -1675,6 +1764,7 @@ function OperationForm({
     operationUnitCost: number;
     overheadRate: number;
     processId: string;
+    procedureId: string;
     setupTime: number;
     setupUnit: string;
     setupUnitHint: string;
@@ -1694,6 +1784,7 @@ function OperationForm({
     operationUnitCost: item.data.operationUnitCost ?? 0,
     overheadRate: item.data.overheadRate ?? 0,
     processId: item.data.processId ?? "",
+    procedureId: item.data.procedureId ?? "",
     setupTime: item.data.setupTime ?? 0,
     setupUnit: item.data.setupUnit ?? "Total Minutes",
     setupUnitHint: getUnitHint(item.data.setupUnit),
@@ -1719,6 +1810,7 @@ function OperationForm({
     setProcessData((p) => ({
       ...p,
       processId,
+      procedureId: "",
       description: process.data?.name ?? "",
       laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
       laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
@@ -1961,7 +2053,7 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowSetup(!showSetup)}
+              onClick={setupDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Setup" />
@@ -1975,23 +2067,25 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
-                  aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    setupDisclosure.isOpen ? "Collapse Setup" : "Expand Setup"
+                  }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowSetup(!showSetup);
+                    setupDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showSetup ? "rotate-180" : ""
+                    setupDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showSetup ? "" : "hidden"
+                setupDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -2033,10 +2127,11 @@ function OperationForm({
               />
             </div>
           </div>
+
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowLabor(!showLabor)}
+              onClick={laborDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Labor" />
@@ -2050,23 +2145,25 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
-                  aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    laborDisclosure.isOpen ? "Collapse Labor" : "Expand Labor"
+                  }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowLabor(!showLabor);
+                    laborDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showLabor ? "rotate-180" : ""
+                    laborDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showLabor ? "" : "hidden"
+                laborDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -2112,7 +2209,7 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowMachine(!showMachine)}
+              onClick={machineDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Machine" />
@@ -2126,25 +2223,27 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
+                  icon={<LuChevronRight />}
                   aria-label={
-                    showMachine ? "Collapse Machine" : "Expand Machine"
+                    machineDisclosure.isOpen
+                      ? "Collapse Machine"
+                      : "Expand Machine"
                   }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowMachine(!showMachine);
+                    machineDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showMachine ? "rotate-180" : ""
+                    machineDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showMachine ? "" : "hidden"
+                machineDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -2190,7 +2289,7 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowCost(!showCost)}
+              onClick={costingDisclosure.onToggle}
             >
               <HStack>
                 <LuDollarSign />
@@ -2198,23 +2297,27 @@ function OperationForm({
               </HStack>
               <HStack>
                 <IconButton
-                  icon={<LuChevronDown />}
-                  aria-label={showCost ? "Collapse Costing" : "Expand Costing"}
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    costingDisclosure.isOpen
+                      ? "Collapse Costing"
+                      : "Expand Costing"
+                  }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowCost(!showCost);
+                    costingDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showCost ? "rotate-180" : ""
+                    costingDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showCost ? "" : "hidden"
+                costingDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <NumberControlled
@@ -2267,6 +2370,90 @@ function OperationForm({
               />
             </div>
           </div>
+
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={procedureDisclosure.onToggle}
+            >
+              <HStack>
+                <LuWaypoints />
+                <Label>Procedure</Label>
+              </HStack>
+              <HStack>
+                {processData.procedureId && (
+                  <Badge variant="secondary">
+                    <LuWaypoints className="h-3 w-3 mr-1" />
+                    Procedure
+                  </Badge>
+                )}
+                <IconButton
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    procedureDisclosure.isOpen
+                      ? "Collapse Procedure"
+                      : "Expand Procedure"
+                  }
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    procedureDisclosure.onToggle();
+                  }}
+                  className={`transition-transform ${
+                    procedureDisclosure.isOpen ? "rotate-90" : ""
+                  }`}
+                />
+              </HStack>
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
+                procedureDisclosure.isOpen ? "" : "hidden"
+              }`}
+            >
+              <Procedure
+                name="procedureId"
+                label="Procedure"
+                processId={processData.processId}
+                value={processData.procedureId}
+                onChange={(value) => {
+                  if (value && value.value !== item.data.procedureId) {
+                    setProcedureWasChanged(true);
+                  }
+                  setProcessData((d) => ({
+                    ...d,
+                    procedureId: value?.value as string,
+                  }));
+                }}
+              />
+              {!isTemporaryId(item.id) && processData.procedureId && (
+                <div className="flex flex-col gap-2 w-auto">
+                  {procedureWasChanged && (
+                    <span className="text-sm text-muted-foreground">
+                      The procedure was changed, but not synced to the
+                      operation.
+                    </span>
+                  )}
+                  <div>
+                    <Button
+                      variant="secondary"
+                      rightIcon={<LuRefreshCcw />}
+                      onClick={procedureSyncDisclosure.onOpen}
+                    >
+                      Sync Procedure
+                    </Button>
+                    {procedureSyncDisclosure.isOpen && (
+                      <ProcedureSyncModal
+                        operationId={item.id}
+                        procedureId={processData.procedureId}
+                        onClose={procedureSyncDisclosure.onClose}
+                      />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </>
       )}
       <motion.div
@@ -2284,6 +2471,75 @@ function OperationForm({
         </motion.div>
       </motion.div>
     </ValidatedForm>
+  );
+}
+
+function ProcedureSyncModal({
+  operationId,
+  procedureId,
+  onClose,
+}: {
+  operationId: string;
+  procedureId: string;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<{ success: boolean }>();
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    }
+  }, [fetcher.data?.success, onClose]);
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ValidatedForm
+          validator={procedureSyncValidator}
+          action={path.to.jobOperationProcedureSync}
+          method="post"
+          fetcher={fetcher}
+          defaultValues={{
+            operationId,
+            procedureId,
+          }}
+        >
+          <ModalHeader>
+            <ModalTitle>Are you sure?</ModalTitle>
+          </ModalHeader>
+          <ModalBody className="py-4">
+            <Hidden name="operationId" />
+            <Hidden name="procedureId" />
+            <Alert variant="warning">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>Potential Data Loss</AlertTitle>
+              <AlertDescription>
+                Syncing the procedure will update the operation with the new
+                work instructions, attributes, and parameters. Any attributes
+                that are not part of the procedure will be removed.
+              </AlertDescription>
+            </Alert>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Submit
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Sync
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
 

@@ -139,6 +139,7 @@ export const jobOperationValidator = z
       }),
     }),
     processId: z.string().min(20, { message: "Process is required" }),
+    procedureId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
@@ -415,6 +416,7 @@ export const procedureValidator = z.object({
   version: zfd.numeric(z.number().min(0)),
   processId: zfd.text(z.string().optional()),
   content: zfd.text(z.string().optional()),
+  copyFromId: zfd.text(z.string().optional()),
 });
 
 export const procedureAttributeValidator = z
@@ -478,6 +480,11 @@ export const procedureParameterValidator = z.object({
   procedureId: z.string().min(1, { message: "Procedure is required" }),
   key: z.string().min(1, { message: "Key is required" }),
   value: z.string().min(1, { message: "Value is required" }),
+});
+
+export const procedureSyncValidator = z.object({
+  operationId: z.string().min(1, { message: "Operation is required" }),
+  procedureId: z.string().min(1, { message: "Procedure is required" }),
 });
 
 export const productionEventValidator = z

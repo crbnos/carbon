@@ -74,11 +74,11 @@ function DirectionAwareTabs({
         filter: "blur(0px)",
       }}
       transition={{ duration: 0.2, delay: 0.3 }}
-      className=" flex flex-col items-center w-full"
+      className="flex flex-col items-center w-full"
     >
       <div
         className={cn(
-          "flex space-x-1 rounded-lg cursor-pointer bg-muted px-[3px] py-[3.2px] shadow-inner-shadow",
+          "flex flex-wrap  gap-1 rounded-lg cursor-pointer bg-muted p-1 shadow-inner-shadow w-auto",
           className,
           rounded
         )}
@@ -89,7 +89,7 @@ function DirectionAwareTabs({
             disabled={tab.disabled}
             onClick={() => handleTabClick(tab.id)}
             className={cn(
-              "relative rounded-md px-3.5 py-1.5 text-xs sm:text-sm font-medium text-foreground/80  transition focus-visible:outline-1 focus-visible:ring-2 ring-ring ring-offset-ring  focus-visible:outline-none flex gap-2 items-center ",
+              "relative rounded-md px-3.5 py-1.5 text-sm font-medium text-foreground/80 transition focus-visible:outline-1 focus-visible:ring-2 ring-ring ring-offset-ring focus-visible:outline-none flex gap-2 items-center justify-center flex-initial",
               activeTab === tab.id
                 ? "text-foreground"
                 : "hover:text-foreground/60 text-foreground/80",
@@ -105,7 +105,7 @@ function DirectionAwareTabs({
                 transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               />
             )}
-            <span className="z-20">{tab.label}</span>
+            <span className="z-20 text-center">{tab.label}</span>
           </button>
         ))}
       </div>

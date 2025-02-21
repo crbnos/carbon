@@ -282,6 +282,7 @@ export const methodOperationValidator = z
     }),
     processId: z.string().min(20, { message: "Process is required" }),
     workCenterId: zfd.text(z.string().optional()),
+    procedureId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })
     ),

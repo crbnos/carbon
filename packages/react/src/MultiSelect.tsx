@@ -15,6 +15,7 @@ import {
 } from "./Command";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { cn } from "./utils/cn";
+import { reactNodeToString } from "./utils/react";
 
 export type MultiSelectProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -147,9 +148,14 @@ function VirtualizedCommand({
 
   const filteredOptions = useMemo(() => {
     return search
-      ? options.filter((option) =>
-          option.label.toLowerCase().includes(search.toLowerCase())
-        )
+      ? options.filter((option) => {
+          const value =
+            typeof option.label === "string"
+              ? option.label.toLowerCase()
+              : reactNodeToString(option.label);
+
+          return value.includes(search.toLowerCase());
+        })
       : options;
   }, [options, search]);
 

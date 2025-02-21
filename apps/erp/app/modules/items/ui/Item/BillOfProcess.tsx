@@ -42,7 +42,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuActivity,
-  LuChevronDown,
+  LuChevronRight,
   LuCirclePlus,
   LuEllipsisVertical,
   LuHammer,
@@ -54,6 +54,7 @@ import {
   LuSquareFunction,
   LuTriangleAlert,
   LuX,
+  LuWaypoints,
 } from "react-icons/lu";
 import { z } from "zod";
 import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
@@ -113,6 +114,7 @@ import { methodOperationValidator } from "../../items.models";
 import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import Procedure from "~/components/Form/Procedure";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -161,6 +163,7 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   operationOrder: "After Previous",
   operationType: "Inside",
   processId: "",
+  procedureId: "",
   setupTime: 0,
   setupUnit: "Total Minutes",
   tags: [],
@@ -415,6 +418,8 @@ const BillOfProcess = ({
       initialOperations.find((o) => o.id === item.id)
         ?.methodOperationAttribute ?? [];
 
+    const hasProcedure = !!item.data.procedureId;
+
     const tabs = [
       {
         id: 0,
@@ -447,7 +452,24 @@ const BillOfProcess = ({
       },
       {
         id: 1,
-        label: "Instructions",
+        label: (
+          <span className="flex items-center gap-2">
+            Instructions
+            {hasProcedure && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="gray">
+                    <LuWaypoints />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="opacity-100">
+                  <p>Instructions are inherited from the procedure.</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </span>
+        ),
+        disabled: hasProcedure,
         content: (
           <div className="flex flex-col">
             <div>
@@ -483,10 +505,25 @@ const BillOfProcess = ({
       },
       {
         id: 2,
+        disabled: hasProcedure,
         label: (
           <span className="flex items-center gap-2">
             <span>Parameters</span>
-            {parameters.length > 0 && <Count count={parameters.length} />}
+            {hasProcedure && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="gray">
+                    <LuWaypoints />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="opacity-100">
+                  <p>Parameters are inherited from the procedure.</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {!hasProcedure && parameters.length > 0 && (
+              <Count count={parameters.length} />
+            )}
           </span>
         ),
         content: (
@@ -506,10 +543,25 @@ const BillOfProcess = ({
       },
       {
         id: 3,
+        disabled: hasProcedure,
         label: (
           <span className="flex items-center gap-2">
             <span>Attributes</span>
-            {attributes.length > 0 && <Count count={attributes.length} />}
+            {hasProcedure && (
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge variant="gray">
+                    <LuWaypoints />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="opacity-100">
+                  <p>Attributes are inherited from the procedure.</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {!hasProcedure && attributes.length > 0 && (
+              <Count count={attributes.length} />
+            )}
           </span>
         ),
         content: (
@@ -815,9 +867,10 @@ function OperationForm({
     setWorkInstructions,
   ]);
 
-  const [showMachine, setShowMachine] = useState(false);
-  const [showLabor, setShowLabor] = useState(false);
-  const [showSetup, setShowSetup] = useState(false);
+  const machineDisclosure = useDisclosure();
+  const laborDisclosure = useDisclosure();
+  const setupDisclosure = useDisclosure();
+  const procedureDisclosure = useDisclosure();
 
   const [processData, setProcessData] = useState<{
     description: string;
@@ -830,6 +883,7 @@ function OperationForm({
     operationType: string;
     operationOrder: string;
     processId: string;
+    procedureId: string;
     workCenterId: string;
     setupTime: number;
     setupUnit: string;
@@ -845,6 +899,7 @@ function OperationForm({
     operationOrder: item.data.operationOrder ?? "After Previous",
     operationType: item.data.operationType ?? "Inside",
     processId: item.data.processId ?? "",
+    procedureId: item.data.procedureId ?? "",
     workCenterId: item.data.workCenterId ?? "",
     setupTime: item.data.setupTime ?? 0,
     setupUnit: item.data.setupUnit ?? "Total Minutes",
@@ -864,6 +919,7 @@ function OperationForm({
     setProcessData((p) => ({
       ...p,
       processId,
+      procedureId: "",
       description: data?.name ?? "",
       laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
       laborUnitHint: getUnitHint(data?.defaultStandardFactor),
@@ -1082,12 +1138,13 @@ function OperationForm({
           }
         />
       </div>
+
       {processData.operationType === "Inside" && (
         <>
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowSetup(!showSetup)}
+              onClick={setupDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Setup" />
@@ -1101,23 +1158,25 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
-                  aria-label={showSetup ? "Collapse Setup" : "Expand Setup"}
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    setupDisclosure.isOpen ? "Collapse Setup" : "Expand Setup"
+                  }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowSetup(!showSetup);
+                    setupDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showSetup ? "rotate-180" : ""
+                    setupDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showSetup ? "" : "hidden"
+                setupDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -1196,7 +1255,7 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowLabor(!showLabor)}
+              onClick={laborDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Labor" />
@@ -1210,23 +1269,25 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
-                  aria-label={showLabor ? "Collapse Labor" : "Expand Labor"}
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    laborDisclosure.isOpen ? "Collapse Labor" : "Expand Labor"
+                  }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowLabor(!showLabor);
+                    laborDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showLabor ? "rotate-180" : ""
+                    laborDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showLabor ? "" : "hidden"
+                laborDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -1304,7 +1365,7 @@ function OperationForm({
           <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
             <HStack
               className="w-full justify-between cursor-pointer"
-              onClick={() => setShowMachine(!showMachine)}
+              onClick={machineDisclosure.onToggle}
             >
               <HStack>
                 <TimeTypeIcon type="Machine" />
@@ -1318,25 +1379,27 @@ function OperationForm({
                   </Badge>
                 )}
                 <IconButton
-                  icon={<LuChevronDown />}
+                  icon={<LuChevronRight />}
                   aria-label={
-                    showMachine ? "Collapse Machine" : "Expand Machine"
+                    machineDisclosure.isOpen
+                      ? "Collapse Machine"
+                      : "Expand Machine"
                   }
                   variant="ghost"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowMachine(!showMachine);
+                    machineDisclosure.onToggle();
                   }}
                   className={`transition-transform ${
-                    showMachine ? "rotate-180" : ""
+                    machineDisclosure.isOpen ? "rotate-90" : ""
                   }`}
                 />
               </HStack>
             </HStack>
             <div
               className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3 pb-4 ${
-                showMachine ? "" : "hidden"
+                machineDisclosure.isOpen ? "" : "hidden"
               }`}
             >
               <UnitHint
@@ -1408,6 +1471,79 @@ function OperationForm({
                       }
                     : undefined
                 }
+              />
+            </div>
+          </div>
+
+          <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4">
+            <HStack
+              className="w-full justify-between cursor-pointer"
+              onClick={procedureDisclosure.onToggle}
+            >
+              <HStack>
+                <LuWaypoints />
+                <Label>Procedure</Label>
+              </HStack>
+              <HStack>
+                {processData.procedureId && (
+                  <Badge variant="secondary">
+                    <LuWaypoints className="h-3 w-3 mr-1" />
+                    Procedure
+                  </Badge>
+                )}
+                <IconButton
+                  icon={<LuChevronRight />}
+                  aria-label={
+                    procedureDisclosure.isOpen
+                      ? "Collapse Procedure"
+                      : "Expand Procedure"
+                  }
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    procedureDisclosure.onToggle();
+                  }}
+                  className={`transition-transform ${
+                    procedureDisclosure.isOpen ? "rotate-90" : ""
+                  }`}
+                />
+              </HStack>
+            </HStack>
+            <div
+              className={`grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-1 pb-4 ${
+                procedureDisclosure.isOpen ? "" : "hidden"
+              }`}
+            >
+              <Procedure
+                name="procedureId"
+                label="Procedure"
+                processId={processData.processId}
+                value={processData.procedureId}
+                isConfigured={rulesByField.has(key("procedureId"))}
+                onConfigure={
+                  configurable && !isTemporaryId(item.id)
+                    ? () => {
+                        onConfigure({
+                          label: "Procedure",
+                          field: key("procedureId"),
+                          code: rulesByField.get(key("procedureId"))?.code,
+                          defaultValue: processData.procedureId,
+                          returnType: {
+                            type: "text",
+                            helperText:
+                              "the unique identifier for the procedure. you can get this from the URL when editing a procedure",
+                          },
+                        });
+                      }
+                    : undefined
+                }
+                onChange={(value) => {
+                  setProcessData((d) => ({
+                    ...d,
+                    procedureId: value?.value as string,
+                  }));
+                }}
               />
             </div>
           </div>
@@ -1848,7 +1984,7 @@ function AttributesListItem({
                   )}
                 </HStack>
                 {attribute.type === "Measurement" && (
-                  <span className="text-xs text-muted-foreground text-right">
+                  <span className="text-xs text-muted-foreground">
                     {attribute.minValue !== null && attribute.maxValue !== null
                       ? `Must be between ${attribute.minValue} and ${
                           attribute.maxValue

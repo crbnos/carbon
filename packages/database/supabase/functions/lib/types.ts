@@ -29517,6 +29517,7 @@ export type Database = {
           order: number | null
           overheadRate: number | null
           priority: number | null
+          procedureId: string | null
           processId: string | null
           quantityComplete: number | null
           quantityReworked: number | null
@@ -29656,6 +29657,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobMaterialWithMakeMethodId"
             referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
+            foreignKeyName: "jobOperation_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperation_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedures"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperation_processId_fkey"
@@ -30336,14 +30351,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -31640,14 +31655,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32499,6 +32514,7 @@ export type Database = {
           operationUnitCost: number | null
           order: number | null
           overheadRate: number | null
+          procedureId: string | null
           processId: string | null
           quoteId: string | null
           quoteLineId: string | null
@@ -32587,6 +32603,20 @@ export type Database = {
             columns: ["operationSupplierProcessId"]
             isOneToOne: false
             referencedRelation: "supplierProcesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedure"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_procedureId_fkey"
+            columns: ["procedureId"]
+            isOneToOne: false
+            referencedRelation: "procedures"
             referencedColumns: ["id"]
           },
           {
@@ -33283,14 +33313,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -313,6 +313,7 @@ export const quoteOperationValidator = z
       }),
     }),
     processId: z.string().min(20, { message: "Process is required" }),
+    procedureId: zfd.text(z.string().optional()),
     workCenterId: zfd.text(z.string().optional()),
     description: zfd.text(
       z.string().min(0, { message: "Description is required" })

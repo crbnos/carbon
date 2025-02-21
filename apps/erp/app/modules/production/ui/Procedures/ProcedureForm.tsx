@@ -67,6 +67,7 @@ const ProcedureForm = ({
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
+              <Hidden name="copyFromId" />
               {type === "copy" && (
                 <>
                   <Hidden name="name" />

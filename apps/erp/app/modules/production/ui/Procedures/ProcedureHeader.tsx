@@ -124,6 +124,7 @@ const ProcedureHeader = () => {
             version: (routeData?.procedure?.version ?? 0) + 1,
             processId: routeData?.procedure?.processId ?? "",
             content: JSON.stringify(routeData?.procedure?.content) ?? "",
+            copyFromId: routeData?.procedure?.id ?? "",
           }}
           open={newVersionDisclosure.isOpen}
           onClose={newVersionDisclosure.onClose}
