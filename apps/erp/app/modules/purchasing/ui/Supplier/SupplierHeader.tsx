@@ -19,6 +19,7 @@ import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
+import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { useRouteData } from "~/hooks";
 import type { SupplierDetail, SupplierStatus } from "~/modules/purchasing";
 import type { action } from "~/routes/x+/settings+/tags";
@@ -33,6 +34,11 @@ const SupplierHeader = () => {
     supplier: SupplierDetail;
     tags: { name: string }[];
   }>(path.to.supplier(supplierId));
+
+  const supplierTypes = useSupplierTypes();
+  const supplierType = supplierTypes?.find(
+    (type) => type.value === routeData?.supplier?.supplierTypeId
+  )?.label;
 
   const sharedSupplierData = useRouteData<{
     supplierStatuses: SupplierStatus[];
@@ -81,6 +87,12 @@ const SupplierHeader = () => {
               <CardAttributeLabel>Status</CardAttributeLabel>
               <CardAttributeValue>
                 {supplierStatus ? <Enumerable value={supplierStatus!} /> : "-"}
+              </CardAttributeValue>
+            </CardAttribute>
+            <CardAttribute>
+              <CardAttributeLabel>Type</CardAttributeLabel>
+              <CardAttributeValue>
+                {supplierType ? <Enumerable value={supplierType!} /> : "-"}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

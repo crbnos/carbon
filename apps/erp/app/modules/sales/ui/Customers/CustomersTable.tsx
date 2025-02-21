@@ -17,6 +17,7 @@ import {
   LuPencil,
   LuPhone,
   LuPrinter,
+  LuShapes,
   LuStar,
   LuTag,
   LuTrash,
@@ -36,6 +37,7 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { Customer, CustomerStatus } from "../../types";
+import { useCustomerTypes } from "~/components/Form/CustomerType";
 
 type CustomersTableProps = {
   data: Customer[];
@@ -53,6 +55,8 @@ const CustomersTable = memo(
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
       null
     );
+
+    const customerTypes = useCustomerTypes();
 
     const customColumns = useCustomColumns<Customer>("customer");
     const columns = useMemo<ColumnDef<Customer>[]>(() => {
@@ -84,6 +88,27 @@ const CustomersTable = memo(
               })),
             },
             icon: <LuStar />,
+          },
+        },
+        {
+          accessorKey: "customerTypeId",
+          header: "Type",
+          cell: (item) => {
+            if (!item.getValue<string>()) return null;
+            const customerType = customerTypes?.find(
+              (type) => type.value === item.getValue<string>()
+            )?.label;
+            return <Enumerable value={customerType ?? ""} />;
+          },
+          meta: {
+            icon: <LuShapes />,
+            filter: {
+              type: "static",
+              options: customerTypes?.map((type) => ({
+                value: type.value,
+                label: <Enumerable value={type.label} />,
+              })),
+            },
           },
         },
         {
@@ -212,7 +237,7 @@ const CustomersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [customerStatuses, people, customColumns, tags]);
+    }, [customerStatuses, customerTypes, people, customColumns, tags]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name

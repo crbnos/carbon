@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs} from "@remix-run/react";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -12,6 +13,7 @@ import {
 import { SupplierTypeForm } from "~/modules/purchasing/ui/SupplierTypes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
+import { getCompanyId, supplierTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -62,6 +64,14 @@ export async function action({ request }: ActionFunctionArgs) {
         `${path.to.supplierTypes}?${getParams(request)}`,
         await flash(request, success("Supplier type created"))
       );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    supplierTypesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function NewSupplierTypesRoute() {

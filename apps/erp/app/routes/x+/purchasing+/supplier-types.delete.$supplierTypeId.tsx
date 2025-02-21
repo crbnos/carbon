@@ -1,12 +1,19 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
+import type {
+  ClientActionFunctionArgs} from "@remix-run/react";
+import {
+  useLoaderData,
+  useNavigate,
+  useParams,
+} from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteSupplierType, getSupplierType } from "~/modules/purchasing";
 import { getParams, path } from "~/utils/path";
+import { supplierTypesQuery , getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -61,6 +68,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     `${path.to.supplierTypes}?${getParams(request)}`,
     await flash(request, success("Successfully deleted supplier type"))
   );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    supplierTypesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function DeleteSupplierTypeRoute() {
