@@ -2,7 +2,12 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import type {
+  ClientActionFunctionArgs} from "@remix-run/react";
+import {
+  useLoaderData,
+  useNavigate,
+} from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
@@ -13,6 +18,7 @@ import {
 import { SupplierTypeForm } from "~/modules/purchasing/ui/SupplierTypes";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
+import { getCompanyId , supplierTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -44,6 +50,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({
     supplierType: supplierType.data,
   });
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    supplierTypesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export async function action({ request }: ActionFunctionArgs) {

@@ -20,6 +20,7 @@ import {
   Currency,
   CustomFormFields,
   CustomerStatus,
+  CustomerType,
   Employee,
   Hidden,
   Input,
@@ -105,7 +106,11 @@ const CustomerForm = ({
                     label="Customer Status"
                     placeholder="Select Customer Status"
                   />
-
+                  <CustomerType
+                    name="customerTypeId"
+                    label="Customer Type"
+                    placeholder="Select Customer Type"
+                  />
                   <Employee name="accountManagerId" label="Account Manager" />
 
                   <Currency name="currencyCode" label="Currency" />

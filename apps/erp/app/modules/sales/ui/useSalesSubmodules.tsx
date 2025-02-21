@@ -1,4 +1,4 @@
-import { LuBan, LuSquareUser, LuStar } from "react-icons/lu";
+import { LuBan, LuShapes, LuSquareUser, LuStar } from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
@@ -43,23 +43,23 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
+        name: "No Quote Reasons",
+        to: path.to.noQuoteReasons,
+        role: "employee",
+        icon: <LuBan />,
+      },
+      {
         name: "Statuses",
         to: path.to.customerStatuses,
         role: "employee",
         icon: <LuStar />,
       },
       {
-        name: "No Quote Reasons",
-        to: path.to.noQuoteReasons,
+        name: "Types",
+        to: path.to.customerTypes,
         role: "employee",
-        icon: <LuBan />,
+        icon: <LuShapes />,
       },
-      // {
-      //   name: "Types",
-      //   to: path.to.customerTypes,
-      //   role: "employee",
-      //   icon: <LuShapes />,
-      // },
     ],
   },
 ];

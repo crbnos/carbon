@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { ClientActionFunctionArgs} from "@remix-run/react";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -9,6 +10,7 @@ import { customerTypeValidator, upsertCustomerType } from "~/modules/sales";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
+import { customerTypesQuery, getCompanyId } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -59,6 +61,14 @@ export async function action({ request }: ActionFunctionArgs) {
         `${path.to.customerTypes}?${getParams(request)}`,
         await flash(request, success("Customer type created"))
       );
+}
+
+export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
+  window.clientCache?.setQueryData(
+    customerTypesQuery(getCompanyId()).queryKey,
+    null
+  );
+  return await serverAction();
 }
 
 export default function NewCustomerTypesRoute() {

@@ -62,6 +62,7 @@ export const customerValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   customerStatusId: zfd.text(z.string().optional()),
+  customerTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   taxPercent: zfd.numeric(

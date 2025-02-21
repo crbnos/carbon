@@ -11,6 +11,7 @@ import {
   LuPencil,
   LuPhone,
   LuPrinter,
+  LuShapes,
   LuStar,
   LuTag,
   LuUser,
@@ -23,6 +24,7 @@ import {
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Supplier, SupplierStatus } from "~/modules/purchasing";
@@ -41,6 +43,7 @@ const SuppliersTable = memo(
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [people] = usePeople();
+    const supplierTypes = useSupplierTypes();
 
     const customColumns = useCustomColumns<Supplier>("supplier");
     const columns = useMemo<ColumnDef<Supplier>[]>(() => {
@@ -72,6 +75,27 @@ const SuppliersTable = memo(
               })),
             },
             icon: <LuStar />,
+          },
+        },
+        {
+          accessorKey: "supplierTypeId",
+          header: "Type",
+          cell: (item) => {
+            if (!item.getValue<string>()) return null;
+            const supplierType = supplierTypes?.find(
+              (type) => type.value === item.getValue<string>()
+            )?.label;
+            return <Enumerable value={supplierType ?? ""} />;
+          },
+          meta: {
+            icon: <LuShapes />,
+            filter: {
+              type: "static",
+              options: supplierTypes?.map((type) => ({
+                value: type.value,
+                label: <Enumerable value={type.label} />,
+              })),
+            },
           },
         },
         {
@@ -230,7 +254,7 @@ const SuppliersTable = memo(
       ];
 
       return [...defaultColumns, ...customColumns];
-    }, [supplierStatuses, people, tags, customColumns]);
+    }, [supplierStatuses, supplierTypes, people, tags, customColumns]);
 
     const renderContextMenu = useMemo(
       // eslint-disable-next-line react/display-name

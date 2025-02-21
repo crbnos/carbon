@@ -23,6 +23,7 @@ import { useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
 import type { CustomerDetail, CustomerStatus } from "../../types";
+import { useCustomerTypes } from "~/components/Form/CustomerType";
 
 const CustomerHeader = () => {
   const { customerId } = useParams();
@@ -34,10 +35,14 @@ const CustomerHeader = () => {
     tags: { name: string }[];
   }>(path.to.customer(customerId));
 
+  const customerTypes = useCustomerTypes();
+  const customerType = customerTypes?.find(
+    (type) => type.value === routeData?.customer?.customerTypeId
+  )?.label;
+
   const sharedCustomerData = useRouteData<{
     customerStatuses: CustomerStatus[];
   }>(path.to.customerRoot);
-
   const customerStatus = sharedCustomerData?.customerStatuses?.find(
     (status) => status.id === routeData?.customer?.customerStatusId
   )?.name;
@@ -81,6 +86,12 @@ const CustomerHeader = () => {
               <CardAttributeLabel>Status</CardAttributeLabel>
               <CardAttributeValue>
                 {customerStatus ? <Enumerable value={customerStatus!} /> : "-"}
+              </CardAttributeValue>
+            </CardAttribute>
+            <CardAttribute>
+              <CardAttributeLabel>Type</CardAttributeLabel>
+              <CardAttributeValue>
+                {customerType ? <Enumerable value={customerType!} /> : "-"}
               </CardAttributeValue>
             </CardAttribute>
             <CardAttribute>

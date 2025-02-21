@@ -208,6 +208,7 @@ export const supplierValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
   supplierStatusId: zfd.text(z.string().optional()),
+  supplierTypeId: zfd.text(z.string().optional()),
   accountManagerId: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
   phone: zfd.text(z.string().optional()),

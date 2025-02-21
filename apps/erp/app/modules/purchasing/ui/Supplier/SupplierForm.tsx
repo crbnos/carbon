@@ -24,6 +24,7 @@ import {
   Input,
   Submit,
   SupplierStatus,
+  SupplierType,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { Supplier } from "~/modules/purchasing";
@@ -103,6 +104,12 @@ const SupplierForm = ({
                     name="supplierStatusId"
                     label="Supplier Status"
                     placeholder="Select Supplier Status"
+                  />
+
+                  <SupplierType
+                    name="supplierTypeId"
+                    label="Supplier Type"
+                    placeholder="Select Supplier Type"
                   />
 
                   <Employee name="accountManagerId" label="Account Manager" />

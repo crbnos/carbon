@@ -3,8 +3,6 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import { useRouteData } from "~/hooks";
-import type { SupplierStatus } from "~/modules/purchasing";
 import type { getCustomerTypesList } from "~/modules/sales";
 import { CustomerTypeForm } from "~/modules/sales/ui/CustomerTypes";
 import { path } from "~/utils/path";
@@ -55,31 +53,18 @@ export const useCustomerTypes = () => {
   const customerTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getCustomerTypesList>>>();
 
-  const sharedCustomerData = useRouteData<{
-    customerTypes: SupplierStatus[];
-  }>(path.to.customerRoot);
-
-  const hasSupplierData = sharedCustomerData?.customerTypes;
-
   useMount(() => {
-    if (!hasSupplierData) customerTypeFetcher.load(path.to.api.customerTypes);
+    customerTypeFetcher.load(path.to.api.customerTypes);
   });
 
   const options = useMemo(() => {
-    const dataSource =
-      (hasSupplierData
-        ? sharedCustomerData.customerTypes
-        : customerTypeFetcher.data?.data) ?? [];
+    const dataSource = customerTypeFetcher.data?.data ?? [];
 
     return dataSource.map((c) => ({
       value: c.id,
       label: c.name,
     }));
-  }, [
-    customerTypeFetcher.data?.data,
-    hasSupplierData,
-    sharedCustomerData?.customerTypes,
-  ]);
+  }, [customerTypeFetcher.data?.data]);
 
   return options;
 };

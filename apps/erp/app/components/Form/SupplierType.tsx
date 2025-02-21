@@ -3,11 +3,7 @@ import { CreatableCombobox } from "@carbon/form";
 import { useDisclosure, useMount } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
-import { useRouteData } from "~/hooks";
-import type {
-  SupplierType as SupplierTypeType,
-  getSupplierTypesList,
-} from "~/modules/purchasing";
+import type { getSupplierTypesList } from "~/modules/purchasing";
 import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
 
 import { path } from "~/utils/path";
@@ -58,31 +54,18 @@ export const useSupplierTypes = () => {
   const supplierTypeFetcher =
     useFetcher<Awaited<ReturnType<typeof getSupplierTypesList>>>();
 
-  const sharedSupplierData = useRouteData<{
-    supplierTypes: SupplierTypeType[];
-  }>(path.to.supplierRoot);
-
-  const hasSupplierData = sharedSupplierData?.supplierTypes;
-
   useMount(() => {
-    if (!hasSupplierData) supplierTypeFetcher.load(path.to.api.supplierTypes);
+    supplierTypeFetcher.load(path.to.api.supplierTypes);
   });
 
   const options = useMemo(() => {
-    const dataSource =
-      (hasSupplierData
-        ? sharedSupplierData.supplierTypes
-        : supplierTypeFetcher.data?.data) ?? [];
+    const dataSource = supplierTypeFetcher.data?.data ?? [];
 
     return dataSource.map((c) => ({
       value: c.id,
       label: c.name,
     }));
-  }, [
-    supplierTypeFetcher.data?.data,
-    hasSupplierData,
-    sharedSupplierData?.supplierTypes,
-  ]);
+  }, [supplierTypeFetcher.data?.data]);
 
   return options;
 };
