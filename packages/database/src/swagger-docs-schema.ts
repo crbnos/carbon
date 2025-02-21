@@ -8401,6 +8401,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.procedureId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -23024,6 +23027,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationsWithMakeMethods.procedureId",
           },
           {
             $ref: "#/parameters/select",
@@ -42789,6 +42795,186 @@ export default {
         tags: ["department"],
       },
     },
+    "/jobOperationAttributeRecord": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.jobOperationAttributeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.numericValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.booleanValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.userValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationAttributeRecord",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationAttributeRecord"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationAttributeRecord",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationAttributeRecord"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.jobOperationAttributeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.numericValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.booleanValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.userValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationAttributeRecord"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.jobOperationAttributeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.value",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.numericValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.booleanValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.userValue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttributeRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationAttributeRecord",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationAttributeRecord"],
+      },
+    },
     "/purchaseInvoiceLine": {
       get: {
         parameters: [
@@ -51184,6 +51370,12 @@ export default {
           },
           type: "array",
         },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -58094,6 +58286,12 @@ export default {
           },
           type: "array",
         },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -62256,7 +62454,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62305,7 +62503,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -66913,6 +67111,67 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    jobOperationAttributeRecord: {
+      required: [
+        "jobOperationAttributeId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        jobOperationAttributeId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        value: {
+          format: "text",
+          type: "string",
+        },
+        numericValue: {
+          format: "numeric",
+          type: "number",
+        },
+        booleanValue: {
+          format: "boolean",
+          type: "boolean",
+        },
+        userValue: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -72380,6 +72639,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithMakeMethods.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -81367,6 +81633,13 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationsWithMakeMethods.procedureId": {
+      name: "procedureId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -92956,6 +93229,85 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.jobOperationAttributeRecord": {
+      name: "jobOperationAttributeRecord",
+      description: "jobOperationAttributeRecord",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationAttributeRecord",
+      },
+    },
+    "rowFilter.jobOperationAttributeRecord.jobOperationAttributeId": {
+      name: "jobOperationAttributeId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.value": {
+      name: "value",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.numericValue": {
+      name: "numericValue",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.booleanValue": {
+      name: "booleanValue",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.userValue": {
+      name: "userValue",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttributeRecord.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
