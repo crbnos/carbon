@@ -2386,13 +2386,6 @@ function IssueModal({
   );
 }
 
-const unitOfMeasures = [
-  { label: "Ohms", value: "OHM" },
-  { label: "Degrees (F)", value: "F" },
-  { label: "Volts", value: "VOLT" },
-  { label: "Hertz", value: "HZ" },
-];
-
 function AttributesListItem({
   attribute,
   compact = false,
@@ -2435,22 +2428,10 @@ function AttributesListItem({
               {type === "Measurement" && (
                 <span className="text-xs text-muted-foreground">
                   {minValue !== null && maxValue !== null
-                    ? `Must be between ${minValue} and ${maxValue} ${
-                        unitOfMeasures.find(
-                          (u) => u.value === unitOfMeasureCode
-                        )?.label
-                      }`
+                    ? `Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`
                     : minValue !== null
-                    ? `Must be > ${minValue} ${
-                        unitOfMeasures.find(
-                          (u) => u.value === unitOfMeasureCode
-                        )?.label
-                      }`
-                    : `Must be < ${maxValue} ${
-                        unitOfMeasures.find(
-                          (u) => u.value === unitOfMeasureCode
-                        )?.label
-                      }`}
+                    ? `Must be > ${minValue} ${unitOfMeasureCode}`
+                    : `Must be < ${maxValue} ${unitOfMeasureCode}`}
                 </span>
               )}
             </VStack>
@@ -2563,11 +2544,7 @@ function PreviewAttributeRecord({
             {numberFormatter.format(
               attribute.jobOperationAttributeRecord.numericValue
             )}{" "}
-            {
-              unitOfMeasures.find(
-                (u) => u.value === attribute.unitOfMeasureCode
-              )?.label
-            }
+            {attribute.unitOfMeasureCode}
           </p>
         )}
       {attribute.type === "Timestamp" && (

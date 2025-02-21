@@ -298,7 +298,7 @@ const JobEstimatesVsActuals = ({
                   return (
                     <>
                       <Tr key={operation.id} className="border-b border-border">
-                        <Td className="border-r border-border min-w-[200px] px-2">
+                        <Td className="border-r border-border px-2">
                           <HStack className="w-full justify-between ">
                             <span>{operation.description}</span>
                             <JobOperationStatus operation={operation} />
@@ -326,9 +326,11 @@ const JobEstimatesVsActuals = ({
                               actual.total > estimated.total && "text-red-500"
                             )}
                           >
-                            {percentFormatter.format(
-                              actual.total / estimated.total
-                            )}
+                            {estimated.total
+                              ? percentFormatter.format(
+                                  actual.total / estimated.total
+                                )
+                              : null}
                           </span>
                         </Td>
                         <Td className="px-2">
@@ -550,7 +552,7 @@ const JobEstimatesVsActuals = ({
                   return (
                     <>
                       <Tr key={material.id} className="border-b border-border">
-                        <Td className="border-r border-border min-w-[200px]">
+                        <Td className="border-r border-border">
                           <HStack className="w-full justify-start">
                             <Tooltip>
                               <TooltipTrigger>

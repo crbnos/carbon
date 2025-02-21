@@ -52,21 +52,34 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ProcedureRoute() {
+  const { id } = useParams();
+  if (!id) throw new Error("Could not find id");
+
+  const { procedure } = useLoaderData<typeof loader>();
+
   return (
-    <PanelProvider>
+    <PanelProvider key={`${id}-${procedure.version}`}>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
         <ProcedureHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorer={<ProcedureExplorer />}
+              explorer={
+                <ProcedureExplorer
+                  key={`explorer-${id}-${procedure.version}`}
+                />
+              }
               content={
                 <div className="bg-background h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <ProcedureEditor />
                   <Outlet />
                 </div>
               }
-              properties={<ProcedureProperties />}
+              properties={
+                <ProcedureProperties
+                  key={`properties-${id}-${procedure.version}`}
+                />
+              }
             />
           </div>
         </div>

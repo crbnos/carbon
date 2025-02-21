@@ -13,6 +13,7 @@ import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { cn } from "./utils/cn";
+import { reactNodeToString } from "./utils/react";
 
 export type CreatableComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -185,9 +186,12 @@ function VirtualizedCommand({
   const filteredOptions = useMemo(() => {
     const filtered = search
       ? options.filter((option) => {
-          return `${option.label} ${option.helper}`
-            .toLowerCase()
-            .includes(search.toLowerCase());
+          const value =
+            typeof option.label === "string"
+              ? `${option.label} ${option.helper}`
+              : reactNodeToString(option.label);
+
+          return value.toLowerCase().includes(search.toLowerCase());
         })
       : options;
 

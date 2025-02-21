@@ -48,6 +48,7 @@ export const path = {
       modelUpload: `${api}/model/upload`,
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
+      procedures: `${api}/production/procedures`,
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
@@ -487,6 +488,7 @@ export const path = {
       generatePath(`${x}/job/methods/operation/attribute/${id}`),
     jobOperationParameter: (id: string) =>
       generatePath(`${x}/job/methods/operation/parameter/${id}`),
+    jobOperationProcedureSync: `${x}/job/methods/operation/procedure/sync`,
     jobOperationTool: (id: string) =>
       generatePath(`${x}/job/methods/operation/tool/${id}`),
     jobOperationStatus: `${x}/job/methods/operation/status`,

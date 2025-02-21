@@ -24,6 +24,7 @@ import type {
   scrapReasonValidator,
 } from "./production.models";
 import type { Job } from "./types";
+import { JSONContent } from "@carbon/react";
 
 export async function deleteJob(
   client: SupabaseClient<Database>,
@@ -440,7 +441,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationAttribute(*)"
+      "*, jobOperationTool(*), jobOperationParameter(*), jobOperationAttribute(*, jobOperationAttributeRecord(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -514,6 +515,18 @@ export async function getProcedures(
   }
 
   return query;
+}
+
+export async function getProceduresList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("procedure")
+    .select("*")
+    .eq("companyId", companyId)
+    .order("name", { ascending: true })
+    .order("version", { ascending: false });
 }
 
 export async function getProductionEvent(
@@ -965,6 +978,7 @@ export async function upsertJobOperation(
     | (Omit<z.infer<typeof jobOperationValidator>, "id"> & {
         id: string;
         jobId: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -977,11 +991,36 @@ export async function upsertJobOperation(
       .select("id")
       .single();
   }
-  return client
+  const operationInsert = await client
     .from("jobOperation")
     .insert([jobOperation])
     .select("id")
     .single();
+
+  if (operationInsert.error) {
+    return operationInsert;
+  }
+  const operationId = operationInsert.data?.id;
+  if (!operationId) return operationInsert;
+
+  if (jobOperation.procedureId) {
+    const { error } = await client.functions.invoke("get-method", {
+      body: {
+        type: "procedureToOperation",
+        sourceId: jobOperation.procedureId,
+        targetId: operationId,
+        companyId: jobOperation.companyId,
+        userId: jobOperation.createdBy,
+      },
+    });
+    if (error) {
+      return {
+        data: null,
+        error: { message: "Failed to get procedure" } as PostgrestError,
+      };
+    }
+  }
+  return operationInsert;
 }
 
 export async function upsertJobOperationAttribute(
@@ -1203,15 +1242,84 @@ export async function upsertProcedure(
         updatedBy: string;
       })
 ) {
-  if ("id" in procedure) {
+  const { copyFromId, ...rest } = procedure;
+  if ("id" in rest) {
     return client
       .from("procedure")
-      .update(sanitize(procedure))
-      .eq("id", procedure.id)
+      .update(sanitize(rest))
+      .eq("id", rest.id)
       .select("id")
       .single();
   }
-  return client.from("procedure").insert([procedure]).select("id").single();
+
+  const insert = await client
+    .from("procedure")
+    .insert([rest])
+    .select("id")
+    .single();
+  if (insert.error) {
+    return insert;
+  }
+  if (copyFromId) {
+    const procedure = await client
+      .from("procedure")
+      .select("*, procedureAttribute(*), procedureParameter(*)")
+      .eq("id", copyFromId)
+      .single();
+
+    if (procedure.error) {
+      return procedure;
+    }
+
+    const attributes = procedure.data.procedureAttribute ?? [];
+    const parameters = procedure.data.procedureParameter ?? [];
+    const workInstruction = (procedure.data.content ?? {}) as JSONContent;
+
+    const [updateWorkInstructions, insertAttributes, insertParameters] =
+      await Promise.all([
+        client
+          .from("procedure")
+          .update({
+            content: workInstruction,
+          })
+          .eq("id", insert.data.id),
+        attributes.length > 0
+          ? client.from("procedureAttribute").insert(
+              attributes.map((attribute) => {
+                const { id, procedureId, ...rest } = attribute;
+                return {
+                  ...rest,
+                  procedureId: insert.data.id,
+                  companyId: procedure.data.companyId!,
+                };
+              })
+            )
+          : Promise.resolve({ data: null, error: null }),
+        parameters.length > 0
+          ? client.from("procedureParameter").insert(
+              parameters.map((parameter) => {
+                const { id, procedureId, ...rest } = parameter;
+                return {
+                  ...rest,
+                  procedureId: insert.data.id,
+                  companyId: procedure.data.companyId!,
+                };
+              })
+            )
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+    if (updateWorkInstructions.error) {
+      return updateWorkInstructions;
+    }
+    if (insertAttributes.error) {
+      return insertAttributes;
+    }
+    if (insertParameters.error) {
+      return insertParameters;
+    }
+  }
+  return insert;
 }
 
 export async function upsertProcedureAttribute(

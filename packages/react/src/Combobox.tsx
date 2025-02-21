@@ -14,6 +14,7 @@ import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { Spinner } from "./Spinner";
 import { cn } from "./utils/cn";
+import { reactNodeToString } from "./utils/react";
 
 export type ComboboxProps = Omit<
   ComponentPropsWithoutRef<"button">,
@@ -161,9 +162,12 @@ function VirtualizedCommand({
   const filteredOptions = useMemo(() => {
     return search
       ? options.filter((option) => {
-          return `${option.label} ${option.helper}`
-            .toLowerCase()
-            .includes(search.toLowerCase());
+          const value =
+            typeof option.label === "string"
+              ? `${option.label} ${option.helper}`
+              : reactNodeToString(option.label);
+
+          return value.toLowerCase().includes(search.toLowerCase());
         })
       : options;
   }, [options, search]);
@@ -201,6 +205,10 @@ function VirtualizedCommand({
         >
           {items.map((virtualRow) => {
             const item = filteredOptions[virtualRow.index];
+            const value =
+              typeof item.label === "string"
+                ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
+                : reactNodeToString(item.label);
 
             return (
               <CommandItem
@@ -208,7 +216,7 @@ function VirtualizedCommand({
                 value={
                   typeof item.label === "string"
                     ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
-                    : undefined
+                    : reactNodeToString(item.label)
                 }
                 onSelect={() => {
                   onChange?.(item.value);
