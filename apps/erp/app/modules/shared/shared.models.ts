@@ -122,7 +122,6 @@ export const operationAttributeValidator = z
   .refine(
     (data) => {
       if (data.type === "List") {
-        console.log(data.listValues);
         return (
           Array.isArray(data.listValues) &&
           data.listValues.length > 0 &&

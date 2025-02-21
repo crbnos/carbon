@@ -28,10 +28,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
     userId,
   });
 
-  console.log(attributeDelete);
-
   if (attributeDelete.error) {
-    console.log(attributeDelete.error);
     return json(
       { success: false },
       await flash(
