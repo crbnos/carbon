@@ -9,6 +9,7 @@ import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
 import { path } from "~/utils/path";
 
 type WorkCenterSelectProps = Omit<ComboboxProps, "options"> & {
+  autoSelectSingleOption?: boolean;
   processId?: string;
   locationId?: string;
   isConfigured?: boolean;
@@ -21,7 +22,7 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
 
-  const options = useWorkCenters({
+  const { options, workCenterFetcher } = useWorkCenters({
     processId: props?.processId,
     locationId: props?.locationId,
   });
@@ -29,6 +30,12 @@ const WorkCenter = (props: WorkCenterSelectProps) => {
   return (
     <>
       <CreatableCombobox
+        autoSelectSingleOption={
+          props?.autoSelectSingleOption &&
+          Boolean(props?.processId) &&
+          options.length === 1 &&
+          workCenterFetcher.state === "idle"
+        }
         ref={triggerRef}
         options={options}
         {...props}
@@ -110,5 +117,5 @@ export const useWorkCenters = (args: {
     [workCenterFetcher.data, processId, locationId]
   );
 
-  return options;
+  return { options, workCenterFetcher };
 };

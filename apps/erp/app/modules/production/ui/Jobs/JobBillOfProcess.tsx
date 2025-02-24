@@ -132,6 +132,7 @@ import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   jobOperationValidator,
+  jobOperationValidatorForReleasedJob,
   procedureSyncValidator,
 } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
@@ -692,6 +693,7 @@ const JobBillOfProcess = ({
               <OperationForm
                 item={item}
                 isDisabled={isDisabled}
+                job={jobData?.job}
                 locationId={locationId}
                 workInstruction={workInstructions[item.id] ?? {}}
                 setWorkInstructions={setWorkInstructions}
@@ -1691,6 +1693,7 @@ function ParametersListItem({
 function OperationForm({
   item,
   isDisabled,
+  job,
   locationId,
   workInstruction,
   setWorkInstructions,
@@ -1699,6 +1702,7 @@ function OperationForm({
 }: {
   item: ItemWithData;
   isDisabled: boolean;
+  job?: Job;
   locationId: string;
   workInstruction: JSONContent;
   setWorkInstructions: Dispatch<SetStateAction<PendingWorkInstructions>>;
@@ -1914,7 +1918,11 @@ function OperationForm({
       }
       method="post"
       defaultValues={item.data}
-      validator={jobOperationValidator}
+      validator={
+        job?.status === "Draft"
+          ? jobOperationValidator
+          : jobOperationValidatorForReleasedJob
+      }
       className="w-full flex flex-col gap-y-4"
       fetcher={fetcher}
       onSubmit={() => {
@@ -2036,8 +2044,9 @@ function OperationForm({
           <WorkCenter
             name="workCenterId"
             label="Work Center"
+            autoSelectSingleOption={Boolean(processData.processId)}
             locationId={locationId}
-            isOptional
+            isOptional={job?.status === "Draft"}
             processId={processData.processId}
             onChange={(value) => {
               if (value) {

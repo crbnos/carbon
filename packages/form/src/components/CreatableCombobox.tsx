@@ -15,6 +15,7 @@ export type CreatableComboboxProps = Omit<
   CreatableComboboxBaseProps,
   "onChange"
 > & {
+  autoSelectSingleOption?: boolean;
   name: string;
   label?: string;
   helperText?: string;
@@ -31,6 +32,7 @@ export type CreatableComboboxProps = Omit<
 const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
   (
     {
+      autoSelectSingleOption = false,
       name,
       label,
       helperText,
@@ -48,6 +50,16 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
       if (props.value !== null && props.value !== undefined)
         setValue(props.value);
     }, [props.value, setValue]);
+
+    useEffect(() => {
+      if (
+        autoSelectSingleOption &&
+        props.options.length === 1 &&
+        !value // Only auto-select if no value is already set
+      ) {
+        setValue(props.options[0].value);
+      }
+    }, [autoSelectSingleOption, props.options, setValue, value]);
 
     const onChange = (value: string) => {
       if (value) {
