@@ -20,12 +20,16 @@ export const KPIs = [
     label: "RFQs",
   },
   {
+    key: "salesFunnel",
+    label: "Sales Funnel",
+  },
+  {
     key: "salesOrderCount",
     label: "Sales Orders",
   },
   {
     key: "salesOrderRevenue",
-    label: "Sales",
+    label: "Sales Revenue",
   },
   // {
   //   key: "turnaroundTime",

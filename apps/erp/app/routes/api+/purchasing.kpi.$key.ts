@@ -397,6 +397,7 @@ async function getSupplierQuotesQuery(
     end: string;
   }
 ) {
+  const endWithTime = end.includes("T") ? end : `${end}T23:59:59`;
   let query = client
     .from("supplierQuote")
     .select("createdAt", {
@@ -404,7 +405,7 @@ async function getSupplierQuotesQuery(
     })
     .eq("companyId", companyId)
     .gt("createdAt", start)
-    .lte("createdAt", end);
+    .lte("createdAt", endWithTime);
 
   if (supplierId) {
     query = query.eq("supplierId", supplierId);
