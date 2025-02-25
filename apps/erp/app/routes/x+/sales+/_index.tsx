@@ -27,6 +27,7 @@ import {
   Thead,
   Tr,
 } from "@carbon/react";
+import { FunnelChart } from "@carbon/react/FunnelChart";
 import {
   ChartContainer,
   ChartTooltip,
@@ -77,11 +78,7 @@ const OPEN_SALES_ORDER_STATUSES = [
   "Draft",
 ] as const;
 
-const chartConfig = {
-  now: {
-    color: "hsl(var(--primary))", // Primary color
-  },
-} satisfies ChartConfig;
+const chartConfig = {} satisfies ChartConfig;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {
@@ -140,6 +137,71 @@ export default function SalesDashboard() {
   const kpiFetcher = useFetcher<typeof kpiLoader>();
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
+  const steps = useMemo(() => {
+    if (!kpiFetcher.data?.data) {
+      return [
+        {
+          id: "rfqs",
+          label: "RFQs",
+          value: 0,
+          colorClassName: "text-blue-600",
+        },
+        {
+          id: "quotes",
+          label: "Quotes",
+          value: 0,
+          colorClassName: "text-violet-600",
+        },
+        {
+          id: "salesOrders",
+          label: "Sales Orders",
+          value: 0,
+          additionalValue: 0,
+          colorClassName: "text-teal-400",
+        },
+      ];
+    }
+
+    const rfqCount =
+      kpiFetcher.data.data.find(
+        (item) => "name" in item && item.name === "RFQs"
+      )?.value ?? 0;
+    const quoteCount =
+      kpiFetcher.data.data.find(
+        (item) => "name" in item && item.name === "Quotes"
+      )?.value ?? 0;
+    const salesOrderCount =
+      kpiFetcher.data.data.find(
+        (item) => "name" in item && item.name === "Sales Orders"
+      )?.value ?? 0;
+    const revenue =
+      kpiFetcher.data.data.find(
+        (item) => "name" in item && item.name === "Revenue"
+      )?.value ?? 0;
+
+    return [
+      {
+        id: "rfqs",
+        label: "RFQs",
+        value: rfqCount,
+        colorClassName: "text-blue-600",
+      },
+      {
+        id: "quotes",
+        label: "Quotes",
+        value: quoteCount,
+        colorClassName: "text-violet-600",
+      },
+      {
+        id: "salesOrders",
+        label: "Sales Orders",
+        value: salesOrderCount,
+        additionalValue: revenue,
+        colorClassName: "text-teal-400",
+      },
+    ];
+  }, [kpiFetcher.data?.data]);
+
   const dateFormatter = useDateFormatter({
     month: "short",
     day: "numeric",
@@ -169,7 +231,7 @@ export default function SalesDashboard() {
   }, [customers]);
 
   const [interval, setInterval] = useState("month");
-  const [selectedKpi, setSelectedKpi] = useState("salesOrderRevenue");
+  const [selectedKpi, setSelectedKpi] = useState("salesFunnel");
   const [dateRange, setDateRange] = useState<DateRange | null>(() => {
     const end = today("UTC");
     const start = end.add({ months: -1 });
@@ -210,13 +272,46 @@ export default function SalesDashboard() {
     setInterval(value);
   };
 
-  const total =
-    kpiFetcher.data?.data.reduce((acc, curr) => acc + curr.value, 0) ?? 0;
-  const previousTotal =
-    kpiFetcher.data?.previousPeriodData.reduce(
-      (acc, curr) => acc + curr.value,
-      0
-    ) ?? 0;
+  const totalData = useMemo(() => {
+    if (!kpiFetcher.data?.data) return null;
+
+    // For salesFunnel, find the Revenue item
+    if (selectedKpi === "salesFunnel") {
+      return kpiFetcher.data.data.find(
+        (item) => "name" in item && item.name === "Revenue"
+      );
+    }
+
+    // For other KPIs, calculate total
+    return {
+      value:
+        kpiFetcher.data.data.reduce((acc, curr) => acc + curr.value, 0) ?? 0,
+    };
+  }, [kpiFetcher.data?.data, selectedKpi]);
+
+  const previousTotalData = useMemo(() => {
+    if (!kpiFetcher.data?.previousPeriodData) return null;
+
+    // For salesFunnel, find the Revenue item
+    if (selectedKpi === "salesFunnel") {
+      return kpiFetcher.data.previousPeriodData.find(
+        (item) => "name" in item && item.name === "Revenue"
+      );
+    }
+
+    // For other KPIs, calculate total
+    return {
+      value:
+        kpiFetcher.data.previousPeriodData.reduce(
+          (acc, curr) => acc + curr.value,
+          0
+        ) ?? 0,
+    };
+  }, [kpiFetcher.data?.previousPeriodData, selectedKpi]);
+
+  const total = totalData?.value ?? 0;
+  const previousTotal = previousTotalData?.value ?? 0;
+
   const percentageChange =
     previousTotal === 0
       ? total > 0
@@ -226,14 +321,31 @@ export default function SalesDashboard() {
 
   const csvData = useMemo(() => {
     if (!kpiFetcher.data?.data) return [];
+
+    // Handle different data formats based on KPI type
+    if (selectedKpi === "salesFunnel") {
+      return [
+        ["Name", "Value"],
+        ...kpiFetcher.data.data.map((item) => [
+          "name" in item ? item.name : "",
+          item.value,
+        ]),
+      ];
+    }
+
     return [
       ["Date", "Value"],
       ...kpiFetcher.data.data.map((item) => [
-        "date" in item ? item.date : item.monthKey,
+        "date" in item
+          ? item.date
+          : "month" in item
+          ? item.month
+          : // @ts-ignore
+            item.monthKey,
         item.value,
       ]),
     ];
-  }, [kpiFetcher.data?.data]);
+  }, [kpiFetcher.data?.data, selectedKpi]);
 
   const csvFilename = useMemo(() => {
     const startDate = dateRange?.start.toString();
@@ -421,7 +533,9 @@ export default function SalesDashboard() {
               ) : (
                 <>
                   <p>
-                    {["salesOrderRevenue"].includes(selectedKpiData.key)
+                    {["salesOrderRevenue", "salesFunnel"].includes(
+                      selectedKpiData.key
+                    )
                       ? currencyFormatter.format(total)
                       : numberFormatter.format(total)}
                   </p>
@@ -467,63 +581,71 @@ export default function SalesDashboard() {
             isLoading={isFetching}
             className="h-[30dvw] md:h-[23dvw] w-full"
           >
-            <ChartContainer
-              config={chartConfig}
-              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
-            >
-              <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
-                <CartesianGrid vertical={false} />
-                <YAxis
-                  dataKey="value"
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) => {
-                    return ["salesOrderRevenue"].includes(selectedKpiData.key)
-                      ? currencyCompactFormatter.format(value as number)
-                      : numberFormatter.format(value as number);
-                  }}
-                />
-                <XAxis
-                  dataKey={
-                    ["week", "month"].includes(interval) ? "date" : "month"
-                  }
-                  tickLine={false}
-                  tickMargin={8}
-                  minTickGap={32}
-                  axisLine={false}
-                  tickFormatter={(value) => {
-                    if (!value) return "";
-                    return ["week", "month"].includes(interval)
-                      ? dateFormatter.format(
-                          parseDate(value).toDate(getLocalTimeZone())
-                        )
-                      : value.slice(0, 3);
-                  }}
-                />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={
-                        ["week", "month"].includes(interval)
-                          ? (value) =>
-                              dateFormatter.format(
-                                parseDate(value).toDate(getLocalTimeZone())
+            {selectedKpi === "salesFunnel" ? (
+              <FunnelChart
+                steps={steps}
+                currencyFormatter={currencyCompactFormatter}
+                numberFormatter={numberFormatter}
+              />
+            ) : (
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+              >
+                <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
+                  <CartesianGrid vertical={false} />
+                  <YAxis
+                    dataKey="value"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => {
+                      return ["salesOrderRevenue"].includes(selectedKpiData.key)
+                        ? currencyCompactFormatter.format(value as number)
+                        : numberFormatter.format(value as number);
+                    }}
+                  />
+                  <XAxis
+                    dataKey={
+                      ["week", "month"].includes(interval) ? "date" : "month"
+                    }
+                    tickLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    axisLine={false}
+                    tickFormatter={(value) => {
+                      if (!value) return "";
+                      return ["week", "month"].includes(interval)
+                        ? dateFormatter.format(
+                            parseDate(value).toDate(getLocalTimeZone())
+                          )
+                        : value.slice(0, 3);
+                    }}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={
+                          ["week", "month"].includes(interval)
+                            ? (value) =>
+                                dateFormatter.format(
+                                  parseDate(value).toDate(getLocalTimeZone())
+                                )
+                            : (value) => (
+                                <span className="font-mono">{value}</span>
                               )
-                          : (value) => (
-                              <span className="font-mono">{value}</span>
-                            )
-                      }
-                      formatter={(value) =>
-                        ["salesOrderRevenue"].includes(selectedKpiData.key)
-                          ? currencyFormatter.format(value as number)
-                          : numberFormatter.format(value as number)
-                      }
-                    />
-                  }
-                />
-                <Bar dataKey="value" fill="var(--color-now)" radius={2} />
-              </BarChart>
-            </ChartContainer>
+                        }
+                        formatter={(value) =>
+                          ["salesOrderRevenue"].includes(selectedKpiData.key)
+                            ? currencyFormatter.format(value as number)
+                            : numberFormatter.format(value as number)
+                        }
+                      />
+                    }
+                  />
+                  <Bar dataKey="value" className="fill-teal-400" radius={2} />
+                </BarChart>
+              </ChartContainer>
+            )}
           </Loading>
         </CardContent>
       </Card>

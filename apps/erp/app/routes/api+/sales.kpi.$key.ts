@@ -50,6 +50,75 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
 
   switch (kpi.key) {
+    case "salesFunnel": {
+      const [salesOrders, quotes, rfqs, previousSalesOrders] =
+        await Promise.all([
+          getSalesOrdersQuery(client, {
+            companyId,
+            customerId,
+            start,
+            end,
+          }),
+          getQuotesQuery(client, {
+            companyId,
+            customerId,
+            start,
+            end,
+          }),
+          getRfqQuery(client, {
+            companyId,
+            customerId,
+            start,
+            end,
+          }),
+          getSalesOrdersQuery(client, {
+            companyId,
+            customerId,
+            start: previousStartDate.toString(),
+            end: previousEndDate.toString(),
+          }),
+        ]);
+
+      const data = [
+        {
+          name: "RFQs",
+          value: rfqs.count ?? 0,
+        },
+        {
+          name: "Quotes",
+          value: quotes.count ?? 0,
+        },
+        {
+          name: "Sales Orders",
+          value: salesOrders.count ?? 0,
+        },
+        {
+          name: "Revenue",
+          value:
+            salesOrders.data?.reduce(
+              (sum, order) => sum + (order.orderTotal ?? 0),
+              0
+            ) ?? 0,
+        },
+      ];
+
+      const previousPeriodData = [
+        {
+          name: "Revenue",
+          value:
+            previousSalesOrders.data?.reduce(
+              (sum, order) => sum + (order.orderTotal ?? 0),
+              0
+            ) ?? 0,
+        },
+      ];
+
+      return json({
+        data,
+        previousPeriodData,
+      });
+    }
+
     case "salesOrderRevenue":
     case "salesOrderCount": {
       const [salesOrders, previousSalesOrders] = await Promise.all([
@@ -344,6 +413,8 @@ async function getSalesOrdersQuery(
     end: string;
   }
 ) {
+  const endWithTime = end.includes("T") ? end : `${end}T23:59:59`;
+
   let query = client
     .from("salesOrders")
     .select("orderTotal, orderDate", {
@@ -361,7 +432,7 @@ async function getSalesOrdersQuery(
       "Invoiced",
     ])
     .gt("orderDate", start)
-    .lte("orderDate", end);
+    .lte("orderDate", endWithTime);
 
   if (customerId) {
     query = query.eq("customerId", customerId);
@@ -386,6 +457,9 @@ async function getQuotesQuery(
     end: string;
   }
 ) {
+  // Add time to end date if not present
+  const endWithTime = end.includes("T") ? end : `${end}T23:59:59`;
+
   let query = client
     .from("quote")
     .select("createdAt", {
@@ -394,7 +468,7 @@ async function getQuotesQuery(
     .eq("companyId", companyId)
     .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
     .gt("createdAt", start)
-    .lte("createdAt", end);
+    .lte("createdAt", endWithTime);
 
   if (customerId) {
     query = query.eq("customerId", customerId);
@@ -419,6 +493,9 @@ async function getRfqQuery(
     end: string;
   }
 ) {
+  // Add time to end date if not present
+  const endWithTime = end.includes("T") ? end : `${end}T23:59:59`;
+
   let query = client
     .from("salesRfq")
     .select("createdAt", {
@@ -427,7 +504,7 @@ async function getRfqQuery(
     .eq("companyId", companyId)
     .in("status", ["Ready for Quote", "Quoted", "Closed"])
     .gt("createdAt", start)
-    .lte("createdAt", end);
+    .lte("createdAt", endWithTime);
 
   if (customerId) {
     query = query.eq("customerId", customerId);
