@@ -218,13 +218,13 @@ export default function PartInventoryRoute() {
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
-        locations={sharedPartsData?.locations ?? []}
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedPartsData?.shelves ?? []}
-        unitOfMeasures={sharedPartsData?.unitOfMeasures ?? []}
       />
-      {partData.partSummary?.itemTrackingType === "Batch" && (
+      {["Batch", "Serial"].includes(
+        partData.partSummary?.itemTrackingType ?? ""
+      ) && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedProperties) => (

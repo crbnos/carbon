@@ -83,8 +83,7 @@ const InventoryShelves = ({
             <Thead>
               <Tr>
                 <Th>Shelf</Th>
-                <Th>Batch</Th>
-                <Th>Serial</Th>
+                <Th>Tracking ID</Th>
                 <Th>QoH</Th>
               </Tr>
             </Thead>
@@ -97,8 +96,7 @@ const InventoryShelves = ({
                       {shelves.find((s) => s.id === item.shelfId)?.name ||
                         item.shelfId}
                     </Td>
-                    <Td>{item.batchNumber}</Td>
-                    <Td>{item.serialNumber}</Td>
+                    <Td>{item.trackedEntityId}</Td>
                     <Td>{item.quantity}</Td>
                   </Tr>
                 ))}

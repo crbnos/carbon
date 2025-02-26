@@ -468,7 +468,7 @@ export async function getItemShelfQuantities(
   companyId: string,
   locationId: string
 ) {
-  return client.rpc("get_item_quantities_by_shelf_batch_serial", {
+  return client.rpc("get_item_quantities_by_tracking_id", {
     item_id: itemId,
     company_id: companyId,
     location_id: locationId,

@@ -1728,122 +1728,6 @@ export type Database = {
         }
         Relationships: []
       }
-      batchNumber: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string | null
-          expirationDate: string | null
-          id: string
-          itemId: string
-          manufacturingDate: string | null
-          notes: Json | null
-          number: string
-          properties: Json | null
-          source: Database["public"]["Enums"]["trackingSource"]
-          supplierId: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy?: string | null
-          expirationDate?: string | null
-          id?: string
-          itemId: string
-          manufacturingDate?: string | null
-          notes?: Json | null
-          number: string
-          properties?: Json | null
-          source?: Database["public"]["Enums"]["trackingSource"]
-          supplierId?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string | null
-          expirationDate?: string | null
-          id?: string
-          itemId?: string
-          manufacturingDate?: string | null
-          notes?: Json | null
-          number?: string
-          properties?: Json | null
-          source?: Database["public"]["Enums"]["trackingSource"]
-          supplierId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "batchNumber_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "batchNumber_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       batchProperty: {
         Row: {
           companyId: string
@@ -6893,7 +6777,6 @@ export type Database = {
       }
       itemLedger: {
         Row: {
-          batchNumber: string | null
           companyId: string
           createdAt: string
           createdBy: string
@@ -6911,11 +6794,9 @@ export type Database = {
           locationId: string | null
           postingDate: string
           quantity: number
-          serialNumber: string | null
           shelfId: string | null
         }
         Insert: {
-          batchNumber?: string | null
           companyId: string
           createdAt?: string
           createdBy?: string
@@ -6933,11 +6814,9 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity: number
-          serialNumber?: string | null
           shelfId?: string | null
         }
         Update: {
-          batchNumber?: string | null
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -6955,24 +6834,9 @@ export type Database = {
           locationId?: string | null
           postingDate?: string
           quantity?: number
-          serialNumber?: string | null
           shelfId?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "itemLedger_batchNumber_fkey"
-            columns: ["batchNumber", "itemId"]
-            isOneToOne: false
-            referencedRelation: "batchNumber"
-            referencedColumns: ["number", "itemId"]
-          },
-          {
-            foreignKeyName: "itemLedger_batchNumber_fkey"
-            columns: ["batchNumber", "itemId"]
-            isOneToOne: false
-            referencedRelation: "batchNumbers"
-            referencedColumns: ["number", "itemId"]
-          },
           {
             foreignKeyName: "itemLedger_createdBy_fkey"
             columns: ["createdBy"]
@@ -7021,20 +6885,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemLedger_serialNumber_fkey"
-            columns: ["serialNumber", "itemId"]
-            isOneToOne: false
-            referencedRelation: "serialNumber"
-            referencedColumns: ["number", "itemId"]
-          },
-          {
-            foreignKeyName: "itemLedger_serialNumber_fkey"
-            columns: ["serialNumber", "itemId"]
-            isOneToOne: false
-            referencedRelation: "serialNumbers"
-            referencedColumns: ["number", "itemId"]
           },
           {
             foreignKeyName: "itemLedger_shelfId_fkey"
@@ -7607,156 +7457,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      itemTracking: {
-        Row: {
-          batchNumberId: string | null
-          companyId: string
-          createdAt: string
-          createdBy: string | null
-          id: string
-          index: number
-          itemId: string
-          posted: boolean
-          quantity: number
-          serialNumberId: string | null
-          sourceDocument: Database["public"]["Enums"]["itemTrackingSourceDocument"]
-          sourceDocumentId: string
-          sourceDocumentLineId: string | null
-          sourceDocumentReadableId: string | null
-        }
-        Insert: {
-          batchNumberId?: string | null
-          companyId: string
-          createdAt?: string
-          createdBy?: string | null
-          id?: string
-          index?: number
-          itemId: string
-          posted?: boolean
-          quantity?: number
-          serialNumberId?: string | null
-          sourceDocument: Database["public"]["Enums"]["itemTrackingSourceDocument"]
-          sourceDocumentId: string
-          sourceDocumentLineId?: string | null
-          sourceDocumentReadableId?: string | null
-        }
-        Update: {
-          batchNumberId?: string | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string | null
-          id?: string
-          index?: number
-          itemId?: string
-          posted?: boolean
-          quantity?: number
-          serialNumberId?: string | null
-          sourceDocument?: Database["public"]["Enums"]["itemTrackingSourceDocument"]
-          sourceDocumentId?: string
-          sourceDocumentLineId?: string | null
-          sourceDocumentReadableId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "itemTracking_batchNumberId_fkey"
-            columns: ["batchNumberId"]
-            isOneToOne: false
-            referencedRelation: "batchNumber"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_batchNumberId_fkey"
-            columns: ["batchNumberId"]
-            isOneToOne: false
-            referencedRelation: "batchNumbers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemTracking_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "itemTracking_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "itemTracking_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_serialNumberId_fkey"
-            columns: ["serialNumberId"]
-            isOneToOne: false
-            referencedRelation: "serialNumber"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "itemTracking_serialNumberId_fkey"
-            columns: ["serialNumberId"]
-            isOneToOne: false
-            referencedRelation: "serialNumbers"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -22017,95 +21717,6 @@ export type Database = {
           },
         ]
       }
-      serialNumber: {
-        Row: {
-          batchNumberId: string | null
-          companyId: string
-          createdAt: string
-          expirationDate: string | null
-          id: string
-          itemId: string
-          number: string
-          source: Database["public"]["Enums"]["trackingSource"]
-          status: Database["public"]["Enums"]["serialStatus"]
-          supplierId: string | null
-        }
-        Insert: {
-          batchNumberId?: string | null
-          companyId: string
-          createdAt?: string
-          expirationDate?: string | null
-          id?: string
-          itemId: string
-          number: string
-          source?: Database["public"]["Enums"]["trackingSource"]
-          status?: Database["public"]["Enums"]["serialStatus"]
-          supplierId?: string | null
-        }
-        Update: {
-          batchNumberId?: string | null
-          companyId?: string
-          createdAt?: string
-          expirationDate?: string | null
-          id?: string
-          itemId?: string
-          number?: string
-          source?: Database["public"]["Enums"]["trackingSource"]
-          status?: Database["public"]["Enums"]["serialStatus"]
-          supplierId?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "serialNumber_batchNumberId_fkey"
-            columns: ["batchNumberId"]
-            isOneToOne: false
-            referencedRelation: "batchNumber"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_batchNumberId_fkey"
-            columns: ["batchNumberId"]
-            isOneToOne: false
-            referencedRelation: "batchNumbers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "serialNumber_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       service: {
         Row: {
           approved: boolean
@@ -26395,6 +26006,621 @@ export type Database = {
           },
         ]
       }
+      trackedActivity: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          sourceDocument: string | null
+          sourceDocumentId: string | null
+          sourceDocumentReadableId: string | null
+          type: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          type: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          sourceDocument?: string | null
+          sourceDocumentId?: string | null
+          sourceDocumentReadableId?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedActivity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      trackedActivityAttribute: {
+        Row: {
+          booleanValue: boolean | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          name: string
+          numericValue: number | null
+          textValue: string | null
+          trackedActivityId: string
+        }
+        Insert: {
+          booleanValue?: boolean | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          name: string
+          numericValue?: number | null
+          textValue?: string | null
+          trackedActivityId: string
+        }
+        Update: {
+          booleanValue?: boolean | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          name?: string
+          numericValue?: number | null
+          textValue?: string | null
+          trackedActivityId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedActivityAttribute_trackedActivityId_fkey"
+            columns: ["trackedActivityId"]
+            isOneToOne: false
+            referencedRelation: "trackedActivity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trackedActivityInput: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          entityType: string
+          quantity: number
+          trackedActivityId: string
+          trackedEntityId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          entityType: string
+          quantity: number
+          trackedActivityId: string
+          trackedEntityId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          entityType?: string
+          quantity?: number
+          trackedActivityId?: string
+          trackedEntityId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedActivityInput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_trackedActivityId_fkey"
+            columns: ["trackedActivityId"]
+            isOneToOne: false
+            referencedRelation: "trackedActivity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityInput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trackedActivityOutput: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          quantity: number
+          trackedActivityId: string
+          trackedEntityId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          quantity: number
+          trackedActivityId: string
+          trackedEntityId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          quantity?: number
+          trackedActivityId?: string
+          trackedEntityId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedActivityOutput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_trackedActivityId_fkey"
+            columns: ["trackedActivityId"]
+            isOneToOne: false
+            referencedRelation: "trackedActivity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedActivityOutput_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trackedEntity: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          quantity: number
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          quantity: number
+          sourceDocument: string
+          sourceDocumentId: string
+          sourceDocumentReadableId?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          quantity?: number
+          sourceDocument?: string
+          sourceDocumentId?: string
+          sourceDocumentReadableId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      trackedEntityAttribute: {
+        Row: {
+          booleanValue: boolean | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          name: string
+          numericValue: number | null
+          textValue: string | null
+          trackedEntityId: string
+        }
+        Insert: {
+          booleanValue?: boolean | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          name: string
+          numericValue?: number | null
+          textValue?: string | null
+          trackedEntityId: string
+        }
+        Update: {
+          booleanValue?: boolean | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          name?: string
+          numericValue?: number | null
+          textValue?: string | null
+          trackedEntityId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "trackedEntityAttribute_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unitOfMeasure: {
         Row: {
           active: boolean
@@ -28101,57 +28327,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      batchNumbers: {
-        Row: {
-          companyId: string | null
-          expirationDate: string | null
-          id: string | null
-          itemId: string | null
-          itemName: string | null
-          itemReadableId: string | null
-          manufacturingDate: string | null
-          number: string | null
-          source: Database["public"]["Enums"]["trackingSource"] | null
-          supplierId: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "batchNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "batchNumber_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -34081,56 +34256,6 @@ export type Database = {
           },
         ]
       }
-      serialNumbers: {
-        Row: {
-          companyId: string | null
-          id: string | null
-          itemId: string | null
-          itemName: string | null
-          itemReadableId: string | null
-          number: string | null
-          source: Database["public"]["Enums"]["trackingSource"] | null
-          status: Database["public"]["Enums"]["serialStatus"] | null
-          supplierId: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "serialNumber_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "serialNumber_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: false
-            referencedRelation: "item"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       shifts: {
         Row: {
           active: boolean | null
@@ -35794,7 +35919,7 @@ export type Database = {
           quantityOnProductionOrder: number
         }[]
       }
-      get_item_quantities_by_shelf_batch_serial: {
+      get_item_quantities_by_tracking_id: {
         Args: {
           item_id: string
           company_id: string
@@ -35804,8 +35929,7 @@ export type Database = {
           itemId: string
           shelfId: string
           shelfName: string
-          batchNumber: string
-          serialNumber: string
+          trackedEntityId: string
           quantity: number
         }[]
       }
@@ -36192,10 +36316,8 @@ export type Database = {
           p_receipt_line_id: string
           p_receipt_id: string
           p_batch_number: string
-          p_batch_id: string
-          p_manufacturing_date: string
-          p_expiration_date: string
           p_quantity: number
+          p_tracked_entity_id?: string
           p_properties?: Json
         }
         Returns: undefined
@@ -36206,28 +36328,7 @@ export type Database = {
           p_receipt_id: string
           p_serial_number: string
           p_index: number
-        }
-        Returns: undefined
-      }
-      update_shipment_line_batch_tracking: {
-        Args: {
-          p_shipment_line_id: string
-          p_shipment_id: string
-          p_batch_number: string
-          p_batch_id: string
-          p_manufacturing_date: string
-          p_expiration_date: string
-          p_quantity: number
-          p_properties?: Json
-        }
-        Returns: undefined
-      }
-      update_shipment_line_serial_tracking: {
-        Args: {
-          p_shipment_line_id: string
-          p_shipment_id: string
-          p_serial_number_id: string
-          p_index: number
+          p_tracked_entity_id?: string
         }
         Returns: undefined
       }

@@ -1,10 +1,10 @@
-import { curveBasis } from "@visx/curve";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { Area } from "@visx/shape";
 import { Text } from "@visx/text";
+import { curveBasis } from "@visx/curve";
 import { motion } from "framer-motion";
-import { Fragment, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "./hooks";
 import { cn } from "./utils/cn";
 
@@ -23,39 +23,53 @@ const layers = [
   },
 ];
 
-const maxLayerPadding = 16;
-const chartPadding = 40;
+const maxPadding = layers.reduce(
+  (acc, layer) => Math.max(acc, layer.padding),
+  0
+);
+const verticalPadding = 30;
 
-type FunnelChartProps = {
-  steps: {
-    id: string;
-    label: string;
-    value: number;
-    additionalValue?: number;
-    colorClassName: string;
-  }[];
+interface FunnelStep {
+  id: string;
+  label: string;
+  value: number;
+  additionalValue?: number;
+  colorClassName: string;
+}
+
+interface FunnelChartProps {
+  steps: FunnelStep[];
   currencyFormatter: Intl.NumberFormat;
   numberFormatter: Intl.NumberFormat;
   persistentPercentages?: boolean;
   defaultTooltipStepId?: string;
   className?: string;
-};
+}
 
 export function FunnelChart(props: FunnelChartProps) {
   return (
     <div className={props.className ?? "size-full"}>
       <ParentSize className="relative">
-        {({ width, height }) => {
-          return width ? (
-            <FunnelChartInner {...props} width={width} height={height || 420} />
-          ) : null;
-        }}
+        {({ width, height }) =>
+          width ? (
+            <FunnelChartContent
+              {...props}
+              width={width}
+              height={height || 420}
+            />
+          ) : null
+        }
       </ParentSize>
     </div>
   );
 }
 
-function FunnelChartInner({
+interface FunnelChartContentProps extends FunnelChartProps {
+  width: number;
+  height: number;
+}
+
+function FunnelChartContent({
   width,
   height,
   steps,
@@ -63,22 +77,19 @@ function FunnelChartInner({
   numberFormatter,
   persistentPercentages = true,
   defaultTooltipStepId,
-}: {
-  width: number;
-  height: number;
-} & FunnelChartProps) {
+}: FunnelChartContentProps) {
   const isMobile = useIsMobile();
 
-  const [tooltip, setTooltip] = useState<string | null>(
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(
     defaultTooltipStepId ?? null
   );
-  const tooltipStep = steps.find(({ id }) => id === tooltip);
+  const activeStep = steps.find(({ id }) => id === activeTooltip);
 
-  const data = useMemo(() => {
+  const funnelData = useMemo(() => {
     return Object.fromEntries(
       steps.map(({ id, value }, idx) => [
         id,
-        interpolate(
+        generateCurvePoints(
           value,
           steps[idx + 1]?.value ?? steps[steps.length - 1].value
         ),
@@ -86,9 +97,9 @@ function FunnelChartInner({
     );
   }, [steps]);
 
-  const zeroData = useMemo(() => interpolate(0, 0), []);
+  const emptyData = useMemo(() => generateCurvePoints(0, 0), []);
 
-  const maxValue = useMemo(
+  const highestValue = useMemo(
     () => Math.max(...steps.map((step) => step.value)),
     [steps]
   );
@@ -99,10 +110,10 @@ function FunnelChartInner({
   });
 
   const yScale = scaleLinear({
-    domain: [maxValue, -maxValue],
+    domain: [highestValue, -highestValue],
     range: [
-      height - maxLayerPadding - chartPadding,
-      maxLayerPadding + chartPadding,
+      height - maxPadding - verticalPadding,
+      maxPadding + verticalPadding,
     ],
   });
 
@@ -113,21 +124,21 @@ function FunnelChartInner({
           const stepCenterX = (xScale(idx) + xScale(idx + 1)) / 2;
           return (
             <Fragment key={id}>
-              {/* Background */}
+              {/* Background interaction area */}
               <rect
                 x={xScale(idx)}
                 y={0}
                 width={width / steps.length}
                 height={height}
-                className="fill-transparent transition-colors hover:fill-blue-600/5"
-                onPointerEnter={() => setTooltip(id)}
-                onPointerDown={() => setTooltip(id)}
+                className="fill-transparent transition-colors hover:fill-foreground/5"
+                onPointerEnter={() => setActiveTooltip(id)}
+                onPointerDown={() => setActiveTooltip(id)}
                 onPointerLeave={() =>
-                  !isMobile && setTooltip(defaultTooltipStepId ?? null)
+                  !isMobile && setActiveTooltip(defaultTooltipStepId ?? null)
                 }
               />
 
-              {/* Divider line */}
+              {/* Vertical divider */}
               <line
                 x1={xScale(idx)}
                 y1={0}
@@ -136,11 +147,11 @@ function FunnelChartInner({
                 className="stroke-black/5 sm:stroke-black/10"
               />
 
-              {/* Funnel */}
+              {/* Funnel visualization */}
               {layers.map(({ opacity, padding }) => (
                 <Area
                   key={`${id}-${opacity}-${padding}`}
-                  data={data[id]}
+                  data={funnelData[id]}
                   curve={curveBasis}
                   x={(d) => xScale(idx + d.x)}
                   y0={(d) => yScale(-d.y) - padding}
@@ -149,8 +160,8 @@ function FunnelChartInner({
                   {({ path }) => {
                     return (
                       <motion.path
-                        initial={{ d: path(zeroData) || "", opacity: 0 }}
-                        animate={{ d: path(data[id]) || "", opacity }}
+                        initial={{ d: path(emptyData) || "", opacity: 0 }}
+                        animate={{ d: path(funnelData[id]) || "", opacity }}
                         className={cn(colorClassName, "pointer-events-none")}
                         fill="currentColor"
                       />
@@ -159,16 +170,16 @@ function FunnelChartInner({
                 </Area>
               ))}
 
-              {/* Percentage */}
+              {/* Percentage indicator */}
               {persistentPercentages && (
-                <PersistentPercentage
+                <PercentageBadge
                   x={stepCenterX}
                   y={height / 2}
                   value={
                     value === 0
                       ? "0%"
-                      : formatPercentage(
-                          (value / maxValue) * 100,
+                      : formatPercent(
+                          (value / highestValue) * 100,
                           numberFormatter
                         ) + "%"
                   }
@@ -179,9 +190,9 @@ function FunnelChartInner({
           );
         })}
       </svg>
-      {tooltipStep && (
+      {activeStep && (
         <div
-          key={tooltipStep.id}
+          key={activeStep.id}
           className={cn(
             "pointer-events-none absolute flex items-center justify-center px-1 pb-4",
             persistentPercentages
@@ -189,41 +200,41 @@ function FunnelChartInner({
               : "animate-fade-in top-1/2 -translate-y-1/2"
           )}
           style={{
-            left: xScale(steps.findIndex(({ id }) => id === tooltipStep.id)),
+            left: xScale(steps.findIndex(({ id }) => id === activeStep.id)),
             width: width / steps.length,
           }}
         >
           <div
             className={cn(
-              "rounded-lg border border-gray-200 bg-white text-base shadow-sm"
+              "rounded-lg border border-border bg-card text-base shadow-sm"
             )}
           >
-            <p className="border-b border-gray-200 px-3 py-2 text-sm text-gray-900 sm:px-4 sm:py-3">
-              {tooltipStep.label}
+            <p className="border-b border-border p-3 text-sm text-foreground">
+              {activeStep.label}
             </p>
-            <div className="flex flex-wrap justify-between gap-x-4 gap-y-2 px-3 py-2 text-sm sm:px-4 sm:py-3">
+            <div className="flex flex-wrap justify-between gap-3 p-3 text-sm">
               <div className="flex items-center gap-2">
                 <div
                   className={cn(
-                    tooltipStep.colorClassName,
-                    "h-2 w-2 shrink-0 rounded-sm bg-current opacity-50 shadow-[inset_0_0_0_1px_#0003]"
+                    activeStep.colorClassName,
+                    "size-2 shrink-0 rounded-sm bg-current"
                   )}
                 />
-                <p className="whitespace-nowrap capitalize text-gray-600">
-                  {tooltipStep.value === 0
+                <p className="whitespace-nowrap text-muted-foreground">
+                  {activeStep.value === 0
                     ? "0%"
-                    : formatPercentage(
-                        (tooltipStep.value / maxValue) * 100,
+                    : formatPercent(
+                        (activeStep.value / highestValue) * 100,
                         numberFormatter
                       ) + "%"}
                 </p>
               </div>
-              <p className="whitespace-nowrap font-medium text-gray-900">
-                {numberFormatter.format(tooltipStep.value)}
-                {tooltipStep.additionalValue !== undefined && (
-                  <span className="text-gray-500">
+              <p className="whitespace-nowrap text-foreground">
+                {numberFormatter.format(activeStep.value)}
+                {activeStep.additionalValue !== undefined && (
+                  <span className="text-muted-foreground">
                     {" "}
-                    {currencyFormatter.format(tooltipStep.additionalValue)}
+                    {currencyFormatter.format(activeStep.additionalValue)}
                   </span>
                 )}
               </p>
@@ -235,42 +246,35 @@ function FunnelChartInner({
   );
 }
 
-function PersistentPercentage({
-  x,
-  y,
-  value,
-  colorClassName,
-}: {
+interface PercentageBadgeProps {
   x: number;
   y: number;
   value: string;
   colorClassName: string;
-}) {
+}
+
+function PercentageBadge({
+  x,
+  y,
+  value,
+  colorClassName,
+}: PercentageBadgeProps) {
   const textRef = useRef<SVGTextElement>(null);
 
   const textWidth = textRef.current?.getComputedTextLength() ?? 0;
-  const pillWidth = textWidth + 28;
 
   return (
     <g>
-      <rect
-        x={x - pillWidth / 2}
-        width={pillWidth}
-        y={y - 14}
-        height={28}
-        rx={14}
-        fill="white"
-      />
       <Text
         innerTextRef={textRef}
         x={x}
         y={y}
+        width={textWidth}
         textAnchor="middle"
         verticalAnchor="middle"
-        fill="currentColor"
         fontSize={14}
         className={cn(
-          "pointer-events-none select-none font-medium brightness-50",
+          "pointer-events-none select-none font-medium fill-white",
           colorClassName
         )}
       >
@@ -280,17 +284,19 @@ function PersistentPercentage({
   );
 }
 
-const formatPercentage = (
+function formatPercent(
   value: number,
   numberFormatter: Intl.NumberFormat
-) => {
+): string {
   return value > 0 && value < 0.01 ? "< 0.01" : numberFormatter.format(value);
-};
+}
 
-const interpolate = (from: number, to: number) => [
-  { x: 0, y: from },
-  { x: 0.3, y: from },
-  { x: 0.5, y: (from + to) / 2 },
-  { x: 0.7, y: to },
-  { x: 1, y: to },
-];
+function generateCurvePoints(from: number, to: number) {
+  return [
+    { x: 0, y: from },
+    { x: 0.3, y: from },
+    { x: 0.5, y: (from + to) / 2 },
+    { x: 0.7, y: to },
+    { x: 1, y: to },
+  ];
+}

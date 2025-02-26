@@ -227,13 +227,13 @@ export default function MaterialInventoryRoute() {
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
-        locations={sharedMaterialsData?.locations ?? []}
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedMaterialsData?.shelves ?? []}
-        unitOfMeasures={sharedMaterialsData?.unitOfMeasures ?? []}
       />
-      {materialData.materialSummary?.itemTrackingType === "Batch" && (
+      {["Batch", "Serial"].includes(
+        materialData.materialSummary?.itemTrackingType ?? ""
+      ) && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedProperties) => (
