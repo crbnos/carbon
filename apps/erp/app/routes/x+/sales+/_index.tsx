@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Combobox,
   DateRangePicker,
   DropdownMenu,
@@ -138,66 +139,50 @@ export default function SalesDashboard() {
   const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
   const steps = useMemo(() => {
-    if (!kpiFetcher.data?.data) {
-      return [
-        {
-          id: "rfqs",
-          label: "RFQs",
-          value: 0,
-          colorClassName: "text-blue-600",
-        },
-        {
-          id: "quotes",
-          label: "Quotes",
-          value: 0,
-          colorClassName: "text-violet-600",
-        },
-        {
-          id: "salesOrders",
-          label: "Sales Orders",
-          value: 0,
-          additionalValue: 0,
-          colorClassName: "text-teal-400",
-        },
-      ];
-    }
-
-    const rfqCount =
-      kpiFetcher.data.data.find(
-        (item) => "name" in item && item.name === "RFQs"
-      )?.value ?? 0;
-    const quoteCount =
-      kpiFetcher.data.data.find(
-        (item) => "name" in item && item.name === "Quotes"
-      )?.value ?? 0;
-    const salesOrderCount =
-      kpiFetcher.data.data.find(
-        (item) => "name" in item && item.name === "Sales Orders"
-      )?.value ?? 0;
-    const revenue =
-      kpiFetcher.data.data.find(
-        (item) => "name" in item && item.name === "Revenue"
-      )?.value ?? 0;
-
-    return [
+    const defaultSteps = [
       {
         id: "rfqs",
         label: "RFQs",
-        value: rfqCount,
-        colorClassName: "text-blue-600",
+        value: 0,
+        colorClassName: "text-violet-600",
       },
       {
         id: "quotes",
         label: "Quotes",
-        value: quoteCount,
-        colorClassName: "text-violet-600",
+        value: 0,
+        colorClassName: "text-blue-600",
       },
       {
         id: "salesOrders",
         label: "Sales Orders",
-        value: salesOrderCount,
-        additionalValue: revenue,
-        colorClassName: "text-teal-400",
+        value: 0,
+        additionalValue: 0,
+        colorClassName: "text-teal-500",
+      },
+    ];
+
+    if (!kpiFetcher.data?.data) {
+      return defaultSteps;
+    }
+
+    const getKpiValue = (name: string) =>
+      kpiFetcher.data?.data?.find(
+        (item) => "name" in item && item.name === name
+      )?.value ?? 0;
+
+    return [
+      {
+        ...defaultSteps[0],
+        value: getKpiValue("RFQs"),
+      },
+      {
+        ...defaultSteps[1],
+        value: getKpiValue("Quotes"),
+      },
+      {
+        ...defaultSteps[2],
+        value: getKpiValue("Sales Orders"),
+        additionalValue: getKpiValue("Revenue"),
       },
     ];
   }, [kpiFetcher.data?.data]);
@@ -642,7 +627,19 @@ export default function SalesDashboard() {
                       />
                     }
                   />
-                  <Bar dataKey="value" className="fill-teal-400" radius={2} />
+                  <Bar
+                    dataKey="value"
+                    className={cn(
+                      ["salesOrderRevenue", "salesOrderCount"].includes(
+                        selectedKpiData.key
+                      ) && "fill-teal-400",
+                      ["quoteCount"].includes(selectedKpiData.key) &&
+                        "fill-blue-600",
+                      ["rfqCount"].includes(selectedKpiData.key) &&
+                        "fill-violet-600"
+                    )}
+                    radius={2}
+                  />
                 </BarChart>
               </ChartContainer>
             )}

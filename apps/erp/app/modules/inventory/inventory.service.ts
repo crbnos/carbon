@@ -48,90 +48,6 @@ export async function deleteShipment(
   return client.from("shipment").delete().eq("id", shipmentId);
 }
 
-export async function getBatch(
-  client: SupabaseClient<Database>,
-  batchId: string,
-  companyId: string
-) {
-  return client
-    .from("batchNumber")
-    .select("*, item(id, name, readableId), itemTracking(*)")
-    .eq("id", batchId)
-    .eq("itemTracking.posted", true)
-    .eq("companyId", companyId)
-    .single();
-}
-
-export async function getBatches(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & {
-    search: string | null;
-  }
-) {
-  let query = client
-    .from("batchNumbers")
-    .select("*", {
-      count: "exact",
-    })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.or(
-      `number.ilike.%${args.search}%,itemName.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "number", ascending: false },
-  ]);
-  return query;
-}
-
-export async function getBatchFiles(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: {
-    receiptLineIds: string[];
-    batchId: string;
-  }
-) {
-  const [batchFiles, receiptFiles] = await Promise.all([
-    client.storage
-      .from("private")
-      .list(`${companyId}/inventory/${args.batchId}`),
-    getReceiptFiles(client, companyId, args.receiptLineIds),
-  ]);
-
-  if (batchFiles.error) {
-    return batchFiles;
-  }
-
-  if (receiptFiles.error) {
-    return receiptFiles;
-  }
-
-  return {
-    data: [...batchFiles.data, ...receiptFiles.data].map((file) => ({
-      ...file,
-      bucket: "inventory",
-    })),
-    error: null,
-  };
-}
-
-export async function getBatchNumbersForItem(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemId: string
-) {
-  return client
-    .from("batchNumbers")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("itemId", itemId);
-}
-
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -274,15 +190,25 @@ export async function getReceiptLines(
 
 export async function getReceiptLineTracking(
   client: SupabaseClient<Database>,
-  receiptId: string
+  receiptLineIds: string[]
 ) {
+  const trackedEntities = await client
+    .from("trackedEntity")
+    .select("*, trackedEntityAttribute(*)")
+    .eq("trackedEntityAttribute.name", "Receipt Line")
+    .in("trackedEntityAttribute.textValue", receiptLineIds);
+
+  if (trackedEntities.error) {
+    return trackedEntities;
+  }
+
   return client
-    .from("itemTracking")
-    .select(
-      "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
-    )
-    .eq("sourceDocument", "Receipt")
-    .eq("sourceDocumentId", receiptId);
+    .from("trackedEntity")
+    .select("*, trackedEntityAttribute(*)")
+    .in(
+      "id",
+      trackedEntities.data.map((t) => t.id)
+    );
 }
 
 export async function getReceiptFiles(
@@ -321,25 +247,6 @@ export async function getReceiptFiles(
     ),
     error: null,
   };
-}
-
-export async function getSerialNumbersForItem(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  itemId: string,
-  includeUnavailable: boolean
-) {
-  let query = client
-    .from("serialNumbers")
-    .select("*")
-    .eq("companyId", companyId)
-    .eq("itemId", itemId);
-
-  if (!includeUnavailable) {
-    query = query.eq("status", "Available");
-  }
-
-  return query;
 }
 
 export async function getShelvesList(
@@ -414,19 +321,6 @@ export async function getShipmentLinesWithDetails(
   shipmentId: string
 ) {
   return client.from("shipmentLines").select("*").eq("shipmentId", shipmentId);
-}
-
-export async function getShipmentLineTracking(
-  client: SupabaseClient<Database>,
-  shipmentId: string
-) {
-  return client
-    .from("itemTracking")
-    .select(
-      "*, batchNumber(id, number, manufacturingDate, expirationDate, properties), serialNumber(id, number)"
-    )
-    .eq("sourceDocument", "Shipment")
-    .eq("sourceDocumentId", shipmentId);
 }
 
 export async function getShipmentFiles(
@@ -544,7 +438,7 @@ export async function insertManualInventoryAdjustment(
   };
 
   const shelfQuantities = await client.rpc(
-    "get_item_quantities_by_shelf_batch_serial",
+    "get_item_quantities_by_tracking_id",
     {
       item_id: data.itemId,
       company_id: data.companyId,

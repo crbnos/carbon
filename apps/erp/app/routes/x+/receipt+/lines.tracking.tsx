@@ -1,6 +1,6 @@
+import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { nanoid } from "nanoid";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -8,25 +8,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
+  const itemId = formData.get("itemId") as string;
   const receiptLineId = formData.get("receiptLineId") as string;
   const receiptId = formData.get("receiptId") as string;
-  const itemId = formData.get("itemId") as string;
   const trackingType = formData.get("trackingType") as "batch" | "serial";
 
   if (trackingType === "batch") {
     const batchNumber = formData.get("batchNumber") as string;
-    const manufacturingDate = formData.get("manufacturingDate") as
-      | string
-      | null;
-    const expirationDate = formData.get("expirationDate") as string | null;
     const quantity = Number(formData.get("quantity"));
     const properties = formData.get("properties") as string | null;
     // First, get or create the batch number record
-    const { data: existingBatch, error: batchQueryError } = await client
-      .from("batchNumber")
-      .select("id")
-      .eq("number", batchNumber)
-      .eq("itemId", itemId)
+    const { data: trackedEntity, error: batchQueryError } = await client
+      .from("trackedEntity")
+      .select("*, trackedEntityAttribute(*)")
+      .eq("trackedEntityAttribute.name", "Receipt Line")
+      .eq("trackedEntityAttribute.textValue", receiptLineId)
       .eq("companyId", companyId)
       .maybeSingle();
 
@@ -34,7 +30,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
       return json({ error: "Failed to query batch number" }, { status: 500 });
     }
 
-    const batchId = existingBatch?.id ?? nanoid();
+    const trackedEntityId = trackedEntity?.id;
     let propertiesJson = {};
     try {
       propertiesJson = properties ? JSON.parse(properties) : {};
@@ -42,19 +38,19 @@ export async function action({ request, context }: ActionFunctionArgs) {
       console.error(error);
     }
 
+    const serviceRole = await getCarbonServiceRole();
     // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_receipt_line_batch_tracking", {
-      p_receipt_line_id: receiptLineId,
-      p_receipt_id: receiptId,
-      p_batch_number: batchNumber,
-      p_batch_id: batchId,
-      // @ts-ignore
-      p_manufacturing_date: manufacturingDate || null,
-      // @ts-ignore
-      p_expiration_date: expirationDate || null,
-      p_quantity: quantity,
-      p_properties: propertiesJson,
-    });
+    const { error } = await serviceRole.rpc(
+      "update_receipt_line_batch_tracking",
+      {
+        p_tracked_entity_id: trackedEntityId,
+        p_receipt_line_id: receiptLineId,
+        p_receipt_id: receiptId,
+        p_batch_number: batchNumber,
+        p_quantity: quantity,
+        p_properties: propertiesJson,
+      }
+    );
 
     if (error) {
       console.error(error);
@@ -65,36 +61,52 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const index = Number(formData.get("index"));
 
     // Check if serial number already exists for this item
-    const { data: existingSerial, error: queryError } = await client
-      .from("serialNumber")
-      .select("id, itemTracking(id)")
-      .eq("number", serialNumber)
-      .eq("itemId", itemId)
-      .neq("itemTracking.sourceDocumentLineId", receiptLineId)
-      .eq("companyId", companyId)
-      .maybeSingle();
+    const { data: existingSerialNumbers, error: serialQueryError } =
+      await client
+        .from("trackedEntity")
+        .select("*, trackedEntityAttribute(*)")
+        .eq("sourceDocument", "Item")
+        .eq("sourceDocumentId", itemId)
+        .eq("companyId", companyId);
 
-    if (queryError) {
+    if (serialQueryError) {
       return json({ error: "Failed to check serial number" }, { status: 500 });
     }
 
+    const existingEntityWithSerialNumber = existingSerialNumbers?.find((t) =>
+      t.trackedEntityAttribute?.some(
+        (attribute) =>
+          attribute.name === "Serial Number" &&
+          attribute.textValue === serialNumber
+      )
+    );
+
+    const existingEntityWithIndex = existingSerialNumbers?.find((t) =>
+      t.trackedEntityAttribute?.some(
+        (attribute) =>
+          attribute.name === "Index" && attribute.numericValue === index
+      )
+    );
+
     if (
-      Array.isArray(existingSerial?.itemTracking) &&
-      existingSerial?.itemTracking?.length > 0
+      existingEntityWithSerialNumber &&
+      existingEntityWithIndex?.id !== existingEntityWithSerialNumber.id
     ) {
-      return json(
-        { error: "Serial number already exists for this item" },
-        { status: 400 }
-      );
+      return json({ error: "Serial number already exists" }, { status: 400 });
     }
 
+    const serviceRole = await getCarbonServiceRole();
     // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_receipt_line_serial_tracking", {
-      p_receipt_line_id: receiptLineId,
-      p_receipt_id: receiptId,
-      p_serial_number: serialNumber,
-      p_index: index,
-    });
+    const { error } = await serviceRole.rpc(
+      "update_receipt_line_serial_tracking",
+      {
+        p_tracked_entity_id: existingEntityWithIndex?.id,
+        p_receipt_line_id: receiptLineId,
+        p_receipt_id: receiptId,
+        p_serial_number: serialNumber,
+        p_index: index,
+      }
+    );
 
     if (error) {
       console.error(error);

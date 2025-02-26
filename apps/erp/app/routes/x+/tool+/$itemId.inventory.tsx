@@ -218,13 +218,13 @@ export default function ToolInventoryRoute() {
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
-        locations={sharedToolsData?.locations ?? []}
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedToolsData?.shelves ?? []}
-        unitOfMeasures={sharedToolsData?.unitOfMeasures ?? []}
       />
-      {toolData.toolSummary?.itemTrackingType === "Batch" && (
+      {["Batch", "Serial"].includes(
+        toolData.toolSummary?.itemTrackingType ?? ""
+      ) && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedProperties) => (

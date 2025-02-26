@@ -7,7 +7,6 @@ import {
   CardTitle,
   cn,
   Combobox,
-  DatePicker,
   Heading,
   HStack,
   IconButton,
@@ -29,7 +28,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { ValidatedForm, Number, Submit } from "@carbon/form";
-import { type CalendarDate, parseDate } from "@internationalized/date";
+import { type CalendarDate } from "@internationalized/date";
 import {
   Await,
   Outlet,
@@ -43,7 +42,6 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
   LuBarcode,
-  LuCalendar,
   LuCircleAlert,
   LuGroup,
   LuSplit,
@@ -103,49 +101,73 @@ const ReceiptLines = () => {
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
     Record<string, { index: number; number: string }[]>
   >(() => {
-    return receiptLines.reduce(
-      (acc, line) => ({
+    return receiptLines.reduce((acc, line) => {
+      if (!line.requiresSerialTracking) return acc;
+
+      const trackedEntities = routeData?.receiptLineTracking.filter(
+        (t) =>
+          t.trackedEntityAttribute.find((a) => a.name === "Receipt Line")
+            ?.textValue === line.id
+      );
+
+      if (!trackedEntities) return acc;
+      return {
         ...acc,
         [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
-          const serialNumber = routeData?.receiptLineTracking.find(
-            (t) =>
-              t.sourceDocumentLineId === line.id &&
-              t.serialNumber !== null &&
-              t.index === index
-          )?.serialNumber;
+          const serialNumber = trackedEntities
+            .find(
+              (t) =>
+                t.trackedEntityAttribute.find((a) => a.name === "Index")
+                  ?.numericValue === index
+            )
+            ?.trackedEntityAttribute.find(
+              (a) => a.name === "Serial Number"
+            )?.textValue;
+
           return {
             index,
-            number: serialNumber?.number ?? "",
+            number: serialNumber ?? "",
           };
         }),
-      }),
-      {}
-    );
+      };
+    }, {});
   });
 
   useEffect(() => {
     setSerialNumbersByLineId(
-      receiptLines.reduce(
-        (acc, line) => ({
+      receiptLines.reduce((acc, line) => {
+        if (!line.requiresSerialTracking) return acc;
+
+        const trackedEntities = routeData?.receiptLineTracking.filter(
+          (t) =>
+            t.trackedEntityAttribute.find((a) => a.name === "Receipt Line")
+              ?.textValue === line.id
+        );
+
+        if (!trackedEntities) return acc;
+        return {
           ...acc,
           [line.id]: Array.from(
             { length: line.receivedQuantity },
             (_, index) => {
-              const serialNumber = routeData?.receiptLineTracking.find(
-                (t) =>
-                  t.sourceDocumentLineId === line.id &&
-                  t.serialNumber !== null &&
-                  t.index === index
-              )?.serialNumber;
+              const serialNumber = trackedEntities
+                .find(
+                  (t) =>
+                    t.trackedEntityAttribute.find((a) => a.name === "Index")
+                      ?.numericValue === index
+                )
+                ?.trackedEntityAttribute.find(
+                  (a) => a.name === "Serial Number"
+                )?.textValue;
+
               return {
                 index,
-                number: serialNumber?.number ?? "",
+                number: serialNumber ?? "",
               };
             }
           ),
-        }),
-        {}
-      )
+        };
+      }, {})
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeData?.receipt?.sourceDocumentId]);
@@ -196,43 +218,45 @@ const ReceiptLines = () => {
             {receiptLines.length === 0 ? (
               <Empty className="py-6" />
             ) : (
-              receiptLines.map((line, index) => (
-                <ReceiptLineItem
-                  key={line.id}
-                  line={line}
-                  receipt={routeData?.receipt}
-                  isReadOnly={isPosted}
-                  onUpdate={onUpdateReceiptLine}
-                  files={routeData?.receiptFiles}
-                  className={
-                    index === receiptLines.length - 1 ? "border-none" : ""
-                  }
-                  serialNumbers={serialNumbersByLineId[line.id] || []}
-                  getPath={(file) => getPath(file, line.id)}
-                  onSerialNumbersChange={(newSerialNumbers) => {
-                    setSerialNumbersByLineId((prev) => ({
-                      ...prev,
-                      [line.id]: newSerialNumbers,
-                    }));
-                  }}
-                  batchProperties={routeData?.batchProperties}
-                  batchNumber={
-                    routeData?.receiptLineTracking.find(
-                      (t) =>
-                        t.sourceDocumentLineId === line.id &&
-                        t.batchNumber !== null
-                    )?.batchNumber ?? {
-                      id: "",
-                      number: "",
-                      manufacturingDate: null,
-                      expirationDate: null,
-                      properties: {},
+              receiptLines.map((line, index) => {
+                const tracking = routeData?.receiptLineTracking?.find(
+                  (t) =>
+                    t.sourceDocumentId === receiptId &&
+                    t.trackedEntityAttribute.find(
+                      (a: { name: string; textValue: string | null }) =>
+                        a.name === "Receipt Line"
+                    )?.textValue === line.id &&
+                    t.trackedEntityAttribute.find(
+                      (a: { name: string; textValue: string | null }) =>
+                        a.name === "Batch Number"
+                    )?.textValue !== null
+                );
+                return (
+                  <ReceiptLineItem
+                    key={line.id}
+                    line={line}
+                    receipt={routeData?.receipt}
+                    isReadOnly={isPosted}
+                    onUpdate={onUpdateReceiptLine}
+                    files={routeData?.receiptFiles}
+                    className={
+                      index === receiptLines.length - 1 ? "border-none" : ""
                     }
-                  }
-                  upload={(files) => upload(files, line.id)}
-                  deleteFile={(file) => deleteFile(file, line.id)}
-                />
-              ))
+                    serialNumbers={serialNumbersByLineId[line.id] || []}
+                    getPath={(file) => getPath(file, line.id)}
+                    onSerialNumbersChange={(newSerialNumbers) => {
+                      setSerialNumbersByLineId((prev) => ({
+                        ...prev,
+                        [line.id]: newSerialNumbers,
+                      }));
+                    }}
+                    batchProperties={routeData?.batchProperties}
+                    tracking={tracking}
+                    upload={(files) => upload(files, line.id)}
+                    deleteFile={(file) => deleteFile(file, line.id)}
+                  />
+                );
+              })
             )}
           </div>
         </CardContent>
@@ -250,7 +274,7 @@ function ReceiptLineItem({
   onUpdate,
   files,
   batchProperties,
-  batchNumber,
+  tracking,
   serialNumbers,
   getPath,
   onSerialNumbersChange,
@@ -263,13 +287,7 @@ function ReceiptLineItem({
   isReadOnly: boolean;
   files?: PostgrestResponse<StorageItem>;
   batchProperties?: PostgrestResponse<BatchProperty>;
-  batchNumber: {
-    id: string;
-    number: string;
-    manufacturingDate?: string | null;
-    expirationDate?: string | null;
-    properties?: any;
-  };
+  tracking: ItemTracking | undefined;
   serialNumbers: { index: number; number: string }[];
   getPath: (file: StorageItem) => string;
   onSerialNumbersChange: (
@@ -421,7 +439,7 @@ function ReceiptLineItem({
             receipt={receipt}
             line={line}
             isReadOnly={isReadOnly}
-            initialValues={batchNumber}
+            tracking={tracking}
             batchProperties={batchProperties}
           />
         </>
@@ -499,20 +517,14 @@ function BatchForm({
   line,
   receipt,
   batchProperties,
-  initialValues,
+  tracking,
   isReadOnly,
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
   isReadOnly: boolean;
   batchProperties?: PostgrestResponse<BatchProperty>;
-  initialValues?: {
-    id: string;
-    number: string;
-    manufacturingDate?: string | null;
-    expirationDate?: string | null;
-    properties?: any;
-  };
+  tracking: ItemTracking | undefined;
 }) {
   const submit = useSubmit();
   const [values, setValues] = useState<{
@@ -521,51 +533,46 @@ function BatchForm({
     expirationDate?: CalendarDate;
     properties: any;
   }>(
-    initialValues
+    tracking
       ? {
-          number: initialValues.number,
-          manufacturingDate: initialValues.manufacturingDate
-            ? parseDate(initialValues.manufacturingDate)
-            : undefined,
-          expirationDate: initialValues.expirationDate
-            ? parseDate(initialValues.expirationDate)
-            : undefined,
-          properties: initialValues.properties ?? {},
+          number:
+            tracking.trackedEntityAttribute.find(
+              (a) => a.name === "Batch Number"
+            )?.textValue ?? "",
+          properties: Object.fromEntries(
+            tracking.trackedEntityAttribute
+              .filter(
+                (attr) => !["Batch Number", "Receipt Line"].includes(attr.name)
+              )
+              .map((attr) => [attr.name, attr.textValue ?? ""])
+          ),
         }
       : {
           number: "",
-          manufacturingDate: undefined,
-          expirationDate: undefined,
           properties: {},
         }
   );
 
-  const { carbon } = useCarbon();
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!receipt?.id || !newValues.number.trim()) return;
 
     const batchMatch = isNew
-      ? (await carbon
-          ?.from("batchNumber")
-          .select("*")
-          .eq("number", newValues.number.trim())
-          .eq("itemId", line.itemId)
-          .eq("companyId", receipt.companyId)
-          .maybeSingle()) ?? { data: null }
-      : { data: null };
+      ? tracking?.trackedEntityAttribute.find((a) => a.name === "Batch Number")
+          ?.textValue
+      : null;
 
     let valuesToSubmit = newValues;
 
-    if (batchMatch.data) {
+    if (batchMatch) {
       valuesToSubmit = {
         ...newValues,
-        manufacturingDate: batchMatch.data.manufacturingDate
-          ? parseDate(batchMatch.data.manufacturingDate)
-          : undefined,
-        expirationDate: batchMatch.data.expirationDate
-          ? parseDate(batchMatch.data.expirationDate)
-          : undefined,
-        properties: batchMatch.data.properties ?? {},
+        properties: Object.fromEntries(
+          tracking?.trackedEntityAttribute
+            .filter(
+              (attr) => !["Batch Number", "Receipt Line"].includes(attr.name)
+            )
+            .map((attr) => [attr.name, attr.textValue ?? ""]) ?? []
+        ),
       };
 
       // Just update the local state without triggering another database write
@@ -578,29 +585,6 @@ function BatchForm({
     formData.append("receiptLineId", line.id);
     formData.append("trackingType", "batch");
     formData.append("batchNumber", valuesToSubmit.number.trim());
-    if (
-      valuesToSubmit.manufacturingDate &&
-      valuesToSubmit.manufacturingDate.year >= 1900
-    ) {
-      formData.append(
-        "manufacturingDate",
-        valuesToSubmit.manufacturingDate.toString()
-      );
-    } else {
-      formData.append("manufacturingDate", "");
-    }
-    if (
-      valuesToSubmit.expirationDate &&
-      valuesToSubmit.expirationDate.year >= 1900
-    ) {
-      formData.append(
-        "expirationDate",
-        valuesToSubmit.expirationDate.toString()
-      );
-    } else {
-      formData.append("expirationDate", "");
-    }
-
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", line.receivedQuantity.toString());
 
@@ -609,18 +593,6 @@ function BatchForm({
       action: path.to.receiptLinesTracking(receipt.id),
       navigate: false,
     });
-  };
-
-  const handleDateChange = (
-    field: "manufacturingDate" | "expirationDate",
-    newDate: CalendarDate | null
-  ) => {
-    const newValues = {
-      ...values,
-      [field]: newDate ?? null,
-    };
-    setValues(newValues);
-    updateBatchNumber(newValues);
   };
 
   const handlePropertiesChange = (newProperties: any) => {
@@ -665,35 +637,6 @@ function BatchForm({
             onBlur={() => {
               updateBatchNumber(values, true);
             }}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 w-full">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuCalendar /> Manufactured Date
-          </label>
-
-          <DatePicker
-            value={values.manufacturingDate}
-            isDisabled={isReadOnly}
-            onChange={(newDate) => {
-              handleDateChange("manufacturingDate", newDate);
-            }}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 w-full">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuCalendar /> Expiration Date
-          </label>
-
-          <DatePicker
-            value={values.expirationDate}
-            isDisabled={isReadOnly}
-            onChange={(newDate) => {
-              handleDateChange("expirationDate", newDate);
-            }}
-            minValue={values.manufacturingDate}
           />
         </div>
 

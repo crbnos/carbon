@@ -230,13 +230,13 @@ export default function ConsumableInventoryRoute() {
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
-        locations={sharedConsumablesData?.locations ?? []}
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedConsumablesData?.shelves ?? []}
-        unitOfMeasures={sharedConsumablesData?.unitOfMeasures ?? []}
       />
-      {consumableData.consumableSummary?.itemTrackingType === "Batch" && (
+      {["Serial", "Batch"].includes(
+        consumableData.consumableSummary?.itemTrackingType ?? ""
+      ) && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
             {(resolvedProperties) => (

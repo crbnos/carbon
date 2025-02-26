@@ -32,10 +32,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
+  const [receipt, receiptLines] = await Promise.all([
     getReceipt(serviceRole, receiptId),
     getReceiptLines(serviceRole, receiptId),
-    getReceiptLineTracking(serviceRole, receiptId),
   ]);
 
   if (receipt.error) {
@@ -59,11 +58,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .map((line) => line.itemId);
   }
 
+  const receiptLineTracking = await getReceiptLineTracking(
+    serviceRole,
+    receiptLineIds
+  );
+
   return defer({
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
-    receiptLineTracking: receiptLineTracking.data ?? [],
     receiptFiles: getReceiptFiles(serviceRole, companyId, receiptLineIds) ?? [],
+    receiptLineTracking: receiptLineTracking.data ?? [],
     batchProperties:
       getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
       [],
