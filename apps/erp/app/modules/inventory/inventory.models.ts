@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { configurationParameterDataTypes } from "../items/items.models";
+import { batchPropertyDataTypes } from "../items/items.models";
 
 export const itemTypes = [
   "Part",
@@ -47,7 +47,7 @@ export const batchPropertyValidator = z
     id: zfd.text(z.string().optional()),
     itemId: z.string().min(1, { message: "Item ID is required" }),
     label: z.string().min(1, { message: "Label is required" }),
-    dataType: z.enum(configurationParameterDataTypes),
+    dataType: z.enum(batchPropertyDataTypes),
     listOptions: z.string().min(1).array().optional(),
     configurationParameterGroupId: z.string().optional(),
   })

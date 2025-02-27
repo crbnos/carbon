@@ -6,12 +6,17 @@ export type Configuration = {
   defaultValue?: string | number | boolean | string[] | null;
 };
 
+
 export type ConfiguratorDataType =
-  | "boolean"
-  | "list"
-  | "numeric"
-  | "text"
-  | "enum";
+| "boolean"
+| "list"
+| "numeric"
+| "text"
+| "enum";
+
+export type BatchPropertyDataType =
+  | ConfiguratorDataType
+  | "date";
 
 export interface ListTypeConfig {
   options: string[];

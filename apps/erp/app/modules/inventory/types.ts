@@ -9,7 +9,7 @@ import type {
   getShipments,
   getShipmentLines,
   getShippingMethods,
-  getShipmentLineTracking,
+  getShipmentTracking,
 } from "./inventory.service";
 
 export type BatchProperty = NonNullable<
@@ -53,7 +53,7 @@ export type ShipmentLine = NonNullable<
 >[number];
 
 export type ShipmentLineTracking = NonNullable<
-  Awaited<ReturnType<typeof getShipmentLineTracking>>["data"]
+  Awaited<ReturnType<typeof getShipmentTracking>>["data"]
 >[number];
 
 export type ShippingCarrier = Database["public"]["Enums"]["shippingCarrier"];

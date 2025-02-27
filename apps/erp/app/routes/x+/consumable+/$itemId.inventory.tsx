@@ -10,6 +10,7 @@ import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
 import { getBatchProperties, InventoryDetails } from "~/modules/inventory";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
+
 import type { Consumable, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,

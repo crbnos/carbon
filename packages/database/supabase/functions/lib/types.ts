@@ -36200,7 +36200,12 @@ export type Database = {
     }
     Enums: {
       accountingPeriodStatus: "Inactive" | "Active"
-      configurationParameterDataType: "text" | "numeric" | "boolean" | "list"
+      configurationParameterDataType:
+        | "text"
+        | "numeric"
+        | "boolean"
+        | "list"
+        | "date"
       costLedgerType:
         | "Direct Cost"
         | "Revaluation"

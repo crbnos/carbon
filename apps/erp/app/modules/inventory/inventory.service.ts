@@ -250,6 +250,22 @@ export async function getReceiptFiles(
   };
 }
 
+export async function getAvailableSerialNumbersForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client.from("trackedEntity").select("*").eq("sourceDocument", "Item").eq("sourceDocumentId", itemId).eq("companyId", companyId).eq("status", "Available");
+}
+
+export async function getAvailableBatchNumbersForItem(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client.from("trackedEntity").select("*").eq("sourceDocument", "Item").eq("sourceDocumentId", itemId).eq("companyId", companyId).eq("status", "Available");
+}
+
 export async function getShelvesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -317,6 +333,7 @@ export async function getShipmentLines(
   return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
 }
 
+
 export async function getShipmentLinesWithDetails(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -360,6 +377,30 @@ export async function getShipmentFiles(
     ),
     error: null,
   };
+}
+
+export async function getShipmentTracking(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes ->> Shipment", shipmentId)
+    .eq("companyId", companyId);
+}
+
+export async function getShipmentLineTracking(
+  client: SupabaseClient<Database>,
+  shipmentLineId: string,
+  companyId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes ->> Shipment Line", shipmentLineId)
+    .eq("companyId", companyId);
 }
 
 export async function getShippingMethod(

@@ -48154,7 +48154,7 @@ export default {
           type: "string",
         },
         dataType: {
-          enum: ["text", "numeric", "boolean", "list"],
+          enum: ["text", "numeric", "boolean", "list", "date"],
           format: 'public."configurationParameterDataType"',
           type: "string",
         },
@@ -56074,7 +56074,7 @@ export default {
           type: "string",
         },
         dataType: {
-          enum: ["text", "numeric", "boolean", "list"],
+          enum: ["text", "numeric", "boolean", "list", "date"],
           format: 'public."configurationParameterDataType"',
           type: "string",
         },
