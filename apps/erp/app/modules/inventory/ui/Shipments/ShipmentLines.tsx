@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Button,
   Card,
@@ -7,7 +6,6 @@ import {
   CardTitle,
   cn,
   Combobox,
-  DatePicker,
   Heading,
   HStack,
   IconButton,
@@ -26,7 +24,6 @@ import {
   ModalTitle,
   ModalDescription,
 } from "@carbon/react";
-import { type CalendarDate, parseDate } from "@internationalized/date";
 import {
   Await,
   Outlet,
@@ -37,13 +34,7 @@ import {
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  LuBarcode,
-  LuCalendar,
-  LuCircleAlert,
-  LuGroup,
-  LuSplit,
-} from "react-icons/lu";
+import { LuBarcode, LuCircleAlert, LuGroup, LuSplit } from "react-icons/lu";
 import { Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
@@ -52,12 +43,13 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import { splitValidator } from "~/modules/inventory";
 import type {
-  getBatchNumbersForItem,
+  getAvailableBatchNumbersForItem,
   BatchProperty,
-  getSerialNumbersForItem,
+  getAvailableSerialNumbersForItem,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking,
+  ItemTracking,
 } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
@@ -65,6 +57,7 @@ import { path } from "~/utils/path";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 import { ValidatedForm, Submit, Number } from "@carbon/form";
+import type { TrackedEntityAttributes } from "~/modules/shared";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -97,52 +90,72 @@ const ShipmentLines = () => {
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
     Record<string, { index: number; id: string }[]>
   >(() => {
-    return shipmentLines.reduce(
-      (acc, line) => ({
+    return shipmentLines.reduce((acc, line) => {
+      if (!line.requiresSerialTracking) return acc;
+
+      const trackedEntitiesForLine = routeData?.shipmentLineTracking.filter(
+        (t) => {
+          const attributes = t.attributes as TrackedEntityAttributes;
+          return attributes["Shipment Line"] === line.id;
+        }
+      );
+
+      if (!trackedEntitiesForLine) return acc;
+      return {
         ...acc,
         [line.id]: Array.from({ length: line.shippedQuantity }, (_, index) => {
-          const serialNumber = routeData?.shipmentLineTracking.find(
-            (t) =>
-              t.sourceDocumentLineId === line.id &&
-              t.serialNumber !== null &&
-              t.index === index
-          )?.serialNumber;
+          const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+            const attributes = t.attributes as TrackedEntityAttributes;
+            return attributes["Index"] === index;
+          });
+
+          const serialNumber = serialNumberEntity?.id || "";
+
           return {
             index,
-            id: serialNumber?.id ?? "",
+            number: serialNumber,
           };
         }),
-      }),
-      {}
-    );
+      };
+    }, {});
   });
 
   useEffect(() => {
     setSerialNumbersByLineId(
-      shipmentLines.reduce(
-        (acc, line) => ({
+      shipmentLines.reduce((acc, line) => {
+        if (!line.requiresSerialTracking) return acc;
+
+        const trackedEntitiesForLine = routeData?.shipmentLineTracking.filter(
+          (t) => {
+            const attributes = t.attributes as TrackedEntityAttributes;
+            return attributes["Shipment Line"] === line.id;
+          }
+        );
+
+        if (!trackedEntitiesForLine) return acc;
+        return {
           ...acc,
           [line.id]: Array.from(
             { length: line.shippedQuantity },
             (_, index) => {
-              const serialNumber = routeData?.shipmentLineTracking.find(
-                (t) =>
-                  t.sourceDocumentLineId === line.id &&
-                  t.serialNumber !== null &&
-                  t.index === index
-              )?.serialNumber;
+              const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+                const attributes = t.attributes as TrackedEntityAttributes;
+                return attributes["Index"] === index;
+              });
+
+              const serialNumber = serialNumberEntity?.id || "";
+
               return {
                 index,
-                id: serialNumber?.id ?? "",
+                number: serialNumber,
               };
             }
           ),
-        }),
-        {}
-      )
+        };
+      }, {})
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeData?.shipment?.sourceDocumentId, shipmentLines.length]);
+  }, [routeData?.shipment?.sourceDocumentId, routeData?.shipmentLines?.length]);
 
   const onUpdateShipmentLine = useCallback(
     async ({
@@ -190,39 +203,33 @@ const ShipmentLines = () => {
             {shipmentLines.length === 0 ? (
               <Empty className="py-6" />
             ) : (
-              shipmentLines.map((line, index) => (
-                <ShipmentLineItem
-                  key={line.id}
-                  line={line}
-                  shipment={routeData?.shipment}
-                  isReadOnly={isPosted}
-                  onUpdate={onUpdateShipmentLine}
-                  className={
-                    index === shipmentLines.length - 1 ? "border-none" : ""
-                  }
-                  serialNumbers={serialNumbersByLineId[line.id] || []}
-                  onSerialNumbersChange={(newSerialNumbers) => {
-                    setSerialNumbersByLineId((prev) => ({
-                      ...prev,
-                      [line.id]: newSerialNumbers,
-                    }));
-                  }}
-                  batchProperties={routeData?.batchProperties}
-                  batchNumber={
-                    routeData?.shipmentLineTracking.find(
-                      (t) =>
-                        t.sourceDocumentLineId === line.id &&
-                        t.batchNumber !== null
-                    )?.batchNumber ?? {
-                      id: "",
-                      number: "",
-                      manufacturingDate: null,
-                      expirationDate: null,
-                      properties: {},
+              shipmentLines.map((line, index) => {
+                const tracking = routeData?.shipmentLineTracking?.find((t) => {
+                  const attributes = t.attributes as TrackedEntityAttributes;
+                  return attributes["Shipment Line"] === line.id;
+                });
+                return (
+                  <ShipmentLineItem
+                    key={line.id}
+                    line={line}
+                    shipment={routeData?.shipment}
+                    isReadOnly={isPosted}
+                    onUpdate={onUpdateShipmentLine}
+                    className={
+                      index === shipmentLines.length - 1 ? "border-none" : ""
                     }
-                  }
-                />
-              ))
+                    serialNumbers={serialNumbersByLineId[line.id] || []}
+                    onSerialNumbersChange={(newSerialNumbers) => {
+                      setSerialNumbersByLineId((prev) => ({
+                        ...prev,
+                        [line.id]: newSerialNumbers,
+                      }));
+                    }}
+                    batchProperties={routeData?.batchProperties}
+                    tracking={tracking}
+                  />
+                );
+              })
             )}
           </div>
         </CardContent>
@@ -239,7 +246,7 @@ function ShipmentLineItem({
   isReadOnly,
   onUpdate,
   batchProperties,
-  batchNumber,
+  tracking,
   serialNumbers,
   onSerialNumbersChange,
 }: {
@@ -248,13 +255,7 @@ function ShipmentLineItem({
   className?: string;
   isReadOnly: boolean;
   batchProperties?: PostgrestResponse<BatchProperty>;
-  batchNumber: {
-    id: string;
-    number: string;
-    manufacturingDate?: string | null;
-    expirationDate?: string | null;
-    properties?: any;
-  };
+  tracking: ItemTracking | undefined;
   serialNumbers: { index: number; id: string }[];
   onSerialNumbersChange: (
     serialNumbers: { index: number; id: string }[]
@@ -403,7 +404,7 @@ function ShipmentLineItem({
             shipment={shipment}
             line={line}
             isReadOnly={isReadOnly}
-            initialValues={batchNumber}
+            tracking={tracking}
             batchProperties={batchProperties}
           />
         </>
@@ -428,75 +429,57 @@ function BatchForm({
   line,
   shipment,
   batchProperties,
-  initialValues,
+  tracking,
   isReadOnly,
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
   isReadOnly: boolean;
   batchProperties?: PostgrestResponse<BatchProperty>;
-  initialValues?: {
-    id: string;
-    number: string;
-    manufacturingDate?: string | null;
-    expirationDate?: string | null;
-    properties?: any;
-  };
+  tracking: ItemTracking | undefined;
 }) {
   const submit = useSubmit();
   const [values, setValues] = useState<{
     number: string;
-    manufacturingDate?: CalendarDate;
-    expirationDate?: CalendarDate;
     properties: any;
-  }>(
-    initialValues
-      ? {
-          number: initialValues.number,
-          manufacturingDate: initialValues.manufacturingDate
-            ? parseDate(initialValues.manufacturingDate)
-            : undefined,
-          expirationDate: initialValues.expirationDate
-            ? parseDate(initialValues.expirationDate)
-            : undefined,
-          properties: initialValues.properties ?? {},
-        }
-      : {
-          number: "",
-          manufacturingDate: undefined,
-          expirationDate: undefined,
-          properties: {},
-        }
-  );
+  }>(() => {
+    if (tracking) {
+      const attributes = tracking.attributes as TrackedEntityAttributes;
+      return {
+        number: attributes["Batch Number"] || "",
+        properties: Object.entries(attributes)
+          .filter(([key]) => !["Batch Number", "Shipment Line"].includes(key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
+      };
+    }
+    return {
+      number: "",
+      properties: {},
+    };
+  });
 
   const { options: batchNumberOptions } = useBatchNumbers(line.itemId);
 
-  const { carbon } = useCarbon();
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!shipment?.id || !newValues.number.trim()) return;
 
-    const batchMatch = isNew
-      ? (await carbon
-          ?.from("batchNumber")
-          .select("*")
-          .eq("number", newValues.number.trim())
-          .eq("itemId", line.itemId)
-          .eq("companyId", shipment.companyId)
-          .maybeSingle()) ?? { data: null }
-      : { data: null };
+    let batchMatch = null;
+    if (isNew && tracking) {
+      const attributes = tracking.attributes as TrackedEntityAttributes;
+      batchMatch = attributes["Batch Number"];
+    }
 
     let valuesToSubmit = newValues;
 
-    if (batchMatch.data) {
+    if (batchMatch) {
+      const attributes = tracking?.attributes as TrackedEntityAttributes;
       valuesToSubmit = {
         ...newValues,
-        manufacturingDate: batchMatch.data.manufacturingDate
-          ? parseDate(batchMatch.data.manufacturingDate)
-          : undefined,
-        expirationDate: batchMatch.data.expirationDate
-          ? parseDate(batchMatch.data.expirationDate)
-          : undefined,
+        properties: Object.entries(attributes)
+          .filter(([key]) => !["Batch Number", "Receipt Line"].includes(key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
       };
+
       // Just update the local state without triggering another database write
       setValues(valuesToSubmit);
     }
@@ -507,29 +490,6 @@ function BatchForm({
     formData.append("shipmentLineId", line.id);
     formData.append("trackingType", "batch");
     formData.append("batchNumber", valuesToSubmit.number.trim());
-    if (
-      valuesToSubmit.manufacturingDate &&
-      valuesToSubmit.manufacturingDate.year >= 1900
-    ) {
-      formData.append(
-        "manufacturingDate",
-        valuesToSubmit.manufacturingDate.toString()
-      );
-    } else {
-      formData.append("manufacturingDate", "");
-    }
-    if (
-      valuesToSubmit.expirationDate &&
-      valuesToSubmit.expirationDate.year >= 1900
-    ) {
-      formData.append(
-        "expirationDate",
-        valuesToSubmit.expirationDate.toString()
-      );
-    } else {
-      formData.append("expirationDate", "");
-    }
-
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", line.shippedQuantity.toString());
 
@@ -538,18 +498,6 @@ function BatchForm({
       action: path.to.shipmentLinesTracking(shipment.id),
       navigate: false,
     });
-  };
-
-  const handleDateChange = (
-    field: "manufacturingDate" | "expirationDate",
-    newDate: CalendarDate | null
-  ) => {
-    const newValues = {
-      ...values,
-      [field]: newDate ?? null,
-    };
-    setValues(newValues);
-    updateBatchNumber(newValues);
   };
 
   const handlePropertiesChange = (newProperties: any) => {
@@ -597,35 +545,6 @@ function BatchForm({
                 true
               );
             }}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 w-full">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuCalendar /> Manufactured Date
-          </label>
-
-          <DatePicker
-            value={values.manufacturingDate}
-            isDisabled={isReadOnly}
-            onChange={(newDate) => {
-              handleDateChange("manufacturingDate", newDate);
-            }}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2 w-full">
-          <label className="text-xs text-muted-foreground flex items-center gap-2">
-            <LuCalendar /> Expiration Date
-          </label>
-
-          <DatePicker
-            value={values.expirationDate}
-            isDisabled={isReadOnly}
-            onChange={(newDate) => {
-              handleDateChange("expirationDate", newDate);
-            }}
-            minValue={values.manufacturingDate}
           />
         </div>
 
@@ -755,7 +674,7 @@ function SerialForm({
   );
 
   return (
-    <div className="flex flex-col gap-2 p-6 border rounded-lg">
+    <div className="flex flex-col gap-6 p-6 border rounded-lg">
       <label className="text-xs text-muted-foreground flex items-center gap-2">
         <LuBarcode /> Serial Numbers
       </label>
@@ -931,7 +850,7 @@ export default ShipmentLines;
 
 export function useSerialNumbers(itemId?: string, isReadOnly = false) {
   const serialNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
+    useFetcher<Awaited<ReturnType<typeof getAvailableSerialNumbersForItem>>>();
 
   useEffect(() => {
     if (itemId) {
@@ -945,7 +864,7 @@ export function useSerialNumbers(itemId?: string, isReadOnly = false) {
       serialNumbersFetcher.data?.data
         ?.map((c) => ({
           value: c.id ?? "",
-          label: c.number ?? "",
+          label: c.id ?? "",
         }))
         .filter((o) => o.value !== "" && o.label !== "") ?? [],
 
@@ -957,7 +876,7 @@ export function useSerialNumbers(itemId?: string, isReadOnly = false) {
 
 export function useBatchNumbers(itemId?: string) {
   const batchNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
+    useFetcher<Awaited<ReturnType<typeof getAvailableBatchNumbersForItem>>>();
 
   useEffect(() => {
     if (itemId) {
@@ -969,8 +888,8 @@ export function useBatchNumbers(itemId?: string) {
   const options = useMemo(() => {
     return (
       batchNumbersFetcher.data?.data?.map((c) => ({
-        value: c.number ?? "",
-        label: c.number ?? "",
+        value: c.id ?? "",
+        label: c.id ?? "",
       })) ?? []
     ).filter((o) => o.value !== "");
   }, [batchNumbersFetcher.data]);

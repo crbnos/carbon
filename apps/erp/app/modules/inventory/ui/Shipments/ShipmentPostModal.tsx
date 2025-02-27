@@ -16,17 +16,26 @@ import {
   toast,
   useMount,
 } from "@carbon/react";
+import { useRouteData } from "@carbon/remix";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
+import { getShipmentTracking } from "../..";
+import type { ShipmentLine  } from "../..";
 import { path } from "~/utils/path";
+import type { TrackedEntityAttributes } from "~/modules/shared";
+import { useUser } from "~/hooks";
 
 const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
+  const routeData = useRouteData<{
+    shipmentLines: ShipmentLine[];
+  }>(path.to.shipment(shipmentId));
+
   const navigation = useNavigation();
-  const { carbon } = useCarbon();
+
   const [validated, setValidated] = useState(false);
   const [validationErrors, setValidationErrors] = useState<
     {
@@ -36,61 +45,76 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     }[]
   >([]);
 
-  const getShipmentLines = async () => {
-    if (!carbon) {
-      toast.error("Carbon client not found");
-      return;
-    }
-    const [shipmentLines, shipmentLineTracking] = await Promise.all([
-      carbon
-        .from("shipmentLine")
-        .select(
-          "id, itemReadableId, shippedQuantity, requiresBatchTracking, requiresSerialTracking"
-        )
-        .eq("shipmentId", shipmentId),
-      carbon
-        .from("itemTracking")
-        .select("*, serialNumber(number), batchNumber(number)")
-        .eq("sourceDocument", "Shipment")
-        .eq("sourceDocumentId", shipmentId),
-    ]);
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
 
-    if (shipmentLines.error || shipmentLineTracking.error) {
-      toast.error("Error fetching shipment lines or tracking data");
-      return;
-    }
-
+  const validateShipmentTracking = async () => {
     const errors: {
       itemReadableId: string | null;
       shippedQuantity: number;
       shippedQuantityError: string;
     }[] = [];
 
-    const shipmentLinesWithTracking = shipmentLines.data.map((line) => ({
-      ...line,
-      shipmentLineTracking: shipmentLineTracking.data.filter(
-        (tracking) => tracking.sourceDocumentLineId === line.id
-      ),
-    }));
+    if (!carbon) {
+      toast.error("Carbon client is not available");
+      return;
+    }
 
-    shipmentLinesWithTracking.forEach((line) => {
-      if (
-        line.requiresBatchTracking &&
-        (line.shipmentLineTracking.length === 0 ||
-          !line.shipmentLineTracking[0].batchNumber)
-      ) {
-        errors.push({
-          itemReadableId: line.itemReadableId,
-          shippedQuantity: line.shippedQuantity,
-          shippedQuantityError: "Batch number is required",
+    const shipmentLineTracking = await getShipmentTracking(
+      carbon,
+      shipmentId,
+      companyId
+    );
+
+    if (
+      routeData?.shipmentLines.length === 0 ||
+      routeData?.shipmentLines.every((line) => line.shippedQuantity === 0)
+    ) {
+      setValidationErrors([
+        {
+          itemReadableId: null,
+          shippedQuantity: 0,
+          shippedQuantityError: "Shipment is empty",
+        },
+      ]);
+    }
+
+    routeData?.shipmentLines.forEach((line: ShipmentLine) => {
+      if (line.requiresBatchTracking) {
+        const trackedEntity = shipmentLineTracking.data?.find((tracking) => {
+          const attributes = tracking.attributes as TrackedEntityAttributes;
+          return attributes["Shipment Line"] === line.id;
         });
+
+        const attributes = trackedEntity?.attributes as
+          | TrackedEntityAttributes
+          | undefined;
+        if (!attributes?.["Batch Number"]) {
+          errors.push({
+            itemReadableId: line.itemReadableId,
+            shippedQuantity: line.shippedQuantity,
+            shippedQuantityError: "Batch number is required",
+          });
+        }
       }
 
       if (line.requiresSerialTracking) {
-        const quantityWithSerial = line.shipmentLineTracking.reduce(
-          (acc, tracking) => acc + tracking.quantity,
-          0
+        const trackedEntities = shipmentLineTracking.data?.filter(
+          (tracking) => {
+            const attributes = tracking.attributes as TrackedEntityAttributes;
+            return attributes["Shipment Line"] === line.id;
+          }
         );
+
+        const quantityWithSerial = trackedEntities?.reduce((acc, tracking) => {
+          const attributes = tracking.attributes as TrackedEntityAttributes;
+          const serialNumber = attributes["Serial Number"];
+
+          return acc + (serialNumber ? 1 : 0);
+        }, 0);
+
         if (quantityWithSerial !== line.shippedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
@@ -106,7 +130,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   useMount(() => {
-    getShipmentLines();
+    validateShipmentTracking();
   });
 
   const fetcher = useFetcher<{}>();

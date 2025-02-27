@@ -28,7 +28,6 @@ import {
   VStack,
 } from "@carbon/react";
 import { ValidatedForm, Number, Submit } from "@carbon/form";
-import { type CalendarDate } from "@internationalized/date";
 import {
   Await,
   Outlet,
@@ -40,13 +39,7 @@ import {
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import {
-  LuCircleAlert,
-  LuGroup,
-  LuQrCode,
-  LuSplit,
-  LuX,
-} from "react-icons/lu";
+import { LuCircleAlert, LuGroup, LuQrCode, LuSplit, LuX } from "react-icons/lu";
 import { DocumentPreview, Empty } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
@@ -63,7 +56,7 @@ import {
   type ReceiptLine,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
-import { TrackedEntityAttributes } from "~/modules/shared/types";
+import type { TrackedEntityAttributes } from "~/modules/shared/types";
 import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -526,8 +519,6 @@ function BatchForm({
   const submit = useSubmit();
   const [values, setValues] = useState<{
     number: string;
-    manufacturingDate?: CalendarDate;
-    expirationDate?: CalendarDate;
     properties: any;
   }>(() => {
     if (tracking) {
