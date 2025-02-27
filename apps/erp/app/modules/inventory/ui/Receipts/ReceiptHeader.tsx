@@ -5,17 +5,20 @@ import {
   IconButton,
   useDisclosure,
 } from "@carbon/react";
+import { labelSizes } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuCreditCard,
   LuPanelLeft,
   LuPanelRight,
+  LuQrCode,
   LuShoppingCart,
 } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
+import { SplitButton } from "~/components/SplitButton";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Receipt, ReceiptLine } from "~/modules/inventory";
+import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";
 import { path } from "~/utils/path";
 
@@ -28,6 +31,7 @@ const ReceiptHeader = () => {
   const routeData = useRouteData<{
     receipt: Receipt;
     receiptLines: ReceiptLine[];
+    receiptLineTracking: ItemTracking[];
   }>(path.to.receipt(receiptId));
 
   if (!routeData?.receipt) throw new Error("Failed to load receipt");
@@ -40,6 +44,23 @@ const ReceiptHeader = () => {
     routeData.receiptLines.some((line) => line.receivedQuantity > 0);
 
   const isPosted = routeData.receipt.status === "Posted";
+
+  const navigateToTrackingLabels = (zpl?: boolean, labelSize?: string) => {
+    if (!window) return;
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLabelsZpl(receiptId, labelSize),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLabelsPdf(receiptId, labelSize),
+        "_blank"
+      );
+    }
+  };
 
   return (
     <>
@@ -60,6 +81,20 @@ const ReceiptHeader = () => {
             <ReceiptStatus status={routeData?.receipt?.status} />
           </HStack>
           <HStack>
+            {routeData.receiptLineTracking.length > 0 && (
+              <SplitButton
+                leftIcon={<LuQrCode />}
+                dropdownItems={labelSizes.map((size) => ({
+                  label: size.name,
+                  onClick: () => navigateToTrackingLabels(!!size.zpl, size.id),
+                }))}
+                // TODO: if we knew the preferred label size, we could use that here
+                onClick={() => navigateToTrackingLabels(false)}
+                variant="secondary"
+              >
+                Tracking Labels
+              </SplitButton>
+            )}
             <SourceDocumentLink
               sourceDocument={routeData.receipt.sourceDocument ?? undefined}
               sourceDocumentId={routeData.receipt.sourceDocumentId ?? undefined}

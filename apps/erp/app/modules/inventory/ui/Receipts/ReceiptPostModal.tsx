@@ -16,17 +16,26 @@ import {
   toast,
   useMount,
 } from "@carbon/react";
+import { useRouteData } from "@carbon/remix";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
+import { ReceiptLine } from "../../types";
+import { getReceiptTracking } from "../../inventory.service";
+import { TrackedEntityAttributes } from "~/modules/shared";
+import { useUser } from "~/hooks";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
+  const routeData = useRouteData<{
+    receiptLines: ReceiptLine[];
+  }>(path.to.receipt(receiptId));
+
   const navigation = useNavigation();
-  const { carbon } = useCarbon();
+
   const [validated, setValidated] = useState(false);
   const [validationErrors, setValidationErrors] = useState<
     {
@@ -36,61 +45,74 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     }[]
   >([]);
 
-  const getReceiptLines = async () => {
-    if (!carbon) {
-      toast.error("Carbon client not found");
-      return;
-    }
-    const [receiptLines, receiptLineTracking] = await Promise.all([
-      carbon
-        .from("receiptLine")
-        .select(
-          "id, itemReadableId, receivedQuantity, requiresBatchTracking, requiresSerialTracking"
-        )
-        .eq("receiptId", receiptId),
-      carbon
-        .from("itemTracking")
-        .select("*, serialNumber(number), batchNumber(number)")
-        .eq("sourceDocument", "Receipt")
-        .eq("sourceDocumentId", receiptId),
-    ]);
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
 
-    if (receiptLines.error || receiptLineTracking.error) {
-      toast.error("Error fetching receipt lines or tracking data");
-      return;
-    }
-
+  const validateReceiptTracking = async () => {
     const errors: {
       itemReadableId: string | null;
       receivedQuantity: number;
       receivedQuantityError: string;
     }[] = [];
 
-    const receiptLinesWithTracking = receiptLines.data.map((line) => ({
-      ...line,
-      receiptLineTracking: receiptLineTracking.data.filter(
-        (tracking) => tracking.sourceDocumentLineId === line.id
-      ),
-    }));
+    if (!carbon) {
+      toast.error("Carbon client is not available");
+      return;
+    }
 
-    receiptLinesWithTracking.forEach((line) => {
-      if (
-        line.requiresBatchTracking &&
-        (line.receiptLineTracking.length === 0 ||
-          !line.receiptLineTracking[0].batchNumber)
-      ) {
-        errors.push({
-          itemReadableId: line.itemReadableId,
-          receivedQuantity: line.receivedQuantity,
-          receivedQuantityError: "Batch number is required",
+    const receiptLineTracking = await getReceiptTracking(
+      carbon,
+      receiptId,
+      companyId
+    );
+
+    if (
+      routeData?.receiptLines.length === 0 ||
+      routeData?.receiptLines.every((line) => line.receivedQuantity === 0)
+    ) {
+      setValidationErrors([
+        {
+          itemReadableId: null,
+          receivedQuantity: 0,
+          receivedQuantityError: "Receipt is empty",
+        },
+      ]);
+    }
+
+    routeData?.receiptLines.forEach((line: ReceiptLine) => {
+      if (line.requiresBatchTracking) {
+        const trackedEntity = receiptLineTracking.data?.find((tracking) => {
+          const attributes = tracking.attributes as TrackedEntityAttributes;
+          return attributes["Receipt Line"] === line.id;
         });
+
+        const attributes = trackedEntity?.attributes as
+          | TrackedEntityAttributes
+          | undefined;
+        if (!attributes?.["Batch Number"]) {
+          errors.push({
+            itemReadableId: line.itemReadableId,
+            receivedQuantity: line.receivedQuantity,
+            receivedQuantityError: "Batch number is required",
+          });
+        }
       }
 
       if (line.requiresSerialTracking) {
-        const quantityWithSerial = line.receiptLineTracking.reduce(
-          (acc, tracking) => acc + tracking.quantity,
-          0
-        );
+        const trackedEntities = receiptLineTracking.data?.filter((tracking) => {
+          const attributes = tracking.attributes as TrackedEntityAttributes;
+          return attributes["Receipt Line"] === line.id;
+        });
+
+        const quantityWithSerial = trackedEntities?.reduce((acc, tracking) => {
+          const attributes = tracking.attributes as TrackedEntityAttributes;
+          const serialNumber = attributes["Serial Number"];
+
+          return acc + (serialNumber ? 1 : 0);
+        }, 0);
+
         if (quantityWithSerial !== line.receivedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
@@ -106,7 +128,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   };
 
   useMount(() => {
-    getReceiptLines();
+    validateReceiptTracking();
   });
 
   const fetcher = useFetcher<{}>();

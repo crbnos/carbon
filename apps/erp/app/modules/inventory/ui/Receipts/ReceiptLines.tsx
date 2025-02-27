@@ -41,9 +41,9 @@ import {
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import {
-  LuBarcode,
   LuCircleAlert,
   LuGroup,
+  LuQrCode,
   LuSplit,
   LuX,
 } from "react-icons/lu";
@@ -63,6 +63,7 @@ import {
   type ReceiptLine,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
+import { TrackedEntityAttributes } from "~/modules/shared/types";
 import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
@@ -70,6 +71,8 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { labelSizes } from "@carbon/utils";
+import { SplitButton } from "~/components/SplitButton";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -104,29 +107,30 @@ const ReceiptLines = () => {
     return receiptLines.reduce((acc, line) => {
       if (!line.requiresSerialTracking) return acc;
 
-      const trackedEntities = routeData?.receiptLineTracking.filter(
-        (t) =>
-          t.trackedEntityAttribute.find((a) => a.name === "Receipt Line")
-            ?.textValue === line.id
+      const trackedEntitiesForLine = routeData?.receiptLineTracking.filter(
+        (t) => {
+          const attributes = t.attributes as TrackedEntityAttributes;
+          return attributes["Receipt Line"] === line.id;
+        }
       );
 
-      if (!trackedEntities) return acc;
+      if (!trackedEntitiesForLine) return acc;
       return {
         ...acc,
         [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
-          const serialNumber = trackedEntities
-            .find(
-              (t) =>
-                t.trackedEntityAttribute.find((a) => a.name === "Index")
-                  ?.numericValue === index
-            )
-            ?.trackedEntityAttribute.find(
-              (a) => a.name === "Serial Number"
-            )?.textValue;
+          const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+            const attributes = t.attributes as TrackedEntityAttributes;
+            return attributes["Index"] === index;
+          });
+
+          const attributes = serialNumberEntity?.attributes as
+            | TrackedEntityAttributes
+            | undefined;
+          const serialNumber = attributes?.["Serial Number"] || "";
 
           return {
             index,
-            number: serialNumber ?? "",
+            number: serialNumber,
           };
         }),
       };
@@ -138,31 +142,32 @@ const ReceiptLines = () => {
       receiptLines.reduce((acc, line) => {
         if (!line.requiresSerialTracking) return acc;
 
-        const trackedEntities = routeData?.receiptLineTracking.filter(
-          (t) =>
-            t.trackedEntityAttribute.find((a) => a.name === "Receipt Line")
-              ?.textValue === line.id
+        const trackedEntitiesForLine = routeData?.receiptLineTracking.filter(
+          (t) => {
+            const attributes = t.attributes as TrackedEntityAttributes;
+            return attributes["Receipt Line"] === line.id;
+          }
         );
 
-        if (!trackedEntities) return acc;
+        if (!trackedEntitiesForLine) return acc;
         return {
           ...acc,
           [line.id]: Array.from(
             { length: line.receivedQuantity },
             (_, index) => {
-              const serialNumber = trackedEntities
-                .find(
-                  (t) =>
-                    t.trackedEntityAttribute.find((a) => a.name === "Index")
-                      ?.numericValue === index
-                )
-                ?.trackedEntityAttribute.find(
-                  (a) => a.name === "Serial Number"
-                )?.textValue;
+              const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+                const attributes = t.attributes as TrackedEntityAttributes;
+                return attributes["Index"] === index;
+              });
+
+              const attributes = serialNumberEntity?.attributes as
+                | TrackedEntityAttributes
+                | undefined;
+              const serialNumber = attributes?.["Serial Number"] || "";
 
               return {
                 index,
-                number: serialNumber ?? "",
+                number: serialNumber,
               };
             }
           ),
@@ -170,7 +175,7 @@ const ReceiptLines = () => {
       }, {})
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeData?.receipt?.sourceDocumentId]);
+  }, [routeData?.receipt?.sourceDocumentId, routeData?.receiptLines?.length]);
 
   const onUpdateReceiptLine = useCallback(
     async ({
@@ -219,18 +224,10 @@ const ReceiptLines = () => {
               <Empty className="py-6" />
             ) : (
               receiptLines.map((line, index) => {
-                const tracking = routeData?.receiptLineTracking?.find(
-                  (t) =>
-                    t.sourceDocumentId === receiptId &&
-                    t.trackedEntityAttribute.find(
-                      (a: { name: string; textValue: string | null }) =>
-                        a.name === "Receipt Line"
-                    )?.textValue === line.id &&
-                    t.trackedEntityAttribute.find(
-                      (a: { name: string; textValue: string | null }) =>
-                        a.name === "Batch Number"
-                    )?.textValue !== null
-                );
+                const tracking = routeData?.receiptLineTracking?.find((t) => {
+                  const attributes = t.attributes as TrackedEntityAttributes;
+                  return attributes["Receipt Line"] === line.id;
+                });
                 return (
                   <ReceiptLineItem
                     key={line.id}
@@ -532,47 +529,40 @@ function BatchForm({
     manufacturingDate?: CalendarDate;
     expirationDate?: CalendarDate;
     properties: any;
-  }>(
-    tracking
-      ? {
-          number:
-            tracking.trackedEntityAttribute.find(
-              (a) => a.name === "Batch Number"
-            )?.textValue ?? "",
-          properties: Object.fromEntries(
-            tracking.trackedEntityAttribute
-              .filter(
-                (attr) => !["Batch Number", "Receipt Line"].includes(attr.name)
-              )
-              .map((attr) => [attr.name, attr.textValue ?? ""])
-          ),
-        }
-      : {
-          number: "",
-          properties: {},
-        }
-  );
+  }>(() => {
+    if (tracking) {
+      const attributes = tracking.attributes as TrackedEntityAttributes;
+      return {
+        number: attributes["Batch Number"] || "",
+        properties: Object.entries(attributes)
+          .filter(([key]) => !["Batch Number", "Receipt Line"].includes(key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
+      };
+    }
+    return {
+      number: "",
+      properties: {},
+    };
+  });
 
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!receipt?.id || !newValues.number.trim()) return;
 
-    const batchMatch = isNew
-      ? tracking?.trackedEntityAttribute.find((a) => a.name === "Batch Number")
-          ?.textValue
-      : null;
+    let batchMatch = null;
+    if (isNew && tracking) {
+      const attributes = tracking.attributes as TrackedEntityAttributes;
+      batchMatch = attributes["Batch Number"];
+    }
 
     let valuesToSubmit = newValues;
 
     if (batchMatch) {
+      const attributes = tracking?.attributes as TrackedEntityAttributes;
       valuesToSubmit = {
         ...newValues,
-        properties: Object.fromEntries(
-          tracking?.trackedEntityAttribute
-            .filter(
-              (attr) => !["Batch Number", "Receipt Line"].includes(attr.name)
-            )
-            .map((attr) => [attr.name, attr.textValue ?? ""]) ?? []
-        ),
+        properties: Object.entries(attributes)
+          .filter(([key]) => !["Batch Number", "Receipt Line"].includes(key))
+          .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
       };
 
       // Just update the local state without triggering another database write
@@ -604,19 +594,48 @@ function BatchForm({
     updateBatchNumber(newValues);
   };
 
+  const navigateToLineTrackingLabels = (zpl?: boolean, labelSize?: string) => {
+    if (!window) return;
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLineLabelsZpl(line.id, labelSize),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLineLabelsPdf(line.id, labelSize),
+        "_blank"
+      );
+    }
+  };
   const propertiesDisclosure = useDisclosure();
-
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
         <Heading size="h4">Batch Properties</Heading>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={propertiesDisclosure.onOpen}
-        >
-          Edit Properties
-        </Button>
+        <div className="flex items-center gap-2">
+          <SplitButton
+            size="sm"
+            leftIcon={<LuQrCode />}
+            dropdownItems={labelSizes.map((size) => ({
+              label: size.name,
+              onClick: () => navigateToLineTrackingLabels(!!size.zpl, size.id),
+            }))}
+            onClick={() => navigateToLineTrackingLabels(false)}
+            variant="secondary"
+          >
+            Tracking Labels
+          </SplitButton>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={propertiesDisclosure.onOpen}
+          >
+            Edit Properties
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
         <div className="flex flex-col gap-2 w-full">
@@ -684,12 +703,14 @@ function BatchForm({
 function SerialForm({
   line,
   receipt,
+  batchProperties,
   serialNumbers,
   isReadOnly,
   onSerialNumbersChange,
 }: {
   line: ReceiptLine;
   receipt?: Receipt;
+  batchProperties?: PostgrestResponse<BatchProperty>;
   serialNumbers: { index: number; number: string }[];
   isReadOnly: boolean;
   onSerialNumbersChange: (
@@ -765,11 +786,42 @@ function SerialForm({
     [line.id, line.itemId, receipt?.id, validateSerialNumber]
   );
 
+  const navigateToLineTrackingLabels = (zpl?: boolean, labelSize?: string) => {
+    if (!window) return;
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLineLabelsZpl(line.id, labelSize),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.receiptLineLabelsPdf(line.id, labelSize),
+        "_blank"
+      );
+    }
+  };
+  const propertiesDisclosure = useDisclosure();
   return (
-    <div className="flex flex-col gap-2 p-6 border rounded-lg">
-      <label className="text-xs text-muted-foreground flex items-center gap-2">
-        <LuBarcode /> Serial Numbers
-      </label>
+    <div className="flex flex-col gap-6 p-6 border rounded-lg">
+      <div className="flex justify-between items-center gap-6">
+        <Heading size="h4">Serial Numbers</Heading>
+        <div className="flex items-center gap-2">
+          <SplitButton
+            size="sm"
+            leftIcon={<LuQrCode />}
+            dropdownItems={labelSizes.map((size) => ({
+              label: size.name,
+              onClick: () => navigateToLineTrackingLabels(!!size.zpl, size.id),
+            }))}
+            onClick={() => navigateToLineTrackingLabels(false)}
+            variant="secondary"
+          >
+            Tracking Labels
+          </SplitButton>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
         {serialNumbers.map((serialNumber, index) => (
@@ -828,6 +880,22 @@ function SerialForm({
             )}
           </div>
         ))}
+        {propertiesDisclosure.isOpen && (
+          <Suspense fallback={null}>
+            <Await resolve={batchProperties}>
+              {(resolvedBatchProperties) => {
+                return (
+                  <BatchPropertiesConfig
+                    itemId={line.itemId}
+                    properties={resolvedBatchProperties?.data ?? []}
+                    type="modal"
+                    onClose={propertiesDisclosure.onClose}
+                  />
+                );
+              }}
+            </Await>
+          </Suspense>
+        )}
       </div>
     </div>
   );

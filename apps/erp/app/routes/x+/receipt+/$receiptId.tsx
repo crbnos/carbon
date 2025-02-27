@@ -11,9 +11,10 @@ import {
   getBatchProperties,
   getReceipt,
   getReceiptFiles,
-  getReceiptLineTracking,
+  getReceiptTracking,
   getReceiptLines,
 } from "~/modules/inventory";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -32,9 +33,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("Could not find receiptId");
 
-  const [receipt, receiptLines] = await Promise.all([
+  const [receipt, receiptLines, receiptLineTracking] = await Promise.all([
     getReceipt(serviceRole, receiptId),
     getReceiptLines(serviceRole, receiptId),
+    getReceiptTracking(serviceRole, receiptId, companyId),
   ]);
 
   if (receipt.error) {
@@ -58,11 +60,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .map((line) => line.itemId);
   }
 
-  const receiptLineTracking = await getReceiptLineTracking(
-    serviceRole,
-    receiptLineIds
-  );
-
   return defer({
     receipt: receipt.data,
     receiptLines: receiptLines.data ?? [],
@@ -71,6 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     batchProperties:
       getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
       [],
+    companySettings: getCompanySettings(serviceRole, companyId),
   });
 }
 

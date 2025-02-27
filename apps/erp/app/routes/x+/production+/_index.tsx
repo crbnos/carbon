@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -56,7 +57,6 @@ import {
   LuEllipsisVertical,
   LuFile,
   LuHardHat,
-  LuLayoutList,
   LuSquareUser,
   LuUserRoundCheck,
 } from "react-icons/lu";
@@ -287,7 +287,7 @@ export default function ProductionDashboard() {
         <Card className="col-span-3 p-6 rounded-xl items-start justify-start gap-y-4">
           <HStack className="justify-between w-full items-start mb-4">
             <div className="bg-muted/80 border border-border rounded-xl p-2 text-foreground dark:shadow-md">
-              <LuLayoutList className="size-5" />
+              <LuHardHat className="size-5" />
             </div>
             <Button
               size="sm"
@@ -403,21 +403,23 @@ export default function ProductionDashboard() {
                   />
                 )}
               </div>
-              <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
+              <HStack className="pl-[3px] pt-1">
                 {isFetching ? (
-                  <Skeleton className="h-5 w-1/4" />
+                  <Skeleton className="h-8 w-1/2" />
                 ) : (
                   <>
-                    <p>{formatDurationMilliseconds(total)}</p>
+                    <p className="text-xl font-semibold tracking-tight">
+                      {formatDurationMilliseconds(total)}
+                    </p>
 
-                    {percentageChange > 0 ? (
-                      <span className="text-emerald-500">
+                    {percentageChange >= 0 ? (
+                      <Badge variant="green">
                         +{percentageChange.toFixed(0)}%
-                      </span>
+                      </Badge>
                     ) : (
-                      <span className="text-red-500">
+                      <Badge variant="red">
                         {percentageChange.toFixed(0)}%
-                      </span>
+                      </Badge>
                     )}
                   </>
                 )}

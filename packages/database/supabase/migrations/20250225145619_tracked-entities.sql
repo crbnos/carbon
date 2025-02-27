@@ -13,13 +13,18 @@ DROP FUNCTION IF EXISTS update_shipment_line_serial_tracking;
 DROP VIEW IF EXISTS "batchNumbers";
 DROP VIEW IF EXISTS "serialNumbers";
 
+DROP TYPE IF EXISTS "serialStatus";
+CREATE TYPE "trackedEntityStatus" AS ENUM('Available', 'Reserved', 'On Hold', 'Consumed');
+
 -- Create tracked entity table
 CREATE TABLE "trackedEntity" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "quantity" NUMERIC NOT NULL,
+  "status" "trackedEntityStatus" NOT NULL DEFAULT 'Available',
   "sourceDocument" TEXT NOT NULL,
   "sourceDocumentId" TEXT NOT NULL,
   "sourceDocumentReadableId" TEXT,
+  "attributes" JSONB NOT NULL DEFAULT '{}',
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -32,28 +37,6 @@ CREATE TABLE "trackedEntity" (
 ALTER TABLE "itemLedger" ADD COLUMN "trackedEntityId" TEXT;
 ALTER TABLE "itemLedger" ADD CONSTRAINT "itemLedger_trackedEntityId_fkey" FOREIGN KEY ("trackedEntityId") REFERENCES "trackedEntity"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
--- Create tracked entity attribute table
-CREATE TABLE "trackedEntityAttribute" (
-  "trackedEntityId" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "textValue" TEXT,
-  "numericValue" NUMERIC,
-  "booleanValue" BOOLEAN,
-  "companyId" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "createdBy" TEXT NOT NULL,
-  
-  CONSTRAINT "trackedEntityAttribute_pkey" PRIMARY KEY ("trackedEntityId", "name"),
-  CONSTRAINT "trackedEntityAttribute_trackedEntityId_fkey" FOREIGN KEY ("trackedEntityId") REFERENCES "trackedEntity"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "trackedEntityAttribute_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "trackedEntityAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "trackedEntityAttribute_value_check" CHECK (
-    (("textValue" IS NOT NULL)::INTEGER + 
-     ("numericValue" IS NOT NULL)::INTEGER + 
-     ("booleanValue" IS NOT NULL)::INTEGER) = 1
-  )
-);
-
 -- Create trackedActivity table
 CREATE TABLE "trackedActivity" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -61,6 +44,7 @@ CREATE TABLE "trackedActivity" (
   "sourceDocument" TEXT,
   "sourceDocumentId" TEXT,
   "sourceDocumentReadableId" TEXT,
+  "attributes" JSONB NOT NULL DEFAULT '{}',
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "createdBy" TEXT NOT NULL,
@@ -68,28 +52,6 @@ CREATE TABLE "trackedActivity" (
   CONSTRAINT "trackedActivity_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "trackedActivity_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "trackedActivity_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE
-);
-
--- Create trackedActivity attribute table
-CREATE TABLE "trackedActivityAttribute" (
-  "trackedActivityId" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
-  "textValue" TEXT,
-  "numericValue" NUMERIC,
-  "booleanValue" BOOLEAN,
-  "companyId" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-  "createdBy" TEXT NOT NULL,
-  
-  CONSTRAINT "trackedActivityAttribute_pkey" PRIMARY KEY ("trackedActivityId", "name"),
-  CONSTRAINT "trackedActivityAttribute_trackedActivityId_fkey" FOREIGN KEY ("trackedActivityId") REFERENCES "trackedActivity"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "trackedActivityAttribute_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "trackedActivityAttribute_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "trackedActivityAttribute_value_check" CHECK (
-    (("textValue" IS NOT NULL)::INTEGER + 
-     ("numericValue" IS NOT NULL)::INTEGER + 
-     ("booleanValue" IS NOT NULL)::INTEGER) = 1
-  )
 );
 
 -- Create trackedActivity input table
@@ -128,12 +90,11 @@ CREATE TABLE "trackedActivityOutput" (
 -- Create indexes for performance
 CREATE INDEX "idx_trackedEntity_sourceDocument_sourceDocumentId" ON "trackedEntity"("sourceDocument", "sourceDocumentId");
 CREATE INDEX "idx_trackedEntity_companyId" ON "trackedEntity"("companyId");
-CREATE INDEX "idx_trackedEntityAttribute_companyId" ON "trackedEntityAttribute"("companyId");
-CREATE INDEX "idx_trackedEntityAttribute_trackedEntityId" ON "trackedEntityAttribute"("trackedEntityId");
+CREATE INDEX "idx_trackedEntity_attributes" ON "trackedEntity" USING GIN ("attributes");
 CREATE INDEX "idx_trackedActivity_type" ON "trackedActivity"("type");
 CREATE INDEX "idx_trackedActivity_sourceDocument_sourceDocumentId" ON "trackedActivity"("sourceDocument", "sourceDocumentId");
 CREATE INDEX "idx_trackedActivity_companyId" ON "trackedActivity"("companyId");
-CREATE INDEX "idx_trackedActivityAttribute_companyId" ON "trackedActivityAttribute"("companyId");
+CREATE INDEX "idx_trackedActivity_attributes" ON "trackedActivity" USING GIN ("attributes");
 CREATE INDEX "idx_trackedActivityInput_trackedEntityId" ON "trackedActivityInput"("trackedEntityId");
 CREATE INDEX "idx_trackedActivityInput_companyId" ON "trackedActivityInput"("companyId");
 CREATE INDEX "idx_trackedActivityOutput_trackedEntityId" ON "trackedActivityOutput"("trackedEntityId");
@@ -141,9 +102,7 @@ CREATE INDEX "idx_trackedActivityOutput_companyId" ON "trackedActivityOutput"("c
 
 -- Add RLS policies
 ALTER TABLE "trackedEntity" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "trackedEntityAttribute" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "trackedActivity" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "trackedActivityAttribute" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "trackedActivityInput" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "trackedActivityOutput" ENABLE ROW LEVEL SECURITY;
 
@@ -157,27 +116,7 @@ FOR SELECT USING (
   )
 );
 
-CREATE POLICY "SELECT" ON "public"."trackedEntityAttribute"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_role()
-    )::text[]
-  )
-);
-
 CREATE POLICY "SELECT" ON "public"."trackedActivity"
-FOR SELECT USING (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "SELECT" ON "public"."trackedActivityAttribute"
 FOR SELECT USING (
   "companyId" = ANY (
     (
@@ -217,27 +156,7 @@ FOR INSERT WITH CHECK (
   )
 );
 
-CREATE POLICY "INSERT" ON "public"."trackedEntityAttribute"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_role()
-    )::text[]
-  )
-);
-
 CREATE POLICY "INSERT" ON "public"."trackedActivity"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY (
-    (
-      SELECT
-        get_companies_with_employee_role()
-    )::text[]
-  )
-);
-
-CREATE POLICY "INSERT" ON "public"."trackedActivityAttribute"
 FOR INSERT WITH CHECK (
   "companyId" = ANY (
     (
@@ -318,7 +237,7 @@ DECLARE
   v_company_id TEXT;
   v_created_by TEXT;
   v_supplier_id TEXT;
-  property RECORD;
+  v_attributes JSONB;
 BEGIN
   v_tracked_entity_id := COALESCE(p_tracked_entity_id, xid());
   -- Get receipt line details
@@ -338,44 +257,47 @@ BEGIN
   JOIN "receipt" r ON r.id = rl."receiptId"
   WHERE rl.id = p_receipt_line_id;
 
-  -- First upsert the batch number
-  INSERT INTO "trackedEntity" ("id", "quantity", "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "companyId", "createdBy")
+  -- Build attributes JSONB
+  v_attributes := jsonb_build_object(
+    'Batch Number', p_batch_number,
+    'Receipt Line', p_receipt_line_id,
+    'Receipt', p_receipt_id
+  );
+  
+  -- Add supplier if available
+  IF v_supplier_id IS NOT NULL THEN
+    v_attributes := v_attributes || jsonb_build_object('Supplier', v_supplier_id);
+  END IF;
+  
+  -- Merge any additional properties
+  v_attributes := v_attributes || p_properties;
+
+  -- Upsert the tracked entity with attributes
+  INSERT INTO "trackedEntity" (
+    "id", 
+    "quantity", 
+    "status",
+    "sourceDocument", 
+    "sourceDocumentId", 
+    "sourceDocumentReadableId", 
+    "attributes",
+    "companyId", 
+    "createdBy"
+  )
   VALUES (
     v_tracked_entity_id,
     p_quantity,
+    'On Hold',
     'Item',
     v_item_id,
     v_item_readable_id,
+    v_attributes,
     v_company_id,
     v_created_by
   )
   ON CONFLICT (id) DO UPDATE SET
-    "quantity" = EXCLUDED."quantity";
-
-  -- Delete any existing tracking records for this receipt line
-  DELETE FROM "trackedEntityAttribute"
-  WHERE "trackedEntityId" = p_tracked_entity_id;
-
-  -- Insert tracked attributes for the batch number, the receipt line and any properties
-  INSERT INTO "trackedEntityAttribute" ("trackedEntityId", "name", "textValue", "numericValue", "booleanValue", "companyId", "createdBy")
-  VALUES
-    (p_tracked_entity_id, 'Batch Number', p_batch_number, NULL, NULL, v_company_id, v_created_by),
-    (p_tracked_entity_id, 'Receipt Line', p_receipt_line_id, NULL, NULL, v_company_id, v_created_by),
-    (p_tracked_entity_id, 'Supplier', v_supplier_id, NULL, NULL, v_company_id, v_created_by);
-
-  -- Insert tracked attributes for any properties
-  FOR property IN SELECT * FROM jsonb_each(p_properties) LOOP
-    INSERT INTO "trackedEntityAttribute" ("trackedEntityId", "name", "textValue", "numericValue", "booleanValue", "companyId", "createdBy")
-    VALUES (
-      p_tracked_entity_id,
-      property.key,
-      CASE WHEN jsonb_typeof(property.value) = 'string' THEN property.value::text END,
-      CASE WHEN jsonb_typeof(property.value) = 'number' THEN property.value::numeric END,
-      CASE WHEN jsonb_typeof(property.value) = 'boolean' THEN property.value::boolean END,
-      v_company_id,
-      v_created_by
-    );
-  END LOOP;
+    "quantity" = EXCLUDED."quantity",
+    "attributes" = EXCLUDED."attributes";
     
 END;
 $$ LANGUAGE plpgsql;
@@ -395,6 +317,7 @@ DECLARE
   v_company_id TEXT;
   v_created_by TEXT;
   v_supplier_id TEXT;
+  v_attributes JSONB;
 BEGIN
   -- Get receipt line details
   SELECT 
@@ -416,29 +339,44 @@ BEGIN
   -- First create the tracked entity for this serial number
   v_serial_id := COALESCE(p_tracked_entity_id, xid());
   
-  INSERT INTO "trackedEntity" ("id", "quantity", "sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "companyId", "createdBy")
+  -- Build attributes JSONB
+  v_attributes := jsonb_build_object(
+    'Serial Number', p_serial_number,
+    'Receipt Line', p_receipt_line_id,
+    'Receipt', p_receipt_id,
+    'Index', p_index
+  );
+  
+  -- Add supplier if available
+  IF v_supplier_id IS NOT NULL THEN
+    v_attributes := v_attributes || jsonb_build_object('Supplier', v_supplier_id);
+  END IF;
+  
+  INSERT INTO "trackedEntity" (
+    "id", 
+    "quantity", 
+    "status",
+    "sourceDocument", 
+    "sourceDocumentId", 
+    "sourceDocumentReadableId", 
+    "attributes",
+    "companyId", 
+    "createdBy"
+  )
   VALUES (
     v_serial_id,
     1,
+    'On Hold',
     'Item',
     v_item_id,
     v_item_readable_id,
+    v_attributes,
     v_company_id,
     v_created_by
   )
   ON CONFLICT (id) DO UPDATE SET
-    "quantity" = EXCLUDED."quantity";
-
-  DELETE FROM "trackedEntityAttribute"
-  WHERE "trackedEntityId" = v_serial_id;
-
-  -- Insert tracked attributes for the serial number and receipt line
-  INSERT INTO "trackedEntityAttribute" ("trackedEntityId", "name", "textValue", "numericValue", "booleanValue", "companyId", "createdBy")
-  VALUES
-    (v_serial_id, 'Serial Number', p_serial_number, NULL, NULL, v_company_id, v_created_by),
-    (v_serial_id, 'Receipt Line', p_receipt_line_id, NULL, NULL, v_company_id, v_created_by), 
-    (v_serial_id, 'Index', NULL, p_index::numeric, NULL, v_company_id, v_created_by),
-    (v_serial_id, 'Supplier', v_supplier_id, NULL, NULL, v_company_id, v_created_by);
+    "quantity" = EXCLUDED."quantity",
+    "attributes" = EXCLUDED."attributes";
 
 END;
 $$ LANGUAGE plpgsql;

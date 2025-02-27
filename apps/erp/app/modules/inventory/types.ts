@@ -1,12 +1,10 @@
 import type { Database } from "@carbon/database";
 import type {
-  getBatch,
-  getBatches,
   getBatchProperties,
   getInventoryItems,
   getItemLedgerPage,
   getReceiptLines,
-  getReceiptLineTracking,
+  getReceiptTracking,
   getReceipts,
   getShipments,
   getShipmentLines,
@@ -14,15 +12,8 @@ import type {
   getShipmentLineTracking,
 } from "./inventory.service";
 
-export type BatchDetails = NonNullable<
-  Awaited<ReturnType<typeof getBatch>>["data"]
->;
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]
->[number];
-
-export type BatchTableRow = NonNullable<
-  Awaited<ReturnType<typeof getBatches>>["data"]
 >[number];
 
 export type InventoryItem = NonNullable<
@@ -34,7 +25,7 @@ export type ItemLedger = NonNullable<
 >[number];
 
 export type ItemTracking = NonNullable<
-  Awaited<ReturnType<typeof getReceiptLineTracking>>["data"]
+  Awaited<ReturnType<typeof getReceiptTracking>>["data"]
 >[number];
 
 export type Receipt = NonNullable<

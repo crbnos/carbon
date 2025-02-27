@@ -1,3 +1,4 @@
+import { labelSizes } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { DataType } from "~/modules/shared";
@@ -66,6 +67,7 @@ export const customFieldValidator = z
 
     return true;
   });
+  
 
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
@@ -73,6 +75,12 @@ export const digitalQuoteValidator = z.object({
     .array(z.string().min(36, { message: "Invalid selection" }))
     .optional(),
   digitalQuoteIncludesPurchaseOrders: zfd.checkbox(),
+});
+
+export const productLabelSizeValidator = z.object({
+  productLabelSize: z.enum(labelSizes.map((size) => size.id) as [string, ...string[]], {
+    message: "Product label size is required",
+  }),
 });
 
 export const rfqReadyValidator = z.object({

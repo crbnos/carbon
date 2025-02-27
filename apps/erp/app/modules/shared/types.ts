@@ -89,3 +89,12 @@ export type SavedView = {
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];
+
+export interface TrackedEntityAttributes {
+  [key: string]: any;
+  "Receipt Line"?: string;
+  "Batch Number"?: string;
+  "Serial Number"?: string;
+  Receipt?: string;
+  Index?: number;
+}

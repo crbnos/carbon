@@ -343,25 +343,35 @@ serve(async (req: Request) => {
           companyId
         );
 
-        const [receiptLine] = await Promise.all([
+        const [receiptLine, trackedEntities] = await Promise.all([
           client
             .from("receiptLine")
             .select("*")
             .eq("id", receiptLineId)
             .single(),
+          client
+            .from("trackedEntity")
+            .select("*")
+            .eq("attributes->> Receipt Line", receiptLineId),
         ]);
 
-        if (!receiptLine.data) throw new Error("Shipment line not found");
+        console.log({
+          trackedEntities,
+        });
+
+        if (!receiptLine.data) throw new Error("Receipt line not found");
 
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = receiptLine.data;
 
-          if (receiptLine.data.requiresSerialTracking) {
+          if (
+            receiptLine.data.requiresSerialTracking &&
+            trackedEntities.data?.length
+          ) {
+            // TODO: update the Receipt Line and Index attributes to point to the new line
             await trx
-              .deleteFrom("itemTracking")
-              .where("sourceDocument", "=", "Receipt")
-              .where("sourceDocumentId", "=", receiptId)
-              .where("sourceDocumentLineId", "=", receiptLineId)
+              .deleteFrom("trackedEntity")
+              .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
               .execute();
           }
 
@@ -894,12 +904,17 @@ serve(async (req: Request) => {
           companyId
         );
 
-        const [shipmentLine] = await Promise.all([
+        const [shipmentLine, trackedEntities] = await Promise.all([
           client
             .from("shipmentLine")
             .select("*")
             .eq("id", shipmentLineId)
             .single(),
+          client
+            .from("trackedEntity")
+            .select("*, trackedEntityAttribute(*)")
+            .eq("trackedEntityAttribute.name", "Shipment Line")
+            .eq("trackedEntityAttribute.textValue", shipmentLineId),
         ]);
 
         if (!shipmentLine.data) throw new Error("Shipment line not found");
@@ -908,11 +923,10 @@ serve(async (req: Request) => {
           const { id, ...data } = shipmentLine.data;
 
           if (shipmentLine.data.requiresSerialTracking) {
+            // TODO: update the Shipment Line and Index attributes to point to the new line
             await trx
-              .deleteFrom("itemTracking")
-              .where("sourceDocument", "=", "Shipment")
-              .where("sourceDocumentId", "=", shipmentId)
-              .where("sourceDocumentLineId", "=", shipmentLineId)
+              .deleteFrom("trackedEntity")
+              .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
               .execute();
           }
 

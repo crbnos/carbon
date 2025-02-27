@@ -495,6 +495,14 @@ export async function updateLogoLightIcon(
     .eq("id", companyId);
 }
 
+export async function updateProductLabelSize(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  productLabelSize: string
+) {
+  return client.from("companySettings").update(sanitize({ productLabelSize })).eq("id", companyId);
+}
+
 export async function updateRfqReadySetting(
   client: SupabaseClient<Database>,
   companyId: string,

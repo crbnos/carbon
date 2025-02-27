@@ -100,8 +100,33 @@ export const path = {
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
+      receiptLabelsPdf: (id: string, labelSize?: string) =>
+        generatePath(
+          labelSize
+            ? `${file}/receipt/${id}/labels.pdf?labelSize=${labelSize}`
+            : `${file}/receipt/${id}/labels.pdf`
+        ),
+      receiptLabelsZpl: (id: string, labelSize?: string) =>
+        generatePath(
+          labelSize
+            ? `${file}/receipt/${id}/labels.zpl?labelSize=${labelSize}`
+            : `${file}/receipt/${id}/labels.zpl`
+        ),
+      receiptLineLabelsPdf: (id: string, labelSize?: string) =>
+        generatePath(
+          labelSize
+            ? `${file}/receipt/line/${id}/labels.pdf?labelSize=${labelSize}`
+            : `${file}/receipt/line/${id}/labels.pdf`
+        ),
+      receiptLineLabelsZpl: (id: string, labelSize?: string) =>
+        generatePath(
+          labelSize
+            ? `${file}/receipt/line/${id}/labels.zpl?labelSize=${labelSize}`
+            : `${file}/receipt/line/${id}/labels.zpl`
+        ),
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
+
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },
     legal: {
@@ -499,6 +524,7 @@ export const path = {
     jobRecalculate: (id: string) => generatePath(`${x}/job/${id}/recalculate`),
     jobRelease: (id: string) => generatePath(`${x}/job/${id}/release`),
     jobStatus: (id: string) => generatePath(`${x}/job/${id}/status`),
+    labelsSettings: `${x}/settings/labels`,
     location: (id: string) => generatePath(`${x}/resources/locations/${id}`),
     locations: `${x}/resources/locations`,
     login: "/login",
