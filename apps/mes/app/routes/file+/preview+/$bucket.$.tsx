@@ -21,6 +21,16 @@ const supportedFileTypes: Record<string, string> = {
   wav: "audio/wav",
   ogg: "audio/ogg",
   flac: "audio/flac",
+  dxf: "application/dxf",
+  dwg: "application/dxf",
+  stl: "application/stl",
+  obj: "application/obj",
+  glb: "application/glb",
+  gltf: "application/gltf",
+  fbx: "application/fbx",
+  ply: "application/ply",
+  off: "application/off",
+  step: "application/step",
 };
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
