@@ -8,6 +8,7 @@ export * from "./duration";
 export * from "./file";
 export * from "./geo";
 export * from "./keyboard";
+export * from "./labels";
 export * from "./math";
 export * from "./ssr";
 export * from "./themes";

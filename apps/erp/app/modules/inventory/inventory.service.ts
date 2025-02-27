@@ -188,27 +188,28 @@ export async function getReceiptLines(
   return client.from("receiptLine").select("*").eq("receiptId", receiptId);
 }
 
-export async function getReceiptLineTracking(
+export async function getReceiptTracking(
   client: SupabaseClient<Database>,
-  receiptLineIds: string[]
+  receiptId: string,
+  companyId: string
 ) {
-  const trackedEntities = await client
-    .from("trackedEntity")
-    .select("*, trackedEntityAttribute(*)")
-    .eq("trackedEntityAttribute.name", "Receipt Line")
-    .in("trackedEntityAttribute.textValue", receiptLineIds);
-
-  if (trackedEntities.error) {
-    return trackedEntities;
-  }
-
   return client
     .from("trackedEntity")
-    .select("*, trackedEntityAttribute(*)")
-    .in(
-      "id",
-      trackedEntities.data.map((t) => t.id)
-    );
+    .select("*")
+    .eq("attributes ->> Receipt", receiptId)
+    .eq("companyId", companyId);
+}
+
+export async function getReceiptLineTracking(
+  client: SupabaseClient<Database>,
+  receiptLineId: string,
+  companyId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes ->> Receipt Line", receiptLineId)
+    .eq("companyId", companyId);
 }
 
 export async function getReceiptFiles(

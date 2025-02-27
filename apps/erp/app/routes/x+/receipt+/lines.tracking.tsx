@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { TrackedEntityAttributes } from "~/modules/shared/types";
 
 export async function action({ request, context }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -20,9 +21,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // First, get or create the batch number record
     const { data: trackedEntity, error: batchQueryError } = await client
       .from("trackedEntity")
-      .select("*, trackedEntityAttribute(*)")
-      .eq("trackedEntityAttribute.name", "Receipt Line")
-      .eq("trackedEntityAttribute.textValue", receiptLineId)
+      .select("*")
+      .eq("attributes ->> Receipt", receiptId)
+      .eq("attributes ->> Batch Number", batchNumber)
       .eq("companyId", companyId)
       .maybeSingle();
 
@@ -60,39 +61,39 @@ export async function action({ request, context }: ActionFunctionArgs) {
     const serialNumber = formData.get("serialNumber") as string;
     const index = Number(formData.get("index"));
 
-    // Check if serial number already exists for this item
-    const { data: existingSerialNumbers, error: serialQueryError } =
+    // Check if the serial number is already used for a different receipt line or index
+    const { data: existingEntityWithIndex, error: indexQueryError } =
       await client
         .from("trackedEntity")
-        .select("*, trackedEntityAttribute(*)")
-        .eq("sourceDocument", "Item")
+        .select("*")
         .eq("sourceDocumentId", itemId)
-        .eq("companyId", companyId);
+        .eq("attributes->> Serial Number", serialNumber)
+        .eq("companyId", companyId)
+        .maybeSingle();
 
-    if (serialQueryError) {
-      return json({ error: "Failed to check serial number" }, { status: 500 });
+    if (indexQueryError) {
+      return json(
+        { error: "Failed to check serial number index" },
+        { status: 500 }
+      );
     }
 
-    const existingEntityWithSerialNumber = existingSerialNumbers?.find((t) =>
-      t.trackedEntityAttribute?.some(
-        (attribute) =>
-          attribute.name === "Serial Number" &&
-          attribute.textValue === serialNumber
-      )
-    );
-
-    const existingEntityWithIndex = existingSerialNumbers?.find((t) =>
-      t.trackedEntityAttribute?.some(
-        (attribute) =>
-          attribute.name === "Index" && attribute.numericValue === index
-      )
-    );
-
-    if (
-      existingEntityWithSerialNumber &&
-      existingEntityWithIndex?.id !== existingEntityWithSerialNumber.id
-    ) {
-      return json({ error: "Serial number already exists" }, { status: 400 });
+    // If the serial number exists but for a different receipt line or index, return an error
+    if (existingEntityWithIndex) {
+      const attributes =
+        existingEntityWithIndex.attributes as TrackedEntityAttributes;
+      if (
+        attributes["Receipt Line"] !== receiptLineId ||
+        attributes["Index"] !== index
+      ) {
+        return json(
+          {
+            error:
+              "Serial number is already used for a different item or position",
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const serviceRole = await getCarbonServiceRole();

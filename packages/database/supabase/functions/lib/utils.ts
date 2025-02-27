@@ -1,3 +1,12 @@
+export interface TrackedEntityAttributes {
+  [key: string]: any;
+  "Receipt Line"?: string;
+  "Batch Number"?: string;
+  "Serial Number"?: string;
+  Receipt?: string;
+  Index?: number;
+}
+
 // used to generate sequences
 export const interpolateSequenceDate = (value?: string | null) => {
   // replace all instances of %{year} with the current year

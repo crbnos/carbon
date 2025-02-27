@@ -2064,21 +2064,27 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           id: string
+          productLabelSize: string | null
           rfqReadyNotificationGroup: string[]
+          shelfLabelSize: string | null
         }
         Insert: {
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id: string
+          productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
+          shelfLabelSize?: string | null
         }
         Update: {
           digitalQuoteEnabled?: boolean
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id?: string
+          productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
+          shelfLabelSize?: string | null
         }
         Relationships: [
           {
@@ -6795,6 +6801,7 @@ export type Database = {
           postingDate: string
           quantity: number
           shelfId: string | null
+          trackedEntityId: string | null
         }
         Insert: {
           companyId: string
@@ -6815,6 +6822,7 @@ export type Database = {
           postingDate?: string
           quantity: number
           shelfId?: string | null
+          trackedEntityId?: string | null
         }
         Update: {
           companyId?: string
@@ -6835,6 +6843,7 @@ export type Database = {
           postingDate?: string
           quantity?: number
           shelfId?: string | null
+          trackedEntityId?: string | null
         }
         Relationships: [
           {
@@ -6891,6 +6900,13 @@ export type Database = {
             columns: ["shelfId"]
             isOneToOne: false
             referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
             referencedColumns: ["id"]
           },
           {
@@ -26008,6 +26024,7 @@ export type Database = {
       }
       trackedActivity: {
         Row: {
+          attributes: Json
           companyId: string
           createdAt: string
           createdBy: string
@@ -26018,6 +26035,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          attributes?: Json
           companyId: string
           createdAt?: string
           createdBy: string
@@ -26028,6 +26046,7 @@ export type Database = {
           type: string
         }
         Update: {
+          attributes?: Json
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -26100,110 +26119,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      trackedActivityAttribute: {
-        Row: {
-          booleanValue: boolean | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          name: string
-          numericValue: number | null
-          textValue: string | null
-          trackedActivityId: string
-        }
-        Insert: {
-          booleanValue?: boolean | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          name: string
-          numericValue?: number | null
-          textValue?: string | null
-          trackedActivityId: string
-        }
-        Update: {
-          booleanValue?: boolean | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          name?: string
-          numericValue?: number | null
-          textValue?: string | null
-          trackedActivityId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "trackedActivityAttribute_trackedActivityId_fkey"
-            columns: ["trackedActivityId"]
-            isOneToOne: false
-            referencedRelation: "trackedActivity"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -26422,6 +26337,7 @@ export type Database = {
       }
       trackedEntity: {
         Row: {
+          attributes: Json
           companyId: string
           createdAt: string
           createdBy: string
@@ -26430,8 +26346,10 @@ export type Database = {
           sourceDocument: string
           sourceDocumentId: string
           sourceDocumentReadableId: string | null
+          status: Database["public"]["Enums"]["trackedEntityStatus"]
         }
         Insert: {
+          attributes?: Json
           companyId: string
           createdAt?: string
           createdBy: string
@@ -26440,8 +26358,10 @@ export type Database = {
           sourceDocument: string
           sourceDocumentId: string
           sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["trackedEntityStatus"]
         }
         Update: {
+          attributes?: Json
           companyId?: string
           createdAt?: string
           createdBy?: string
@@ -26450,6 +26370,7 @@ export type Database = {
           sourceDocument?: string
           sourceDocumentId?: string
           sourceDocumentReadableId?: string | null
+          status?: Database["public"]["Enums"]["trackedEntityStatus"]
         }
         Relationships: [
           {
@@ -26514,110 +26435,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-        ]
-      }
-      trackedEntityAttribute: {
-        Row: {
-          booleanValue: boolean | null
-          companyId: string
-          createdAt: string
-          createdBy: string
-          name: string
-          numericValue: number | null
-          textValue: string | null
-          trackedEntityId: string
-        }
-        Insert: {
-          booleanValue?: boolean | null
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          name: string
-          numericValue?: number | null
-          textValue?: string | null
-          trackedEntityId: string
-        }
-        Update: {
-          booleanValue?: boolean | null
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          name?: string
-          numericValue?: number | null
-          textValue?: string | null
-          trackedEntityId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "trackedEntityAttribute_trackedEntityId_fkey"
-            columns: ["trackedEntityId"]
-            isOneToOne: false
-            referencedRelation: "trackedEntity"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -33488,14 +33305,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -36701,7 +36518,6 @@ export type Database = {
         | "Consumable"
         | "Material"
         | "Fixture"
-      serialStatus: "Available" | "Reserved" | "Consumed"
       serviceType: "Internal" | "External"
       shipmentSourceDocument:
         | "Sales Order"
@@ -36723,6 +36539,7 @@ export type Database = {
         | "Refund"
       supplierQuoteStatus: "Active" | "Expired"
       tableViewType: "Public" | "Private"
+      trackedEntityStatus: "Available" | "Reserved" | "On Hold" | "Consumed"
       trackingSource: "Purchased" | "Manufactured"
     }
     CompositeTypes: {

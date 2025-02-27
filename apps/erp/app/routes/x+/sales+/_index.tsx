@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
+  Badge,
   Button,
   Card,
   CardAction,
@@ -512,12 +513,12 @@ export default function SalesDashboard() {
                 className="min-w-[160px] gap-4"
               />
             </div>
-            <HStack className="text-sm text-muted-foreground pl-[3px] pt-1">
+            <HStack className="pl-[3px] pt-1">
               {isFetching ? (
-                <Skeleton className="h-5 w-1/4" />
+                <Skeleton className="h-8 w-1/2" />
               ) : (
                 <>
-                  <p>
+                  <p className="text-xl font-semibold tracking-tight">
                     {["salesOrderRevenue", "salesFunnel"].includes(
                       selectedKpiData.key
                     )
@@ -525,13 +526,13 @@ export default function SalesDashboard() {
                       : numberFormatter.format(total)}
                   </p>
                   {percentageChange >= 0 ? (
-                    <span className="text-emerald-500">
+                    <Badge variant="green">
                       +{percentageChange.toFixed(0)}%
-                    </span>
+                    </Badge>
                   ) : (
-                    <span className="text-red-500">
+                    <Badge variant="red">
                       {percentageChange.toFixed(0)}%
-                    </span>
+                    </Badge>
                   )}
                 </>
               )}
