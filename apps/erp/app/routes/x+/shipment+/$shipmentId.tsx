@@ -9,7 +9,7 @@ import { PanelProvider } from "~/components/Layout";
 import {
   getBatchProperties,
   getShipment,
-  getShipmentLineTracking,
+  getShipmentTracking,
   getShipmentLines,
 } from "~/modules/inventory";
 import ShipmentHeader from "~/modules/inventory/ui/Shipments/ShipmentHeader";
@@ -34,7 +34,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
     getShipment(serviceRole, shipmentId),
     getShipmentLines(serviceRole, shipmentId),
-    getShipmentLineTracking(serviceRole, shipmentId),
+    getShipmentTracking(serviceRole, shipmentId),
   ]);
 
   if (shipment.error) {

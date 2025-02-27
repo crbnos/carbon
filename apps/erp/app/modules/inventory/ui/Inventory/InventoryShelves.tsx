@@ -34,6 +34,8 @@ import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { LuQrCode } from "react-icons/lu";
+import { Copy } from "~/components";
 
 type InventoryShelvesProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
@@ -83,8 +85,9 @@ const InventoryShelves = ({
             <Thead>
               <Tr>
                 <Th>Shelf</Th>
-                <Th>Tracking ID</Th>
+               
                 <Th>QoH</Th>
+                <Th>Tracking ID</Th>
               </Tr>
             </Thead>
             <Tbody>
@@ -96,8 +99,14 @@ const InventoryShelves = ({
                       {shelves.find((s) => s.id === item.shelfId)?.name ||
                         item.shelfId}
                     </Td>
-                    <Td>{item.trackedEntityId}</Td>
-                    <Td>{item.quantity}</Td>
+                      
+                    <Td className="flex items-center gap-2">
+                      <span>{item.quantity}</span>
+                      
+                    </Td>
+                    <Td>
+                      <Copy icon={<LuQrCode />} text={item.trackedEntityId} />
+                    </Td>
                   </Tr>
                 ))}
             </Tbody>

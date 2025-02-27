@@ -69,10 +69,10 @@ import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
-import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 import { labelSizes } from "@carbon/utils";
 import { SplitButton } from "~/components/SplitButton";
+import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -630,6 +630,7 @@ function BatchForm({
           </SplitButton>
           <Button
             variant="secondary"
+            leftIcon={<LuGroup />}
             size="sm"
             onClick={propertiesDisclosure.onOpen}
           >

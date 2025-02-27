@@ -1,7 +1,4 @@
 import {
-  // LuBarcode,
-  LuBox,
-  LuGroup,
   LuHandCoins,
   LuTally5,
   LuTruck,
@@ -22,18 +19,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuTally5 />,
         table: "inventory",
       },
-      {
-        name: "Batches",
-        to: path.to.batches,
-        icon: <LuGroup />,
-        table: "batchNumber",
-      },
-      // {
-      //   name: "Serial Numbers",
-      //   to: path.to.serialNumbers,
-      //   icon: <LuBarcode />,
-      //   table: "serialNumber",
-      // },
+      
     ],
   },
   {

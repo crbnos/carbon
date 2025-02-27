@@ -142,6 +142,7 @@ const Item = ({
   };
 
   const canSwitchItemType = typeof onTypeChange === "function";
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   return (
     <>
@@ -292,6 +293,9 @@ const Item = ({
                     size="lg"
                     onClick={() => {
                       onTypeChange?.(itemType);
+                      setTimeout(() => {
+                        submitRef.current?.focus();
+                      }, 0);
                     }}
                   >
                     {itemType}
@@ -309,6 +313,7 @@ const Item = ({
                 Cancel
               </Button>
               <Button
+                ref={submitRef}
                 isDisabled={type === "Item"}
                 onClick={() => {
                   selectTypeModal.onClose();

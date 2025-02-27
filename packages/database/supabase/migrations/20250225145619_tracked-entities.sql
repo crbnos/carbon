@@ -16,6 +16,8 @@ DROP VIEW IF EXISTS "serialNumbers";
 DROP TYPE IF EXISTS "serialStatus";
 CREATE TYPE "trackedEntityStatus" AS ENUM('Available', 'Reserved', 'On Hold', 'Consumed');
 
+ALTER TYPE "configurationParameterDataType" ADD VALUE 'date';
+
 -- Create tracked entity table
 CREATE TABLE "trackedEntity" (
   "id" TEXT NOT NULL DEFAULT xid(),

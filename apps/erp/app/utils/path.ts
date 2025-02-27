@@ -174,8 +174,6 @@ export const path = {
       generatePath(`${x}/people/attributes/${id}`),
     attributeCategoryList: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}`),
-    batches: `${x}/inventory/batches`,
-    batch: (id: string) => generatePath(`${x}/batch/${id}`),
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>

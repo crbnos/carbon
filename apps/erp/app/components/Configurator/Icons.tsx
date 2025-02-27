@@ -1,12 +1,12 @@
 import { cn } from "@carbon/react";
-import { LuHash, LuList, LuToggleLeft, LuType } from "react-icons/lu";
-import type { ConfiguratorDataType } from "./types";
+import { LuCalendar, LuHash, LuList, LuToggleLeft, LuType } from "react-icons/lu";
+import type { BatchPropertyDataType } from "./types";
 
 export function ConfiguratorDataTypeIcon({
   type,
   className,
 }: {
-  type: ConfiguratorDataType;
+  type: BatchPropertyDataType;
   className?: string;
 }) {
   switch (type) {
@@ -21,6 +21,8 @@ export function ConfiguratorDataTypeIcon({
     case "enum":
     case "list":
       return <LuList className={cn("w-4 h-4 text-orange-600", className)} />;
+    case "date":
+      return <LuCalendar className={cn("w-4 h-4 text-red-600", className)} />;
     default:
       return null;
   }
