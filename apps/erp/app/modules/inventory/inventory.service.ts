@@ -253,9 +253,21 @@ export async function getReceiptFiles(
 export async function getAvailableSerialNumbersForItem(
   client: SupabaseClient<Database>,
   itemId: string,
-  companyId: string
+  companyId: string,
+  isReadOnly = false
 ) {
-  return client.from("trackedEntity").select("*").eq("sourceDocument", "Item").eq("sourceDocumentId", itemId).eq("companyId", companyId).eq("status", "Available");
+  let query = client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .eq("sourceDocumentId", itemId)
+    .eq("companyId", companyId);
+
+  if (!isReadOnly) {
+    query = query.eq("status", "Available");
+  }
+
+  return query;
 }
 
 export async function getAvailableBatchNumbersForItem(
@@ -263,7 +275,13 @@ export async function getAvailableBatchNumbersForItem(
   itemId: string,
   companyId: string
 ) {
-  return client.from("trackedEntity").select("*").eq("sourceDocument", "Item").eq("sourceDocumentId", itemId).eq("companyId", companyId).eq("status", "Available");
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .eq("sourceDocumentId", itemId)
+    .eq("companyId", companyId)
+    .eq("status", "Available");
 }
 
 export async function getShelvesList(
@@ -332,7 +350,6 @@ export async function getShipmentLines(
 ) {
   return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
 }
-
 
 export async function getShipmentLinesWithDetails(
   client: SupabaseClient<Database>,

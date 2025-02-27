@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { getBatchNumbersForItem } from "~/modules/inventory/inventory.service";
+import { getAvailableBatchNumbersForItem } from "~/modules/inventory/inventory.service";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -15,5 +15,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   }
 
-  return json(await getBatchNumbersForItem(client, companyId, itemId));
+  return json(await getAvailableBatchNumbersForItem(client, companyId, itemId));
 }
