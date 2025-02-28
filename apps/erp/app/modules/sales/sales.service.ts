@@ -868,17 +868,6 @@ export async function getQuoteLines(
     .order("itemReadableId", { ascending: true });
 }
 
-export async function getSalesOrderCustomerDetails(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("salesOrderLocations")
-    .select("*")
-    .eq("id", salesOrderId)
-    .single();
-}
-
 export async function getQuoteByExternalId(
   client: SupabaseClient<Database>,
   externalId: string
@@ -1054,6 +1043,17 @@ export async function getSalesOrder(
   return client.from("salesOrders").select("*").eq("id", salesOrderId).single();
 }
 
+export async function getSalesOrderCustomerDetails(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  return client
+    .from("salesOrderLocations")
+    .select("*")
+    .eq("id", salesOrderId)
+    .single();
+}
+
 export async function getSalesOrderFavorites(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1064,6 +1064,24 @@ export async function getSalesOrderFavorites(
     .select("*")
     .eq("companyId", companyId)
     .eq("userId", userId);
+}
+
+export async function getSalesOrderRelatedItems(
+  client: SupabaseClient<Database>,
+  salesOrderId: string
+) {
+  const [jobs, shipments] = await Promise.all([
+    client.from("job").select("*").eq("salesOrderId", salesOrderId),
+    client
+      .from("shipment")
+      .select("*, shipmentLine(*)")
+      .eq("sourceDocumentId", salesOrderId),
+  ]);
+
+  return {
+    jobs: jobs.data ?? [],
+    shipments: shipments.data ?? [],
+  };
 }
 
 export async function getSalesOrders(

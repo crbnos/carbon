@@ -21,6 +21,7 @@ import type {
   getQuoteShipment,
   getSalesOrderLines,
   getSalesOrderLineShipments,
+  getSalesOrderRelatedItems,
   getSalesOrders,
   getSalesRFQLines,
   getSalesRFQs,
@@ -157,6 +158,10 @@ export type SalesOrderStatus = Database["public"]["Enums"]["salesOrderStatus"];
 
 export type SalesOrderTransactionType =
   Database["public"]["Enums"]["salesOrderTransactionType"];
+
+export type SalesOrderRelatedItems = Awaited<
+  ReturnType<typeof getSalesOrderRelatedItems>
+>;
 
 export type SalesRFQ = NonNullable<
   Awaited<ReturnType<typeof getSalesRFQs>>["data"]

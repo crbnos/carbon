@@ -109,16 +109,80 @@ export function TeamSwitcher({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            disabled={!hasMultipleCompanies}
-            className="disabled:opacity-100"
+        {hasMultipleCompanies ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              disabled={!hasMultipleCompanies}
+              className="disabled:opacity-100"
+              asChild
+            >
+              <SidebarMenuButton
+                size="lg"
+                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              >
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
+                  {companyLogo ? (
+                    <img
+                      src={companyLogo}
+                      alt={`${company.name} logo`}
+                      className="h-full w-full rounded object-contain"
+                    />
+                  ) : (
+                    <BsFillHexagonFill />
+                  )}
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">{company.name}</span>
+                </div>
+                {hasMultipleCompanies && (
+                  <LuChevronsUpDown className="ml-auto" />
+                )}
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+              align="start"
+              side={isMobile ? "bottom" : "right"}
+              sideOffset={4}
+            >
+              <DropdownMenuLabel className="text-xs text-muted-foreground">
+                Companies
+              </DropdownMenuLabel>
+              {companies.map((c, index) => {
+                const logo = mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                return (
+                  <Form
+                    key={c.companyId}
+                    method="post"
+                    action={path.to.companySwitch(c.companyId!)}
+                    className="w-full"
+                  >
+                    <DropdownMenuItem
+                      key={c.name}
+                      className="gap-2 p-2"
+                      asChild
+                    >
+                      <button type="submit" className="w-full">
+                        <Avatar
+                          src={logo ?? undefined}
+                          name={c.name ?? ""}
+                          className="rounded-md object-contain bg-transparent border-none"
+                        />
+                        {c.name}
+                      </button>
+                    </DropdownMenuItem>
+                  </Form>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <SidebarMenuButton
+            size="lg"
+            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             asChild
           >
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
+            <Link to={path.to.assigned}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
                 {companyLogo ? (
                   <img
@@ -133,42 +197,9 @@ export function TeamSwitcher({
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{company.name}</span>
               </div>
-              {hasMultipleCompanies && <LuChevronsUpDown className="ml-auto" />}
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-            align="start"
-            side={isMobile ? "bottom" : "right"}
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
-              Companies
-            </DropdownMenuLabel>
-            {companies.map((c, index) => {
-              const logo = mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-              return (
-                <Form
-                  key={c.companyId}
-                  method="post"
-                  action={path.to.companySwitch(c.companyId!)}
-                  className="w-full"
-                >
-                  <DropdownMenuItem key={c.name} className="gap-2 p-2" asChild>
-                    <button type="submit" className="w-full">
-                      <Avatar
-                        src={logo ?? undefined}
-                        name={c.name ?? ""}
-                        className="rounded-md object-contain bg-transparent border-none"
-                      />
-                      {c.name}
-                    </button>
-                  </DropdownMenuItem>
-                </Form>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </Link>
+          </SidebarMenuButton>
+        )}
       </SidebarMenuItem>
     </SidebarMenu>
   );

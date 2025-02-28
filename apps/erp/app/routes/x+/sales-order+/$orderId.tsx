@@ -14,6 +14,7 @@ import {
   getQuote,
   getSalesOrder,
   getSalesOrderLines,
+  getSalesOrderRelatedItems,
 } from "~/modules/sales";
 import {
   SalesOrderExplorer,
@@ -70,6 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
     files: getOpportunityDocuments(client, companyId, opportunity.data.id),
+    relatedItems: getSalesOrderRelatedItems(client, orderId),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,
