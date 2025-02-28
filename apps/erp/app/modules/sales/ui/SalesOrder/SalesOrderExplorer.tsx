@@ -16,12 +16,36 @@ import {
   useKeyboardShortcuts,
   useMount,
   VStack,
+  Count,
+  Input,
+  InputGroup,
+  InputLeftElement,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useParams } from "@remix-run/react";
-import { useRef, useState } from "react";
-import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
-import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
+import {
+  Link,
+  useNavigate,
+  useParams,
+  Await,
+} from "@remix-run/react";
+import { useRef, useState, Suspense } from "react";
+import {
+  LuCirclePlus,
+  LuEllipsisVertical,
+  LuTrash,
+  LuChevronDown,
+  LuSearch,
+  LuChevronRight,
+  LuTruck,
+} from "react-icons/lu";
+import {
+  Empty,
+  ItemThumbnail,
+  Hyperlink,
+  MethodIcon,
+  MethodItemTypeIcon,
+} from "~/components";
+import { LevelLine } from "~/components/TreeView";
 import {
   useOptimisticLocation,
   usePermissions,
@@ -33,9 +57,62 @@ import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { Customer, SalesOrder, SalesOrderLine } from "../../types";
+import type {
+  Customer,
+  SalesOrder,
+  SalesOrderLine,
+  SalesOrderRelatedItems,
+} from "../../types";
 import DeleteSalesOrderLine from "./DeleteSalesOrderLine";
 import SalesOrderLineForm from "./SalesOrderLineForm";
+
+// Define types for the related items
+type RelatedItem = {
+  id: string;
+  documentReadableId: string;
+  documentId?: string;
+};
+
+type RelatedItemNode = {
+  key: "jobs" | "shipments";
+  name: string;
+  module: string;
+  children: RelatedItem[];
+};
+
+function getRelatedItems(
+  items: SalesOrderRelatedItems,
+  lineId: string
+): RelatedItemNode[] {
+  return [
+    {
+      key: "jobs",
+      name: "Jobs",
+      module: "production",
+      children: items.jobs
+        .filter((job) => job.salesOrderLineId === lineId)
+        .map((job) => ({
+          id: job.id ?? "",
+          documentReadableId: job.jobId ?? "",
+          documentId: job.id ?? "",
+        })),
+    },
+    {
+      key: "shipments",
+      name: "Shipments",
+      module: "inventory",
+      children: items.shipments
+        .filter((shipment) =>
+          shipment.shipmentLine.some((line) => line.lineId === lineId)
+        )
+        .map((shipment) => ({
+          id: shipment.id ?? "",
+          documentReadableId: shipment.shipmentId ?? "",
+          documentId: shipment.id ?? "",
+        })),
+    },
+  ];
+}
 
 export default function SalesOrderExplorer() {
   const { defaults } = useUser();
@@ -169,9 +246,12 @@ function SalesOrderLineItem({
 }: SalesOrderLineItemProps) {
   const { orderId, lineId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
+
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
+  const navigate = useNavigate();
+  const searchDisclosure = useDisclosure();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -182,41 +262,59 @@ function SalesOrderLineItem({
   const isSelected =
     location.pathname === path.to.salesOrderLine(orderId, line.id!);
 
+  const onLineClick = () => {
+    if (location.pathname !== path.to.salesOrderLine(orderId, line.id!)) {
+      navigate(path.to.salesOrderLine(orderId, line.id!));
+    }
+  };
+
   return (
     <VStack spacing={0} className="border-b">
-      <Link
-        to={path.to.salesOrderLine(orderId, line.id!)}
-        prefetch="intent"
-        className="w-full"
+      <HStack
+        className={cn(
+          "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
+          isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
+        )}
+        onClick={onLineClick}
       >
-        <HStack
-          className={cn(
-            "group w-full p-2 items-center hover:bg-accent/30 cursor-pointer relative",
-            isSelected && "bg-accent/60 hover:bg-accent/50 shadow-inner"
-          )}
-        >
-          <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-            <ItemThumbnail
-              thumbnailPath={line.thumbnailPath}
-              type="Part" // TODO
-            />
+        <HStack spacing={2} className="flex-grow min-w-0 pr-10">
+          <ItemThumbnail
+            thumbnailPath={line.thumbnailPath}
+            type="Part" // TODO
+          />
 
-            <VStack spacing={0} className="min-w-0">
-              <span className="font-semibold line-clamp-1">
-                {line.itemReadableId}
-              </span>
-              <span className="text-muted-foreground text-xs truncate line-clamp-1">
-                {line.description}
-              </span>
-            </VStack>
-          </HStack>
-          <div className="absolute right-2">
+          <VStack spacing={0} className="min-w-0">
+            <span className="font-semibold line-clamp-1">
+              {line.itemReadableId}
+            </span>
+            <span className="text-muted-foreground text-xs truncate line-clamp-1">
+              {line.description}
+            </span>
+          </VStack>
+        </HStack>
+        <div className="absolute right-2">
+          <HStack spacing={1}>
+            <IconButton
+              aria-label={disclosure.isOpen ? "Hide" : "Show"}
+              className={cn(
+                "animate opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100",
+                disclosure.isOpen && "-rotate-180"
+              )}
+              icon={<LuChevronDown />}
+              size="md"
+              variant="solid"
+              onClick={(e) => {
+                e.stopPropagation();
+                disclosure.onToggle();
+              }}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <IconButton
                   aria-label="More"
                   className="opacity-0 group-hover:opacity-100 group-active:opacity-100 data-[state=open]:opacity-100"
                   icon={<LuEllipsisVertical />}
+                  size="md"
                   variant="solid"
                   onClick={(e) => e.stopPropagation()}
                 />
@@ -249,11 +347,199 @@ function SalesOrderLineItem({
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={searchDisclosure.onOpen}>
+                  <DropdownMenuIcon icon={<LuSearch />} />
+                  Search
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </HStack>
-      </Link>
+          </HStack>
+        </div>
+      </HStack>
+      {disclosure.isOpen && (
+        <VStack className="border-b border-border p-1">
+          <RelatedItems
+            lineId={line.id!}
+            isSearchExpanded={searchDisclosure.isOpen}
+          />
+        </VStack>
+      )}
     </VStack>
+  );
+}
+
+function RelatedItems({
+  lineId,
+  isSearchExpanded,
+}: {
+  lineId: string;
+  isSearchExpanded: boolean;
+}) {
+  const { orderId } = useParams();
+  if (!orderId) throw new Error("Could not find orderId");
+
+  const salesOrderData = useRouteData<{
+    relatedItems: Promise<SalesOrderRelatedItems>;
+  }>(path.to.salesOrder(orderId));
+
+  return (
+    <Suspense
+      fallback={
+        <div className="p-2 text-sm text-muted-foreground">
+          Loading related items...
+        </div>
+      }
+    >
+      <Await resolve={salesOrderData?.relatedItems}>
+        {(relatedItemsData) => {
+          // Process the related items for this specific line
+          // @ts-ignore
+          const relatedItems = getRelatedItems(relatedItemsData, lineId);
+
+          return (
+            <SalesOrderLineRelatedItems
+              relatedItems={relatedItems}
+              isSearchExpanded={isSearchExpanded}
+            />
+          );
+        }}
+      </Await>
+    </Suspense>
+  );
+}
+
+type SalesOrderLineRelatedItemsProps = {
+  relatedItems: RelatedItemNode[];
+  isSearchExpanded: boolean;
+};
+
+// Component to display related items tree for a sales order line
+function SalesOrderLineRelatedItems({
+  relatedItems,
+  isSearchExpanded,
+}: SalesOrderLineRelatedItemsProps) {
+  const [filterText, setFilterText] = useState("");
+
+  return (
+    <VStack className="w-full p-2">
+      {isSearchExpanded && (
+        <HStack className="w-full pb-2">
+          <InputGroup size="sm" className="flex flex-grow">
+            <InputLeftElement>
+              <LuSearch className="h-4 w-4" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search related items..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
+            />
+          </InputGroup>
+        </HStack>
+      )}
+      <VStack spacing={0} className="w-full">
+        {relatedItems.map((node) => (
+          <RelatedItemTreeNode key={node.key} node={node} filterText={filterText} />
+        ))}
+      </VStack>
+    </VStack>
+  );
+}
+
+// Component to display a node in the related items tree
+function RelatedItemTreeNode({
+  node,
+  filterText,
+}: {
+  node: RelatedItemNode;
+  filterText: string;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const filteredChildren = node.children.filter((child) =>
+    child.documentReadableId.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  return (
+    <>
+      <button
+        className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-muted/90 w-full font-medium"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+      >
+        <div className="h-8 w-4 flex items-center justify-center">
+          <LuChevronRight className={cn("size-4", isExpanded && "rotate-90")} />
+        </div>
+        <div className="flex flex-grow items-center justify-between gap-2">
+          <span>{node.name}</span>
+          {filteredChildren.length > 0 && (
+            <Count count={filteredChildren.length} />
+          )}
+        </div>
+      </button>
+      {isExpanded && (
+        <div className="flex flex-col w-full">
+          {filteredChildren.length === 0 ? (
+            <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-4">
+              <LevelLine isSelected={false} />
+              <div className="text-xs text-muted-foreground">
+                No {node.name.toLowerCase()} found
+              </div>
+            </div>
+          ) : (
+            filteredChildren.map((child) => (
+              <RelatedItemLink
+                key={child.id}
+                item={child}
+                nodeType={node.key}
+              />
+            ))
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+// Component to display a link to a related item
+function RelatedItemLink({
+  item,
+  nodeType,
+}: {
+  item: RelatedItem;
+  nodeType: "jobs" | "shipments";
+}) {
+  const getLinkForItem = (): string => {
+    switch (nodeType) {
+      case "jobs":
+        return item.documentId ? path.to.job(item.documentId) : "#";
+      case "shipments":
+        return item.documentId ? path.to.shipment(item.documentId) : "#";
+      default:
+        return "#";
+    }
+  };
+
+  const getIcon = () => {
+    switch (nodeType) {
+      case "jobs":
+        return <MethodIcon type="Make" />;
+      case "shipments":
+        return <LuTruck className="text-indigo-600" />;
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <Hyperlink
+      to={getLinkForItem()}
+      className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium"
+    >
+      <LevelLine isSelected={false} className="mr-2" />
+      <div className="mr-2">{getIcon()}</div>
+      {item.documentReadableId}
+    </Hyperlink>
   );
 }
