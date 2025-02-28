@@ -91,10 +91,16 @@ export type SavedView = {
 export type StandardFactor = (typeof standardFactorType)[number];
 
 export interface TrackedEntityAttributes {
-  [key: string]: any;
-  "Receipt Line"?: string;
   "Batch Number"?: string;
-  "Serial Number"?: string;
+  Customer?: string;
+  "Purchase Order"?: string;
+  "Receipt Line Index"?: number;
+  "Receipt Line"?: string;
   Receipt?: string;
-  Index?: number;
+  Supplier?: string;
+  "Serial Number"?: string;
+  "Shipment Line Index"?: number;
+  "Shipment Line"?: string;
+  Shipment?: string;
+  "Split Entity ID"?: string;
 }

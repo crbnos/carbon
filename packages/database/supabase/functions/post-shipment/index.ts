@@ -4,7 +4,8 @@ import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
-import type { Database } from "../lib/types.ts";
+import type { Database, Json } from "../lib/types.ts";
+import { TrackedEntityAttributes } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -46,15 +47,10 @@ serve(async (req: Request) => {
       client.from("shipment").select("*").eq("id", shipmentId).single(),
       client.from("shipmentLine").select("*").eq("shipmentId", shipmentId),
       client
-        .from("itemTracking")
-        .select(
-          "id, quantity, sourceDocumentLineId, sourceDocument, serialNumber(id, number), batchNumber(id, number)"
-        )
-        .eq("sourceDocument", "Shipment")
-        .eq("sourceDocumentId", shipmentId),
+        .from("trackedEntity")
+        .select("*")
+        .eq("attributes->> Shipment", shipmentId),
     ]);
-
-    console.log({ shipmentLineTracking });
 
     if (shipment.error) throw new Error("Failed to fetch shipment");
     if (shipmentLines.error) throw new Error("Failed to fetch shipment lines");
@@ -132,8 +128,6 @@ serve(async (req: Request) => {
             items.data.find((item) => item.id === shipmentLine.itemId)
               ?.itemTrackingType ?? "Inventory";
 
-          console.log({ shipmentLine });
-
           if (itemTrackingType === "Inventory") {
             itemLedgerInserts.push({
               postingDate: today,
@@ -158,15 +152,16 @@ serve(async (req: Request) => {
               itemReadableId: shipmentLine.itemReadableId ?? "",
               quantity: -shipmentLine.shippedQuantity,
               locationId: shipmentLine.locationId ?? locationId,
-              shelfId: shipmentLine.shelfId, // TODO: get shelfId dynamically
+              shelfId: shipmentLine.shelfId,
               entryType: "Negative Adjmt.",
               documentType: "Sales Shipment",
               documentId: shipment.data?.id ?? undefined,
-              batchNumber: shipmentLineTracking.data?.find(
+              trackedEntityId: shipmentLineTracking.data?.find(
                 (tracking) =>
-                  tracking.sourceDocument === "Shipment" &&
-                  tracking.sourceDocumentLineId === shipmentLine.lineId
-              )?.batchNumber?.number,
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              )?.id,
               externalDocumentId: undefined,
               createdBy: userId,
               companyId,
@@ -176,8 +171,9 @@ serve(async (req: Request) => {
           if (shipmentLine.requiresSerialTracking) {
             const lineTracking = shipmentLineTracking.data?.filter(
               (tracking) =>
-                tracking.sourceDocument === "Shipment" &&
-                tracking.sourceDocumentLineId === shipmentLine.id
+                (tracking.attributes as TrackedEntityAttributes | undefined)?.[
+                  "Shipment Line"
+                ] === shipmentLine.id
             );
 
             lineTracking?.forEach((tracking) => {
@@ -187,18 +183,18 @@ serve(async (req: Request) => {
                 itemReadableId: shipmentLine.itemReadableId ?? "",
                 quantity: -1,
                 locationId: shipmentLine.locationId ?? locationId,
-                shelfId: shipmentLine.shelfId, // TODO: get shelfId dynamically
+                shelfId: shipmentLine.shelfId,
                 entryType: "Negative Adjmt.",
                 documentType: "Sales Shipment",
                 documentId: shipment.data?.id ?? undefined,
-                serialNumber: tracking.serialNumber?.number,
+                trackedEntityId: tracking.id,
                 externalDocumentId: undefined,
                 createdBy: userId,
                 companyId,
               });
 
-              if (tracking.serialNumber?.id) {
-                serialNumbersConsumed.push(tracking.serialNumber?.id);
+              if (tracking.id) {
+                serialNumbersConsumed.push(tracking.id);
               }
             });
           }
@@ -265,25 +261,60 @@ serve(async (req: Request) => {
           return acc;
         }, {});
 
-        const itemTrackingUpdates =
+        const trackedEntitySplits: Record<
+          string,
+          {
+            originalEntityId: string;
+            originalQuantity: number;
+            shippedQuantity: number;
+            remainingQuantity: number;
+            attributes: TrackedEntityAttributes;
+            sourceDocument: string;
+            sourceDocumentId: string;
+            sourceDocumentReadableId: string | null;
+            companyId: string;
+          }
+        > = {};
+
+        const trackedEntityUpdates =
           shipmentLineTracking.data?.reduce<
             Record<
               string,
-              Database["public"]["Tables"]["itemTracking"]["Update"]
+              Database["public"]["Tables"]["trackedEntity"]["Update"]
             >
-          >((acc, itemTracking) => {
+          >((acc, trackedEntity) => {
             const shipmentLine = shipmentLines.data?.find(
               (shipmentLine) =>
-                shipmentLine.id === itemTracking.sourceDocumentLineId
+                shipmentLine.id ===
+                (trackedEntity.attributes as TrackedEntityAttributes)?.[
+                  "Shipment Line"
+                ]
             );
 
-            const quantity = shipmentLine?.requiresSerialTracking
-              ? 1
-              : shipmentLine?.shippedQuantity ?? itemTracking.quantity;
+            if (
+              shipmentLine?.shippedQuantity !== undefined &&
+              trackedEntity.quantity !== undefined &&
+              shipmentLine.shippedQuantity < trackedEntity.quantity
+            ) {
+              // Need to split the batch
+              trackedEntitySplits[trackedEntity.id] = {
+                originalEntityId: trackedEntity.id,
+                originalQuantity: trackedEntity.quantity,
+                shippedQuantity: shipmentLine.shippedQuantity,
+                remainingQuantity:
+                  trackedEntity.quantity - shipmentLine.shippedQuantity,
+                attributes: trackedEntity.attributes as TrackedEntityAttributes,
+                sourceDocument: trackedEntity.sourceDocument,
+                sourceDocumentId: trackedEntity.sourceDocumentId,
+                sourceDocumentReadableId:
+                  trackedEntity.sourceDocumentReadableId,
+                companyId: trackedEntity.companyId,
+              };
+            }
 
-            acc[itemTracking.id] = {
-              posted: true,
-              quantity: quantity,
+            acc[trackedEntity.id] = {
+              status: "Consumed",
+              quantity: shipmentLine?.shippedQuantity ?? trackedEntity.quantity,
             };
 
             return acc;
@@ -338,14 +369,6 @@ serve(async (req: Request) => {
             .where("id", "=", salesOrder.data.id)
             .execute();
 
-          if (itemLedgerInserts.length > 0) {
-            await trx
-              .insertInto("itemLedger")
-              .values(itemLedgerInserts)
-              .returning(["id"])
-              .execute();
-          }
-
           await trx
             .updateTable("shipment")
             .set({
@@ -356,25 +379,268 @@ serve(async (req: Request) => {
             .where("id", "=", shipmentId)
             .execute();
 
-          if (Object.keys(itemTrackingUpdates).length > 0) {
+          if (Object.keys(trackedEntityUpdates).length > 0) {
+            const trackedActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Shipment",
+                sourceDocument: "Shipment",
+                sourceDocumentId: shipmentId,
+                sourceDocumentReadableId: shipment.data.shipmentId,
+                attributes: {
+                  "Sales Order": salesOrder.data.id,
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today,
+              })
+              .returning(["id"])
+              .execute();
+
+            const trackedActivityId = trackedActivity[0].id;
+
+            // Handle batch splits first
+            for await (const splitInfo of Object.values(trackedEntitySplits)) {
+              // Create a split activity
+              const splitActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Split",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data.shipmentId,
+                  attributes: {
+                    "Original Quantity": splitInfo.originalQuantity,
+                    "Shipped Quantity": splitInfo.shippedQuantity,
+                    "Remaining Quantity": splitInfo.remainingQuantity,
+                  },
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+
+              const splitActivityId = splitActivity[0].id!;
+
+              // Record the original entity as input to the split
+              await trx
+                .insertInto("trackedActivityInput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: splitInfo.originalEntityId,
+                  quantity: splitInfo.originalQuantity,
+                  entityType: "Item",
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+
+              // Create a new tracked entity for the remaining quantity
+              const newTrackedEntity = await trx
+                .insertInto("trackedEntity")
+                .values({
+                  quantity: splitInfo.remainingQuantity,
+                  status: "Available",
+                  sourceDocument: splitInfo.sourceDocument,
+                  sourceDocumentId: splitInfo.sourceDocumentId,
+                  sourceDocumentReadableId: splitInfo.sourceDocumentReadableId,
+                  attributes: splitInfo.attributes as unknown as Json,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+
+              const newTrackedEntityId = newTrackedEntity[0].id!;
+
+              // Update the original entity's attributes to include the split entity ID
+              const originalEntity = await trx
+                .selectFrom("trackedEntity")
+                .select(["attributes"])
+                .where("id", "=", splitInfo.originalEntityId)
+                .executeTakeFirst();
+
+              if (originalEntity) {
+                const updatedAttributes = {
+                  ...((originalEntity.attributes as TrackedEntityAttributes) ||
+                    {}),
+                  "Split Entity ID": newTrackedEntityId,
+                };
+
+                // Update the original entity with the reference to the new split entity
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({
+                    attributes: updatedAttributes,
+                  })
+                  .where("id", "=", splitInfo.originalEntityId)
+                  .execute();
+              }
+
+              // Record the new entity as output from the split
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: newTrackedEntityId,
+                  quantity: splitInfo.remainingQuantity,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+
+              // Record the shipped portion as output (will be consumed by shipment)
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: splitInfo.originalEntityId,
+                  quantity: splitInfo.shippedQuantity,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.itemId!,
+                itemReadableId:
+                  shipmentLines.data.find(
+                    (sl) =>
+                      sl.id ===
+                      (splitInfo.attributes as TrackedEntityAttributes)?.[
+                        "Shipment Line"
+                      ]
+                  )?.itemReadableId ?? "",
+                quantity: -splitInfo.originalQuantity,
+                locationId: locationId,
+                shelfId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.shelfId,
+                entryType: "Negative Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                trackedEntityId: splitInfo.originalEntityId,
+                createdBy: userId,
+                companyId,
+              });
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.itemId!,
+                itemReadableId:
+                  shipmentLines.data.find(
+                    (sl) =>
+                      sl.id ===
+                      (splitInfo.attributes as TrackedEntityAttributes)?.[
+                        "Shipment Line"
+                      ]
+                  )?.itemReadableId ?? "",
+                quantity: splitInfo.shippedQuantity,
+                locationId: locationId,
+                shelfId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.shelfId,
+                entryType: "Positive Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                trackedEntityId: splitInfo.originalEntityId,
+                createdBy: userId,
+                companyId,
+              });
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.itemId!,
+                itemReadableId:
+                  shipmentLines.data.find(
+                    (sl) =>
+                      sl.id ===
+                      (splitInfo.attributes as TrackedEntityAttributes)?.[
+                        "Shipment Line"
+                      ]
+                  )?.itemReadableId ?? "",
+                quantity: splitInfo.remainingQuantity,
+                locationId: locationId,
+                shelfId: shipmentLines.data.find(
+                  (sl) =>
+                    sl.id ===
+                    (splitInfo.attributes as TrackedEntityAttributes)?.[
+                      "Shipment Line"
+                    ]
+                )?.shelfId,
+                entryType: "Positive Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                trackedEntityId: newTrackedEntityId,
+                createdBy: userId,
+                companyId,
+              });
+            }
+
+            // Now handle the shipment consumption
             for await (const [id, update] of Object.entries(
-              itemTrackingUpdates
+              trackedEntityUpdates
             )) {
               await trx
-                .updateTable("itemTracking")
+                .updateTable("trackedEntity")
                 .set(update)
                 .where("id", "=", id)
                 .execute();
+
+              if (trackedActivityId) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values({
+                    trackedActivityId,
+                    trackedEntityId: id,
+                    quantity: update.quantity ?? 0,
+                    entityType: "Item",
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .execute();
+              }
             }
           }
 
-          if (serialNumbersConsumed.length > 0) {
+          if (itemLedgerInserts.length > 0) {
             await trx
-              .updateTable("serialNumber")
-              .set({
-                status: "Consumed",
-              })
-              .where("id", "in", serialNumbersConsumed)
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .returning(["id"])
               .execute();
           }
         });

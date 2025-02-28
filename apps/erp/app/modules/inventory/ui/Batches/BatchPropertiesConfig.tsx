@@ -50,7 +50,7 @@ import {
 import { EmployeeAvatar } from "~/components";
 import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { configurationParameterDataTypes } from "~/modules/items/items.models";
+import { batchPropertyDataTypes } from "~/modules/items/items.models";
 import type { action as batchPropertyAction } from "~/routes/x+/inventory+/batch-property+/$itemId.property";
 import { path } from "~/utils/path";
 import { capitalize } from "~/utils/string";
@@ -61,11 +61,13 @@ export default function BatchPropertiesConfig({
   itemId,
   properties: initialProperties,
   type = "card",
+  isReadOnly = false,
   onClose,
 }: {
   itemId: string;
   properties: BatchProperty[];
   type?: "card" | "modal";
+  isReadOnly?: boolean;
   onClose?: () => void;
 }) {
   const { isList, onChangeCheckForListType, setIsList } = useBatchProperties();
@@ -142,30 +144,37 @@ export default function BatchPropertiesConfig({
                   <VStack spacing={4}>
                     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                       <VStack>
-                        <Input name="label" label="Label" />
+                        <Input
+                          name="label"
+                          label="Label"
+                          isDisabled={isReadOnly}
+                        />
                       </VStack>
 
                       <Select
                         name="dataType"
                         label="Data Type"
-                        options={configurationParameterDataTypes.map(
-                          (type) => ({
-                            label: (
-                              <HStack className="w-full">
-                                <ConfiguratorDataTypeIcon
-                                  type={type}
-                                  className="mr-2"
-                                />
-                                {capitalize(type)}
-                              </HStack>
-                            ),
-                            value: type,
-                          })
-                        )}
+                        disabled={isReadOnly}
+                        options={batchPropertyDataTypes.map((type) => ({
+                          label: (
+                            <HStack className="w-full">
+                              <ConfiguratorDataTypeIcon
+                                type={type}
+                                className="mr-2"
+                              />
+                              {capitalize(type)}
+                            </HStack>
+                          ),
+                          value: type,
+                        }))}
                         onChange={onChangeCheckForListType}
                       />
                       {isList && (
-                        <ArrayInput name="listOptions" label="List Options" />
+                        <ArrayInput
+                          isDisabled={isReadOnly}
+                          name="listOptions"
+                          label="List Options"
+                        />
                       )}
                     </div>
                     <HStack spacing={2}>
@@ -359,7 +368,7 @@ function BatchPropertyComponent({
               <Select
                 name="dataType"
                 label="Data Type"
-                options={configurationParameterDataTypes.map((type) => ({
+                options={batchPropertyDataTypes.map((type) => ({
                   label: (
                     <HStack className="w-full">
                       <ConfiguratorDataTypeIcon type={type} className="mr-2" />

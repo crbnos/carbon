@@ -85,7 +85,7 @@ const InventoryShelves = ({
             <Thead>
               <Tr>
                 <Th>Shelf</Th>
-               
+
                 <Th>QoH</Th>
                 <Th>Tracking ID</Th>
               </Tr>
@@ -99,13 +99,16 @@ const InventoryShelves = ({
                       {shelves.find((s) => s.id === item.shelfId)?.name ||
                         item.shelfId}
                     </Td>
-                      
+
                     <Td className="flex items-center gap-2">
                       <span>{item.quantity}</span>
-                      
                     </Td>
                     <Td>
-                      <Copy icon={<LuQrCode />} text={item.trackedEntityId} />
+                      <Copy
+                        icon={<LuQrCode />}
+                        text={item.trackedEntityId}
+                        withTextInTooltip
+                      />
                     </Td>
                   </Tr>
                 ))}

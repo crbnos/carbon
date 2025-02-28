@@ -1,5 +1,11 @@
 import { cn } from "@carbon/react";
-import { LuCalendar, LuHash, LuList, LuToggleLeft, LuType } from "react-icons/lu";
+import {
+  LuCalendar,
+  LuHash,
+  LuList,
+  LuToggleLeft,
+  LuType,
+} from "react-icons/lu";
 import type { BatchPropertyDataType } from "./types";
 
 export function ConfiguratorDataTypeIcon({

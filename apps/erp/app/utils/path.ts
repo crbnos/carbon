@@ -100,32 +100,69 @@ export const path = {
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
-      receiptLabelsPdf: (id: string, labelSize?: string) =>
-        generatePath(
-          labelSize
-            ? `${file}/receipt/${id}/labels.pdf?labelSize=${labelSize}`
-            : `${file}/receipt/${id}/labels.pdf`
-        ),
-      receiptLabelsZpl: (id: string, labelSize?: string) =>
-        generatePath(
-          labelSize
-            ? `${file}/receipt/${id}/labels.zpl?labelSize=${labelSize}`
-            : `${file}/receipt/${id}/labels.zpl`
-        ),
-      receiptLineLabelsPdf: (id: string, labelSize?: string) =>
-        generatePath(
-          labelSize
-            ? `${file}/receipt/line/${id}/labels.pdf?labelSize=${labelSize}`
-            : `${file}/receipt/line/${id}/labels.pdf`
-        ),
-      receiptLineLabelsZpl: (id: string, labelSize?: string) =>
-        generatePath(
-          labelSize
-            ? `${file}/receipt/line/${id}/labels.zpl?labelSize=${labelSize}`
-            : `${file}/receipt/line/${id}/labels.zpl`
-        ),
+      receiptLabelsPdf: (
+        id: string,
+        { labelSize, lineId }: { labelSize?: string; lineId?: string } = {}
+      ) => {
+        let url = `${file}/receipt/${id}/labels.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (lineId) params.append("lineId", lineId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      receiptLabelsZpl: (
+        id: string,
+        { labelSize, lineId }: { labelSize?: string; lineId?: string } = {}
+      ) => {
+        let url = `${file}/receipt/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (lineId) params.append("lineId", lineId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
+      shipmentLabelsPdf: (
+        id: string,
+        { labelSize, lineId }: { labelSize?: string; lineId?: string } = {}
+      ) => {
+        let url = `${file}/shipment/${id}/labels.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (lineId) params.append("lineId", lineId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      shipmentLabelsZpl: (
+        id: string,
+        { labelSize, lineId }: { labelSize?: string; lineId?: string } = {}
+      ) => {
+        let url = `${file}/shipment/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (lineId) params.append("lineId", lineId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
 
       quote: (id: string) => generatePath(`${file}/quote/${id}.pdf`),
     },

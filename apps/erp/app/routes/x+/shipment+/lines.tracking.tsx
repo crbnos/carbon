@@ -1,6 +1,7 @@
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { nanoid } from "nanoid";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -11,94 +12,96 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const shipmentLineId = formData.get("shipmentLineId") as string;
   const shipmentId = formData.get("shipmentId") as string;
-  const itemId = formData.get("itemId") as string;
+  // const itemId = formData.get("itemId") as string;
   const trackingType = formData.get("trackingType") as "batch" | "serial";
+  const trackedEntityId = formData.get("trackedEntityId") as string;
+
+  // Fetch the current tracked entity to get existing attributes
+  const trackedEntityResponse = await client
+    .from("trackedEntity")
+    .select("*")
+    .eq("id", trackedEntityId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (trackedEntityResponse.error) {
+    return json(
+      { success: false, error: trackedEntityResponse.error.message },
+      await flash(
+        request,
+        error(trackedEntityResponse.error, trackedEntityResponse.error.message)
+      )
+    );
+  }
+
+  const trackedEntity = trackedEntityResponse.data;
+
+  if (trackedEntity.status !== "Available") {
+    return json(
+      {
+        success: false,
+        error: `Tracked entity is not available. Current status: ${trackedEntity.status}`,
+      },
+      await flash(
+        request,
+        error(
+          `Tracked entity is not available. Current status: ${trackedEntity.status}`
+        )
+      )
+    );
+  }
+
+  const serviceRole = await getCarbonServiceRole();
+
+  // Prepare new attributes by merging with existing ones
+  const existingAttributes = trackedEntity.attributes || {};
+  let newAttributes = { ...(existingAttributes as Record<string, any>) };
 
   if (trackingType === "batch") {
-    const batchNumber = formData.get("batchNumber") as string;
-    const manufacturingDate = formData.get("manufacturingDate") as
-      | string
-      | null;
-    const expirationDate = formData.get("expirationDate") as string | null;
     const quantity = Number(formData.get("quantity"));
-    const properties = formData.get("properties") as string | null;
-    // First, get or create the batch number record
-    const { data: existingBatch, error: batchQueryError } = await client
-      .from("batchNumber")
-      .select("id")
-      .eq("number", batchNumber)
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .maybeSingle();
 
-    if (batchQueryError) {
-      return json({ error: "Failed to query batch number" }, { status: 500 });
+    if (trackedEntity.quantity < quantity) {
+      return json(
+        { success: false, error: "Batch has insufficient quantity" },
+        await flash(request, error("Batch has insufficient quantity"))
+      );
     }
 
-    const batchId = existingBatch?.id ?? nanoid();
-    let propertiesJson = {};
-    try {
-      propertiesJson = properties ? JSON.parse(properties) : {};
-    } catch (error) {
-      console.error(error);
-    }
-
-    // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_shipment_line_batch_tracking", {
-      p_shipment_line_id: shipmentLineId,
-      p_shipment_id: shipmentId,
-      p_batch_number: batchNumber,
-      p_batch_id: batchId,
-      // @ts-ignore
-      p_manufacturing_date: manufacturingDate || null,
-      // @ts-ignore
-      p_expiration_date: expirationDate || null,
-      p_quantity: quantity,
-      p_properties: propertiesJson,
-    });
-
-    if (error) {
-      console.error(error);
-      return json({ error: "Failed to update tracking" }, { status: 500 });
-    }
+    // Add batch-specific attributes
+    newAttributes = {
+      ...newAttributes,
+      "Shipment Line": shipmentLineId,
+      Shipment: shipmentId,
+    };
   } else if (trackingType === "serial") {
-    const serialNumberId = formData.get("serialNumberId") as string;
     const index = Number(formData.get("index"));
 
-    // Check if serial number already exists for this item
-    const { error: queryError } = await client
-      .from("serialNumber")
-      .select("id, itemTracking(id, sourceDocument, posted)")
-      .eq("id", serialNumberId)
-      .eq("itemId", itemId)
-      .neq("itemTracking.sourceDocumentLineId", shipmentLineId)
-      .eq("companyId", companyId)
-      .eq("status", "Available")
-      .single();
+    // Add serial-specific attributes
+    newAttributes = {
+      ...newAttributes,
+      "Shipment Line": shipmentLineId,
+      Shipment: shipmentId,
+      "Shipment Line Index": index,
+    };
+  }
 
-    if (queryError) {
-      return json({ error: "Serial number does not exist" }, { status: 400 });
-    }
+  // Update the trackedEntity record using service role to bypass RLS
+  const updateResponse = await serviceRole
+    .from("trackedEntity")
+    .update({
+      attributes: newAttributes,
+    })
+    .eq("id", trackedEntityId)
+    .eq("status", "Available");
 
-    // Use a transaction to ensure data consistency
-    const { error } = await client.rpc("update_shipment_line_serial_tracking", {
-      p_shipment_line_id: shipmentLineId,
-      p_shipment_id: shipmentId,
-      p_serial_number_id: serialNumberId,
-      p_index: index,
-    });
-
-    if (error) {
-      console.error(error);
-      // Check if error is due to unique constraint violation
-      if (error.message?.includes("duplicate key value")) {
-        return json(
-          { error: "Serial number already exists for this item" },
-          { status: 400 }
-        );
-      }
-      return json({ error: "Failed to update tracking" }, { status: 500 });
-    }
+  if (updateResponse.error) {
+    return json(
+      { success: false, error: updateResponse.error.message },
+      await flash(
+        request,
+        error(updateResponse.error, updateResponse.error.message)
+      )
+    );
   }
 
   return json({ success: true });

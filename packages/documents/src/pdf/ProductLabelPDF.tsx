@@ -1,26 +1,10 @@
 import { Document, Page, View, Text, Image } from "@react-pdf/renderer";
 import bwipjs from "@bwip-js/node";
 import { createTw } from "react-pdf-tailwind";
-
-interface Item {
-  itemId: string;
-  revision?: string;
-  quantity?: number;
-  number?: string;
-  trackedEntityId?: string;
-  trackingType?: string;
-}
-
-interface LabelSize {
-  width: number;
-  height: number;
-  rows?: number;
-  columns?: number;
-  rotated?: boolean;
-}
+import { LabelSize, ProductLabelItem } from "@carbon/utils";
 
 interface ProductLabelProps {
-  items: Item[];
+  items: ProductLabelItem[];
   labelSize: LabelSize;
 }
 

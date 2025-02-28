@@ -27,7 +27,8 @@
   },
   "exports": {
     "./email": "./src/email/index.ts",
-    "./pdf": "./src/pdf/index.ts"
+    "./pdf": "./src/pdf/index.ts",
+    "./zpl": "./src/zpl/index.ts"
   },
   "jest": {
     "preset": "@carbon/jest/node"

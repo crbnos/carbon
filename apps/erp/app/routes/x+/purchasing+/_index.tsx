@@ -448,9 +448,7 @@ export default function PurchaseDashboard() {
                       +{percentageChange.toFixed(0)}%
                     </Badge>
                   ) : (
-                    <Badge variant="red">
-                      {percentageChange.toFixed(0)}%
-                    </Badge>
+                    <Badge variant="red">{percentageChange.toFixed(0)}%</Badge>
                   )}
                 </>
               )}

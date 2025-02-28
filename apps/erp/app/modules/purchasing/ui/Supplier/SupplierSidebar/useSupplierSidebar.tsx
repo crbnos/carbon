@@ -6,7 +6,8 @@ import {
   LuLayoutList,
   LuMapPin,
   LuPackageSearch,
- LuCog } from "react-icons/lu";
+  LuCog,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";

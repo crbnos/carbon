@@ -1,5 +1,6 @@
 import {
   Button,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -57,7 +58,11 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
               variant={variant}
               size={size}
               disabled={disabled}
-              className="rounded-l-none border-l px-1 before:rounded-l-none border shadow-none hover:shadow-button-base"
+              className={cn(
+                "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none hover:shadow-button-base",
+                variant === "primary" &&
+                  "shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)]"
+              )}
             >
               <LuChevronDown />
             </Button>

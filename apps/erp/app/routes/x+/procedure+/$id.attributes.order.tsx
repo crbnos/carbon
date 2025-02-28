@@ -1,5 +1,5 @@
 import { json } from "@vercel/remix";
-import type { ActionFunctionArgs  } from "@vercel/remix";
+import type { ActionFunctionArgs } from "@vercel/remix";
 
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";

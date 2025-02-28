@@ -500,7 +500,10 @@ export async function updateProductLabelSize(
   companyId: string,
   productLabelSize: string
 ) {
-  return client.from("companySettings").update(sanitize({ productLabelSize })).eq("id", companyId);
+  return client
+    .from("companySettings")
+    .update(sanitize({ productLabelSize }))
+    .eq("id", companyId);
 }
 
 export async function updateRfqReadySetting(

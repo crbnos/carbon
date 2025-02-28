@@ -18,6 +18,8 @@ CREATE TYPE "trackedEntityStatus" AS ENUM('Available', 'Reserved', 'On Hold', 'C
 
 ALTER TYPE "configurationParameterDataType" ADD VALUE 'date';
 
+ALTER TYPE "itemLedgerDocumentType" ADD VALUE 'Batch Split';
+
 -- Create tracked entity table
 CREATE TABLE "trackedEntity" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -346,7 +348,7 @@ BEGIN
     'Serial Number', p_serial_number,
     'Receipt Line', p_receipt_line_id,
     'Receipt', p_receipt_id,
-    'Index', p_index
+    'Receipt Line Index', p_index
   );
   
   -- Add supplier if available

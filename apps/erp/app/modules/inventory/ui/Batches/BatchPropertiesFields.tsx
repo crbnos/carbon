@@ -1,4 +1,5 @@
 import {
+  DatePicker,
   Input,
   Label,
   NumberDecrementStepper,
@@ -14,8 +15,10 @@ import {
   SelectValue,
   Switch,
 } from "@carbon/react";
+import { parseDate } from "@internationalized/date";
 import { useEffect, useState } from "react";
 import {
+  LuCalendar,
   LuChevronDown,
   LuChevronUp,
   LuHash,
@@ -32,10 +35,16 @@ interface FormData {
 interface PropertyFieldProps {
   property: BatchProperty;
   value: string | number | boolean;
+  isReadOnly: boolean;
   onChange: (value: string | number | boolean) => void;
 }
 
-function PropertyField({ property, value, onChange }: PropertyFieldProps) {
+function PropertyField({
+  property,
+  value,
+  isReadOnly,
+  onChange,
+}: PropertyFieldProps) {
   const [localTextValue, setLocalTextValue] = useState((value as string) || "");
 
   useEffect(() => {
@@ -54,6 +63,7 @@ function PropertyField({ property, value, onChange }: PropertyFieldProps) {
             {property.label}
           </Label>
           <NumberField
+            isDisabled={isReadOnly}
             onChange={(val) => onChange(Number(val))}
             value={value as number}
           >
@@ -85,6 +95,7 @@ function PropertyField({ property, value, onChange }: PropertyFieldProps) {
           <Input
             id={property.id}
             type="text"
+            isDisabled={isReadOnly}
             value={localTextValue}
             onChange={(e) => setLocalTextValue(e.target.value)}
             onBlur={() => onChange(localTextValue)}
@@ -104,6 +115,7 @@ function PropertyField({ property, value, onChange }: PropertyFieldProps) {
             {property.label}
           </Label>
           <Select
+            disabled={isReadOnly}
             value={value as string}
             onValueChange={(val) => onChange(val)}
           >
@@ -133,9 +145,28 @@ function PropertyField({ property, value, onChange }: PropertyFieldProps) {
           </Label>
           <Switch
             id={property.id}
+            disabled={isReadOnly}
             checked={(value as boolean) || false}
             onCheckedChange={(val) => onChange(val)}
             className="mt-1"
+          />
+        </div>
+      );
+
+    case "date":
+      return (
+        <div className="space-y-2">
+          <Label
+            className="flex items-center gap-2 font-normal text-xs text-muted-foreground"
+            htmlFor={property.id}
+          >
+            <LuCalendar />
+            {property.label}
+          </Label>
+          <DatePicker
+            isDisabled={isReadOnly}
+            value={value ? parseDate(value as string) : undefined}
+            onChange={(val) => onChange(val?.toString() ?? "")}
           />
         </div>
       );
@@ -149,12 +180,14 @@ interface BatchPropertiesFieldsProps {
   itemId: string;
   properties: BatchProperty[];
   values: FormData;
+  isReadOnly?: boolean;
   onChange: (values: FormData) => void;
 }
 
 export function BatchPropertiesFields({
   properties,
   values,
+  isReadOnly = false,
   onChange,
 }: BatchPropertiesFieldsProps) {
   return properties.map((property) => (
@@ -162,6 +195,7 @@ export function BatchPropertiesFields({
       key={property.id}
       property={property}
       value={values[property.id] ?? getDefaultValue(property.dataType)}
+      isReadOnly={isReadOnly}
       onChange={(value) => {
         onChange({
           ...values,

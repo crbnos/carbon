@@ -23,18 +23,25 @@ import {
   ModalFooter,
   ModalTitle,
   ModalDescription,
+  Input,
+  InputGroup,
+  InputRightElement,
 } from "@carbon/react";
 import {
-  Await,
   Outlet,
   useFetcher,
   useFetchers,
   useParams,
   useSubmit,
 } from "@remix-run/react";
-import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { LuBarcode, LuCircleAlert, LuGroup, LuSplit } from "react-icons/lu";
+import { useCallback, useEffect, useState } from "react";
+import {
+  LuCheck,
+  LuCircleAlert,
+  LuGroup,
+  LuQrCode,
+  LuSplit,
+} from "react-icons/lu";
 import { Empty } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
@@ -43,9 +50,8 @@ import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import { splitValidator } from "~/modules/inventory";
 import type {
-  getAvailableBatchNumbersForItem,
-  BatchProperty,
-  getAvailableSerialNumbersForItem,
+  getBatchNumbersForItem,
+  getSerialNumbersForItem,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking,
@@ -54,10 +60,10 @@ import type {
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
-import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 import { ValidatedForm, Submit, Number } from "@carbon/form";
 import type { TrackedEntityAttributes } from "~/modules/shared";
+import { SplitButton } from "~/components/SplitButton";
+import { labelSizes } from "@carbon/utils";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -69,7 +75,6 @@ const ShipmentLines = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ShipmentLineTracking[];
-    batchProperties: PostgrestResponse<BatchProperty>;
   }>(path.to.shipment(shipmentId));
 
   const shipmentsById = new Map<string, ShipmentLine>(
@@ -106,14 +111,14 @@ const ShipmentLines = () => {
         [line.id]: Array.from({ length: line.shippedQuantity }, (_, index) => {
           const serialNumberEntity = trackedEntitiesForLine.find((t) => {
             const attributes = t.attributes as TrackedEntityAttributes;
-            return attributes["Index"] === index;
+            return attributes["Shipment Line Index"] === index;
           });
 
           const serialNumber = serialNumberEntity?.id || "";
 
           return {
             index,
-            number: serialNumber,
+            id: serialNumber,
           };
         }),
       };
@@ -140,14 +145,14 @@ const ShipmentLines = () => {
             (_, index) => {
               const serialNumberEntity = trackedEntitiesForLine.find((t) => {
                 const attributes = t.attributes as TrackedEntityAttributes;
-                return attributes["Index"] === index;
+                return attributes["Shipment Line Index"] === index;
               });
 
               const serialNumber = serialNumberEntity?.id || "";
 
               return {
                 index,
-                number: serialNumber,
+                id: serialNumber,
               };
             }
           ),
@@ -213,6 +218,16 @@ const ShipmentLines = () => {
                     key={line.id}
                     line={line}
                     shipment={routeData?.shipment}
+                    hasTrackingLabel={
+                      routeData?.shipmentLineTracking?.some((t) => {
+                        const attributes =
+                          t.attributes as TrackedEntityAttributes;
+                        return (
+                          attributes["Shipment Line"] === line.id &&
+                          attributes["Split Entity ID"]
+                        );
+                      }) ?? false
+                    }
                     isReadOnly={isPosted}
                     onUpdate={onUpdateShipmentLine}
                     className={
@@ -225,7 +240,6 @@ const ShipmentLines = () => {
                         [line.id]: newSerialNumbers,
                       }));
                     }}
-                    batchProperties={routeData?.batchProperties}
                     tracking={tracking}
                   />
                 );
@@ -243,18 +257,18 @@ function ShipmentLineItem({
   line,
   shipment,
   className,
+  hasTrackingLabel,
   isReadOnly,
-  onUpdate,
-  batchProperties,
   tracking,
   serialNumbers,
+  onUpdate,
   onSerialNumbersChange,
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
   className?: string;
+  hasTrackingLabel: boolean;
   isReadOnly: boolean;
-  batchProperties?: PostgrestResponse<BatchProperty>;
   tracking: ItemTracking | undefined;
   serialNumbers: { index: number; id: string }[];
   onSerialNumbersChange: (
@@ -292,6 +306,7 @@ function ShipmentLineItem({
               variant="ghost"
               size="sm"
               onClick={splitDisclosure.onOpen}
+              isDisabled={isReadOnly}
             />
           </TooltipTrigger>
           <TooltipContent>Split shipment line</TooltipContent>
@@ -399,15 +414,13 @@ function ShipmentLineItem({
         </div>
       </div>
       {line.requiresBatchTracking && (
-        <>
-          <BatchForm
-            shipment={shipment}
-            line={line}
-            isReadOnly={isReadOnly}
-            tracking={tracking}
-            batchProperties={batchProperties}
-          />
-        </>
+        <BatchForm
+          shipment={shipment}
+          line={line}
+          hasTrackingLabel={hasTrackingLabel}
+          isReadOnly={isReadOnly}
+          tracking={tracking}
+        />
       )}
       {line.requiresSerialTracking && (
         <SerialForm
@@ -428,14 +441,14 @@ function ShipmentLineItem({
 function BatchForm({
   line,
   shipment,
-  batchProperties,
+  hasTrackingLabel,
   tracking,
   isReadOnly,
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
+  hasTrackingLabel: boolean;
   isReadOnly: boolean;
-  batchProperties?: PostgrestResponse<BatchProperty>;
   tracking: ItemTracking | undefined;
 }) {
   const submit = useSubmit();
@@ -444,11 +457,22 @@ function BatchForm({
     properties: any;
   }>(() => {
     if (tracking) {
-      const attributes = tracking.attributes as TrackedEntityAttributes;
       return {
-        number: attributes["Batch Number"] || "",
-        properties: Object.entries(attributes)
-          .filter(([key]) => !["Batch Number", "Shipment Line"].includes(key))
+        number: tracking.id || "",
+        properties: Object.entries(
+          (tracking.attributes ?? {}) as TrackedEntityAttributes
+        )
+          .filter(
+            ([key]) =>
+              ![
+                "Batch Number",
+                "Shipment Line",
+                "Shipment",
+                "Shipment Line Index",
+                "Receipt Line",
+                "Receipt",
+              ].includes(key)
+          )
           .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
       };
     }
@@ -458,7 +482,34 @@ function BatchForm({
     };
   });
 
-  const { options: batchNumberOptions } = useBatchNumbers(line.itemId);
+  const { data: batchNumbers } = useBatchNumbers(line.itemId);
+  const [error, setError] = useState<string | null>(null);
+
+  // Check if the batch number is valid and in the list
+  const isBatchNumberValid =
+    values.number &&
+    batchNumbers?.data?.some(
+      (b) => b.id === values.number && b.status === "Available"
+    );
+
+  // Verify batch quantity is sufficient for the shipped quantity
+  useEffect(() => {
+    if (values.number && batchNumbers?.data && line.shippedQuantity > 0) {
+      const batchNumber = batchNumbers.data.find((b) => b.id === values.number);
+
+      if (
+        batchNumber &&
+        batchNumber.status === "Available" &&
+        line.shippedQuantity > batchNumber.quantity
+      ) {
+        setValues({
+          ...values,
+          number: "",
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [line.shippedQuantity]);
 
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!shipment?.id || !newValues.number.trim()) return;
@@ -484,12 +535,58 @@ function BatchForm({
       setValues(valuesToSubmit);
     }
 
+    // Check if batch number is available
+    const batchNumber = batchNumbers?.data?.find(
+      (b) => b.id === valuesToSubmit.number.trim()
+    );
+
+    if (batchNumber && batchNumber.status !== "Available") {
+      setError(`Batch number is ${batchNumber.status}`);
+      setValues({
+        ...valuesToSubmit,
+        number: "",
+      });
+      return;
+    } else if (!batchNumber && valuesToSubmit.number.trim()) {
+      // If batch number is not in the list, don't proceed with the network request
+      setError("Batch number not found");
+      return;
+    } else {
+      setError(null);
+    }
+
+    // Check if the shipped quantity exceeds the batch quantity
+    if (batchNumber && line.shippedQuantity > batchNumber.quantity) {
+      setError(
+        `Shipped quantity exceeds batch quantity (${batchNumber.quantity})`
+      );
+      setValues({
+        ...valuesToSubmit,
+        number: "",
+      });
+      return;
+    }
+
+    if (batchNumber && batchNumber.attributes) {
+      const attributes = batchNumber.attributes as TrackedEntityAttributes;
+      if (
+        attributes["Shipment Line"] &&
+        attributes["Shipment"] === shipment?.id
+      ) {
+        setError("Batch number is already used on another shipment line");
+        setValues({
+          ...valuesToSubmit,
+          number: "",
+        });
+      }
+    }
+
     const formData = new FormData();
     formData.append("itemId", line.itemId);
     formData.append("shipmentId", shipment.id);
     formData.append("shipmentLineId", line.id);
     formData.append("trackingType", "batch");
-    formData.append("batchNumber", valuesToSubmit.number.trim());
+    formData.append("trackedEntityId", valuesToSubmit.number.trim());
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
     formData.append("quantity", line.shippedQuantity.toString());
 
@@ -500,28 +597,47 @@ function BatchForm({
     });
   };
 
-  const handlePropertiesChange = (newProperties: any) => {
-    const newValues = {
-      ...values,
-      properties: newProperties,
-    };
-    setValues(newValues);
-    updateBatchNumber(newValues);
+  const navigateToLineTrackingLabels = (zpl?: boolean, labelSize?: string) => {
+    if (!window) return;
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.shipmentLabelsZpl(shipment?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.shipmentLabelsPdf(shipment?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
+        "_blank"
+      );
+    }
   };
-
-  const propertiesDisclosure = useDisclosure();
 
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
-        <Heading size="h4">Batch Properties</Heading>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={propertiesDisclosure.onOpen}
-        >
-          Edit Properties
-        </Button>
+        <Heading size="h4">Tracking Number</Heading>
+        {hasTrackingLabel && (
+          <SplitButton
+            size="sm"
+            leftIcon={<LuQrCode />}
+            dropdownItems={labelSizes.map((size) => ({
+              label: size.name,
+              onClick: () => navigateToLineTrackingLabels(!!size.zpl, size.id),
+            }))}
+            onClick={() => navigateToLineTrackingLabels(false)}
+            variant="primary"
+          >
+            Tracking Labels
+          </SplitButton>
+        )}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
         <div className="flex flex-col gap-2 w-full">
@@ -529,62 +645,53 @@ function BatchForm({
             <LuGroup /> Batch Number
           </label>
 
-          <Combobox
-            options={batchNumberOptions}
-            placeholder={`Batch number`}
-            disabled={isReadOnly}
-            value={values.number}
-            onChange={(newValue) => {
-              updateBatchNumber(
-                {
-                  ...values,
-                  number:
-                    batchNumberOptions.find((o) => o.value === newValue)
-                      ?.label ?? "",
-                },
-                true
-              );
-            }}
-          />
-        </div>
-
-        <Suspense fallback={null}>
-          <Await resolve={batchProperties}>
-            {(resolvedBatchProperties) => {
-              return (
-                <BatchPropertiesFields
-                  itemId={line.itemId}
-                  properties={
-                    resolvedBatchProperties?.data?.filter(
-                      (p) => p.itemId === line.itemId
-                    ) ?? []
+          <div className="flex flex-col gap-1">
+            <InputGroup isDisabled={isReadOnly}>
+              <Input
+                placeholder="Batch number"
+                value={values.number}
+                onChange={(e) => {
+                  setValues({
+                    ...values,
+                    number: e.target.value,
+                  });
+                }}
+                onBlur={() => {
+                  updateBatchNumber(values, true);
+                }}
+                className={cn(error && "border-destructive")}
+              />
+              <InputRightElement className="pl-2">
+                {isBatchNumberValid ? (
+                  <LuCheck className="text-emerald-500" />
+                ) : (
+                  <LuQrCode />
+                )}
+              </InputRightElement>
+            </InputGroup>
+            {values.number &&
+              batchNumbers?.data &&
+              (() => {
+                const batchNumber = batchNumbers.data.find(
+                  (b) => b.id === values.number
+                );
+                if (batchNumber) {
+                  if (line.shippedQuantity < batchNumber.quantity) {
+                    return (
+                      <span className="text-xs text-muted-foreground">
+                        Shipped quantity is less than batch quantity. A new
+                        batch will be created for the remaining quantity when
+                        posted.
+                      </span>
+                    );
                   }
-                  values={values.properties}
-                  onChange={(newProperties) => {
-                    handlePropertiesChange(newProperties);
-                  }}
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
+                }
+                return null;
+              })()}
+            {error && <span className="text-xs text-destructive">{error}</span>}
+          </div>
+        </div>
       </div>
-      {propertiesDisclosure.isOpen && (
-        <Suspense fallback={null}>
-          <Await resolve={batchProperties}>
-            {(resolvedBatchProperties) => {
-              return (
-                <BatchPropertiesConfig
-                  itemId={line.itemId}
-                  properties={resolvedBatchProperties?.data ?? []}
-                  type="modal"
-                  onClose={propertiesDisclosure.onClose}
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
     </div>
   );
 }
@@ -605,20 +712,38 @@ function SerialForm({
   ) => void;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
-  const { options } = useSerialNumbers(line.itemId, isReadOnly);
+  const { data: serialNumbersData } = useSerialNumbers(line.itemId, isReadOnly);
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
     (serialNumberId: string, currentIndex: number) => {
       if (!serialNumberId) return null;
 
+      // Check for duplicates within the form
       const isDuplicate = serialNumbers.some(
         (sn, idx) => idx !== currentIndex && sn.id === serialNumberId
       );
 
-      return isDuplicate ? "Duplicate serial number" : null;
+      if (isDuplicate) {
+        return "Duplicate serial number";
+      }
+
+      // Check if serial number is available
+      const serialNumber = serialNumbersData?.data?.find(
+        (sn) => sn.id === serialNumberId
+      );
+
+      if (!serialNumber) {
+        return "Serial number not found";
+      }
+
+      if (serialNumber.status !== "Available") {
+        return `Serial number is ${serialNumber.status}`;
+      }
+
+      return null;
     },
-    [serialNumbers]
+    [serialNumbers, serialNumbersData?.data]
   );
 
   const updateSerialNumber = useCallback(
@@ -628,6 +753,14 @@ function SerialForm({
       const error = validateSerialNumber(serialNumber.id, serialNumber.index);
       if (error) {
         setErrors((prev) => ({ ...prev, [serialNumber.index]: error }));
+
+        // Clear the input value but keep the error message
+        const newSerialNumbers = [...serialNumbers];
+        newSerialNumbers[serialNumber.index] = {
+          index: serialNumber.index,
+          id: "",
+        };
+        onSerialNumbersChange(newSerialNumbers);
         return;
       }
 
@@ -637,7 +770,7 @@ function SerialForm({
       formData.append("shipmentId", shipment.id);
       formData.append("shipmentLineId", line.id);
       formData.append("index", serialNumber.index.toString());
-      formData.append("serialNumberId", serialNumber.id.trim());
+      formData.append("trackedEntityId", serialNumber.id.trim());
 
       try {
         const response = await fetch(
@@ -656,75 +789,128 @@ function SerialForm({
             return newErrors;
           });
         } else {
+          const responseData = await response.json();
+          const errorMessage =
+            responseData.message || "Failed to track serial number";
+
           setErrors((prev) => ({
             ...prev,
-            [serialNumber.index]: "Serial number already exists",
+            [serialNumber.index]: errorMessage,
           }));
+
+          // Clear the input value but keep the error message
+          const newSerialNumbers = [...serialNumbers];
+          newSerialNumbers[serialNumber.index] = {
+            index: serialNumber.index,
+            id: "",
+          };
+          onSerialNumbersChange(newSerialNumbers);
         }
       } catch (error) {
-        if (error instanceof Error && error.message.includes("duplicate")) {
+        if (error instanceof Error && error.message.includes("available")) {
           setErrors((prev) => ({
             ...prev,
-            [serialNumber.index]: "Serial number already exists for this item",
+            [serialNumber.index]: "Serial number is not available",
           }));
+
+          // Clear the input value but keep the error message
+          const newSerialNumbers = [...serialNumbers];
+          newSerialNumbers[serialNumber.index] = {
+            index: serialNumber.index,
+            id: "",
+          };
+          onSerialNumbersChange(newSerialNumbers);
         }
       }
     },
-    [line.id, line.itemId, shipment?.id, validateSerialNumber]
+    [
+      line.id,
+      line.itemId,
+      shipment?.id,
+      validateSerialNumber,
+      serialNumbers,
+      onSerialNumbersChange,
+    ]
   );
 
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg">
-      <label className="text-xs text-muted-foreground flex items-center gap-2">
-        <LuBarcode /> Serial Numbers
-      </label>
+      <Heading size="h4">Tracking Numbers</Heading>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-4 gap-y-3">
-        {serialNumbers.map((serialNumber, index) => (
-          <div
-            key={`${line.id}-${index}-serial`}
-            className="flex flex-col gap-1"
-          >
-            <Combobox
-              options={
-                options.filter(
-                  (o) =>
-                    !serialNumbers.some(
-                      (sn) => sn.id === o.value && sn.index !== index
-                    )
-                ) ?? []
-              }
-              placeholder={`Serial ${index + 1}`}
-              disabled={isReadOnly}
-              value={serialNumber.id}
-              onChange={(newValue) => {
-                const error = validateSerialNumber(newValue, index);
+        {serialNumbers.map((serialNumber, index) => {
+          // Check if the serial number is valid and in the list
+          const isSerialNumberValid =
+            serialNumber.id &&
+            serialNumbersData?.data?.some(
+              (sn) => sn.id === serialNumber.id && sn.status === "Available"
+            );
 
-                setErrors((prev) => {
-                  const newErrors = { ...prev };
-                  if (error) {
-                    newErrors[index] = error;
-                  } else {
-                    delete newErrors[index];
-                  }
-                  return newErrors;
-                });
+          return (
+            <div
+              key={`${line.id}-${index}-serial`}
+              className="flex flex-col gap-1"
+            >
+              <InputGroup isDisabled={isReadOnly}>
+                <Input
+                  placeholder={`Tracking Number ${index + 1}`}
+                  value={serialNumber.id}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    const newSerialNumbers = [...serialNumbers];
+                    newSerialNumbers[index] = {
+                      index,
+                      id: newValue,
+                    };
+                    onSerialNumbersChange(newSerialNumbers);
+                  }}
+                  onBlur={(e) => {
+                    const newValue = e.target.value;
+                    const error = validateSerialNumber(newValue, index);
 
-                const newSerialNumbers = [...serialNumbers];
-                newSerialNumbers[index] = {
-                  index,
-                  id: newValue,
-                };
-                onSerialNumbersChange(newSerialNumbers);
-                updateSerialNumber(newSerialNumbers[index]);
-              }}
-              className={cn(errors[index] && "border-destructive")}
-            />
-            {errors[index] && (
-              <span className="text-xs text-destructive">{errors[index]}</span>
-            )}
-          </div>
-        ))}
+                    setErrors((prev) => {
+                      const newErrors = { ...prev };
+                      if (error) {
+                        newErrors[index] = error;
+                      } else {
+                        delete newErrors[index];
+                      }
+                      return newErrors;
+                    });
+
+                    if (!error) {
+                      updateSerialNumber({
+                        index,
+                        id: newValue,
+                      });
+                    } else {
+                      // Clear the input value but keep the error message
+                      const newSerialNumbers = [...serialNumbers];
+                      newSerialNumbers[index] = {
+                        index,
+                        id: "",
+                      };
+                      onSerialNumbersChange(newSerialNumbers);
+                    }
+                  }}
+                  className={cn(errors[index] && "border-destructive")}
+                />
+                <InputRightElement className="pl-2">
+                  {isSerialNumberValid ? (
+                    <LuCheck className="text-emerald-500" />
+                  ) : (
+                    <LuQrCode />
+                  )}
+                </InputRightElement>
+              </InputGroup>
+              {errors[index] && (
+                <span className="text-xs text-destructive">
+                  {errors[index]}
+                </span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -850,7 +1036,7 @@ export default ShipmentLines;
 
 export function useSerialNumbers(itemId?: string, isReadOnly = false) {
   const serialNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getAvailableSerialNumbersForItem>>>();
+    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
 
   useEffect(() => {
     if (itemId) {
@@ -859,24 +1045,12 @@ export function useSerialNumbers(itemId?: string, isReadOnly = false) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
 
-  const options = useMemo(
-    () =>
-      serialNumbersFetcher.data?.data
-        ?.map((c) => ({
-          value: c.id ?? "",
-          label: c.id ?? "",
-        }))
-        .filter((o) => o.value !== "" && o.label !== "") ?? [],
-
-    [serialNumbersFetcher.data]
-  );
-
-  return { options, data: serialNumbersFetcher.data };
+  return { data: serialNumbersFetcher.data };
 }
 
 export function useBatchNumbers(itemId?: string) {
   const batchNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getAvailableBatchNumbersForItem>>>();
+    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
 
   useEffect(() => {
     if (itemId) {
@@ -885,14 +1059,5 @@ export function useBatchNumbers(itemId?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [itemId]);
 
-  const options = useMemo(() => {
-    return (
-      batchNumbersFetcher.data?.data?.map((c) => ({
-        value: c.id ?? "",
-        label: c.id ?? "",
-      })) ?? []
-    ).filter((o) => o.value !== "");
-  }, [batchNumbersFetcher.data]);
-
-  return { options, data: batchNumbersFetcher.data };
+  return { data: batchNumbersFetcher.data };
 }

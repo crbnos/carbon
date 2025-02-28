@@ -20,12 +20,13 @@ import { Select, Submit, ValidatedForm, validator } from "@carbon/form";
 import { labelSizes } from "@carbon/utils";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { useEffect } from "react";
-import {
-  getCompanySettings,
-} from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { productLabelSizeValidator, updateProductLabelSize } from "~/modules/settings";
+import {
+  productLabelSizeValidator,
+  updateProductLabelSize,
+} from "~/modules/settings";
 export const handle: Handle = {
   breadcrumb: "Labels",
   to: path.to.labelsSettings,
@@ -47,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(companySettings.error, "Failed to get company settings")
       )
     );
-  return json({ companySettings: companySettings.data,  });
+  return json({ companySettings: companySettings.data });
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -74,8 +75,10 @@ export async function action({ request }: ActionFunctionArgs) {
         validation.data.productLabelSize
       );
       if (productLabelSize.error)
-        return json({ success: false, message: productLabelSize.error.message });
-
+        return json({
+          success: false,
+          message: productLabelSize.error.message,
+        });
   }
 
   return json({ success: true, message: "Label settings updated" });
@@ -84,7 +87,6 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function SalesSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
-  
 
   useEffect(() => {
     if (fetcher.data?.success === true && fetcher?.data?.message) {
@@ -95,10 +97,6 @@ export default function SalesSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.message, fetcher.data?.success]);
-
-  
-
-  
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-49px)]">
@@ -122,13 +120,13 @@ export default function SalesSettingsRoute() {
                 Product Label Size
               </CardTitle>
               <CardDescription>
-                Define the default size of the product label. Used for tracking items in inventory.
+                Define the default size of the product label. Used for tracking
+                items in inventory.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-8 max-w-[400px]">
                 <div className="flex flex-col gap-2">
-                 
                   <Select
                     name="productLabelSize"
                     label="Product Label Size"
@@ -138,8 +136,6 @@ export default function SalesSettingsRoute() {
                     }))}
                   />
                 </div>
-
-               
               </div>
             </CardContent>
             <CardFooter>
@@ -147,7 +143,6 @@ export default function SalesSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-
       </VStack>
     </ScrollArea>
   );
