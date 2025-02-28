@@ -3,7 +3,7 @@ import { ProductLabelPDF } from "@carbon/documents/pdf";
 import { labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { getReceiptTracking } from "~/modules/inventory";
+import { getShipmentTracking } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { TrackedEntityAttributes } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -18,9 +18,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [companySettings, receiptLineTracking] = await Promise.all([
+  const [companySettings, shipmentTracking] = await Promise.all([
     getCompanySettings(client, companyId),
-    getReceiptTracking(client, id, companyId),
+    getShipmentTracking(client, id, companyId),
   ]);
 
   // Get the label size from query params or default to avery5160
@@ -39,14 +39,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (labelSize.zpl) {
     throw redirect(
-      path.to.file.receiptLabelsZpl(id, {
+      path.to.file.shipmentLabelsZpl(id, {
         labelSize: labelSize.id,
         lineId: lineIdParam ?? undefined,
       })
     );
   }
 
-  let filteredTracking = receiptLineTracking.data;
+  let filteredTracking = shipmentTracking.data;
 
   // Filter by lineId if provided
   if (lineIdParam) {
@@ -54,13 +54,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       filteredTracking?.filter(
         (tracking) =>
           tracking.attributes &&
-          (tracking.attributes as TrackedEntityAttributes)["Receipt Line"] ===
+          (tracking.attributes as TrackedEntityAttributes)["Shipment Line"] ===
             lineIdParam
       ) ?? [];
   }
 
-  const items = filteredTracking
-    ?.map((tracking) => ({
+  const itemEntityIds = filteredTracking
+    ?.filter(
+      (tracking) =>
+        "Split Entity ID" in (tracking.attributes as TrackedEntityAttributes)
+    )
+    ?.map(
+      (tracking) =>
+        (tracking.attributes as TrackedEntityAttributes)["Split Entity ID"] ??
+        ""
+    )
+    .sort((a, b) => a.localeCompare(b))
+    .filter(Boolean);
+
+  if (!itemEntityIds || itemEntityIds.length === 0) {
+    return new Response(
+      `No items found for shipment ${id}${
+        lineIdParam ? ` and line ${lineIdParam}` : ""
+      }`,
+      { status: 404 }
+    );
+  }
+
+  const trackedEntities = await client
+    .from("trackedEntity")
+    .select("*")
+    .in("id", itemEntityIds)
+    .eq("companyId", companyId);
+
+  if (!trackedEntities.data || trackedEntities.data.length === 0) {
+    return new Response(
+      `No items found for shipment ${id}${
+        lineIdParam ? ` and line ${lineIdParam}` : ""
+      }`,
+      { status: 404 }
+    );
+  }
+
+  const items = trackedEntities.data
+    .map((tracking) => ({
       itemId: tracking.sourceDocumentReadableId ?? "",
       revision: "0",
       number:
@@ -80,7 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (!Array.isArray(items) || items.length === 0) {
     return new Response(
-      `No items found for receipt ${id}${
+      `No items found for shipment ${id}${
         lineIdParam ? ` and line ${lineIdParam}` : ""
       }`,
       { status: 404 }

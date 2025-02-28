@@ -14,10 +14,12 @@ const Copy = ({
   text,
   icon,
   className,
+  withTextInTooltip = false,
 }: {
   text: string;
   icon?: ReactNode;
   className?: string;
+  withTextInTooltip?: boolean;
 }) => {
   const [isCopied, setIsCopied] = useState(false);
 
@@ -49,7 +51,13 @@ const Copy = ({
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        <span>{isCopied ? "Copied!" : "Copy to clipboard"}</span>
+        <span>
+          {isCopied
+            ? "Copied!"
+            : withTextInTooltip
+            ? text
+            : "Copy to clipboard"}
+        </span>
       </TooltipContent>
     </Tooltip>
   );

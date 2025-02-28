@@ -1,21 +1,12 @@
-import {
-  Button,
-  HStack,
-  Heading,
-  IconButton,
-  useDisclosure,
-} from "@carbon/react";
+import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuCreditCard,
-  LuPanelLeft,
-  LuPanelRight,
   LuQrCode,
   LuShoppingCart,
 } from "react-icons/lu";
-import { usePanels } from "~/components/Layout";
 import { SplitButton } from "~/components/SplitButton";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
@@ -25,8 +16,6 @@ import { path } from "~/utils/path";
 const ReceiptHeader = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
-
-  const { toggleExplorer, toggleProperties } = usePanels();
 
   const routeData = useRouteData<{
     receipt: Receipt;
@@ -50,13 +39,13 @@ const ReceiptHeader = () => {
     if (zpl) {
       window.open(
         window.location.origin +
-          path.to.file.receiptLabelsZpl(receiptId, labelSize),
+          path.to.file.receiptLabelsZpl(receiptId, { labelSize }),
         "_blank"
       );
     } else {
       window.open(
         window.location.origin +
-          path.to.file.receiptLabelsPdf(receiptId, labelSize),
+          path.to.file.receiptLabelsPdf(receiptId, { labelSize }),
         "_blank"
       );
     }
@@ -64,15 +53,9 @@ const ReceiptHeader = () => {
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
         <HStack className="w-full justify-between">
           <HStack>
-            <IconButton
-              aria-label="Toggle Explorer"
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
             <Link to={path.to.receiptDetails(receiptId)}>
               <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.receipt?.receiptId}</span>
@@ -90,7 +73,7 @@ const ReceiptHeader = () => {
                 }))}
                 // TODO: if we knew the preferred label size, we could use that here
                 onClick={() => navigateToTrackingLabels(false)}
-                variant="secondary"
+                variant={isPosted ? "primary" : "secondary"}
               >
                 Tracking Labels
               </SplitButton>
@@ -110,13 +93,6 @@ const ReceiptHeader = () => {
             >
               Post
             </Button>
-
-            <IconButton
-              aria-label="Toggle Properties"
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
           </HStack>
         </HStack>
       </div>

@@ -599,8 +599,6 @@ serve(async (req: Request) => {
 
         await db.transaction().execute(async (trx) => {
           if (hasShipment) {
-            console.log({ shipmentId });
-
             // update existing shipment
             await trx
               .updateTable("shipment")
@@ -904,31 +902,18 @@ serve(async (req: Request) => {
           companyId
         );
 
-        const [shipmentLine, trackedEntities] = await Promise.all([
+        const [shipmentLine] = await Promise.all([
           client
             .from("shipmentLine")
             .select("*")
             .eq("id", shipmentLineId)
             .single(),
-          client
-            .from("trackedEntity")
-            .select("*, trackedEntityAttribute(*)")
-            .eq("trackedEntityAttribute.name", "Shipment Line")
-            .eq("trackedEntityAttribute.textValue", shipmentLineId),
         ]);
 
         if (!shipmentLine.data) throw new Error("Shipment line not found");
 
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = shipmentLine.data;
-
-          if (shipmentLine.data.requiresSerialTracking) {
-            // TODO: update the Shipment Line and Index attributes to point to the new line
-            await trx
-              .deleteFrom("trackedEntity")
-              .where("id", "in", trackedEntities.data?.map((d) => d.id) ?? [])
-              .execute();
-          }
 
           await trx
             .insertInto("shipmentLine")

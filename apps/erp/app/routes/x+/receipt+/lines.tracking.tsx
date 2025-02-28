@@ -39,6 +39,15 @@ export async function action({ request, context }: ActionFunctionArgs) {
       console.error(error);
     }
 
+    console.log(
+      trackedEntityId,
+      receiptLineId,
+      receiptId,
+      batchNumber,
+      quantity,
+      propertiesJson
+    );
+
     const serviceRole = await getCarbonServiceRole();
     // Use a transaction to ensure data consistency
     const { error } = await serviceRole.rpc(
@@ -84,7 +93,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
         existingEntityWithIndex.attributes as TrackedEntityAttributes;
       if (
         attributes["Receipt Line"] !== receiptLineId ||
-        attributes["Index"] !== index
+        attributes["Receipt Line Index"] !== index
       ) {
         return json(
           {

@@ -113,7 +113,7 @@ const ReceiptLines = () => {
         [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
           const serialNumberEntity = trackedEntitiesForLine.find((t) => {
             const attributes = t.attributes as TrackedEntityAttributes;
-            return attributes["Index"] === index;
+            return attributes["Receipt Line Index"] === index;
           });
 
           const attributes = serialNumberEntity?.attributes as
@@ -150,7 +150,7 @@ const ReceiptLines = () => {
             (_, index) => {
               const serialNumberEntity = trackedEntitiesForLine.find((t) => {
                 const attributes = t.attributes as TrackedEntityAttributes;
-                return attributes["Index"] === index;
+                return attributes["Receipt Line Index"] === index;
               });
 
               const attributes = serialNumberEntity?.attributes as
@@ -526,7 +526,17 @@ function BatchForm({
       return {
         number: attributes["Batch Number"] || "",
         properties: Object.entries(attributes)
-          .filter(([key]) => !["Batch Number", "Receipt Line"].includes(key))
+          .filter(
+            ([key]) =>
+              ![
+                "Batch Number",
+                "Shipment Line",
+                "Shipment",
+                "Shipment Line Index",
+                "Receipt Line",
+                "Receipt",
+              ].includes(key)
+          )
           .reduce((acc, [key, value]) => ({ ...acc, [key]: value || "" }), {}),
       };
     }
@@ -590,18 +600,25 @@ function BatchForm({
     if (zpl) {
       window.open(
         window.location.origin +
-          path.to.file.receiptLineLabelsZpl(line.id, labelSize),
+          path.to.file.receiptLabelsZpl(receipt?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
         "_blank"
       );
     } else {
       window.open(
         window.location.origin +
-          path.to.file.receiptLineLabelsPdf(line.id, labelSize),
+          path.to.file.receiptLabelsPdf(receipt?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
         "_blank"
       );
     }
   };
   const propertiesDisclosure = useDisclosure();
+
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
@@ -637,7 +654,7 @@ function BatchForm({
 
           <Input
             placeholder={`Batch number`}
-            disabled={isReadOnly}
+            isDisabled={isReadOnly}
             value={values.number}
             onChange={(e) => {
               setValues((prev) => ({
@@ -662,6 +679,7 @@ function BatchForm({
                       (p) => p.itemId === line.itemId
                     ) ?? []
                   }
+                  isReadOnly={isReadOnly}
                   values={values.properties}
                   onChange={(newProperties) => {
                     handlePropertiesChange(newProperties);
@@ -783,13 +801,19 @@ function SerialForm({
     if (zpl) {
       window.open(
         window.location.origin +
-          path.to.file.receiptLineLabelsZpl(line.id, labelSize),
+          path.to.file.receiptLabelsZpl(receipt?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
         "_blank"
       );
     } else {
       window.open(
         window.location.origin +
-          path.to.file.receiptLineLabelsPdf(line.id, labelSize),
+          path.to.file.receiptLabelsPdf(receipt?.id ?? "", {
+            lineId: line.id,
+            labelSize,
+          }),
         "_blank"
       );
     }
@@ -823,7 +847,7 @@ function SerialForm({
           >
             <Input
               placeholder={`Serial ${index + 1}`}
-              disabled={isReadOnly}
+              isDisabled={isReadOnly}
               value={serialNumber.number}
               onChange={(e) => {
                 const newValue = e.target.value;

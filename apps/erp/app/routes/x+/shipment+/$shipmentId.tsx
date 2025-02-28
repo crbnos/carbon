@@ -7,7 +7,6 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider } from "~/components/Layout";
 import {
-  getBatchProperties,
   getShipment,
   getShipmentTracking,
   getShipmentLines,
@@ -34,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
     getShipment(serviceRole, shipmentId),
     getShipmentLines(serviceRole, shipmentId),
-    getShipmentTracking(serviceRole, shipmentId),
+    getShipmentTracking(serviceRole, shipmentId, companyId),
   ]);
 
   if (shipment.error) {
@@ -48,21 +47,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.shipments);
   }
 
-  let itemsWithBatchProperties: string[] = [];
-
-  if (shipmentLines.data) {
-    itemsWithBatchProperties = shipmentLines.data
-      .filter((line) => line.itemId && line.requiresBatchTracking)
-      .map((line) => line.itemId);
-  }
-
   return defer({
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     shipmentLineTracking: shipmentLineTracking.data ?? [],
-    batchProperties:
-      getBatchProperties(serviceRole, itemsWithBatchProperties, companyId) ??
-      [],
   });
 }
 

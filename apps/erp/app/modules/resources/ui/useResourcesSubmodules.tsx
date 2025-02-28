@@ -1,4 +1,4 @@
-import { LuMapPin, LuWrench , LuCog } from "react-icons/lu";
+import { LuMapPin, LuWrench, LuCog } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";

@@ -1,8 +1,4 @@
-import {
-  LuHandCoins,
-  LuTally5,
-  LuTruck,
-} from "react-icons/lu";
+import { LuHandCoins, LuTally5, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -19,7 +15,6 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuTally5 />,
         table: "inventory",
       },
-      
     ],
   },
   {

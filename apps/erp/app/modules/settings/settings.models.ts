@@ -67,7 +67,6 @@ export const customFieldValidator = z
 
     return true;
   });
-  
 
 export const digitalQuoteValidator = z.object({
   digitalQuoteEnabled: zfd.checkbox(),
@@ -78,9 +77,12 @@ export const digitalQuoteValidator = z.object({
 });
 
 export const productLabelSizeValidator = z.object({
-  productLabelSize: z.enum(labelSizes.map((size) => size.id) as [string, ...string[]], {
-    message: "Product label size is required",
-  }),
+  productLabelSize: z.enum(
+    labelSizes.map((size) => size.id) as [string, ...string[]],
+    {
+      message: "Product label size is required",
+    }
+  ),
 });
 
 export const rfqReadyValidator = z.object({

@@ -237,6 +237,10 @@ const inputAddonVariants = cva(
         sm: "h-8 px-2",
         xs: "h-6 px-1",
       },
+      isDisabled: {
+        true: "opacity-50 cursor-not-allowed bg-muted text-muted-foreground",
+        false: "",
+      },
     },
     compoundVariants: [
       {
@@ -282,22 +286,26 @@ const inputAddonVariants = cva(
     ],
     defaultVariants: {
       size: "md",
+      isDisabled: false,
     },
   }
 );
 
 export interface InputAddonProps
   extends HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof inputAddonVariants> {}
+    VariantProps<typeof inputAddonVariants> {
+  isDisabled?: boolean;
+}
 
 const InputLeftAddon = forwardRef<HTMLDivElement, InputAddonProps>(
-  ({ className, size, ...props }, ref) => {
+  ({ className, size, isDisabled = false, ...props }, ref) => {
     return (
       <div
         className={cn(
           inputAddonVariants({
             placement: "left",
             size,
+            isDisabled,
             className,
           })
         )}
@@ -310,13 +318,14 @@ const InputLeftAddon = forwardRef<HTMLDivElement, InputAddonProps>(
 InputLeftAddon.displayName = "InputLeftAddon";
 
 const InputRightAddon = forwardRef<HTMLDivElement, InputAddonProps>(
-  ({ className, size, ...props }, ref) => {
+  ({ className, size, isDisabled = false, ...props }, ref) => {
     return (
       <div
         className={cn(
           inputAddonVariants({
             placement: "right",
             size,
+            isDisabled,
             className,
           })
         )}
@@ -342,6 +351,13 @@ const inputElementVariants = cva(
         left: "pl-2",
         right: "pr-2",
       },
+      isDisabled: {
+        true: "opacity-50 cursor-not-allowed",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      isDisabled: false,
     },
   }
 );
@@ -351,16 +367,28 @@ export interface InputElementProps
     VariantProps<typeof inputElementVariants> {
   isFirstChild?: boolean;
   isLastChild?: boolean;
+  isDisabled?: boolean;
 }
 
 const InputLeftElement = forwardRef<HTMLDivElement, InputElementProps>(
-  ({ className, size, isFirstChild, isLastChild, ...props }, ref) => {
+  (
+    {
+      className,
+      size,
+      isFirstChild,
+      isLastChild,
+      isDisabled = false,
+      ...props
+    },
+    ref
+  ) => {
     return (
       <div
         className={cn(
           inputElementVariants({
             size,
             placement: "left",
+            isDisabled,
             className,
           })
         )}
@@ -373,13 +401,24 @@ const InputLeftElement = forwardRef<HTMLDivElement, InputElementProps>(
 InputLeftElement.displayName = "InputLeftElement";
 
 const InputRightElement = forwardRef<HTMLDivElement, InputElementProps>(
-  ({ className, size, isFirstChild, isLastChild, ...props }, ref) => {
+  (
+    {
+      className,
+      size,
+      isFirstChild,
+      isLastChild,
+      isDisabled = false,
+      ...props
+    },
+    ref
+  ) => {
     return (
       <div
         className={cn(
           inputElementVariants({
             size,
             placement: "right",
+            isDisabled,
             className,
           })
         )}

@@ -1,13 +1,8 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type {
-  ClientActionFunctionArgs} from "@remix-run/react";
-import {
-  useLoaderData,
-  useNavigate,
-  useParams,
-} from "@remix-run/react";
+import type { ClientActionFunctionArgs } from "@remix-run/react";
+import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";

@@ -109,7 +109,7 @@ export const configurationParameterValidator = z
     itemId: z.string().min(1, { message: "Item ID is required" }),
     key: zfd.text(z.string().optional()),
     label: z.string().min(1, { message: "Label is required" }),
-    dataType: z.enum([...configurationParameterDataTypes, "date"] ),
+    dataType: z.enum([...configurationParameterDataTypes, "date"]),
     listOptions: z.string().min(1).array().optional(),
     configurationParameterGroupId: z.string().optional(),
   })

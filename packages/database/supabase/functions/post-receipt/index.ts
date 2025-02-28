@@ -682,8 +682,6 @@ serve(async (req: Request) => {
           }
 
           if (receiptLine.requiresBatchTracking) {
-            
-
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
@@ -696,8 +694,9 @@ serve(async (req: Request) => {
               documentId: receipt.data?.id ?? undefined,
               trackedEntityId: receiptLineTracking.data?.find(
                 (tracking) =>
-                  (tracking.attributes as TrackedEntityAttributes | undefined)
-                    ?.["Receipt Line"] === receiptLine.id
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
               )?.id,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
               createdBy: userId,
@@ -708,34 +707,37 @@ serve(async (req: Request) => {
           if (receiptLine.requiresSerialTracking) {
             const lineTracking = receiptLineTracking.data?.filter(
               (tracking) =>
-                (tracking.attributes as TrackedEntityAttributes | undefined)
-                  ?.["Receipt Line"] === receiptLine.id
+                (tracking.attributes as TrackedEntityAttributes | undefined)?.[
+                  "Receipt Line"
+                ] === receiptLine.id
             );
 
             const receivedQuantity = receiptLine.receivedQuantity || 0;
-            
+
             for (let i = 0; i < receivedQuantity; i++) {
               const trackingWithIndex = lineTracking?.find(
-                (tracking) => (tracking.attributes as TrackedEntityAttributes | undefined)?.["Index"] === i
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line Index"] === i
               );
-              
-              if (trackingWithIndex) {
-                itemLedgerInserts.push({
-                  postingDate: today,
-                  itemId: receiptLine.itemId,
-                  itemReadableId: receiptLine.itemReadableId ?? "",
-                  quantity: 1,
-                  locationId: receiptLine.locationId,
-                  shelfId: receiptLine.shelfId,
-                  entryType: "Positive Adjmt.",
-                  documentType: "Purchase Receipt",
-                  documentId: receipt.data?.id ?? undefined,
-                  trackedEntityId: trackingWithIndex.id,
-                  externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
-                  createdBy: userId,
-                  companyId,
-                });
-              }
+
+              itemLedgerInserts.push({
+                postingDate: today,
+                itemId: receiptLine.itemId,
+                itemReadableId: receiptLine.itemReadableId ?? "",
+                quantity: 1,
+                locationId: receiptLine.locationId,
+                shelfId: receiptLine.shelfId,
+                entryType: "Positive Adjmt.",
+                documentType: "Purchase Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                trackedEntityId: trackingWithIndex?.id,
+                externalDocumentId:
+                  receipt.data?.externalDocumentId ?? undefined,
+                createdBy: userId,
+                companyId,
+              });
             }
           }
         }
@@ -849,6 +851,25 @@ serve(async (req: Request) => {
             .execute();
 
           if (Object.keys(trackedEntityUpdates).length > 0) {
+            const trackedActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Receipt",
+                sourceDocument: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentReadableId: receipt.data.receiptId,
+                attributes: {
+                  "Purchase Order": receipt.data.sourceDocumentId,
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today,
+              })
+              .returning(["id"])
+              .execute();
+
+            const trackedActivityId = trackedActivity[0].id;
+
             for await (const [id, update] of Object.entries(
               trackedEntityUpdates
             )) {
@@ -857,6 +878,20 @@ serve(async (req: Request) => {
                 .set(update)
                 .where("id", "=", id)
                 .execute();
+
+              if (trackedActivityId) {
+                await trx
+                  .insertInto("trackedActivityOutput")
+                  .values({
+                    trackedActivityId,
+                    trackedEntityId: id,
+                    quantity: update.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .execute();
+              }
             }
           }
         });

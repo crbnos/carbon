@@ -1,3 +1,12 @@
+export type ProductLabelItem = {
+  itemId: string;
+  revision?: string;
+  quantity?: number;
+  number: string;
+  trackedEntityId: string;
+  trackingType: string;
+};
+
 export type LabelSize = {
   id: string;
   name: string;

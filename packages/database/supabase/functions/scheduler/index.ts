@@ -23,7 +23,6 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    
     const { jobId, companyId, userId } = payloadValidator.parse(payload);
 
     console.log({

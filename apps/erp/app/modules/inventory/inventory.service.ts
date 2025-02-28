@@ -250,38 +250,39 @@ export async function getReceiptFiles(
   };
 }
 
-export async function getAvailableSerialNumbersForItem(
+export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string,
-  isReadOnly = false
+  args: {
+    itemId: string;
+    companyId: string;
+  }
 ) {
   let query = client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
-    .eq("sourceDocumentId", itemId)
-    .eq("companyId", companyId);
-
-  if (!isReadOnly) {
-    query = query.eq("status", "Available");
-  }
+    .eq("sourceDocumentId", args.itemId)
+    .eq("companyId", args.companyId)
+    .eq("quantity", 1);
 
   return query;
 }
 
-export async function getAvailableBatchNumbersForItem(
+export async function getBatchNumbersForItem(
   client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
+  args: {
+    itemId: string;
+    companyId: string;
+    isReadOnly?: boolean;
+  }
 ) {
   return client
     .from("trackedEntity")
     .select("*")
     .eq("sourceDocument", "Item")
-    .eq("sourceDocumentId", itemId)
-    .eq("companyId", companyId)
-    .eq("status", "Available");
+    .eq("sourceDocumentId", args.itemId)
+    .eq("companyId", args.companyId)
+    .gte("quantity", 1);
 }
 
 export async function getShelvesList(

@@ -1,36 +1,30 @@
 import {
   Button,
-  DropdownMenu,
   HStack,
   Heading,
-  IconButton,
   useDisclosure,
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
-import {
-  LuCheckCheck,
-  LuBarcode,
-  LuPanelLeft,
-  LuPanelRight,
-} from "react-icons/lu";
-import { usePanels } from "~/components/Layout";
+import { LuCheckCheck, LuBarcode, LuQrCode } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { Shipment, ShipmentLine } from "~/modules/inventory";
+import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
 
 import { path } from "~/utils/path";
-import ShipmentStatus from "./ShipmentStatus";
 import ShipmentPostModal from "./ShipmentPostModal";
 import { RiProgress8Line } from "react-icons/ri";
+import { TrackedEntityAttributes } from "~/modules/shared";
+import ShipmentStatus from "./ShipmentStatus";
+import { SplitButton } from "~/components/SplitButton";
+import { labelSizes } from "@carbon/utils";
 
 const ShipmentHeader = () => {
   const { shipmentId } = useParams();
   if (!shipmentId) throw new Error("shipmentId not found");
 
-  const { toggleExplorer, toggleProperties } = usePanels();
-
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
+    shipmentLineTracking: ItemTracking[];
   }>(path.to.shipment(shipmentId));
 
   if (!routeData?.shipment) throw new Error("Failed to load shipment");
@@ -43,18 +37,34 @@ const ShipmentHeader = () => {
     routeData.shipmentLines.some((line) => line.shippedQuantity > 0);
 
   const isPosted = routeData.shipment.status === "Posted";
+  const hasTrackingLabels = routeData.shipmentLineTracking.some(
+    (line) => "Split Entity ID" in (line.attributes as TrackedEntityAttributes)
+  );
+
+  const navigateToTrackingLabels = (zpl?: boolean, labelSize?: string) => {
+    if (!window) return;
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.shipmentLabelsZpl(shipmentId, {
+            labelSize,
+          }),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.shipmentLabelsPdf(shipmentId, { labelSize }),
+        "_blank"
+      );
+    }
+  };
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)]">
+      <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1)]">
         <HStack className="w-full justify-between">
           <HStack>
-            <IconButton
-              aria-label="Toggle Explorer"
-              icon={<LuPanelLeft />}
-              onClick={toggleExplorer}
-              variant="ghost"
-            />
             <Link to={path.to.shipmentDetails(shipmentId)}>
               <Heading size="h4" className="flex items-center gap-2">
                 <span>{routeData?.shipment?.shipmentId}</span>
@@ -63,17 +73,31 @@ const ShipmentHeader = () => {
             <ShipmentStatus status={routeData?.shipment?.status} />
           </HStack>
           <HStack>
-            <DropdownMenu>
-              <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.shipment(shipmentId)}
-                  rel="noreferrer"
-                >
-                  Packing Slip
-                </a>
-              </Button>
-            </DropdownMenu>
+            {hasTrackingLabels && (
+              <SplitButton
+                leftIcon={<LuQrCode />}
+                dropdownItems={labelSizes.map((size) => ({
+                  label: size.name,
+                  onClick: () => navigateToTrackingLabels(!!size.zpl, size.id),
+                }))}
+                // TODO: if we knew the preferred label size, we could use that here
+                onClick={() => navigateToTrackingLabels(false)}
+                variant="primary"
+              >
+                Tracking Labels
+              </SplitButton>
+            )}
+
+            <Button variant="secondary" leftIcon={<LuBarcode />} asChild>
+              <a
+                target="_blank"
+                href={path.to.file.shipment(shipmentId)}
+                rel="noreferrer"
+              >
+                Packing Slip
+              </a>
+            </Button>
+
             <SourceDocumentLink
               sourceDocument={routeData.shipment.sourceDocument ?? undefined}
               sourceDocumentId={
@@ -91,13 +115,6 @@ const ShipmentHeader = () => {
             >
               Post
             </Button>
-
-            <IconButton
-              aria-label="Toggle Properties"
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
           </HStack>
         </HStack>
       </div>

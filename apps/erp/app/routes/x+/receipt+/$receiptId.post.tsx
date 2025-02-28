@@ -22,7 +22,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (setPendingState.error) {
     throw redirect(
-      path.to.receipts,
+      path.to.receipt(receiptId),
       await flash(
         request,
         error(setPendingState.error, "Failed to post receipt")
@@ -49,7 +49,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .eq("id", receiptId);
 
       throw redirect(
-        path.to.receipts,
+        path.to.receipt(receiptId),
         await flash(request, error(postReceipt.error, "Failed to post receipt"))
       );
     }
@@ -62,5 +62,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", receiptId);
   }
 
-  throw redirect(path.to.receipts);
+  throw redirect(path.to.receipt(receiptId));
 }

@@ -21,7 +21,7 @@ import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { getShipmentTracking } from "../..";
-import type { ShipmentLine  } from "../..";
+import type { ShipmentLine } from "../..";
 import { path } from "~/utils/path";
 import type { TrackedEntityAttributes } from "~/modules/shared";
 import { useUser } from "~/hooks";

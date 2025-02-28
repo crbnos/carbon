@@ -151,7 +151,11 @@ const ReceiptForm = ({ initialValues, status }: ReceiptFormProps) => {
                   }))}
                   isReadOnly={isPosted}
                 />
-                <Input name="externalDocumentId" label="External Reference" />
+                <Input
+                  name="externalDocumentId"
+                  label="External Reference"
+                  isDisabled={isPosted}
+                />
                 <CustomFormFields table="receipt" />
               </div>
             </VStack>
