@@ -45,7 +45,10 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
-import { jobMaterialValidator } from "../../production.models";
+import {
+  jobMaterialValidator,
+  jobMaterialValidatorForReleasedJob,
+} from "../../production.models";
 import type { Job } from "../../types";
 
 type Material = z.infer<typeof jobMaterialValidator> & {
@@ -496,6 +499,7 @@ const JobBillOfMaterial = ({
                           <MaterialForm
                             item={item}
                             isDisabled={isDisabled}
+                            job={jobData?.job}
                             setSelectedItemId={setSelectedItemId}
                             jobOperations={operations}
                             temporaryItems={temporaryItems}
@@ -559,20 +563,22 @@ function isTemporaryId(id: string) {
 function MaterialForm({
   item,
   isDisabled,
-  setSelectedItemId,
+  job,
   jobOperations,
   temporaryItems,
-  setTemporaryItems,
   orderState,
+  setSelectedItemId,
+  setTemporaryItems,
   setOrderState,
 }: {
   item: ItemWithData;
   isDisabled: boolean;
-  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
+  job?: Job;
   jobOperations: Operation[];
+  orderState: OrderState;
   temporaryItems: TemporaryItems;
   setTemporaryItems: Dispatch<SetStateAction<TemporaryItems>>;
-  orderState: OrderState;
+  setSelectedItemId: Dispatch<SetStateAction<string | null>>;
   setOrderState: Dispatch<SetStateAction<OrderState>>;
 }) {
   const { jobId } = useParams();
@@ -692,7 +698,11 @@ function MaterialForm({
       }
       method="post"
       defaultValues={item.data}
-      validator={jobMaterialValidator}
+      validator={
+        job?.status === "Draft"
+          ? jobMaterialValidator
+          : jobMaterialValidatorForReleasedJob
+      }
       className="w-full"
       fetcher={methodMaterialFetcher}
       onSubmit={() => {
