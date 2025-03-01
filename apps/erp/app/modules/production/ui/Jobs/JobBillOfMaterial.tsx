@@ -12,6 +12,9 @@ import {
   cn,
   HStack,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDebounce,
   VStack,
 } from "@carbon/react";
@@ -21,7 +24,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
-import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -45,7 +48,10 @@ import type { jobOperationValidator } from "../../production.models";
 import { jobMaterialValidator } from "../../production.models";
 import type { Job } from "../../types";
 
-type Material = z.infer<typeof jobMaterialValidator>;
+type Material = z.infer<typeof jobMaterialValidator> & {
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+};
 
 type Operation = z.infer<typeof jobOperationValidator>;
 
@@ -105,14 +111,43 @@ function makeItem(
     checked: checked,
     details: (
       <HStack spacing={2}>
-        <Badge variant="secondary">
-          <MethodIcon type={material.methodType} />
-        </Badge>
-
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodIcon type={material.methodType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.methodType}</TooltipContent>
+        </Tooltip>
+        {material.requiresBatchTracking ? (
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type="Batch" />
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Batch Tracking</TooltipContent>
+          </Tooltip>
+        ) : material.requiresSerialTracking ? (
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type="Serial" />
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>Serial Tracking</TooltipContent>
+          </Tooltip>
+        ) : null}
         <Badge variant="secondary">{material.quantity}</Badge>
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={material.itemType} />
-        </Badge>
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodItemTypeIcon type={material.itemType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.itemType}</TooltipContent>
+        </Tooltip>
       </HStack>
     ),
     data: {
@@ -200,6 +235,8 @@ const JobBillOfMaterial = ({
       materialsById.set("temporary", {
         ...pendingMaterial,
         description: "",
+        requiresBatchTracking: false,
+        requiresSerialTracking: false,
       });
     } else {
       materialsById.set(pendingMaterial.id, {

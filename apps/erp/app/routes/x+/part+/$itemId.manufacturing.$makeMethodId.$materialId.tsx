@@ -114,10 +114,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methodOperations:
       methodOperations.data?.map((operation) => ({
         ...operation,
-        workCenterId: operation.workCenterId ?? undefined,
+        description: operation.description ?? "",
+        procedureId: operation.procedureId ?? undefined,
         operationSupplierProcessId:
           operation.operationSupplierProcessId ?? undefined,
         tags: operation.tags ?? [],
+        workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
     model: getModelByItemId(client, material.data.itemId),

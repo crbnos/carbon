@@ -97,6 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     materials:
       materials?.data.map((m) => ({
         ...m,
+        description: m.description ?? "",
         itemType: m.itemType as "Part",
         unitOfMeasureCode: m.unitOfMeasureCode ?? "",
         quoteOperationId: m.quoteOperationId ?? undefined,
@@ -105,6 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       operations.data?.map((o) => ({
         ...o,
         description: o.description ?? "",
+        procedureId: o.procedureId ?? undefined,
         workCenterId: o.workCenterId ?? undefined,
         laborRate: o.laborRate ?? 0,
         machineRate: o.machineRate ?? 0,

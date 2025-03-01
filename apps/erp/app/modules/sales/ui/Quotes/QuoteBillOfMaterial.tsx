@@ -12,6 +12,9 @@ import {
   cn,
   HStack,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDebounce,
   VStack,
 } from "@carbon/react";
@@ -21,7 +24,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
-import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -44,8 +47,14 @@ import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
+import { Database } from "@carbon/database";
 
-type Material = z.infer<typeof quoteMaterialValidator>;
+type Material = z.infer<typeof quoteMaterialValidator> & {
+  item: {
+    name: string;
+    itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  };
+};
 
 type Operation = z.infer<typeof quoteOperationValidator>;
 
@@ -105,14 +114,38 @@ function makeItem(
     checked: checked,
     details: (
       <HStack spacing={2}>
-        <Badge variant="secondary">
-          <MethodIcon type={material.methodType} />
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodIcon type={material.methodType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.methodType}</TooltipContent>
+        </Tooltip>
+
+        {["Batch", "Serial"].includes(material.item.itemTrackingType) && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type={material.item.itemTrackingType} />
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              {material.item.itemTrackingType} Tracking
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         <Badge variant="secondary">{material.quantity}</Badge>
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={material.itemType} />
-        </Badge>
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodItemTypeIcon type={material.itemType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.itemType}</TooltipContent>
+        </Tooltip>
       </HStack>
     ),
     data: {
@@ -206,6 +239,10 @@ const QuoteBillOfMaterial = ({
       materialsById.set("temporary", {
         ...pendingMaterial,
         description: "",
+        item: {
+          name: "",
+          itemTrackingType: "Inventory",
+        },
       });
     } else {
       materialsById.set(pendingMaterial.id, {

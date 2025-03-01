@@ -844,7 +844,7 @@ export async function getMethodMaterialsByMakeMethod(
 ) {
   return client
     .from("methodMaterial")
-    .select("*, item(name)")
+    .select("*, item(name, itemTrackingType)")
     .eq("makeMethodId", makeMethodId)
     .order("order", { ascending: true });
 }
