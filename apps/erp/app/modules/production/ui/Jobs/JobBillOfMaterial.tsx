@@ -111,14 +111,6 @@ function makeItem(
     checked: checked,
     details: (
       <HStack spacing={2}>
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodIcon type={material.methodType} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>{material.methodType}</TooltipContent>
-        </Tooltip>
         {material.requiresBatchTracking ? (
           <Tooltip>
             <TooltipTrigger>
@@ -138,6 +130,15 @@ function makeItem(
             <TooltipContent>Serial Tracking</TooltipContent>
           </Tooltip>
         ) : null}
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodIcon type={material.methodType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.methodType}</TooltipContent>
+        </Tooltip>
         <Badge variant="secondary">{material.quantity}</Badge>
 
         <Tooltip>
