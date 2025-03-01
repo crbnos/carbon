@@ -18,12 +18,12 @@ import {
 } from "@carbon/react";
 import { useRouteData } from "@carbon/remix";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
-import { ReceiptLine } from "../../types";
+import type { ReceiptLine } from "../../types";
 import { getReceiptTracking } from "../../inventory.service";
-import { TrackedEntityAttributes } from "~/modules/shared";
+import type { TrackedEntityAttributes } from "~/modules/shared";
 import { useUser } from "~/hooks";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
@@ -132,6 +132,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   });
 
   const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onClose();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.state]);
 
   return (
     <Modal
@@ -176,7 +183,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             <Button variant="solid" onClick={onClose}>
               Cancel
             </Button>
-            <fetcher.Form action={path.to.receiptPost(receiptId)} method="post">
+            <fetcher.Form
+              action={path.to.receiptPost(receiptId)}
+              method="post"
+              onSubmit={() => {
+                submitted.current = true;
+              }}
+            >
               <Button
                 isLoading={fetcher.state !== "idle"}
                 isDisabled={
