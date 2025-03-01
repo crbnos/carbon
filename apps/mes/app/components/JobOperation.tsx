@@ -149,6 +149,7 @@ import {
   LuHammer,
   LuHardHat,
   LuPaperclip,
+  LuQrCode,
   LuSend,
   LuTimer,
   LuTrash,
@@ -156,8 +157,8 @@ import {
 } from "react-icons/lu";
 import {
   MethodIcon,
-  MethodItemTypeIcon,
   ProcedureAttributeTypeIcon,
+  TrackingTypeIcon,
 } from "~/components/Icons";
 import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
@@ -220,6 +221,7 @@ export const JobOperation = ({
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
+    trackingModal,
   } = useOperation(originalOperation, events, isModalOpen);
 
   const controlsHeight = useMemo(() => {
@@ -531,11 +533,10 @@ export const JobOperation = ({
                                 )}
                               >
                                 <Td>
-                                  <HStack spacing={2}>
-                                    <MethodItemTypeIcon
-                                      type={material.itemType}
-                                      className="size-4"
-                                    />
+                                  <HStack
+                                    spacing={2}
+                                    className="justify-between"
+                                  >
                                     <VStack spacing={0}>
                                       <span className="font-semibold">
                                         {material.itemReadableId}
@@ -544,6 +545,22 @@ export const JobOperation = ({
                                         {material.description}
                                       </span>
                                     </VStack>
+                                    {material.requiresBatchTracking ? (
+                                      <Badge variant="secondary">
+                                        <TrackingTypeIcon
+                                          type="Batch"
+                                          className="shrink-0"
+                                        />
+                                      </Badge>
+                                    ) : null}
+                                    {material.requiresSerialTracking ? (
+                                      <Badge variant="secondary">
+                                        <TrackingTypeIcon
+                                          type="Serial"
+                                          className="shrink-0"
+                                        />
+                                      </Badge>
+                                    ) : null}
                                   </HStack>
                                 </Td>
                                 <Td className="lg:table-cell hidden">
@@ -565,17 +582,35 @@ export const JobOperation = ({
                                   )}
                                 </Td>
                                 <Td className="text-right">
-                                  {material.methodType !== "Make" && (
+                                  {material.methodType !== "Make" &&
+                                    material.requiresBatchTracking === false &&
+                                    material.requiresSerialTracking ===
+                                      false && (
+                                      <IconButton
+                                        aria-label="Issue Material"
+                                        variant="ghost"
+                                        icon={<LuGitBranchPlus />}
+                                        className="h-8 w-8"
+                                        onClick={() => {
+                                          flushSync(() => {
+                                            setSelectedMaterial(material);
+                                          });
+                                          issueModal.onOpen();
+                                        }}
+                                      />
+                                    )}
+                                  {(material.requiresBatchTracking ||
+                                    material.requiresSerialTracking) && (
                                     <IconButton
                                       aria-label="Issue Material"
                                       variant="ghost"
-                                      icon={<LuGitBranchPlus />}
+                                      icon={<LuQrCode />}
                                       className="h-8 w-8"
                                       onClick={() => {
                                         flushSync(() => {
                                           setSelectedMaterial(material);
                                         });
-                                        issueModal.onOpen();
+                                        trackingModal.onOpen();
                                       }}
                                     />
                                   )}
@@ -1240,6 +1275,13 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
+      {trackingModal.isOpen && (
+        <TrackingModal
+          operationId={operation.id}
+          material={selectedMaterial ?? undefined}
+          onClose={trackingModal.onClose}
+        />
+      )}
       {issueModal.isOpen && (
         <IssueModal
           operationId={operation.id}
@@ -1504,7 +1546,7 @@ function useOperation(
   const completeModal = useDisclosure();
   const finishModal = useDisclosure();
   const issueModal = useDisclosure();
-
+  const trackingModal = useDisclosure();
   // we do this to avoid re-rendering when the modal is open
   const isAnyModalOpen =
     pauseInterval ||
@@ -1723,6 +1765,7 @@ function useOperation(
     completeModal,
     finishModal,
     issueModal,
+    trackingModal,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
@@ -2303,6 +2346,26 @@ function QuantityModal({
   );
 }
 
+function TrackingModal({
+  operationId,
+  material,
+  onClose,
+}: {
+  operationId: string;
+  material?: JobMaterial;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Tracking</ModalTitle>
+        </ModalHeader>
+      </ModalContent>
+    </Modal>
+  );
+}
+
 function IssueModal({
   operationId,
   material,
@@ -2340,19 +2403,21 @@ function IssueModal({
             materialId: material?.id,
             jobOperationId: operationId,
             itemId: material?.itemId,
-            quantity: 1,
-            adjustmentType: "Positive Adjmt.",
+            quantity:
+              (material?.estimatedQuantity ?? 0) -
+              (material?.quantityIssued ?? 0),
+            adjustmentType: "Negative Adjmt.",
           }}
         >
           <ModalBody>
             <Hidden name="jobOperationId" />
             <Hidden name="materialId" />
-            {!material?.id && (
-              <Hidden name="adjustmentType" value="Set Quantity" />
+            {material?.id && (
+              <Hidden name="adjustmentType" value="Negative Adjmt." />
             )}
             <VStack spacing={4}>
               <Combobox name="itemId" label="Item" options={itemOptions} />
-              {material?.id && (
+              {!material?.id && (
                 <Select
                   name="adjustmentType"
                   label="Adjustment Type"

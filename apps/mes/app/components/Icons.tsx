@@ -3,9 +3,11 @@ import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
+  LuBarcode,
   LuCircleCheck,
   LuCircleX,
   LuClock,
+  LuGroup,
   LuFlaskConical,
   LuHammer,
   LuHeadphones,
@@ -17,6 +19,7 @@ import {
   LuSquare,
   LuToggleLeft,
   LuUser,
+  LuBox,
 } from "react-icons/lu";
 
 import {
@@ -32,6 +35,7 @@ import {
   BsFileZipFill,
 } from "react-icons/bs";
 import { RxCodesandboxLogo } from "react-icons/rx";
+import { TbTargetOff } from "react-icons/tb";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
@@ -40,7 +44,7 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type { documentTypes } from "~/services/models";
 import type { Operation } from "~/services/types";
-import { Database } from "../../../../packages/database/src/types";
+import type { Database } from "../../../../packages/database/src/types";
 
 type FileIconProps = {
   type: (typeof documentTypes)[number];
@@ -223,5 +227,26 @@ export const ProcedureAttributeTypeIcon = ({
       return <LuList className={cn("text-orange-600", className)} />;
     case "File":
       return <LuImage className={cn("text-indigo-500", className)} />;
+  }
+};
+
+export const TrackingTypeIcon = ({
+  type,
+  className,
+}: {
+  type: string;
+  className?: string;
+}) => {
+  switch (type) {
+    case "Serial":
+      return <LuBarcode className={cn("text-foreground", className)} />;
+    case "Batch":
+      return <LuGroup className={cn("text-emerald-500", className)} />;
+    case "Inventory":
+      return <LuBox className={cn("text-blue-500", className)} />;
+    case "Non-Inventory":
+      return <TbTargetOff className={cn("text-red-500", className)} />;
+    default:
+      return <LuSquare className={cn("text-muted-foreground", className)} />;
   }
 };

@@ -47,7 +47,7 @@ import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
-import { Database } from "@carbon/database";
+import type { Database } from "@carbon/database";
 
 type Material = z.infer<typeof quoteMaterialValidator> & {
   item: {
@@ -114,15 +114,6 @@ function makeItem(
     checked: checked,
     details: (
       <HStack spacing={2}>
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodIcon type={material.methodType} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>{material.methodType}</TooltipContent>
-        </Tooltip>
-
         {["Batch", "Serial"].includes(material.item.itemTrackingType) && (
           <Tooltip>
             <TooltipTrigger>
@@ -135,6 +126,15 @@ function makeItem(
             </TooltipContent>
           </Tooltip>
         )}
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodIcon type={material.methodType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.methodType}</TooltipContent>
+        </Tooltip>
 
         <Badge variant="secondary">{material.quantity}</Badge>
 
