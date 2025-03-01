@@ -104,11 +104,13 @@ const InventoryShelves = ({
                       <span>{item.quantity}</span>
                     </Td>
                     <Td>
-                      <Copy
-                        icon={<LuQrCode />}
-                        text={item.trackedEntityId}
-                        withTextInTooltip
-                      />
+                      {item.trackedEntityId && (
+                        <Copy
+                          icon={<LuQrCode />}
+                          text={item.trackedEntityId}
+                          withTextInTooltip
+                        />
+                      )}
                     </Td>
                   </Tr>
                 ))}
