@@ -661,11 +661,17 @@ serve(async (req: Request) => {
               let itemReadableId = child.data.itemReadableId;
               let itemType = child.data.itemType;
               let unitCost = child.data.unitCost;
+              let requiresSerialTracking =
+                child.data.itemTrackingType === "Serial";
+              let requiresBatchTracking =
+                child.data.itemTrackingType === "Batch";
 
               if (itemId !== child.data.itemId) {
                 const item = await client
                   .from("item")
-                  .select("readableId, type, name, itemCost(unitCost)")
+                  .select(
+                    "readableId, type, name, itemTrackingType, itemCost(unitCost)"
+                  )
                   .eq("id", itemId)
                   .eq("companyId", companyId)
                   .single();
@@ -677,6 +683,10 @@ serve(async (req: Request) => {
                   if (description === child.data.description) {
                     description = item.data.name;
                   }
+                  requiresSerialTracking =
+                    item.data.itemTrackingType === "Serial";
+                  requiresBatchTracking =
+                    item.data.itemTrackingType === "Batch";
                 } else {
                   itemId = child.data.itemId;
                 }
@@ -694,6 +704,8 @@ serve(async (req: Request) => {
                 order: child.data.order,
                 description,
                 quantity,
+                requiresSerialTracking,
+                requiresBatchTracking,
                 unitOfMeasureCode,
                 unitCost,
                 companyId,
@@ -1010,6 +1022,8 @@ serve(async (req: Request) => {
               order: child.data.order,
               description: child.data.description,
               quantity: child.data.quantity,
+              requiresBatchTracking: child.data.itemTrackingType === "Batch",
+              requiresSerialTracking: child.data.itemTrackingType === "Serial",
               unitOfMeasureCode: child.data.unitOfMeasureCode,
               unitCost: child.data.unitCost,
               companyId,
@@ -2941,6 +2955,10 @@ serve(async (req: Request) => {
                           child.data.quoteMakeMethodId
                         ],
                   quantity: child.data.quantity,
+                  requiresBatchTracking:
+                    child.data.itemTrackingType === "Batch",
+                  requiresSerialTracking:
+                    child.data.itemTrackingType === "Serial",
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,

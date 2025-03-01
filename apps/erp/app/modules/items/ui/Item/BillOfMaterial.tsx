@@ -13,6 +13,9 @@ import {
   HStack,
   IconButton,
   toast,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   useThrottle,
   VStack,
@@ -24,7 +27,7 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuSettings2, LuSquareFunction, LuX } from "react-icons/lu";
 import type { z } from "zod";
-import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import type { Configuration } from "~/components/Configurator/types";
 import {
   DefaultMethodType,
@@ -54,9 +57,14 @@ import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
 import type { ConfigurationParameter, ConfigurationRule } from "../../types";
+import { Database } from "@carbon/database";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
+  item: {
+    name: string;
+    itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  };
 };
 
 type Operation = z.infer<typeof methodOperationValidator>;
@@ -136,6 +144,10 @@ const BillOfMaterial = ({
       materialsById.set("temporary", {
         ...pendingMaterial,
         description: "",
+        item: {
+          name: "",
+          itemTrackingType: "Inventory",
+        },
       });
     } else {
       materialsById.set(pendingMaterial.id, {
@@ -818,14 +830,38 @@ function makeItem(
     checked,
     details: (
       <HStack spacing={2}>
-        <Badge variant="secondary">
-          <MethodIcon type={material.methodType} />
-        </Badge>
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodIcon type={material.methodType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.methodType}</TooltipContent>
+        </Tooltip>
+
+        {["Batch", "Serial"].includes(material.item.itemTrackingType) && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Badge variant="secondary">
+                <TrackingTypeIcon type={material.item.itemTrackingType} />
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              {material.item.itemTrackingType} Tracking
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         <Badge variant="secondary">{material.quantity}</Badge>
-        <Badge variant="secondary">
-          <MethodItemTypeIcon type={material.itemType} />
-        </Badge>
+
+        <Tooltip>
+          <TooltipTrigger>
+            <Badge variant="secondary">
+              <MethodItemTypeIcon type={material.itemType} />
+            </Badge>
+          </TooltipTrigger>
+          <TooltipContent>{material.itemType}</TooltipContent>
+        </Tooltip>
       </HStack>
     ),
     data: {

@@ -934,7 +934,7 @@ export async function getQuoteMaterialsByMethodId(
 ) {
   return client
     .from("quoteMaterial")
-    .select("*")
+    .select("*, item(name, itemTrackingType)")
     .eq("quoteMakeMethodId", quoteMakeMethodId)
     .order("order", { ascending: true });
 }
