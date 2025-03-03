@@ -149,7 +149,7 @@ serve(async (req: Request) => {
               .insertInto("methodOperation")
               .values(
                 sourceOperations.data.map(
-                  ({ methodOperationTool: _tools, ...operation }) => ({
+                  ({ methodOperationTool: _tools, methodOperationParameter: _parameters, methodOperationAttribute: _attributes, ...operation }) => ({
                     ...operation,
                     id: undefined, // Let the database generate a new ID
                     makeMethodId: targetMakeMethod.data.id,
