@@ -23,7 +23,7 @@ import { LuTriangleAlert } from "react-icons/lu";
 import { getShipmentTracking } from "../..";
 import type { ShipmentLine } from "../..";
 import { path } from "~/utils/path";
-import type { TrackedEntityAttributes } from "~/modules/shared";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useUser } from "~/hooks";
 
 const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {

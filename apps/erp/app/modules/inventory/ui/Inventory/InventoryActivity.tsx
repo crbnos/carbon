@@ -8,20 +8,20 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.documentType) {
     case "Purchase Receipt":
       return `received ${ledgerRecord.quantity} units${
-        ledgerRecord.batchNumber
-          ? ` from batch ${ledgerRecord.batchNumber}`
-          : ""
-      }${
-        ledgerRecord.serialNumber
-          ? ` with serial number ${ledgerRecord.serialNumber}`
+        ledgerRecord.trackedEntityId
+          ? ` from ${
+              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
+            } ${ledgerRecord.trackedEntityId}`
           : ""
       }`;
     case "Purchase Invoice":
       return `invoiced ${ledgerRecord.quantity} units`;
     case "Sales Shipment":
       return `shipped ${-1 * ledgerRecord.quantity} units${
-        ledgerRecord.serialNumber
-          ? ` with serial number ${ledgerRecord.serialNumber}`
+        ledgerRecord.trackedEntityId
+          ? ` of ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
+              ledgerRecord.trackedEntityId
+            }`
           : ""
       }`;
     case "Sales Invoice":
@@ -107,7 +107,7 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
 const getActivityIcon = (ledgerRecord: ItemLedger) => {
   switch (ledgerRecord.entryType) {
     case "Positive Adjmt.":
-      return <LuCirclePlus className="text-blue-500 w-5 h-5" />;
+      return <LuCirclePlus className="text-emerald-500 w-5 h-5" />;
     case "Negative Adjmt.":
     case "Consumption":
       return <LuCircleMinus className="text-red-500 w-5 h-5" />;

@@ -80,9 +80,10 @@ const JobBreadcrumbs = () => {
     material: JobMaterial;
   }>(path.to.jobMakeMethod(jobId, methodId!, materialId!));
 
-  const itemId = materialRouteData?.material?.itemId ?? routeData?.job?.itemId;
+  const itemId =
+    materialRouteData?.material?.jobMaterialItemId ?? routeData?.job?.itemId;
   const itemType =
-    materialRouteData?.material?.itemType ?? routeData?.job?.itemType;
+    materialRouteData?.material?.type ?? routeData?.job?.itemType;
 
   const itemLink =
     itemType && itemId

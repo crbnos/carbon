@@ -4,7 +4,7 @@ import { labelSizes } from "@carbon/utils";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getShipmentTracking } from "~/modules/inventory/inventory.service";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import { TrackedEntityAttributes } from "~/modules/shared/types";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { path } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };

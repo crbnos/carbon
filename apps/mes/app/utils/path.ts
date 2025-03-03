@@ -11,6 +11,10 @@ export const path = {
   to: {
     api: {
       autodeskToken: `${api}/autodesk/token`,
+      batchNumbers: (itemId: string) =>
+        generatePath(`${api}/batch-numbers?itemId=${itemId}`),
+      serialNumbers: (itemId: string) =>
+        generatePath(`${api}/serial-numbers?itemId=${itemId}`),
     },
     file: {
       previewImage: (bucket: string, path: string) =>

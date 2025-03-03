@@ -61,7 +61,7 @@ import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { ValidatedForm, Submit, Number } from "@carbon/form";
-import type { TrackedEntityAttributes } from "~/modules/shared";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { SplitButton } from "~/components/SplitButton";
 import { labelSizes } from "@carbon/utils";
 

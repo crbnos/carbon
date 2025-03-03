@@ -11,6 +11,41 @@ export const inventoryAdjustmentValidator = z.object({
   quantity: zfd.numeric(z.number().min(1, { message: "Quantity is required" })),
 });
 
+export async function getBatchNumbersForItem(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    isReadOnly?: boolean;
+  }
+) {
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .eq("sourceDocumentId", args.itemId)
+    .eq("companyId", args.companyId)
+    .gte("quantity", 1);
+}
+
+export async function getSerialNumbersForItem(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+  }
+) {
+  let query = client
+    .from("trackedEntity")
+    .select("*")
+    .eq("sourceDocument", "Item")
+    .eq("sourceDocumentId", args.itemId)
+    .eq("companyId", args.companyId)
+    .eq("quantity", 1);
+
+  return query;
+}
+
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
