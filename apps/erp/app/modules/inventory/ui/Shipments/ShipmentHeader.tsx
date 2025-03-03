@@ -7,7 +7,7 @@ import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import ShipmentPostModal from "./ShipmentPostModal";
 import { RiProgress8Line } from "react-icons/ri";
-import { TrackedEntityAttributes } from "~/modules/shared";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import ShipmentStatus from "./ShipmentStatus";
 import { SplitButton } from "~/components/SplitButton";
 import { labelSizes } from "@carbon/utils";

@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Checkbox,
+  Combobox as ComboboxBase,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -53,6 +54,14 @@ import {
   useMount,
   VStack,
   type JSONContent,
+  InputGroup,
+  InputRightElement,
+  NumberDecrementStepper,
+  NumberField,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputGroup,
+  NumberInputStepper,
 } from "@carbon/react";
 import { generateHTML } from "@carbon/react/Editor";
 import {
@@ -120,6 +129,7 @@ import {
   formatDateTime,
   formatDurationMilliseconds,
   formatRelativeTime,
+  TrackedEntityAttributes,
 } from "@carbon/utils";
 import {
   getLocalTimeZone,
@@ -139,8 +149,12 @@ import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuActivity,
   LuAxis3D,
+  LuCheck,
+  LuChevronDown,
   LuChevronLeft,
+  LuChevronUp,
   LuCircleCheck,
+  LuCirclePlus,
   LuClipboardCheck,
   LuDownload,
   LuEllipsisVertical,
@@ -148,12 +162,14 @@ import {
   LuGitBranchPlus,
   LuHammer,
   LuHardHat,
+  LuList,
   LuPaperclip,
   LuQrCode,
   LuSend,
   LuTimer,
   LuTrash,
   LuTriangleAlert,
+  LuX,
 } from "react-icons/lu";
 import {
   MethodIcon,
@@ -166,6 +182,8 @@ import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 import FileDropzone from "./FileDropzone";
 import { useNumberFormatter } from "@react-aria/i18n";
+import { getSerialNumbersForItem } from "~/services/inventory.service";
+import { getBatchNumbersForItem } from "~/services/inventory.service";
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -221,7 +239,6 @@ export const JobOperation = ({
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
-    trackingModal,
   } = useOperation(originalOperation, events, isModalOpen);
 
   const controlsHeight = useMemo(() => {
@@ -575,7 +592,9 @@ export const JobOperation = ({
 
                                 <Td>{material.estimatedQuantity}</Td>
                                 <Td>
-                                  {material.methodType === "Make" ? (
+                                  {material.methodType === "Make" &&
+                                  material.requiresBatchTracking === false &&
+                                  material.requiresSerialTracking === false ? (
                                     <MethodIcon type="Make" />
                                   ) : (
                                     material.quantityIssued
@@ -610,7 +629,7 @@ export const JobOperation = ({
                                         flushSync(() => {
                                           setSelectedMaterial(material);
                                         });
-                                        trackingModal.onOpen();
+                                        issueModal.onOpen();
                                       }}
                                     />
                                   )}
@@ -1275,23 +1294,46 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
-      {trackingModal.isOpen && (
-        <TrackingModal
-          operationId={operation.id}
-          material={selectedMaterial ?? undefined}
-          onClose={trackingModal.onClose}
-        />
-      )}
-      {issueModal.isOpen && (
-        <IssueModal
-          operationId={operation.id}
-          material={selectedMaterial ?? undefined}
-          onClose={() => {
-            setSelectedMaterial(null);
-            issueModal.onClose();
-          }}
-        />
-      )}
+
+      {issueModal.isOpen &&
+        selectedMaterial?.requiresBatchTracking !== true &&
+        selectedMaterial?.requiresSerialTracking !== true && (
+          <IssueModal
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+      {issueModal.isOpen &&
+        selectedMaterial?.requiresBatchTracking === true && (
+          <BatchIssueModal
+            parentId={""} // TODO
+            parentIdIsSerialized={false} // TODO
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+      {issueModal.isOpen &&
+        selectedMaterial?.requiresSerialTracking === true && (
+          <SerialIssueModal
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            parentId={""} // TODO
+            parentIdIsSerialized={false} // TODO
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+
       {attributeRecordModal.isOpen && selectedAttribute ? (
         <RecordModal
           key={selectedAttribute.id}
@@ -1546,7 +1588,7 @@ function useOperation(
   const completeModal = useDisclosure();
   const finishModal = useDisclosure();
   const issueModal = useDisclosure();
-  const trackingModal = useDisclosure();
+
   // we do this to avoid re-rendering when the modal is open
   const isAnyModalOpen =
     pauseInterval ||
@@ -1765,7 +1807,6 @@ function useOperation(
     completeModal,
     finishModal,
     issueModal,
-    trackingModal,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
@@ -2345,25 +2386,788 @@ function QuantityModal({
     </Modal>
   );
 }
-
-function TrackingModal({
+function SerialIssueModal({
   operationId,
   material,
+  parentId,
+  parentIdIsSerialized,
   onClose,
 }: {
+  parentId: string;
+  parentIdIsSerialized: boolean;
   operationId: string;
   material?: JobMaterial;
   onClose: () => void;
 }) {
+  const { data: serialNumbers } = useSerialNumbers(material?.itemId);
+
+  const [errors, setErrors] = useState<Record<number, string>>({});
+
+  const options = useMemo(() => {
+    return (
+      serialNumbers?.data?.map((serialNumber) => {
+        const attributes = serialNumber.attributes as TrackedEntityAttributes;
+        return {
+          label: serialNumber.sourceDocumentReadableId ?? "",
+          value: serialNumber.id,
+          helper: attributes["Serial Number"]
+            ? `Serial ${attributes["Serial Number"]}`
+            : attributes["Batch Number"]
+            ? `Batch ${attributes["Batch Number"]}`
+            : undefined,
+        };
+      }) ?? []
+    );
+  }, [serialNumbers]);
+
+  const initialQuantity = parentIdIsSerialized
+    ? material?.quantity ?? 1
+    : material?.estimatedQuantity ?? 1;
+
+  const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
+    Array<{
+      index: number;
+      id: string;
+    }>
+  >(
+    Array(initialQuantity)
+      .fill("")
+      .map((_, index) => ({ index, id: "" }))
+  );
+
+  const validateSerialNumber = useCallback(
+    (value: string, index: number) => {
+      if (!value) return "Serial number is required";
+
+      // Check for duplicates
+      const isDuplicate = selectedSerialNumbers.some(
+        (sn, i) => sn.id === value && i !== index
+      );
+      if (isDuplicate) return "Duplicate serial number";
+
+      // Check if serial number exists in options
+      const isValid = options.some((option) => option.value === value);
+      if (!isValid) return "Invalid serial number";
+
+      return null;
+    },
+    [selectedSerialNumbers, options]
+  );
+
+  const updateSerialNumber = useCallback(
+    (serialNumber: { index: number; id: string }) => {
+      setSelectedSerialNumbers((prev) => {
+        const newSerialNumbers = [...prev];
+        newSerialNumbers[serialNumber.index] = serialNumber;
+        return newSerialNumbers;
+      });
+    },
+    []
+  );
+
+  const addSerialNumber = useCallback(() => {
+    setSelectedSerialNumbers((prev) => {
+      const newIndex = prev.length;
+      return [...prev, { index: newIndex, id: "" }];
+    });
+  }, []);
+
+  const removeSerialNumber = useCallback((indexToRemove: number) => {
+    setSelectedSerialNumbers((prev) => {
+      // Remove the item at the specified index
+      const filtered = prev.filter((_, i) => i !== indexToRemove);
+
+      // Reindex the remaining items
+      return filtered.map((item, i) => ({ ...item, index: i }));
+    });
+
+    // Clean up any errors for the removed index
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[indexToRemove];
+
+      // Reindex the errors for indices greater than the removed one
+      const reindexedErrors: Record<number, string> = {};
+      Object.entries(newErrors).forEach(([key, value]) => {
+        const keyNum = parseInt(key);
+        if (keyNum > indexToRemove) {
+          reindexedErrors[keyNum - 1] = value;
+        } else {
+          reindexedErrors[keyNum] = value;
+        }
+      });
+
+      return reindexedErrors;
+    });
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    // Validate all serial numbers
+    let hasErrors = false;
+    const newErrors: Record<number, string> = {};
+
+    selectedSerialNumbers.forEach((sn) => {
+      const error = validateSerialNumber(sn.id, sn.index);
+      if (error) {
+        newErrors[sn.index] = error;
+        hasErrors = true;
+      }
+    });
+
+    setErrors(newErrors);
+
+    if (!hasErrors) {
+      // Submit to the API
+      console.log({
+        id: operationId,
+        parentId,
+        children: selectedSerialNumbers.map((sn) => ({
+          trackedEntityId: sn.id,
+          quantity: 1,
+        })),
+      });
+      onClose();
+    }
+  }, [
+    selectedSerialNumbers,
+    validateSerialNumber,
+    operationId,
+    parentId,
+    onClose,
+  ]);
+
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Tracking</ModalTitle>
+          <ModalTitle>Issue Serial Tracked Parts</ModalTitle>
         </ModalHeader>
+        <ModalBody>
+          <Tabs defaultValue="scan">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="scan">
+                <LuQrCode className="mr-2" />
+                Scan
+              </TabsTrigger>
+              <TabsTrigger value="select">
+                <LuList className="mr-2" />
+                Select
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="scan">
+              <div className="flex flex-col gap-4">
+                {selectedSerialNumbers.map((serialNumber, index) => (
+                  <div
+                    key={`${index}-serial-scan`}
+                    className="flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <InputGroup>
+                          <Input
+                            placeholder={`Serial Number ${index + 1}`}
+                            value={serialNumber.id}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              const newSerialNumbers = [
+                                ...selectedSerialNumbers,
+                              ];
+                              newSerialNumbers[index] = {
+                                index,
+                                id: newValue,
+                              };
+                              setSelectedSerialNumbers(newSerialNumbers);
+                            }}
+                            onBlur={(e) => {
+                              const newValue = e.target.value;
+                              const error = validateSerialNumber(
+                                newValue,
+                                index
+                              );
+
+                              setErrors((prev) => {
+                                const newErrors = { ...prev };
+                                if (error) {
+                                  newErrors[index] = error;
+                                } else {
+                                  delete newErrors[index];
+                                }
+                                return newErrors;
+                              });
+
+                              if (!error) {
+                                updateSerialNumber({
+                                  index,
+                                  id: newValue,
+                                });
+                              } else {
+                                // Clear the input value but keep the error message
+                                const newSerialNumbers = [
+                                  ...selectedSerialNumbers,
+                                ];
+                                newSerialNumbers[index] = {
+                                  index,
+                                  id: "",
+                                };
+                                setSelectedSerialNumbers(newSerialNumbers);
+                              }
+                            }}
+                            className={cn(
+                              errors[index] && "border-destructive"
+                            )}
+                          />
+                          <InputRightElement className="pl-2">
+                            {!errors[index] && serialNumber.id ? (
+                              <LuCheck className="text-emerald-500" />
+                            ) : (
+                              <LuQrCode />
+                            )}
+                          </InputRightElement>
+                        </InputGroup>
+                      </div>
+                      <IconButton
+                        aria-label="Remove Serial Number"
+                        icon={<LuX />}
+                        variant="ghost"
+                        onClick={() => removeSerialNumber(index)}
+                        className="flex-shrink-0"
+                      />
+                    </div>
+                    {errors[index] && (
+                      <span className="text-xs text-destructive">
+                        {errors[index]}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    leftIcon={<LuCirclePlus />}
+                    onClick={addSerialNumber}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="select">
+              <div className="flex flex-col gap-4">
+                {selectedSerialNumbers.map((serialNumber, index) => (
+                  <div
+                    key={`${index}-serial-select`}
+                    className="flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <ComboboxBase
+                          placeholder={`Select Serial Number ${index + 1}`}
+                          value={serialNumber.id}
+                          onChange={(value) => {
+                            const newSerialNumbers = [...selectedSerialNumbers];
+                            newSerialNumbers[index] = {
+                              index,
+                              id: value,
+                            };
+                            setSelectedSerialNumbers(newSerialNumbers);
+
+                            // Validate on change for select
+                            const error = validateSerialNumber(value, index);
+                            setErrors((prev) => {
+                              const newErrors = { ...prev };
+                              if (error) {
+                                newErrors[index] = error;
+                              } else {
+                                delete newErrors[index];
+                              }
+                              return newErrors;
+                            });
+                          }}
+                          options={options}
+                        />
+                      </div>
+                      <IconButton
+                        aria-label="Remove Serial Number"
+                        icon={<LuX />}
+                        variant="ghost"
+                        onClick={() => removeSerialNumber(index)}
+                        className="flex-shrink-0"
+                      />
+                    </div>
+                    {errors[index] && (
+                      <span className="text-xs text-destructive">
+                        {errors[index]}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    leftIcon={<LuCirclePlus />}
+                    onClick={addSerialNumber}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            Issue
+          </Button>
+        </ModalFooter>
       </ModalContent>
     </Modal>
   );
+}
+
+function useSerialNumbers(itemId?: string) {
+  const serialNumbersFetcher =
+    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
+
+  useEffect(() => {
+    if (itemId) {
+      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
+  return { data: serialNumbersFetcher.data };
+}
+function BatchIssueModal({
+  parentId,
+  parentIdIsSerialized,
+  operationId,
+  material,
+  onClose,
+}: {
+  parentId: string;
+  parentIdIsSerialized: boolean;
+  operationId: string;
+  material?: JobMaterial;
+  onClose: () => void;
+}) {
+  const { data: batchNumbers } = useBatchNumbers(material?.itemId);
+
+  const [errors, setErrors] = useState<Record<number, string>>({});
+
+  const options = useMemo(() => {
+    return (
+      batchNumbers?.data?.map((batchNumber) => {
+        const attributes = batchNumber.attributes as TrackedEntityAttributes;
+        return {
+          label: batchNumber.sourceDocumentReadableId ?? "",
+          value: batchNumber.id,
+          helper: attributes["Batch Number"]
+            ? `${batchNumber.quantity} Available ${
+                attributes["Batch Number"]
+                  ? `of Batch ${attributes["Batch Number"]}`
+                  : ""
+              }`
+            : undefined,
+          availableQuantity: batchNumber.quantity,
+        };
+      }) ?? []
+    );
+  }, [batchNumbers]);
+
+  const initialQuantity = parentIdIsSerialized
+    ? material?.quantity ?? 1
+    : material?.estimatedQuantity ?? 1;
+
+  const [selectedBatchNumbers, setSelectedBatchNumbers] = useState<
+    Array<{
+      index: number;
+      id: string;
+      quantity: number;
+    }>
+  >(
+    Array(1)
+      .fill("")
+      .map((_, index) => ({ index, id: "", quantity: initialQuantity }))
+  );
+
+  const validateBatchNumber = useCallback(
+    (value: string, quantity: number, index: number) => {
+      if (!value) return "Batch number is required";
+
+      // Check for duplicates
+      const isDuplicate = selectedBatchNumbers.some(
+        (bn, i) => bn.id === value && i !== index
+      );
+      if (isDuplicate) return "Duplicate batch number";
+
+      // Check if batch number exists in options
+      const batchOption = options.find((option) => option.value === value);
+      if (!batchOption) return "Invalid batch number";
+
+      // Check if quantity is valid
+      if (quantity <= 0) return "Quantity must be greater than 0";
+      if (quantity > batchOption.availableQuantity)
+        return `Quantity cannot exceed available quantity (${batchOption.availableQuantity})`;
+
+      return null;
+    },
+    [selectedBatchNumbers, options]
+  );
+
+  const updateBatchNumber = useCallback(
+    (batchNumber: { index: number; id: string; quantity: number }) => {
+      setSelectedBatchNumbers((prev) => {
+        const newBatchNumbers = [...prev];
+        newBatchNumbers[batchNumber.index] = batchNumber;
+        return newBatchNumbers;
+      });
+    },
+    []
+  );
+
+  const addBatchNumber = useCallback(() => {
+    setSelectedBatchNumbers((prev) => {
+      const newIndex = prev.length;
+      return [...prev, { index: newIndex, id: "", quantity: 1 }];
+    });
+  }, []);
+
+  const removeBatchNumber = useCallback((indexToRemove: number) => {
+    setSelectedBatchNumbers((prev) => {
+      // Remove the item at the specified index
+      const filtered = prev.filter((_, i) => i !== indexToRemove);
+
+      // Reindex the remaining items
+      return filtered.map((item, i) => ({ ...item, index: i }));
+    });
+
+    // Clean up any errors for the removed index
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[indexToRemove];
+
+      // Reindex the errors for indices greater than the removed one
+      const reindexedErrors: Record<number, string> = {};
+      Object.entries(newErrors).forEach(([key, value]) => {
+        const keyNum = parseInt(key);
+        if (keyNum > indexToRemove) {
+          reindexedErrors[keyNum - 1] = value;
+        } else {
+          reindexedErrors[keyNum] = value;
+        }
+      });
+
+      return reindexedErrors;
+    });
+  }, []);
+
+  const handleSubmit = useCallback(() => {
+    // Validate all batch numbers
+    let hasErrors = false;
+    const newErrors: Record<number, string> = {};
+
+    selectedBatchNumbers.forEach((bn) => {
+      const error = validateBatchNumber(bn.id, bn.quantity, bn.index);
+      if (error) {
+        newErrors[bn.index] = error;
+        hasErrors = true;
+      }
+    });
+
+    setErrors(newErrors);
+
+    if (!hasErrors) {
+      // Submit to the API
+      console.log({
+        id: operationId,
+        parentId,
+        children: selectedBatchNumbers.map((bn) => ({
+          trackedEntityId: bn.id,
+          quantity: bn.quantity,
+        })),
+      });
+      onClose();
+    }
+  }, [
+    selectedBatchNumbers,
+    validateBatchNumber,
+    operationId,
+    parentId,
+    onClose,
+  ]);
+
+  const validateBatchInput = useCallback(
+    (value: string, index: number) => {
+      if (!value) {
+        setErrors((prev) => ({ ...prev, [index]: "Batch number is required" }));
+        return false;
+      }
+
+      // Check for duplicates by comparing with all other batch numbers
+      // This ensures we catch duplicates even after adding new batch numbers
+      const duplicateIndices = selectedBatchNumbers
+        .map((bn, i) => (bn.id === value && i !== index ? i : -1))
+        .filter((i) => i !== -1);
+
+      if (duplicateIndices.length > 0) {
+        setErrors((prev) => ({ ...prev, [index]: "Duplicate batch number" }));
+        return false;
+      }
+
+      // Check if batch number exists in options
+      const batchOption = options.find((option) => option.value === value);
+      if (!batchOption) {
+        setErrors((prev) => ({ ...prev, [index]: "Invalid batch number" }));
+        return false;
+      }
+
+      // Check if the requested quantity exceeds available quantity
+      const currentBatchNumber = selectedBatchNumbers[index];
+      if (currentBatchNumber.quantity > batchOption.availableQuantity) {
+        // If we need more than available, create a new batch row with remaining quantity
+        const remainingQuantity =
+          currentBatchNumber.quantity - batchOption.availableQuantity;
+
+        // Update current row to use maximum available quantity
+        updateBatchNumber({
+          ...currentBatchNumber,
+          id: value,
+          quantity: batchOption.availableQuantity,
+        });
+
+        // Add a new row for the remaining quantity
+        setSelectedBatchNumbers((prev) => {
+          const newIndex = prev.length;
+          return [
+            ...prev,
+            { index: newIndex, id: "", quantity: remainingQuantity },
+          ];
+        });
+      }
+
+      // Clear errors if valid
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[index];
+        return newErrors;
+      });
+      return true;
+    },
+    [selectedBatchNumbers, options, updateBatchNumber]
+  );
+
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Issue Batch Tracked Parts</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <Tabs defaultValue="scan">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="scan">
+                <LuQrCode className="mr-2" />
+                Scan
+              </TabsTrigger>
+              <TabsTrigger value="select">
+                <LuList className="mr-2" />
+                Select
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="scan">
+              <div className="flex flex-col gap-4">
+                {selectedBatchNumbers.map((batchNumber, index) => (
+                  <div key={index} className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <InputGroup>
+                          <Input
+                            value={batchNumber.id}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              updateBatchNumber({
+                                ...batchNumber,
+                                id: newValue,
+                              });
+                            }}
+                            onBlur={(e) => {
+                              validateBatchInput(e.target.value, index);
+                            }}
+                            placeholder="Scan batch number"
+                          />
+                          <InputRightElement className="pl-2">
+                            {!errors[index] && batchNumber.id ? (
+                              <LuCheck className="text-emerald-500" />
+                            ) : (
+                              <LuQrCode />
+                            )}
+                          </InputRightElement>
+                        </InputGroup>
+                      </div>
+                      <div className="w-24">
+                        <NumberField
+                          id={`quantity-${index}`}
+                          value={batchNumber.quantity}
+                          onChange={(value) =>
+                            updateBatchNumber({
+                              ...batchNumber,
+                              quantity: value,
+                            })
+                          }
+                          minValue={1}
+                          maxValue={
+                            options.find((o) => o.value === batchNumber.id)
+                              ?.availableQuantity ?? 999999
+                          }
+                        >
+                          <NumberInputGroup className="relative">
+                            <NumberInput />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper>
+                                <LuChevronUp size="1em" strokeWidth="3" />
+                              </NumberIncrementStepper>
+                              <NumberDecrementStepper>
+                                <LuChevronDown size="1em" strokeWidth="3" />
+                              </NumberDecrementStepper>
+                            </NumberInputStepper>
+                          </NumberInputGroup>
+                        </NumberField>
+                      </div>
+                      {index > 0 && (
+                        <IconButton
+                          aria-label="Remove Batch Number"
+                          icon={<LuX />}
+                          variant="ghost"
+                          onClick={() => removeBatchNumber(index)}
+                        />
+                      )}
+                    </div>
+                    {errors[index] && (
+                      <span className="text-xs text-destructive">
+                        {errors[index]}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    leftIcon={<LuCirclePlus />}
+                    onClick={addBatchNumber}
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+            <TabsContent value="select">
+              <div className="flex flex-col gap-4">
+                {selectedBatchNumbers.map((batchNumber, index) => (
+                  <div key={index} className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <ComboboxBase
+                          value={batchNumber.id}
+                          onChange={(value) => {
+                            updateBatchNumber({
+                              ...batchNumber,
+                              id: value,
+                            });
+                            validateBatchInput(value, index);
+                          }}
+                          options={options}
+                          placeholder="Select batch number"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <NumberField
+                          value={batchNumber.quantity}
+                          onChange={(value) =>
+                            updateBatchNumber({
+                              ...batchNumber,
+                              quantity: value,
+                            })
+                          }
+                          minValue={1}
+                          maxValue={
+                            options.find((o) => o.value === batchNumber.id)
+                              ?.availableQuantity ?? 999999
+                          }
+                        >
+                          <NumberInputGroup className="relative">
+                            <NumberInput />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper>
+                                <LuChevronUp size="1em" strokeWidth="3" />
+                              </NumberIncrementStepper>
+                              <NumberDecrementStepper>
+                                <LuChevronDown size="1em" strokeWidth="3" />
+                              </NumberDecrementStepper>
+                            </NumberInputStepper>
+                          </NumberInputGroup>
+                        </NumberField>
+                      </div>
+                      {index > 0 && (
+                        <IconButton
+                          aria-label="Remove Batch Number"
+                          icon={<LuX />}
+                          variant="ghost"
+                          onClick={() => removeBatchNumber(index)}
+                        />
+                      )}
+                    </div>
+                    {errors[index] && (
+                      <span className="text-xs text-destructive">
+                        {errors[index]}
+                      </span>
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    leftIcon={<LuCirclePlus />}
+                    onClick={addBatchNumber}
+                  >
+                    Add Batch
+                  </Button>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleSubmit}>
+            Issue
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+function useBatchNumbers(itemId?: string) {
+  const batchNumbersFetcher =
+    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
+
+  useEffect(() => {
+    if (itemId) {
+      batchNumbersFetcher.load(path.to.api.batchNumbers(itemId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemId]);
+
+  return { data: batchNumbersFetcher.data };
 }
 
 function IssueModal({
@@ -2422,13 +3226,12 @@ function IssueModal({
                   name="adjustmentType"
                   label="Adjustment Type"
                   options={[
-                    { label: "Set Quantity", value: "Set Quantity" },
                     {
-                      label: "Positive Adjustment",
+                      label: "Add to Inventory",
                       value: "Positive Adjmt.",
                     },
                     {
-                      label: "Negative Adjustment",
+                      label: "Pull from Inventory",
                       value: "Negative Adjmt.",
                     },
                   ]}

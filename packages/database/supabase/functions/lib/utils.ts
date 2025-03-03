@@ -11,6 +11,7 @@ export interface TrackedEntityAttributes {
   "Shipment Line"?: string;
   Shipment?: string;
   "Split Entity ID"?: string;
+  Shelf?: string;
 }
 
 // used to generate sequences

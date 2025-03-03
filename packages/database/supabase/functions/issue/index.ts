@@ -5,11 +5,21 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
 import { Database } from "../lib/types.ts";
+import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("jobComplete"),
+    jobId: z.string(),
+    quantityComplete: z.number(),
+    shelfId: z.string().optional(),
+    locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
   z.object({
     type: z.literal("jobOperation"),
     id: z.string(),
@@ -31,11 +41,16 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
-    type: z.literal("jobComplete"),
-    jobId: z.string(),
-    quantityComplete: z.number(),
-    shelfId: z.string().optional(),
-    locationId: z.string().optional(),
+    type: z.literal("trackedEntitiesToOperation"),
+    id: z.string(),
+    activityDescription: z.string(),
+    parentId: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number(),
+      })
+    ),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -59,6 +74,68 @@ serve(async (req: Request) => {
       [];
 
     switch (validatedPayload.type) {
+      case "jobComplete": {
+        const {
+          jobId,
+          quantityComplete,
+          shelfId,
+          locationId,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        await db.transaction().execute(async (trx) => {
+          const job = await trx
+            .selectFrom("job")
+            .where("id", "=", jobId)
+            .select(["itemId", "quantityReceivedToInventory"])
+            .executeTakeFirst();
+
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", job?.itemId!)
+            .select(["readableId"])
+            .executeTakeFirst();
+
+          const quantityReceivedToInventory =
+            quantityComplete - (job?.quantityReceivedToInventory ?? 0);
+
+          await trx
+            .updateTable("job")
+            .set({
+              status: "Completed" as const,
+              completedDate: new Date().toISOString(),
+              quantityComplete,
+              quantityReceivedToInventory,
+              updatedAt: new Date().toISOString(),
+              updatedBy: userId,
+            })
+            .where("id", "=", jobId)
+            .execute();
+
+          itemLedgerInserts.push({
+            entryType: "Assembly Output",
+            documentType: "Job Receipt",
+            documentId: jobId,
+            companyId,
+            itemId: job?.itemId!,
+            itemReadableId: item?.readableId,
+            quantity: quantityReceivedToInventory,
+            locationId,
+            shelfId,
+            createdBy: userId,
+          });
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
+        });
+
+        break;
+      }
       case "jobOperation": {
         const { id, companyId, userId } = validatedPayload;
         await db.transaction().execute(async (trx) => {
@@ -68,6 +145,9 @@ serve(async (req: Request) => {
             .where("quantityToIssue", ">", 0)
             .where("itemType", "in", ["Material", "Part", "Consumable"])
             .where("methodType", "!=", "Make")
+            .where("estimatedQuantity", ">", 0)
+            .where("requiresBatchTracking", "=", false)
+            .where("requiresSerialTracking", "=", false)
             .selectAll()
             .execute();
 
@@ -214,7 +294,7 @@ serve(async (req: Request) => {
               adjustmentType === "Positive Adjmt."
                 ? Number(quantity)
                 : adjustmentType === "Negative Adjmt."
-                ? -Number(quantity)
+                ? Number(quantity)
                 : Number(quantity) - Number(material?.quantityIssued); // set quantity
 
             if (
@@ -232,7 +312,10 @@ serve(async (req: Request) => {
                 shelfId: material?.defaultShelf
                   ? pickMethod?.defaultShelfId
                   : material?.shelfId,
-                quantity: -Number(quantityToIssue),
+                quantity:
+                  adjustmentType === "Positive Adjmt."
+                    ? Number(quantityToIssue)
+                    : -Number(quantityToIssue),
                 createdBy: userId,
               });
             }
@@ -269,7 +352,10 @@ serve(async (req: Request) => {
                 documentLineId: id,
                 companyId,
                 itemId: itemId!,
-                quantity: -Number(quantity ?? 0),
+                quantity:
+                  adjustmentType === "Positive Adjmt."
+                    ? Number(quantity)
+                    : -Number(quantity),
                 locationId: job?.locationId,
                 shelfId: pickMethod?.defaultShelfId,
                 createdBy: userId,
@@ -322,57 +408,259 @@ serve(async (req: Request) => {
         });
         break;
       }
-      case "jobComplete": {
+      case "trackedEntitiesToOperation": {
         const {
-          jobId,
-          quantityComplete,
-          shelfId,
-          locationId,
+          id: operationId,
+          children,
+          activityDescription,
+          parentId,
           companyId,
           userId,
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Get job operation details
+          const jobOperation = await trx
+            .selectFrom("jobOperation")
+            .where("id", "=", operationId)
+            .select(["jobId", "jobMakeMethodId"])
+            .executeTakeFirst();
+
+          // Get job location
           const job = await trx
             .selectFrom("job")
-            .where("id", "=", jobId)
-            .select(["itemId", "quantityReceivedToInventory"])
+            .where("id", "=", jobOperation?.jobId!)
+            .select("locationId")
             .executeTakeFirst();
 
+          // Get parent tracked entity details
+          const parentTrackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", parentId)
+            .select([
+              "id",
+              "sourceDocumentId",
+              "quantity",
+              "attributes",
+              "status",
+            ])
+            .executeTakeFirst();
+
+          if (!parentTrackedEntity) {
+            throw new Error("Parent tracked entity not found");
+          }
+
+          // Get item details
           const item = await trx
             .selectFrom("item")
-            .where("id", "=", job?.itemId!)
-            .select(["readableId"])
+            .where("id", "=", parentTrackedEntity.sourceDocumentId)
+            .select(["id", "readableId", "name", "type", "itemTrackingType"])
             .executeTakeFirst();
 
-          const quantityReceivedToInventory =
-            quantityComplete - (job?.quantityReceivedToInventory ?? 0);
-
-          await trx
-            .updateTable("job")
-            .set({
-              status: "Completed" as const,
-              completedDate: new Date().toISOString(),
-              quantityComplete,
-              quantityReceivedToInventory,
-              updatedAt: new Date().toISOString(),
-              updatedBy: userId,
-            })
-            .where("id", "=", jobId)
+          // Get current inventory quantity from item ledger
+          const itemLedgerQuantity = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "=", parentId)
+            .select(["quantity", "shelfId"])
             .execute();
 
-          itemLedgerInserts.push({
-            entryType: "Assembly Output",
-            documentType: "Job Receipt",
-            documentId: jobId,
-            companyId,
-            itemId: job?.itemId!,
-            itemReadableId: item?.readableId,
-            quantity: quantityReceivedToInventory,
-            locationId,
-            shelfId,
-            createdBy: userId,
-          });
+          const currentQuantity = itemLedgerQuantity.reduce(
+            (sum, record) => sum + record.quantity,
+            0
+          );
+          const shelfId = itemLedgerQuantity[0]?.shelfId;
+
+          // Create tracked activity
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Operation Consumption",
+              sourceDocument: "Job Operation",
+              sourceDocumentId: operationId,
+              attributes: {
+                description: activityDescription,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+            [];
+
+          // If quantities don't match, split the batch
+          if (currentQuantity !== parentTrackedEntity.quantity) {
+            const remainingQuantity =
+              parentTrackedEntity.quantity - currentQuantity;
+            const newTrackedEntityId = nanoid();
+
+            // Create split activity
+            const splitActivityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: splitActivityId,
+                type: "Split",
+                sourceDocument: "Job Operation",
+                sourceDocumentId: operationId,
+                attributes: {
+                  "Original Quantity": parentTrackedEntity.quantity,
+                  "Consumed Quantity": currentQuantity,
+                  "Remaining Quantity": remainingQuantity,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            // Record original entity as input
+            await trx
+              .insertInto("trackedActivityInput")
+              .values({
+                trackedActivityId: splitActivityId,
+                trackedEntityId: parentId,
+                quantity: parentTrackedEntity.quantity,
+                entityType: "Item",
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            // Create new tracked entity for remaining quantity
+            await trx
+              .insertInto("trackedEntity")
+              .values({
+                id: newTrackedEntityId,
+                sourceDocumentId: item?.id!,
+                sourceDocument: "Item",
+                sourceDocumentReadableId: item?.readableId,
+                quantity: remainingQuantity,
+                status: parentTrackedEntity.status ?? "Available",
+                attributes: parentTrackedEntity.attributes,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            // Update original entity attributes with split reference
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                quantity: currentQuantity,
+                attributes: {
+                  ...((parentTrackedEntity.attributes as Record<
+                    string,
+                    unknown
+                  >) ?? {}),
+                  "Split Entity ID": newTrackedEntityId,
+                },
+              })
+              .where("id", "=", parentId)
+              .execute();
+
+            // Record outputs from split
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values([
+                {
+                  trackedActivityId: splitActivityId!,
+                  trackedEntityId: newTrackedEntityId!,
+                  quantity: remainingQuantity,
+                  companyId,
+                  createdBy: userId,
+                },
+                {
+                  trackedActivityId: splitActivityId!,
+                  trackedEntityId: parentId!,
+                  quantity: currentQuantity,
+                  companyId,
+                  createdBy: userId,
+                },
+              ])
+              .execute();
+
+            // Create item ledger entries for split
+            itemLedgerInserts.push(
+              {
+                entryType: "Negative Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                companyId,
+                itemId: item?.id!,
+                itemReadableId: item?.readableId,
+                quantity: -parentTrackedEntity.quantity,
+                locationId: job?.locationId,
+                shelfId,
+                trackedEntityId: parentId,
+                createdBy: userId,
+              },
+              {
+                entryType: "Positive Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                companyId,
+                itemId: item?.id!,
+                itemReadableId: item?.readableId,
+                quantity: currentQuantity,
+                locationId: job?.locationId,
+                shelfId,
+                trackedEntityId: parentId,
+                createdBy: userId,
+              },
+              {
+                entryType: "Positive Adjmt.",
+                documentType: "Batch Split",
+                documentId: splitActivityId,
+                companyId,
+                itemId: item?.id!,
+                itemReadableId: item?.readableId,
+                quantity: remainingQuantity,
+                locationId: job?.locationId,
+                shelfId,
+                trackedEntityId: newTrackedEntityId,
+                createdBy: userId,
+              }
+            );
+          }
+
+          // Process each child tracked entity
+          for (const child of children) {
+            const { trackedEntityId, quantity } = child;
+
+            trackedActivityInputs.push({
+              trackedActivityId: activityId,
+              trackedEntityId,
+              quantity,
+              entityType: "Material",
+              companyId,
+              createdBy: userId,
+            });
+
+            itemLedgerInserts.push({
+              entryType: "Consumption",
+              documentType: "Job Consumption",
+              documentId: operationId,
+              companyId,
+              itemId: parentTrackedEntity.sourceDocumentId,
+              itemReadableId: item?.readableId,
+              quantity: -quantity,
+              locationId: job?.locationId,
+              shelfId,
+              trackedEntityId,
+              createdBy: userId,
+            });
+          }
+
+          if (trackedActivityInputs.length > 0) {
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(trackedActivityInputs)
+              .execute();
+          }
 
           if (itemLedgerInserts.length > 0) {
             await trx

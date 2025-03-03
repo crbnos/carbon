@@ -28,6 +28,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { ValidatedForm, Number, Submit } from "@carbon/form";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   Await,
   Outlet,
@@ -56,7 +57,6 @@ import {
   type ReceiptLine,
 } from "~/modules/inventory";
 import { getDocumentType } from "~/modules/shared/shared.service";
-import type { TrackedEntityAttributes } from "~/modules/shared/types";
 import type { action as receiptLinesUpdateAction } from "~/routes/x+/receipt+/lines.update";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";

@@ -23,7 +23,7 @@ import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 import type { ReceiptLine } from "../../types";
 import { getReceiptTracking } from "../../inventory.service";
-import type { TrackedEntityAttributes } from "~/modules/shared";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useUser } from "~/hooks";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
