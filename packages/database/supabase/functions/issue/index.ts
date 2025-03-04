@@ -42,9 +42,8 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("trackedEntitiesToOperation"),
-    id: z.string(),
-    activityDescription: z.string(),
-    parentId: z.string(),
+    materialId: z.string(),
+    parentTrackedEntityId: z.string(),
     children: z.array(
       z.object({
         trackedEntityId: z.string(),
@@ -204,7 +203,6 @@ serve(async (req: Request) => {
 
             for await (const material of materialsToIssue) {
               if (material.quantityToIssue) {
-                
                 if (itemIdIsTracked.get(material.itemId)) {
                   itemLedgerInserts.push({
                     entryType: "Consumption",
@@ -411,37 +409,66 @@ serve(async (req: Request) => {
       }
       case "trackedEntitiesToOperation": {
         const {
-          id: operationId,
+          materialId,
+          parentTrackedEntityId,
           children,
-          activityDescription,
-          parentId,
           companyId,
           userId,
         } = validatedPayload;
 
-        if(!parentId) {
+        if (!parentTrackedEntityId) {
           throw new Error("Parent ID is required");
         }
 
+        if (children.length === 0) {
+          throw new Error("Children are required");
+        }
+
         await db.transaction().execute(async (trx) => {
-          // Get job operation details
-          const jobOperation = await trx
-            .selectFrom("jobOperation")
-            .where("id", "=", operationId)
-            .select(["jobId", "jobMakeMethodId"])
+          const trackedEntities = await trx
+            .selectFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .selectAll()
+            .execute();
+
+          const itemLedgers = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "in", [
+              ...children.map((child) => child.trackedEntityId),
+            ])
+            .orderBy("createdBy", "desc")
+            .selectAll()
+            .execute();
+
+          if (trackedEntities.length !== children.length) {
+            throw new Error("Tracked entities not found");
+          }
+
+          if (trackedEntities.some((entity) => entity.status !== "Available")) {
+            throw new Error("Tracked entities are not available");
+          }
+
+          const jobMaterial = await trx
+            .selectFrom("jobMaterial")
+            .where("id", "=", materialId)
+            .selectAll()
             .executeTakeFirst();
 
           // Get job location
           const job = await trx
             .selectFrom("job")
-            .where("id", "=", jobOperation?.jobId!)
-            .select("locationId")
+            .select(["id", "locationId"])
+            .where("id", "=", jobMaterial?.jobId!)
             .executeTakeFirst();
 
           // Get parent tracked entity details
           const parentTrackedEntity = await trx
             .selectFrom("trackedEntity")
-            .where("id", "=", parentId)
+            .where("id", "=", parentTrackedEntityId)
             .select([
               "id",
               "sourceDocumentId",
@@ -455,37 +482,21 @@ serve(async (req: Request) => {
             throw new Error("Parent tracked entity not found");
           }
 
-          // Get item details
-          const item = await trx
-            .selectFrom("item")
-            .where("id", "=", parentTrackedEntity.sourceDocumentId)
-            .select(["id", "readableId", "name", "type", "itemTrackingType"])
-            .executeTakeFirst();
-
-          // Get current inventory quantity from item ledger
-          const itemLedgerQuantity = await trx
-            .selectFrom("itemLedger")
-            .where("trackedEntityId", "=", parentId)
-            .select(["quantity", "shelfId"])
-            .execute();
-
-          const currentQuantity = itemLedgerQuantity.reduce(
-            (sum, record) => sum + record.quantity,
-            0
-          );
-          const shelfId = itemLedgerQuantity[0]?.shelfId;
-
           // Create tracked activity
           const activityId = nanoid();
           await trx
             .insertInto("trackedActivity")
             .values({
               id: activityId,
-              type: "Operation Consumption",
-              sourceDocument: "Job Operation",
-              sourceDocumentId: operationId,
+              type: "Job Material Consumption",
+              sourceDocument: "Job Material",
+              sourceDocumentId: materialId,
+              sourceDocumentReadableId: jobMaterial?.itemReadableId,
               attributes: {
-                description: activityDescription,
+                Job: job?.id!,
+                "Job Material": jobMaterial?.id!,
+                Description: "Issue",
+                Employee: userId,
               },
               companyId,
               createdBy: userId,
@@ -497,150 +508,185 @@ serve(async (req: Request) => {
           const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
             [];
 
-          // If quantities don't match, split the batch
-          if (currentQuantity !== parentTrackedEntity.quantity) {
-            const remainingQuantity =
-              parentTrackedEntity.quantity - currentQuantity;
-            const newTrackedEntityId = nanoid();
+          // Process each child tracked entity
+          for (const child of children) {
+            const trackedEntity = trackedEntities.find(
+              (entity) => entity.id === child.trackedEntityId
+            );
+            if (!trackedEntity) {
+              throw new Error("Tracked entity not found");
+            }
+            const { trackedEntityId, quantity } = child;
 
-            // Create split activity
-            const splitActivityId = nanoid();
-            await trx
-              .insertInto("trackedActivity")
-              .values({
-                id: splitActivityId,
-                type: "Split",
-                sourceDocument: "Job Operation",
-                sourceDocumentId: operationId,
-                attributes: {
-                  "Original Quantity": parentTrackedEntity.quantity,
-                  "Consumed Quantity": currentQuantity,
-                  "Remaining Quantity": remainingQuantity,
+            // If quantities don't match, split the batch
+            if (Number(trackedEntity.quantity) !== quantity) {
+              const remainingQuantity =
+                Number(trackedEntity.quantity) - quantity;
+              const newTrackedEntityId = nanoid();
+
+              console.log("Split quantities:", {
+                childQuantity: Number(trackedEntity.quantity),
+                availableQuantity: quantity,
+                remainingQuantity,
+              });
+
+              // Create split activity
+              const splitActivityId = nanoid();
+              await trx
+                .insertInto("trackedActivity")
+                .values({
+                  id: splitActivityId,
+                  type: "Split",
+                  sourceDocument: "Job Material",
+                  sourceDocumentId: materialId,
+                  attributes: {
+                    "Original Quantity": Number(trackedEntity.quantity),
+                    "Consumed Quantity": quantity,
+                    "Remaining Quantity": remainingQuantity,
+                  },
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Record original entity as input
+              await trx
+                .insertInto("trackedActivityInput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: trackedEntity.id!,
+                  quantity: Number(trackedEntity.quantity),
+                  entityType: "Item",
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Create new tracked entity for remaining quantity
+              await trx
+                .insertInto("trackedEntity")
+                .values({
+                  id: newTrackedEntityId,
+                  sourceDocumentId: trackedEntity.sourceDocumentId,
+                  sourceDocument: "Item",
+                  sourceDocumentReadableId:
+                    trackedEntity.sourceDocumentReadableId,
+                  quantity: remainingQuantity,
+                  status: trackedEntity.status ?? "Available",
+                  attributes: trackedEntity.attributes,
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
+
+              // Update original entity attributes with split reference
+              await trx
+                .updateTable("trackedEntity")
+                .set({
+                  quantity: quantity,
+                  attributes: {
+                    ...((trackedEntity.attributes as Record<string, unknown>) ??
+                      {}),
+                    "Split Entity ID": newTrackedEntityId,
+                  },
+                })
+                .where("id", "=", parentTrackedEntityId)
+                .execute();
+
+              // Record outputs from split
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values([
+                  {
+                    trackedActivityId: splitActivityId!,
+                    trackedEntityId: newTrackedEntityId!,
+                    quantity: remainingQuantity,
+                    companyId,
+                    createdBy: userId,
+                  },
+                  {
+                    trackedActivityId: splitActivityId!,
+                    trackedEntityId: trackedEntity.id!,
+                    quantity: quantity,
+                    companyId,
+                    createdBy: userId,
+                  },
+                ])
+                .execute();
+
+              // Create item ledger entries for split
+              console.log("Item ledger split entries:", {
+                parentQuantity: -Number(trackedEntity.quantity),
+                quantity,
+                remainingQuantity,
+              });
+
+              itemLedgerInserts.push(
+                {
+                  entryType: "Negative Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  itemReadableId: trackedEntity.sourceDocumentReadableId,
+                  quantity: -Number(trackedEntity.quantity),
+                  locationId: job?.locationId,
+                  shelfId: itemLedgers.find(
+                    (itemLedger) =>
+                      itemLedger.trackedEntityId === trackedEntityId
+                  )?.shelfId,
+                  trackedEntityId: trackedEntity.id!,
+                  createdBy: userId,
                 },
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
+                {
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  itemReadableId: trackedEntity.sourceDocumentReadableId,
+                  quantity: quantity,
+                  locationId: job?.locationId,
+                  shelfId: itemLedgers.find(
+                    (itemLedger) =>
+                      itemLedger.trackedEntityId === trackedEntityId
+                  )?.shelfId,
+                  trackedEntityId: trackedEntity.id!,
+                  createdBy: userId,
+                },
+                {
+                  entryType: "Positive Adjmt.",
+                  documentType: "Batch Split",
+                  documentId: splitActivityId,
+                  companyId,
+                  itemId: trackedEntity.sourceDocumentId,
+                  itemReadableId: trackedEntity.sourceDocumentReadableId,
+                  quantity: remainingQuantity,
+                  locationId: job?.locationId,
+                  shelfId: itemLedgers.find(
+                    (itemLedger) =>
+                      itemLedger.trackedEntityId === trackedEntityId
+                  )?.shelfId,
+                  trackedEntityId: newTrackedEntityId,
+                  createdBy: userId,
+                }
+              );
+            }
 
-            // Record original entity as input
-            await trx
-              .insertInto("trackedActivityInput")
-              .values({
-                trackedActivityId: splitActivityId,
-                trackedEntityId: parentId,
-                quantity: parentTrackedEntity.quantity,
-                entityType: "Item",
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            // Create new tracked entity for remaining quantity
-            await trx
-              .insertInto("trackedEntity")
-              .values({
-                id: newTrackedEntityId,
-                sourceDocumentId: item?.id!,
-                sourceDocument: "Item",
-                sourceDocumentReadableId: item?.readableId,
-                quantity: remainingQuantity,
-                status: parentTrackedEntity.status ?? "Available",
-                attributes: parentTrackedEntity.attributes,
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            // Update original entity attributes with split reference
+            // Update tracked entity status to consumed
             await trx
               .updateTable("trackedEntity")
               .set({
-                quantity: currentQuantity,
-                attributes: {
-                  ...((parentTrackedEntity.attributes as Record<
-                    string,
-                    unknown
-                  >) ?? {}),
-                  "Split Entity ID": newTrackedEntityId,
-                },
+                status: "Consumed",
               })
-              .where("id", "=", parentId)
+              .where("id", "=", trackedEntityId)
               .execute();
-
-            // Record outputs from split
-            await trx
-              .insertInto("trackedActivityOutput")
-              .values([
-                {
-                  trackedActivityId: splitActivityId!,
-                  trackedEntityId: newTrackedEntityId!,
-                  quantity: remainingQuantity,
-                  companyId,
-                  createdBy: userId,
-                },
-                {
-                  trackedActivityId: splitActivityId!,
-                  trackedEntityId: parentId!,
-                  quantity: currentQuantity,
-                  companyId,
-                  createdBy: userId,
-                },
-              ])
-              .execute();
-
-            // Create item ledger entries for split
-            itemLedgerInserts.push(
-              {
-                entryType: "Negative Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                companyId,
-                itemId: item?.id!,
-                itemReadableId: item?.readableId,
-                quantity: -parentTrackedEntity.quantity,
-                locationId: job?.locationId,
-                shelfId,
-                trackedEntityId: parentId,
-                createdBy: userId,
-              },
-              {
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                companyId,
-                itemId: item?.id!,
-                itemReadableId: item?.readableId,
-                quantity: currentQuantity,
-                locationId: job?.locationId,
-                shelfId,
-                trackedEntityId: parentId,
-                createdBy: userId,
-              },
-              {
-                entryType: "Positive Adjmt.",
-                documentType: "Batch Split",
-                documentId: splitActivityId,
-                companyId,
-                itemId: item?.id!,
-                itemReadableId: item?.readableId,
-                quantity: remainingQuantity,
-                locationId: job?.locationId,
-                shelfId,
-                trackedEntityId: newTrackedEntityId,
-                createdBy: userId,
-              }
-            );
-          }
-
-          // Process each child tracked entity
-          for (const child of children) {
-            const { trackedEntityId, quantity } = child;
 
             trackedActivityInputs.push({
               trackedActivityId: activityId,
               trackedEntityId,
               quantity,
-              entityType: "Material",
+              entityType: "Item",
               companyId,
               createdBy: userId,
             });
@@ -648,13 +694,15 @@ serve(async (req: Request) => {
             itemLedgerInserts.push({
               entryType: "Consumption",
               documentType: "Job Consumption",
-              documentId: operationId,
+              documentId: job?.id!,
               companyId,
-              itemId: parentTrackedEntity.sourceDocumentId,
-              itemReadableId: item?.readableId,
+              itemId: trackedEntity.sourceDocumentId,
+              itemReadableId: trackedEntity.sourceDocumentReadableId,
               quantity: -quantity,
               locationId: job?.locationId,
-              shelfId,
+              shelfId: itemLedgers.find(
+                (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
+              )?.shelfId,
               trackedEntityId,
               createdBy: userId,
             });
@@ -673,6 +721,27 @@ serve(async (req: Request) => {
               .values(itemLedgerInserts)
               .execute();
           }
+
+          const totalChildQuantity = children.reduce((sum, child) => {
+            return sum + Number(child.quantity);
+          }, 0);
+
+          const currentQuantityIssued =
+            Number(jobMaterial?.quantityIssued) || 0;
+          const newQuantityIssued = currentQuantityIssued + totalChildQuantity;
+
+          await trx
+            .updateTable("jobMaterial")
+            .set({
+              quantityIssued: newQuantityIssued,
+            })
+            .where("id", "=", materialId)
+            .execute();
+
+          console.log("Job material quantity updated:", {
+            materialId,
+            newQuantityIssued,
+          });
         });
 
         break;

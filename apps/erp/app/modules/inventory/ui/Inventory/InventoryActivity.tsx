@@ -56,10 +56,17 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
       return (
         <span>
           issued {-1 * ledgerRecord.quantity} units{" "}
+          {ledgerRecord.trackedEntityId ? (
+            <>
+              from {Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"}{" "}
+              {ledgerRecord.trackedEntityId}{" "}
+            </>
+          ) : null}
           {ledgerRecord.documentLineId && ledgerRecord.documentId ? (
             <>
               to a{" "}
               <Hyperlink
+                className="inline-flex"
                 to={`${path.to.jobProductionEvents(
                   ledgerRecord.documentId!
                 )}?filter=jobOperationId:eq:${ledgerRecord.documentLineId}`}
@@ -70,7 +77,10 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
           ) : ledgerRecord.documentId ? (
             <>
               to a{" "}
-              <Hyperlink to={path.to.jobDetails(ledgerRecord.documentId!)}>
+              <Hyperlink
+                className="inline-flex"
+                to={path.to.jobDetails(ledgerRecord.documentId!)}
+              >
                 job
               </Hyperlink>
             </>
@@ -81,7 +91,10 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
       return (
         <>
           <span>received {ledgerRecord.quantity} units from a</span>{" "}
-          <Hyperlink to={path.to.jobDetails(ledgerRecord.documentId!)}>
+          <Hyperlink
+            className="inline-flex"
+            to={path.to.jobDetails(ledgerRecord.documentId!)}
+          >
             job
           </Hyperlink>
         </>

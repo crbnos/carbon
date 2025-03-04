@@ -489,6 +489,12 @@ const baseMaterialValidator = z.object({
   itemReadableId: z.string().min(1, { message: "Item ID is required" }),
   order: zfd.numeric(z.number().min(0)),
   quantity: zfd.numeric(z.number().min(0)),
+  requiresBatchTracking: zfd.text(
+    z.string().transform((val) => val === "true")
+  ),
+  requiresSerialTracking: zfd.text(
+    z.string().transform((val) => val === "true")
+  ),
   unitCost: zfd.numeric(z.number().min(0)),
   unitOfMeasureCode: z
     .string()

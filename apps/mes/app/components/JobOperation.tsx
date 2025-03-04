@@ -212,7 +212,6 @@ export const JobOperation = ({
   thumbnailPath,
   workCenter,
 }: JobOperationProps) => {
-  
   const navigate = useNavigate();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
@@ -2390,6 +2389,7 @@ function QuantityModal({
     </Modal>
   );
 }
+
 function SerialIssueModal({
   operationId,
   material,
@@ -2403,25 +2403,27 @@ function SerialIssueModal({
   material?: JobMaterial;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{success: boolean, message: string}>();
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
   const { data: serialNumbers } = useSerialNumbers(material?.itemId);
 
   const [errors, setErrors] = useState<Record<number, string>>({});
 
   const options = useMemo(() => {
     return (
-      serialNumbers?.data?.map((serialNumber) => {
-        const attributes = serialNumber.attributes as TrackedEntityAttributes;
-        return {
-          label: serialNumber.sourceDocumentReadableId ?? "",
-          value: serialNumber.id,
-          helper: attributes["Serial Number"]
-            ? `Serial ${attributes["Serial Number"]}`
-            : attributes["Batch Number"]
-            ? `Batch ${attributes["Batch Number"]}`
-            : undefined,
-        };
-      }) ?? []
+      serialNumbers?.data
+        ?.filter((serialNumber) => serialNumber.status === "Available")
+        .map((serialNumber) => {
+          const attributes = serialNumber.attributes as TrackedEntityAttributes;
+          return {
+            label: serialNumber.sourceDocumentReadableId ?? "",
+            value: serialNumber.id,
+            helper: attributes["Serial Number"]
+              ? `Serial ${attributes["Serial Number"]}`
+              : attributes["Batch Number"]
+              ? `Batch ${attributes["Batch Number"]}`
+              : undefined,
+          };
+        }) ?? []
     );
   }, [serialNumbers]);
 
@@ -2452,11 +2454,15 @@ function SerialIssueModal({
 
       // Check if serial number exists in options
       const isValid = options.some((option) => option.value === value);
-      if (!isValid) return "Invalid serial number";
+      if (!isValid) {
+        const serialNumber = serialNumbers?.data?.find((sn) => sn.id === value);
+        if (serialNumber) return `Serial number is ${serialNumber.status}`;
+        return "Serial number is not available";
+      }
 
       return null;
     },
-    [selectedSerialNumbers, options]
+    [selectedSerialNumbers, options, serialNumbers?.data]
   );
 
   const updateSerialNumber = useCallback(
@@ -2523,9 +2529,9 @@ function SerialIssueModal({
 
     if (!hasErrors) {
       // Submit to the API
-      const payload ={
-        id: operationId,
-        parentId,
+      const payload = {
+        materialId: material?.id!,
+        parentTrackedEntityId: parentId,
         children: selectedSerialNumbers.map((sn) => ({
           trackedEntityId: sn.id,
           quantity: 1,
@@ -2537,22 +2543,23 @@ function SerialIssueModal({
         action: path.to.issueTrackedEntity,
         encType: "application/json",
       });
-     
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedSerialNumbers,
     validateSerialNumber,
     operationId,
     parentId,
     onClose,
+    material?.id,
   ]);
 
   useEffect(() => {
     if (fetcher.data?.success) {
       onClose();
-      if(fetcher.data.message) {
+      if (fetcher.data.message) {
         toast.success(fetcher.data.message);
-      } 
+      }
     } else if (fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
@@ -2561,9 +2568,8 @@ function SerialIssueModal({
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
-        <ModalHeader>
-          <ModalTitle>Issue Serial Tracked Parts</ModalTitle>
-        </ModalHeader>
+        <ModalTitle>{material?.itemReadableId}</ModalTitle>
+        <ModalDescription>{material?.description}</ModalDescription>
         <ModalBody>
           <Tabs defaultValue="scan">
             <TabsList className="grid w-full grid-cols-2 mb-4">
@@ -2647,13 +2653,15 @@ function SerialIssueModal({
                           </InputRightElement>
                         </InputGroup>
                       </div>
-                      <IconButton
-                        aria-label="Remove Serial Number"
-                        icon={<LuX />}
-                        variant="ghost"
-                        onClick={() => removeSerialNumber(index)}
-                        className="flex-shrink-0"
-                      />
+                      {index > 0 && (
+                        <IconButton
+                          aria-label="Remove Serial Number"
+                          icon={<LuX />}
+                          variant="ghost"
+                          onClick={() => removeSerialNumber(index)}
+                          className="flex-shrink-0"
+                        />
+                      )}
                     </div>
                     {errors[index] && (
                       <span className="text-xs text-destructive">
@@ -2709,13 +2717,15 @@ function SerialIssueModal({
                           options={options}
                         />
                       </div>
-                      <IconButton
-                        aria-label="Remove Serial Number"
-                        icon={<LuX />}
-                        variant="ghost"
-                        onClick={() => removeSerialNumber(index)}
-                        className="flex-shrink-0"
-                      />
+                      {index > 0 && (
+                        <IconButton
+                          aria-label="Remove Serial Number"
+                          icon={<LuX />}
+                          variant="ghost"
+                          onClick={() => removeSerialNumber(index)}
+                          className="flex-shrink-0"
+                        />
+                      )}
                     </div>
                     {errors[index] && (
                       <span className="text-xs text-destructive">
@@ -2742,7 +2752,12 @@ function SerialIssueModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit} isLoading={fetcher.state !== "idle"} isDisabled={fetcher.state !== "idle"}>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+          >
             Issue
           </Button>
         </ModalFooter>
@@ -2783,21 +2798,23 @@ function BatchIssueModal({
 
   const options = useMemo(() => {
     return (
-      batchNumbers?.data?.map((batchNumber) => {
-        const attributes = batchNumber.attributes as TrackedEntityAttributes;
-        return {
-          label: batchNumber.sourceDocumentReadableId ?? "",
-          value: batchNumber.id,
-          helper: attributes["Batch Number"]
-            ? `${batchNumber.quantity} Available ${
-                attributes["Batch Number"]
-                  ? `of Batch ${attributes["Batch Number"]}`
-                  : ""
-              }`
-            : undefined,
-          availableQuantity: batchNumber.quantity,
-        };
-      }) ?? []
+      batchNumbers?.data
+        ?.filter((batchNumber) => batchNumber.status === "Available")
+        .map((batchNumber) => {
+          const attributes = batchNumber.attributes as TrackedEntityAttributes;
+          return {
+            label: batchNumber.sourceDocumentReadableId ?? "",
+            value: batchNumber.id,
+            helper: attributes["Batch Number"]
+              ? `${batchNumber.quantity} Available ${
+                  attributes["Batch Number"]
+                    ? `of Batch ${attributes["Batch Number"]}`
+                    : ""
+                }`
+              : undefined,
+            availableQuantity: batchNumber.quantity,
+          };
+        }) ?? []
     );
   }, [batchNumbers]);
 
@@ -2829,7 +2846,11 @@ function BatchIssueModal({
 
       // Check if batch number exists in options
       const batchOption = options.find((option) => option.value === value);
-      if (!batchOption) return "Invalid batch number";
+      if (!batchOption) {
+        const batchNumber = batchNumbers?.data?.find((bn) => bn.id === value);
+        if (batchNumber) return `Batch number is ${batchNumber.status}`;
+        return "Batch number is not available";
+      }
 
       // Check if quantity is valid
       if (quantity <= 0) return "Quantity must be greater than 0";
@@ -2838,7 +2859,7 @@ function BatchIssueModal({
 
       return null;
     },
-    [selectedBatchNumbers, options]
+    [selectedBatchNumbers, options, batchNumbers?.data]
   );
 
   const updateBatchNumber = useCallback(
@@ -2888,6 +2909,8 @@ function BatchIssueModal({
     });
   }, []);
 
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
+
   const handleSubmit = useCallback(() => {
     // Validate all batch numbers
     let hasErrors = false;
@@ -2905,23 +2928,41 @@ function BatchIssueModal({
 
     if (!hasErrors) {
       // Submit to the API
-      console.log({
-        id: operationId,
-        parentId,
+      const payload = {
+        materialId: material?.id!,
+        parentTrackedEntityId: parentId,
         children: selectedBatchNumbers.map((bn) => ({
           trackedEntityId: bn.id,
           quantity: bn.quantity,
         })),
+      };
+
+      fetcher.submit(JSON.stringify(payload), {
+        method: "post",
+        action: path.to.issueTrackedEntity,
+        encType: "application/json",
       });
-      onClose();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     selectedBatchNumbers,
     validateBatchNumber,
     operationId,
     parentId,
     onClose,
+    material?.id,
   ]);
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+      if (fetcher.data.message) {
+        toast.success(fetcher.data.message);
+      }
+    } else if (fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+  }, [fetcher.data, onClose]);
 
   const validateBatchInput = useCallback(
     (value: string, index: number) => {
@@ -2944,7 +2985,10 @@ function BatchIssueModal({
       // Check if batch number exists in options
       const batchOption = options.find((option) => option.value === value);
       if (!batchOption) {
-        setErrors((prev) => ({ ...prev, [index]: "Invalid batch number" }));
+        setErrors((prev) => ({
+          ...prev,
+          [index]: "Batch number is not available",
+        }));
         return false;
       }
 
@@ -2987,7 +3031,8 @@ function BatchIssueModal({
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Issue Batch Tracked Parts</ModalTitle>
+          <ModalTitle>{material?.itemReadableId}</ModalTitle>
+          <ModalDescription>{material?.description}</ModalDescription>
         </ModalHeader>
         <ModalBody>
           <Tabs defaultValue="scan">
@@ -3169,7 +3214,12 @@ function BatchIssueModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            isLoading={fetcher.state !== "idle"}
+            isDisabled={fetcher.state !== "idle"}
+          >
             Issue
           </Button>
         </ModalFooter>

@@ -627,6 +627,8 @@ function MaterialForm({
     unitCost: number;
     unitOfMeasureCode: string;
     quantity: number;
+    requiresBatchTracking: boolean;
+    requiresSerialTracking: boolean;
   }>({
     itemId: item.data.itemId ?? "",
     itemReadableId: item.data.itemReadableId ?? "",
@@ -635,6 +637,8 @@ function MaterialForm({
     unitCost: item.data.unitCost ?? 0,
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
+    requiresBatchTracking: item.data.requiresBatchTracking ?? false,
+    requiresSerialTracking: item.data.requiresSerialTracking ?? false,
   });
 
   const onTypeChange = (value: MethodItemType | "Item") => {
@@ -649,6 +653,8 @@ function MaterialForm({
       unitCost: 0,
       description: "",
       unitOfMeasureCode: "EA",
+      requiresBatchTracking: false,
+      requiresSerialTracking: false,
     });
   };
 
@@ -662,7 +668,9 @@ function MaterialForm({
     const [item, itemCost] = await await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
+        .select(
+          "name, readableId, type, unitOfMeasureCode, defaultMethodType, itemTrackingType"
+        )
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -682,6 +690,8 @@ function MaterialForm({
       unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
+      requiresBatchTracking: item.data?.itemTrackingType === "Batch",
+      requiresSerialTracking: item.data?.itemTrackingType === "Serial",
     }));
 
     if (item.data?.type) {
@@ -715,6 +725,14 @@ function MaterialForm({
       <Hidden name="jobMakeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />
+      <Hidden
+        name="requiresBatchTracking"
+        value={itemData.requiresBatchTracking.toString()}
+      />
+      <Hidden
+        name="requiresSerialTracking"
+        value={itemData.requiresSerialTracking.toString()}
+      />
       {itemData.methodType === "Make" && (
         <Hidden name="unitCost" value={itemData.unitCost} />
       )}

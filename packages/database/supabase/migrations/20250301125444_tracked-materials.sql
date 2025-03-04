@@ -294,3 +294,22 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION delete_tracked_entity_on_job_make_method_delete()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Delete the tracked entity when job make method is deleted
+  DELETE FROM "trackedEntity" 
+  WHERE "id" = OLD."trackedEntityId";
+  
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER delete_tracked_entity_on_job_make_method_delete_trigger
+BEFORE DELETE ON "jobMakeMethod"
+FOR EACH ROW
+EXECUTE FUNCTION delete_tracked_entity_on_job_make_method_delete();
+
+
