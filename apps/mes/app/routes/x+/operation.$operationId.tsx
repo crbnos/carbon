@@ -63,10 +63,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [thumbnailPath, method] = await Promise.all([
-    getThumbnailPathByItemId(
-      serviceRole,
-      operation.data?.[0].itemId
-    ),
+    getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
   ]);
 

@@ -12181,6 +12181,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobMakeMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.trackedEntityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -12273,6 +12282,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobMakeMethod.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.trackedEntityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12317,6 +12335,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMakeMethod.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.trackedEntityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
           },
           {
             $ref: "#/parameters/body.jobMakeMethod",
@@ -12679,6 +12706,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -12813,6 +12846,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -12899,6 +12938,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.quantityToIssue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
           },
           {
             $ref: "#/parameters/body.jobMaterial",
@@ -43920,6 +43965,95 @@ export default {
         tags: ["(rpc) get_next_numeric_sequence"],
       },
     },
+    "/rpc/nanoid": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "prefix",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "size",
+            required: false,
+            type: "integer",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "alphabet",
+            required: false,
+            type: "string",
+          },
+          {
+            format: "double precision",
+            in: "query",
+            name: "additionalbytesfactor",
+            required: false,
+            type: "number",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) nanoid"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                additionalbytesfactor: {
+                  format: "double precision",
+                  type: "number",
+                },
+                alphabet: {
+                  format: "text",
+                  type: "string",
+                },
+                prefix: {
+                  format: "text",
+                  type: "string",
+                },
+                size: {
+                  format: "integer",
+                  type: "integer",
+                },
+              },
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) nanoid"],
+      },
+    },
     "/rpc/has_company_permission": {
       get: {
         parameters: [
@@ -45575,6 +45709,96 @@ export default {
           },
         },
         tags: ["(rpc) get_company_id_from_foreign_key"],
+      },
+    },
+    "/rpc/nanoid_optimized": {
+      get: {
+        parameters: [
+          {
+            format: "integer",
+            in: "query",
+            name: "size",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "alphabet",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "mask",
+            required: true,
+            type: "integer",
+          },
+          {
+            format: "integer",
+            in: "query",
+            name: "step",
+            required: true,
+            type: "integer",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) nanoid_optimized"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                alphabet: {
+                  format: "text",
+                  type: "string",
+                },
+                mask: {
+                  format: "integer",
+                  type: "integer",
+                },
+                size: {
+                  format: "integer",
+                  type: "integer",
+                },
+                step: {
+                  format: "integer",
+                  type: "integer",
+                },
+              },
+              required: ["size", "alphabet", "mask", "step"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) nanoid_optimized"],
       },
     },
     "/rpc/xid_time": {
@@ -52703,6 +52927,8 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "requiresSerialTracking",
+        "requiresBatchTracking",
       ],
       properties: {
         id: {
@@ -52763,6 +52989,22 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        trackedEntityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `trackedEntity.id`.<fk table='trackedEntity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        requiresSerialTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresBatchTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -52872,6 +53114,8 @@ export default {
         "createdAt",
         "createdBy",
         "jobMakeMethodId",
+        "requiresSerialTracking",
+        "requiresBatchTracking",
       ],
       properties: {
         id: {
@@ -53001,6 +53245,16 @@ export default {
         quantityToIssue: {
           format: "numeric",
           type: "number",
+        },
+        requiresSerialTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresBatchTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -54763,7 +55017,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.nanoid()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -61994,7 +62248,7 @@ export default {
       ],
       properties: {
         id: {
-          default: "public.xid()",
+          default: "public.nanoid()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -74433,6 +74687,27 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobMakeMethod.trackedEntityId": {
+      name: "trackedEntityId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMakeMethod.requiresSerialTracking": {
+      name: "requiresSerialTracking",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMakeMethod.requiresBatchTracking": {
+      name: "requiresBatchTracking",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
     "body.contact": {
       name: "contact",
       description: "contact",
@@ -74751,6 +75026,20 @@ export default {
       name: "quantityToIssue",
       required: false,
       format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.requiresSerialTracking": {
+      name: "requiresSerialTracking",
+      required: false,
+      format: "boolean",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.requiresBatchTracking": {
+      name: "requiresBatchTracking",
+      required: false,
+      format: "boolean",
       in: "query",
       type: "string",
     },
