@@ -36,6 +36,7 @@ export const path = {
     healthcheck: "/healthcheck",
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,
+    issueTrackedEntity: `${x}/issue-tracked-entity`,
     location: `${x}/location`,
     login: "/login",
     logout: "/logout",

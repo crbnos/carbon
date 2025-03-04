@@ -105,6 +105,7 @@ import type {
   ProductionEvent,
   ProductionQuantity,
   StorageItem,
+  JobMakeMethod,
 } from "~/services/types";
 import { path } from "~/utils/path";
 
@@ -189,6 +190,7 @@ type JobOperationProps = {
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
   materials: Promise<PostgrestResponse<JobMaterial>>;
+  method: JobMakeMethod | null;
   operation: OperationWithDetails;
   procedure: Promise<{
     attributes: JobOperationAttribute[];
@@ -204,11 +206,13 @@ export const JobOperation = ({
   files,
   job,
   materials,
+  method,
   operation: originalOperation,
   procedure,
   thumbnailPath,
   workCenter,
 }: JobOperationProps) => {
+  
   const navigate = useNavigate();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
@@ -1310,8 +1314,8 @@ export const JobOperation = ({
       {issueModal.isOpen &&
         selectedMaterial?.requiresBatchTracking === true && (
           <BatchIssueModal
-            parentId={""} // TODO
-            parentIdIsSerialized={false} // TODO
+            parentId={method?.trackedEntity?.id ?? ""}
+            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
             operationId={operation.id}
             material={selectedMaterial ?? undefined}
             onClose={() => {
@@ -1325,8 +1329,8 @@ export const JobOperation = ({
           <SerialIssueModal
             operationId={operation.id}
             material={selectedMaterial ?? undefined}
-            parentId={""} // TODO
-            parentIdIsSerialized={false} // TODO
+            parentId={method?.trackedEntity?.id ?? ""}
+            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
             onClose={() => {
               setSelectedMaterial(null);
               issueModal.onClose();
@@ -2399,6 +2403,7 @@ function SerialIssueModal({
   material?: JobMaterial;
   onClose: () => void;
 }) {
+  const fetcher = useFetcher<{success: boolean, message: string}>();
   const { data: serialNumbers } = useSerialNumbers(material?.itemId);
 
   const [errors, setErrors] = useState<Record<number, string>>({});
@@ -2518,15 +2523,21 @@ function SerialIssueModal({
 
     if (!hasErrors) {
       // Submit to the API
-      console.log({
+      const payload ={
         id: operationId,
         parentId,
         children: selectedSerialNumbers.map((sn) => ({
           trackedEntityId: sn.id,
           quantity: 1,
         })),
+      };
+
+      fetcher.submit(JSON.stringify(payload), {
+        method: "post",
+        action: path.to.issueTrackedEntity,
+        encType: "application/json",
       });
-      onClose();
+     
     }
   }, [
     selectedSerialNumbers,
@@ -2535,6 +2546,17 @@ function SerialIssueModal({
     parentId,
     onClose,
   ]);
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+      if(fetcher.data.message) {
+        toast.success(fetcher.data.message);
+      } 
+    } else if (fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+  }, [fetcher.data, onClose]);
 
   return (
     <Modal open onOpenChange={onClose}>
@@ -2720,7 +2742,7 @@ function SerialIssueModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
+          <Button variant="primary" onClick={handleSubmit} isLoading={fetcher.state !== "idle"} isDisabled={fetcher.state !== "idle"}>
             Issue
           </Button>
         </ModalFooter>

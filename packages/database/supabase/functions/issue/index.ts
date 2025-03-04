@@ -204,6 +204,7 @@ serve(async (req: Request) => {
 
             for await (const material of materialsToIssue) {
               if (material.quantityToIssue) {
+                
                 if (itemIdIsTracked.get(material.itemId)) {
                   itemLedgerInserts.push({
                     entryType: "Consumption",
@@ -417,6 +418,10 @@ serve(async (req: Request) => {
           companyId,
           userId,
         } = validatedPayload;
+
+        if(!parentId) {
+          throw new Error("Parent ID is required");
+        }
 
         await db.transaction().execute(async (trx) => {
           // Get job operation details

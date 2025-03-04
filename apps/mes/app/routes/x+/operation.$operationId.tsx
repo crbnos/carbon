@@ -10,6 +10,7 @@ import { defer, redirect } from "@vercel/remix";
 import {
   getJobByOperationId,
   getJobFiles,
+  getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
   getJobOperationProcedure,
@@ -61,10 +62,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const thumbnailPath = await getThumbnailPathByItemId(
-    serviceRole,
-    operation.data?.[0].itemId
-  );
+  const [thumbnailPath, method] = await Promise.all([
+    getThumbnailPathByItemId(
+      serviceRole,
+      operation.data?.[0].itemId
+    ),
+    getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
+  ]);
 
   return defer({
     events: events.data ?? [],
@@ -89,6 +93,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       operation.data?.[0].itemId
     ),
     materials: getJobMaterialsByOperationId(serviceRole, operation.data?.[0]),
+    method: method.data,
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
     workCenter: getWorkCenter(serviceRole, operation.data?.[0].workCenterId),
@@ -105,6 +110,7 @@ export default function OperationRoute() {
     job,
     files,
     materials,
+    method,
     operation,
     procedure,
     workCenter,
@@ -116,6 +122,7 @@ export default function OperationRoute() {
       events={events}
       files={files}
       materials={materials}
+      method={method}
       operation={operation}
       procedure={procedure}
       job={job}

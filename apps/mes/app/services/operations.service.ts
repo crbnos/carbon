@@ -352,6 +352,17 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+export async function getJobMakeMethod(
+  client: SupabaseClient<Database>,
+  jobMakeMethodId: string
+) {
+  return client
+    .from("jobMakeMethod")
+    .select("trackedEntity(*), requiresBatchTracking, requiresSerialTracking")
+    .eq("id", jobMakeMethodId)
+    .single();
+}
+
 export async function getThumbnailPathByItemId(
   client: SupabaseClient<Database>,
   itemId: string
