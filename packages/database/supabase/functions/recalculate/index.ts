@@ -200,7 +200,7 @@ const updateJobQuantities = async (
   parentQuantity: number = 1
 ) => {
   const currentQuantity = tree.data.quantity * parentQuantity;
-  console.log({ tree });
+  
 
   // Update jobMaterial
   await trx
@@ -210,12 +210,30 @@ const updateJobQuantities = async (
     .execute();
 
   if (tree.data.jobMaterialMakeMethodId) {
-    // Update jobOperation
-    await trx
+    const [jobMakeMethod] = await Promise.all([trx
+      .selectFrom("jobMakeMethod")
+      .select(["trackedEntityId", "requiresSerialTracking"])
+      .where("id", "=", tree.data.jobMaterialMakeMethodId)
+      .executeTakeFirst(),
+    trx
+      .updateTable("jobMakeMethod")
+      .set({ quantityPerParent: tree.data.quantity })
+      .where("id", "=", tree.data.jobMaterialMakeMethodId)
+      .execute(),
+    trx
       .updateTable("jobOperation")
       .set({ operationQuantity: currentQuantity })
       .where("jobMakeMethodId", "=", tree.data.jobMaterialMakeMethodId)
-      .execute();
+      .execute()
+    ]);
+
+    if(jobMakeMethod?.trackedEntityId) {
+      await trx
+        .updateTable("trackedEntity")
+        .set({ quantity: jobMakeMethod.requiresSerialTracking ? 1 : currentQuantity })
+        .where("id", "=", jobMakeMethod.trackedEntityId)
+        .execute();
+    }
   }
 
   // Recursively update children

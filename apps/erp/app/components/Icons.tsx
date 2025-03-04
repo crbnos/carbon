@@ -234,7 +234,7 @@ export const TrackingTypeIcon = ({
     case "Serial":
       return <LuBarcode className={cn("text-foreground", className)} />;
     case "Batch":
-      return <LuGroup className={cn("text-emerald-500", className)} />;
+      return <LuGroup className={cn("text-teal-400", className)} />;
     case "Inventory":
       return <LuBox className={cn("text-blue-500", className)} />;
     case "Non-Inventory":
