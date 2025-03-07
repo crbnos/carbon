@@ -195,28 +195,33 @@ WHERE mm.id = uid
 ORDER BY "order"
 $$ LANGUAGE sql STABLE;
 
+
 CREATE OR REPLACE FUNCTION insert_job_make_method()
 RETURNS TRIGGER AS $$
 DECLARE
   v_item_readable_id TEXT;
   v_item_tracking_type TEXT;
-  v_tracked_entity_id TEXT;
+  v_job_make_method_id TEXT;
 BEGIN
   -- Get item details
   SELECT "readableId", "itemTrackingType" INTO v_item_readable_id, v_item_tracking_type
   FROM "item"
   WHERE "id" = NEW."itemId";
   
-  -- Insert tracked entity
-  INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "quantity", "status", "companyId", "createdBy", "attributes")
-  VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', NEW."companyId", NEW."createdBy", jsonb_build_object('Job', NEW."id"))
-  RETURNING "id" INTO v_tracked_entity_id;
-  
-  -- Insert job make method with tracked entity ID
-  INSERT INTO "jobMakeMethod" ("jobId", "itemId", "companyId", "createdBy", "trackedEntityId", 
+  -- Insert job make method first
+  INSERT INTO "jobMakeMethod" ("jobId", "itemId", "companyId", "createdBy", 
                               "requiresSerialTracking", "requiresBatchTracking")
-  VALUES (NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy", v_tracked_entity_id,
-          v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch');
+  VALUES (NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy",
+          v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch')
+  RETURNING "id" INTO v_job_make_method_id;
+  
+  -- Insert tracked entity with job make method ID in attributes
+  INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", 
+                              "quantity", "status", "companyId", "createdBy", 
+                              "attributes")
+  VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
+          NEW."companyId", NEW."createdBy", 
+          jsonb_build_object('Job', NEW."id", 'Job Make Method', v_job_make_method_id));
   
   RETURN NEW;
 END;
@@ -228,23 +233,27 @@ RETURNS TRIGGER AS $$
 DECLARE
   v_item_readable_id TEXT;
   v_item_tracking_type TEXT;
-  v_tracked_entity_id TEXT;
+  v_job_make_method_id TEXT;
 BEGIN
   -- Get item details
   SELECT "readableId", "itemTrackingType" INTO v_item_readable_id, v_item_tracking_type
   FROM "item"
   WHERE "id" = NEW."itemId";
   
-  -- Insert tracked entity
-  INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "quantity", "status", "companyId", "createdBy", "attributes")
-  VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', NEW."companyId", NEW."createdBy", jsonb_build_object('Job', NEW."jobId"))
-  RETURNING "id" INTO v_tracked_entity_id;
-  
-  -- Insert job make method with tracked entity ID
+  -- Insert job make method first
   INSERT INTO "jobMakeMethod" ("jobId", "parentMaterialId", "itemId", "companyId", "createdBy", 
-                              "trackedEntityId", "requiresSerialTracking", "requiresBatchTracking")
-  VALUES (NEW."jobId", NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy", v_tracked_entity_id,
-          v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch');
+                              "requiresSerialTracking", "requiresBatchTracking")
+  VALUES (NEW."jobId", NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy",
+          v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch')
+  RETURNING "id" INTO v_job_make_method_id;
+  
+  -- Insert tracked entity with job make method ID in attributes
+  INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", 
+                              "quantity", "status", "companyId", "createdBy", 
+                              "attributes")
+  VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
+          NEW."companyId", NEW."createdBy", 
+          jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
   
   RETURN NEW;
 END;
@@ -255,7 +264,7 @@ CREATE OR REPLACE FUNCTION update_job_material_make_method_item_id()
 DECLARE
   v_item_readable_id TEXT;
   v_item_tracking_type TEXT;
-  v_tracked_entity_id TEXT;
+  v_job_make_method_id TEXT;
 BEGIN
   -- Get item details
   SELECT "readableId", "itemTrackingType" INTO v_item_readable_id, v_item_tracking_type
@@ -266,30 +275,36 @@ BEGIN
     SELECT 1 FROM "jobMakeMethod"
     WHERE "jobId" = NEW."jobId" AND "parentMaterialId" = NEW."id"
   ) THEN
-    -- Insert tracked entity
-    INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "quantity", "status", "companyId", "createdBy", "attributes")
-    VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 
-    'Reserved', NEW."companyId", NEW."createdBy", jsonb_build_object('Job', NEW."jobId"))
-    RETURNING "id" INTO v_tracked_entity_id;
-    
-    -- Insert job make method with tracked entity ID
+    -- Insert job make method first
     INSERT INTO "jobMakeMethod" ("jobId", "parentMaterialId", "itemId", "companyId", "createdBy", 
-                                "trackedEntityId", "requiresSerialTracking", "requiresBatchTracking")
-    VALUES (NEW."jobId", NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy", v_tracked_entity_id,
-            v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch');
-  ELSE
-    -- Insert tracked entity
-    INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", "quantity", "status", "companyId", "createdBy", "attributes")
-    VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', NEW."companyId", NEW."createdBy", jsonb_build_object('Job', NEW."jobId"))
-    RETURNING "id" INTO v_tracked_entity_id;
+                                "requiresSerialTracking", "requiresBatchTracking")
+    VALUES (NEW."jobId", NEW."id", NEW."itemId", NEW."companyId", NEW."createdBy",
+            v_item_tracking_type = 'Serial', v_item_tracking_type = 'Batch')
+    RETURNING "id" INTO v_job_make_method_id;
     
-    -- Update job make method with new item ID and tracked entity ID
+    -- Insert tracked entity with job make method ID in attributes
+    INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", 
+                                "quantity", "status", "companyId", "createdBy", 
+                                "attributes")
+    VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
+            NEW."companyId", NEW."createdBy", 
+            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
+  ELSE
+    -- Update job make method first
     UPDATE "jobMakeMethod"
     SET "itemId" = NEW."itemId",
-        "trackedEntityId" = v_tracked_entity_id,
         "requiresSerialTracking" = (v_item_tracking_type = 'Serial'),
         "requiresBatchTracking" = (v_item_tracking_type = 'Batch')
-    WHERE "jobId" = NEW."jobId" AND "parentMaterialId" = NEW."id";
+    WHERE "jobId" = NEW."jobId" AND "parentMaterialId" = NEW."id"
+    RETURNING "id" INTO v_job_make_method_id;
+    
+    -- Insert tracked entity with job make method ID in attributes
+    INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId", 
+                                "quantity", "status", "companyId", "createdBy", 
+                                "attributes")
+    VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
+            NEW."companyId", NEW."createdBy", 
+            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
   END IF;
   RETURN NEW;
 END;
@@ -299,9 +314,9 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION delete_tracked_entity_on_job_make_method_delete()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Delete the tracked entity when job make method is deleted
+  -- Find and delete tracked entities with this job make method ID in attributes
   DELETE FROM "trackedEntity" 
-  WHERE "id" = OLD."trackedEntityId";
+  WHERE "attributes"->>'Job Make Method' = OLD."id";
   
   RETURN OLD;
 END;
@@ -313,3 +328,67 @@ FOR EACH ROW
 EXECUTE FUNCTION delete_tracked_entity_on_job_make_method_delete();
 
 
+DROP FUNCTION IF EXISTS get_direct_descendants_of_tracked_entity;
+CREATE OR REPLACE FUNCTION get_direct_descendants_of_tracked_entity(p_tracked_entity_id TEXT)
+RETURNS TABLE (
+    "trackedEntityId" TEXT,
+    "quantity" NUMERIC,
+    "status" "trackedEntityStatus",
+    "activityAttributes" JSONB,
+    "entityAttributes" JSONB
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ai."trackedEntityId", 
+        te."quantity", 
+        te."status", 
+        ta."attributes" AS "activityAttributes", 
+        te."attributes" AS "entityAttributes"
+    FROM "trackedActivityInput" ai
+    INNER JOIN "trackedEntity" te 
+        ON ai."trackedEntityId" = te."id"
+    INNER JOIN "trackedActivity" ta
+        ON ai."trackedActivityId" = ta."id"
+    JOIN "trackedActivityOutput" ao 
+        ON ai."trackedActivityId" = ao."trackedActivityId"
+    WHERE ao."trackedEntityId" = p_tracked_entity_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get direct descendants with strict filtering
+DROP FUNCTION IF EXISTS get_direct_descendants_of_tracked_entity_strict;
+CREATE OR REPLACE FUNCTION get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id TEXT)
+RETURNS TABLE (
+    "trackedEntityId" TEXT,
+    "quantity" NUMERIC,
+    "status" "trackedEntityStatus",
+    "activityAttributes" JSONB,
+    "entityAttributes" JSONB
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        tai."trackedEntityId", 
+        te."quantity", 
+        te."status", 
+        ta."attributes" AS "activityAttributes",
+        te."attributes" AS "entityAttributes"
+    FROM "trackedActivityInput" tai
+    INNER JOIN "trackedEntity" te 
+        ON tai."trackedEntityId" = te."id"
+    INNER JOIN "trackedActivity" ta
+        ON tai."trackedActivityId" = ta."id"
+    WHERE tai."trackedActivityId" IN (
+        SELECT tao."trackedActivityId"
+        FROM "trackedActivityOutput" tao
+        LEFT JOIN "trackedActivityInput" tai2 
+            ON tao."trackedActivityId" = tai2."trackedActivityId" 
+            AND tai2."trackedEntityId" = p_tracked_entity_id
+        WHERE tao."trackedEntityId" = p_tracked_entity_id 
+            AND tai2."trackedEntityId" IS NULL
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+ALTER TABLE "trackedEntity" ADD COLUMN "currentOperationIds" TEXT[] DEFAULT ARRAY[]::TEXT[];

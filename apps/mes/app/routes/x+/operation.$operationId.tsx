@@ -17,17 +17,20 @@ import {
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
+  getTrackedEntitiesByMakeMethodId,
   getWorkCenter,
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
 
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
+
+  const url = new URL(request.url);
+  const trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
 
@@ -62,10 +65,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [thumbnailPath, method] = await Promise.all([
+  const [thumbnailPath, trackedEntities, jobMakeMethod] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
+    getTrackedEntitiesByMakeMethodId(
+      serviceRole,
+      operation.data?.[0].jobMakeMethodId
+    ),
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
   ]);
+
+  // If no trackedEntityId is provided in the URL but trackedEntities exist,
+  // redirect to the same URL with the last trackedEntityId as a search param
+  if (
+    !trackedEntityId &&
+    trackedEntities.data &&
+    trackedEntities.data.length > 0 &&
+    // Check if any tracked entity has an attribute for this operation
+    !trackedEntities.data.every(entity => {
+      const attributes = entity.attributes as Record<string, unknown>;
+      return Object.keys(attributes).some(key => key.startsWith(`Operation`));
+    })
+  ) {
+    const lastTrackedEntity =
+      trackedEntities.data[trackedEntities.data.length - 1];
+    const redirectUrl = new URL(request.url);
+    redirectUrl.searchParams.set("trackedEntityId", lastTrackedEntity.id);
+    throw redirect(redirectUrl.toString());
+  }
 
   return defer({
     events: events.data ?? [],
@@ -83,14 +109,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       { scrap: 0, production: 0, rework: 0 }
     ),
     job: job.data,
+    jobMakeMethod: jobMakeMethod.data,
     files: getJobFiles(
       serviceRole,
       companyId,
       job.data,
       operation.data?.[0].itemId
     ),
-    materials: getJobMaterialsByOperationId(serviceRole, operation.data?.[0]),
-    method: method.data,
+    materials: getJobMaterialsByOperationId(
+      serviceRole,
+      operation.data?.[0],
+      jobMakeMethod.data?.requiresSerialTracking
+        ? trackedEntityId ?? trackedEntities?.data?.[0]?.id
+        : undefined
+    ),
+    trackedEntities: trackedEntities.data ?? [],
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
     workCenter: getWorkCenter(serviceRole, operation.data?.[0].workCenterId),
@@ -104,14 +137,15 @@ export default function OperationRoute() {
 
   const {
     events,
-    job,
     files,
+    job,
+    jobMakeMethod,
     materials,
-    method,
     operation,
     procedure,
-    workCenter,
     thumbnailPath,
+    trackedEntities,
+    workCenter,
   } = useLoaderData<typeof loader>();
 
   return (
@@ -119,7 +153,8 @@ export default function OperationRoute() {
       events={events}
       files={files}
       materials={materials}
-      method={method}
+      method={jobMakeMethod}
+      trackedEntities={trackedEntities}
       operation={operation}
       procedure={procedure}
       job={job}

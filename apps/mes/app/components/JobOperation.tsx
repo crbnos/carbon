@@ -86,7 +86,7 @@ import {
   FilePreview,
   OperationStatusIcon,
 } from "~/components";
-import { useMode, useUser } from "~/hooks";
+import { useMode, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import {
   attributeRecordValidator,
@@ -106,6 +106,7 @@ import type {
   ProductionQuantity,
   StorageItem,
   JobMakeMethod,
+  TrackedEntity,
 } from "~/services/types";
 import { path } from "~/utils/path";
 
@@ -139,7 +140,6 @@ import {
   toZoned,
 } from "@internationalized/date";
 import type {
-  PostgrestResponse,
   PostgrestSingleResponse,
   RealtimeChannel,
 } from "@supabase/supabase-js";
@@ -150,6 +150,7 @@ import { FaCheck, FaPause, FaPlay, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuActivity,
   LuAxis3D,
+  LuBarcode,
   LuCheck,
   LuChevronDown,
   LuChevronLeft,
@@ -189,7 +190,7 @@ import { getBatchNumbersForItem } from "~/services/inventory.service";
 type JobOperationProps = {
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
-  materials: Promise<PostgrestResponse<JobMaterial>>;
+  materials: Promise<JobMaterial[]>;
   method: JobMakeMethod | null;
   operation: OperationWithDetails;
   procedure: Promise<{
@@ -198,6 +199,7 @@ type JobOperationProps = {
   }>;
   job: Job;
   thumbnailPath: string | null;
+  trackedEntities: TrackedEntity[];
   workCenter: Promise<PostgrestSingleResponse<{ name: string }>>;
 };
 
@@ -210,9 +212,21 @@ export const JobOperation = ({
   operation: originalOperation,
   procedure,
   thumbnailPath,
+  trackedEntities,
   workCenter,
 }: JobOperationProps) => {
+  const [params, setParams] = useUrlParams();
+
+  const trackedEntityParam = params.get("trackedEntityId");
+  const trackedEntityId =
+    trackedEntityParam ?? trackedEntities[0]?.id;
+  const trackedEntity = trackedEntities.find(
+    (entity) => entity.id === trackedEntityId
+  );
+
+  
   const navigate = useNavigate();
+  const parentIsSerial = method?.requiresSerialTracking;
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
@@ -223,6 +237,7 @@ export const JobOperation = ({
     attributeRecordModal.isOpen || attributeRecordDeleteModal.isOpen;
 
   const {
+    availableEntities,
     active,
     activeTab,
     completeModal,
@@ -237,12 +252,13 @@ export const JobOperation = ({
     progress,
     reworkModal,
     scrapModal,
+    serialModal,
     selectedMaterial,
     setActiveTab,
     setEventType,
     setSelectedMaterial,
     setupProductionEvent,
-  } = useOperation(originalOperation, events, isModalOpen);
+  } = useOperation(originalOperation, events, trackedEntities, isModalOpen);
 
   const controlsHeight = useMemo(() => {
     let operations = 1;
@@ -292,6 +308,8 @@ export const JobOperation = ({
     attributeRecordDeleteModal.onClose();
   };
 
+  
+
   return (
     <>
       <Tabs
@@ -311,7 +329,7 @@ export const JobOperation = ({
               <Button
                 variant="ghost"
                 leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(-1)}
+                onClick={() => navigate(path.to.operations)}
                 className="pl-2"
               >
                 Back
@@ -427,7 +445,16 @@ export const JobOperation = ({
                 </div>
               </HStack>
               <div className="flex flex-col flex-shrink items-end">
-                <Heading size="h2">{operation.operationQuantity}</Heading>
+                {parentIsSerial ? (
+                  <Heading size="h2">
+                    {/* @ts-ignore */}
+                    {trackedEntity?.attributes?.[`Operation ${operationId}`] ??
+                      1} 
+                    {" "}of  {operation.operationQuantity}
+                  </Heading>
+                ) : (
+                  <Heading size="h2">{operation.operationQuantity}</Heading>
+                )}
                 <p className="text-muted-foreground line-clamp-1">
                   {operation.itemUnitOfMeasure}
                 </p>
@@ -534,7 +561,7 @@ export const JobOperation = ({
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {resolvedMaterials?.data?.length === 0 ? (
+                          {resolvedMaterials?.length === 0 ? (
                             <Tr>
                               <Td
                                 colSpan={24}
@@ -544,7 +571,7 @@ export const JobOperation = ({
                               </Td>
                             </Tr>
                           ) : (
-                            resolvedMaterials?.data?.map((material) => (
+                            resolvedMaterials?.map((material) => (
                               <Tr
                                 key={`material-${material.id}`}
                                 className={cn(
@@ -572,8 +599,7 @@ export const JobOperation = ({
                                           className="shrink-0"
                                         />
                                       </Badge>
-                                    ) : null}
-                                    {material.requiresSerialTracking ? (
+                                    ) : material.requiresSerialTracking ? (
                                       <Badge variant="secondary">
                                         <TrackingTypeIcon
                                           type="Serial"
@@ -593,12 +619,22 @@ export const JobOperation = ({
                                   </Badge>
                                 </Td>
 
-                                <Td>{material.estimatedQuantity}</Td>
+                                <Td>
+                                  {parentIsSerial &&
+                                  (material.requiresBatchTracking ||
+                                    material.requiresSerialTracking)
+                                    ? `${material.quantity}/${material.estimatedQuantity}`
+                                    : material.estimatedQuantity}
+                                </Td>
                                 <Td>
                                   {material.methodType === "Make" &&
                                   material.requiresBatchTracking === false &&
                                   material.requiresSerialTracking === false ? (
                                     <MethodIcon type="Make" />
+                                  ) : parentIsSerial &&
+                                    (material.requiresBatchTracking ||
+                                      material.requiresSerialTracking) ? (
+                                    `${material.quantityIssued}/${material.quantity}`
                                   ) : (
                                     material.quantityIssued
                                   )}
@@ -866,6 +902,74 @@ export const JobOperation = ({
                 </Suspense>
               </div>
             </div>
+
+            {parentIsSerial && (
+              <>
+                <Separator />
+                <div className="flex flex-col items-start justify-between w-full">
+                  <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                    <HStack className="justify-between w-full">
+                      <Heading size="h3">Serial Numbers</Heading>
+                      <HStack>
+                        <Button variant="secondary" leftIcon={<LuQrCode />}>
+                          Tracking Labels
+                        </Button>
+                        <Button variant="secondary" leftIcon={<LuBarcode />}>
+                          Scan
+                        </Button>
+                      </HStack>
+                    </HStack>
+
+                    <Table className="w-full">
+                      <Thead>
+                        <Tr>
+                          <Th>Serial</Th>
+                          <Th className="text-right" />
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {trackedEntities?.length === 0 ? (
+                          <Tr>
+                            <Td
+                              colSpan={24}
+                              className="py-8 text-red-500 text-center"
+                            >
+                              No serial numbers
+                            </Td>
+                          </Tr>
+                        ) : (
+                          trackedEntities?.map((entity) => (
+                            <Tr key={`serial-${entity.id}`}>
+                              <Td className="flex gap-2 items-center">
+                                <span>{entity.id}</span>
+                                {entity.id === trackedEntityId && (
+                                  <LuCheck className="text-emerald-500 size-4" />
+                                )}
+                              </Td>
+
+                              <Td className="text-right">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  isDisabled={entity.id === trackedEntityId}
+                                  onClick={() => {
+                                    setParams({
+                                      trackedEntityId: entity.id,
+                                    });
+                                  }}
+                                >
+                                  Select
+                                </Button>
+                              </Td>
+                            </Tr>
+                          ))
+                        )}
+                      </Tbody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            )}
           </ScrollArea>
         </TabsContent>
         <TabsContent value="model">
@@ -1118,6 +1222,7 @@ export const JobOperation = ({
                 /> 
                 */}
                 <IconButtonWithTooltip
+                  disabled={parentIsSerial && trackedEntities.some(entity => entity.id === trackedEntityId && `Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes))}
                   icon={
                     <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
@@ -1126,6 +1231,7 @@ export const JobOperation = ({
                 />
 
                 <IconButtonWithTooltip
+                  disabled={parentIsSerial && trackedEntities.some(entity => entity.id === trackedEntityId && `Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes))}
                   icon={
                     <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
@@ -1246,32 +1352,47 @@ export const JobOperation = ({
       {reworkModal.isOpen && (
         <QuantityModal
           type="rework"
-          operation={operation}
-          setupProductionEvent={setupProductionEvent}
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
+          operation={operation}
+          parentIsSerial={parentIsSerial}
+          setupProductionEvent={setupProductionEvent}
+          trackedEntityId={trackedEntityId}
           onClose={reworkModal.onClose}
         />
       )}
       {scrapModal.isOpen && (
         <QuantityModal
           type="scrap"
-          operation={operation}
-          setupProductionEvent={setupProductionEvent}
           laborProductionEvent={laborProductionEvent}
           machineProductionEvent={machineProductionEvent}
+          operation={operation}
+          parentIsSerial={parentIsSerial}
+          setupProductionEvent={setupProductionEvent}
+          trackedEntityId={trackedEntityId}
           onClose={scrapModal.onClose}
         />
       )}
       {completeModal.isOpen && (
-        <QuantityModal
-          type="complete"
-          operation={operation}
-          setupProductionEvent={setupProductionEvent}
-          laborProductionEvent={laborProductionEvent}
-          machineProductionEvent={machineProductionEvent}
-          onClose={completeModal.onClose}
-        />
+        <Suspense>
+          <Await resolve={materials}>
+            {(resolvedMaterials) => {
+              return (
+                <QuantityModal
+                  type="complete"
+                  laborProductionEvent={laborProductionEvent}
+                  machineProductionEvent={machineProductionEvent}
+                  materials={resolvedMaterials}
+                  operation={operation}
+                  parentIsSerial={parentIsSerial}
+                  setupProductionEvent={setupProductionEvent}
+                  trackedEntityId={trackedEntityId}
+                  onClose={completeModal.onClose}
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
       )}
       {/* @ts-ignore */}
       {finishModal.isOpen && (
@@ -1284,12 +1405,13 @@ export const JobOperation = ({
               );
               return (
                 <QuantityModal
-                  allAttributesRecorded={allAttributesRecorded}
                   type="finish"
-                  operation={operation}
-                  setupProductionEvent={setupProductionEvent}
+                  allAttributesRecorded={allAttributesRecorded}
                   laborProductionEvent={laborProductionEvent}
                   machineProductionEvent={machineProductionEvent}
+                  operation={operation}
+                  setupProductionEvent={setupProductionEvent}
+                  trackedEntityId={trackedEntityId}
                   onClose={finishModal.onClose}
                 />
               );
@@ -1313,7 +1435,7 @@ export const JobOperation = ({
       {issueModal.isOpen &&
         selectedMaterial?.requiresBatchTracking === true && (
           <BatchIssueModal
-            parentId={method?.trackedEntity?.id ?? ""}
+            parentId={trackedEntityId ?? ""}
             parentIdIsSerialized={method?.requiresSerialTracking ?? false}
             operationId={operation.id}
             material={selectedMaterial ?? undefined}
@@ -1328,7 +1450,7 @@ export const JobOperation = ({
           <SerialIssueModal
             operationId={operation.id}
             material={selectedMaterial ?? undefined}
-            parentId={method?.trackedEntity?.id ?? ""}
+            parentId={trackedEntityId ?? ""}
             parentIdIsSerialized={method?.requiresSerialTracking ?? false}
             onClose={() => {
               setSelectedMaterial(null);
@@ -1336,6 +1458,20 @@ export const JobOperation = ({
             }}
           />
         )}
+
+      {serialModal.isOpen && (
+        <SerialSelectorModal
+          availableEntities={availableEntities}
+          onClose={serialModal.onClose}
+          onCancel={() => navigate(path.to.operations)}
+          onSelect={(entity) => {
+            setParams({
+              trackedEntityId: entity.id,
+            });
+            serialModal.onClose();
+          }}
+        />
+      )}
 
       {attributeRecordModal.isOpen && selectedAttribute ? (
         <RecordModal
@@ -1579,8 +1715,11 @@ function OperationChat({ operation }: { operation: OperationWithDetails }) {
 function useOperation(
   operation: OperationWithDetails,
   events: ProductionEvent[],
+  trackedEntities: TrackedEntity[],
   pauseInterval: boolean
 ) {
+  const [params] = useUrlParams();
+  const trackedEntityParam = params.get("trackedEntityId");
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
   const revalidator = useRevalidator();
@@ -1591,6 +1730,7 @@ function useOperation(
   const completeModal = useDisclosure();
   const finishModal = useDisclosure();
   const issueModal = useDisclosure();
+  const serialModal = useDisclosure();
 
   // we do this to avoid re-rendering when the modal is open
   const isAnyModalOpen =
@@ -1599,7 +1739,8 @@ function useOperation(
     reworkModal.isOpen ||
     completeModal.isOpen ||
     finishModal.isOpen ||
-    issueModal.isOpen;
+    issueModal.isOpen ||
+    serialModal.isOpen;
 
   const [selectedMaterial, setSelectedMaterial] = useState<JobMaterial | null>(
     null
@@ -1757,6 +1898,7 @@ function useOperation(
       }
     );
   }, [eventState]);
+
   const [progress, setProgress] = useState<{
     setup: number;
     labor: number;
@@ -1796,8 +1938,20 @@ function useOperation(
       : null
   );
 
+  const { operationId } = useParams();
+  const [availableEntities, setAvailableEntities] = useState<TrackedEntity[]>([]);
+  // show the serial selector with the remaining serial numbers for the operation
+  useEffect(() => {
+    if (trackedEntityParam) return;
+    const uncompletedEntities = trackedEntities.filter((entity) => !(`Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes ?? {})));
+    if(uncompletedEntities.length > 0) serialModal.onOpen();
+    setAvailableEntities(uncompletedEntities);
+    
+  }, [trackedEntities, operationId, trackedEntityParam]);
+
   return {
     active,
+    availableEntities,
     hasActiveEvents:
       progress.setup > 0 || progress.labor > 0 || progress.machine > 0,
     ...activeEvents,
@@ -1810,6 +1964,7 @@ function useOperation(
     completeModal,
     finishModal,
     issueModal,
+    serialModal,
     isOverdue: operation.jobDueDate
       ? new Date(operation.jobDueDate) < new Date()
       : false,
@@ -1989,13 +2144,15 @@ function ButtonWithTooltip({
 function IconButtonWithTooltip({
   icon,
   tooltip,
+  disabled,
   ...props
-}: ComponentProps<"button"> & { icon: ReactNode; tooltip: string }) {
+}: ComponentProps<"button"> & { icon: ReactNode; tooltip: string; disabled?: boolean }) {
   return (
     <ButtonWithTooltip
       {...props}
       tooltip={tooltip}
-      className="size-16 text-xl md:text-lg md:size-[8dvh]  flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted"
+      disabled={disabled}
+      className="size-16 text-xl md:text-lg md:size-[8dvh] flex flex-row items-center gap-2 justify-center bg-accent rounded-full shadow-lg hover:cursor-pointer hover:shadow-xl hover:accent hover:scale-105 transition-all disabled:cursor-not-allowed disabled:bg-muted disabled:opacity-30"
     >
       {icon}
     </ButtonWithTooltip>
@@ -2221,20 +2378,26 @@ function PlayButton({ className, ...props }: ComponentProps<"button">) {
 
 function QuantityModal({
   allAttributesRecorded = true,
-  operation,
-  setupProductionEvent,
   laborProductionEvent,
   machineProductionEvent,
-  onClose,
+  materials = [],
+  operation,
+  parentIsSerial = false,
+  setupProductionEvent,
+  trackedEntityId,
   type,
+  onClose,
 }: {
   allAttributesRecorded?: boolean;
-  operation: OperationWithDetails;
-  setupProductionEvent: ProductionEvent | undefined;
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
-  onClose: () => void;
+  materials?: JobMaterial[];
+  operation: OperationWithDetails;
+  parentIsSerial?: boolean;
+  setupProductionEvent: ProductionEvent | undefined;
+  trackedEntityId: string;
   type: "scrap" | "rework" | "complete" | "finish";
+  onClose: () => void;
 }) {
   const fetcher = useFetcher<ProductionQuantity>();
   const [quantity, setQuantity] = useState(type === "finish" ? 0 : 1);
@@ -2278,6 +2441,15 @@ function QuantityModal({
     finish: finishValidator,
   };
 
+  const hasUnissuedMaterials = useMemo(() => {
+    return (
+      parentIsSerial &&
+      materials.some(
+        (material) => material.jobOperationId === operation.id && (material?.quantityIssued ?? 0) < material.quantity
+      )
+    );
+  }, [materials, parentIsSerial, operation.id]);
+
   return (
     <Modal
       open
@@ -2293,6 +2465,8 @@ function QuantityModal({
           method="post"
           validator={validatorMap[type]}
           defaultValues={{
+            // @ts-ignore
+            trackedEntityId: parentIsSerial ? trackedEntityId : undefined,
             jobOperationId: operation.id,
             // @ts-ignore
             quantity: type === "finish" ? undefined : 1,
@@ -2310,11 +2484,23 @@ function QuantityModal({
             <ModalDescription>{descriptionMap[type]}</ModalDescription>
           </ModalHeader>
           <ModalBody>
+            <Hidden name="trackedEntityId" />
             <Hidden name="jobOperationId" />
             <Hidden name="setupProductionEventId" />
             <Hidden name="laborProductionEventId" />
             <Hidden name="machineProductionEventId" />
             <VStack spacing={2}>
+              {hasUnissuedMaterials && (
+                <Alert variant="destructive">
+                  <LuTriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Unissued materials</AlertTitle>
+                  <AlertDescription>
+                    Please issue all materials for this operation before
+                    closing.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {type === "finish" && !isOperationComplete && (
                 <Alert variant="destructive">
                   <LuTriangleAlert className="h-4 w-4" />
@@ -2342,6 +2528,7 @@ function QuantityModal({
                     label="Quantity"
                     value={quantity}
                     onChange={setQuantity}
+                    isReadOnly={parentIsSerial}
                     minValue={1}
                   />
                 </>
@@ -2390,6 +2577,122 @@ function QuantityModal({
   );
 }
 
+function SerialSelectorModal({
+  availableEntities,
+  onCancel,
+  onClose,
+  onSelect,
+}: {
+  availableEntities: TrackedEntity[];
+  onCancel: () => void;
+  onClose: () => void;
+  onSelect: (entity: TrackedEntity) => void;
+}) {
+  const [serial, setSerial] = useState("");
+  
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>Select Serial Number</ModalTitle>
+          <ModalDescription>
+            Select a serial number to continue with this operation
+          </ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+        <Tabs defaultValue="scan">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="scan">
+                <LuQrCode className="mr-2" />
+                Scan
+              </TabsTrigger>
+              <TabsTrigger value="select">
+                <LuList className="mr-2" />
+                Select
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="select" className="mt-4">
+              <ScrollArea className="max-h-[40dvh]">
+                <VStack spacing={2}>
+                  {availableEntities.length === 0 ? (
+                    <p className="text-center text-muted-foreground">
+                      No available serial numbers found
+                    </p>
+                  ) : (
+                    availableEntities.map((entity) => {
+                      return (
+                        <HStack key={entity.id} className="w-full justify-between p-4 border rounded-md">
+                          <VStack spacing={1} className="w-full items-start">
+                            <p className="text-sm">{entity.id}</p>
+                            
+                          </VStack>
+                          <Button 
+                            size="sm" 
+                            variant="secondary"
+                            onClick={() => onSelect(entity)}
+                          >
+                            Select
+                          </Button>
+                        </HStack>
+                      );
+                    })
+                  )}
+                </VStack>
+              </ScrollArea>
+            </TabsContent>
+            <TabsContent value="scan" className="mt-4">
+              <VStack spacing={4}>
+                <InputGroup>
+                  <Input 
+                    autoFocus
+                    placeholder="Scan or enter serial number" 
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const entity = availableEntities.find(
+                          entity => entity.id === e.currentTarget.value
+                        );
+                        if (entity) {
+                          onSelect(entity);
+                        }
+                      }
+                    }}
+                    value={serial}
+                    onChange={(e) => setSerial(e.target.value)}
+                  />
+                  <InputRightElement>
+                    {serial && (
+                      availableEntities.some(entity => entity.id === serial) ? (
+                        <LuCheck className="text-green-500" />
+                      ) : (
+                        <LuX className="text-red-500" />
+                      )
+                    )}
+                    
+                  </InputRightElement>
+                </InputGroup>
+                
+              </VStack>
+            </TabsContent>
+          </Tabs>
+        </ModalBody>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+
+}
+
 function SerialIssueModal({
   operationId,
   material,
@@ -2415,7 +2718,7 @@ function SerialIssueModal({
         .map((serialNumber) => {
           const attributes = serialNumber.attributes as TrackedEntityAttributes;
           return {
-            label: serialNumber.sourceDocumentReadableId ?? "",
+            label: serialNumber.id ?? "",
             value: serialNumber.id,
             helper: attributes["Serial Number"]
               ? `Serial ${attributes["Serial Number"]}`
@@ -2779,6 +3082,7 @@ function useSerialNumbers(itemId?: string) {
 
   return { data: serialNumbersFetcher.data };
 }
+
 function BatchIssueModal({
   parentId,
   parentIdIsSerialized,
@@ -2803,7 +3107,7 @@ function BatchIssueModal({
         .map((batchNumber) => {
           const attributes = batchNumber.attributes as TrackedEntityAttributes;
           return {
-            label: batchNumber.sourceDocumentReadableId ?? "",
+            label: batchNumber.id ?? "",
             value: batchNumber.id,
             helper: attributes["Batch Number"]
               ? `${batchNumber.quantity} Available ${
@@ -3346,6 +3650,7 @@ function AttributesListItem({
     attribute;
 
   if (!operationId) return null;
+
   return (
     <div className={cn("border-b hover:bg-muted/30 p-6", className)}>
       <div className="flex flex-1 justify-between items-center w-full gap-2">
@@ -3371,7 +3676,9 @@ function AttributesListItem({
                     ? `Must be between ${minValue} and ${maxValue} ${unitOfMeasureCode}`
                     : minValue !== null
                     ? `Must be > ${minValue} ${unitOfMeasureCode}`
-                    : `Must be < ${maxValue} ${unitOfMeasureCode}`}
+                    : maxValue !== null
+                    ? `Must be < ${maxValue} ${unitOfMeasureCode}`
+                    : null}
                 </span>
               )}
             </VStack>

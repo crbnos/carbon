@@ -1,6 +1,8 @@
 export interface TrackedEntityAttributes {
   "Batch Number"?: string;
   Customer?: string;
+  "Job Operation"?: string;
+  "Job Operation Index"?: number;
   "Purchase Order"?: string;
   "Receipt Line Index"?: number;
   "Receipt Line"?: string;

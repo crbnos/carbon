@@ -32398,6 +32398,9 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
           },
           {
+            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32487,6 +32490,9 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
           },
           {
+            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32528,6 +32534,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
           },
           {
             $ref: "#/parameters/body.trackedEntity",
@@ -46418,6 +46427,63 @@ export default {
         tags: ["(rpc) get_item_quantities_by_tracking_id"],
       },
     },
+    "/rpc/get_direct_descendants_of_tracked_entity": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_tracked_entity_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_descendants_of_tracked_entity"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_tracked_entity_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_descendants_of_tracked_entity"],
+      },
+    },
     "/rpc/is_claims_admin": {
       get: {
         produces: [
@@ -46978,6 +47044,63 @@ export default {
           },
         },
         tags: ["(rpc) create_rfq_from_models_v1"],
+      },
+    },
+    "/rpc/get_direct_descendants_of_tracked_entity_strict": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_tracked_entity_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_descendants_of_tracked_entity_strict"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_tracked_entity_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_descendants_of_tracked_entity_strict"],
       },
     },
     "/rpc/get_job_operations_by_work_center": {
@@ -62294,6 +62417,13 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        currentOperationIds: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -86816,6 +86946,13 @@ export default {
       name: "createdBy",
       required: false,
       format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.trackedEntity.currentOperationIds": {
+      name: "currentOperationIds",
+      required: false,
+      format: "text[]",
       in: "query",
       type: "string",
     },

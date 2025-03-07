@@ -1170,11 +1170,13 @@ function AttributesListItem({
                             (u) => u.value === unitOfMeasureCode
                           )?.label
                         }`
-                      : `Must be < ${attribute.maxValue} ${
+                      : attribute.maxValue !== null
+                      ? `Must be < ${attribute.maxValue} ${
                           unitOfMeasures.find(
                             (u) => u.value === unitOfMeasureCode
                           )?.label
-                        }`}
+                        }`
+                      : null}
                   </span>
                 )}
               </VStack>

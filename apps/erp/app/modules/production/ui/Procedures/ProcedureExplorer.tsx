@@ -497,7 +497,9 @@ function ProcedureAttributeItem({
                   ? `Must be between ${attribute.minValue} and ${attribute.maxValue}`
                   : attribute.minValue !== null
                   ? `Must be > ${attribute.minValue}`
-                  : `Must be < ${attribute.maxValue}`}
+                  : attribute.maxValue !== null
+                  ? `Must be < ${attribute.maxValue}`
+                  : null}
               </p>
             )}
           </VStack>

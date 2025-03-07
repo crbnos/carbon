@@ -854,7 +854,7 @@ serve(async (req: Request) => {
             const trackedActivity = await trx
               .insertInto("trackedActivity")
               .values({
-                type: "Receipt",
+                type: "Receive",
                 sourceDocument: "Receipt",
                 sourceDocumentId: receiptId,
                 sourceDocumentReadableId: receipt.data.receiptId,
