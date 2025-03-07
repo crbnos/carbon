@@ -116,11 +116,13 @@ export const finishValidator = z.object({
 });
 
 export const nonScrapQuantityValidator = finishValidator.extend({
+  trackedEntityId: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number().positive()),
   notes: zfd.text(z.string().optional()),
 });
 
 export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
+  trackedEntityId: zfd.text(z.string().optional()),
   scrapReasonId: zfd.text(z.string()),
   notes: zfd.text(z.string().optional()),
 });

@@ -10,6 +10,7 @@ import type {
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getRecentJobOperationsByEmployee,
+  getTrackedEntitiesByMakeMethodId,
 } from "./operations.service";
 
 export type BaseOperation = NonNullable<
@@ -36,7 +37,7 @@ export type Job = NonNullable<
 >;
 
 export type JobMaterial = NonNullable<
-  Awaited<ReturnType<typeof getJobMaterialsByOperationId>>["data"]
+  Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
 >[number];
 
 export type JobMakeMethod = NonNullable<
@@ -76,6 +77,10 @@ export type ProductionQuantity = NonNullable<
 export type StorageItem = FileObject & {
   bucket: string;
 };
+
+export type TrackedEntity = NonNullable<
+  Awaited<ReturnType<typeof getTrackedEntitiesByMakeMethodId>>["data"]
+>[number];
 
 export type WorkCenter = NonNullable<
   Awaited<ReturnType<typeof getJobOperationsByWorkCenter>>["data"]

@@ -6,6 +6,8 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { Database } from "../lib/types.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { TrackedEntityAttributes } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -25,6 +27,18 @@ const payloadValidator = z.discriminatedUnion("type", [
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("jobOperationSerialComplete"),
+    trackedEntityId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+    quantity: z.number(),
+    jobOperationId: z.string(),
+    notes: z.string().optional(),
+    laborProductionEventId: z.string().optional(),
+    machineProductionEventId: z.string().optional(),
+    setupProductionEventId: z.string().optional(),
   }),
   z.object({
     type: z.literal("partToOperation"),
@@ -244,6 +258,142 @@ serve(async (req: Request) => {
 
         break;
       }
+      case "jobOperationSerialComplete": {
+        const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const jobOperation = await client
+          .from("jobOperation")
+          .select("*")
+          .eq("id", row.jobOperationId)
+          .single();
+        if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
+          throw new Error("Job operation not found");
+        }
+
+        const trackedEntities = await client
+          .from("trackedEntity")
+          .select("*")
+          .eq("attributes->>Job Make Method", jobOperation.data.jobMakeMethodId)
+          .order("createdAt", { ascending: true });
+
+        if (!trackedEntities.data || trackedEntities.data.length === 0) {
+          throw new Error("Tracked entities not found");
+        }
+
+        const relatedTrackedEntities = trackedEntities.data.filter(
+          (trackedEntity) =>
+            `Operation ${row.jobOperationId}` in (trackedEntity.attributes as TrackedEntityAttributes)
+        );
+         
+
+        let newEntityId: string | undefined;
+        await db.transaction().execute(async (trx) => {
+          await trx
+            .insertInto("productionQuantity")
+            .values({
+              ...row,
+              type: "Production",
+              companyId,
+              createdBy: userId,
+            })
+            .executeTakeFirst();
+
+          const trackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", trackedEntityId)
+            .selectAll()
+            .executeTakeFirst();
+
+          if (!trackedEntity) {
+            throw new Error("Tracked entity not found");
+          }
+
+          if (trackedEntity.status !== "Consumed") {
+            const activityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: activityId,
+                type: "Complete",
+                sourceDocument: "Job Operation",
+                sourceDocumentId: row.jobOperationId,
+                attributes: {
+                  "Job Operation": row.jobOperationId,
+                  Employee: userId,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: trackedEntityId,
+                quantity: 1,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+            // Update the current trackedEntity to Complete
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Available",
+                quantity: 1,
+                attributes: {
+                  ...(trackedEntity.attributes as TrackedEntityAttributes),
+                  [`Operation ${row.jobOperationId}`]:
+                    relatedTrackedEntities.length + 1,
+                },
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+          }
+
+          if (
+            trackedEntities.data.length <
+            (jobOperation.data.operationQuantity ?? 0)
+          ) {
+            // Create a new trackedEntity with the same attributes but status = Reserved
+            const newTrackedEntityResult = await trx
+              .insertInto("trackedEntity")
+              .values({
+                sourceDocument: trackedEntity.sourceDocument,
+                sourceDocumentId: trackedEntity.sourceDocumentId,
+                sourceDocumentReadableId:
+                  trackedEntity.sourceDocumentReadableId,
+                quantity: 1,
+                status: "Reserved",
+                attributes: trackedEntity.attributes,
+                companyId,
+                createdBy: userId,
+              })
+              .returning(["id"])
+              .executeTakeFirst();
+
+            newEntityId = newTrackedEntityResult?.id;
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            newTrackedEntityId: newEntityId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
       case "partToOperation": {
         const {
           id,
@@ -488,16 +638,27 @@ serve(async (req: Request) => {
             .insertInto("trackedActivity")
             .values({
               id: activityId,
-              type: "Job Material Consumption",
+              type: "Issue",
               sourceDocument: "Job Material",
               sourceDocumentId: materialId,
               sourceDocumentReadableId: jobMaterial?.itemReadableId,
               attributes: {
                 Job: job?.id!,
+                "Job Make Method": jobMaterial?.jobMakeMethodId!,
                 "Job Material": jobMaterial?.id!,
-                Description: "Issue",
                 Employee: userId,
               },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values({
+              trackedActivityId: activityId,
+              trackedEntityId: parentTrackedEntityId,
+              quantity: parentTrackedEntity.quantity,
               companyId,
               createdBy: userId,
             })
@@ -751,6 +912,7 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
+        message: "x",
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

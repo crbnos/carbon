@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import type { PostgrestResponse, SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -9,7 +9,12 @@ import type {
   productionEventValidator,
   scrapQuantityValidator,
 } from "./models";
-import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
+import type {
+  BaseOperationWithDetails,
+  Job,
+  StorageItem,
+} from "./types";
+import { TrackedActivityAttributes } from "@carbon/utils";
 
 export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
@@ -229,18 +234,64 @@ export async function getJobFiles(
   }
 }
 
+export async function getJobMakeMethod(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("jobMakeMethod").select("*").eq("id", id).single();
+}
+
 export async function getJobMaterialsByOperationId(
   client: SupabaseClient<Database>,
-  operation: BaseOperationWithDetails
-): Promise<
-  PostgrestResponse<Database["public"]["Tables"]["jobMaterial"]["Row"]>
-> {
-  return client
-    .from("jobMaterial")
-    .select("*")
-    .eq("jobMakeMethodId", operation.jobMakeMethodId)
-    .order("itemReadableId", { ascending: true })
-    .order("id", { ascending: true });
+  operation: BaseOperationWithDetails,
+  serialTrackingEntityId: string | undefined
+) {
+  if (serialTrackingEntityId) {
+    const materials = await client
+      .from("jobMaterial")
+      .select("*")
+      .eq("jobMakeMethodId", operation.jobMakeMethodId)
+      .order("itemReadableId", { ascending: true })
+      .order("id", { ascending: true });
+
+    const trackedInputs = await client.rpc(
+      "get_direct_descendants_of_tracked_entity",
+      {
+        p_tracked_entity_id: serialTrackingEntityId,
+      }
+    );
+
+    return (
+      materials.data?.map((material) => {
+        if (!material.requiresSerialTracking) return material;
+        const issuedForTrackedParent =
+          trackedInputs.data
+            ?.filter(
+              (input) =>
+                (input.activityAttributes as TrackedActivityAttributes)?.[
+                  "Job Material"
+                ] === material.id
+            )
+            .reduce((acc, input) => {
+              return acc + input.quantity;
+            }, 0) ?? 0;
+
+        return {
+          ...material,
+          quantityIssued: issuedForTrackedParent,
+        };
+      }) ?? []
+    );
+  } else {
+    const materials = await client
+      .from("jobMaterial")
+      .select("*")
+      .eq("jobMakeMethodId", operation.jobMakeMethodId)
+      .order("itemReadableId", { ascending: true })
+      .order("id", { ascending: true });
+
+    return materials.data ?? [];
+  }
 }
 
 export async function getJobOperationsAssignedToEmployee(
@@ -352,15 +403,15 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
-export async function getJobMakeMethod(
+export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string
 ) {
   return client
-    .from("jobMakeMethod")
-    .select("trackedEntity(*), requiresBatchTracking, requiresSerialTracking")
-    .eq("id", jobMakeMethodId)
-    .single();
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes->>Job Make Method", jobMakeMethodId)
+    .order("createdAt", { ascending: true });
 }
 
 export async function getThumbnailPathByItemId(
