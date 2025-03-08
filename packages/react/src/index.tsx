@@ -293,6 +293,7 @@ import type {
 } from "./hooks/useShortcutKeys";
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
+import Copy from "./Copy";
 
 export * from "./hooks";
 export {
@@ -359,6 +360,7 @@ export {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuTrigger,
+  Copy,
   Count,
   CreatableCombobox,
   CreatableMultiSelect,

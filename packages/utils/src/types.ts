@@ -24,6 +24,7 @@ export interface TrackedActivityAttributes {
   "Job Make Method"?: string;
   "Job Material"?: string;
   "Job Operation"?: string;
+  "Production Event"?: string;
   Job?: string;
   "Original Quantity"?: number;
   "Remaining Quantity"?: number;

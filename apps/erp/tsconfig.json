@@ -5,7 +5,8 @@
     "**/*.tsx",
     "app/modules/documents/documents.service.ts",
     "app/types/global.d.ts",
-    "trigger.config.ts"
+    "trigger.config.ts",
+    "../../packages/react/src/Copy.tsx"
   ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],

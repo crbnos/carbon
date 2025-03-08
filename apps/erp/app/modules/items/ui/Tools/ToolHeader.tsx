@@ -1,7 +1,6 @@
-import { HStack, Heading, VStack } from "@carbon/react";
+import { Copy, HStack, Heading, VStack } from "@carbon/react";
 
 import { Link, useParams } from "@remix-run/react";
-import { Copy } from "~/components";
 import { DetailsTopbar } from "~/components/Layout";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";

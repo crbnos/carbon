@@ -1,5 +1,6 @@
 import {
   Button,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -39,7 +40,6 @@ import {
   LuShare,
   LuTrophy,
 } from "react-icons/lu";
-import { Copy } from "~/components";
 import { usePanels } from "~/components/Layout";
 
 import { usePermissions, useRouteData } from "~/hooks";

@@ -40,31 +40,15 @@ export const jobOperationStatus = [
   "Canceled",
 ] as const;
 
-export const attributeRecordValidator = z
-  .object({
-    jobOperationAttributeId: z.string(),
-    value: zfd.text(z.string().optional()),
-    numericValue: zfd.numeric(z.number().optional()),
-    booleanValue: zfd.checkbox().optional(),
-    userValue: zfd.text(z.string().optional()),
-  })
-  .refine(
-    (data) => {
-      if (
-        data.value === undefined &&
-        data.numericValue === undefined &&
-        data.booleanValue === undefined &&
-        data.userValue === undefined
-      ) {
-        return false;
-      }
-      return true;
-    },
-    {
-      path: ["value", "numericValue"],
-      message: "Value is required",
-    }
-  );
+export const attributeRecordValidator = z.object({
+  jobOperationAttributeId: z.string(),
+  value: zfd.text(z.string().optional()),
+  numericValue: zfd.numeric(z.number().optional()),
+  booleanValue: zfd
+    .text(z.enum(["true", "false"]).transform((val) => val === "true"))
+    .optional(),
+  userValue: zfd.text(z.string().optional()),
+});
 
 export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
@@ -106,6 +90,7 @@ export const productionEventValidator = z.object({
   }),
   workCenterId: zfd.text(z.string().optional()),
   hasActiveEvents: z.enum(["true", "false"]),
+  trackedEntityId: zfd.text(z.string().optional()),
 });
 
 export const finishValidator = z.object({

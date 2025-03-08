@@ -62,6 +62,8 @@ import {
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
+  Copy,
+  Switch,
 } from "@carbon/react";
 import { generateHTML } from "@carbon/react/Editor";
 import {
@@ -218,13 +220,11 @@ export const JobOperation = ({
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");
-  const trackedEntityId =
-    trackedEntityParam ?? trackedEntities[0]?.id;
+  const trackedEntityId = trackedEntityParam ?? trackedEntities[0]?.id;
   const trackedEntity = trackedEntities.find(
     (entity) => entity.id === trackedEntityId
   );
 
-  
   const navigate = useNavigate();
   const parentIsSerial = method?.requiresSerialTracking;
 
@@ -307,8 +307,6 @@ export const JobOperation = ({
     attributeRecordModal.onClose();
     attributeRecordDeleteModal.onClose();
   };
-
-  
 
   return (
     <>
@@ -449,8 +447,8 @@ export const JobOperation = ({
                   <Heading size="h2">
                     {/* @ts-ignore */}
                     {trackedEntity?.attributes?.[`Operation ${operationId}`] ??
-                      1} 
-                    {" "}of  {operation.operationQuantity}
+                      1}{" "}
+                    of {operation.operationQuantity}
                   </Heading>
                 ) : (
                   <Heading size="h2">{operation.operationQuantity}</Heading>
@@ -948,18 +946,21 @@ export const JobOperation = ({
                               </Td>
 
                               <Td className="text-right">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  isDisabled={entity.id === trackedEntityId}
-                                  onClick={() => {
-                                    setParams({
-                                      trackedEntityId: entity.id,
-                                    });
-                                  }}
-                                >
-                                  Select
-                                </Button>
+                                <div className="flex justify-end gap-2">
+                                  <Copy text={entity.id} />
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    isDisabled={entity.id === trackedEntityId}
+                                    onClick={() => {
+                                      setParams({
+                                        trackedEntityId: entity.id,
+                                      });
+                                    }}
+                                  >
+                                    Select
+                                  </Button>
+                                </div>
                               </Td>
                             </Tr>
                           ))
@@ -1211,6 +1212,11 @@ export const JobOperation = ({
                 laborProductionEvent={laborProductionEvent}
                 machineProductionEvent={machineProductionEvent}
                 hasActiveEvents={hasActiveEvents}
+                isTrackedActivity={
+                  method?.requiresSerialTracking === true ||
+                  method?.requiresBatchTracking === true
+                }
+                trackedEntityId={trackedEntityId}
               />
               <div className="flex flex-row md:flex-col items-center gap-2 justify-center">
                 {/* <IconButtonWithTooltip
@@ -1222,7 +1228,15 @@ export const JobOperation = ({
                 /> 
                 */}
                 <IconButtonWithTooltip
-                  disabled={parentIsSerial && trackedEntities.some(entity => entity.id === trackedEntityId && `Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes))}
+                  disabled={
+                    parentIsSerial &&
+                    trackedEntities.some(
+                      (entity) =>
+                        entity.id === trackedEntityId &&
+                        `Operation ${operationId}` in
+                          (entity.attributes as TrackedEntityAttributes)
+                    )
+                  }
                   icon={
                     <FaTrash className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
@@ -1231,7 +1245,15 @@ export const JobOperation = ({
                 />
 
                 <IconButtonWithTooltip
-                  disabled={parentIsSerial && trackedEntities.some(entity => entity.id === trackedEntityId && `Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes))}
+                  disabled={
+                    parentIsSerial &&
+                    trackedEntities.some(
+                      (entity) =>
+                        entity.id === trackedEntityId &&
+                        `Operation ${operationId}` in
+                          (entity.attributes as TrackedEntityAttributes)
+                    )
+                  }
                   icon={
                     <FaPlus className="text-accent-foreground group-hover:text-accent-foreground/80" />
                   }
@@ -1939,14 +1961,21 @@ function useOperation(
   );
 
   const { operationId } = useParams();
-  const [availableEntities, setAvailableEntities] = useState<TrackedEntity[]>([]);
+  const [availableEntities, setAvailableEntities] = useState<TrackedEntity[]>(
+    []
+  );
   // show the serial selector with the remaining serial numbers for the operation
   useEffect(() => {
     if (trackedEntityParam) return;
-    const uncompletedEntities = trackedEntities.filter((entity) => !(`Operation ${operationId}` in (entity.attributes as TrackedEntityAttributes ?? {})));
-    if(uncompletedEntities.length > 0) serialModal.onOpen();
+    const uncompletedEntities = trackedEntities.filter(
+      (entity) =>
+        !(
+          `Operation ${operationId}` in
+          ((entity.attributes as TrackedEntityAttributes) ?? {})
+        )
+    );
+    if (uncompletedEntities.length > 0) serialModal.onOpen();
     setAvailableEntities(uncompletedEntities);
-    
   }, [trackedEntities, operationId, trackedEntityParam]);
 
   return {
@@ -2146,7 +2175,11 @@ function IconButtonWithTooltip({
   tooltip,
   disabled,
   ...props
-}: ComponentProps<"button"> & { icon: ReactNode; tooltip: string; disabled?: boolean }) {
+}: ComponentProps<"button"> & {
+  icon: ReactNode;
+  tooltip: string;
+  disabled?: boolean;
+}) {
   return (
     <ButtonWithTooltip
       {...props}
@@ -2260,6 +2293,8 @@ function StartStopButton({
   laborProductionEvent,
   machineProductionEvent,
   hasActiveEvents,
+  isTrackedActivity,
+  trackedEntityId,
   ...props
 }: ComponentProps<"button"> & {
   eventType: (typeof productionEventType)[number];
@@ -2269,7 +2304,10 @@ function StartStopButton({
   laborProductionEvent: ProductionEvent | undefined;
   machineProductionEvent: ProductionEvent | undefined;
   hasActiveEvents: boolean;
+  isTrackedActivity: boolean;
+  trackedEntityId: string | undefined;
 }) {
+  console.log(isTrackedActivity);
   const fetcher = useFetcher<ProductionEvent>();
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
@@ -2334,6 +2372,9 @@ function StartStopButton({
       fetcher={fetcher}
     >
       <Hidden name="id" value={id} />
+      {isTrackedActivity && (
+        <Hidden name="trackedEntityId" value={trackedEntityId} />
+      )}
       <Hidden name="jobOperationId" value={operation.id} />
       <Hidden name="timezone" />
       <Hidden
@@ -2445,7 +2486,9 @@ function QuantityModal({
     return (
       parentIsSerial &&
       materials.some(
-        (material) => material.jobOperationId === operation.id && (material?.quantityIssued ?? 0) < material.quantity
+        (material) =>
+          material.jobOperationId === operation.id &&
+          (material?.quantityIssued ?? 0) < material.quantity
       )
     );
   }, [materials, parentIsSerial, operation.id]);
@@ -2589,7 +2632,7 @@ function SerialSelectorModal({
   onSelect: (entity: TrackedEntity) => void;
 }) {
   const [serial, setSerial] = useState("");
-  
+
   return (
     <Modal
       open
@@ -2607,7 +2650,7 @@ function SerialSelectorModal({
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-        <Tabs defaultValue="scan">
+          <Tabs defaultValue="scan">
             <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="scan">
                 <LuQrCode className="mr-2" />
@@ -2628,13 +2671,15 @@ function SerialSelectorModal({
                   ) : (
                     availableEntities.map((entity) => {
                       return (
-                        <HStack key={entity.id} className="w-full justify-between p-4 border rounded-md">
+                        <HStack
+                          key={entity.id}
+                          className="w-full justify-between p-4 border rounded-md"
+                        >
                           <VStack spacing={1} className="w-full items-start">
                             <p className="text-sm">{entity.id}</p>
-                            
                           </VStack>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="secondary"
                             onClick={() => onSelect(entity)}
                           >
@@ -2650,13 +2695,13 @@ function SerialSelectorModal({
             <TabsContent value="scan" className="mt-4">
               <VStack spacing={4}>
                 <InputGroup>
-                  <Input 
+                  <Input
                     autoFocus
-                    placeholder="Scan or enter serial number" 
+                    placeholder="Scan or enter serial number"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         const entity = availableEntities.find(
-                          entity => entity.id === e.currentTarget.value
+                          (entity) => entity.id === e.currentTarget.value
                         );
                         if (entity) {
                           onSelect(entity);
@@ -2667,17 +2712,16 @@ function SerialSelectorModal({
                     onChange={(e) => setSerial(e.target.value)}
                   />
                   <InputRightElement>
-                    {serial && (
-                      availableEntities.some(entity => entity.id === serial) ? (
+                    {serial &&
+                      (availableEntities.some(
+                        (entity) => entity.id === serial
+                      ) ? (
                         <LuCheck className="text-green-500" />
                       ) : (
                         <LuX className="text-red-500" />
-                      )
-                    )}
-                    
+                      ))}
                   </InputRightElement>
                 </InputGroup>
-                
               </VStack>
             </TabsContent>
           </Tabs>
@@ -2690,7 +2734,6 @@ function SerialSelectorModal({
       </ModalContent>
     </Modal>
   );
-
 }
 
 function SerialIssueModal({
@@ -3913,6 +3956,10 @@ function RecordModal({
     }
   }, [fetcher.data?.success, onClose]);
 
+  const [booleanControlled, setBooleanControlled] = useState(
+    attribute?.jobOperationAttributeRecord?.booleanValue ?? false
+  );
+
   return (
     <Modal
       open
@@ -3936,8 +3983,6 @@ function RecordModal({
             numericValue:
               attribute?.jobOperationAttributeRecord?.numericValue ?? 0,
             userValue: attribute?.jobOperationAttributeRecord?.userValue ?? "",
-            booleanValue:
-              attribute?.jobOperationAttributeRecord?.booleanValue ?? false,
           }}
           fetcher={fetcher}
         >
@@ -3947,6 +3992,12 @@ function RecordModal({
           </ModalHeader>
           <ModalBody>
             <Hidden name="jobOperationAttributeId" />
+            {attribute.type === "Checkbox" && (
+              <Hidden
+                name="booleanValue"
+                value={booleanControlled ? "true" : "false"}
+              />
+            )}
             {attribute.type === "File" && (
               <Hidden name="value" value={filePath ?? ""} />
             )}
@@ -3961,7 +4012,10 @@ function RecordModal({
                 <DateTimePicker name="value" label="" />
               )}
               {attribute.type === "Checkbox" && (
-                <Boolean name="booleanValue" label="" />
+                <Switch
+                  checked={booleanControlled}
+                  onCheckedChange={(checked) => setBooleanControlled(!!checked)}
+                />
               )}
               {attribute.type === "Person" && (
                 <Combobox name="userValue" label="" options={employeeOptions} />

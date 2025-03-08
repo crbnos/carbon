@@ -34,17 +34,22 @@ export async function action({ request }: ActionFunctionArgs) {
     action: productionAction,
     timezone,
     hasActiveEvents,
+    trackedEntityId,
     ...data
   } = validation.data;
 
   if (productionAction === "Start") {
-    const startEvent = await startProductionEvent(client, {
-      ...data,
-      startTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
-      employeeId: userId,
-      companyId,
-      createdBy: userId,
-    });
+    const startEvent = await startProductionEvent(
+      client,
+      {
+        ...data,
+        startTime: now(timezone ?? getLocalTimeZone()).toAbsoluteString(),
+        employeeId: userId,
+        companyId,
+        createdBy: userId,
+      },
+      trackedEntityId
+    );
 
     if (startEvent.error) {
       return json(
