@@ -9,12 +9,9 @@ import type {
   productionEventValidator,
   scrapQuantityValidator,
 } from "./models";
-import type {
-  BaseOperationWithDetails,
-  Job,
-  StorageItem,
-} from "./types";
+import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
 import { TrackedActivityAttributes } from "@carbon/utils";
+import { nanoid } from "nanoid";
 
 export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
@@ -263,7 +260,8 @@ export async function getJobMaterialsByOperationId(
 
     return (
       materials.data?.map((material) => {
-        if (!material.requiresSerialTracking) return material;
+        if (!material.requiresSerialTracking && !material.requiresBatchTracking)
+          return material;
         const issuedForTrackedParent =
           trackedInputs.data
             ?.filter(
@@ -580,7 +578,66 @@ export async function startProductionEvent(
     employeeId: string;
     companyId: string;
     createdBy: string;
-  }
+  },
+  trackedEntityId: string | undefined
 ) {
+  if (trackedEntityId) {
+    const activityId = nanoid();
+
+    const [eventInsert, operation] = await Promise.all([
+      client.from("productionEvent").insert(data).select("id").single(),
+      client
+        .from("jobOperation")
+        .select("*")
+        .eq("id", data.jobOperationId)
+        .single(),
+    ]);
+
+    if (eventInsert.error) return eventInsert;
+    if (operation.error) return operation;
+
+    const trackedActivityInsert = await client
+      .from("trackedActivity")
+      .insert({
+        id: activityId,
+        type: `${operation.data?.description} (${data.type})`,
+        sourceDocument: "Production Event",
+        sourceDocumentId: eventInsert.data?.id,
+        attributes: {
+          "Production Event": eventInsert.data?.id,
+          "Work Center": data.workCenterId,
+          "Job Operation": data.jobOperationId,
+          Employee: data.employeeId,
+        },
+        companyId: data.companyId,
+        createdBy: data.createdBy,
+      })
+      .select("id")
+      .single();
+
+    if (trackedActivityInsert.error) {
+      console.error(trackedActivityInsert.error);
+      return trackedActivityInsert;
+    }
+
+    const trackedActivityOutputInsert = await client
+      .from("trackedActivityOutput")
+      .insert({
+        trackedActivityId: activityId,
+        trackedEntityId,
+        quantity: 1,
+        companyId: data.companyId,
+        createdBy: data.createdBy,
+        entityType: "Production Event",
+      });
+
+    if (trackedActivityOutputInsert.error) {
+      console.error(trackedActivityOutputInsert.error);
+      return trackedActivityOutputInsert;
+    }
+
+    return eventInsert;
+  }
+
   return client.from("productionEvent").insert(data).select("*");
 }

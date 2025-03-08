@@ -287,9 +287,9 @@ serve(async (req: Request) => {
 
         const relatedTrackedEntities = trackedEntities.data.filter(
           (trackedEntity) =>
-            `Operation ${row.jobOperationId}` in (trackedEntity.attributes as TrackedEntityAttributes)
+            `Operation ${row.jobOperationId}` in
+            (trackedEntity.attributes as TrackedEntityAttributes)
         );
-         
 
         let newEntityId: string | undefined;
         await db.transaction().execute(async (trx) => {
@@ -314,33 +314,33 @@ serve(async (req: Request) => {
           }
 
           if (trackedEntity.status !== "Consumed") {
-            const activityId = nanoid();
-            await trx
-              .insertInto("trackedActivity")
-              .values({
-                id: activityId,
-                type: "Complete",
-                sourceDocument: "Job Operation",
-                sourceDocumentId: row.jobOperationId,
-                attributes: {
-                  "Job Operation": row.jobOperationId,
-                  Employee: userId,
-                },
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
+            // const activityId = nanoid();
+            // await trx
+            //   .insertInto("trackedActivity")
+            //   .values({
+            //     id: activityId,
+            //     type: "Complete",
+            //     sourceDocument: "Job Operation",
+            //     sourceDocumentId: row.jobOperationId,
+            //     attributes: {
+            //       "Job Operation": row.jobOperationId,
+            //       Employee: userId,
+            //     },
+            //     companyId,
+            //     createdBy: userId,
+            //   })
+            //   .execute();
 
-            await trx
-              .insertInto("trackedActivityOutput")
-              .values({
-                trackedActivityId: activityId,
-                trackedEntityId: trackedEntityId,
-                quantity: 1,
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
+            // await trx
+            //   .insertInto("trackedActivityOutput")
+            //   .values({
+            //     trackedActivityId: activityId,
+            //     trackedEntityId: trackedEntityId,
+            //     quantity: 1,
+            //     companyId,
+            //     createdBy: userId,
+            //   })
+            //   .execute();
             // Update the current trackedEntity to Complete
             await trx
               .updateTable("trackedEntity")
@@ -704,6 +704,7 @@ serve(async (req: Request) => {
                     "Original Quantity": Number(trackedEntity.quantity),
                     "Consumed Quantity": quantity,
                     "Remaining Quantity": remainingQuantity,
+                    "Split Entity ID": newTrackedEntityId,
                   },
                   companyId,
                   createdBy: userId,
@@ -751,7 +752,7 @@ serve(async (req: Request) => {
                     "Split Entity ID": newTrackedEntityId,
                   },
                 })
-                .where("id", "=", parentTrackedEntityId)
+                .where("id", "=", trackedEntityId)
                 .execute();
 
               // Record outputs from split

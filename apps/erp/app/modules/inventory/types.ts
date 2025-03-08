@@ -64,3 +64,56 @@ export type ShippingMethod = NonNullable<
 
 export type ShipmentSourceDocument =
   Database["public"]["Enums"]["shipmentSourceDocument"];
+
+export interface TrackedEntity {
+  id: string;
+  quantity: number;
+  sourceDocument: string;
+  sourceDocumentId: string;
+  sourceDocumentReadableId: string;
+  attributes: Record<string, any>;
+}
+
+export interface Activity {
+  id: string;
+  type: string;
+  sourceDocument?: string;
+  sourceDocumentId?: string;
+  sourceDocumentReadableId?: string;
+  attributes: Record<string, any>;
+}
+
+export interface ActivityInput {
+  trackedActivityId: string;
+  trackedEntityId: string;
+  quantity: number;
+  entityType: string;
+}
+
+export interface ActivityOutput {
+  trackedActivityId: string;
+  trackedEntityId: string;
+  quantity: number;
+}
+
+export interface GraphNode {
+  id: string;
+  type: "entity" | "activity";
+  data: TrackedEntity | Activity;
+  x?: number;
+  y?: number;
+  depth?: number;
+  parentId: string | null;
+}
+
+export interface GraphLink {
+  source: string;
+  target: string;
+  type: "input" | "output";
+  quantity: number;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  links: GraphLink[];
+}

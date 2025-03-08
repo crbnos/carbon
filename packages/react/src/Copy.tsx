@@ -1,14 +1,10 @@
-import {
-  Button,
-  cn,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@carbon/react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { LuCheck, LuCopy } from "react-icons/lu";
-import { copyToClipboard } from "~/utils/string";
+import { copyToClipboard } from "./utils/dom";
+import { cn } from "./utils/cn";
+import { Button } from "./Button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 
 const Copy = ({
   text,

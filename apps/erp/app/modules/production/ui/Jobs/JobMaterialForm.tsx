@@ -5,6 +5,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Copy,
   toast,
   VStack,
 } from "@carbon/react";
@@ -19,7 +20,6 @@ import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
-import { Copy } from "~/components";
 import {
   DefaultMethodType,
   Hidden,

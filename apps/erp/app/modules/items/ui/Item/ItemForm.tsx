@@ -8,6 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -19,7 +20,7 @@ import { Link, useFetcher } from "@remix-run/react";
 import { useState } from "react";
 import { LuEllipsisVertical } from "react-icons/lu";
 import type { z } from "zod";
-import { Copy, TrackingTypeIcon } from "~/components";
+import { TrackingTypeIcon } from "~/components";
 import {
   Boolean,
   DefaultMethodType,

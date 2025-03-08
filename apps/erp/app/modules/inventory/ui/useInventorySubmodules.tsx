@@ -1,4 +1,4 @@
-import { LuHandCoins, LuTally5, LuTruck } from "react-icons/lu";
+import { LuHandCoins, LuNetwork, LuTally5, LuTruck } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -6,7 +6,7 @@ import { path } from "~/utils/path";
 
 const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
-    name: "Track",
+    name: "Traceability",
     routes: [
       {
         name: "Quantities",
@@ -14,6 +14,12 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
         role: "employee",
         icon: <LuTally5 />,
         table: "inventory",
+      },
+      {
+        name: "Traceability",
+        to: path.to.traceability,
+        role: "employee",
+        icon: <LuNetwork />,
       },
     ],
   },

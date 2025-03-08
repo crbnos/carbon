@@ -1,5 +1,6 @@
 import {
   Badge,
+  Copy,
   HStack,
   HoverCard,
   HoverCardContent,
@@ -17,7 +18,7 @@ import {
 import { useFetchers, useNavigate } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
-import { Copy, MethodIcon, MethodItemTypeIcon } from "~/components";
+import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";

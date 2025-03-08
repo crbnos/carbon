@@ -4,7 +4,6 @@ import AvatarMenu from "./AvatarMenu";
 import { BreadcrumbItem, BreadcrumbLink, Breadcrumbs } from "./Breadcrumb";
 import CadModel from "./CadModel";
 import Contact from "./Contact";
-import Copy from "./Copy";
 import CustomerAvatar from "./CustomerAvatar";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
 import DocumentPreview from "./DocumentPreview";
@@ -41,7 +40,6 @@ export {
   Breadcrumbs,
   CadModel,
   Contact,
-  Copy,
   CustomerAvatar,
   DirectionAwareTabs,
   DocumentPreview,

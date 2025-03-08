@@ -7,6 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -35,7 +36,6 @@ import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { LuQrCode } from "react-icons/lu";
-import { Copy } from "~/components";
 
 type InventoryShelvesProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
