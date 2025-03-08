@@ -36,7 +36,8 @@ export async function finishJobOperation(
       endTime: new Date().toISOString(),
       updatedBy: args.userId,
     })
-    .eq("jobOperationId", args.jobOperationId);
+    .eq("jobOperationId", args.jobOperationId)
+    .is("endTime", null);
 
   if (closeProductionEvents.error) {
     return closeProductionEvents;
