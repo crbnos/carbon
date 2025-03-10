@@ -17,16 +17,17 @@ import {
   TrackedActivityAttributes,
   TrackedEntityAttributes,
 } from "@carbon/utils";
-import { useLoaderData, useNavigation } from "@remix-run/react";
+import { Link, useLoaderData, useNavigation } from "@remix-run/react";
 import { json, LoaderFunctionArgs, redirect } from "@vercel/remix";
 import { ParentSize } from "@visx/responsive";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { LuLink, LuCopy } from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
+  Empty,
   Hyperlink,
   SupplierAvatar,
 } from "~/components";
@@ -121,7 +122,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     return json({
       entities: [
-        entity?.data,
+        ...(entity?.data ? [entity.data] : []),
         ...(descendants?.data ?? []),
         ...(ancestors?.data ?? []),
       ],
@@ -229,6 +230,10 @@ export default function TraceabilityRoute() {
     links: [],
   });
 
+  const isEmpty = useMemo(() => {
+    return entities.length === 0 && activities.length === 0;
+  }, [entities, activities]);
+
   useEffect(() => {
     // Cast the data from the loader to the correct types
     const validEntities = entities.filter(
@@ -273,6 +278,15 @@ export default function TraceabilityRoute() {
         </HStack>
         <div className="flex flex-1 w-full h-full overflow-y-auto scrollbar-hide p-4">
           <div className="w-full max-w-full overflow-x-auto text-muted-foreground">
+            {isEmpty ? (
+              <Empty className="h-full w-full">
+                <Button asChild>
+                  <Link to={path.to.traceability}>
+                    Back to traceability
+                  </Link>
+                </Button>
+              </Empty>
+            ): (
             <ParentSize>
               {({ width, height }) => (
                 <Loading isLoading={!isHydrated || navigation.state !== "idle"}>
@@ -287,15 +301,18 @@ export default function TraceabilityRoute() {
                 </Loading>
               )}
             </ParentSize>
+            )}
           </div>
         </div>
       </VStack>
-      <TraceabilitySidebar
+      {!isEmpty && (
+
+        <TraceabilitySidebar
         key={`sidebar-${selectedId}`}
         entity={
           entities
-            .filter(Boolean)
-            .find((entity) => entity?.id === selectedId) as TrackedEntity | null
+          .filter(Boolean)
+          .find((entity) => entity?.id === selectedId) as TrackedEntity | null
         }
         activity={
           activities
@@ -303,6 +320,7 @@ export default function TraceabilityRoute() {
             .find((activity) => activity?.id === selectedId) as Activity | null
         }
       />
+    )}
     </div>
   );
 }
@@ -315,9 +333,9 @@ function TraceabilitySidebar({
 }) {
   const selectedNode = entity ?? activity;
   const selectedNodeType = entity ? "entity" : "activity";
-  const selectedNodeAttributes = entity
-    ? entity.attributes ?? {}
-    : activity?.attributes ?? {};
+  const selectedNodeAttributes = (entity
+    ? (entity.attributes ?? {}) 
+    : (activity?.attributes ?? {})) as Record<string, any>;
 
   return (
     <VStack
@@ -425,7 +443,7 @@ function TraceabilitySidebar({
               case "Purchase Order":
                 return <PurchaseOrderAttribute purchaseOrderId={value} />;
               case "Purchase Order Line":
-                null;
+                return null;
               case "Receipt":
                 return <ReceiptAttribute receiptId={value} />;
               case "Receipt Line":
@@ -437,7 +455,7 @@ function TraceabilitySidebar({
               case "Shipment":
                 return <ShipmentAttribute shipmentId={value} />;
               case "Shipment Line":
-                null;
+                return null;
               case "Production Event":
                 return (
                   <JobProductionEvent

@@ -107,10 +107,22 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
     case "Positive Adjmt.":
       return `made a positive adjustment of ${ledgerRecord.quantity}${
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf?.name}` : ""
+      }${
+        ledgerRecord.trackedEntityId
+          ? ` for ${
+              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
+            } ${ledgerRecord.trackedEntityId}`
+          : ""
       }`;
     case "Negative Adjmt.":
       return `made a negative adjustment of ${-1 * ledgerRecord.quantity}${
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
+      }${
+        ledgerRecord.trackedEntityId
+          ? ` for ${
+              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
+            } ${ledgerRecord.trackedEntityId}`
+          : ""
       }`;
     default:
       return "";
