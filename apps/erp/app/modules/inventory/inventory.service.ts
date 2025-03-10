@@ -483,6 +483,34 @@ export async function getShippingTermsList(
     .order("name", { ascending: true });
 }
 
+export async function getTrackedEntities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client
+    .from("trackedEntity")
+    .select("*", {
+      count: "exact",
+    })
+    .eq("companyId", companyId)
+    .neq("status", "Reserved");
+
+  if (args.search) {
+    query = query.or(
+      `id.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "sourceDocumentReadableId", ascending: true },
+  ]);
+  return query;
+}
+
+
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {

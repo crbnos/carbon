@@ -1068,6 +1068,7 @@ export const path = {
     tools: `${x}/items/tools`,
     traceability: `${x}/traceability`,
     traceabilityGraph: `${x}/traceability/graph`,
+    trackedEntities: `${x}/inventory/tracked-entities`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),

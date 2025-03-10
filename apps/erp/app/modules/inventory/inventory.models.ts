@@ -42,6 +42,13 @@ export const itemLedgerDocumentTypes = [
   "Direct Transfer",
 ] as const;
 
+export const trackedEntityStatus = [
+  "Available",
+  "Consumed",
+  "On Hold",
+  "Reserved",
+] as const;
+
 export const batchPropertyValidator = z
   .object({
     id: zfd.text(z.string().optional()),

@@ -10,6 +10,7 @@ import type {
   getShipmentLines,
   getShippingMethods,
   getShipmentTracking,
+  getTrackedEntities,
 } from "./inventory.service";
 
 export type BatchProperty = NonNullable<
@@ -65,15 +66,9 @@ export type ShippingMethod = NonNullable<
 export type ShipmentSourceDocument =
   Database["public"]["Enums"]["shipmentSourceDocument"];
 
-export interface TrackedEntity {
-  id: string;
-  quantity: number;
-  status: string;
-  sourceDocument: string;
-  sourceDocumentId: string;
-  sourceDocumentReadableId: string;
-  attributes: Record<string, any>;
-}
+export type TrackedEntity = NonNullable<
+  Awaited<ReturnType<typeof getTrackedEntities>>["data"]
+>[number];
 
 export interface Activity {
   id: string;

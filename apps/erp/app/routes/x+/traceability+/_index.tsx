@@ -75,7 +75,7 @@ export default function TraceabilityRoute() {
     <div className="flex w-full h-full flex-1 items-center justify-center bg-card pt-[-49px]">
       <div className="flex flex-col items-center gap-4">
         <div className="relative">
-          <Input
+          <TrackingInput
             placeholder="Scan or enter a tracking number"
             className="pr-10"
             value={inputValue}
@@ -113,7 +113,7 @@ export default function TraceabilityRoute() {
   );
 }
 
-const Input = forwardRef<HTMLInputElement, ComponentProps<"input">>(
+const TrackingInput = forwardRef<HTMLInputElement, ComponentProps<"input">>(
   ({ className, ...props }, ref) => {
     return (
       <input
@@ -127,4 +127,4 @@ const Input = forwardRef<HTMLInputElement, ComponentProps<"input">>(
     );
   }
 );
-Input.displayName = "Input";
+TrackingInput.displayName = "TrackingInput";
