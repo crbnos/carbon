@@ -68,6 +68,8 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       companyId
     );
 
+    
+
     if (
       routeData?.shipmentLines.length === 0 ||
       routeData?.shipmentLines.every((line) => line.shippedQuantity === 0)
@@ -82,20 +84,18 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     }
 
     routeData?.shipmentLines.forEach((line: ShipmentLine) => {
+      
       if (line.requiresBatchTracking) {
         const trackedEntity = shipmentLineTracking.data?.find((tracking) => {
           const attributes = tracking.attributes as TrackedEntityAttributes;
           return attributes["Shipment Line"] === line.id;
         });
 
-        const attributes = trackedEntity?.attributes as
-          | TrackedEntityAttributes
-          | undefined;
-        if (!attributes?.["Batch Number"]) {
+        if (trackedEntity?.status !== "Available") {
           errors.push({
             itemReadableId: line.itemReadableId,
             shippedQuantity: line.shippedQuantity,
-            shippedQuantityError: "Batch number is required",
+            shippedQuantityError: "Tracked entity is not available",
           });
         }
       }
@@ -108,18 +108,17 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           }
         );
 
-        const quantityWithSerial = trackedEntities?.reduce((acc, tracking) => {
-          const attributes = tracking.attributes as TrackedEntityAttributes;
-          const serialNumber = attributes["Serial Number"];
+        const quantityAvailable = trackedEntities?.reduce((acc, tracking) => {
+          const trackingQuantity = Number(tracking.quantity);
 
-          return acc + (serialNumber ? 1 : 0);
+          return acc + (tracking.status === "Available" ? trackingQuantity : 0);
         }, 0);
 
-        if (quantityWithSerial !== line.shippedQuantity) {
+        if (quantityAvailable !== line.shippedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
             shippedQuantity: line.shippedQuantity,
-            shippedQuantityError: "Serial numbers are missing",
+            shippedQuantityError: "Serial numbers are missing or unavailable",
           });
         }
       }

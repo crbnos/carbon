@@ -388,6 +388,7 @@ serve(async (req: Request) => {
                 sourceDocumentId: shipmentId,
                 sourceDocumentReadableId: shipment.data.shipmentId,
                 attributes: {
+                  Shipment: shipmentId,
                   "Sales Order": salesOrder.data.id,
                 },
                 companyId,
@@ -430,7 +431,6 @@ serve(async (req: Request) => {
                   trackedActivityId: splitActivityId,
                   trackedEntityId: splitInfo.originalEntityId,
                   quantity: splitInfo.originalQuantity,
-                  entityType: "Item",
                   companyId: splitInfo.companyId,
                   createdBy: userId,
                   createdAt: today,
@@ -626,7 +626,6 @@ serve(async (req: Request) => {
                     trackedActivityId,
                     trackedEntityId: id,
                     quantity: update.quantity ?? 0,
-                    entityType: "Item",
                     companyId,
                     createdBy: userId,
                     createdAt: today,

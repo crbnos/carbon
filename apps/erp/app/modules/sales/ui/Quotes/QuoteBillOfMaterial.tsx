@@ -114,11 +114,15 @@ function makeItem(
     checked: checked,
     details: (
       <HStack spacing={2}>
-        {["Batch", "Serial"].includes(material.item.itemTrackingType) && (
+        {["Batch", "Serial"].includes(
+          material.item?.itemTrackingType ?? ""
+        ) && (
           <Tooltip>
             <TooltipTrigger>
               <Badge variant="secondary">
-                <TrackingTypeIcon type={material.item.itemTrackingType} />
+                <TrackingTypeIcon
+                  type={material.item?.itemTrackingType ?? ""}
+                />
               </Badge>
             </TooltipTrigger>
             <TooltipContent>

@@ -1,12 +1,36 @@
+import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { HStack, Heading, VStack } from "@carbon/react";
+import {
+  Button,
+  HStack,
+  Heading,
+  Loading,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  VStack,
+  useHydrated,
+  useMount,
+} from "@carbon/react";
 import { useUrlParams } from "@carbon/remix";
-import { useLoaderData } from "@remix-run/react";
-import { json, LoaderFunctionArgs } from "@vercel/remix";
+import {
+  TrackedActivityAttributes,
+  TrackedEntityAttributes,
+} from "@carbon/utils";
+import { useLoaderData, useNavigation } from "@remix-run/react";
+import { json, LoaderFunctionArgs, redirect } from "@vercel/remix";
 import { ParentSize } from "@visx/responsive";
 import * as d3 from "d3";
+import { motion } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
-import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
+import { LuLink, LuCopy } from "react-icons/lu";
+import {
+  CustomerAvatar,
+  EmployeeAvatar,
+  Hyperlink,
+  SupplierAvatar,
+} from "~/components";
+import { useWorkCenters } from "~/components/Form/WorkCenter";
 import {
   GraphData,
   GraphNode,
@@ -16,9 +40,18 @@ import {
   ActivityOutput,
   Activity,
 } from "~/modules/inventory";
+import { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+import { capitalize, copyToClipboard } from "~/utils/string";
+
+export const handle: Handle = {
+  breadcrumb: "Traceability",
+  to: path.to.traceability,
+  module: "inventory",
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     view: "inventory",
     bypassRls: true,
   });
@@ -26,73 +59,164 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
   const trackedEntityId = searchParams.get("trackedEntityId");
+  const trackedActivityId = searchParams.get("trackedActivityId");
 
-  if (!trackedEntityId) {
-    throw new Error("No tracked entity id provided");
+  if (!trackedEntityId && !trackedActivityId) {
+    throw redirect(path.to.traceability);
   }
 
-  const [entity, descendants, ancestors] = await Promise.all([
-    client.from("trackedEntity").select("*").eq("id", trackedEntityId).single(),
-    client.rpc("get_direct_descendants_of_tracked_entity_strict", {
-      p_tracked_entity_id: trackedEntityId,
-    }),
-    client.rpc("get_direct_ancestors_of_tracked_entity_strict", {
-      p_tracked_entity_id: trackedEntityId,
-    }),
-  ]);
+  if (trackedEntityId) {
+    const [entity, descendants, ancestors] = await Promise.all([
+      client
+        .from("trackedEntity")
+        .select("*")
+        .eq("id", trackedEntityId)
+        .single(),
+      client.rpc("get_direct_descendants_of_tracked_entity_strict", {
+        p_tracked_entity_id: trackedEntityId,
+      }),
+      client.rpc("get_direct_ancestors_of_tracked_entity_strict", {
+        p_tracked_entity_id: trackedEntityId,
+      }),
+    ]);
 
-  const [inputs, outputs] = await Promise.all([
-    client
-      .from("trackedActivityInput")
+    const [inputs, outputs] = await Promise.all([
+      client
+        .from("trackedActivityInput")
+        .select("*")
+        .in(
+          "trackedEntityId",
+          Array.from(
+            new Set([
+              ...(descendants?.data?.map((descendant) => descendant.id) || []),
+              trackedEntityId,
+            ])
+          )
+        ),
+      client
+        .from("trackedActivityOutput")
+        .select("*")
+        .in(
+          "trackedEntityId",
+          Array.from(
+            new Set([
+              trackedEntityId,
+              ...(ancestors?.data?.map((ancestor) => ancestor.id) || []),
+            ])
+          )
+        ),
+    ]);
+
+    const uniqueActivityIds = Array.from(
+      new Set([
+        ...(inputs?.data?.map((input) => input.trackedActivityId) || []),
+        ...(outputs?.data?.map((output) => output.trackedActivityId) || []),
+      ])
+    );
+
+    const activities = await client
+      .from("trackedActivity")
       .select("*")
-      .in(
-        "trackedEntityId",
-        Array.from(
-          new Set([
-            ...(descendants?.data?.map((descendant) => descendant.id) || []),
-            trackedEntityId,
-          ])
-        )
-      ),
-    client
-      .from("trackedActivityOutput")
+      .in("id", uniqueActivityIds);
+
+    return json({
+      entities: [
+        entity?.data,
+        ...(descendants?.data ?? []),
+        ...(ancestors?.data ?? []),
+      ],
+      inputs: inputs?.data ?? [],
+      outputs: outputs?.data ?? [],
+      activities: activities?.data ?? [],
+    });
+  }
+
+  if (trackedActivityId) {
+    // Get the initial activity and its direct inputs/outputs
+    const [activity, directInputs, directOutputs] = await Promise.all([
+      client.from("trackedActivity").select("*").eq("id", trackedActivityId),
+      client
+        .from("trackedActivityInput")
+        .select("*")
+        .eq("trackedActivityId", trackedActivityId),
+      client
+        .from("trackedActivityOutput")
+        .select("*")
+        .eq("trackedActivityId", trackedActivityId),
+    ]);
+
+    // Get the direct entities connected to this activity
+    const directEntityIds = Array.from(
+      new Set([
+        ...(directInputs?.data?.map((input) => input.trackedEntityId) || []),
+        ...(directOutputs?.data?.map((output) => output.trackedEntityId) || []),
+      ])
+    );
+
+    // Get the direct entities
+    const directEntities = await client
+      .from("trackedEntity")
       .select("*")
-      .in(
-        "trackedEntityId",
-        Array.from(
-          new Set([
-            trackedEntityId,
-            ...(ancestors?.data?.map((ancestor) => ancestor.id) || []),
-          ])
-        )
-      ),
-  ]);
+      .in("id", directEntityIds);
 
-  const uniqueActivityIds = Array.from(
-    new Set([
-      ...(inputs?.data?.map((input) => input.trackedActivityId) || []),
-      ...(outputs?.data?.map((output) => output.trackedActivityId) || []),
-    ])
-  );
+    // Get additional activities connected to these entities
+    const [additionalInputs, additionalOutputs] = await Promise.all([
+      client
+        .from("trackedActivityInput")
+        .select("*")
+        .in("trackedEntityId", directEntityIds)
+        .neq("trackedActivityId", trackedActivityId),
+      client
+        .from("trackedActivityOutput")
+        .select("*")
+        .in("trackedEntityId", directEntityIds)
+        .neq("trackedActivityId", trackedActivityId),
+    ]);
 
-  const activities = await client
-    .from("trackedActivity")
-    .select("*")
-    .in("id", uniqueActivityIds);
+    // Get additional activity IDs
+    const additionalActivityIds = Array.from(
+      new Set([
+        ...(additionalInputs?.data?.map((input) => input.trackedActivityId) ||
+          []),
+        ...(additionalOutputs?.data?.map(
+          (output) => output.trackedActivityId
+        ) || []),
+      ])
+    );
 
-  return json({
-    trackedEntityId,
-    entities: [
-      entity?.data,
-      ...(descendants?.data ?? []),
-      ...(ancestors?.data ?? []),
-    ],
-    inputs: inputs?.data ?? [],
-    outputs: outputs?.data ?? [],
-    activities: activities?.data ?? [],
-  });
+    // Get additional activities
+    const additionalActivities = await client
+      .from("trackedActivity")
+      .select("*")
+      .in("id", additionalActivityIds);
+
+    // Combine all inputs and outputs
+    const allInputs = [
+      ...(directInputs?.data || []),
+      ...(additionalInputs?.data || []),
+    ];
+
+    const allOutputs = [
+      ...(directOutputs?.data || []),
+      ...(additionalOutputs?.data || []),
+    ];
+
+    // Combine all activities
+    const allActivities = [
+      ...(activity?.data || []),
+      ...(additionalActivities?.data || []),
+    ];
+
+    return json({
+      entities: directEntities?.data ?? [],
+      inputs: allInputs,
+      outputs: allOutputs,
+      activities: allActivities,
+    });
+  }
+
+  throw new Error("Invalid query parameters");
 }
-
 export default function TraceabilityRoute() {
   const [params, setParams] = useUrlParams();
   const selectedId =
@@ -119,6 +243,10 @@ export default function TraceabilityRoute() {
   }, [entities, activities, inputs, outputs]);
 
   const handleNodeClick = (node: GraphNode) => {
+    if (node.data.id === selectedId) {
+      return;
+    }
+
     if (node.type === "entity") {
       setParams({
         trackedEntityId: node.data.id,
@@ -132,12 +260,14 @@ export default function TraceabilityRoute() {
     }
   };
 
+  const isHydrated = useHydrated();
+  const navigation = useNavigation();
+
   return (
-    <div className="bg-card h-[calc(100dvh-49px)] w-full overflow-hidden scrollbar-hide">
-      <VStack className="flex-1 w-full h-full">
+    <div className="flex bg-card h-[calc(100dvh-49px)] w-full overflow-hidden scrollbar-hide">
+      <VStack className="flex-1 min-w-0 h-full">
         <HStack className="px-4 py-6 justify-between w-full relative">
           <HStack spacing={1}>
-            <CollapsibleSidebarTrigger />
             <Heading size={"h2"}>Traceability</Heading>
           </HStack>
         </HStack>
@@ -145,23 +275,449 @@ export default function TraceabilityRoute() {
           <div className="w-full max-w-full overflow-x-auto text-muted-foreground">
             <ParentSize>
               {({ width, height }) => (
-                <TraceabilityGraph
-                  key={`${selectedId}`}
-                  data={graphData}
-                  onNodeClick={handleNodeClick}
-                  selectedId={selectedId}
-                  width={width}
-                  height={height}
-                />
+                <Loading isLoading={!isHydrated || navigation.state !== "idle"}>
+                  <TraceabilityGraph
+                    key={`graph-${selectedId}`}
+                    data={graphData}
+                    onNodeClick={handleNodeClick}
+                    selectedId={selectedId}
+                    width={width}
+                    height={height}
+                  />
+                </Loading>
               )}
             </ParentSize>
           </div>
         </div>
       </VStack>
+      <TraceabilitySidebar
+        key={`sidebar-${selectedId}`}
+        entity={
+          entities
+            .filter(Boolean)
+            .find((entity) => entity?.id === selectedId) as TrackedEntity | null
+        }
+        activity={
+          activities
+            .filter(Boolean)
+            .find((activity) => activity?.id === selectedId) as Activity | null
+        }
+      />
     </div>
   );
 }
+function TraceabilitySidebar({
+  entity,
+  activity,
+}: {
+  entity: TrackedEntity | null;
+  activity: Activity | null;
+}) {
+  const selectedNode = entity ?? activity;
+  const selectedNodeType = entity ? "entity" : "activity";
+  const selectedNodeAttributes = entity
+    ? entity.attributes ?? {}
+    : activity?.attributes ?? {};
 
+  return (
+    <VStack
+      spacing={4}
+      className="w-96 flex-shrink-0 bg-sidebar h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+    >
+      <VStack spacing={4}>
+        <HStack className="w-full justify-between">
+          <h3 className="text-xs text-muted-foreground">Attributes</h3>
+          <HStack spacing={1}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label="Link"
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(window.location.href)}
+                >
+                  <LuLink className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Copy link</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label="Copy"
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(selectedNode?.id ?? "")}
+                >
+                  <LuCopy className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>Copy {capitalize(selectedNodeType)} ID</span>
+              </TooltipContent>
+            </Tooltip>
+          </HStack>
+        </HStack>
+        <VStack spacing={0}>
+          <span className="text-sm font-medium">
+            {entity
+              ? entity.sourceDocumentReadableId
+              : activity
+              ? activity.type
+              : "No selection"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {selectedNode?.id}
+          </span>
+        </VStack>
+
+        {selectedNodeType === "entity" && (
+          <VStack spacing={0}>
+            <span className="text-xs text-muted-foreground">Status</span>
+            <span className="text-sm">{entity?.status}</span>
+          </VStack>
+        )}
+
+        {selectedNodeType === "entity" && (
+          <VStack spacing={0}>
+            <span className="text-xs text-muted-foreground">Quantity</span>
+            <span className="text-sm">{entity?.quantity}</span>
+          </VStack>
+        )}
+
+        {Object.entries(selectedNodeAttributes)
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .map(([key, value]) => {
+            if (key.startsWith("Operation ")) {
+              return null;
+            }
+            console.log(key);
+            switch (
+              key as keyof (TrackedEntityAttributes & TrackedActivityAttributes)
+            ) {
+              case "Customer":
+                return <CustomerAttribute value={value} />;
+              case "Employee":
+                return <EmployeeAttribute value={value} />;
+              case "Job":
+                return <JobAttribute jobId={value} />;
+              case "Job Material":
+                return null;
+              case "Job Make Method":
+                return (
+                  <JobMakeMethodAttribute
+                    jobId={selectedNodeAttributes["Job"]}
+                    makeMethodId={value}
+                    materialId={selectedNodeAttributes["Job Material"]}
+                  />
+                );
+              case "Job Operation":
+                return (
+                  <JobOperationAttribute
+                    jobId={selectedNodeAttributes["Job"]}
+                    operationId={value}
+                  />
+                );
+              case "Purchase Order":
+                return <PurchaseOrderAttribute purchaseOrderId={value} />;
+              case "Purchase Order Line":
+                null;
+              case "Receipt":
+                return <ReceiptAttribute receiptId={value} />;
+              case "Receipt Line":
+                return null;
+              case "Sales Order":
+                return <SalesOrderAttribute salesOrderId={value} />;
+              case "Sales Order Line":
+                return null;
+              case "Shipment":
+                return <ShipmentAttribute shipmentId={value} />;
+              case "Shipment Line":
+                null;
+              case "Production Event":
+                return (
+                  <JobProductionEvent
+                    jobId={selectedNodeAttributes["Job"]}
+                    eventId={value}
+                  />
+                );
+              case "Supplier":
+                return <SupplierAttribute value={value} />;
+              case "Work Center":
+                return <WorkCenterAttribute value={value} />;
+              case "Consumed Quantity":
+              case "Original Quantity":
+              case "Remaining Quantity":
+              case "Receipt Line Index":
+              case "Shipment Line Index":
+              // Special cases can be handled here in the future
+              default:
+                return (
+                  <VStack spacing={0} key={key}>
+                    <span className="text-xs text-muted-foreground">{key}</span>
+                    <span className="text-sm">{value}</span>
+                  </VStack>
+                );
+            }
+          })}
+      </VStack>
+    </VStack>
+  );
+}
+
+function CustomerAttribute({ value }: { value: string }) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Customer</span>
+      <CustomerAvatar customerId={value} />
+    </VStack>
+  );
+}
+
+function EmployeeAttribute({ value }: { value: string }) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Employee</span>
+      <EmployeeAvatar employeeId={value} />
+    </VStack>
+  );
+}
+
+function JobAttribute({ jobId }: { jobId: string }) {
+  const [job, setJob] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getJob = async () => {
+    const response = await carbon
+      ?.from("job")
+      .select("jobId")
+      .eq("id", jobId)
+      .single();
+
+    setJob(response?.data?.jobId ?? null);
+  };
+
+  useMount(() => {
+    getJob();
+  });
+
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Job</span>
+      <Hyperlink to={path.to.jobDetails(jobId)}>{job ?? jobId}</Hyperlink>
+    </VStack>
+  );
+}
+
+function JobProductionEvent({
+  jobId,
+  eventId,
+}: {
+  jobId: string;
+  eventId: string;
+}) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Production Event</span>
+      {jobId && eventId ? (
+        <Hyperlink to={path.to.jobProductionEvent(jobId, eventId)}>
+          {eventId}
+        </Hyperlink>
+      ) : (
+        <span className="text-sm text-muted-foreground">{eventId}</span>
+      )}
+    </VStack>
+  );
+}
+
+function JobOperationAttribute({
+  jobId,
+  operationId,
+}: {
+  jobId: string;
+  operationId: string;
+}) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Job Operation</span>
+      {jobId && operationId ? (
+        <Hyperlink
+          to={`${path.to.jobProductionEvents(
+            jobId
+          )}?filter=jobOperationId:eq:${operationId}`}
+        >
+          {operationId}
+        </Hyperlink>
+      ) : (
+        <span className="text-sm text-muted-foreground">{operationId}</span>
+      )}
+    </VStack>
+  );
+}
+
+function JobMakeMethodAttribute({
+  jobId,
+  makeMethodId,
+  materialId,
+}: {
+  jobId: string;
+  makeMethodId: string;
+  materialId: string;
+}) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Job Make Method</span>
+      <Hyperlink
+        to={
+          materialId
+            ? path.to.jobMakeMethod(jobId, makeMethodId, materialId)
+            : path.to.jobMethod(jobId, makeMethodId)
+        }
+      >
+        {makeMethodId}
+      </Hyperlink>
+    </VStack>
+  );
+}
+
+function PurchaseOrderAttribute({
+  purchaseOrderId,
+}: {
+  purchaseOrderId: string;
+}) {
+  const [poNumber, setPoNumber] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getPurchaseOrder = async () => {
+    const response = await carbon
+      ?.from("purchaseOrder")
+      .select("purchaseOrderId")
+      .eq("id", purchaseOrderId)
+      .single();
+
+    setPoNumber(response?.data?.purchaseOrderId ?? null);
+  };
+
+  useMount(() => {
+    getPurchaseOrder();
+  });
+
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Purchase Order</span>
+      <Hyperlink to={path.to.purchaseOrderDetails(purchaseOrderId)}>
+        {poNumber ?? purchaseOrderId}
+      </Hyperlink>
+    </VStack>
+  );
+}
+
+function SalesOrderAttribute({ salesOrderId }: { salesOrderId: string }) {
+  const [soNumber, setSoNumber] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getSalesOrder = async () => {
+    const response = await carbon
+      ?.from("salesOrder")
+      .select("salesOrderId")
+      .eq("id", salesOrderId)
+      .single();
+
+    setSoNumber(response?.data?.salesOrderId ?? null);
+  };
+
+  useMount(() => {
+    getSalesOrder();
+  });
+
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Sales Order</span>
+      <Hyperlink to={path.to.salesOrderDetails(salesOrderId)}>
+        {soNumber ?? salesOrderId}
+      </Hyperlink>
+    </VStack>
+  );
+}
+
+function ReceiptAttribute({ receiptId }: { receiptId: string }) {
+  const [receiptNumber, setReceiptNumber] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getReceipt = async () => {
+    const response = await carbon
+      ?.from("receipt")
+      .select("receiptId")
+      .eq("id", receiptId)
+      .single();
+
+    setReceiptNumber(response?.data?.receiptId ?? null);
+  };
+
+  useMount(() => {
+    getReceipt();
+  });
+
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Receipt</span>
+      <Hyperlink to={path.to.receiptDetails(receiptId)}>
+        {receiptNumber ?? receiptId}
+      </Hyperlink>
+    </VStack>
+  );
+}
+function ShipmentAttribute({ shipmentId }: { shipmentId: string }) {
+  const [shipmentNumber, setShipmentNumber] = useState<string | null>(null);
+  const { carbon } = useCarbon();
+
+  const getShipment = async () => {
+    const response = await carbon
+      ?.from("shipment")
+      .select("shipmentId")
+      .eq("id", shipmentId)
+      .single();
+
+    setShipmentNumber(response?.data?.shipmentId ?? null);
+  };
+
+  useMount(() => {
+    getShipment();
+  });
+
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Shipment</span>
+      <Hyperlink to={path.to.shipmentDetails(shipmentId)}>
+        {shipmentNumber ?? shipmentId}
+      </Hyperlink>
+    </VStack>
+  );
+}
+
+function SupplierAttribute({ value }: { value: string }) {
+  return (
+    <VStack spacing={1}>
+      <span className="text-xs text-muted-foreground">Supplier</span>
+      <SupplierAvatar supplierId={value} />
+    </VStack>
+  );
+}
+
+function WorkCenterAttribute({ value }: { value: string }) {
+  const workCenters = useWorkCenters({});
+  const workCenter = workCenters.options.find((wc) => wc.value === value);
+  return (
+    <VStack spacing={0}>
+      <span className="text-xs text-muted-foreground">Work Center</span>
+      <span className="text-sm">{workCenter?.label}</span>
+    </VStack>
+  );
+}
 type TraceabilityGraphProps = {
   data: GraphData;
   selectedId: string | null;
@@ -402,7 +958,6 @@ function TraceabilityGraph({
         event.stopPropagation();
         onNodeClick(d);
       });
-
     // Add labels to the nodes
     node
       .append("text")
@@ -423,6 +978,16 @@ function TraceabilityGraph({
       .attr("font-weight", "bold")
       .attr("font-family", "Geist");
 
+    // Add serial number below the label
+    node
+      .append("text")
+      .text((d) => d.id?.substring(0, 8) || "")
+      .attr("text-anchor", "middle")
+      .attr("dy", (d) => 45 + (d.depth || 0) * 2) // Position below the main label
+      .attr("font-size", "10px")
+      .attr("fill", "currentColor")
+      .attr("font-family", "Geist");
+
     // Add title for hover tooltip
     node.append("title").text((d) => {
       if (d.type === "entity") {
@@ -434,7 +999,7 @@ function TraceabilityGraph({
         const activity = d.data as Activity;
         return `Activity: ${activity.type || "Unknown"}\nID: ${
           activity.id || "Unknown"
-        }\nDepth: ${d.depth || 0}`;
+        }`;
       }
     });
 
@@ -481,9 +1046,14 @@ function TraceabilityGraph({
   }, [data, width, height, onNodeClick, selectedId]);
 
   return (
-    <div className="relative">
+    <motion.div
+      className="relative"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <svg ref={svgRef} width={width} height={height} />
-    </div>
+    </motion.div>
   );
 }
 

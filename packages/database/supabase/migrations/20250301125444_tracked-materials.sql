@@ -10,6 +10,8 @@ ADD FOREIGN KEY ("trackedEntityId") REFERENCES "trackedEntity"("id");
 
 CREATE INDEX "jobMakeMethod_trackedEntityId_idx" ON "jobMakeMethod"("trackedEntityId");
 
+ALTER TABLE "trackedActivityInput" DROP COLUMN "entityType";
+
 DROP FUNCTION IF EXISTS get_quote_methods_by_method_id;
 CREATE OR REPLACE FUNCTION get_quote_methods_by_method_id(mid TEXT)
 RETURNS TABLE (
@@ -253,7 +255,7 @@ BEGIN
                               "attributes")
   VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
           NEW."companyId", NEW."createdBy", 
-          jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
+          jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."id"));
   
   RETURN NEW;
 END;
@@ -288,7 +290,12 @@ BEGIN
                                 "attributes")
     VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
             NEW."companyId", NEW."createdBy", 
-            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
+            CASE 
+              WHEN NEW."parentMaterialId" IS NOT NULL THEN 
+                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."parentMaterialId")
+              ELSE 
+                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id)
+            END);
   ELSE
     -- Update job make method first
     UPDATE "jobMakeMethod"
@@ -304,11 +311,41 @@ BEGIN
                                 "attributes")
     VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
             NEW."companyId", NEW."createdBy", 
-            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id));
+            CASE 
+              WHEN NEW."parentMaterialId" IS NOT NULL THEN 
+                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."parentMaterialId")
+              ELSE 
+                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id)
+            END);
   END IF;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+
+CREATE OR REPLACE FUNCTION update_tracked_entity_on_job_make_method_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Update tracked entities that reference this job make method ID in attributes
+  -- Only update the 'Job Make Method' attribute while preserving all other attributes
+  UPDATE "trackedEntity"
+  SET "attributes" = jsonb_set(
+    "attributes", 
+    '{Job Make Method}', 
+    to_jsonb(NEW."id")
+  )
+  WHERE "attributes"->>'Job Make Method' = OLD."id";
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_tracked_entity_on_job_make_method_update_trigger
+AFTER UPDATE OF "id" ON "jobMakeMethod"
+FOR EACH ROW
+WHEN (OLD."id" IS DISTINCT FROM NEW."id")
+EXECUTE FUNCTION update_tracked_entity_on_job_make_method_update();
+
 
 
 CREATE OR REPLACE FUNCTION delete_tracked_entity_on_job_make_method_delete()

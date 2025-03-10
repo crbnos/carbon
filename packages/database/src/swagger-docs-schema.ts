@@ -32398,9 +32398,6 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
           },
           {
-            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -32490,9 +32487,6 @@ export default {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
           },
           {
-            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32534,9 +32528,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trackedEntity.createdBy",
-          },
-          {
-            $ref: "#/parameters/rowFilter.trackedEntity.currentOperationIds",
           },
           {
             $ref: "#/parameters/body.trackedEntity",
@@ -38404,9 +38395,6 @@ export default {
             $ref: "#/parameters/rowFilter.trackedActivityInput.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.trackedActivityInput.entityType",
-          },
-          {
             $ref: "#/parameters/rowFilter.trackedActivityInput.companyId",
           },
           {
@@ -38484,9 +38472,6 @@ export default {
             $ref: "#/parameters/rowFilter.trackedActivityInput.quantity",
           },
           {
-            $ref: "#/parameters/rowFilter.trackedActivityInput.entityType",
-          },
-          {
             $ref: "#/parameters/rowFilter.trackedActivityInput.companyId",
           },
           {
@@ -38516,9 +38501,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.trackedActivityInput.quantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.trackedActivityInput.entityType",
           },
           {
             $ref: "#/parameters/rowFilter.trackedActivityInput.companyId",
@@ -46095,6 +46077,63 @@ export default {
         tags: ["(rpc) xid_pid"],
       },
     },
+    "/rpc/get_direct_ancestors_of_tracked_entity": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_tracked_entity_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_ancestors_of_tracked_entity"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_tracked_entity_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_ancestors_of_tracked_entity"],
+      },
+    },
     "/rpc/xid_decode": {
       get: {
         parameters: [
@@ -46264,6 +46303,63 @@ export default {
           },
         },
         tags: ["(rpc) get_quote_methods"],
+      },
+    },
+    "/rpc/get_direct_ancestors_of_tracked_entity_strict": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_tracked_entity_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_ancestors_of_tracked_entity_strict"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_tracked_entity_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["p_tracked_entity_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_direct_ancestors_of_tracked_entity_strict"],
       },
     },
     "/rpc/get_company_id_from_api_key": {
@@ -62418,13 +62514,6 @@ export default {
           format: "text",
           type: "string",
         },
-        currentOperationIds: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
       },
       type: "object",
     },
@@ -64865,7 +64954,6 @@ export default {
         "trackedActivityId",
         "trackedEntityId",
         "quantity",
-        "entityType",
         "companyId",
         "createdAt",
         "createdBy",
@@ -64886,10 +64974,6 @@ export default {
         quantity: {
           format: "numeric",
           type: "number",
-        },
-        entityType: {
-          format: "text",
-          type: "string",
         },
         companyId: {
           description:
@@ -86949,13 +87033,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.trackedEntity.currentOperationIds": {
-      name: "currentOperationIds",
-      required: false,
-      format: "text[]",
-      in: "query",
-      type: "string",
-    },
     "body.partners": {
       name: "partners",
       description: "partners",
@@ -90131,13 +90208,6 @@ export default {
       name: "quantity",
       required: false,
       format: "numeric",
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.trackedActivityInput.entityType": {
-      name: "entityType",
-      required: false,
-      format: "text",
       in: "query",
       type: "string",
     },

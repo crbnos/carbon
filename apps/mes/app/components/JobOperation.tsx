@@ -114,7 +114,6 @@ import { path } from "~/utils/path";
 
 import { useCarbon } from "@carbon/auth";
 import {
-  Boolean,
   Combobox,
   DateTimePicker,
   Hidden,
@@ -221,12 +220,15 @@ export const JobOperation = ({
 
   const trackedEntityParam = params.get("trackedEntityId");
   const trackedEntityId = trackedEntityParam ?? trackedEntities[0]?.id;
+
   const trackedEntity = trackedEntities.find(
     (entity) => entity.id === trackedEntityId
   );
 
-  const navigate = useNavigate();
   const parentIsSerial = method?.requiresSerialTracking;
+  const parentIsBatch = method?.requiresBatchTracking;
+
+  const navigate = useNavigate();
 
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
@@ -1378,6 +1380,7 @@ export const JobOperation = ({
           machineProductionEvent={machineProductionEvent}
           operation={operation}
           parentIsSerial={parentIsSerial}
+          parentIsBatch={parentIsBatch}
           setupProductionEvent={setupProductionEvent}
           trackedEntityId={trackedEntityId}
           onClose={reworkModal.onClose}
@@ -1390,6 +1393,7 @@ export const JobOperation = ({
           machineProductionEvent={machineProductionEvent}
           operation={operation}
           parentIsSerial={parentIsSerial}
+          parentIsBatch={parentIsBatch}
           setupProductionEvent={setupProductionEvent}
           trackedEntityId={trackedEntityId}
           onClose={scrapModal.onClose}
@@ -1407,6 +1411,7 @@ export const JobOperation = ({
                   materials={resolvedMaterials}
                   operation={operation}
                   parentIsSerial={parentIsSerial}
+                  parentIsBatch={parentIsBatch}
                   setupProductionEvent={setupProductionEvent}
                   trackedEntityId={trackedEntityId}
                   onClose={completeModal.onClose}
@@ -1976,7 +1981,7 @@ function useOperation(
     );
     if (uncompletedEntities.length > 0) serialModal.onOpen();
     setAvailableEntities(uncompletedEntities);
-  }, [trackedEntities, operationId, trackedEntityParam]);
+  }, [trackedEntities, operationId, trackedEntityParam, serialModal]);
 
   return {
     active,
@@ -2307,7 +2312,6 @@ function StartStopButton({
   isTrackedActivity: boolean;
   trackedEntityId: string | undefined;
 }) {
-  console.log(isTrackedActivity);
   const fetcher = useFetcher<ProductionEvent>();
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
@@ -2424,6 +2428,7 @@ function QuantityModal({
   materials = [],
   operation,
   parentIsSerial = false,
+  parentIsBatch = false,
   setupProductionEvent,
   trackedEntityId,
   type,
@@ -2435,6 +2440,7 @@ function QuantityModal({
   materials?: JobMaterial[];
   operation: OperationWithDetails;
   parentIsSerial?: boolean;
+  parentIsBatch?: boolean;
   setupProductionEvent: ProductionEvent | undefined;
   trackedEntityId: string;
   type: "scrap" | "rework" | "complete" | "finish";
@@ -2509,7 +2515,8 @@ function QuantityModal({
           validator={validatorMap[type]}
           defaultValues={{
             // @ts-ignore
-            trackedEntityId: parentIsSerial ? trackedEntityId : undefined,
+            trackedEntityId:
+              parentIsSerial || parentIsBatch ? trackedEntityId : undefined,
             jobOperationId: operation.id,
             // @ts-ignore
             quantity: type === "finish" ? undefined : 1,
@@ -2528,6 +2535,12 @@ function QuantityModal({
           </ModalHeader>
           <ModalBody>
             <Hidden name="trackedEntityId" />
+            <Hidden
+              name="trackingType"
+              value={
+                parentIsSerial ? "Serial" : parentIsBatch ? "Batch" : undefined
+              }
+            />
             <Hidden name="jobOperationId" />
             <Hidden name="setupProductionEventId" />
             <Hidden name="laborProductionEventId" />

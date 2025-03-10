@@ -27,7 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // this is a serial part
-  if (validation.data.trackedEntityId) {
+  if (validation.data.trackingType === "Serial") {
     const serviceRole = await getCarbonServiceRole();
     const response = await serviceRole.functions.invoke("issue", {
       body: {
@@ -41,14 +41,40 @@ export async function action({ request }: ActionFunctionArgs) {
     const trackedEntityId = response.data?.newTrackedEntityId;
 
     if (trackedEntityId) {
-     
-      throw redirect(`${path.to.operation(validation.data.jobOperationId)}?trackedEntityId=${trackedEntityId}`);
+      throw redirect(
+        `${path.to.operation(
+          validation.data.jobOperationId
+        )}?trackedEntityId=${trackedEntityId}`
+      );
+    }
+
+    throw redirect(`${path.to.operation(validation.data.jobOperationId)}`);
+  } else if (validation.data.trackingType === "Batch") {
+    const serviceRole = await getCarbonServiceRole();
+    const response = await serviceRole.functions.invoke("issue", {
+      body: {
+        type: "jobOperationBatchComplete",
+        ...validation.data,
+        companyId,
+        userId,
+      },
+    });
+
+    if (response.error) {
+      return json(
+        {},
+        await flash(
+          request,
+          error(response.error, "Failed to complete job operation")
+        )
+      );
     }
 
     throw redirect(`${path.to.operation(validation.data.jobOperationId)}`);
   } else {
+    const { trackedEntityId, trackingType, ...data } = validation.data;
     const insertProduction = await insertProductionQuantity(client, {
-      ...validation.data,
+      ...data,
       companyId,
       createdBy: userId,
     });

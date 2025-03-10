@@ -100,14 +100,16 @@ export const finishValidator = z.object({
   machineProductionEventId: zfd.text(z.string().optional()),
 });
 
-export const nonScrapQuantityValidator = finishValidator.extend({
+export const baseQuantityValidator = finishValidator.extend({
   trackedEntityId: zfd.text(z.string().optional()),
+  trackingType: z.enum(["Serial", "Batch", ""]).optional(),
   quantity: zfd.numeric(z.number().positive()),
   notes: zfd.text(z.string().optional()),
 });
 
-export const scrapQuantityValidator = nonScrapQuantityValidator.extend({
-  trackedEntityId: zfd.text(z.string().optional()),
+export const nonScrapQuantityValidator = baseQuantityValidator;
+
+export const scrapQuantityValidator = baseQuantityValidator.extend({
   scrapReasonId: zfd.text(z.string()),
   notes: zfd.text(z.string().optional()),
 });
