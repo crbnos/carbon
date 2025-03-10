@@ -228,12 +228,12 @@ const PurchaseOrderPDF = ({
                     : formatter.format(getLineTotal(line))}
                 </Text>
               </View>
-              {/* {Object.keys(line.externalNotes ?? {}).length > 0 && (
+              {Object.keys(line.externalNotes ?? {}).length > 0 && (
                 <Note
                   key={`${line.id}-notes`}
                   content={line.externalNotes as JSONContent}
                 />
-              )} */}
+              )}
             </View>
           ))}
           {taxAmount > 0 && (
