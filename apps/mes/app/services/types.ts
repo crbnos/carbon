@@ -11,6 +11,7 @@ import type {
   getProductionQuantitiesForJobOperation,
   getRecentJobOperationsByEmployee,
   getTrackedEntitiesByMakeMethodId,
+  getTrackedInputs,
 } from "./operations.service";
 
 export type BaseOperation = NonNullable<
@@ -38,6 +39,10 @@ export type Job = NonNullable<
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
+>["materials"][number];
+
+export type TrackedInput = NonNullable<
+  Awaited<ReturnType<typeof getTrackedInputs>>["data"]
 >[number];
 
 export type JobMakeMethod = NonNullable<

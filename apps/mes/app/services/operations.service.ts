@@ -240,26 +240,30 @@ export async function getJobMakeMethod(
 
 export async function getJobMaterialsByOperationId(
   client: SupabaseClient<Database>,
-  operation: BaseOperationWithDetails,
-  serialTrackingEntityId: string | undefined
+  args: {
+    operation: BaseOperationWithDetails;
+    trackedEntityId: string | undefined;
+    requiresSerialTracking: boolean;
+  }
 ) {
-  if (serialTrackingEntityId) {
-    const materials = await client
-      .from("jobMaterial")
-      .select("*")
-      .eq("jobMakeMethodId", operation.jobMakeMethodId)
-      .order("itemReadableId", { ascending: true })
-      .order("id", { ascending: true });
 
-    const trackedInputs = await client.rpc(
-      "get_direct_descendants_of_tracked_entity",
-      {
-        p_tracked_entity_id: serialTrackingEntityId,
-      }
-    );
+  const { operation, trackedEntityId, requiresSerialTracking } = args;
 
-    return (
-      materials.data?.map((material) => {
+  const [materials, trackedInputs] = await Promise.all([client
+    .from("jobMaterial")
+    .select("*")
+    .eq("jobMakeMethodId", operation.jobMakeMethodId)
+    .order("itemReadableId", { ascending: true })
+    .order("id", { ascending: true }),
+    getTrackedInputs(
+      client,
+      trackedEntityId
+    )
+  ]);
+  
+  if (requiresSerialTracking) {
+    return {
+      materials: materials.data?.map((material) => {
         if (!material.requiresSerialTracking && !material.requiresBatchTracking)
           return material;
         const issuedForTrackedParent =
@@ -278,17 +282,14 @@ export async function getJobMaterialsByOperationId(
           ...material,
           quantityIssued: issuedForTrackedParent,
         };
-      }) ?? []
-    );
+      }) ?? [],
+      trackedInputs: trackedInputs.data ?? [],
+    };
   } else {
-    const materials = await client
-      .from("jobMaterial")
-      .select("*")
-      .eq("jobMakeMethodId", operation.jobMakeMethodId)
-      .order("itemReadableId", { ascending: true })
-      .order("id", { ascending: true });
-
-    return materials.data ?? [];
+    return {
+      materials: materials.data ?? [],
+      trackedInputs: trackedInputs.data ?? [],
+    };
   }
 }
 
@@ -412,6 +413,18 @@ export async function getTrackedEntitiesByMakeMethodId(
     .order("createdAt", { ascending: true });
 }
 
+export async function getTrackedInputs(
+  client: SupabaseClient<Database>,
+  trackedEntityId?: string
+) {
+  if (!trackedEntityId) return { data: [] };
+  return client.rpc(
+    "get_direct_descendants_of_tracked_entity",
+    {
+      p_tracked_entity_id: trackedEntityId,
+    }
+  );
+}
 export async function getThumbnailPathByItemId(
   client: SupabaseClient<Database>,
   itemId: string

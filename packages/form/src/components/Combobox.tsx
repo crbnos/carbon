@@ -12,7 +12,7 @@ import { useControlField, useField } from "../hooks";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
-  label?: string;
+  label?: string | JSX.Element;
   isLoading?: boolean;
   isOptional?: boolean;
   helperText?: string;

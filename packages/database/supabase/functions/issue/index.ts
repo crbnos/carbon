@@ -79,6 +79,19 @@ const payloadValidator = z.discriminatedUnion("type", [
     companyId: z.string(),
     userId: z.string(),
   }),
+  z.object({
+    type: z.literal("unconsumeTrackedEntities"),
+    materialId: z.string(),
+    parentTrackedEntityId: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number(),
+      })
+    ),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
 ]);
 
 serve(async (req: Request) => {
@@ -588,7 +601,6 @@ serve(async (req: Request) => {
           }
         );
       }
-
       case "partToOperation": {
         const {
           id,
@@ -1098,6 +1110,200 @@ serve(async (req: Request) => {
             .execute();
 
           console.log("Job material quantity updated:", {
+            materialId,
+            newQuantityIssued,
+          });
+        });
+
+        break;
+      }
+      case "unconsumeTrackedEntities": {
+        const {
+          materialId,
+          parentTrackedEntityId,
+          children,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        if (!parentTrackedEntityId) {
+          throw new Error("Parent ID is required");
+        }
+
+        if (children.length === 0) {
+          throw new Error("Children are required");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          const trackedEntities = await trx
+            .selectFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .selectAll()
+            .execute();
+
+          const itemLedgers = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "in", [
+              ...children.map((child) => child.trackedEntityId),
+            ])
+            .orderBy("createdBy", "desc")
+            .selectAll()
+            .execute();
+
+          if (trackedEntities.length !== children.length) {
+            throw new Error("Tracked entities not found");
+          }
+
+          if (trackedEntities.some((entity) => entity.status !== "Consumed")) {
+            throw new Error("Tracked entities must be in Consumed status to unconsume");
+          }
+
+          const jobMaterial = await trx
+            .selectFrom("jobMaterial")
+            .where("id", "=", materialId)
+            .selectAll()
+            .executeTakeFirst();
+
+          // Get job location
+          const job = await trx
+            .selectFrom("job")
+            .select(["id", "locationId"])
+            .where("id", "=", jobMaterial?.jobId!)
+            .executeTakeFirst();
+
+          // Get parent tracked entity details
+          const parentTrackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", parentTrackedEntityId)
+            .select([
+              "id",
+              "sourceDocumentId",
+              "quantity",
+              "attributes",
+              "status",
+            ])
+            .executeTakeFirst();
+
+          if (!parentTrackedEntity) {
+            throw new Error("Parent tracked entity not found");
+          }
+
+          // Create tracked activity for unconsume
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Unconsume",
+              sourceDocument: "Job Material",
+              sourceDocumentId: materialId,
+              sourceDocumentReadableId: jobMaterial?.itemReadableId,
+              attributes: {
+                Job: job?.id!,
+                "Job Make Method": jobMaterial?.jobMakeMethodId!,
+                "Job Material": jobMaterial?.id!,
+                Employee: userId,
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityInput")
+            .values({
+              trackedActivityId: activityId,
+              trackedEntityId: parentTrackedEntityId,
+              quantity: parentTrackedEntity.quantity,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] = [];
+          const trackedActivityOutputs: Database["public"]["Tables"]["trackedActivityOutput"]["Insert"][] = [];
+
+          // Process each child tracked entity
+          for (const child of children) {
+            const trackedEntity = trackedEntities.find(
+              (entity) => entity.id === child.trackedEntityId
+            );
+            if (!trackedEntity) {
+              throw new Error("Tracked entity not found");
+            }
+            const { trackedEntityId, quantity } = child;
+
+            // Update tracked entity status back to Available
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Available",
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+
+            trackedActivityOutputs.push({
+              trackedActivityId: activityId,
+              trackedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            });
+
+            if (jobMaterial?.methodType !== "Make") {
+              itemLedgerInserts.push({
+                entryType: "Consumption",
+                documentType: "Job Consumption",
+                documentId: job?.id!,
+                companyId,
+                itemId: trackedEntity.sourceDocumentId,
+                itemReadableId: trackedEntity.sourceDocumentReadableId,
+                quantity: quantity,
+                locationId: job?.locationId,
+                shelfId: itemLedgers.find(
+                  (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
+                )?.shelfId,
+                trackedEntityId,
+                createdBy: userId,
+              });
+            }
+          }
+
+          if (trackedActivityOutputs.length > 0) {
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values(trackedActivityOutputs)
+              .execute();
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+          }
+
+          const totalChildQuantity = children.reduce((sum, child) => {
+            return sum + Number(child.quantity);
+          }, 0);
+
+          const currentQuantityIssued =
+            Number(jobMaterial?.quantityIssued) || 0;
+          const newQuantityIssued = currentQuantityIssued - totalChildQuantity;
+
+          await trx
+            .updateTable("jobMaterial")
+            .set({
+              quantityIssued: newQuantityIssued,
+            })
+            .where("id", "=", materialId)
+            .execute();
+
+          console.log("Job material quantity updated for unconsume:", {
             materialId,
             newQuantityIssued,
           });

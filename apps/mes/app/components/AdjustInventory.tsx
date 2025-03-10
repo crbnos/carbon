@@ -22,7 +22,7 @@ import {
 } from "@carbon/react";
 import { useRouteData } from "@carbon/remix";
 import { useFetcher } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { action as endShiftAction } from "~/routes/x+/end-shift";
 import { inventoryAdjustmentValidator } from "~/services/inventory.service";
 import { useItems } from "~/stores";
@@ -45,7 +45,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
   }>(path.to.authenticatedRoot);
 
   const onItemChange = async (
-    value: { value: string; label: string } | null
+    value: { value: string; label: string | JSX.Element } | null
   ) => {
     if (!value || !carbon) return;
     const pickMethod = await carbon
@@ -96,6 +96,14 @@ export function AdjustInventory({ add }: { add: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data?.success]);
 
+  const itemOptions = useMemo(() => {
+    return items.filter(i => !["Batch", "Serial"].includes(i.itemTrackingType)).map((item) => ({
+      label: item.readableId,
+      helper: item.name,
+      value: item.id,
+    }));
+  }, [items]);
+
   return (
     <>
       <SidebarMenuButton onClick={modal.onOpen}>
@@ -137,11 +145,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
                       label="Item"
                       name="itemId"
                       onChange={onItemChange}
-                      options={items.map((item) => ({
-                        label: item.readableId,
-                        value: item.id,
-                        helper: item.name,
-                      }))}
+                      options={itemOptions}
                       itemHeight={44}
                     />
                     <Number label="Quantity" name="quantity" />

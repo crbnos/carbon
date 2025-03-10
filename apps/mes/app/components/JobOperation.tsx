@@ -109,6 +109,7 @@ import type {
   StorageItem,
   JobMakeMethod,
   TrackedEntity,
+  TrackedInput,
 } from "~/services/types";
 import { path } from "~/utils/path";
 
@@ -173,6 +174,7 @@ import {
   LuTimer,
   LuTrash,
   LuTriangleAlert,
+  LuUndo2,
   LuX,
 } from "react-icons/lu";
 import {
@@ -191,7 +193,10 @@ import type { getSerialNumbersForItem , getBatchNumbersForItem } from "~/service
 type JobOperationProps = {
   events: ProductionEvent[];
   files: Promise<StorageItem[]>;
-  materials: Promise<JobMaterial[]>;
+  materials: Promise<{
+    materials: JobMaterial[];
+    trackedInputs: TrackedInput[];
+  }>;
   method: JobMakeMethod | null;
   operation: OperationWithDetails;
   procedure: Promise<{
@@ -550,6 +555,7 @@ export const JobOperation = ({
                 >
                   <Await resolve={materials}>
                     {(resolvedMaterials) => (
+                      <>
                       <Table className="w-full">
                         <Thead>
                           <Tr>
@@ -561,7 +567,7 @@ export const JobOperation = ({
                           </Tr>
                         </Thead>
                         <Tbody>
-                          {resolvedMaterials?.length === 0 ? (
+                          {resolvedMaterials?.materials.length === 0 ? (
                             <Tr>
                               <Td
                                 colSpan={24}
@@ -571,7 +577,7 @@ export const JobOperation = ({
                               </Td>
                             </Tr>
                           ) : (
-                            resolvedMaterials?.map((material) => (
+                            resolvedMaterials?.materials.map((material) => (
                               <Tr
                                 key={`material-${material.id}`}
                                 className={cn(
@@ -579,6 +585,7 @@ export const JobOperation = ({
                                     "opacity-50 hover:opacity-100"
                                 )}
                               >
+                              
                                 <Td>
                                   <HStack
                                     spacing={2}
@@ -678,6 +685,47 @@ export const JobOperation = ({
                           )}
                         </Tbody>
                       </Table>
+                      {issueModal.isOpen &&
+        selectedMaterial?.requiresBatchTracking !== true &&
+        selectedMaterial?.requiresSerialTracking !== true && (
+          <IssueModal
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+      {issueModal.isOpen &&
+        selectedMaterial?.requiresBatchTracking === true && (
+          <BatchIssueModal
+            parentId={trackedEntityId ?? ""}
+            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            trackedInputs={resolvedMaterials?.trackedInputs ?? []}
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+      {issueModal.isOpen &&
+        selectedMaterial?.requiresSerialTracking === true && (
+          <SerialIssueModal
+            operationId={operation.id}
+            material={selectedMaterial ?? undefined}
+            parentId={trackedEntityId ?? ""}
+            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
+            trackedInputs={resolvedMaterials?.trackedInputs ?? []}
+            onClose={() => {
+              setSelectedMaterial(null);
+              issueModal.onClose();
+            }}
+          />
+        )}
+                      </>
                     )}
                   </Await>
                 </Suspense>
@@ -1408,7 +1456,7 @@ export const JobOperation = ({
                   type="complete"
                   laborProductionEvent={laborProductionEvent}
                   machineProductionEvent={machineProductionEvent}
-                  materials={resolvedMaterials}
+                  materials={resolvedMaterials.materials}
                   operation={operation}
                   parentIsSerial={parentIsSerial}
                   parentIsBatch={parentIsBatch}
@@ -1446,45 +1494,6 @@ export const JobOperation = ({
           </Await>
         </Suspense>
       )}
-
-      {issueModal.isOpen &&
-        selectedMaterial?.requiresBatchTracking !== true &&
-        selectedMaterial?.requiresSerialTracking !== true && (
-          <IssueModal
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
-      {issueModal.isOpen &&
-        selectedMaterial?.requiresBatchTracking === true && (
-          <BatchIssueModal
-            parentId={trackedEntityId ?? ""}
-            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
-      {issueModal.isOpen &&
-        selectedMaterial?.requiresSerialTracking === true && (
-          <SerialIssueModal
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            parentId={trackedEntityId ?? ""}
-            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
 
       {serialModal.isOpen && (
         <SerialSelectorModal
@@ -2754,12 +2763,14 @@ function SerialIssueModal({
   material,
   parentId,
   parentIdIsSerialized,
+  trackedInputs,
   onClose,
 }: {
   parentId: string;
   parentIdIsSerialized: boolean;
   operationId: string;
   material?: JobMaterial;
+  trackedInputs: TrackedInput[];
   onClose: () => void;
 }) {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
@@ -2924,14 +2935,16 @@ function SerialIssueModal({
     }
   }, [fetcher.data, onClose]);
 
+  const [activeTab, setActiveTab] = useState("scan");
+
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
         <ModalTitle>{material?.itemReadableId}</ModalTitle>
         <ModalDescription>{material?.description}</ModalDescription>
         <ModalBody>
-          <Tabs defaultValue="scan">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className={cn("grid w-full grid-cols-2 mb-4", trackedInputs.length > 0 && "grid-cols-3")}>
               <TabsTrigger value="scan">
                 <LuQrCode className="mr-2" />
                 Scan
@@ -2940,6 +2953,12 @@ function SerialIssueModal({
                 <LuList className="mr-2" />
                 Select
               </TabsTrigger>
+              {trackedInputs.length > 0 && (
+                <TabsTrigger value="unconsume">
+                  <LuUndo2 className="mr-2" />
+                  Unconsume
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="scan">
               <div className="flex flex-col gap-4">
@@ -3105,6 +3124,13 @@ function SerialIssueModal({
                 </div>
               </div>
             </TabsContent>
+            {trackedInputs.length > 0 && (
+              <TabsContent value="unconsume">
+                <div className="flex flex-col gap-4">
+                  <pre>{JSON.stringify(trackedInputs, null, 2)}</pre>
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </ModalBody>
         <ModalFooter>
@@ -3144,12 +3170,14 @@ function BatchIssueModal({
   parentIdIsSerialized,
   operationId,
   material,
+  trackedInputs,
   onClose,
 }: {
   parentId: string;
   parentIdIsSerialized: boolean;
   operationId: string;
   material?: JobMaterial;
+  trackedInputs: TrackedInput[];
   onClose: () => void;
 }) {
   const { data: batchNumbers } = useBatchNumbers(material?.itemId);
@@ -3177,6 +3205,16 @@ function BatchIssueModal({
         }) ?? []
     );
   }, [batchNumbers]);
+
+  const unconsumeOptions = useMemo(() => {
+    return trackedInputs.map((input) => ({
+      label: input.id,
+      value: input.id,
+      helper: `${input.quantity} ${(input.attributes as TrackedEntityAttributes)?.["Batch Number"] 
+        ? `of Batch ${(input.attributes as TrackedEntityAttributes)?.["Batch Number"]}` 
+        : ""}`,
+    }));
+  }, [trackedInputs]);
 
   const initialQuantity = parentIdIsSerialized
     ? material?.quantity ?? 1
@@ -3387,6 +3425,26 @@ function BatchIssueModal({
     [selectedBatchNumbers, options, updateBatchNumber]
   );
 
+  const [activeTab, setActiveTab] = useState("scan");
+
+  const [unconsumedBatch, setUnconsumedBatch] = useState("");
+  const handleUnconsume = useCallback(() => {
+    const payload = {
+      materialId: material?.id!,
+      parentTrackedEntityId: parentId,
+      children: [{
+        trackedEntityId: unconsumedBatch,
+        quantity: trackedInputs.find((input) => input.id === unconsumedBatch)?.quantity ?? 0,
+      }],
+    };
+
+    fetcher.submit(JSON.stringify(payload), {
+      method: "post",
+      action: path.to.unconsume,
+      encType: "application/json",
+    });
+  }, [unconsumedBatch, material?.id, parentId, trackedInputs]);
+
   return (
     <Modal open onOpenChange={onClose}>
       <ModalContent>
@@ -3395,8 +3453,8 @@ function BatchIssueModal({
           <ModalDescription>{material?.description}</ModalDescription>
         </ModalHeader>
         <ModalBody>
-          <Tabs defaultValue="scan">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className={cn("grid w-full grid-cols-2 mb-4", trackedInputs.length > 0 && "grid-cols-3")}>
               <TabsTrigger value="scan">
                 <LuQrCode className="mr-2" />
                 Scan
@@ -3405,6 +3463,12 @@ function BatchIssueModal({
                 <LuList className="mr-2" />
                 Select
               </TabsTrigger>
+              {trackedInputs.length > 0 && (
+                <TabsTrigger value="unconsume">
+                  <LuUndo2 className="mr-2" />
+                  Unconsume
+                </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="scan">
               <div className="flex flex-col gap-4">
@@ -3568,20 +3632,47 @@ function BatchIssueModal({
                 </div>
               </div>
             </TabsContent>
+            {trackedInputs.length > 0 && (
+              <TabsContent value="unconsume">
+                <div className="flex flex-col gap-4">
+                <ComboboxBase
+                  value={unconsumedBatch}
+                  onChange={(value) => {
+                    setUnconsumedBatch(value);
+                  }}
+                  options={unconsumeOptions}
+                  placeholder="Select batch to unconsume"
+                  
+                />
+                <div className="h-8" />
+                </div>
+              </TabsContent>
+            )}
           </Tabs>
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
+          {activeTab === "unconsume" ? (
+            <Button
+              variant="destructive"
+              onClick={handleUnconsume}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle" || !unconsumedBatch}
+            >
+              Unconsume
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
             isLoading={fetcher.state !== "idle"}
             isDisabled={fetcher.state !== "idle"}
           >
             Issue
           </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -3613,7 +3704,7 @@ function IssueModal({
 }) {
   const [items] = useItems();
   const itemOptions = useMemo(() => {
-    return items.map((item) => ({
+    return items.filter(i => !["Batch", "Serial"].includes(i.itemTrackingType)).map((item) => ({
       label: item.readableId,
       helper: item.name,
       value: item.id,
