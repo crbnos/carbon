@@ -552,6 +552,8 @@ export const path = {
     jobOperationTool: (id: string) =>
       generatePath(`${x}/job/methods/operation/tool/${id}`),
     jobOperationStatus: `${x}/job/methods/operation/status`,
+    jobProductionEvent: (jobId: string, eventId: string) =>
+      generatePath(`${x}/job/${jobId}/events/${eventId}`),
     jobProductionEvents: (id: string) => generatePath(`${x}/job/${id}/events`),
     jobProductionQuantities: (id: string) =>
       generatePath(`${x}/job/${id}/quantities`),
@@ -1053,7 +1055,7 @@ export const path = {
       generatePath(
         `${x}/tool/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
       ),
-      
+
     toolPlanning: (id: string) => generatePath(`${x}/tool/${id}/planning`),
     toolPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/planning?location=${locationId}`),
@@ -1064,7 +1066,8 @@ export const path = {
       generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
     toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
     tools: `${x}/items/tools`,
-    traceability: `${x}/inventory/traceability`,
+    traceability: `${x}/traceability`,
+    traceabilityGraph: `${x}/traceability/graph`,
     uom: (id: string) => generatePath(`${x}/items/uom/${id}`),
     uoms: `${x}/items/uom`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),

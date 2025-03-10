@@ -6,11 +6,13 @@ export interface TrackedEntityAttributes {
   Customer?: string;
   Job?: string;
   "Job Make Method"?: string;
-
   "Purchase Order"?: string;
+  "Purchase Order Line"?: string;
   "Receipt Line Index"?: number;
   "Receipt Line"?: string;
   Receipt?: string;
+  "Sales Order"?: string;
+  "Sales Order Line"?: string;
   Supplier?: string;
   "Serial Number"?: string;
   "Shipment Line Index"?: number;
@@ -24,9 +26,12 @@ export interface TrackedActivityAttributes {
   "Job Make Method"?: string;
   "Job Material"?: string;
   "Job Operation"?: string;
-  "Production Event"?: string;
-  Job?: string;
   "Original Quantity"?: number;
+  "Production Event"?: string;
+  "Receipt Line"?: string;
   "Remaining Quantity"?: number;
   Employee?: string;
+  Job?: string;
+  Receipt?: string;
+  "Work Center"?: string;
 }

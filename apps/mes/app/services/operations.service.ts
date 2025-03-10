@@ -604,9 +604,10 @@ export async function startProductionEvent(
         sourceDocument: "Production Event",
         sourceDocumentId: eventInsert.data?.id,
         attributes: {
+          Job: operation.data?.jobId,
+          "Job Operation": data.jobOperationId,
           "Production Event": eventInsert.data?.id,
           "Work Center": data.workCenterId,
-          "Job Operation": data.jobOperationId,
           Employee: data.employeeId,
         },
         companyId: data.companyId,
@@ -628,7 +629,6 @@ export async function startProductionEvent(
         quantity: 1,
         companyId: data.companyId,
         createdBy: data.createdBy,
-        entityType: "Production Event",
       });
 
     if (trackedActivityOutputInsert.error) {

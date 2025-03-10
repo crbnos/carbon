@@ -29,6 +29,18 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("jobOperationBatchComplete"),
+    trackedEntityId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+    quantity: z.number(),
+    jobOperationId: z.string(),
+    notes: z.string().optional(),
+    laborProductionEventId: z.string().optional(),
+    machineProductionEventId: z.string().optional(),
+    setupProductionEventId: z.string().optional(),
+  }),
+  z.object({
     type: z.literal("jobOperationSerialComplete"),
     trackedEntityId: z.string(),
     companyId: z.string(),
@@ -74,6 +86,7 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
   const payload = await req.json();
+  console.log({ payload });
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
@@ -97,18 +110,31 @@ serve(async (req: Request) => {
           userId,
         } = validatedPayload;
 
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
         await db.transaction().execute(async (trx) => {
           const job = await trx
             .selectFrom("job")
             .where("id", "=", jobId)
             .select(["itemId", "quantityReceivedToInventory"])
-            .executeTakeFirst();
+            .executeTakeFirstOrThrow();
+
+          const jobMakeMethod = await trx
+            .selectFrom("jobMakeMethod")
+            .where("jobId", "=", jobId)
+            .where("parentMaterialId", "is", null)
+            .selectAll()
+            .executeTakeFirstOrThrow();
 
           const item = await trx
             .selectFrom("item")
             .where("id", "=", job?.itemId!)
             .select(["readableId"])
-            .executeTakeFirst();
+            .executeTakeFirstOrThrow();
 
           const quantityReceivedToInventory =
             quantityComplete - (job?.quantityReceivedToInventory ?? 0);
@@ -126,18 +152,83 @@ serve(async (req: Request) => {
             .where("id", "=", jobId)
             .execute();
 
-          itemLedgerInserts.push({
-            entryType: "Assembly Output",
-            documentType: "Job Receipt",
-            documentId: jobId,
-            companyId,
-            itemId: job?.itemId!,
-            itemReadableId: item?.readableId,
-            quantity: quantityReceivedToInventory,
-            locationId,
-            shelfId,
-            createdBy: userId,
-          });
+          if (jobMakeMethod.requiresBatchTracking) {
+            const trackedEntity = await client
+              .from("trackedEntity")
+              .select("*")
+              .eq("attributes->>Job Make Method", jobMakeMethod.id!)
+              .single();
+
+            if (!trackedEntity.data) {
+              throw new Error("Tracked entity not found");
+            }
+
+            itemLedgerInserts.push({
+              entryType: "Assembly Output",
+              documentType: "Job Receipt",
+              documentId: jobId,
+              companyId,
+              itemId: job?.itemId!,
+              itemReadableId: item?.readableId,
+              quantity: quantityReceivedToInventory,
+              locationId,
+              shelfId,
+              trackedEntityId: trackedEntity.data.id,
+              createdBy: userId,
+            });
+          } else if (jobMakeMethod.requiresSerialTracking) {
+            const trackedEntities = await client
+              .from("trackedEntity")
+              .select("*")
+              .eq("attributes->>Job Make Method", jobMakeMethod.id!)
+              .neq("status", "Consumed");
+
+            if (!trackedEntities.data) {
+              throw new Error("Tracked entities not found");
+            }
+
+            // TODO: we probably need some user input for determining which entities go into inventory
+            trackedEntities.data.forEach((trackedEntity) => {
+              itemLedgerInserts.push({
+                entryType: "Assembly Output",
+                documentType: "Job Receipt",
+                documentId: jobId,
+                companyId,
+                itemId: job?.itemId!,
+                itemReadableId: item?.readableId,
+                quantity: 1,
+                locationId,
+                shelfId,
+                trackedEntityId: trackedEntity.id,
+                createdBy: userId,
+              });
+            });
+
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Available",
+              })
+              .where(
+                "id",
+                "in",
+                trackedEntities.data.map((trackedEntity) => trackedEntity.id)
+              )
+              .execute();
+          } else {
+            itemLedgerInserts.push({
+              entryType: "Assembly Output",
+              documentType: "Job Receipt",
+              documentId: jobId,
+              companyId,
+              itemId: job?.itemId!,
+              itemReadableId: item?.readableId,
+              quantity: quantityReceivedToInventory,
+              locationId,
+              shelfId,
+              createdBy: userId,
+            });
+          }
 
           if (itemLedgerInserts.length > 0) {
             await trx
@@ -257,6 +348,110 @@ serve(async (req: Request) => {
         });
 
         break;
+      }
+      case "jobOperationBatchComplete": {
+        const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [jobOperation, productionQuantities] = await Promise.all([
+          client
+            .from("jobOperation")
+            .select("*")
+            .eq("id", row.jobOperationId)
+            .single(),
+          client
+            .from("productionQuantity")
+            .select("*")
+            .eq("jobOperationId", row.jobOperationId)
+            .eq("type", "Production"),
+        ]);
+
+        if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
+          throw new Error("Job operation not found");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          await trx
+            .insertInto("productionQuantity")
+            .values({
+              ...row,
+              type: "Production",
+              companyId,
+              createdBy: userId,
+            })
+            .executeTakeFirst();
+
+          const trackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", trackedEntityId)
+            .selectAll()
+            .executeTakeFirst();
+
+          if (!trackedEntity) {
+            throw new Error("Tracked entity not found");
+          }
+
+          if (trackedEntity.status !== "Consumed") {
+            const activityId = nanoid();
+            await trx
+              .insertInto("trackedActivity")
+              .values({
+                id: activityId,
+                type: "Produce",
+                sourceDocument: "Job Operation",
+                sourceDocumentId: row.jobOperationId,
+                attributes: {
+                  "Job Operation": row.jobOperationId,
+                  Employee: userId,
+                  Quantity: row.quantity,
+                },
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            await trx
+              .insertInto("trackedActivityOutput")
+              .values({
+                trackedActivityId: activityId,
+                trackedEntityId: trackedEntityId,
+                quantity: row.quantity,
+                companyId,
+                createdBy: userId,
+              })
+              .execute();
+
+            const previousProductionQuantities =
+              productionQuantities?.data?.reduce((acc, curr) => {
+                const quantity = Number(curr.quantity);
+                return acc + quantity;
+              }, 0) ?? 0;
+
+            // Update the current trackedEntity to Complete
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Available",
+                quantity: previousProductionQuantities + row.quantity,
+              })
+              .where("id", "=", trackedEntityId)
+              .execute();
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
@@ -638,7 +833,7 @@ serve(async (req: Request) => {
             .insertInto("trackedActivity")
             .values({
               id: activityId,
-              type: "Issue",
+              type: "Consume",
               sourceDocument: "Job Material",
               sourceDocumentId: materialId,
               sourceDocumentReadableId: jobMaterial?.itemReadableId,
@@ -718,7 +913,6 @@ serve(async (req: Request) => {
                   trackedActivityId: splitActivityId,
                   trackedEntityId: trackedEntity.id!,
                   quantity: Number(trackedEntity.quantity),
-                  entityType: "Item",
                   companyId,
                   createdBy: userId,
                 })
@@ -783,56 +977,58 @@ serve(async (req: Request) => {
                 remainingQuantity,
               });
 
-              itemLedgerInserts.push(
-                {
-                  entryType: "Negative Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  itemReadableId: trackedEntity.sourceDocumentReadableId,
-                  quantity: -Number(trackedEntity.quantity),
-                  locationId: job?.locationId,
-                  shelfId: itemLedgers.find(
-                    (itemLedger) =>
-                      itemLedger.trackedEntityId === trackedEntityId
-                  )?.shelfId,
-                  trackedEntityId: trackedEntity.id!,
-                  createdBy: userId,
-                },
-                {
-                  entryType: "Positive Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  itemReadableId: trackedEntity.sourceDocumentReadableId,
-                  quantity: quantity,
-                  locationId: job?.locationId,
-                  shelfId: itemLedgers.find(
-                    (itemLedger) =>
-                      itemLedger.trackedEntityId === trackedEntityId
-                  )?.shelfId,
-                  trackedEntityId: trackedEntity.id!,
-                  createdBy: userId,
-                },
-                {
-                  entryType: "Positive Adjmt.",
-                  documentType: "Batch Split",
-                  documentId: splitActivityId,
-                  companyId,
-                  itemId: trackedEntity.sourceDocumentId,
-                  itemReadableId: trackedEntity.sourceDocumentReadableId,
-                  quantity: remainingQuantity,
-                  locationId: job?.locationId,
-                  shelfId: itemLedgers.find(
-                    (itemLedger) =>
-                      itemLedger.trackedEntityId === trackedEntityId
-                  )?.shelfId,
-                  trackedEntityId: newTrackedEntityId,
-                  createdBy: userId,
-                }
-              );
+              if (jobMaterial?.methodType !== "Make") {
+                itemLedgerInserts.push(
+                  {
+                    entryType: "Negative Adjmt.",
+                    documentType: "Batch Split",
+                    documentId: splitActivityId,
+                    companyId,
+                    itemId: trackedEntity.sourceDocumentId,
+                    itemReadableId: trackedEntity.sourceDocumentReadableId,
+                    quantity: -Number(trackedEntity.quantity),
+                    locationId: job?.locationId,
+                    shelfId: itemLedgers.find(
+                      (itemLedger) =>
+                        itemLedger.trackedEntityId === trackedEntityId
+                    )?.shelfId,
+                    trackedEntityId: trackedEntity.id!,
+                    createdBy: userId,
+                  },
+                  {
+                    entryType: "Positive Adjmt.",
+                    documentType: "Batch Split",
+                    documentId: splitActivityId,
+                    companyId,
+                    itemId: trackedEntity.sourceDocumentId,
+                    itemReadableId: trackedEntity.sourceDocumentReadableId,
+                    quantity: quantity,
+                    locationId: job?.locationId,
+                    shelfId: itemLedgers.find(
+                      (itemLedger) =>
+                        itemLedger.trackedEntityId === trackedEntityId
+                    )?.shelfId,
+                    trackedEntityId: trackedEntity.id!,
+                    createdBy: userId,
+                  },
+                  {
+                    entryType: "Positive Adjmt.",
+                    documentType: "Batch Split",
+                    documentId: splitActivityId,
+                    companyId,
+                    itemId: trackedEntity.sourceDocumentId,
+                    itemReadableId: trackedEntity.sourceDocumentReadableId,
+                    quantity: remainingQuantity,
+                    locationId: job?.locationId,
+                    shelfId: itemLedgers.find(
+                      (itemLedger) =>
+                        itemLedger.trackedEntityId === trackedEntityId
+                    )?.shelfId,
+                    trackedEntityId: newTrackedEntityId,
+                    createdBy: userId,
+                  }
+                );
+              }
             }
 
             // Update tracked entity status to consumed
@@ -848,26 +1044,27 @@ serve(async (req: Request) => {
               trackedActivityId: activityId,
               trackedEntityId,
               quantity,
-              entityType: "Item",
               companyId,
               createdBy: userId,
             });
 
-            itemLedgerInserts.push({
-              entryType: "Consumption",
-              documentType: "Job Consumption",
-              documentId: job?.id!,
-              companyId,
-              itemId: trackedEntity.sourceDocumentId,
-              itemReadableId: trackedEntity.sourceDocumentReadableId,
-              quantity: -quantity,
-              locationId: job?.locationId,
-              shelfId: itemLedgers.find(
-                (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
-              )?.shelfId,
-              trackedEntityId,
-              createdBy: userId,
-            });
+            if (jobMaterial?.methodType !== "Make") {
+              itemLedgerInserts.push({
+                entryType: "Consumption",
+                documentType: "Job Consumption",
+                documentId: job?.id!,
+                companyId,
+                itemId: trackedEntity.sourceDocumentId,
+                itemReadableId: trackedEntity.sourceDocumentReadableId,
+                quantity: -quantity,
+                locationId: job?.locationId,
+                shelfId: itemLedgers.find(
+                  (itemLedger) => itemLedger.trackedEntityId === trackedEntityId
+                )?.shelfId,
+                trackedEntityId,
+                createdBy: userId,
+              });
+            }
           }
 
           if (trackedActivityInputs.length > 0) {

@@ -860,6 +860,8 @@ serve(async (req: Request) => {
                 sourceDocumentReadableId: receipt.data.receiptId,
                 attributes: {
                   "Purchase Order": receipt.data.sourceDocumentId,
+                  Receipt: receiptId,
+                  Employee: userId,
                 },
                 companyId,
                 createdBy: userId,

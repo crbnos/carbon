@@ -64,6 +64,7 @@ import { ValidatedForm, Submit, Number } from "@carbon/form";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { SplitButton } from "~/components/SplitButton";
 import { labelSizes } from "@carbon/utils";
+import { useCarbon } from "@carbon/auth";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -420,6 +421,7 @@ function ShipmentLineItem({
           hasTrackingLabel={hasTrackingLabel}
           isReadOnly={isReadOnly}
           tracking={tracking}
+          onUpdate={onUpdate}
         />
       )}
       {line.requiresSerialTracking && (
@@ -444,12 +446,22 @@ function BatchForm({
   hasTrackingLabel,
   tracking,
   isReadOnly,
+  onUpdate,
 }: {
   line: ShipmentLine;
   shipment?: Shipment;
   hasTrackingLabel: boolean;
   isReadOnly: boolean;
   tracking: ItemTracking | undefined;
+  onUpdate: ({
+    lineId,
+    field,
+    value,
+  }: {
+    lineId: string;
+    field: "shelfId";
+    value: string;
+  }) => Promise<void>;
 }) {
   const submit = useSubmit();
   const [values, setValues] = useState<{
@@ -484,6 +496,7 @@ function BatchForm({
 
   const { data: batchNumbers } = useBatchNumbers(line.itemId);
   const [error, setError] = useState<string | null>(null);
+  const { carbon } = useCarbon();
 
   // Check if the batch number is valid and in the list
   const isBatchNumberValid =
@@ -510,6 +523,31 @@ function BatchForm({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [line.shippedQuantity]);
+
+  const getShelfFromBatchNumber = async (trackedEntityId: string) => {
+    const response = await carbon
+      ?.from("itemLedger")
+      .select("shelfId")
+      .eq("trackedEntityId", trackedEntityId)
+      .order("createdAt", { ascending: false })
+      .single();
+
+    if (response?.data?.shelfId) {
+      onUpdate({
+        lineId: line.id,
+        field: "shelfId",
+        value: response.data.shelfId,
+      });
+    }
+  };
+
+  // Fetch the latest shelf for the selected batch number
+  useEffect(() => {
+    if (values.number && values.number.trim()) {
+      getShelfFromBatchNumber(values.number);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.number]);
 
   const updateBatchNumber = async (newValues: typeof values, isNew = false) => {
     if (!shipment?.id || !newValues.number.trim()) return;

@@ -39,15 +39,6 @@ export async function action({ request, context }: ActionFunctionArgs) {
       console.error(error);
     }
 
-    console.log(
-      trackedEntityId,
-      receiptLineId,
-      receiptId,
-      batchNumber,
-      quantity,
-      propertiesJson
-    );
-
     const serviceRole = await getCarbonServiceRole();
     // Use a transaction to ensure data consistency
     const { error } = await serviceRole.rpc(

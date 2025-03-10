@@ -68,6 +68,7 @@ export type ShipmentSourceDocument =
 export interface TrackedEntity {
   id: string;
   quantity: number;
+  status: string;
   sourceDocument: string;
   sourceDocumentId: string;
   sourceDocumentReadableId: string;
@@ -87,7 +88,6 @@ export interface ActivityInput {
   trackedActivityId: string;
   trackedEntityId: string;
   quantity: number;
-  entityType: string;
 }
 
 export interface ActivityOutput {

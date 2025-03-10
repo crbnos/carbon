@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
-  Combobox,
+  CreatableCombobox,
   Heading,
   HStack,
   IconButton,
@@ -39,7 +39,7 @@ import {
   useSubmit,
 } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { LuCircleAlert, LuGroup, LuQrCode, LuSplit, LuX } from "react-icons/lu";
 import { DocumentPreview, Empty } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
@@ -50,6 +50,7 @@ import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import {
+  ShelfForm,
   splitValidator,
   type BatchProperty,
   type ItemTracking,
@@ -985,25 +986,49 @@ function Shelf({
   isReadOnly: boolean;
   onChange: (shelf: string) => void;
 }) {
-  const { options } = useShelves(locationId ?? undefined);
+  const { options, data } = useShelves(locationId ?? undefined);
+  const newShelfModal = useDisclosure();
+  const [created, setCreated] = useState<string>("");
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   if (!locationId) return null;
+
+  const ShelfPreview = (
+    value: string,
+    options: { value: string; label: string }[]
+  ) => {
+    const shelf = options.find((o) => o.value === value);
+    if (!shelf) return null;
+    return shelf.label;
+  };
 
   return (
     <div className="flex flex-col items-start gap-1 min-w-[140px] text-sm">
       <label className="text-xs text-muted-foreground">Shelf</label>
-      <Combobox
-        value={shelfId ?? undefined}
-        onChange={(newValue) => {
-          onChange(newValue);
-        }}
+      <CreatableCombobox
+        ref={triggerRef}
         options={options}
-        isReadOnly={isReadOnly}
-        inline={(value, options) => {
-          const option = options.find((o) => o.value === value);
-          return option?.label ?? "";
+        value={shelfId ?? undefined}
+        onChange={onChange}
+        disabled={isReadOnly}
+        inline={ShelfPreview}
+        onCreateOption={(option) => {
+          newShelfModal.onOpen();
+          setCreated(option);
         }}
       />
+      {newShelfModal.isOpen && (
+        <ShelfForm
+          locationId={locationId}
+          type="modal"
+          onClose={() => {
+            setCreated("");
+            newShelfModal.onClose();
+            triggerRef.current?.click();
+          }}
+          initialValues={{ name: created, locationId: locationId }}
+        />
+      )}
     </div>
   );
 }

@@ -81,9 +81,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     trackedEntities.data &&
     trackedEntities.data.length > 0 &&
     // Check if any tracked entity has an attribute for this operation
-    !trackedEntities.data.every(entity => {
+    !trackedEntities.data.every((entity) => {
       const attributes = entity.attributes as Record<string, unknown>;
-      return Object.keys(attributes).some(key => key.startsWith(`Operation`));
+      return Object.keys(attributes).some((key) => key.startsWith(`Operation`));
     })
   ) {
     const lastTrackedEntity =
