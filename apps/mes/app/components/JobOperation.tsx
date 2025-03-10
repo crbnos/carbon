@@ -125,14 +125,15 @@ import {
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
+import type {
+  TrackedEntityAttributes} from "@carbon/utils";
 import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDate,
   formatDateTime,
   formatDurationMilliseconds,
-  formatRelativeTime,
-  TrackedEntityAttributes,
+  formatRelativeTime
 } from "@carbon/utils";
 import {
   getLocalTimeZone,
@@ -185,8 +186,7 @@ import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 import FileDropzone from "./FileDropzone";
 import { useNumberFormatter } from "@react-aria/i18n";
-import { getSerialNumbersForItem } from "~/services/inventory.service";
-import { getBatchNumbersForItem } from "~/services/inventory.service";
+import type { getSerialNumbersForItem , getBatchNumbersForItem } from "~/services/inventory.service";
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -329,10 +329,10 @@ export const JobOperation = ({
               <Button
                 variant="ghost"
                 leftIcon={<LuChevronLeft />}
-                onClick={() => navigate(path.to.operations)}
+                onClick={() => navigate(path.to.assigned)}
                 className="pl-2"
               >
-                Back
+                Assignments
               </Button>
             </div>
             <div className="hidden md:flex flex-shrink-0 items-center justify-end gap-2">
