@@ -1,4 +1,10 @@
-import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
+import {
+  Button,
+  HStack,
+  Heading,
+  SplitButton,
+  useDisclosure,
+} from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
 import { LuCheckCheck, LuBarcode, LuQrCode } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -9,7 +15,6 @@ import ShipmentPostModal from "./ShipmentPostModal";
 import { RiProgress8Line } from "react-icons/ri";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import ShipmentStatus from "./ShipmentStatus";
-import { SplitButton } from "~/components/SplitButton";
 import { labelSizes } from "@carbon/utils";
 
 const ShipmentHeader = () => {

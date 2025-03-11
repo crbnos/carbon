@@ -294,6 +294,7 @@ import type {
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 import Copy from "./Copy";
+import { SplitButton } from "./SplitButton";
 
 export * from "./hooks";
 export {
@@ -520,6 +521,7 @@ export {
   Skeleton,
   Slider,
   Spinner,
+  SplitButton,
   Status,
   Switch,
   Table,

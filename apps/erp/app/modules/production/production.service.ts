@@ -229,6 +229,17 @@ export async function getJobsList(
     .order("jobId");
 }
 
+export async function getJobMakeMethodById(
+  client: SupabaseClient<Database>,
+  jobMakeMethodId: string
+) {
+  return client
+    .from("jobMakeMethod")
+    .select("*")
+    .eq("id", jobMakeMethodId)
+    .single();
+}
+
 export async function getJobMaterialsWithQuantityOnHand(
   client: SupabaseClient<Database>,
   jobId: string,

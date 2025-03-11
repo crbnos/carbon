@@ -64,6 +64,7 @@ import {
   NumberInputStepper,
   Copy,
   Switch,
+  SplitButton,
 } from "@carbon/react";
 import { generateHTML } from "@carbon/react/Editor";
 import {
@@ -134,6 +135,7 @@ import {
   formatDateTime,
   formatDurationMilliseconds,
   formatRelativeTime,
+  labelSizes,
 } from "@carbon/utils";
 import {
   getLocalTimeZone,
@@ -168,6 +170,7 @@ import {
   LuHardHat,
   LuList,
   LuPaperclip,
+  LuPrinter,
   LuQrCode,
   LuSend,
   LuTimer,
@@ -315,6 +318,37 @@ export const JobOperation = ({
     setSelectedAttribute(null);
     attributeRecordModal.onClose();
     attributeRecordDeleteModal.onClose();
+  };
+
+  const navigateToTrackingLabels = (
+    zpl?: boolean,
+    {
+      labelSize,
+      trackedEntityId,
+    }: { labelSize?: string; trackedEntityId?: string } = {}
+  ) => {
+    if (!window) return;
+    if (!operationId) return;
+
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.operationLabelsZpl(operationId, {
+            labelSize,
+            trackedEntityId,
+          }),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.operationLabelsPdf(operationId, {
+            labelSize,
+            trackedEntityId,
+          }),
+        "_blank"
+      );
+    }
   };
 
   return (
@@ -969,14 +1003,27 @@ export const JobOperation = ({
                   <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
                     <HStack className="justify-between w-full">
                       <Heading size="h3">Serial Numbers</Heading>
-                      <HStack>
-                        <Button variant="secondary" leftIcon={<LuQrCode />}>
-                          Tracking Labels
-                        </Button>
-                        <Button variant="secondary" leftIcon={<LuBarcode />}>
-                          Scan
-                        </Button>
-                      </HStack>
+                      {trackedEntities?.length > 0 && (
+                        <HStack>
+                          <SplitButton
+                            leftIcon={<LuQrCode />}
+                            dropdownItems={labelSizes.map((size) => ({
+                              label: size.name,
+                              onClick: () =>
+                                navigateToTrackingLabels(!!size.zpl, {
+                                  labelSize: size.id,
+                                }),
+                            }))}
+                            // TODO: if we knew the preferred label size, we could use that here
+                            onClick={() => navigateToTrackingLabels(false)}
+                          >
+                            Tracking Labels
+                          </SplitButton>
+                          <Button variant="secondary" leftIcon={<LuBarcode />}>
+                            Scan
+                          </Button>
+                        </HStack>
+                      )}
                     </HStack>
 
                     <Table className="w-full">
@@ -991,8 +1038,9 @@ export const JobOperation = ({
                           <Tr>
                             <Td
                               colSpan={24}
-                              className="py-8 text-red-500 text-center"
+                              className="py-8 text-muted-foreground text-center"
                             >
+                              <LuTriangleAlert className="text-red-500 size-4" />
                               No serial numbers
                             </Td>
                           </Tr>
@@ -1004,11 +1052,22 @@ export const JobOperation = ({
                                 {entity.id === trackedEntityId && (
                                   <LuCheck className="text-emerald-500 size-4" />
                                 )}
+                                <Copy text={entity.id} />
                               </Td>
 
                               <Td className="text-right">
                                 <div className="flex justify-end gap-2">
-                                  <Copy text={entity.id} />
+                                  <IconButton
+                                    aria-label="Print Label"
+                                    size="sm"
+                                    icon={<LuPrinter />}
+                                    variant="secondary"
+                                    onClick={() => {
+                                      navigateToTrackingLabels(false, {
+                                        trackedEntityId: entity.id,
+                                      });
+                                    }}
+                                  />
                                   <Button
                                     variant="secondary"
                                     size="sm"

@@ -17,6 +17,7 @@ import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
+  getJobMakeMethodById,
   getJobMaterial,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
@@ -36,6 +37,7 @@ import { usePanels } from "~/components/Layout";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production",
+    bypassRls: true,
   });
 
   const { jobId, methodId, materialId } = params;
@@ -111,6 +113,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent | null,
       })) ?? [],
+    makeMethod: getJobMakeMethodById(client, methodId),
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
@@ -121,6 +124,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobMakeMethodRoute() {
+  const { makeMethod } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { methodId, jobId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
@@ -139,7 +143,7 @@ export default function JobMakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <JobMakeMethodTools />
+      <JobMakeMethodTools makeMethod={makeMethod} />
       <JobMaterialForm
         key={material.id}
         initialValues={material}

@@ -28,6 +28,17 @@ export async function getBatchNumbersForItem(
     .gte("quantity", 1);
 }
 
+export async function getCompanySettings(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("companySettings")
+    .select("*")
+    .eq("id", companyId)
+    .single();
+}
+
 export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
   args: {

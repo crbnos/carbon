@@ -1,4 +1,10 @@
-import { Button, HStack, Heading, useDisclosure } from "@carbon/react";
+import {
+  Button,
+  HStack,
+  Heading,
+  SplitButton,
+  useDisclosure,
+} from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
 import { Link, useParams } from "@remix-run/react";
 import {
@@ -7,7 +13,7 @@ import {
   LuQrCode,
   LuShoppingCart,
 } from "react-icons/lu";
-import { SplitButton } from "~/components/SplitButton";
+
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Receipt, ReceiptLine } from "~/modules/inventory";
 import { ReceiptPostModal, ReceiptStatus } from "~/modules/inventory";

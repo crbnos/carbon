@@ -15,6 +15,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  SplitButton,
   Tabs,
   TabsContent,
   TabsList,
@@ -31,12 +32,16 @@ import {
   useLocation,
   useParams,
 } from "@remix-run/react";
-import type { PostgrestResponse } from "@supabase/supabase-js";
+import type {
+  PostgrestResponse,
+  PostgrestSingleResponse,
+} from "@supabase/supabase-js";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import {
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuQrCode,
   LuSquareStack,
   LuTriangleAlert,
 } from "react-icons/lu";
@@ -59,9 +64,14 @@ import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getJobMethodValidator } from "../../production.models";
-import type { Job, JobMaterial, JobMethod } from "../../types";
+import type { Job, JobMakeMethod, JobMaterial, JobMethod } from "../../types";
+import { labelSizes } from "@carbon/utils";
 
-const JobBreadcrumbs = () => {
+const JobMakeMethodTools = ({
+  makeMethod,
+}: {
+  makeMethod?: Promise<PostgrestSingleResponse<JobMakeMethod>>;
+}) => {
   const permissions = usePermissions();
   const { jobId, methodId, materialId } = useParams();
   if (!jobId) throw new Error("jobId not found");
@@ -156,6 +166,36 @@ const JobBreadcrumbs = () => {
     });
   };
 
+  const navigateToTrackingLabels = (
+    makeMethodId: string,
+    zpl: boolean,
+    {
+      labelSize,
+      trackedEntityId,
+    }: { labelSize?: string; trackedEntityId?: string } = {}
+  ) => {
+    if (!window) return;
+    if (!makeMethodId) return;
+
+    if (zpl) {
+      window.open(
+        window.location.origin +
+          path.to.file.operationLabelsZpl(makeMethodId, {
+            labelSize,
+          }),
+        "_blank"
+      );
+    } else {
+      window.open(
+        window.location.origin +
+          path.to.file.operationLabelsPdf(makeMethodId, {
+            labelSize,
+          }),
+        "_blank"
+      );
+    }
+  };
+
   return (
     <>
       {permissions.can("update", "production") &&
@@ -204,6 +244,40 @@ const JobBreadcrumbs = () => {
                       Item Master
                     </Link>
                   </MenubarItem>
+                )}
+                {makeMethod && (
+                  <Suspense fallback={null}>
+                    <Await resolve={makeMethod}>
+                      {(resolvedMakeMethod) =>
+                        resolvedMakeMethod.data?.requiresSerialTracking ||
+                        resolvedMakeMethod.data?.requiresBatchTracking ? (
+                          <SplitButton
+                            dropdownItems={labelSizes.map((size) => ({
+                              label: size.name,
+                              onClick: () =>
+                                navigateToTrackingLabels(
+                                  resolvedMakeMethod.data?.id,
+                                  !!size.zpl,
+                                  {
+                                    labelSize: size.id,
+                                  }
+                                ),
+                            }))}
+                            leftIcon={<LuQrCode />}
+                            variant="ghost"
+                            onClick={() =>
+                              navigateToTrackingLabels(
+                                resolvedMakeMethod.data?.id,
+                                false
+                              )
+                            }
+                          >
+                            Tracking Labels
+                          </SplitButton>
+                        ) : null
+                      }
+                    </Await>
+                  </Suspense>
                 )}
               </HStack>
             </HStack>
@@ -419,7 +493,7 @@ const JobBreadcrumbs = () => {
   );
 };
 
-export default JobBreadcrumbs;
+export default JobMakeMethodTools;
 
 function QuoteLineForm() {
   const quoteFetcher =

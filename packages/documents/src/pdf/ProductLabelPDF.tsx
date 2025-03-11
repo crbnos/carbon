@@ -152,7 +152,7 @@ const ProductLabelPDF = ({ items, labelSize }: ProductLabelProps) => {
                           </Text>
                         )}
 
-                        {item.trackingType === "Serial" && (
+                        {item.trackingType === "Serial" && item.number && (
                           <Text
                             style={{
                               ...tw("mb-1"),
@@ -162,7 +162,7 @@ const ProductLabelPDF = ({ items, labelSize }: ProductLabelProps) => {
                             S/N: {item.number}
                           </Text>
                         )}
-                        {item.trackingType === "Batch" && (
+                        {item.trackingType === "Batch" && item.number && (
                           <Text
                             style={{
                               ...tw("mb-1"),

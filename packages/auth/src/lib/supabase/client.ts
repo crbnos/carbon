@@ -30,22 +30,22 @@ const getCarbonClient = (supabaseKey: string, accessToken?: string) => {
   return client;
 };
 
-/**
- * Provides a Carbon Client for the logged in user or get back a public and safe client without admin privileges
- *
- * It's a per request scoped client to prevent access token leaking over multiple concurrent requests and from different users.
- *
- */
+export const getCarbonAPIKeyClient = (apiKey: string) => {
+  const client = createClient<Database>(SUPABASE_API_URL, SUPABASE_ANON_PUBLIC, {
+    global: {
+      headers: {
+        "carbon-key": apiKey,
+      },
+    },
+  });
+
+  return client;
+};
+
 export const getCarbon = (accessToken?: string) => {
   return getCarbonClient(SUPABASE_ANON_PUBLIC, accessToken);
 };
 
-/**
- * Provides a Carbon Admin Client with full admin privileges
- *
- * It's a per request scoped client, to prevent access token leaking`.
- *
- */
 export const getCarbonServiceRole = () => {
   if (isBrowser)
     throw new Error(
