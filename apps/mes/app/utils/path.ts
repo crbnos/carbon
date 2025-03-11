@@ -55,6 +55,7 @@ export const path = {
     scrapReasons: `${api}/scrap-reasons`,
     switchCompany: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
+    unconsume: `${x}/unconsume`,
     workCenter: (workCenter: string) =>
       generatePath(`${x}/operations/${workCenter}`),
   },

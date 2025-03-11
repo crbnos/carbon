@@ -510,7 +510,6 @@ export async function getTrackedEntities(
   return query;
 }
 
-
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {

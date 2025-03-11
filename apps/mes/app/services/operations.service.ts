@@ -246,43 +246,44 @@ export async function getJobMaterialsByOperationId(
     requiresSerialTracking: boolean;
   }
 ) {
-
   const { operation, trackedEntityId, requiresSerialTracking } = args;
 
-  const [materials, trackedInputs] = await Promise.all([client
-    .from("jobMaterial")
-    .select("*")
-    .eq("jobMakeMethodId", operation.jobMakeMethodId)
-    .order("itemReadableId", { ascending: true })
-    .order("id", { ascending: true }),
-    getTrackedInputs(
-      client,
-      trackedEntityId
-    )
+  const [materials, trackedInputs] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select("*")
+      .eq("jobMakeMethodId", operation.jobMakeMethodId)
+      .order("itemReadableId", { ascending: true })
+      .order("id", { ascending: true }),
+    getTrackedInputs(client, trackedEntityId),
   ]);
-  
+
   if (requiresSerialTracking) {
     return {
-      materials: materials.data?.map((material) => {
-        if (!material.requiresSerialTracking && !material.requiresBatchTracking)
-          return material;
-        const issuedForTrackedParent =
-          trackedInputs.data
-            ?.filter(
-              (input) =>
-                (input.activityAttributes as TrackedActivityAttributes)?.[
-                  "Job Material"
-                ] === material.id
-            )
-            .reduce((acc, input) => {
-              return acc + input.quantity;
-            }, 0) ?? 0;
+      materials:
+        materials.data?.map((material) => {
+          if (
+            !material.requiresSerialTracking &&
+            !material.requiresBatchTracking
+          )
+            return material;
+          const issuedForTrackedParent =
+            trackedInputs.data
+              ?.filter(
+                (input) =>
+                  (input.activityAttributes as TrackedActivityAttributes)?.[
+                    "Job Material"
+                  ] === material.id
+              )
+              .reduce((acc, input) => {
+                return acc + input.quantity;
+              }, 0) ?? 0;
 
-        return {
-          ...material,
-          quantityIssued: issuedForTrackedParent,
-        };
-      }) ?? [],
+          return {
+            ...material,
+            quantityIssued: issuedForTrackedParent,
+          };
+        }) ?? [],
       trackedInputs: trackedInputs.data ?? [],
     };
   } else {
@@ -418,13 +419,52 @@ export async function getTrackedInputs(
   trackedEntityId?: string
 ) {
   if (!trackedEntityId) return { data: [] };
-  return client.rpc(
-    "get_direct_descendants_of_tracked_entity",
-    {
+  const [inputs, outputs] = await Promise.all([
+    client.rpc("get_direct_descendants_of_tracked_entity_strict", {
       p_tracked_entity_id: trackedEntityId,
+    }),
+    client.rpc("get_direct_ancestors_of_tracked_entity_strict", {
+      p_tracked_entity_id: trackedEntityId,
+    }),
+  ]);
+
+  if (outputs.error || outputs.data.length === 0) return inputs;
+
+  // Handle circular references while keeping only unique entities that appear more times in inputs than outputs
+  const inputCounts = new Map<string, number>();
+  const outputCounts = new Map<string, number>();
+
+  // Count occurrences in inputs
+  inputs.data?.forEach((input) => {
+    inputCounts.set(input.id, (inputCounts.get(input.id) || 0) + 1);
+  });
+
+  // Count occurrences in outputs
+  outputs.data?.forEach((output) => {
+    outputCounts.set(output.id, (outputCounts.get(output.id) || 0) + 1);
+  });
+
+  // Track which IDs we've already included to avoid duplicates
+  const includedIds = new Set<string>();
+
+  const inputsWithoutCircularReferences = inputs.data?.filter((input) => {
+    const inputCount = inputCounts.get(input.id) || 0;
+    const outputCount = outputCounts.get(input.id) || 0;
+
+    // Only include if input count > output count and we haven't included this ID yet
+    if (inputCount > outputCount && !includedIds.has(input.id)) {
+      includedIds.add(input.id);
+      return true;
     }
-  );
+    return false;
+  });
+
+  return {
+    data: inputsWithoutCircularReferences,
+    error: inputs.error,
+  };
 }
+
 export async function getThumbnailPathByItemId(
   client: SupabaseClient<Database>,
   itemId: string

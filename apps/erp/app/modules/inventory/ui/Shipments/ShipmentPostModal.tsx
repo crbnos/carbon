@@ -68,8 +68,6 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
       companyId
     );
 
-    
-
     if (
       routeData?.shipmentLines.length === 0 ||
       routeData?.shipmentLines.every((line) => line.shippedQuantity === 0)
@@ -84,7 +82,6 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
     }
 
     routeData?.shipmentLines.forEach((line: ShipmentLine) => {
-      
       if (line.requiresBatchTracking) {
         const trackedEntity = shipmentLineTracking.data?.find((tracking) => {
           const attributes = tracking.attributes as TrackedEntityAttributes;
