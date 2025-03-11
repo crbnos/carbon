@@ -14,6 +14,7 @@ import {
   Modal,
   NumberField,
   NumberInput,
+  SplitButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -62,7 +63,6 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { ValidatedForm, Submit, Number } from "@carbon/form";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { SplitButton } from "~/components/SplitButton";
 import { labelSizes } from "@carbon/utils";
 import { useCarbon } from "@carbon/auth";
 

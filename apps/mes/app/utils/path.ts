@@ -17,6 +17,42 @@ export const path = {
         generatePath(`${api}/serial-numbers?itemId=${itemId}`),
     },
     file: {
+      operationLabelsPdf: (
+        id: string,
+        {
+          labelSize,
+          trackedEntityId,
+        }: { labelSize?: string; trackedEntityId?: string } = {}
+      ) => {
+        let url = `${file}/operation/${id}/labels.pdf`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (trackedEntityId) params.append("trackedEntityId", trackedEntityId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
+      operationLabelsZpl: (
+        id: string,
+        {
+          labelSize,
+          trackedEntityId,
+        }: { labelSize?: string; trackedEntityId?: string } = {}
+      ) => {
+        let url = `${file}/operation/${id}/labels.zpl`;
+        const params = new URLSearchParams();
+
+        if (labelSize) params.append("labelSize", labelSize);
+        if (trackedEntityId) params.append("trackedEntityId", trackedEntityId);
+
+        const queryString = params.toString();
+        if (queryString) url += `?${queryString}`;
+
+        return generatePath(url);
+      },
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),

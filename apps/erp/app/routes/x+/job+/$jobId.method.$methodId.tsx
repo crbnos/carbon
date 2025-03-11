@@ -17,6 +17,7 @@ import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
+  getJobMakeMethodById,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
   getProductionDataByOperations,
@@ -34,6 +35,7 @@ import { usePanels } from "~/components/Layout";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "production",
+    bypassRls: true,
   });
 
   const { jobId, methodId } = params;
@@ -85,6 +87,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent,
       })) ?? [],
+    makeMethod: getJobMakeMethodById(client, methodId),
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
@@ -94,6 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function JobMakeMethodRoute() {
+  const { makeMethod } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { methodId, jobId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
@@ -114,7 +118,7 @@ export default function JobMakeMethodRoute() {
   return (
     <div className="h-[calc(100dvh-49px)] w-full items-start overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
       <VStack spacing={2} className="p-2">
-        <JobMakeMethodTools />
+        <JobMakeMethodTools makeMethod={makeMethod} />
         <JobBillOfProcess
           key={`bop:${methodId}`}
           jobMakeMethodId={methodId}

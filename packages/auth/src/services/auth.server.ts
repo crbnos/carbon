@@ -17,6 +17,7 @@ import { getUserClaims } from "./users.server";
 
 import type { AuthSession } from "../types";
 import { error } from "../utils/result";
+import { getCarbonAPIKeyClient } from "../lib/supabase/client";
 
 export async function createEmailAuthAccount(
   email: string,
@@ -61,6 +62,11 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
   return data.user;
 }
 
+function getCompanyIdFromAPIKey(apiKey: string) {
+  const serviceRole = getCarbonServiceRole();
+  return serviceRole.from("apiKey").select("companyId, createdBy").eq("key", apiKey).single();
+}
+
 function makeAuthSession(
   supabaseSession: SupabaseAuthSession | null,
   companyId: string
@@ -101,6 +107,23 @@ export async function requirePermissions(
   email: string;
   userId: string;
 }> {
+  const apiKey = request.headers.get("carbon-key");
+  if (apiKey) {
+    const company = await getCompanyIdFromAPIKey(apiKey);
+    if (company.data) {
+      const companyId = company.data.companyId;
+      const userId = company.data.createdBy;
+      const client = getCarbonAPIKeyClient(apiKey);
+
+      return {
+        client,
+        companyId,
+        userId,
+        email: "",
+      };
+    }
+  }
+
   const { accessToken, companyId, email, userId } = await requireAuthSession(
     request
   );

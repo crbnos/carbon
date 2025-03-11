@@ -52,10 +52,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      "@carbon/documents": path.resolve(
-        __dirname,
-        "../../packages/documents/src/index.tsx"
-      ),
       "@carbon/utils": path.resolve(
         __dirname,
         "../../packages/utils/src/index.ts"
@@ -63,10 +59,6 @@ export default defineConfig({
       "@carbon/form": path.resolve(
         __dirname,
         "../../packages/form/src/index.tsx"
-      ),
-      "@carbon/logger": path.resolve(
-        __dirname,
-        "../../packages/logger/src/index.ts"
       ),
     },
   },

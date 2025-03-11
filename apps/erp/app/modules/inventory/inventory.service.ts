@@ -510,6 +510,39 @@ export async function getTrackedEntities(
   return query;
 }
 
+export async function getTrackedEntitiesByMakeMethodId(
+  client: SupabaseClient<Database>,
+  jobMakeMethodId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes->>Job Make Method", jobMakeMethodId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function getTrackedEntitiesByOperationId(
+  client: SupabaseClient<Database>,
+  operationId: string
+) {
+  const jobOperation = await client
+    .from("jobOperation")
+    .select("jobMakeMethodId")
+    .eq("id", operationId)
+    .single();
+
+  if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
+    return {
+      data: null,
+      error: jobOperation.error,
+    };
+
+  return getTrackedEntitiesByMakeMethodId(
+    client,
+    jobOperation.data.jobMakeMethodId
+  );
+}
+
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
