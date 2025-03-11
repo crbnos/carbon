@@ -38,6 +38,7 @@ import type {
 import { type MethodItemType } from "~/modules/shared";
 import type { jobStatus } from "../../production.models";
 import { deadlineTypes, jobValidator } from "../../production.models";
+import { getDeadlineIcon, getDeadlineText } from "./Deadline";
 
 type JobFormValues = z.infer<typeof jobValidator> & {
   description: string;
@@ -297,7 +298,12 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                   label="Deadline Type"
                   options={deadlineTypes.map((d) => ({
                     value: d,
-                    label: d,
+                    label: (
+                      <div className="flex gap-1 items-center">
+                        {getDeadlineIcon(d, false)}
+                        <span>{getDeadlineText(d)}</span>
+                      </div>
+                    ),
                   }))}
                 />
 

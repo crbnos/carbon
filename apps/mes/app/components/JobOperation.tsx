@@ -520,7 +520,7 @@ export const JobOperation = ({
                     <h3 className="tracking-tight text-sm font-medium">
                       Scrapped
                     </h3>
-                    <FaTrash className="h-3 w-3 text-red-500" />
+                    <FaTrash className="h-3 w-3 text-muted-foreground" />
                   </div>
                   <div className="p-6 pt-0">
                     <Heading size="h1">{operation.quantityScrapped}</Heading>
@@ -3697,7 +3697,7 @@ function BatchIssueModal({
                               quantity: value,
                             })
                           }
-                          minValue={1}
+                          minValue={0.01}
                           maxValue={
                             options.find((o) => o.value === batchNumber.id)
                               ?.availableQuantity ?? 999999
@@ -3772,7 +3772,7 @@ function BatchIssueModal({
                               quantity: value,
                             })
                           }
-                          minValue={1}
+                          minValue={0.01}
                           maxValue={
                             options.find((o) => o.value === batchNumber.id)
                               ?.availableQuantity ?? 999999

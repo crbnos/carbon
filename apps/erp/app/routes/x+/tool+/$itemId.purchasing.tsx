@@ -3,10 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
+import { getBatchProperties } from "~/modules/inventory";
+import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
 import {
   getItemReplenishment,
@@ -24,22 +27,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [toolPurchasing] = await Promise.all([
+  const [toolPurchasingResult] = await Promise.all([
     getItemReplenishment(client, itemId, companyId),
   ]);
 
-  if (toolPurchasing.error) {
+  if (toolPurchasingResult.error) {
     throw redirect(
       path.to.items,
       await flash(
         request,
-        error(toolPurchasing.error, "Failed to load tool purchasing")
+        error(toolPurchasingResult.error, "Failed to load tool purchasing")
       )
     );
   }
 
-  return json({
-    toolPurchasing: toolPurchasing.data,
+  return defer({
+    toolPurchasing: toolPurchasingResult.data,
+    batchProperties: getBatchProperties(client, [itemId], companyId),
   });
 }
 
@@ -83,7 +87,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ToolPurchasingRoute() {
-  const { toolPurchasing } = useLoaderData<typeof loader>();
+  const { toolPurchasing, batchProperties } = useLoaderData<typeof loader>();
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -91,6 +95,10 @@ export default function ToolPurchasingRoute() {
     path.to.tool(itemId)
   );
   const supplierParts = routeData?.supplierParts ?? [];
+
+  const toolData = useRouteData<{
+    toolSummary: { itemTrackingType?: string };
+  }>(path.to.tool(itemId));
 
   const initialValues = {
     ...toolPurchasing,
@@ -112,6 +120,21 @@ export default function ToolPurchasingRoute() {
         }
       />
       <SupplierParts supplierParts={supplierParts} />
+      {["Batch", "Serial"].includes(
+        toolData?.toolSummary?.itemTrackingType ?? ""
+      ) && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedProperties) => (
+              <BatchPropertiesConfig
+                itemId={itemId}
+                key={`batch-properties:${itemId}`}
+                properties={resolvedProperties.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
     </VStack>
   );
 }

@@ -290,12 +290,7 @@ BEGIN
                                 "attributes")
     VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
             NEW."companyId", NEW."createdBy", 
-            CASE 
-              WHEN NEW."parentMaterialId" IS NOT NULL THEN 
-                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."parentMaterialId")
-              ELSE 
-                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id)
-            END);
+            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."id"));
   ELSE
     -- Update job make method first
     UPDATE "jobMakeMethod"
@@ -311,12 +306,7 @@ BEGIN
                                 "attributes")
     VALUES ('Item', NEW."itemId", v_item_readable_id, NEW."quantity", 'Reserved', 
             NEW."companyId", NEW."createdBy", 
-            CASE 
-              WHEN NEW."parentMaterialId" IS NOT NULL THEN 
-                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."parentMaterialId")
-              ELSE 
-                jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id)
-            END);
+            jsonb_build_object('Job', NEW."jobId", 'Job Make Method', v_job_make_method_id, 'Job Material', NEW."id"));
   END IF;
   RETURN NEW;
 END;

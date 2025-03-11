@@ -3,13 +3,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { Await, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { defer, redirect } from "@vercel/remix";
-import { Suspense } from "react";
+import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
-import { getBatchProperties, InventoryDetails } from "~/modules/inventory";
-import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
+import { InventoryDetails } from "~/modules/inventory";
 import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
@@ -130,12 +128,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return defer({
+  return json({
     partInventory: partInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
-    batchProperties: getBatchProperties(client, [itemId], companyId),
   });
 }
 
@@ -187,13 +184,8 @@ export default function PartInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
 
-  const {
-    partInventory,
-    itemShelfQuantities,
-    quantities,
-    itemId,
-    batchProperties,
-  } = useLoaderData<typeof loader>();
+  const { partInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
     partSummary: PartSummary;
@@ -222,21 +214,6 @@ export default function PartInventoryRoute() {
         quantities={quantities}
         shelves={sharedPartsData?.shelves ?? []}
       />
-      {["Batch", "Serial"].includes(
-        partData.partSummary?.itemTrackingType ?? ""
-      ) && (
-        <Suspense fallback={null}>
-          <Await resolve={batchProperties}>
-            {(resolvedProperties) => (
-              <BatchPropertiesConfig
-                itemId={itemId}
-                key={`batch-properties:${itemId}`}
-                properties={resolvedProperties.data ?? []}
-              />
-            )}
-          </Await>
-        </Suspense>
-      )}
     </VStack>
   );
 }

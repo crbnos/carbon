@@ -3,10 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
+import { getBatchProperties } from "~/modules/inventory";
+import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
 import {
   getItemReplenishment,
@@ -24,25 +27,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [consumablePurchasing] = await Promise.all([
+  const [consumablePurchasingResult] = await Promise.all([
     getItemReplenishment(client, itemId, companyId),
   ]);
 
-  if (consumablePurchasing.error) {
+  if (consumablePurchasingResult.error) {
     throw redirect(
       path.to.items,
       await flash(
         request,
         error(
-          consumablePurchasing.error,
+          consumablePurchasingResult.error,
           "Failed to load consumable purchasing"
         )
       )
     );
   }
 
-  return json({
-    consumablePurchasing: consumablePurchasing.data,
+  return defer({
+    consumablePurchasing: consumablePurchasingResult.data,
+    batchProperties: getBatchProperties(client, [itemId], companyId),
   });
 }
 
@@ -89,7 +93,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function ConsumablePurchasingRoute() {
-  const { consumablePurchasing } = useLoaderData<typeof loader>();
+  const { consumablePurchasing, batchProperties } =
+    useLoaderData<typeof loader>();
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -97,6 +102,10 @@ export default function ConsumablePurchasingRoute() {
     path.to.consumable(itemId)
   );
   const supplierParts = routeData?.supplierParts ?? [];
+
+  const consumableData = useRouteData<{
+    consumableSummary: { itemTrackingType?: string };
+  }>(path.to.consumable(itemId));
 
   const initialValues = {
     ...consumablePurchasing,
@@ -118,6 +127,21 @@ export default function ConsumablePurchasingRoute() {
         }
       />
       <SupplierParts supplierParts={supplierParts} />
+      {["Batch", "Serial"].includes(
+        consumableData?.consumableSummary?.itemTrackingType ?? ""
+      ) && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedProperties) => (
+              <BatchPropertiesConfig
+                itemId={itemId}
+                key={`batch-properties:${itemId}`}
+                properties={resolvedProperties.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
     </VStack>
   );
 }
