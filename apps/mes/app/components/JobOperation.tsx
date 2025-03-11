@@ -126,15 +126,14 @@ import {
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
-import type {
-  TrackedEntityAttributes} from "@carbon/utils";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,
   convertKbToString,
   formatDate,
   formatDateTime,
   formatDurationMilliseconds,
-  formatRelativeTime
+  formatRelativeTime,
 } from "@carbon/utils";
 import {
   getLocalTimeZone,
@@ -188,7 +187,10 @@ import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
 import FileDropzone from "./FileDropzone";
 import { useNumberFormatter } from "@react-aria/i18n";
-import type { getSerialNumbersForItem , getBatchNumbersForItem } from "~/services/inventory.service";
+import type {
+  getSerialNumbersForItem,
+  getBatchNumbersForItem,
+} from "~/services/inventory.service";
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -556,105 +558,121 @@ export const JobOperation = ({
                   <Await resolve={materials}>
                     {(resolvedMaterials) => (
                       <>
-                      <Table className="w-full">
-                        <Thead>
-                          <Tr>
-                            <Th>Part</Th>
-                            <Th className="lg:table-cell hidden">Method</Th>
-                            <Th>Estimated</Th>
-                            <Th>Actual</Th>
-                            <Th className="text-right" />
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {resolvedMaterials?.materials.length === 0 ? (
+                        <Table className="w-full">
+                          <Thead>
                             <Tr>
-                              <Td
-                                colSpan={24}
-                                className="py-8 text-muted-foreground text-center"
-                              >
-                                No materials
-                              </Td>
+                              <Th>Part</Th>
+                              <Th className="lg:table-cell hidden">Method</Th>
+                              <Th>Estimated</Th>
+                              <Th>Actual</Th>
+                              <Th className="text-right" />
                             </Tr>
-                          ) : (
-                            resolvedMaterials?.materials.map((material) => (
-                              <Tr
-                                key={`material-${material.id}`}
-                                className={cn(
-                                  material.jobOperationId !== operationId &&
-                                    "opacity-50 hover:opacity-100"
-                                )}
-                              >
-                              
-                                <Td>
-                                  <HStack
-                                    spacing={2}
-                                    className="justify-between"
-                                  >
-                                    <VStack spacing={0}>
-                                      <span className="font-semibold">
-                                        {material.itemReadableId}
-                                      </span>
-                                      <span className="text-muted-foreground text-xs">
-                                        {material.description}
-                                      </span>
-                                    </VStack>
-                                    {material.requiresBatchTracking ? (
-                                      <Badge variant="secondary">
-                                        <TrackingTypeIcon
-                                          type="Batch"
-                                          className="shrink-0"
-                                        />
-                                      </Badge>
-                                    ) : material.requiresSerialTracking ? (
-                                      <Badge variant="secondary">
-                                        <TrackingTypeIcon
-                                          type="Serial"
-                                          className="shrink-0"
-                                        />
-                                      </Badge>
-                                    ) : null}
-                                  </HStack>
+                          </Thead>
+                          <Tbody>
+                            {resolvedMaterials?.materials.length === 0 ? (
+                              <Tr>
+                                <Td
+                                  colSpan={24}
+                                  className="py-8 text-muted-foreground text-center"
+                                >
+                                  No materials
                                 </Td>
-                                <Td className="lg:table-cell hidden">
-                                  <Badge variant="secondary">
-                                    <MethodIcon
-                                      type={material.methodType}
-                                      className="mr-2"
-                                    />
-                                    {material.methodType}
-                                  </Badge>
-                                </Td>
-
-                                <Td>
-                                  {parentIsSerial &&
-                                  (material.requiresBatchTracking ||
-                                    material.requiresSerialTracking)
-                                    ? `${material.quantity}/${material.estimatedQuantity}`
-                                    : material.estimatedQuantity}
-                                </Td>
-                                <Td>
-                                  {material.methodType === "Make" &&
-                                  material.requiresBatchTracking === false &&
-                                  material.requiresSerialTracking === false ? (
-                                    <MethodIcon type="Make" />
-                                  ) : parentIsSerial &&
-                                    (material.requiresBatchTracking ||
-                                      material.requiresSerialTracking) ? (
-                                    `${material.quantityIssued}/${material.quantity}`
-                                  ) : (
-                                    material.quantityIssued
+                              </Tr>
+                            ) : (
+                              resolvedMaterials?.materials.map((material) => (
+                                <Tr
+                                  key={`material-${material.id}`}
+                                  className={cn(
+                                    material.jobOperationId !== operationId &&
+                                      "opacity-50 hover:opacity-100"
                                   )}
-                                </Td>
-                                <Td className="text-right">
-                                  {material.methodType !== "Make" &&
+                                >
+                                  <Td>
+                                    <HStack
+                                      spacing={2}
+                                      className="justify-between"
+                                    >
+                                      <VStack spacing={0}>
+                                        <span className="font-semibold">
+                                          {material.itemReadableId}
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                          {material.description}
+                                        </span>
+                                      </VStack>
+                                      {material.requiresBatchTracking ? (
+                                        <Badge variant="secondary">
+                                          <TrackingTypeIcon
+                                            type="Batch"
+                                            className="shrink-0"
+                                          />
+                                        </Badge>
+                                      ) : material.requiresSerialTracking ? (
+                                        <Badge variant="secondary">
+                                          <TrackingTypeIcon
+                                            type="Serial"
+                                            className="shrink-0"
+                                          />
+                                        </Badge>
+                                      ) : null}
+                                    </HStack>
+                                  </Td>
+                                  <Td className="lg:table-cell hidden">
+                                    <Badge variant="secondary">
+                                      <MethodIcon
+                                        type={material.methodType}
+                                        className="mr-2"
+                                      />
+                                      {material.methodType}
+                                    </Badge>
+                                  </Td>
+
+                                  <Td>
+                                    {parentIsSerial &&
+                                    (material.requiresBatchTracking ||
+                                      material.requiresSerialTracking)
+                                      ? `${material.quantity}/${material.estimatedQuantity}`
+                                      : material.estimatedQuantity}
+                                  </Td>
+                                  <Td>
+                                    {material.methodType === "Make" &&
                                     material.requiresBatchTracking === false &&
                                     material.requiresSerialTracking ===
-                                      false && (
+                                      false ? (
+                                      <MethodIcon type="Make" />
+                                    ) : parentIsSerial &&
+                                      (material.requiresBatchTracking ||
+                                        material.requiresSerialTracking) ? (
+                                      `${material.quantityIssued}/${material.quantity}`
+                                    ) : (
+                                      material.quantityIssued
+                                    )}
+                                  </Td>
+                                  <Td className="text-right">
+                                    {material.methodType !== "Make" &&
+                                      material.requiresBatchTracking ===
+                                        false &&
+                                      material.requiresSerialTracking ===
+                                        false && (
+                                        <IconButton
+                                          aria-label="Issue Material"
+                                          variant="ghost"
+                                          icon={<LuGitBranchPlus />}
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            flushSync(() => {
+                                              setSelectedMaterial(material);
+                                            });
+                                            issueModal.onOpen();
+                                          }}
+                                        />
+                                      )}
+                                    {(material.requiresBatchTracking ||
+                                      material.requiresSerialTracking) && (
                                       <IconButton
                                         aria-label="Issue Material"
                                         variant="ghost"
-                                        icon={<LuGitBranchPlus />}
+                                        icon={<LuQrCode />}
                                         className="h-8 w-8"
                                         onClick={() => {
                                           flushSync(() => {
@@ -664,67 +682,60 @@ export const JobOperation = ({
                                         }}
                                       />
                                     )}
-                                  {(material.requiresBatchTracking ||
-                                    material.requiresSerialTracking) && (
-                                    <IconButton
-                                      aria-label="Issue Material"
-                                      variant="ghost"
-                                      icon={<LuQrCode />}
-                                      className="h-8 w-8"
-                                      onClick={() => {
-                                        flushSync(() => {
-                                          setSelectedMaterial(material);
-                                        });
-                                        issueModal.onOpen();
-                                      }}
-                                    />
-                                  )}
-                                </Td>
-                              </Tr>
-                            ))
+                                  </Td>
+                                </Tr>
+                              ))
+                            )}
+                          </Tbody>
+                        </Table>
+                        {issueModal.isOpen &&
+                          selectedMaterial?.requiresBatchTracking !== true &&
+                          selectedMaterial?.requiresSerialTracking !== true && (
+                            <IssueModal
+                              operationId={operation.id}
+                              material={selectedMaterial ?? undefined}
+                              onClose={() => {
+                                setSelectedMaterial(null);
+                                issueModal.onClose();
+                              }}
+                            />
                           )}
-                        </Tbody>
-                      </Table>
-                      {issueModal.isOpen &&
-        selectedMaterial?.requiresBatchTracking !== true &&
-        selectedMaterial?.requiresSerialTracking !== true && (
-          <IssueModal
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
-      {issueModal.isOpen &&
-        selectedMaterial?.requiresBatchTracking === true && (
-          <BatchIssueModal
-            parentId={trackedEntityId ?? ""}
-            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            trackedInputs={resolvedMaterials?.trackedInputs ?? []}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
-      {issueModal.isOpen &&
-        selectedMaterial?.requiresSerialTracking === true && (
-          <SerialIssueModal
-            operationId={operation.id}
-            material={selectedMaterial ?? undefined}
-            parentId={trackedEntityId ?? ""}
-            parentIdIsSerialized={method?.requiresSerialTracking ?? false}
-            trackedInputs={resolvedMaterials?.trackedInputs ?? []}
-            onClose={() => {
-              setSelectedMaterial(null);
-              issueModal.onClose();
-            }}
-          />
-        )}
+                        {issueModal.isOpen &&
+                          selectedMaterial?.requiresBatchTracking === true && (
+                            <BatchIssueModal
+                              parentId={trackedEntityId ?? ""}
+                              parentIdIsSerialized={
+                                method?.requiresSerialTracking ?? false
+                              }
+                              operationId={operation.id}
+                              material={selectedMaterial ?? undefined}
+                              trackedInputs={
+                                resolvedMaterials?.trackedInputs ?? []
+                              }
+                              onClose={() => {
+                                setSelectedMaterial(null);
+                                issueModal.onClose();
+                              }}
+                            />
+                          )}
+                        {issueModal.isOpen &&
+                          selectedMaterial?.requiresSerialTracking === true && (
+                            <SerialIssueModal
+                              operationId={operation.id}
+                              material={selectedMaterial ?? undefined}
+                              parentId={trackedEntityId ?? ""}
+                              parentIdIsSerialized={
+                                method?.requiresSerialTracking ?? false
+                              }
+                              trackedInputs={
+                                resolvedMaterials?.trackedInputs ?? []
+                              }
+                              onClose={() => {
+                                setSelectedMaterial(null);
+                                issueModal.onClose();
+                              }}
+                            />
+                          )}
                       </>
                     )}
                   </Await>
@@ -2774,6 +2785,7 @@ function SerialIssueModal({
   onClose: () => void;
 }) {
   const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const unconsumeFetcher = useFetcher<{ success: boolean; message: string }>();
   const { data: serialNumbers } = useSerialNumbers(material?.itemId);
 
   const [errors, setErrors] = useState<Record<number, string>>({});
@@ -2810,6 +2822,10 @@ function SerialIssueModal({
     Array(initialQuantity)
       .fill("")
       .map((_, index) => ({ index, id: "" }))
+  );
+
+  const [selectedTrackedInputs, setSelectedTrackedInputs] = useState<string[]>(
+    []
   );
 
   const validateSerialNumber = useCallback(
@@ -2924,6 +2940,28 @@ function SerialIssueModal({
     material?.id,
   ]);
 
+  const handleUnconsume = useCallback(() => {
+    if (selectedTrackedInputs.length === 0) {
+      toast.error("Please select at least one item to unconsume");
+      return;
+    }
+
+    const payload = {
+      materialId: material?.id!,
+      parentTrackedEntityId: parentId,
+      children: selectedTrackedInputs.map((id) => ({
+        trackedEntityId: id,
+        quantity: 1,
+      })),
+    };
+
+    unconsumeFetcher.submit(JSON.stringify(payload), {
+      method: "post",
+      action: path.to.unconsume,
+      encType: "application/json",
+    });
+  }, [selectedTrackedInputs, material?.id, parentId, unconsumeFetcher]);
+
   useEffect(() => {
     if (fetcher.data?.success) {
       onClose();
@@ -2935,7 +2973,28 @@ function SerialIssueModal({
     }
   }, [fetcher.data, onClose]);
 
+  useEffect(() => {
+    if (unconsumeFetcher.data?.success) {
+      onClose();
+      if (unconsumeFetcher.data.message) {
+        toast.success(unconsumeFetcher.data.message);
+      }
+    } else if (unconsumeFetcher.data?.message) {
+      toast.error(unconsumeFetcher.data.message);
+    }
+  }, [unconsumeFetcher.data, onClose]);
+
   const [activeTab, setActiveTab] = useState("scan");
+
+  const toggleTrackedInput = useCallback((id: string) => {
+    setSelectedTrackedInputs((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((item) => item !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  }, []);
 
   return (
     <Modal open onOpenChange={onClose}>
@@ -2944,7 +3003,12 @@ function SerialIssueModal({
         <ModalDescription>{material?.description}</ModalDescription>
         <ModalBody>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className={cn("grid w-full grid-cols-2 mb-4", trackedInputs.length > 0 && "grid-cols-3")}>
+            <TabsList
+              className={cn(
+                "grid w-full grid-cols-2 mb-4",
+                trackedInputs.length > 0 && "grid-cols-3"
+              )}
+            >
               <TabsTrigger value="scan">
                 <LuQrCode className="mr-2" />
                 Scan
@@ -3127,7 +3191,44 @@ function SerialIssueModal({
             {trackedInputs.length > 0 && (
               <TabsContent value="unconsume">
                 <div className="flex flex-col gap-4">
-                  <pre>{JSON.stringify(trackedInputs, null, 2)}</pre>
+                  {trackedInputs.map((input) => {
+                    const attributes =
+                      input.attributes as TrackedEntityAttributes;
+                    const serialNumber = attributes["Serial Number"];
+
+                    return (
+                      <div
+                        key={input.id}
+                        className="flex items-center gap-3 p-2 border rounded-md"
+                      >
+                        <Checkbox
+                          id={`unconsume-${input.id}`}
+                          checked={selectedTrackedInputs.includes(input.id)}
+                          onCheckedChange={() => toggleTrackedInput(input.id)}
+                        />
+                        <label
+                          htmlFor={`unconsume-${input.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="font-medium text-sm">{input.id}</div>
+                          {serialNumber && (
+                            <div className="text-xs text-muted-foreground">
+                              Serial: {serialNumber}
+                            </div>
+                          )}
+                        </label>
+                      </div>
+                    );
+                  })}
+
+                  {trackedInputs.length === 0 && (
+                    <Alert variant="warning">
+                      <AlertTitle>No consumed materials</AlertTitle>
+                      <AlertDescription>
+                        There are no consumed materials to unconsume.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
               </TabsContent>
             )}
@@ -3137,14 +3238,28 @@ function SerialIssueModal({
           <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleSubmit}
-            isLoading={fetcher.state !== "idle"}
-            isDisabled={fetcher.state !== "idle"}
-          >
-            Issue
-          </Button>
+          {activeTab === "unconsume" ? (
+            <Button
+              variant="destructive"
+              onClick={handleUnconsume}
+              isLoading={unconsumeFetcher.state !== "idle"}
+              isDisabled={
+                unconsumeFetcher.state !== "idle" ||
+                selectedTrackedInputs.length === 0
+              }
+            >
+              Unconsume
+            </Button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={handleSubmit}
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Issue
+            </Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
@@ -3210,9 +3325,13 @@ function BatchIssueModal({
     return trackedInputs.map((input) => ({
       label: input.id,
       value: input.id,
-      helper: `${input.quantity} ${(input.attributes as TrackedEntityAttributes)?.["Batch Number"] 
-        ? `of Batch ${(input.attributes as TrackedEntityAttributes)?.["Batch Number"]}` 
-        : ""}`,
+      helper: `${input.quantity} ${
+        (input.attributes as TrackedEntityAttributes)?.["Batch Number"]
+          ? `of Batch ${
+              (input.attributes as TrackedEntityAttributes)?.["Batch Number"]
+            }`
+          : ""
+      }`,
     }));
   }, [trackedInputs]);
 
@@ -3432,10 +3551,14 @@ function BatchIssueModal({
     const payload = {
       materialId: material?.id!,
       parentTrackedEntityId: parentId,
-      children: [{
-        trackedEntityId: unconsumedBatch,
-        quantity: trackedInputs.find((input) => input.id === unconsumedBatch)?.quantity ?? 0,
-      }],
+      children: [
+        {
+          trackedEntityId: unconsumedBatch,
+          quantity:
+            trackedInputs.find((input) => input.id === unconsumedBatch)
+              ?.quantity ?? 0,
+        },
+      ],
     };
 
     fetcher.submit(JSON.stringify(payload), {
@@ -3454,7 +3577,12 @@ function BatchIssueModal({
         </ModalHeader>
         <ModalBody>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className={cn("grid w-full grid-cols-2 mb-4", trackedInputs.length > 0 && "grid-cols-3")}>
+            <TabsList
+              className={cn(
+                "grid w-full grid-cols-2 mb-4",
+                trackedInputs.length > 0 && "grid-cols-3"
+              )}
+            >
               <TabsTrigger value="scan">
                 <LuQrCode className="mr-2" />
                 Scan
@@ -3635,16 +3763,32 @@ function BatchIssueModal({
             {trackedInputs.length > 0 && (
               <TabsContent value="unconsume">
                 <div className="flex flex-col gap-4">
-                <ComboboxBase
-                  value={unconsumedBatch}
-                  onChange={(value) => {
-                    setUnconsumedBatch(value);
-                  }}
-                  options={unconsumeOptions}
-                  placeholder="Select batch to unconsume"
-                  
-                />
-                <div className="h-8" />
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <ComboboxBase
+                        value={unconsumedBatch}
+                        onChange={(value) => {
+                          setUnconsumedBatch(value);
+                        }}
+                        options={unconsumeOptions}
+                        placeholder="Select batch to unconsume"
+                      />
+                    </div>
+                    {unconsumedBatch && (
+                      <div className="w-24">
+                        <Input
+                          isReadOnly
+                          value={
+                            trackedInputs
+                              .find((input) => input.id === unconsumedBatch)
+                              ?.quantity.toString() ?? "0"
+                          }
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-8" />
                 </div>
               </TabsContent>
             )}
@@ -3667,11 +3811,11 @@ function BatchIssueModal({
             <Button
               variant="primary"
               onClick={handleSubmit}
-            isLoading={fetcher.state !== "idle"}
-            isDisabled={fetcher.state !== "idle"}
-          >
-            Issue
-          </Button>
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+            >
+              Issue
+            </Button>
           )}
         </ModalFooter>
       </ModalContent>
@@ -3704,11 +3848,13 @@ function IssueModal({
 }) {
   const [items] = useItems();
   const itemOptions = useMemo(() => {
-    return items.filter(i => !["Batch", "Serial"].includes(i.itemTrackingType)).map((item) => ({
-      label: item.readableId,
-      helper: item.name,
-      value: item.id,
-    }));
+    return items
+      .filter((i) => !["Batch", "Serial"].includes(i.itemTrackingType))
+      .map((item) => ({
+        label: item.readableId,
+        helper: item.name,
+        value: item.id,
+      }));
   }, [items]);
 
   return (

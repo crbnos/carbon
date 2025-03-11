@@ -83,6 +83,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
 
     routeData?.receiptLines.forEach((line: ReceiptLine) => {
       if (line.requiresBatchTracking) {
+        if (line.receivedQuantity === 0) return;
         const trackedEntity = receiptLineTracking.data?.find((tracking) => {
           const attributes = tracking.attributes as TrackedEntityAttributes;
           return attributes["Receipt Line"] === line.id;
@@ -101,6 +102,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       }
 
       if (line.requiresSerialTracking) {
+        if (line.receivedQuantity === 0) return;
         const trackedEntities = receiptLineTracking.data?.filter((tracking) => {
           const attributes = tracking.attributes as TrackedEntityAttributes;
           return attributes["Receipt Line"] === line.id;

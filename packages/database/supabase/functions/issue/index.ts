@@ -1159,7 +1159,9 @@ serve(async (req: Request) => {
           }
 
           if (trackedEntities.some((entity) => entity.status !== "Consumed")) {
-            throw new Error("Tracked entities must be in Consumed status to unconsume");
+            throw new Error(
+              "Tracked entities must be in Consumed status to unconsume"
+            );
           }
 
           const jobMaterial = await trx
@@ -1224,8 +1226,10 @@ serve(async (req: Request) => {
             })
             .execute();
 
-          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] = [];
-          const trackedActivityOutputs: Database["public"]["Tables"]["trackedActivityOutput"]["Insert"][] = [];
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const trackedActivityOutputs: Database["public"]["Tables"]["trackedActivityOutput"]["Insert"][] =
+            [];
 
           // Process each child tracked entity
           for (const child of children) {
@@ -1236,7 +1240,6 @@ serve(async (req: Request) => {
               throw new Error("Tracked entity not found");
             }
             const { trackedEntityId, quantity } = child;
-
             // Update tracked entity status back to Available
             await trx
               .updateTable("trackedEntity")

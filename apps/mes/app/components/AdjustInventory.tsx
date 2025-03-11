@@ -97,11 +97,13 @@ export function AdjustInventory({ add }: { add: boolean }) {
   }, [fetcher.data?.success]);
 
   const itemOptions = useMemo(() => {
-    return items.filter(i => !["Batch", "Serial"].includes(i.itemTrackingType)).map((item) => ({
-      label: item.readableId,
-      helper: item.name,
-      value: item.id,
-    }));
+    return items
+      .filter((i) => !["Batch", "Serial"].includes(i.itemTrackingType))
+      .map((item) => ({
+        label: item.readableId,
+        helper: item.name,
+        value: item.id,
+      }));
   }, [items]);
 
   return (

@@ -109,9 +109,9 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf?.name}` : ""
       }${
         ledgerRecord.trackedEntityId
-          ? ` for ${
-              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
-            } ${ledgerRecord.trackedEntityId}`
+          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
+              ledgerRecord.trackedEntityId
+            }`
           : ""
       }`;
     case "Negative Adjmt.":
@@ -119,9 +119,9 @@ const getActivityText = (ledgerRecord: ItemLedger) => {
         ledgerRecord.shelf?.name ? ` to ${ledgerRecord.shelf.name}` : ""
       }${
         ledgerRecord.trackedEntityId
-          ? ` for ${
-              Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"
-            } ${ledgerRecord.trackedEntityId}`
+          ? ` for ${Math.abs(ledgerRecord.quantity) > 1 ? "batch" : "serial"} ${
+              ledgerRecord.trackedEntityId
+            }`
           : ""
       }`;
     default:

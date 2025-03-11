@@ -23,7 +23,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const issue = await serviceRole.functions.invoke("issue", {
     body: {
-      type: "trackedEntitiesToOperation",
+      type: "unconsumeTrackedEntities",
       materialId,
       parentTrackedEntityId,
       children,
@@ -40,5 +40,5 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return json({ success: true, message: "Material issued successfully" });
+  return json({ success: true, message: "Material unconsumed successfully" });
 }

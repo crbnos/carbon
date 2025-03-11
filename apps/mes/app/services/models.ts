@@ -100,6 +100,17 @@ export const finishValidator = z.object({
   machineProductionEventId: zfd.text(z.string().optional()),
 });
 
+export const issueTrackedEntityValidator = z.object({
+  materialId: z.string(),
+  parentTrackedEntityId: z.string(),
+  children: z.array(
+    z.object({
+      trackedEntityId: z.string(),
+      quantity: z.number(),
+    })
+  ),
+});
+
 export const baseQuantityValidator = finishValidator.extend({
   trackedEntityId: zfd.text(z.string().optional()),
   trackingType: z.enum(["Serial", "Batch", ""]).optional(),

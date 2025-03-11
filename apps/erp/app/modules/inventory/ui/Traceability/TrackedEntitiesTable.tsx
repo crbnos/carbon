@@ -15,7 +15,7 @@ import { usePermissions } from "~/hooks";
 import { trackedEntityStatus, type TrackedEntity } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import TrackedEntityStatus from "./TrackedEntityStatus";
-import type { Item} from "~/stores/items";
+import type { Item } from "~/stores/items";
 import { useItems } from "~/stores/items";
 import { Enumerable } from "~/components/Enumerable";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
@@ -147,9 +147,9 @@ function SourceDocumentLink({
   switch (data.sourceDocument) {
     case "Item":
       const item = items.find((item) => item.id === data.sourceDocumentId);
-      if (!item) <Enumerable value={data.sourceDocument} />;
-      // @ts-ignore
+      if (!item) return <Enumerable value={data.sourceDocument} />;
       return (
+        // @ts-ignore
         <Hyperlink to={getLinkToItemDetails(item.type, item.id)}>
           <Enumerable value={data.sourceDocument} />
         </Hyperlink>

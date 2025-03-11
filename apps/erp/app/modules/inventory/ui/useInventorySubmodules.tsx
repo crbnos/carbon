@@ -1,10 +1,16 @@
-import { LuHandCoins, LuNetwork, LuQrCode, LuTally5, LuTruck } from "react-icons/lu";
+import {
+  LuHandCoins,
+  LuNetwork,
+  LuQrCode,
+  LuTally5,
+  LuTruck,
+} from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
-const inventoryRoutes: AuthenticatedRouteGroup[] = [ 
+const inventoryRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Manage",
     routes: [

@@ -116,14 +116,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       job.data,
       operation.data?.[0].itemId
     ),
-    materials: getJobMaterialsByOperationId(
-      serviceRole,
-      {
-        operation: operation.data?.[0],
-        trackedEntityId: trackedEntityId ?? trackedEntities?.data?.[0]?.id,
-        requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,
-      }
-    ),
+    materials: getJobMaterialsByOperationId(serviceRole, {
+      operation: operation.data?.[0],
+      trackedEntityId: trackedEntityId ?? trackedEntities?.data?.[0]?.id,
+      requiresSerialTracking:
+        jobMakeMethod.data?.requiresSerialTracking ?? false,
+    }),
     trackedEntities: trackedEntities.data ?? [],
     operation: makeDurations(operation.data?.[0]) as OperationWithDetails,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
