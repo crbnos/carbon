@@ -3,10 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import { useRouteData } from "~/hooks";
+import { getBatchProperties } from "~/modules/inventory";
+import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
 import {
   getItemReplenishment,
@@ -24,22 +27,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [materialPurchasing] = await Promise.all([
+  const [materialPurchasingResult] = await Promise.all([
     getItemReplenishment(client, itemId, companyId),
   ]);
 
-  if (materialPurchasing.error) {
+  if (materialPurchasingResult.error) {
     throw redirect(
       path.to.items,
       await flash(
         request,
-        error(materialPurchasing.error, "Failed to load material purchasing")
+        error(
+          materialPurchasingResult.error,
+          "Failed to load material purchasing"
+        )
       )
     );
   }
 
-  return json({
-    materialPurchasing: materialPurchasing.data,
+  return defer({
+    materialPurchasing: materialPurchasingResult.data,
+    batchProperties: getBatchProperties(client, [itemId], companyId),
   });
 }
 
@@ -86,7 +93,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function MaterialPurchasingRoute() {
-  const { materialPurchasing } = useLoaderData<typeof loader>();
+  const { materialPurchasing, batchProperties } =
+    useLoaderData<typeof loader>();
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -94,6 +102,10 @@ export default function MaterialPurchasingRoute() {
     path.to.material(itemId)
   );
   const supplierParts = routeData?.supplierParts ?? [];
+
+  const materialData = useRouteData<{
+    materialSummary: { itemTrackingType?: string };
+  }>(path.to.material(itemId));
 
   const initialValues = {
     ...materialPurchasing,
@@ -115,6 +127,21 @@ export default function MaterialPurchasingRoute() {
         }
       />
       <SupplierParts supplierParts={supplierParts} />
+      {["Batch", "Serial"].includes(
+        materialData?.materialSummary?.itemTrackingType ?? ""
+      ) && (
+        <Suspense fallback={null}>
+          <Await resolve={batchProperties}>
+            {(resolvedProperties) => (
+              <BatchPropertiesConfig
+                itemId={itemId}
+                key={`batch-properties:${itemId}`}
+                properties={resolvedProperties.data ?? []}
+              />
+            )}
+          </Await>
+        </Suspense>
+      )}
     </VStack>
   );
 }

@@ -149,6 +149,7 @@ export default function OperationRoute() {
 
   return (
     <JobOperation
+      key={operationId}
       events={events}
       files={files}
       materials={materials}
