@@ -1241,7 +1241,10 @@ export const JobOperation = ({
                   <span className="text-muted-foreground text-xs">
                     Work Center
                   </span>
-                  <Suspense fallback={<Heading size="h4">...</Heading>}>
+                  <Suspense
+                    fallback={<Heading size="h4">...</Heading>}
+                    key={`work-center-${operationId}`}
+                  >
                     <Await resolve={workCenter}>
                       {(resolvedWorkCenter) =>
                         resolvedWorkCenter.data && (
@@ -1518,7 +1521,7 @@ export const JobOperation = ({
         />
       )}
       {completeModal.isOpen && (
-        <Suspense>
+        <Suspense key={`complete-modal-${operationId}`}>
           <Await resolve={materials}>
             {(resolvedMaterials) => {
               return (
@@ -2060,7 +2063,9 @@ function useOperation(
     );
     if (uncompletedEntities.length > 0) serialModal.onOpen();
     setAvailableEntities(uncompletedEntities);
-  }, [trackedEntities, operationId, trackedEntityParam, serialModal]);
+    // causes an infinite loop on navigation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trackedEntities, trackedEntityParam]);
 
   return {
     active,
@@ -3625,6 +3630,8 @@ function BatchIssueModal({
       action: path.to.unconsume,
       encType: "application/json",
     });
+    // fetcher is not needed to be in the dependency array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [unconsumedBatch, material?.id, parentId, trackedInputs]);
 
   return (
