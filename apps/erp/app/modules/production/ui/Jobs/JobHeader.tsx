@@ -28,7 +28,7 @@ import {
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { Hidden, Number, ValidatedForm } from "@carbon/form";
+import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
@@ -541,7 +541,6 @@ function JobCancelModal({
     </Modal>
   );
 }
-
 function JobCompleteModal({
   job,
   onClose,
@@ -557,17 +556,53 @@ function JobCompleteModal({
     undefined
   );
 
+  const [quantityComplete, setQuantityComplete] = useState<number>(
+    job?.quantity ?? 0
+  );
+  const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
+
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
 
-  const getDefaultShelf = async () => {
+  const getJobData = async () => {
     if (!carbon) return;
 
-    const pickMethod = await carbon
-      .from("pickMethod")
-      .select("*")
-      .eq("locationId", job?.locationId!)
-      .eq("itemId", job?.itemId!)
-      .single();
+    const [pickMethod, makeMethod] = await Promise.all([
+      carbon
+        .from("pickMethod")
+        .select("*")
+        .eq("locationId", job?.locationId!)
+        .eq("itemId", job?.itemId!)
+        .single(),
+      carbon
+        .from("jobMakeMethod")
+        .select("*")
+        .eq("jobId", job?.id!)
+        .is("parentMaterialId", null)
+        .single(),
+    ]);
+
+    if (
+      makeMethod.data?.requiresSerialTracking ||
+      makeMethod.data?.requiresBatchTracking
+    ) {
+      const trackedEntities = await carbon
+        .from("trackedEntity")
+        .select("*")
+        .eq("attributes->>Job Make Method", makeMethod.data?.id!)
+        .order("createdAt", { ascending: true });
+
+      if (trackedEntities.data?.length) {
+        const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
+          if (curr.status === "Available") {
+            return acc + curr.quantity;
+          }
+          return acc;
+        }, 0);
+
+        setQuantityComplete(availableQuantity);
+        setHasTrackedQuantity(true);
+      }
+    }
 
     flushSync(() => {
       setDefaultShelfId(pickMethod.data?.defaultShelfId ?? undefined);
@@ -578,11 +613,7 @@ function JobCompleteModal({
 
   useMount(() => {
     if (!job) return;
-    if (!makeToOrder) {
-      getDefaultShelf();
-    } else {
-      setLoading(false);
-    }
+    getJobData();
   });
 
   if (!job) return null;
@@ -643,7 +674,13 @@ function JobCompleteModal({
                     />
                   </>
                 )}
-                <Number name="quantityComplete" label="Quantity Completed" />
+                <NumberControlled
+                  name="quantityComplete"
+                  label="Quantity Completed"
+                  value={quantityComplete}
+                  onChange={(value) => setQuantityComplete(value)}
+                  isReadOnly={hasTrackedQuantity}
+                />
               </VStack>
             </ModalBody>
             <ModalFooter>

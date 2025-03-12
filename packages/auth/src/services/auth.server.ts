@@ -64,7 +64,11 @@ export async function getAuthAccountByAccessToken(accessToken: string) {
 
 function getCompanyIdFromAPIKey(apiKey: string) {
   const serviceRole = getCarbonServiceRole();
-  return serviceRole.from("apiKey").select("companyId, createdBy").eq("key", apiKey).single();
+  return serviceRole
+    .from("apiKey")
+    .select("companyId, createdBy")
+    .eq("key", apiKey)
+    .single();
 }
 
 function makeAuthSession(

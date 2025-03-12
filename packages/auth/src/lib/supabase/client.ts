@@ -31,13 +31,17 @@ const getCarbonClient = (supabaseKey: string, accessToken?: string) => {
 };
 
 export const getCarbonAPIKeyClient = (apiKey: string) => {
-  const client = createClient<Database>(SUPABASE_API_URL, SUPABASE_ANON_PUBLIC, {
-    global: {
-      headers: {
-        "carbon-key": apiKey,
+  const client = createClient<Database>(
+    SUPABASE_API_URL,
+    SUPABASE_ANON_PUBLIC,
+    {
+      global: {
+        headers: {
+          "carbon-key": apiKey,
+        },
       },
-    },
-  });
+    }
+  );
 
   return client;
 };
