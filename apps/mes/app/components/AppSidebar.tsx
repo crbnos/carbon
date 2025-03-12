@@ -50,7 +50,7 @@ import { useRef, type ComponentProps } from "react";
 import { useMode, useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
-import { path } from "~/utils/path";
+import { ERP_URL, path } from "~/utils/path";
 import { AdjustInventory } from "./AdjustInventory";
 import { EndShift } from "./EndShift";
 import Feedback from "./Feedback";
@@ -182,7 +182,7 @@ export function TeamSwitcher({
             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             asChild
           >
-            <Link to={path.to.assigned}>
+            <a href={ERP_URL}>
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
                 {companyLogo ? (
                   <img
@@ -197,7 +197,7 @@ export function TeamSwitcher({
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{company.name}</span>
               </div>
-            </Link>
+            </a>
           </SidebarMenuButton>
         )}
       </SidebarMenuItem>
