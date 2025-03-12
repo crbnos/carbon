@@ -351,7 +351,7 @@ function LineItems({
                     {line.description}
                   </span>
                   {isMade && (
-                    <div className="mt-2 flex flex-row items-center gap-x-2">
+                    <div className="mt-2 flex flex-row items-end gap-x-2">
                       <Badge variant={jobVariant}>{jobLabel}</Badge>
                       {jobs.length > 0 && (
                         <HoverCard>
