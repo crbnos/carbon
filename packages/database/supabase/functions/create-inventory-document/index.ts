@@ -549,18 +549,17 @@ serve(async (req: Request) => {
         const hasShipment = !!shipment.data?.id;
 
         // Group jobs by sales order line ID
-        const jobsBySalesOrderLine = (jobs.data || []).reduce<Record<string, Database["public"]["Tables"]["job"]["Row"][]>>(
-          (acc, job) => {
-            if (job.salesOrderLineId) {
-              if (!acc[job.salesOrderLineId]) {
-                acc[job.salesOrderLineId] = [];
-              }
-              acc[job.salesOrderLineId].push(job);
+        const jobsBySalesOrderLine = (jobs.data || []).reduce<
+          Record<string, Database["public"]["Tables"]["job"]["Row"][]>
+        >((acc, job) => {
+          if (job.salesOrderLineId) {
+            if (!acc[job.salesOrderLineId]) {
+              acc[job.salesOrderLineId] = [];
             }
-            return acc;
-          },
-          {}
-        );
+            acc[job.salesOrderLineId].push(job);
+          }
+          return acc;
+        }, {});
 
         const previouslyShippedQuantitiesByLine = (
           salesOrderLines.data ?? []
@@ -641,9 +640,9 @@ serve(async (req: Request) => {
             const isBatch = batchItems.has(salesOrderLine.itemId);
 
             if (salesOrderLine.methodType === "Make") {
-              for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ?? []) {
+              for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
+                []) {
                 if (!salesOrderLine.itemId) return;
-
 
                 const quantityAvailable =
                   job.quantityComplete - job.quantityShipped;
@@ -660,14 +659,14 @@ serve(async (req: Request) => {
                     })
                     .returning(["id"])
                     .execute();
-  
+
                   const fulfillmentId = fulfillment?.[0]?.id;
-  
+
                   const shippingAndTaxUnitCost =
                     (salesOrderLine.shippingCost / quantityAvailable +
                       (salesOrderLine.unitPrice ?? 0)) *
                     (1 + salesOrderLine.taxPercent);
-  
+
                   const shipmentLine = await trx
                     .insertInto("shipmentLine")
                     .values({
@@ -683,17 +682,17 @@ serve(async (req: Request) => {
                       requiresSerialTracking: isSerial,
                       requiresBatchTracking: isBatch,
                       unitPrice: shippingAndTaxUnitCost,
-                      unitOfMeasure:
-                        salesOrderLine.unitOfMeasureCode ?? "EA",
+                      unitOfMeasure: salesOrderLine.unitOfMeasureCode ?? "EA",
                       createdBy: userId ?? "",
                     })
                     .returning(["id"])
                     .execute();
-  
+
                   const shipmentLineId = shipmentLine?.[0]?.id;
-  
-                  if (!shipmentLineId) throw new Error("Shipment line not found");
-  
+
+                  if (!shipmentLineId)
+                    throw new Error("Shipment line not found");
+
                   if (isSerial || isBatch) {
                     const jobMakeMethod = await trx
                       .selectFrom("jobMakeMethod")
@@ -701,14 +700,14 @@ serve(async (req: Request) => {
                       .where("jobId", "=", job.id)
                       .where("parentMaterialId", "is", null)
                       .executeTakeFirst();
-  
+
                     if (jobMakeMethod?.id) {
                       const trackedEntities = await client
                         .from("trackedEntity")
                         .select("*")
                         .eq("attributes->>Job Make Method", jobMakeMethod.id)
                         .order("createdAt", { ascending: true });
-  
+
                       let index = 0;
                       for await (const trackedEntity of trackedEntities?.data ??
                         []) {
@@ -736,14 +735,14 @@ serve(async (req: Request) => {
             } else {
               const outstandingQuantity =
                 (salesOrderLine.saleQuantity ?? 0) -
-                previouslyShippedQuantitiesByLine[salesOrderLine.id] ?? 0;
-  
+                  previouslyShippedQuantitiesByLine[salesOrderLine.id] ?? 0;
+
               const shippingAndTaxUnitCost =
                 (salesOrderLine.shippingCost /
                   (salesOrderLine.saleQuantity ?? 0) +
                   (salesOrderLine.unitPrice ?? 0)) *
                 (1 + salesOrderLine.taxPercent);
-  
+
               await trx
                 .insertInto("shipmentLine")
                 .values({
@@ -765,11 +764,9 @@ serve(async (req: Request) => {
                 })
                 .execute();
             }
-
           }
 
-          
-          if(shipmentLineItems.length > 0) {
+          if (shipmentLineItems.length > 0) {
             // Insert all shipment lines
             await trx
               .insertInto("shipmentLine")

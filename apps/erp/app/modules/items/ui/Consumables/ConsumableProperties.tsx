@@ -27,7 +27,6 @@ import { Boolean, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
-import { useFlags } from "~/hooks/useFlags";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
 import type { ListItem } from "~/types";
@@ -136,8 +135,6 @@ const ConsumableProperties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [itemId]
   );
-
-  const { isInternal } = useFlags();
 
   return (
     <VStack
@@ -250,19 +247,15 @@ const ConsumableProperties = () => {
             </Badge>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {itemTrackingTypes
-              .filter(
-                (type) => isInternal || !["Serial", "Batch"].includes(type)
-              )
-              .map((type) => (
-                <DropdownMenuItem
-                  key={type}
-                  onClick={() => onUpdate("itemTrackingType", type)}
-                >
-                  <DropdownMenuIcon icon={<TrackingTypeIcon type={type} />} />
-                  <span>{type}</span>
-                </DropdownMenuItem>
-              ))}
+            {itemTrackingTypes.map((type) => (
+              <DropdownMenuItem
+                key={type}
+                onClick={() => onUpdate("itemTrackingType", type)}
+              >
+                <DropdownMenuIcon icon={<TrackingTypeIcon type={type} />} />
+                <span>{type}</span>
+              </DropdownMenuItem>
+            ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </VStack>
