@@ -45,7 +45,10 @@ import type { Job } from "~/modules/production/types";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
-import { getDeadlineIcon, getDeadlineText } from "~/modules/production/ui/Jobs/Deadline";
+import {
+  getDeadlineIcon,
+  getDeadlineText,
+} from "~/modules/production/ui/Jobs/Deadline";
 
 type SalesOrderLineJobsProps = {
   salesOrder: SalesOrder;
@@ -238,18 +241,18 @@ export function SalesOrderLineJobs({
                   />
                   <DatePicker name="dueDate" label="Due Date" />
                   <Select
-                  name="deadlineType"
-                  label="Deadline Type"
-                  options={deadlineTypes.map((d) => ({
-                    value: d,
-                    label: (
-                      <div className="flex gap-1 items-center">
-                        {getDeadlineIcon(d, false)}
-                        <span>{getDeadlineText(d)}</span>
-                      </div>
-                    ),
-                  }))}
-                />
+                    name="deadlineType"
+                    label="Deadline Type"
+                    options={deadlineTypes.map((d) => ({
+                      value: d,
+                      label: (
+                        <div className="flex gap-1 items-center">
+                          {getDeadlineIcon(d, false)}
+                          <span>{getDeadlineText(d)}</span>
+                        </div>
+                      ),
+                    }))}
+                  />
                 </div>
               </ModalBody>
               <ModalFooter>

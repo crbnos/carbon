@@ -40,7 +40,6 @@ import {
 } from "~/components/Form";
 import { ReplenishmentSystemIcon, TrackingTypeIcon } from "~/components/Icons";
 import { useNextItemId, usePermissions, useUser } from "~/hooks";
-import { useFlags } from "~/hooks/useFlags";
 import { path } from "~/utils/path";
 import {
   itemReplenishmentSystems,
@@ -161,22 +160,15 @@ const ToolForm = ({ initialValues, type = "card", onClose }: ToolFormProps) => {
   const permissions = usePermissions();
   const isEditing = !!initialValues.id;
 
-  const { isInternal } = useFlags();
-
-  const itemTrackingTypeOptions =
-    itemTrackingTypes
-      .map((itemTrackingType) => ({
-        label: (
-          <span className="flex items-center gap-2">
-            <TrackingTypeIcon type={itemTrackingType} />
-            {itemTrackingType}
-          </span>
-        ),
-        value: itemTrackingType,
-      }))
-      .filter(
-        (item) => isInternal || !["Serial", "Batch"].includes(item.value)
-      ) ?? [];
+  const itemTrackingTypeOptions = itemTrackingTypes.map((itemTrackingType) => ({
+    label: (
+      <span className="flex items-center gap-2">
+        <TrackingTypeIcon type={itemTrackingType} />
+        {itemTrackingType}
+      </span>
+    ),
+    value: itemTrackingType,
+  }));
 
   const [replenishmentSystem, setReplenishmentSystem] = useState<string>(
     initialValues.replenishmentSystem ?? "Buy"

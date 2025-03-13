@@ -24,6 +24,13 @@ CREATE TABLE "fulfillment" (
   )
 );
 
+-- Create indexes for foreign keys to improve query performance
+CREATE INDEX "fulfillment_salesOrderLineId_idx" ON "fulfillment" ("salesOrderLineId");
+CREATE INDEX "fulfillment_companyId_idx" ON "fulfillment" ("companyId");
+CREATE INDEX "fulfillment_createdBy_idx" ON "fulfillment" ("createdBy");
+CREATE INDEX "fulfillment_jobId_idx" ON "fulfillment" ("jobId");
+
+
 CREATE POLICY "SELECT" ON "fulfillment"
 FOR SELECT USING (
   "companyId" = ANY (
@@ -71,3 +78,5 @@ ADD COLUMN "fulfillmentId" TEXT NULL;
 
 ALTER TABLE "shipmentLine"
 ADD CONSTRAINT "shipmentLine_fulfillmentId_fkey" FOREIGN KEY ("fulfillmentId") REFERENCES "fulfillment"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+CREATE INDEX "shipmentLine_fulfillmentId_idx" ON "shipmentLine" ("fulfillmentId");

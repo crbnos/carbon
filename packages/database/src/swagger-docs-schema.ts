@@ -4263,6 +4263,168 @@ export default {
         tags: ["supplierPayment"],
       },
     },
+    "/fulfillment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/fulfillment",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["fulfillment"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.fulfillment",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["fulfillment"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["fulfillment"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.salesOrderLineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.type",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.fulfillment.createdBy",
+          },
+          {
+            $ref: "#/parameters/body.fulfillment",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["fulfillment"],
+      },
+    },
     "/methodOperationTool": {
       get: {
         parameters: [
@@ -23749,6 +23911,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -23865,6 +24030,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLine.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -23933,6 +24101,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipmentLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipmentLine.fulfillmentId",
           },
           {
             $ref: "#/parameters/body.shipmentLine",
@@ -49254,6 +49425,64 @@ export default {
       },
       type: "object",
     },
+    fulfillment: {
+      required: [
+        "id",
+        "salesOrderLineId",
+        "type",
+        "quantity",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        type: {
+          enum: ["Inventory", "Job"],
+          format: 'public."fulfillmentType"',
+          type: "string",
+        },
+        quantity: {
+          format: "numeric",
+          type: "number",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     methodOperationTool: {
       required: [
         "id",
@@ -58738,6 +58967,12 @@ export default {
         updatedBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        fulfillmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fulfillment.id`.<fk table='fulfillment' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -69864,6 +70099,71 @@ export default {
       name: "tags",
       required: false,
       format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "body.fulfillment": {
+      name: "fulfillment",
+      description: "fulfillment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/fulfillment",
+      },
+    },
+    "rowFilter.fulfillment.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.salesOrderLineId": {
+      name: "salesOrderLineId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.type": {
+      name: "type",
+      required: false,
+      format: 'public."fulfillmentType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.jobId": {
+      name: "jobId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.createdAt": {
+      name: "createdAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.fulfillment.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
@@ -82114,6 +82414,13 @@ export default {
     },
     "rowFilter.shipmentLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipmentLine.fulfillmentId": {
+      name: "fulfillmentId",
       required: false,
       format: "text",
       in: "query",
