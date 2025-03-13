@@ -15,6 +15,7 @@ import {
 } from "~/modules/items";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { useItems } from "~/stores/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 
@@ -147,10 +148,16 @@ export default function ItemInventoryRoute() {
     shelves: ListItem[];
   }>(path.to.inventoryRoot);
 
+  const [items] = useItems();
+  const itemTrackingType = items.find(
+    (i) => i.id === item.id
+  )?.itemTrackingType;
+
   return (
     <InventoryDetails
       itemShelfQuantities={itemShelfQuantities}
       itemUnitOfMeasureCode={item.unitOfMeasureCode ?? "EA"}
+      itemTrackingType={itemTrackingType ?? "Inventory"}
       pickMethod={{
         ...pickMethod,
         defaultShelfId: pickMethod.defaultShelfId ?? undefined,

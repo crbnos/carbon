@@ -545,7 +545,6 @@ export async function getTrackedEntitiesByOperationId(
     jobOperation.data.jobMakeMethodId
   );
 }
-
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
@@ -569,10 +568,15 @@ export async function insertManualInventoryAdjustment(
     }
   );
 
-  const currentQuantity = shelfQuantities?.data?.find(
-    // null == undefined - so we use a == instead of === here
-    (quantity) => quantity.shelfId == data.shelfId
-  );
+  const currentQuantity = inventoryAdjustment.trackedEntityId
+    ? shelfQuantities?.data?.find(
+        (quantity) =>
+          quantity.trackedEntityId == inventoryAdjustment.trackedEntityId
+      )
+    : shelfQuantities?.data?.find(
+        // null == undefined - so we use a == instead of === here
+        (quantity) => quantity.shelfId == data.shelfId
+      );
 
   const currentQuantityOnHand = currentQuantity?.quantity ?? 0;
 
@@ -598,6 +602,50 @@ export async function insertManualInventoryAdjustment(
       };
     }
     data.quantity = -Math.abs(data.quantity);
+  }
+
+  if (inventoryAdjustment.trackedEntityId) {
+    if (currentQuantity) {
+      // Update the existing tracked entity
+      const trackedEntityUpdate = await client
+        .from("trackedEntity")
+        .update({
+          quantity: data.quantity + currentQuantityOnHand,
+        })
+        .eq("id", inventoryAdjustment.trackedEntityId);
+
+      if (trackedEntityUpdate.error) {
+        return trackedEntityUpdate;
+      }
+    } else {
+      const item = await client
+        .from("item")
+        .select("*")
+        .eq("id", data.itemId)
+        .single();
+
+      // Create a new tracked entity
+      const trackedEntityInsert = await client
+        .from("trackedEntity")
+        .insert([
+          {
+            id: inventoryAdjustment.trackedEntityId,
+            sourceDocument: "Item",
+            sourceDocumentId: data.itemId,
+            sourceDocumentReadableId: item.data?.readableId,
+            quantity: data.quantity,
+            status: "Available",
+            companyId: data.companyId,
+            createdBy: data.createdBy,
+          },
+        ])
+        .select("*")
+        .single();
+
+      if (trackedEntityInsert.error) {
+        return trackedEntityInsert;
+      }
+    }
   }
 
   return client.from("itemLedger").insert([data]).select("*").single();

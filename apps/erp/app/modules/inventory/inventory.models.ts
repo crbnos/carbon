@@ -88,6 +88,7 @@ export const inventoryAdjustmentValidator = z.object({
   shelfId: zfd.text(z.string().optional()),
   adjustmentType: z.enum([...itemLedgerTypes, "Set Quantity"]),
   quantity: zfd.numeric(z.number()),
+  trackedEntityId: zfd.text(z.string().optional()),
 });
 
 export const itemLedgerValidator = z.object({
