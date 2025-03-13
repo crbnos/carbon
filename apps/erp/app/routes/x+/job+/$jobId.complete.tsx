@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const issue = await serviceRole.functions.invoke("issue", {
       body: {
         jobId,
-        type: "jobComplete",
+        type: "jobCompleteInventory",
         companyId,
         userId,
         quantityComplete,

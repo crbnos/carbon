@@ -298,20 +298,29 @@ function ShipmentLineItem({
 
   return (
     <div className={cn("flex flex-col border-b p-6 gap-6 relative", className)}>
-      <div className="absolute top-4 right-6">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <IconButton
-              aria-label="Split shipment line"
-              icon={<LuSplit />}
-              variant="ghost"
-              size="sm"
-              onClick={splitDisclosure.onOpen}
-              isDisabled={isReadOnly}
-            />
-          </TooltipTrigger>
-          <TooltipContent>Split shipment line</TooltipContent>
-        </Tooltip>
+      <div className="absolute top-6 right-6">
+        {line.fulfillment?.type === "Job" ? (
+          <div className="flex flex-col items-end gap-0">
+            <span>Job</span>
+            <span className="text-xs text-muted-foreground">
+              {line.fulfillment?.job?.jobId}
+            </span>
+          </div>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <IconButton
+                aria-label="Split shipment line"
+                icon={<LuSplit />}
+                variant="ghost"
+                size="sm"
+                onClick={splitDisclosure.onOpen}
+                isDisabled={isReadOnly}
+              />
+            </TooltipTrigger>
+            <TooltipContent>Split shipment line</TooltipContent>
+          </Tooltip>
+        )}
       </div>
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
@@ -363,7 +372,7 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-                  isDisabled={isReadOnly}
+                  isDisabled={isReadOnly || line.fulfillment?.type === "Job"}
                   size="sm"
                   min={0}
                 />
@@ -400,18 +409,20 @@ function ShipmentLineItem({
               </HStack>
             </VStack>
           </HStack>
-          <Shelf
-            locationId={line.locationId}
-            shelfId={line.shelfId}
-            isReadOnly={isReadOnly}
-            onChange={(shelf) => {
-              onUpdate({
-                lineId: line.id,
-                field: "shelfId",
-                value: shelf,
-              });
-            }}
-          />
+          {line.fulfillment?.type !== "Job" && (
+            <Shelf
+              locationId={line.locationId}
+              shelfId={line.shelfId}
+              isReadOnly={isReadOnly}
+              onChange={(shelf) => {
+                onUpdate({
+                  lineId: line.id,
+                  field: "shelfId",
+                  value: shelf,
+                });
+              }}
+            />
+          )}
         </div>
       </div>
       {line.requiresBatchTracking && (

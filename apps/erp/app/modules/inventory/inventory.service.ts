@@ -349,7 +349,10 @@ export async function getShipmentLines(
   client: SupabaseClient<Database>,
   shipmentId: string
 ) {
-  return client.from("shipmentLine").select("*").eq("shipmentId", shipmentId);
+  return client
+    .from("shipmentLine")
+    .select("*, fulfillment(*, job(*))")
+    .eq("shipmentId", shipmentId);
 }
 
 export async function getShipmentLinesWithDetails(

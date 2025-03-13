@@ -45,6 +45,7 @@ import type { Job } from "~/modules/production/types";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
+import { getDeadlineIcon, getDeadlineText } from "~/modules/production/ui/Jobs/Deadline";
 
 type SalesOrderLineJobsProps = {
   salesOrder: SalesOrder;
@@ -114,8 +115,8 @@ export function SalesOrderLineJobs({
                 <Tr>
                   <Th>Job ID</Th>
                   <Th>Status</Th>
-                  <Th>Quantity</Th>
-                  <Th>Complete</Th>
+                  <Th className="text-right">Complete</Th>
+                  <Th className="text-right">Shipped</Th>
                   <Th>Assignee</Th>
                 </Tr>
               </Thead>
@@ -130,8 +131,14 @@ export function SalesOrderLineJobs({
                     <Td>
                       <JobStatus status={job.status} />
                     </Td>
-                    <Td>{job.quantity}</Td>
-                    <Td>{job.quantityComplete}</Td>
+
+                    <Td className="text-right">
+                      {job.quantityComplete}/{job.productionQuantity}
+                    </Td>
+                    <Td className="text-right">
+                      {job.quantityShipped}/{job.quantityComplete}
+                    </Td>
+
                     <Td>
                       <Assignee
                         id={job.id!}
@@ -231,13 +238,18 @@ export function SalesOrderLineJobs({
                   />
                   <DatePicker name="dueDate" label="Due Date" />
                   <Select
-                    name="deadlineType"
-                    label="Deadline Type"
-                    options={deadlineTypes.map((d) => ({
-                      value: d,
-                      label: d,
-                    }))}
-                  />
+                  name="deadlineType"
+                  label="Deadline Type"
+                  options={deadlineTypes.map((d) => ({
+                    value: d,
+                    label: (
+                      <div className="flex gap-1 items-center">
+                        {getDeadlineIcon(d, false)}
+                        <span>{getDeadlineText(d)}</span>
+                      </div>
+                    ),
+                  }))}
+                />
                 </div>
               </ModalBody>
               <ModalFooter>
