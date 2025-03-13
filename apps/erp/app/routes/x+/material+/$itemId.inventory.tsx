@@ -19,6 +19,7 @@ import {
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -207,6 +208,10 @@ export default function MaterialInventoryRoute() {
     defaultShelfId: materialInventory.defaultShelfId ?? undefined,
     ...getCustomFields(materialInventory.customFields ?? {}),
   };
+
+  const [items] = useItems();
+  const itemTrackingType = items.find((i) => i.id === itemId)?.itemTrackingType;
+
   return (
     <VStack spacing={2} className="p-2">
       <PickMethodForm
@@ -219,6 +224,7 @@ export default function MaterialInventoryRoute() {
       <InventoryDetails
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode ?? "EA"}
+        itemTrackingType={itemTrackingType ?? "Inventory"}
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedMaterialsData?.shelves ?? []}

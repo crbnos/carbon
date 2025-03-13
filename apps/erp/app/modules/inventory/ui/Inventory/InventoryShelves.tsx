@@ -1,4 +1,4 @@
-import { Hidden, Submit, ValidatedForm } from "@carbon/form";
+import { Hidden, NumberControlled, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -25,28 +25,35 @@ import {
   VStack,
 } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
-import { Input, Location, Number, Select, Shelf } from "~/components/Form";
+import { Input, Location, Select, Shelf } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import type { ItemShelfQuantities, pickMethodValidator } from "~/modules/items";
+import type {
+  ItemShelfQuantities,
+  itemTrackingTypes,
+  pickMethodValidator,
+} from "~/modules/items";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { LuQrCode } from "react-icons/lu";
+import { nanoid } from "nanoid";
 
 type InventoryShelvesProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
   itemShelfQuantities: ItemShelfQuantities[];
   itemUnitOfMeasureCode: string;
+  itemTrackingType: (typeof itemTrackingTypes)[number];
   shelves: ListItem[];
 };
 
 const InventoryShelves = ({
   itemShelfQuantities,
   itemUnitOfMeasureCode,
+  itemTrackingType,
   pickMethod,
   shelves,
 }: InventoryShelvesProps) => {
@@ -59,6 +66,11 @@ const InventoryShelves = ({
     () => unitOfMeasures.find((unit) => unit.value === itemUnitOfMeasureCode),
     [itemUnitOfMeasureCode, unitOfMeasures]
   );
+
+  const isSerial = itemTrackingType === "Serial";
+  const isBatch = itemTrackingType === "Batch";
+  console.log({ isSerial, isBatch });
+  const [quantity, setQuantity] = useState(1);
 
   return (
     <>
@@ -134,9 +146,11 @@ const InventoryShelves = ({
               action={path.to.inventoryItemAdjustment(pickMethod.itemId)}
               defaultValues={{
                 itemId: pickMethod.itemId,
+                quantity: quantity,
                 locationId: pickMethod.locationId,
                 shelfId: pickMethod.defaultShelfId,
-                adjustmentType: "Set Quantity",
+                adjustmentType: isSerial ? "Positive Adjmt." : "Set Quantity",
+                trackedEntityId: nanoid(),
               }}
               onSubmit={adjustmentModal.onClose}
             >
@@ -157,7 +171,9 @@ const InventoryShelves = ({
                     name="adjustmentType"
                     label="Adjustment Type"
                     options={[
-                      { label: "Set Quantity", value: "Set Quantity" },
+                      ...(isSerial
+                        ? []
+                        : [{ label: "Set Quantity", value: "Set Quantity" }]),
                       {
                         label: "Positive Adjustment",
                         value: "Positive Adjmt.",
@@ -168,7 +184,22 @@ const InventoryShelves = ({
                       },
                     ]}
                   />
-                  <Number name="quantity" label="Quantity" minValue={0} />
+                  {(isBatch || isSerial) && (
+                    <Input
+                      name="trackedEntityId"
+                      label="Tracking ID"
+                      helperText="Globally unique identifier for the item"
+                    />
+                  )}
+                  <NumberControlled
+                    name="quantity"
+                    label="Quantity"
+                    minValue={0}
+                    value={quantity}
+                    onChange={setQuantity}
+                    isReadOnly={isSerial}
+                  />
+
                   <Input
                     name="unitOfMeasure"
                     label="Unit of Measure"

@@ -10,6 +10,7 @@ import type { z } from "zod";
 import type {
   ItemQuantities,
   ItemShelfQuantities,
+  itemTrackingTypes,
   pickMethodValidator,
 } from "~/modules/items";
 import type { ListItem } from "~/types";
@@ -18,6 +19,7 @@ import InventoryShelves from "./InventoryShelves";
 type InventoryDetailsProps = {
   itemShelfQuantities: ItemShelfQuantities[];
   itemUnitOfMeasureCode: string;
+  itemTrackingType: (typeof itemTrackingTypes)[number];
   pickMethod: z.infer<typeof pickMethodValidator>;
   quantities: ItemQuantities | null;
   shelves: ListItem[];
@@ -26,6 +28,7 @@ type InventoryDetailsProps = {
 const InventoryDetails = ({
   itemShelfQuantities,
   itemUnitOfMeasureCode,
+  itemTrackingType,
   pickMethod,
   quantities,
   shelves,
@@ -86,6 +89,7 @@ const InventoryDetails = ({
       <InventoryShelves
         itemShelfQuantities={itemShelfQuantities}
         itemUnitOfMeasureCode={itemUnitOfMeasureCode}
+        itemTrackingType={itemTrackingType}
         pickMethod={pickMethod}
         shelves={shelves}
       />
