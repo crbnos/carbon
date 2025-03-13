@@ -83,7 +83,10 @@ const MaterialProperties = () => {
         | "active"
         | "unitOfMeasureCode"
         | "materialFormId"
-        | "materialSubstanceId",
+        | "materialSubstanceId"
+        | "grade"
+        | "dimensions"
+        | "finish",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -353,6 +356,30 @@ const MaterialProperties = () => {
           }}
         />
       </ValidatedForm>
+
+      {(["grade", "dimensions", "finish"] as const).map((fieldName) => (
+        <ValidatedForm
+          key={fieldName}
+          defaultValues={{
+            [fieldName]: routeData?.materialSummary?.[fieldName] ?? "",
+          }}
+          validator={z.object({
+            [fieldName]: zfd.text(z.string().optional()),
+          })}
+          className="w-full"
+        >
+          <InputControlled
+            name={fieldName}
+            label={fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}
+            value={routeData?.materialSummary?.[fieldName] ?? ""}
+            size="sm"
+            inline
+            onBlur={(e) => {
+              onUpdate(fieldName, e.target.value);
+            }}
+          />
+        </ValidatedForm>
+      ))}
 
       <ValidatedForm
         defaultValues={{

@@ -31,6 +31,9 @@ export async function action({ request }: ActionFunctionArgs) {
           })
           .in("id", items as string[])
       );
+    case "grade":
+    case "dimensions":
+    case "finish":
     case "materialFormId":
     case "materialSubstanceId":
       return json(
