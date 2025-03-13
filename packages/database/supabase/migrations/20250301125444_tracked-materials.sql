@@ -516,3 +516,4 @@ $$ LANGUAGE plpgsql;
 
 CREATE INDEX "idx_trackedEntity_sourceDocumentReadableId" ON "trackedEntity"("sourceDocumentReadableId");
 CREATE INDEX "idx_trackedEntity_status" ON "trackedEntity"("status");
+

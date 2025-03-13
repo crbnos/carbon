@@ -30,6 +30,7 @@ import type {
 } from "../../types";
 
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
+import { formatDate } from "@carbon/utils";
 
 type SalesOrderLineShipmentsProps = {
   salesOrder: SalesOrder;
@@ -54,7 +55,6 @@ export function SalesOrderLineShipments({
     (sum, shipment) => sum + (shipment.shippedQuantity ?? 0),
     0
   );
-  const quantityRequired = (line.saleQuantity ?? 0) - totalShipmentQuantity;
 
   const fetcher = useFetcher<{ success: boolean }>();
 
@@ -66,24 +66,22 @@ export function SalesOrderLineShipments({
             <CardTitle>Shipments</CardTitle>
           </CardHeader>
           <CardAction>
-            {permissions.can("create", "inventory") &&
-              hasShipments &&
-              quantityRequired > 0 && (
-                <fetcher.Form
-                  method="post"
-                  action={path.to.newSalesOrderLineShipment(orderId, lineId)}
+            {permissions.can("create", "inventory") && hasShipments && (
+              <fetcher.Form
+                method="post"
+                action={path.to.newSalesOrderLineShipment(orderId, lineId)}
+              >
+                <Button
+                  type="submit"
+                  leftIcon={<LuCirclePlus />}
+                  onClick={newJobDisclosure.onOpen}
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle"}
                 >
-                  <Button
-                    type="submit"
-                    leftIcon={<LuCirclePlus />}
-                    onClick={newJobDisclosure.onOpen}
-                    isLoading={fetcher.state !== "idle"}
-                    isDisabled={fetcher.state !== "idle"}
-                  >
-                    New Shipment
-                  </Button>
-                </fetcher.Form>
-              )}
+                  New Shipment
+                </Button>
+              </fetcher.Form>
+            )}
           </CardAction>
         </HStack>
 
@@ -93,7 +91,8 @@ export function SalesOrderLineShipments({
               <Thead>
                 <Tr>
                   <Th>Shipment</Th>
-                  <Th>Quantity</Th>
+                  <Th>Date</Th>
+                  <Th className="text-right">Quantity</Th>
                 </Tr>
               </Thead>
               <Tbody>
@@ -119,6 +118,9 @@ export function SalesOrderLineShipments({
                       </HStack>
                     </Td>
                     <Td>
+                      {formatDate(groupedShipments[0].shipment.createdAt)}
+                    </Td>
+                    <Td className="text-right">
                       {groupedShipments.reduce(
                         (sum, shipment) =>
                           sum + (shipment.shippedQuantity ?? 0),
@@ -131,7 +133,8 @@ export function SalesOrderLineShipments({
               <Tfoot className="border-t border-border">
                 <Tr>
                   <Td />
-                  <Td>{totalShipmentQuantity}</Td>
+                  <Td />
+                  <Td className="text-right">{totalShipmentQuantity}</Td>
                 </Tr>
               </Tfoot>
             </Table>

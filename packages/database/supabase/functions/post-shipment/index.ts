@@ -45,7 +45,10 @@ serve(async (req: Request) => {
 
     const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
       client.from("shipment").select("*").eq("id", shipmentId).single(),
-      client.from("shipmentLine").select("*").eq("shipmentId", shipmentId),
+      client
+        .from("shipmentLine")
+        .select("*, fulfillment(*)")
+        .eq("shipmentId", shipmentId),
       client
         .from("trackedEntity")
         .select("*")
@@ -62,7 +65,17 @@ serve(async (req: Request) => {
       return acc;
     }, []);
 
-    const [items, itemCosts] = await Promise.all([
+    const jobIds = shipmentLines.data.reduce<string[]>((acc, shipmentLine) => {
+      if (
+        shipmentLine.fulfillment?.jobId &&
+        !acc.includes(shipmentLine.fulfillment?.jobId)
+      ) {
+        acc.push(shipmentLine.fulfillment?.jobId);
+      }
+      return acc;
+    }, []);
+
+    const [items, itemCosts, jobs] = await Promise.all([
       client
         .from("item")
         .select("id, itemTrackingType")
@@ -72,12 +85,16 @@ serve(async (req: Request) => {
         .from("itemCost")
         .select("itemId, itemPostingGroupId")
         .in("itemId", itemIds),
+      client.from("job").select("id, quantityShipped").in("id", jobIds),
     ]);
     if (items.error) {
       throw new Error("Failed to fetch items");
     }
     if (itemCosts.error) {
       throw new Error("Failed to fetch item costs");
+    }
+    if (jobs.error) {
+      throw new Error("Failed to fetch jobs");
     }
 
     switch (shipment.data?.sourceDocument) {
@@ -119,11 +136,42 @@ serve(async (req: Request) => {
         const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
           [];
 
+        const jobUpdates: Record<
+          string,
+          Database["public"]["Tables"]["job"]["Update"]
+        > = {};
+
         const serialNumbersConsumed: string[] = [];
 
         const locationId = shipment.data.locationId;
 
         for await (const shipmentLine of shipmentLines.data) {
+          if (
+            shipmentLine.fulfillment?.type === "Job" &&
+            shipmentLine.fulfillment?.jobId
+          ) {
+            // Update quantity shipped on job, accumulating totals from multiple shipments
+            const jobId = shipmentLine.fulfillment.jobId;
+            const currentJob = jobs.data.find((j) => j.id === jobId);
+            const currentQuantityShipped = currentJob?.quantityShipped ?? 0;
+
+            // If we've already updated this job in this transaction, use that as the base
+            // instead of the current DB value to avoid double counting
+            if (jobUpdates[jobId]) {
+              jobUpdates[jobId] = {
+                quantityShipped:
+                  (jobUpdates[jobId]?.quantityShipped ?? 0) +
+                  shipmentLine.shippedQuantity,
+              };
+            } else {
+              jobUpdates[jobId] = {
+                quantityShipped:
+                  currentQuantityShipped + shipmentLine.shippedQuantity,
+              };
+            }
+            continue;
+          }
+
           const itemTrackingType =
             items.data.find((item) => item.id === shipmentLine.itemId)
               ?.itemTrackingType ?? "Inventory";
@@ -641,6 +689,16 @@ serve(async (req: Request) => {
               .values(itemLedgerInserts)
               .returning(["id"])
               .execute();
+          }
+
+          if (Object.keys(jobUpdates).length > 0) {
+            for await (const [jobId, update] of Object.entries(jobUpdates)) {
+              await trx
+                .updateTable("job")
+                .set(update)
+                .where("id", "=", jobId)
+                .execute();
+            }
           }
         });
         break;

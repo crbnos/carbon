@@ -7,9 +7,6 @@ import {
   CardHeader,
   CardTitle,
   Heading,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   HStack,
   Table,
   Tbody,
@@ -354,14 +351,14 @@ function LineItems({
                     <div className="mt-2 flex flex-row items-end gap-x-2">
                       <Badge variant={jobVariant}>{jobLabel}</Badge>
                       {jobs.length > 0 && (
-                        <HoverCard>
-                          <HoverCardTrigger>
+                        <Tooltip>
+                          <TooltipTrigger>
                             <Badge variant="secondary">
                               {jobs.length} Jobs
                               <LuEllipsisVertical className="w-3 h-3 ml-2" />
                             </Badge>
-                          </HoverCardTrigger>
-                          <HoverCardContent>
+                          </TooltipTrigger>
+                          <TooltipContent>
                             <div className="flex flex-col w-full gap-4 text-sm">
                               {jobs.map((job) => (
                                 <div
@@ -380,8 +377,8 @@ function LineItems({
                                 </div>
                               ))}
                             </div>
-                          </HoverCardContent>
-                        </HoverCard>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                   )}

@@ -14,11 +14,18 @@ const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("jobComplete"),
+    type: z.literal("jobCompleteInventory"),
     jobId: z.string(),
     quantityComplete: z.number(),
     shelfId: z.string().optional(),
     locationId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("jobCompleteMakeToOrder"),
+    jobId: z.string(),
+    quantityComplete: z.number(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -113,7 +120,7 @@ serve(async (req: Request) => {
       [];
 
     switch (validatedPayload.type) {
-      case "jobComplete": {
+      case "jobCompleteInventory": {
         const {
           jobId,
           quantityComplete,

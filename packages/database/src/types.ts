@@ -6045,6 +6045,131 @@ export type Database = {
           }
         ];
       };
+      fulfillment: {
+        Row: {
+          companyId: string;
+          createdAt: string;
+          createdBy: string;
+          id: string;
+          jobId: string | null;
+          quantity: number;
+          salesOrderLineId: string;
+          type: Database["public"]["Enums"]["fulfillmentType"];
+        };
+        Insert: {
+          companyId: string;
+          createdAt?: string;
+          createdBy: string;
+          id?: string;
+          jobId?: string | null;
+          quantity: number;
+          salesOrderLineId: string;
+          type: Database["public"]["Enums"]["fulfillmentType"];
+        };
+        Update: {
+          companyId?: string;
+          createdAt?: string;
+          createdBy?: string;
+          id?: string;
+          jobId?: string | null;
+          quantity?: number;
+          salesOrderLineId?: string;
+          type?: Database["public"]["Enums"]["fulfillmentType"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "fulfillment_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "company";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "customFieldTables";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "fulfillment_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "integrations";
+            referencedColumns: ["companyId"];
+          },
+          {
+            foreignKeyName: "fulfillment_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "fulfillment_jobId_fkey";
+            columns: ["jobId"];
+            isOneToOne: false;
+            referencedRelation: "job";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_jobId_fkey";
+            columns: ["jobId"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLine";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "fulfillment_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLines";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       group: {
         Row: {
           companyId: string | null;
@@ -22583,6 +22708,7 @@ export type Database = {
           companyId: string;
           createdAt: string;
           createdBy: string;
+          fulfillmentId: string | null;
           id: string;
           itemId: string;
           itemReadableId: string | null;
@@ -22604,6 +22730,7 @@ export type Database = {
           companyId: string;
           createdAt?: string;
           createdBy: string;
+          fulfillmentId?: string | null;
           id?: string;
           itemId: string;
           itemReadableId?: string | null;
@@ -22625,6 +22752,7 @@ export type Database = {
           companyId?: string;
           createdAt?: string;
           createdBy?: string;
+          fulfillmentId?: string | null;
           id?: string;
           itemId?: string;
           itemReadableId?: string | null;
@@ -22677,6 +22805,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "userDefaults";
             referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "shipmentLine_fulfillmentId_fkey";
+            columns: ["fulfillmentId"];
+            isOneToOne: false;
+            referencedRelation: "fulfillment";
+            referencedColumns: ["id"];
           },
           {
             foreignKeyName: "shipmentLine_itemId_fkey";
@@ -30362,14 +30497,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["id"];
+            columns: ["supplierLocationId"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["supplierLocationId"];
+            columns: ["id"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
@@ -31668,14 +31803,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["supplierCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["supplierCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -33326,14 +33461,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["paymentCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["paymentCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -36369,6 +36504,7 @@ export type Database = {
         | "Seconds/Piece"
         | "Total Hours"
         | "Total Minutes";
+      fulfillmentType: "Inventory" | "Job";
       glAccountCategory:
         | "Bank"
         | "Accounts Receivable"
