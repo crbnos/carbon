@@ -2,7 +2,7 @@ import type { Database } from "@carbon/database";
 import { Text, View, Image } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import bwipjs from "@bwip-js/node";
-import { formatCityStatePostalCode } from "@carbon/utils";
+import { formatCityStatePostalCode, TrackedEntityAttributes } from "@carbon/utils";
 import type { JSONContent } from "@carbon/react";
 import type { PDF } from "../types";
 import { Header, Note, Summary, Template } from "./components";
@@ -17,6 +17,7 @@ interface PackingSlipProps extends PDF {
   paymentTerm: { id: string; name: string };
   shippingMethod: { id: string; name: string };
   terms: JSONContent;
+  trackedEntities: Database["public"]["Tables"]["trackedEntity"]["Row"][];
 }
 
 // Initialize tailwind-styled-components
@@ -48,6 +49,7 @@ const PackingSlipPDF = ({
   paymentTerm,
   shippingMethod,
   title = "Packing Slip",
+  trackedEntities,
 }: PackingSlipProps) => {
   const {
     addressLine1,
@@ -83,6 +85,8 @@ const PackingSlipPDF = ({
     });
   }
 
+  const hasTrackedEntities = trackedEntities.length > 0;
+
   return (
     <Template
       title={title}
@@ -92,17 +96,21 @@ const PackingSlipPDF = ({
         subject: meta?.subject ?? "Packing Slip",
       }}
     >
-      <View>
-        <Header title={title} company={company} />
-        <Summary company={company} items={details} />
-        {shipment?.trackingNumber && (
-          <View style={tw("flex flex-col gap-2 justify-between mb-5")}>
-            <Text style={tw("text-gray-500 text-xs")}>Tracking Number</Text>
-            <Text style={tw("text-sm")}>{shipment?.trackingNumber}</Text>
-          </View>
-        )}
+      <View style={tw("flex flex-col")}>
+        {/* Header Section - Always at the top */}
+        <View style={tw("mb-4")}>
+          <Header title={title} company={company} />
+          <Summary company={company} items={details} />
+          {shipment?.trackingNumber && (
+            <View style={tw("flex flex-col gap-2 justify-between mb-5")}>
+              <Text style={tw("text-gray-500 text-xs")}>Tracking Number</Text>
+              <Text style={tw("text-sm")}>{shipment?.trackingNumber}</Text>
+            </View>
+          )}
+        </View>
 
-        <View style={tw("flex flex-row justify-between mb-5")}>
+        {/* Shipping Information Section */}
+        <View style={tw("flex flex-row justify-between mb-6 page-break-inside-avoid")}>
           <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
             <Text style={tw("text-sm")}>{customer.name}</Text>
@@ -132,41 +140,70 @@ const PackingSlipPDF = ({
             <Text style={tw("text-sm")}>{paymentTerm.name}</Text>
           </View>
         </View>
-        <View style={tw("mb-5 text-xs")}>
+
+        {/* Line Items Section */}
+        <View style={tw("mb-6 text-xs")}>
           <View
             style={tw(
-              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase"
+              "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid"
             )}
           >
-            <Text style={tw("w-5/12 text-left")}>Description</Text>
-            <Text style={tw("w-1/6 text-center")}>Qty</Text>
-            <Text style={tw("w-1/6 text-right")}>Barcode</Text>
+            <Text style={tw(`w-${hasTrackedEntities ? '7/12' : '9/12'} text-left`)}>Description</Text>
+            <Text style={tw(`w-${hasTrackedEntities ? '1/6' : '3/12'} text-center`)}>Qty</Text>
+            {hasTrackedEntities && (
+              <Text style={tw("w-1/4 text-right")}>Serial/Batch</Text>
+            )}
           </View>
+          
           {shipmentLines.map((line) => {
             const barcodeDataUrl = generateBarcode(line.itemReadableId);
+            const trackedEntitiesForLine = trackedEntities.filter(
+              (entity) => (entity.attributes as TrackedEntityAttributes)?.["Shipment Line"] === line.id
+            );
             return (
               <View
                 style={tw(
-                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300"
+                  "flex flex-row justify-between py-3 px-[6px] border-b border-gray-300 page-break-inside-avoid"
                 )}
                 key={line.id}
               >
-                <View style={tw("w-1/2")}>
+                <View style={tw(`w-${hasTrackedEntities ? '7/12' : '9/12'}`)}>
                   <Text style={tw("font-bold mb-1")}>
                     {getLineDescription(line)}
                   </Text>
-                  <Text style={tw("text-[9px] opacity-80")}>
+                  <Text style={tw("text-[9px] opacity-80 mb-2")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
+                  <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
-                <Text style={tw("w-1/4 text-center")}>
+                <Text style={tw(`w-${hasTrackedEntities ? '1/6' : '3/12'} text-center`)}>
                   {getLineQuantity(line)}
                 </Text>
-                <Image style={tw("w-1/4 text-right")} src={barcodeDataUrl} />
+                {hasTrackedEntities && (
+                  <View style={tw("flex flex-col gap-2 w-1/4 text-right")}>
+                    {trackedEntitiesForLine.length > 0 && (
+                      <View>
+                        {trackedEntitiesForLine.map((entity) => {
+                          const qrCodeDataUrl = generateQRCode(entity.id);
+                          return (
+                            <View key={entity.id} style={tw("mb-2 text-right")}>
+                              <Text style={tw("text-[8px] mb-1")}>
+                                {entity.id}
+                              </Text>
+                              <Image src={qrCodeDataUrl} style={tw("max-w-[80%] ml-auto")} />
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                )}
               </View>
             );
           })}
         </View>
+
+        {/* Notes and Terms Section */}
         <View style={tw("flex flex-col gap-4 w-full")}>
           <Note
             title="Notes"
@@ -198,6 +235,17 @@ function getLineDescriptionDetails(
   line: Database["public"]["Views"]["shipmentLines"]["Row"]
 ) {
   return line.description;
+}
+
+async function generateQRCode(text: string): Promise<string> {
+  const buffer = await bwipjs.toBuffer({
+    bcid: "qrcode",
+    text,
+    scale: 2, // Reduced scale for smaller QR code
+    height: 8, // Reduced height
+    width: 8, // Reduced width
+  });
+  return `data:image/png;base64,${buffer.toString("base64")}`;
 }
 
 async function generateBarcode(text: string): Promise<string> {

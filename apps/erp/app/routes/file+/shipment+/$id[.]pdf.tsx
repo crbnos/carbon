@@ -7,6 +7,7 @@ import { getPaymentTerm } from "~/modules/accounting";
 import {
   getShipment,
   getShipmentLinesWithDetails,
+  getShipmentTracking,
   getShippingMethod,
 } from "~/modules/inventory";
 import {
@@ -70,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         getSalesOrderShipment(client, shipment.data.sourceDocumentId),
       ]);
 
-      const [customer, customerLocation, paymentTerm, shippingMethod] =
+      const [customer, customerLocation, paymentTerm, shippingMethod, shipmentTracking] =
         await Promise.all([
           client
             .from("customer")
@@ -83,6 +84,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             client,
             salesOrderShipment.data?.shippingMethodId ?? ""
           ),
+          getShipmentTracking(client, shipment.data.id, companyId),
         ]);
 
       if (customer.error) {
@@ -109,6 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
           paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
           title="Packing Slip"
         />
       );

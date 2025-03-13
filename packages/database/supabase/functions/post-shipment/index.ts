@@ -518,6 +518,17 @@ serve(async (req: Request) => {
                   "Split Entity ID": newTrackedEntityId,
                 };
 
+                // Remove Shipment and Shipment Line attributes from the new entity
+                const updatedAttributesObj = { ...((originalEntity.attributes as TrackedEntityAttributes) || {}) };
+                
+                // Delete shipment-related attributes
+                delete updatedAttributesObj["Shipment"];
+                delete updatedAttributesObj["Shipment Line"];
+                delete updatedAttributesObj["Shipment Line Index"];
+                
+                // Add the split entity reference
+                updatedAttributesObj["Split Entity ID"] = newTrackedEntityId;
+
                 // Update the original entity with the reference to the new split entity
                 await trx
                   .updateTable("trackedEntity")

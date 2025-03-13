@@ -31801,14 +31801,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -33459,14 +33459,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -34364,6 +34364,7 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           description: string | null
+          fulfillmentId: string | null
           id: string | null
           itemId: string | null
           itemReadableId: string | null
@@ -34417,6 +34418,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "shipmentLine_fulfillmentId_fkey"
+            columns: ["fulfillmentId"]
+            isOneToOne: false
+            referencedRelation: "fulfillment"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "shipmentLine_itemId_fkey"
