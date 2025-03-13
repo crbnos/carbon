@@ -22,12 +22,7 @@ import {
   InputLeftElement,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import {
-  Link,
-  useNavigate,
-  useParams,
-  Await,
-} from "@remix-run/react";
+import { Link, useNavigate, useParams, Await } from "@remix-run/react";
 import { useRef, useState, Suspense } from "react";
 import {
   LuCirclePlus,
@@ -438,7 +433,11 @@ function SalesOrderLineRelatedItems({
       )}
       <VStack spacing={0} className="w-full">
         {relatedItems.map((node) => (
-          <RelatedItemTreeNode key={node.key} node={node} filterText={filterText} />
+          <RelatedItemTreeNode
+            key={node.key}
+            node={node}
+            filterText={filterText}
+          />
         ))}
       </VStack>
     </VStack>
@@ -535,11 +534,11 @@ function RelatedItemLink({
   return (
     <Hyperlink
       to={getLinkForItem()}
-      className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium"
+      className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap"
     >
       <LevelLine isSelected={false} className="mr-2" />
       <div className="mr-2">{getIcon()}</div>
-      {item.documentReadableId}
+      <span className="truncate">{item.documentReadableId}</span>
     </Hyperlink>
   );
 }
