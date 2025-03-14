@@ -15,8 +15,8 @@ INSERT INTO auth.users (
     'authenticated', 
     'authenticated', 
     'admin@carbon.us.org', 
-    '$2a$10$CFhDAUJZngIsa3kwNlnvZeK5U3Ueq1.IDX8Eysb8WwmrKzBvZfa/K', 
-    '2025-03-14 19:25:59.239172+00', 
+    crypt('carbon', gen_salt('bf')),
+    CURRENT_TIMESTAMP, 
     NULL, 
     '', 
     NULL, 
@@ -29,8 +29,8 @@ INSERT INTO auth.users (
     '{"role": "employee", "provider": "email", "providers": ["email"]}', 
     '{}', 
     NULL, 
-    '2025-03-14 19:25:59.217934+00', 
-    '2025-03-14 19:25:59.294048+00', 
+    CURRENT_TIMESTAMP, 
+    CURRENT_TIMESTAMP, 
     NULL, 
     NULL, 
     '', 
@@ -45,6 +45,28 @@ INSERT INTO auth.users (
     NULL, 
     false
 );
+
+INSERT INTO
+  auth.identities (
+    user_id,
+    provider_id,
+    identity_data,
+    provider,
+    last_sign_in_at,
+    created_at,
+    updated_at
+  )
+    SELECT
+      '82fd05db-270d-46af-b29e-082e9f709b1f',,
+      '82fd05db-270d-46af-b29e-082e9f709b1f',,
+      format('{"sub":"%s","email":"%s"}', '82fd05db-270d-46af-b29e-082e9f709b1f', 'admin@carbon.us.org')::jsonb,
+      'email',
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP,
+      CURRENT_TIMESTAMP
+    FROM
+      import.users
+    ON CONFLICT (provider_id, provider) DO NOTHING;
 
 -- Insert admin user into public.user table
 INSERT INTO public."user" (
