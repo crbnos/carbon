@@ -111,7 +111,7 @@ export async function copyQuoteLine(
 
 export async function copyQuote(
   client: SupabaseClient<Database>,
-  payload: z.infer<typeof getMethodValidator> & {
+  payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
     companyId: string;
     userId: string;
   }
