@@ -1,6 +1,7 @@
 import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { ActionFunctionArgs, json } from "@vercel/remix";
+import type { ActionFunctionArgs} from "@vercel/remix";
+import { json } from "@vercel/remix";
 import { copyQuote } from "~/modules/sales/sales.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -27,10 +28,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const copy = await copyQuote(serviceRole, {
     sourceId: quoteId,
     targetId: asRevision ? quoteId : "",
-    type: "quoteToQuote",
     companyId: companyId,
     userId: userId,
   });
+
+  console.log(copy);
 
   return json({
     success: true,
