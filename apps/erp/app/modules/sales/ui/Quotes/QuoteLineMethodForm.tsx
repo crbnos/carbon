@@ -5,7 +5,7 @@ import { PostgrestResponse } from "@supabase/supabase-js";
 import { useState, useEffect, useMemo } from "react";
 import { path } from "~/utils/path";
 
-export function  QuoteLineMethodForm() {
+export function QuoteLineMethodForm() {
   const quoteFetcher =
     useFetcher<PostgrestResponse<{ id: string; quoteId: string }>>();
   const quoteLineFetcher = useFetcher<

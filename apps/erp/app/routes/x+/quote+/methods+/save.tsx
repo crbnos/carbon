@@ -3,7 +3,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import {
-
   getMethodValidator,
   upsertMakeMethodFromQuoteLine,
   upsertMakeMethodFromQuoteMethod,
@@ -19,11 +18,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const type = formData.get("type") as string;
 
   const serviceRole = getCarbonServiceRole();
-  
+
   if (type === "item") {
-    const validation = await validator(getMethodValidator).validate(
-      formData
-    );
+    const validation = await validator(getMethodValidator).validate(formData);
     if (validation.error) {
       return validationError(validation.error);
     }

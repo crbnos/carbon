@@ -53,8 +53,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
-    SUPABASE_API_URL,
-    SUPABASE_ANON_PUBLIC,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
   } = getBrowserEnv();
 
   const sessionFlash = await getSessionFlash(request);
@@ -64,8 +64,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       env: {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
-        SUPABASE_API_URL,
-        SUPABASE_ANON_PUBLIC,
+        SUPABASE_URL,
+        SUPABASE_ANON_KEY,
       },
       mode: getMode(request),
       theme: getTheme(request),

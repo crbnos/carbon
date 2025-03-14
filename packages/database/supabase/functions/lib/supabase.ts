@@ -6,7 +6,7 @@ export const getSupabase = (authorizationHeader: string | null) => {
 
   return createClient<Database>(
     Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_PUBLIC") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     {
       global: {
         headers: { authorizationHeader },

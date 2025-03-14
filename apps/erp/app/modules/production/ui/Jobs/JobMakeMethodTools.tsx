@@ -32,9 +32,7 @@ import {
   useLocation,
   useParams,
 } from "@remix-run/react";
-import type {
-  PostgrestSingleResponse,
-} from "@supabase/supabase-js";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useState } from "react";
 import {
   LuGitBranch,
@@ -46,11 +44,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
-import {
-  Hidden,
-  Item,
-  Submit,
-} from "~/components/Form";
+import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -492,4 +486,3 @@ const JobMakeMethodTools = ({
 };
 
 export default JobMakeMethodTools;
-

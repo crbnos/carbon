@@ -1,4 +1,4 @@
-import { getAppUrl, SUPABASE_API_URL } from "@carbon/auth";
+import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -33,7 +33,7 @@ export const removeSubdomain = (url?: string): string => {
 };
 
 export const getStoragePath = (bucket: string, path: string) => {
-  return `${SUPABASE_API_URL}/storage/v1/object/public/${bucket}/${path}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
 export const requestReferrer = (request: Request) => {

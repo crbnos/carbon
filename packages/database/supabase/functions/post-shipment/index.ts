@@ -519,13 +519,16 @@ serve(async (req: Request) => {
                 };
 
                 // Remove Shipment and Shipment Line attributes from the new entity
-                const updatedAttributesObj = { ...((originalEntity.attributes as TrackedEntityAttributes) || {}) };
-                
+                const updatedAttributesObj = {
+                  ...((originalEntity.attributes as TrackedEntityAttributes) ||
+                    {}),
+                };
+
                 // Delete shipment-related attributes
                 delete updatedAttributesObj["Shipment"];
                 delete updatedAttributesObj["Shipment Line"];
                 delete updatedAttributesObj["Shipment Line Index"];
-                
+
                 // Add the split entity reference
                 updatedAttributesObj["Split Entity ID"] = newTrackedEntityId;
 

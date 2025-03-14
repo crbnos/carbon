@@ -1,4 +1,4 @@
-import { getBrowserEnv, SUPABASE_ANON_PUBLIC } from "@carbon/auth";
+import { getBrowserEnv, SUPABASE_ANON_KEY } from "@carbon/auth";
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { LuTriangleAlert } from "react-icons/lu";
@@ -6,7 +6,7 @@ import { useUser } from "~/hooks";
 import { CodeSnippet, Snippets, useSelectedLang } from "~/modules/api";
 import { path } from "~/utils/path";
 
-const { SUPABASE_API_URL } = getBrowserEnv();
+const { SUPABASE_URL } = getBrowserEnv();
 
 export default function Route() {
   const { company } = useUser();
@@ -27,8 +27,8 @@ export default function Route() {
               snippet={Snippets.env({
                 appUrl: window.location.origin,
                 apiKey: "<your-api-key>",
-                publicKey: SUPABASE_ANON_PUBLIC,
-                apiUrl: SUPABASE_API_URL,
+                publicKey: SUPABASE_ANON_KEY,
+                apiUrl: SUPABASE_URL,
                 companyId: company?.id,
               })}
             />
@@ -73,7 +73,7 @@ export default function Route() {
                 <article className="code">
                   <CodeSnippet
                     selectedLang={selectedLang}
-                    snippet={Snippets.init(SUPABASE_API_URL)}
+                    snippet={Snippets.init(SUPABASE_URL)}
                   />
                 </article>
               </div>

@@ -1,6 +1,6 @@
 import {
   getCarbonServiceRole,
-  SUPABASE_API_URL,
+  SUPABASE_URL,
   VERCEL_URL,
 } from "@carbon/auth";
 
@@ -27,7 +27,7 @@ export const modelThumbnailTask = task({
     const client = getCarbonServiceRole();
 
     const url = getModelUrl(modelId);
-    const imageUrl = `${SUPABASE_API_URL}/functions/v1/thumbnail`;
+    const imageUrl = `${SUPABASE_URL}/functions/v1/thumbnail`;
 
     const response = await fetch(imageUrl, {
       method: "POST",

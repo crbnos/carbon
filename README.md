@@ -102,8 +102,8 @@ $ cp ./.env.example ./.env
 
 1. Use the output of `npm run db:start` to set the supabase entries:
 
-- SUPABASE_SERVICE_ROLE=[service_role key]
-- SUPABASE_ANON_PUBLIC=[anon key]
+- SUPABASE_SERVICE_ROLE_KEY=[service_role key]
+- SUPABASE_ANON_KEY=[anon key]
 
 2. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
 

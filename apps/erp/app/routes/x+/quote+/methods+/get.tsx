@@ -18,19 +18,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const type = formData.get("type") as string;
 
-
   const serviceRole = getCarbonServiceRole();
   if (type === "item") {
-    const validation = await validator(getMethodValidator).validate(
-      formData
-    );
+    const validation = await validator(getMethodValidator).validate(formData);
     if (validation.error) {
       return validationError(validation.error);
     }
 
     const [quoteId, quoteLineId] = validation.data.targetId.split(":");
     const itemId = validation.data.sourceId;
-
 
     const lineMethod = await upsertQuoteLineMethod(serviceRole, {
       itemId,
@@ -50,7 +46,6 @@ export async function action({ request }: ActionFunctionArgs) {
     if (validation.error) {
       return validationError(validation.error);
     }
-
 
     const copyLine = await copyQuoteLine(serviceRole, {
       ...validation.data,

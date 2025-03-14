@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL } from "@carbon/auth";
+import { SUPABASE_URL } from "@carbon/auth";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -22,7 +22,7 @@ export default function ConfirmMagicLink() {
   }
 
   const getConfirmationURL = (token: string) => {
-    return `${SUPABASE_API_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${window?.location.origin}/callback`;
+    return `${SUPABASE_URL}/auth/v1/verify?token=${token}&type=magiclink&redirect_to=${window?.location.origin}/callback`;
   };
 
   return (

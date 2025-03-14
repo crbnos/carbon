@@ -71,21 +71,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         getSalesOrderShipment(client, shipment.data.sourceDocumentId),
       ]);
 
-      const [customer, customerLocation, paymentTerm, shippingMethod, shipmentTracking] =
-        await Promise.all([
-          client
-            .from("customer")
-            .select("*")
-            .eq("id", salesOrder.data?.customerId ?? "")
-            .single(),
-          getCustomerLocation(client, salesOrder.data?.locationId ?? ""),
-          getPaymentTerm(client, salesOrder.data?.paymentTermId ?? ""),
-          getShippingMethod(
-            client,
-            salesOrderShipment.data?.shippingMethodId ?? ""
-          ),
-          getShipmentTracking(client, shipment.data.id, companyId),
-        ]);
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        shipmentTracking,
+      ] = await Promise.all([
+        client
+          .from("customer")
+          .select("*")
+          .eq("id", salesOrder.data?.customerId ?? "")
+          .single(),
+        getCustomerLocation(client, salesOrder.data?.locationId ?? ""),
+        getPaymentTerm(client, salesOrder.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          client,
+          salesOrderShipment.data?.shippingMethodId ?? ""
+        ),
+        getShipmentTracking(client, shipment.data.id, companyId),
+      ]);
 
       if (customer.error) {
         console.error(customer.error);

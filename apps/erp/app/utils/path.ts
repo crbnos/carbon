@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL } from "@carbon/auth";
+import { SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -871,6 +871,7 @@ export const path = {
         `${x}/quote/${quoteId}/lines/${lineId}/assembly/${assemblyId}`
       ),
     quoteDetails: (id: string) => generatePath(`${x}/quote/${id}/details`),
+    quoteDuplicate: (id: string) => generatePath(`${x}/quote/${id}/duplicate`),
     quoteExchangeRate: (id: string) =>
       generatePath(`${x}/quote/${id}/exchange-rate`),
     quoteExternalDocuments: (id: string) =>
@@ -1126,7 +1127,7 @@ export const onboardingSequence = [
 ] as const;
 
 export const getStoragePath = (bucket: string, path: string) => {
-  return `${SUPABASE_API_URL}/storage/v1/object/public/${bucket}/${path}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
 export const requestReferrer = (request: Request, withParams = true) => {

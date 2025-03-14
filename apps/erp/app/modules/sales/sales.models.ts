@@ -122,11 +122,10 @@ export const externalQuoteValidator = z.discriminatedUnion("type", [
 ]);
 
 export const getMethodValidator = z.object({
-  type: z.enum(["item", "quoteLine", "method" ]),
+  type: z.enum(["item", "quoteLine", "method", "quoteToQuote"]),
   sourceId: z.string(),
   targetId: z.string(),
 });
-
 
 export const noQuoteReasonValidator = z.object({
   id: zfd.text(z.string().optional()),

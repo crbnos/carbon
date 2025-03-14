@@ -6,7 +6,7 @@ import type { ValidLang } from "~/modules/api";
 import { CodeSnippet, Snippets } from "~/modules/api";
 import { snakeToCamel } from "~/utils/string";
 
-const { SUPABASE_ANON_PUBLIC } = getBrowserEnv();
+const { SUPABASE_ANON_KEY } = getBrowserEnv();
 
 type TableDocsProps = {
   endpoint: string;
@@ -102,7 +102,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                     title: `Select ${x.id}`,
                     resourceId,
                     endpoint: endpoint,
-                    apiKey: SUPABASE_ANON_PUBLIC,
+                    apiKey: SUPABASE_ANON_KEY,
                     columnName: x.id,
                   })}
                 />
@@ -136,7 +136,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.readAll(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
               <CodeSnippet
@@ -144,7 +144,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.readColumns({
                   resourceId,
                   endpoint: endpoint,
-                  apiKey: SUPABASE_ANON_PUBLIC,
+                  apiKey: SUPABASE_ANON_KEY,
                 })}
               />
               <CodeSnippet
@@ -152,7 +152,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.readForeignTables(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
               <CodeSnippet
@@ -160,7 +160,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.readRange(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
             </article>
@@ -185,7 +185,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.readFilters(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
             </article>
@@ -221,7 +221,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.insertSingle(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
               <CodeSnippet
@@ -229,7 +229,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.insertMany(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
               <CodeSnippet
@@ -237,7 +237,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.upsert(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
             </article>
@@ -275,7 +275,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.update(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
             </article>
@@ -308,7 +308,7 @@ const TableDocs = ({ endpoint, selectedLang, resourceId }: TableDocsProps) => {
                 snippet={Snippets.delete(
                   resourceId,
                   endpoint,
-                  SUPABASE_ANON_PUBLIC
+                  SUPABASE_ANON_KEY
                 )}
               />
             </article>
