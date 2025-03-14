@@ -56,17 +56,16 @@ INSERT INTO
     created_at,
     updated_at
   )
-    SELECT
-      '82fd05db-270d-46af-b29e-082e9f709b1f',,
-      '82fd05db-270d-46af-b29e-082e9f709b1f',,
-      format('{"sub":"%s","email":"%s"}', '82fd05db-270d-46af-b29e-082e9f709b1f', 'admin@carbon.us.org')::jsonb,
-      'email',
-      CURRENT_TIMESTAMP,
-      CURRENT_TIMESTAMP,
-      CURRENT_TIMESTAMP
-    FROM
-      import.users
-    ON CONFLICT (provider_id, provider) DO NOTHING;
+VALUES (
+    '82fd05db-270d-46af-b29e-082e9f709b1f',
+    '82fd05db-270d-46af-b29e-082e9f709b1f',
+    format('{"sub":"%s","email":"%s"}', '82fd05db-270d-46af-b29e-082e9f709b1f', 'admin@carbon.us.org')::jsonb,
+    'email',
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+)
+ON CONFLICT (provider_id, provider) DO NOTHING;
 
 -- Insert admin user into public.user table
 INSERT INTO public."user" (
