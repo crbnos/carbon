@@ -40,6 +40,7 @@ const payloadValidator = z.object({
     "procedureToOperation",
     "quoteLineToItem",
     "quoteLineToJob",
+    "quoteLineToQuoteLine",
     "quoteMakeMethodToItem",
   ]),
   sourceId: z.string(),
@@ -3119,6 +3120,280 @@ serve(async (req: Request) => {
                   }
                 }
               }
+            }
+          }
+        });
+
+        break;
+      }
+      case "quoteLineToQuoteLine": {
+        const [, sourceQuoteLineId] = (sourceId as string).split(":");
+        const [targetQuoteId, targetQuoteLineId] = (targetId as string).split(":");
+
+        console.log({
+          sourceQuoteLineId,
+          targetQuoteId,
+          targetQuoteLineId,
+        })
+        
+        const [
+          targetQuoteMakeMethod,
+          sourceQuoteMakeMethod,
+          sourceQuoteMaterials,
+          sourceQuoteOperations,
+        ] = await Promise.all([
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("quoteLineId", targetQuoteLineId)
+            .is("parentMaterialId", null)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .is("parentMaterialId", null)
+            .eq("quoteLineId", sourceQuoteLineId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("quoteMaterial")
+            .select("*")
+            .eq("quoteLineId", sourceQuoteLineId)
+            .eq("companyId", companyId),
+          client
+            .from("quoteOperation")
+            .select(
+              "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationAttribute(*)"
+            )
+            .eq("quoteLineId", sourceQuoteLineId)
+            .eq("companyId", companyId),
+        ]);
+
+        if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
+          console.error(targetQuoteMakeMethod.error);
+          throw new Error("Failed to get target quote make method");
+        }
+
+        if (
+          sourceQuoteMakeMethod.error ||
+          sourceQuoteMaterials.error ||
+          sourceQuoteOperations.error
+        ) {
+          throw new Error("Failed to source quote data");
+        }
+
+        const [quoteMethodTrees] = await Promise.all([
+          getQuoteMethodTree(client, sourceQuoteMakeMethod.data.id),
+        ]);
+
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const quoteMethodTree = quoteMethodTrees
+          .data?.[0] as QuoteMethodTreeItem;
+        if (!quoteMethodTree) throw new Error("Method tree not found");
+
+        const quoteMaterialIdToQuoteMaterialId: Record<string, string> = {};
+        const quoteMakeMethodIdToQuoteMakeMethodId: Record<string, string> = {};
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing jobMakeMethods, jobMaterials, and jobOperations for this job
+          await Promise.all([
+            trx
+              .deleteFrom("quoteMakeMethod")
+              .where((eb) =>
+                eb.and([
+                  eb("quoteLineId", "=", targetQuoteLineId),
+                  eb("parentMaterialId", "is not", null),
+                ])
+              )
+              .execute(),
+            trx.deleteFrom("quoteMaterial").where("quoteLineId", "=", targetQuoteLineId).execute(),
+            trx.deleteFrom("quoteOperation").where("quoteLineId", "=", targetQuoteLineId).execute(),
+          ]);
+
+
+
+          await traverseQuoteMethod(
+            quoteMethodTree,
+            async (node: QuoteMethodTreeItem) => {
+              const quoteMaterialInserts: Database["public"]["Tables"]["quoteMaterial"]["Insert"][] =
+                [];
+              const quoteMakeMethodInserts: Database["public"]["Tables"]["quoteMakeMethod"]["Insert"][] =
+                [];
+
+              for await (const child of node.children) {
+                const newMaterialId = nanoid();
+                quoteMaterialIdToQuoteMaterialId[child.id] = newMaterialId;
+
+                quoteMaterialInserts.push({
+                  id: newMaterialId,
+                  quoteId: targetQuoteId,
+                  quoteLineId: targetQuoteLineId,
+                  itemId: child.data.itemId,
+                  itemReadableId: child.data.itemReadableId,
+                  itemType: child.data.itemType,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  description: child.data.description,
+                  quoteMakeMethodId:
+                    child.data.quoteMakeMethodId === sourceQuoteMakeMethod.data.id
+                      ? targetQuoteMakeMethod.data.id
+                      : quoteMakeMethodIdToQuoteMakeMethodId[
+                          child.data.quoteMakeMethodId
+                        ],
+                  quantity: child.data.quantity,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
+
+                if (child.data.quoteMaterialMakeMethodId) {
+                  const newMakeMethodId = nanoid();
+                  quoteMakeMethodIdToQuoteMakeMethodId[
+                    child.data.quoteMaterialMakeMethodId
+                  ] = newMakeMethodId;
+                  quoteMakeMethodInserts.push({
+                    id: newMakeMethodId,
+                    quoteId: targetQuoteId,
+                    quoteLineId: targetQuoteLineId,
+                    parentMaterialId: quoteMaterialIdToQuoteMaterialId[child.id],
+                    itemId: child.data.itemId,
+                    quantityPerParent: child.data.quantity,
+                    companyId,
+                    createdBy: userId,
+                  });
+                }
+              }
+
+              if (quoteMaterialInserts.length > 0) {
+                await trx
+                  .insertInto("quoteMaterial")
+                  .values(quoteMaterialInserts)
+                  .execute();
+              }
+
+              if (quoteMakeMethodInserts.length > 0) {
+                for await (const insert of quoteMakeMethodInserts) {
+                  await trx
+                    .updateTable("quoteMakeMethod")
+                    .set({
+                      id: insert.id,
+                      quantityPerParent: insert.quantityPerParent,
+                    })
+                    .where("quoteLineId", "=", targetQuoteLineId)
+                    .where("parentMaterialId", "=", insert.parentMaterialId)
+                    .execute();
+                }
+              }
+            }
+          );
+
+          const quoteOperationInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+            sourceQuoteOperations.data.map((op) => ({
+              quoteId: targetQuoteId,
+              quoteLineId: targetQuoteLineId,
+              quoteMakeMethodId:
+                op.quoteMakeMethodId === sourceQuoteMakeMethod.data.id
+                  ? targetQuoteMakeMethod.data.id
+                  : quoteMakeMethodIdToQuoteMakeMethodId[op.quoteMakeMethodId!],
+              processId: op.processId,
+              procedureId: op.procedureId,
+              workCenterId: op.workCenterId,
+              description: op.description,
+              setupTime: op.setupTime,
+              setupUnit: op.setupUnit,
+              laborTime: op.laborTime,
+              laborUnit: op.laborUnit,
+              machineTime: op.machineTime,
+              machineUnit: op.machineUnit,
+              order: op.order,
+              operationOrder: op.operationOrder,
+              operationType: op.operationType,
+              operationSupplierProcessId: op.operationSupplierProcessId,
+              tags: op.tags ?? [],
+              workInstruction: op.workInstruction,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            }));
+
+          if (quoteOperationInserts.length > 0) {
+            const operationIds = await trx
+              .insertInto("quoteOperation")
+              .values(quoteOperationInserts)
+              .returning(["id"])
+              .execute();
+
+            for (const [index, operation] of (
+              sourceQuoteOperations.data ?? []
+            ).entries()) {
+              const operationId = operationIds[index].id;
+              if (operationId) {
+                const {
+                  quoteOperationTool,
+                  quoteOperationParameter,
+                  quoteOperationAttribute,
+                } = operation;
+
+                if (
+                  Array.isArray(quoteOperationTool) &&
+                  quoteOperationTool.length > 0
+                ) {
+                  await trx
+                    .insertInto("quoteOperationTool")
+                    .values(
+                      quoteOperationTool.map((tool) => ({
+                        toolId: tool.toolId,
+                        quantity: tool.quantity,
+                        operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                
+                  if (
+                    Array.isArray(quoteOperationParameter) &&
+                    quoteOperationParameter.length > 0
+                  ) {
+                    await trx
+                      .insertInto("quoteOperationParameter")
+                      .values(
+                        quoteOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(quoteOperationAttribute) &&
+                    quoteOperationAttribute.length > 0
+                  ) {
+                    await trx
+                      .insertInto("quoteOperationAttribute")
+                      .values(
+                        quoteOperationAttribute.map((attribute) => ({
+                          ...attribute,
+                          operationId,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+                }
+              
             }
           }
         });

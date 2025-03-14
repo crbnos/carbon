@@ -121,17 +121,12 @@ export const externalQuoteValidator = z.discriminatedUnion("type", [
   }),
 ]);
 
-export const getLineMethodValidator = z.object({
-  type: z.enum(["line"]),
-  itemId: z.string().min(1, { message: "Please select a source method" }),
-  quoteId: z.string(),
-  quoteLineId: z.string(),
+export const getMethodValidator = z.object({
+  type: z.enum(["item", "quoteLine", "method" ]),
+  sourceId: z.string(),
+  targetId: z.string(),
 });
 
-export const getMethodValidator = z.object({
-  quoteMaterialId: z.string().min(1, { message: "Quote Material is required" }),
-  itemId: z.string().min(1, { message: "Please select a source method" }),
-});
 
 export const noQuoteReasonValidator = z.object({
   id: zfd.text(z.string().optional()),

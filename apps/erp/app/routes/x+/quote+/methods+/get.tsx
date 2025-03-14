@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import {
-  getLineMethodValidator,
+  copyQuoteLine,
   getMethodValidator,
   upsertQuoteLineMethod,
   upsertQuoteMaterialMakeMethod,
@@ -18,17 +18,24 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const type = formData.get("type") as string;
 
+
   const serviceRole = getCarbonServiceRole();
-  if (type === "line") {
-    const validation = await validator(getLineMethodValidator).validate(
+  if (type === "item") {
+    const validation = await validator(getMethodValidator).validate(
       formData
     );
     if (validation.error) {
       return validationError(validation.error);
     }
 
+    const [quoteId, quoteLineId] = validation.data.targetId.split(":");
+    const itemId = validation.data.sourceId;
+
+
     const lineMethod = await upsertQuoteLineMethod(serviceRole, {
-      ...validation.data,
+      itemId,
+      quoteId,
+      quoteLineId,
       companyId,
       userId,
     });
@@ -38,14 +45,36 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
+  if (type === "quoteLine") {
+    const validation = await validator(getMethodValidator).validate(formData);
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+
+    const copyLine = await copyQuoteLine(serviceRole, {
+      ...validation.data,
+      companyId,
+      userId,
+    });
+
+    return json({
+      error: copyLine.error ? "Failed to copy quote line" : null,
+    });
+  }
+
   if (type === "method") {
     const validation = await validator(getMethodValidator).validate(formData);
     if (validation.error) {
       return validationError(validation.error);
     }
 
+    const quoteMaterialId = validation.data.targetId;
+    const itemId = validation.data.sourceId;
+
     const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
-      ...validation.data,
+      itemId,
+      quoteMaterialId,
       companyId,
       createdBy: userId,
     });

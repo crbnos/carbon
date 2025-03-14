@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import {
-  getLineMethodValidator,
+
   getMethodValidator,
   upsertMakeMethodFromQuoteLine,
   upsertMakeMethodFromQuoteMethod,
@@ -19,16 +19,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const type = formData.get("type") as string;
 
   const serviceRole = getCarbonServiceRole();
-  if (type === "line") {
-    const validation = await validator(getLineMethodValidator).validate(
+  
+  if (type === "item") {
+    const validation = await validator(getMethodValidator).validate(
       formData
     );
     if (validation.error) {
       return validationError(validation.error);
     }
 
+    const [quoteId, quoteLineId] = validation.data.sourceId.split(":");
+    const itemId = validation.data.targetId;
+
     const lineMethod = await upsertMakeMethodFromQuoteLine(serviceRole, {
-      ...validation.data,
+      quoteId,
+      quoteLineId,
+      itemId,
       companyId,
       userId,
     });
@@ -46,8 +52,12 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
+    const quoteMaterialId = validation.data.targetId;
+    const itemId = validation.data.sourceId;
+
     const makeMethod = await upsertMakeMethodFromQuoteMethod(serviceRole, {
-      ...validation.data,
+      quoteMaterialId,
+      itemId,
       companyId,
       createdBy: userId,
     });

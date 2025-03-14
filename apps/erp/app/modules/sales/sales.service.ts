@@ -94,6 +94,22 @@ export async function convertQuoteToOrder(
   });
 }
 
+export async function copyQuoteLine(
+  client: SupabaseClient<Database>,
+  payload: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{ copiedId: string }>("get-method", {
+    body: {
+      ...payload,
+      type: "quoteLineToQuoteLine",
+    },
+  });
+}
+
+
 export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
@@ -1772,7 +1788,9 @@ export async function upsertMakeMethodFromQuoteLine(
 
 export async function upsertMakeMethodFromQuoteMethod(
   client: SupabaseClient<Database>,
-  quoteMaterial: z.infer<typeof getMethodValidator> & {
+  quoteMaterial: {
+    quoteMaterialId: string;
+    itemId: string;
     companyId: string;
     createdBy: string;
   }
@@ -2137,7 +2155,9 @@ export async function upsertQuoteMaterial(
 
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
-  quoteMaterial: z.infer<typeof getMethodValidator> & {
+  quoteMaterial: {
+    quoteMaterialId: string;
+    itemId: string;
     companyId: string;
     createdBy: string;
   }

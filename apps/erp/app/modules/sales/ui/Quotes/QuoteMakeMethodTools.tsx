@@ -15,6 +15,10 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   toast,
   useDisclosure,
   useMount,
@@ -33,6 +37,7 @@ import {
   LuGitFork,
   LuGitMerge,
   LuSettings,
+  LuSquareStack,
   LuTriangleAlert,
 } from "react-icons/lu";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
@@ -46,8 +51,10 @@ import type {
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
-import { getLineMethodValidator, getMethodValidator } from "../../sales.models";
+import { getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
+import { RiProgress4Line } from "react-icons/ri";
+import { QuoteLineMethodForm } from "./QuoteLineMethodForm";
 
 const QuoteMakeMethodTools = () => {
   const permissions = usePermissions();
@@ -218,9 +225,7 @@ const QuoteMakeMethodTools = () => {
               method="post"
               fetcher={fetcher}
               action={path.to.quoteMethodGet}
-              validator={
-                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
-              }
+              validator={getMethodValidator}
               onSubmit={getMethodModal.onClose}
             >
               <ModalHeader>
@@ -231,48 +236,92 @@ const QuoteMakeMethodTools = () => {
               </ModalHeader>
               <ModalBody>
                 {isQuoteLineMethod ? (
-                  <>
-                    <Hidden name="type" value="line" />
-                    <Hidden name="quoteId" value={quoteId} />
-                    <Hidden name="quoteLineId" value={lineId} />
-                  </>
+                  <Tabs defaultValue="item" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 my-4">
+                      <TabsTrigger value="item">
+                        <LuSquareStack className="mr-2" /> Item
+                      </TabsTrigger>
+                      <TabsTrigger value="quote">
+                        <RiProgress4Line className="mr-2" />
+                        Quote
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="item">
+                      <Hidden name="type" value="item" />
+                      <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
+                      <VStack spacing={4}>
+                        <Item
+                          name="sourceId"
+                          label="Source Method"
+                          type={(line?.itemType ?? "Part") as "Part"}
+                          includeInactive={includeInactive === true}
+                          replenishmentSystem="Make"
+                        />
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="include-inactive"
+                            checked={includeInactive}
+                            onCheckedChange={setIncludeInactive}
+                          />
+                          <label
+                            htmlFor="include-inactive"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Include Inactive
+                          </label>
+                        </div>
+                        {hasMethods && (
+                          <Alert variant="destructive">
+                            <LuTriangleAlert className="h-4 w-4" />
+                            <AlertTitle>
+                              This will overwrite the existing quote method
+                            </AlertTitle>
+                          </Alert>
+                        )}
+                      </VStack>
+                    </TabsContent>
+                    <TabsContent value="quote">
+                      <Hidden name="type" value="quoteLine" />
+                      <Hidden name="targetId" value={`${quoteId}:${lineId}`} />
+                      <QuoteLineMethodForm />
+                    </TabsContent>
+                  </Tabs>
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="quoteMaterialId" value={materialId!} />
+                    <Hidden name="targetId" value={materialId!} />
+                    <VStack spacing={4}>
+                      <Item
+                        name="sourceId"
+                        label="Source Method"
+                        type={(line?.itemType ?? "Part") as "Part"}
+                        includeInactive={includeInactive === true}
+                        replenishmentSystem="Make"
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="include-inactive"
+                          checked={includeInactive}
+                          onCheckedChange={setIncludeInactive}
+                        />
+                        <label
+                          htmlFor="include-inactive"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Include Inactive
+                        </label>
+                      </div>
+                      {hasMethods && (
+                        <Alert variant="destructive">
+                          <LuTriangleAlert className="h-4 w-4" />
+                          <AlertTitle>
+                            This will overwrite the existing quote method
+                          </AlertTitle>
+                        </Alert>
+                      )}
+                    </VStack>
                   </>
                 )}
-
-                <VStack spacing={4}>
-                  <Item
-                    name="itemId"
-                    label="Source Method"
-                    type={(line?.itemType ?? "Part") as "Part"}
-                    includeInactive={includeInactive === true}
-                    replenishmentSystem="Make"
-                  />
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="include-inactive"
-                      checked={includeInactive}
-                      onCheckedChange={setIncludeInactive}
-                    />
-                    <label
-                      htmlFor="include-inactive"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Include Inactive
-                    </label>
-                  </div>
-                  {hasMethods && (
-                    <Alert variant="destructive">
-                      <LuTriangleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        This will overwrite the existing quote method
-                      </AlertTitle>
-                    </Alert>
-                  )}
-                </VStack>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={getMethodModal.onClose} variant="secondary">
@@ -301,11 +350,9 @@ const QuoteMakeMethodTools = () => {
               method="post"
               fetcher={fetcher}
               action={path.to.quoteMethodSave}
-              validator={
-                isQuoteLineMethod ? getLineMethodValidator : getMethodValidator
-              }
+              validator={getMethodValidator}
               defaultValues={{
-                itemId: isQuoteLineMethod
+                sourceId: isQuoteLineMethod
                   ? line?.itemId ?? undefined
                   : undefined,
               }}
@@ -321,20 +368,19 @@ const QuoteMakeMethodTools = () => {
               <ModalBody>
                 {isQuoteLineMethod ? (
                   <>
-                    <Hidden name="type" value="line" />
-                    <Hidden name="quoteId" value={quoteId} />
-                    <Hidden name="quoteLineId" value={lineId} />
+                    <Hidden name="type" value="item" />
+                    <Hidden name="sourceId" value={`${quoteId}:${lineId}`} />
                   </>
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="quoteMaterialId" value={materialId!} />
+                    <Hidden name="sourceId" value={materialId!} />
                   </>
                 )}
 
                 <VStack spacing={4}>
                   <Item
-                    name="itemId"
+                    name="targetId"
                     label="Target Method"
                     type={(line?.itemType ?? "Part") as "Part"}
                     includeInactive={includeInactive === true}
