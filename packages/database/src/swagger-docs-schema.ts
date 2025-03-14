@@ -23338,6 +23338,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipmentLines.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.shipmentLines.fulfillmentId",
+          },
+          {
             $ref: "#/parameters/rowFilter.shipmentLines.thumbnailPath",
           },
           {
@@ -24334,6 +24337,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteRejectedByEmail",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.opportunityId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -24486,6 +24492,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteRejectedByEmail",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.opportunityId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24590,6 +24599,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.digitalQuoteRejectedByEmail",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.opportunityId",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -33871,6 +33883,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.noQuoteReasonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.opportunityId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -34002,6 +34017,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.noQuoteReasonId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.opportunityId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -34085,6 +34103,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.noQuoteReasonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.opportunityId",
           },
           {
             $ref: "#/parameters/body.salesRfq",
@@ -34903,6 +34924,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.opportunityId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -35040,6 +35064,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.opportunityId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -35129,6 +35156,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.sentCompleteDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.opportunityId",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -58710,6 +58740,12 @@ export default {
           format: "text",
           type: "string",
         },
+        fulfillmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fulfillment.id`.<fk table='fulfillment' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -59174,6 +59210,12 @@ export default {
           type: "string",
         },
         digitalQuoteRejectedByEmail: {
+          format: "text",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -63412,6 +63454,12 @@ export default {
           format: "text",
           type: "string",
         },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -63850,6 +63898,12 @@ export default {
         },
         sentCompleteDate: {
           format: "date",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -82082,6 +82136,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.shipmentLines.fulfillmentId": {
+      name: "fulfillmentId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "rowFilter.shipmentLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -82677,6 +82738,13 @@ export default {
     },
     "rowFilter.quote.digitalQuoteRejectedByEmail": {
       name: "digitalQuoteRejectedByEmail",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.opportunityId": {
+      name: "opportunityId",
       required: false,
       format: "text",
       in: "query",
@@ -88164,6 +88232,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesRfq.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.paymentTerm": {
       name: "paymentTerm",
       description: "paymentTerm",
@@ -88742,6 +88817,13 @@ export default {
       name: "sentCompleteDate",
       required: false,
       format: "date",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesOrder.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
