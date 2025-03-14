@@ -122,3 +122,10 @@ port = 54327
 vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
+
+[functions.seed-company]
+enabled = true
+[functions.get-method]
+enabled = true
+[functions.recalculate]
+enabled = true
