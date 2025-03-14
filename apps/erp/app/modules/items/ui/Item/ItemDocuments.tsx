@@ -165,7 +165,18 @@ const ItemDocuments = ({
                       <DocumentIcon type={type} />
                       <span
                         className="font-medium"
-                        onClick={() => download(file)}
+                        onClick={() => {
+                          if (["PDF", "Image"].includes(type)) {
+                            window.open(
+                              path.to.file.previewFile(
+                                `${"private"}/${getPath(file)}`
+                              ),
+                              "_blank"
+                            );
+                          } else {
+                            download(file);
+                          }
+                        }}
                       >
                         {["PDF", "Image"].includes(type) ? (
                           <DocumentPreview

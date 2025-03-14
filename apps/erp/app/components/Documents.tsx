@@ -353,7 +353,18 @@ const Documents = ({
                       <DocumentIcon type={type} />
                       <span
                         className="font-medium"
-                        onClick={() => download(file)}
+                        onClick={() => {
+                          if (["PDF", "Image"].includes(type)) {
+                            window.open(
+                              path.to.file.previewFile(
+                                `${"private"}/${getReadPath(file)}`
+                              ),
+                              "_blank"
+                            );
+                          } else {
+                            download(file);
+                          }
+                        }}
                       >
                         {isPreviewable ? (
                           <DocumentPreview
