@@ -6,8 +6,9 @@ import {
   Badge,
   Button,
   Checkbox,
-  Combobox as ComboboxBase,
   cn,
+  Combobox as ComboboxBase,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -17,6 +18,8 @@ import {
   HStack,
   IconButton,
   Input,
+  InputGroup,
+  InputRightElement,
   Loading,
   Modal,
   ModalBody,
@@ -26,11 +29,19 @@ import {
   ModalHeader,
   ModalTitle,
   ModelViewer,
+  NumberDecrementStepper,
+  NumberField,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputGroup,
+  NumberInputStepper,
   Progress,
   ScrollArea,
   Separator,
   SidebarTrigger,
   Skeleton,
+  SplitButton,
+  Switch,
   Table,
   Tabs,
   TabsContent,
@@ -54,17 +65,6 @@ import {
   useMount,
   VStack,
   type JSONContent,
-  InputGroup,
-  InputRightElement,
-  NumberDecrementStepper,
-  NumberField,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputGroup,
-  NumberInputStepper,
-  Copy,
-  Switch,
-  SplitButton,
 } from "@carbon/react";
 import { generateHTML } from "@carbon/react/Editor";
 import {
@@ -101,14 +101,14 @@ import {
 } from "~/services/models";
 import type {
   Job,
+  JobMakeMethod,
   JobMaterial,
-  JobOperationParameter,
   JobOperationAttribute,
+  JobOperationParameter,
   OperationWithDetails,
   ProductionEvent,
   ProductionQuantity,
   StorageItem,
-  JobMakeMethod,
   TrackedEntity,
   TrackedInput,
 } from "~/services/types";
@@ -143,6 +143,7 @@ import {
   parseAbsolute,
   toZoned,
 } from "@internationalized/date";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type {
   PostgrestSingleResponse,
   RealtimeChannel,
@@ -184,16 +185,15 @@ import {
   ProcedureAttributeTypeIcon,
   TrackingTypeIcon,
 } from "~/components/Icons";
+import type {
+  getBatchNumbersForItem,
+  getSerialNumbersForItem,
+} from "~/services/inventory.service";
 import { getFileType } from "~/services/operations.service";
 import { useItems, usePeople } from "~/stores";
+import FileDropzone from "./FileDropzone";
 import ItemThumbnail from "./ItemThumbnail";
 import ScrapReason from "./ScrapReason";
-import FileDropzone from "./FileDropzone";
-import { useNumberFormatter } from "@react-aria/i18n";
-import type {
-  getSerialNumbersForItem,
-  getBatchNumbersForItem,
-} from "~/services/inventory.service";
 
 type JobOperationProps = {
   events: ProductionEvent[];
@@ -937,7 +937,23 @@ export const JobOperation = ({
                                     <Td>
                                       <HStack>
                                         <FileIcon type={type} />
-                                        <span className="font-medium">
+                                        <span
+                                          className="font-medium"
+                                          onClick={() => {
+                                            if (
+                                              ["PDF", "Image"].includes(type)
+                                            ) {
+                                              window.open(
+                                                path.to.file.previewFile(
+                                                  `${"private"}/${getFilePath(
+                                                    file
+                                                  )}`
+                                                ),
+                                                "_blank"
+                                              );
+                                            }
+                                          }}
+                                        >
                                           {["PDF", "Image"].includes(type) ? (
                                             <FilePreview
                                               bucket="private"
