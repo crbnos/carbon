@@ -63,10 +63,10 @@ async function migrate(): Promise<void> {
             customer.decrypted_access_token === null
               ? SUPABASE_ACCESS_TOKEN
               : customer.decrypted_access_token,
-          SUPABASE_API_URL: database_url,
+          SUPABASE_URL: database_url,
           SUPABASE_DB_PASSWORD: decrypted_database_password,
           SUPABASE_PROJECT_ID: project_id,
-          SUPABASE_SERVICE_ROLE: decrypted_service_role_key,
+          SUPABASE_SERVICE_ROLE_KEY: decrypted_service_role_key,
         },
         cwd: "supabase",
       });

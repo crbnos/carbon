@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL } from "@carbon/auth";
+import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -102,16 +102,16 @@ export async function getCompanies(
     data: companies.data.map((company) => ({
       ...company,
       logoLightIcon: company.logoLightIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
         : null,
       logoDarkIcon: company.logoDarkIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
         : null,
       logoDark: company.logoDark
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDark}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoDark}`
         : null,
       logoLight: company.logoLight
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLight}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLight}`
         : null,
     })),
     error: null,
@@ -135,16 +135,16 @@ export async function getCompany(
     data: {
       ...company.data,
       logoLightIcon: company.data.logoLightIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoLightIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.data.logoLightIcon}`
         : null,
       logoDarkIcon: company.data.logoDarkIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoDarkIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.data.logoDarkIcon}`
         : null,
       logoDark: company.data.logoDark
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoDark}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.data.logoDark}`
         : null,
       logoLight: company.data.logoLight
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.data.logoLight}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.data.logoLight}`
         : null,
     },
     error: null,

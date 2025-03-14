@@ -3,9 +3,9 @@ import { isBrowser } from "@carbon/utils";
 import { createClient } from "@supabase/supabase-js";
 
 import {
-  SUPABASE_ANON_PUBLIC,
-  SUPABASE_API_URL,
-  SUPABASE_SERVICE_ROLE,
+  SUPABASE_ANON_KEY,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
 } from "../../config/env";
 
 const getCarbonClient = (supabaseKey: string, accessToken?: string) => {
@@ -19,7 +19,7 @@ const getCarbonClient = (supabaseKey: string, accessToken?: string) => {
       }
     : {};
 
-  const client = createClient<Database>(SUPABASE_API_URL, supabaseKey, {
+  const client = createClient<Database>(SUPABASE_URL, supabaseKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -32,8 +32,8 @@ const getCarbonClient = (supabaseKey: string, accessToken?: string) => {
 
 export const getCarbonAPIKeyClient = (apiKey: string) => {
   const client = createClient<Database>(
-    SUPABASE_API_URL,
-    SUPABASE_ANON_PUBLIC,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
     {
       global: {
         headers: {
@@ -47,7 +47,7 @@ export const getCarbonAPIKeyClient = (apiKey: string) => {
 };
 
 export const getCarbon = (accessToken?: string) => {
-  return getCarbonClient(SUPABASE_ANON_PUBLIC, accessToken);
+  return getCarbonClient(SUPABASE_ANON_KEY, accessToken);
 };
 
 export const getCarbonServiceRole = () => {
@@ -56,7 +56,7 @@ export const getCarbonServiceRole = () => {
       "getCarbonServiceRole is not available in browser and should NOT be used in insecure environments"
     );
 
-  return getCarbonClient(SUPABASE_SERVICE_ROLE);
+  return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY);
 };
 
 export const carbonClient = getCarbon();

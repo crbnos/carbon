@@ -1,6 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { SUPABASE_API_URL } from "../config/env";
+import { SUPABASE_URL } from "../config/env";
 import type { Permission } from "../types";
 
 export async function getClaims(
@@ -33,16 +33,16 @@ export async function getCompanies(
     data: companies.data.map((company) => ({
       ...company,
       logoLightIcon: company.logoLightIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLightIcon}`
         : null,
       logoDarkIcon: company.logoDarkIcon
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoDarkIcon}`
         : null,
       logoLight: company.logoLight
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoLight}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoLight}`
         : null,
       logoDark: company.logoDark
-        ? `${SUPABASE_API_URL}/storage/v1/object/public/public/${company.logoDark}`
+        ? `${SUPABASE_URL}/storage/v1/object/public/public/${company.logoDark}`
         : null,
     })),
     error: null,

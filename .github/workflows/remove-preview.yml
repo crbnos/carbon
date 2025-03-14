@@ -1,0 +1,38 @@
+name: Remove Supabase Preview Branch
+
+on:
+  pull_request:
+    types: [closed]
+    paths: ["packages/database/supabase/**"]
+  workflow_dispatch:
+
+jobs:
+  remove-preview:
+    name: Remove Supabase Preview Branch
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: |
+          npm install
+          npm install --prefix ci
+
+      - name: Remove preview branch
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          SANITIZED_BRANCH_NAME=$(echo "$BRANCH_NAME" | sed 's/[^a-zA-Z0-9]/-/g')
+          supabase db branch delete "$SANITIZED_BRANCH_NAME" --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} --db-url ${{ secrets.SUPABASE_DB_URL }}

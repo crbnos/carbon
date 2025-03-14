@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL, useCarbon } from "@carbon/auth";
+import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import { Button, File as FileUpload, HStack, toast } from "@carbon/react";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -80,7 +80,7 @@ export function ItemThumbnailUpload({
 
         try {
           const response = await fetch(
-            `${SUPABASE_API_URL}/functions/v1/image-resizer`,
+            `${SUPABASE_URL}/functions/v1/image-resizer`,
             {
               method: "POST",
               body: formData,

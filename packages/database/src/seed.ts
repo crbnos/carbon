@@ -7,8 +7,8 @@ import type { Database } from "./types";
 dotenv.config();
 
 const supabaseAdmin = createClient<Database>(
-  process.env.SUPABASE_API_URL!,
-  process.env.SUPABASE_SERVICE_ROLE!,
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
   {
     auth: {
       autoRefreshToken: false,
@@ -49,10 +49,10 @@ async function seed() {
   const upsertConfig = await supabaseAdmin.from("config").upsert([
     {
       id: true,
-      apiUrl: process.env.SUPABASE_API_URL!.includes("localhost")
+      apiUrl: process.env.SUPABASE_URL!.includes("localhost")
         ? "http://host.docker.internal:54321"
-        : process.env.SUPABASE_API_URL,
-      anonKey: process.env.SUPABASE_ANON_PUBLIC!,
+        : process.env.SUPABASE_URL,
+      anonKey: process.env.SUPABASE_ANON_KEY!,
     },
   ]);
   if (upsertConfig.error) throw upsertConfig.error;

@@ -4,7 +4,7 @@ declare global {
   interface Window {
     env: {
       SUPABASE_URL: string;
-      SUPABASE_ANON_PUBLIC: string;
+      SUPABASE_ANON_KEY: string;
       // NOVU_APPLICATION_ID: string; // for some reason this causes typescript errors
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
@@ -24,9 +24,9 @@ declare global {
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
-      SUPABASE_ANON_PUBLIC: string;
+      SUPABASE_ANON_KEY: string;
       SUPABASE_URL: string;
-      SUPABASE_SERVICE_ROLE: string;
+      SUPABASE_SERVICE_ROLE_KEY: string;
       VERCEL_URL: string;
       VERCEL_ENV: string;
     }
@@ -80,7 +80,7 @@ export const NOVU_SECRET_KEY = getEnv("NOVU_SECRET_KEY");
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false,
 });
-export const SUPABASE_SERVICE_ROLE = getEnv("SUPABASE_SERVICE_ROLE");
+export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
@@ -105,8 +105,8 @@ export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
 export const POSTHOG_PROJECT_PUBLIC_KEY = getEnv("POSTHOG_PROJECT_PUBLIC_KEY", {
   isSecret: false,
 });
-export const SUPABASE_API_URL = getEnv("SUPABASE_API_URL", { isSecret: false });
-export const SUPABASE_ANON_PUBLIC = getEnv("SUPABASE_ANON_PUBLIC", {
+export const SUPABASE_URL = getEnv("SUPABASE_URL", { isSecret: false });
+export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false,
 });
 
@@ -124,8 +124,8 @@ export function getAppUrl() {
 
 export function getBrowserEnv() {
   return {
-    SUPABASE_API_URL,
-    SUPABASE_ANON_PUBLIC,
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     NOVU_APPLICATION_ID,

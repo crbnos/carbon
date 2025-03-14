@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL, useCarbon } from "@carbon/auth";
+import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import {
   Avatar,
   Button,
@@ -61,7 +61,7 @@ const CompanyLogoForm = ({
 
       try {
         const response = await fetch(
-          `${SUPABASE_API_URL}/functions/v1/image-resizer`,
+          `${SUPABASE_URL}/functions/v1/image-resizer`,
           {
             method: "POST",
             body: formData,

@@ -2,7 +2,7 @@ import { getBrowserEnv } from "@carbon/auth";
 import { useParams } from "@remix-run/react";
 import { TableDocs, useSelectedLang } from "~/modules/api";
 
-const { SUPABASE_API_URL } = getBrowserEnv();
+const { SUPABASE_URL } = getBrowserEnv();
 
 export const config = {
   runtime: "nodejs",
@@ -15,7 +15,7 @@ export default function Route() {
 
   return (
     <TableDocs
-      endpoint={SUPABASE_API_URL}
+      endpoint={SUPABASE_URL}
       selectedLang={selectedLang}
       resourceId={id}
     />

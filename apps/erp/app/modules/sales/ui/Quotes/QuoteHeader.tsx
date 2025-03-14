@@ -31,9 +31,12 @@ import {
   LuChevronDown,
   LuCircleStop,
   LuCircleX,
+  LuCopy,
+  LuEllipsisVertical,
   LuExternalLink,
   LuEye,
   LuFile,
+  LuGitBranchPlus,
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
@@ -54,6 +57,7 @@ import type {
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
 import QuoteToOrderDrawer from "./QuoteToOrderDrawer";
+import { useState } from "react";
 
 const QuoteHeader = () => {
   const permissions = usePermissions();
@@ -77,6 +81,9 @@ const QuoteHeader = () => {
   const finalizeModal = useDisclosure();
   const convertToOrderModal = useDisclosure();
   const shareModal = useDisclosure();
+  const createRevisionModal = useDisclosure();
+
+  const [asRevision, setAsRevision] = useState(false);
 
   const finalizeFetcher = useFetcher<{}>();
   const statusFetcher = useFetcher<{}>();
@@ -97,6 +104,35 @@ const QuoteHeader = () => {
                 <span>{routeData?.quote?.quoteId}</span>
               </Heading>
             </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label="More options"
+                  icon={<LuEllipsisVertical />}
+                  variant="ghost"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setAsRevision(false);
+                    createRevisionModal.onOpen();
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuCopy />} />
+                  Copy Quote
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setAsRevision(true);
+                    createRevisionModal.onOpen();
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuGitBranchPlus />} />
+                  Create Quote Revision
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <QuoteStatus status={routeData?.quote?.status} />
           </HStack>
           <HStack>
@@ -295,6 +331,13 @@ const QuoteHeader = () => {
           fetcher={finalizeFetcher}
         />
       )}
+      {createRevisionModal.isOpen && (
+        <CreateRevisionModal
+          quote={routeData?.quote}
+          asRevision={asRevision}
+          onClose={createRevisionModal.onClose}
+        />
+      )}
       {shareModal.isOpen && (
         <ShareQuoteModal
           id={quoteId}
@@ -315,6 +358,59 @@ const QuoteHeader = () => {
 };
 
 export default QuoteHeader;
+
+function CreateRevisionModal({
+  quote,
+  asRevision,
+  onClose,
+}: {
+  quote?: Quotation;
+  asRevision: boolean;
+  onClose: () => void;
+}) {
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  if (!quote) return null;
+  return (
+    <Modal open onOpenChange={onClose}>
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            {asRevision ? "Create Quote Revision" : "Copy Quote"}
+          </ModalTitle>
+          <ModalDescription>
+            {asRevision
+              ? "The quote will be copied with a revision suffix"
+              : "Create a quote with a new quote ID"}
+          </ModalDescription>
+        </ModalHeader>
+        <ModalFooter>
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          <fetcher.Form
+            method="post"
+            action={path.to.quoteDuplicate(quote.id!)}
+          >
+            <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
+            <input
+              type="hidden"
+              name="asRevision"
+              value={asRevision ? "true" : "false"}
+            />
+            <Button
+              isLoading={fetcher.state !== "idle"}
+              isDisabled={fetcher.state !== "idle"}
+              variant="primary"
+              type="submit"
+            >
+              {asRevision ? "Create Revision" : "Copy Quote"}
+            </Button>
+          </fetcher.Form>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
 
 function ShareQuoteModal({
   id,

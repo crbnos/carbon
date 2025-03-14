@@ -1,4 +1,4 @@
-import { getAppUrl, SUPABASE_API_URL } from "@carbon/auth";
+import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 export const ERP_URL = getAppUrl();
@@ -111,7 +111,7 @@ export const getPrivateUrl = (path: string) => {
 };
 
 export const getStoragePath = (bucket: string, path: string) => {
-  return `${SUPABASE_API_URL}/storage/v1/object/public/${bucket}/${path}`;
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 };
 
 export const requestReferrer = (request: Request) => {

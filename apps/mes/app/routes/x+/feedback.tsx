@@ -1,4 +1,4 @@
-import { getCarbonServiceRole, SUPABASE_API_URL } from "@carbon/auth";
+import { getCarbonServiceRole, SUPABASE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
@@ -85,7 +85,7 @@ export async function action({ request }: ActionFunctionArgs) {
             type: "mrkdwn",
             text: `*Attachment:*\n${
               attachmentPath
-                ? `${SUPABASE_API_URL}/storage/v1/object/public/feedback/${attachmentPath}`
+                ? `${SUPABASE_URL}/storage/v1/object/public/feedback/${attachmentPath}`
                 : "None"
             }`,
           },

@@ -109,7 +109,20 @@ export async function copyQuoteLine(
   });
 }
 
-
+export async function copyQuote(
+  client: SupabaseClient<Database>,
+  payload: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{ copiedId: string }>("get-method", {
+    body: {
+      ...payload,
+      type: "quoteToQuote",
+    },
+  });
+}
 export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string

@@ -1,4 +1,4 @@
-import { SUPABASE_API_URL, useCarbon } from "@carbon/auth";
+import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import { Button, File as FileUpload, VStack, toast } from "@carbon/react";
 import { useSubmit } from "@remix-run/react";
 import type { ChangeEvent } from "react";
@@ -27,7 +27,7 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
 
       try {
         const response = await fetch(
-          `${SUPABASE_API_URL}/functions/v1/image-resizer`,
+          `${SUPABASE_URL}/functions/v1/image-resizer`,
           {
             method: "POST",
             body: formData,

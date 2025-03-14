@@ -2,7 +2,10 @@ import type { Database } from "@carbon/database";
 import { Text, View, Image } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import bwipjs from "@bwip-js/node";
-import { formatCityStatePostalCode, TrackedEntityAttributes } from "@carbon/utils";
+import {
+  formatCityStatePostalCode,
+  TrackedEntityAttributes,
+} from "@carbon/utils";
 import type { JSONContent } from "@carbon/react";
 import type { PDF } from "../types";
 import { Header, Note, Summary, Template } from "./components";
@@ -110,7 +113,11 @@ const PackingSlipPDF = ({
         </View>
 
         {/* Shipping Information Section */}
-        <View style={tw("flex flex-row justify-between mb-6 page-break-inside-avoid")}>
+        <View
+          style={tw(
+            "flex flex-row justify-between mb-6 page-break-inside-avoid"
+          )}
+        >
           <View style={tw("flex flex-col gap-2 w-1/3")}>
             <Text style={tw("text-gray-500 text-xs")}>Ship To</Text>
             <Text style={tw("text-sm")}>{customer.name}</Text>
@@ -148,17 +155,28 @@ const PackingSlipPDF = ({
               "flex flex-row justify-between items-center mt-5 py-3 px-[6px] border-t border-b border-gray-300 font-bold uppercase page-break-inside-avoid"
             )}
           >
-            <Text style={tw(`w-${hasTrackedEntities ? '7/12' : '9/12'} text-left`)}>Description</Text>
-            <Text style={tw(`w-${hasTrackedEntities ? '1/6' : '3/12'} text-center`)}>Qty</Text>
+            <Text
+              style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"} text-left`)}
+            >
+              Description
+            </Text>
+            <Text
+              style={tw(`w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`)}
+            >
+              Qty
+            </Text>
             {hasTrackedEntities && (
               <Text style={tw("w-1/4 text-right")}>Serial/Batch</Text>
             )}
           </View>
-          
+
           {shipmentLines.map((line) => {
             const barcodeDataUrl = generateBarcode(line.itemReadableId);
             const trackedEntitiesForLine = trackedEntities.filter(
-              (entity) => (entity.attributes as TrackedEntityAttributes)?.["Shipment Line"] === line.id
+              (entity) =>
+                (entity.attributes as TrackedEntityAttributes)?.[
+                  "Shipment Line"
+                ] === line.id
             );
             return (
               <View
@@ -167,7 +185,7 @@ const PackingSlipPDF = ({
                 )}
                 key={line.id}
               >
-                <View style={tw(`w-${hasTrackedEntities ? '7/12' : '9/12'}`)}>
+                <View style={tw(`w-${hasTrackedEntities ? "7/12" : "9/12"}`)}>
                   <Text style={tw("font-bold mb-1")}>
                     {getLineDescription(line)}
                   </Text>
@@ -176,7 +194,11 @@ const PackingSlipPDF = ({
                   </Text>
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
-                <Text style={tw(`w-${hasTrackedEntities ? '1/6' : '3/12'} text-center`)}>
+                <Text
+                  style={tw(
+                    `w-${hasTrackedEntities ? "1/6" : "3/12"} text-center`
+                  )}
+                >
                   {getLineQuantity(line)}
                 </Text>
                 {hasTrackedEntities && (
@@ -190,7 +212,10 @@ const PackingSlipPDF = ({
                               <Text style={tw("text-[8px] mb-1")}>
                                 {entity.id}
                               </Text>
-                              <Image src={qrCodeDataUrl} style={tw("max-w-[80%] ml-auto")} />
+                              <Image
+                                src={qrCodeDataUrl}
+                                style={tw("max-w-[80%] ml-auto")}
+                              />
                             </View>
                           );
                         })}
