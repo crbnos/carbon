@@ -486,7 +486,6 @@ serve(async (req: Request) => {
           salesOrderLines,
           salesOrderShipment,
           shipment,
-          opportunity,
           jobs,
         ] = await Promise.all([
           client.from("salesOrder").select("*").eq("id", salesOrderId).single(),
@@ -512,11 +511,6 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", existingShipmentId)
             .maybeSingle(),
-          client
-            .from("opportunity")
-            .select("*")
-            .eq("salesOrderId", salesOrderId)
-            .single(),
           client
             .from("job")
             .select("*")
@@ -582,7 +576,7 @@ serve(async (req: Request) => {
                 sourceDocumentReadableId: salesOrder.data.salesOrderId,
                 customerId: salesOrder.data.customerId,
                 shippingMethodId: salesOrderShipment.data?.shippingMethodId,
-                opportunityId: opportunity.data?.id,
+                opportunityId: salesOrder.data.opportunityId,
                 locationId: locationId,
                 updatedBy: userId,
               })
@@ -610,7 +604,7 @@ serve(async (req: Request) => {
                 sourceDocumentReadableId: salesOrder.data.salesOrderId,
                 shippingMethodId: salesOrderShipment.data?.shippingMethodId,
                 customerId: salesOrder.data.customerId,
-                opportunityId: opportunity.data?.id,
+                opportunityId: salesOrder.data.opportunityId,
                 companyId: companyId,
                 locationId: locationId,
                 createdBy: userId,
@@ -829,7 +823,7 @@ serve(async (req: Request) => {
           throw new Error("Sales order line not found");
         const salesOrderId = salesOrderLine.data.salesOrderId;
 
-        const [salesOrder, salesOrderShipment, shipment, opportunity, jobs] =
+        const [salesOrder, salesOrderShipment, shipment, jobs] =
           await Promise.all([
             client
               .from("salesOrder")
@@ -846,11 +840,6 @@ serve(async (req: Request) => {
               .select("*")
               .eq("id", existingShipmentId)
               .maybeSingle(),
-            client
-              .from("opportunity")
-              .select("*")
-              .eq("salesOrderId", salesOrderId)
-              .single(),
             client
               .from("job")
               .select("*")
@@ -913,7 +902,7 @@ serve(async (req: Request) => {
                 sourceDocumentReadableId: salesOrder.data.salesOrderId,
                 shippingMethodId: salesOrderShipment.data?.shippingMethodId,
                 customerId: salesOrder.data.customerId,
-                opportunityId: opportunity.data?.id,
+                opportunityId: salesOrder.data.opportunityId,
                 companyId: companyId,
                 locationId: locationId,
                 createdBy: userId,
