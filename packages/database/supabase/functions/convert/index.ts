@@ -333,6 +333,10 @@ serve(async (req: Request) => {
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
                   quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
+                completedDate: originatedFromDigitalQuote
+                  ? new Date().toISOString()
+                  : null,
+                opportunityId: quote.data.opportunityId,
               },
             ])
             .returning(["id"])
@@ -430,15 +434,6 @@ serve(async (req: Request) => {
               digitalQuoteAcceptedByEmail: digitalQuoteAcceptedByEmail ?? null,
             })
             .where("id", "=", quote.data.id)
-            .execute();
-
-          await trx
-            .updateTable("opportunity")
-            .set({
-              salesOrderId: insertedSalesOrderId,
-              salesOrderCompletedDate: new Date().toISOString(),
-            })
-            .where("quoteId", "=", quote.data.id)
             .execute();
 
           const customerPartToItemInserts = quoteLines.data
@@ -692,6 +687,7 @@ serve(async (req: Request) => {
                 exchangeRate,
                 exchangeRateUpdatedAt: new Date().toISOString(),
                 externalLinkId: externalLinkId.id,
+                opportunityId: salesRfq.data.opportunityId,
               },
             ])
             .returning(["id"])
@@ -767,14 +763,6 @@ serve(async (req: Request) => {
             .updateTable("salesRfq")
             .set({ status: "Ready for Quote" })
             .where("id", "=", id)
-            .execute();
-
-          await trx
-            .updateTable("opportunity")
-            .set({
-              quoteId: quote.id!,
-            })
-            .where("salesRfqId", "=", id)
             .execute();
 
           const customerPartToItemInserts = salesRfqLinesWithItemIds

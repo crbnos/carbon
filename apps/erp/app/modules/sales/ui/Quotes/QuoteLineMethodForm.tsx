@@ -7,7 +7,9 @@ import { path } from "~/utils/path";
 
 export function QuoteLineMethodForm() {
   const quoteFetcher =
-    useFetcher<PostgrestResponse<{ id: string; quoteId: string }>>();
+    useFetcher<
+      PostgrestResponse<{ id: string; quoteId: string; revisionId: number }>
+    >();
   const quoteLineFetcher = useFetcher<
     PostgrestResponse<{
       id: string;
@@ -35,7 +37,14 @@ export function QuoteLineMethodForm() {
   const quoteOptions = useMemo(
     () =>
       quoteFetcher.data?.data?.map((quote) => ({
-        label: quote.quoteId,
+        label: (
+          <div className="flex justify-start items-center gap-0">
+            <span>{quote.quoteId}</span>
+            {(quote.revisionId ?? 0) > 0 && (
+              <span className="text-muted-foreground">-{quote.revisionId}</span>
+            )}
+          </div>
+        ),
         value: quote.id,
       })) ?? [],
     [quoteFetcher.data]

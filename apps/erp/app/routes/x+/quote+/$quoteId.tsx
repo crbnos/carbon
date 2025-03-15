@@ -11,7 +11,7 @@ import { getCurrencyByCode } from "~/modules/accounting";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
   getCustomer,
-  getOpportunityByQuote,
+  getOpportunity,
   getOpportunityDocuments,
   getQuote,
   getQuoteLinePricesByQuoteId,
@@ -66,8 +66,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       getQuotePayment(serviceRole, quoteId),
       getQuoteLines(serviceRole, quoteId),
       getQuoteLinePricesByQuoteId(serviceRole, quoteId),
-      getOpportunityByQuote(serviceRole, quoteId),
+      getOpportunity(serviceRole, quote.data?.opportunityId),
       getQuoteMethodTrees(serviceRole, quoteId),
+      getOpportunityDocuments(
+        serviceRole,
+        companyId,
+        quote.data?.opportunityId ?? ""
+      ),
     ]);
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
@@ -106,10 +111,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
-  if (opportunity.data?.salesOrderId) {
+  if (
+    opportunity.data?.salesOrders.length &&
+    opportunity.data.salesOrders[0]?.id
+  ) {
     salesOrderLines = await getSalesOrderLines(
       serviceRole,
-      opportunity.data.salesOrderId
+      opportunity.data.salesOrders[0]?.id
     );
   }
 
@@ -118,7 +126,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customer: customer.data,
     lines: lines.data ?? [],
     methods: methods.data ?? [],
-    files: getOpportunityDocuments(client, companyId, opportunity.data.id),
+    files: getOpportunityDocuments(
+      client,
+      companyId,
+      quote.data?.opportunityId ?? ""
+    ),
     prices: prices.data ?? [],
     shipment: shipment.data,
     payment: payment.data,

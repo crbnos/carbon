@@ -63,7 +63,7 @@ import type {
 } from "~/modules/sales";
 import {
   externalQuoteValidator,
-  getOpportunityByQuote,
+  getOpportunity,
   getQuoteByExternalId,
   getQuoteCustomerDetails,
   getQuoteLinePricesByQuoteId,
@@ -279,14 +279,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     getPaymentTermsList(serviceRole, quote.data.companyId),
     getSalesTerms(serviceRole, quote.data.companyId),
     getShippingMethodsList(serviceRole, quote.data.companyId),
-    getOpportunityByQuote(serviceRole, quote.data.id),
+    getOpportunity(serviceRole, quote.data.opportunityId),
   ]);
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
-  if (opportunity.data?.salesOrderId) {
+  if (
+    opportunity.data?.salesOrders?.length &&
+    opportunity.data.salesOrders[0]?.id
+  ) {
     salesOrderLines = await getSalesOrderLines(
       serviceRole,
-      opportunity.data.salesOrderId
+      opportunity.data.salesOrders[0].id
     );
   }
 

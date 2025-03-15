@@ -1,6 +1,6 @@
 import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ActionFunctionArgs} from "@vercel/remix";
+import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { copyQuote } from "~/modules/sales/sales.service";
 
@@ -32,10 +32,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId: userId,
   });
 
-  console.log(copy);
+  if (copy.error) {
+    return json({
+      success: false,
+      message: "Failed to duplicate quote",
+    });
+  }
 
   return json({
     success: true,
-    message: "Successfully duplicated quote",
+    data: {
+      newQuoteId: copy.data?.newQuoteId,
+    },
   });
 }

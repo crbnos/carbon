@@ -5,7 +5,6 @@ import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import {
   convertQuoteToOrder,
-  getOpportunityByQuote,
   getQuoteByExternalId,
   selectedLinesValidator,
 } from "~/modules/sales";
@@ -68,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       const selectedLines = parseResult.data;
 
-      const [convert, opportunity] = await Promise.all([
+      const [convert] = await Promise.all([
         convertQuoteToOrder(serviceRole, {
           id: quote.data.id,
           companyId: quote.data.companyId,
@@ -77,7 +76,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           digitalQuoteAcceptedBy,
           digitalQuoteAcceptedByEmail,
         }),
-        getOpportunityByQuote(serviceRole, quote.data.id),
       ]);
 
       if (convert.error) {
@@ -90,14 +88,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       if (companySettings.error) {
         console.error("Failed to get company settings", companySettings.error);
-        return json({
-          success: false,
-          message: "Failed to send notification",
-        });
-      }
-
-      if (opportunity.error) {
-        console.error("Failed to get opportunity", opportunity.error);
         return json({
           success: false,
           message: "Failed to send notification",
@@ -126,7 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
 
       if (file && file instanceof File) {
-        const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${opportunity.data.id}/${file.name}`;
+        const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${quote.data.opportunityId}/${file.name}`;
 
         const fileUpload = await serviceRole.storage
           .from("private")
@@ -145,7 +135,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .update({
             purchaseOrderDocumentPath,
           })
-          .eq("id", opportunity.data?.id!);
+          .eq("id", quote.data.opportunityId!);
 
         if (updateOpportunity.error) {
           console.error(

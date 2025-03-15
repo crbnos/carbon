@@ -75,7 +75,14 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
               type={row.original.itemType}
             />
             <Hyperlink to={path.to.quoteDetails(row.original.id!)}>
-              {row.original.quoteId}
+              <div className="flex justify-start items-center gap-0">
+                <span>{row.original.quoteId}</span>
+                {(row.original.revisionId ?? 0) > 0 && (
+                  <span className="text-muted-foreground">
+                    -{row.original.revisionId}
+                  </span>
+                )}
+              </div>
             </Hyperlink>
           </HStack>
         ),

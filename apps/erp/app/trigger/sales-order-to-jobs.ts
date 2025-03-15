@@ -2,7 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { task, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 import {
-  getOpportunityBySalesOrder,
+  getOpportunity,
   getSalesOrder,
   getSalesOrderLines,
 } from "~/modules/sales";
@@ -27,10 +27,9 @@ export const salesOrderToJobsTask = task({
     const { orderId, companyId, userId } = payload;
 
     const serviceRole = getCarbonServiceRole();
-    const [salesOrder, salesOrderLines, opportunity] = await Promise.all([
+    const [salesOrder, salesOrderLines] = await Promise.all([
       getSalesOrder(serviceRole, orderId),
       getSalesOrderLines(serviceRole, orderId),
-      getOpportunityBySalesOrder(serviceRole, orderId),
     ]);
 
     if (companyId !== salesOrder.data?.companyId) {
@@ -55,6 +54,13 @@ export const salesOrderToJobsTask = task({
       console.error("No lines found");
       return;
     }
+
+    const opportunity = await getOpportunity(
+      serviceRole,
+      salesOrder.data?.opportunityId ?? null
+    );
+    const quoteId = opportunity.data?.quotes[0]?.id;
+    const salesOrderId = opportunity.data?.salesOrders[0]?.id;
 
     for await (const line of lines) {
       if (line.methodType === "Make" && line.itemId) {
@@ -100,9 +106,9 @@ export const salesOrderToJobsTask = task({
             locationId: line.locationId ?? "",
             modelUploadId: line.modelUploadId ?? undefined,
             quantity: jobQuantity,
-            quoteId: opportunity.data?.quoteId ?? undefined,
-            quoteLineId: opportunity.data?.quoteId ? line.id : undefined,
-            salesOrderId: opportunity.data?.salesOrderId ?? undefined,
+            quoteId: quoteId ?? undefined,
+            quoteLineId: quoteId ? line.id : undefined,
+            salesOrderId: salesOrderId ?? undefined,
             salesOrderLineId: line.id,
             scrapQuantity: 0,
             unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
@@ -121,12 +127,12 @@ export const salesOrderToJobsTask = task({
             continue;
           }
 
-          if (opportunity.data?.quoteId) {
+          if (quoteId) {
             const upsertMethod = await upsertJobMethod(
               serviceRole,
               "quoteLineToJob",
               {
-                sourceId: `${opportunity.data.quoteId}:${line.id}`,
+                sourceId: `${quoteId}:${line.id}`,
                 targetId: createJob.data.id,
                 companyId,
                 userId,

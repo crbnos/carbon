@@ -22,10 +22,11 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  toast,
   useDisclosure,
 } from "@carbon/react";
 
-import { Link, useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
   LuChevronDown,
@@ -57,7 +58,7 @@ import type {
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
 import QuoteToOrderDrawer from "./QuoteToOrderDrawer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const QuoteHeader = () => {
   const permissions = usePermissions();
@@ -100,8 +101,16 @@ const QuoteHeader = () => {
               variant="ghost"
             />
             <Link to={path.to.quoteDetails(quoteId)}>
-              <Heading size="h4" className="flex items-center gap-2">
+              <Heading
+                size="h4"
+                className="flex items-center justify-start gap-0"
+              >
                 <span>{routeData?.quote?.quoteId}</span>
+                {(routeData?.quote?.revisionId ?? 0) > 0 && (
+                  <span className="text-muted-foreground">
+                    -{routeData?.quote?.revisionId}
+                  </span>
+                )}
               </Heading>
             </Link>
             <DropdownMenu>
@@ -275,10 +284,10 @@ const QuoteHeader = () => {
                 action={path.to.quoteStatus(quoteId)}
               >
                 <input type="hidden" name="status" value="Draft" />
-                {routeData?.opportunity?.salesOrderId === null ? (
+                {routeData?.opportunity?.salesOrders.length === 0 ? (
                   <Button
                     isDisabled={
-                      routeData?.opportunity?.salesOrderId !== null ||
+                      routeData?.opportunity?.salesOrders.length !== 0 ||
                       statusFetcher.state !== "idle" ||
                       !permissions.can("update", "sales")
                     }
@@ -368,7 +377,29 @@ function CreateRevisionModal({
   asRevision: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean; message: string }>();
+  const navigate = useNavigate();
+  const fetcher = useFetcher<
+    | { success: false; message: string }
+    | { success: true; data: { newQuoteId: string } }
+  >();
+
+  useEffect(() => {
+    if (fetcher.data?.success === false) {
+      toast.error(fetcher.data?.message);
+    }
+
+    if (fetcher.data?.success === true) {
+      toast.success(
+        asRevision
+          ? "Successfully created a new revision"
+          : "Successfully copied quote"
+      );
+      onClose();
+      navigate(path.to.quoteDetails(fetcher.data?.data.newQuoteId!));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data?.success]);
+
   if (!quote) return null;
   return (
     <Modal open onOpenChange={onClose}>

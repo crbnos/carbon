@@ -1,8 +1,4 @@
-import {
-  getCarbonServiceRole,
-  SUPABASE_URL,
-  VERCEL_URL,
-} from "@carbon/auth";
+import { getCarbonServiceRole, SUPABASE_URL, VERCEL_URL } from "@carbon/auth";
 
 import { task } from "@trigger.dev/sdk/v3";
 

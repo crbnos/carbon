@@ -1,7 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLocalTimeZone, now } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { salesOrderStatusType, updateSalesOrderStatus } from "~/modules/sales";
@@ -35,15 +34,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       assignee: ["Closed"].includes(status) ? null : undefined,
       updatedBy: userId,
     }),
-    client
-      .from("opportunity")
-      .update({
-        salesOrderCompletedDate:
-          status !== "Draft"
-            ? now(getLocalTimeZone()).toAbsoluteString()
-            : null,
-      })
-      .eq("salesOrderId", id),
   ]);
   if (update.error) {
     throw redirect(

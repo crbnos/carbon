@@ -8,25 +8,6 @@ import { motion } from "framer-motion";
 import { useIsMobile } from "./hooks";
 import { cn } from "./utils/cn";
 
-const layers = [
-  {
-    opacity: 1,
-    padding: 0,
-  },
-  {
-    opacity: 0.3,
-    padding: 8,
-  },
-  {
-    opacity: 0.15,
-    padding: 16,
-  },
-];
-
-const maxPadding = layers.reduce(
-  (acc, layer) => Math.max(acc, layer.padding),
-  0
-);
 const verticalPadding = 30;
 
 interface FunnelStep {
@@ -41,7 +22,6 @@ interface FunnelChartProps {
   steps: FunnelStep[];
   currencyFormatter: Intl.NumberFormat;
   numberFormatter: Intl.NumberFormat;
-  persistentPercentages?: boolean;
   defaultTooltipStepId?: string;
   className?: string;
 }
@@ -75,7 +55,6 @@ function FunnelChartContent({
   steps,
   currencyFormatter,
   numberFormatter,
-  persistentPercentages = true,
   defaultTooltipStepId,
 }: FunnelChartContentProps) {
   const isMobile = useIsMobile();
@@ -111,10 +90,7 @@ function FunnelChartContent({
 
   const yScale = scaleLinear({
     domain: [highestValue, -highestValue],
-    range: [
-      height - maxPadding - verticalPadding,
-      maxPadding + verticalPadding,
-    ],
+    range: [height - verticalPadding, verticalPadding],
   });
 
   return (
@@ -147,45 +123,38 @@ function FunnelChartContent({
                 className="stroke-black/5 sm:stroke-black/10"
               />
 
-              {/* Funnel visualization */}
-              {layers.map(({ opacity, padding }) => (
-                <Area
-                  key={`${id}-${opacity}-${padding}`}
-                  data={funnelData[id]}
-                  curve={curveBasis}
-                  x={(d) => xScale(idx + d.x)}
-                  y0={(d) => yScale(-d.y) - padding}
-                  y1={(d) => yScale(d.y) + padding}
-                >
-                  {({ path }) => {
-                    return (
-                      <motion.path
-                        initial={{ d: path(emptyData) || "", opacity: 0 }}
-                        animate={{ d: path(funnelData[id]) || "", opacity }}
-                        className={cn(colorClassName, "pointer-events-none")}
-                        fill="currentColor"
-                      />
-                    );
-                  }}
-                </Area>
-              ))}
+              <Area
+                data={funnelData[id]}
+                curve={curveBasis}
+                x={(d) => xScale(idx + d.x)}
+                y0={(d) => yScale(-d.y)}
+                y1={(d) => yScale(d.y)}
+              >
+                {({ path }) => {
+                  return (
+                    <motion.path
+                      initial={{ d: path(emptyData) || "", opacity: 0 }}
+                      animate={{ d: path(funnelData[id]) || "", opacity: 1 }}
+                      className={cn(colorClassName, "pointer-events-none")}
+                      fill="currentColor"
+                    />
+                  );
+                }}
+              </Area>
 
-              {/* Percentage indicator */}
-              {persistentPercentages && (
-                <PercentageBadge
-                  x={stepCenterX}
-                  y={height / 2}
-                  value={
-                    value === 0
-                      ? "0%"
-                      : formatPercent(
-                          (value / highestValue) * 100,
-                          numberFormatter
-                        ) + "%"
-                  }
-                  colorClassName={colorClassName}
-                />
-              )}
+              <Percentage
+                x={stepCenterX}
+                y={height / 2}
+                value={
+                  value === 0
+                    ? "0%"
+                    : formatPercent(
+                        (value / highestValue) * 100,
+                        numberFormatter
+                      ) + "%"
+                }
+                colorClassName={colorClassName}
+              />
             </Fragment>
           );
         })}
@@ -193,12 +162,7 @@ function FunnelChartContent({
       {activeStep && (
         <div
           key={activeStep.id}
-          className={cn(
-            "pointer-events-none absolute flex items-center justify-center px-1 pb-4",
-            persistentPercentages
-              ? "animate-slide-up-fade top-16 sm:top-12"
-              : "animate-fade-in top-1/2 -translate-y-1/2"
-          )}
+          className="pointer-events-none absolute flex items-center justify-center px-1 pb-4 animate-slide-up-fade top-1/2 -translate-y-1/2"
           style={{
             left: xScale(steps.findIndex(({ id }) => id === activeStep.id)),
             width: width / steps.length,
@@ -246,19 +210,14 @@ function FunnelChartContent({
   );
 }
 
-interface PercentageBadgeProps {
+type PercentageProps = {
   x: number;
   y: number;
   value: string;
   colorClassName: string;
-}
+};
 
-function PercentageBadge({
-  x,
-  y,
-  value,
-  colorClassName,
-}: PercentageBadgeProps) {
+function Percentage({ x, y, value, colorClassName }: PercentageProps) {
   const textRef = useRef<SVGTextElement>(null);
 
   const textWidth = textRef.current?.getComputedTextLength() ?? 0;

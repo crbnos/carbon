@@ -12,7 +12,6 @@ import {
   finalizeQuote,
   getCustomer,
   getCustomerContact,
-  getOpportunityByQuote,
   getQuote,
   quoteFinalizeValidator,
 } from "~/modules/sales";
@@ -42,23 +41,11 @@ export async function action(args: ActionFunctionArgs) {
   let file: ArrayBuffer;
   let fileName: string;
 
-  const [quote, opportunity] = await Promise.all([
-    getQuote(client, quoteId),
-    getOpportunityByQuote(client, quoteId),
-  ]);
+  const [quote] = await Promise.all([getQuote(client, quoteId)]);
   if (quote.error) {
     throw redirect(
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
-    );
-  }
-  if (opportunity.error) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(
-        request,
-        error(opportunity.error, "Failed to get opportunity")
-      )
     );
   }
 
@@ -71,18 +58,15 @@ export async function action(args: ActionFunctionArgs) {
       expiresAt: quote.data.expirationDate,
       companyId,
     }),
-    client
-      .from("opportunity")
-      .update({
-        quoteCompletedDate: now(getLocalTimeZone()).toAbsoluteString(),
-      })
-      .eq("quoteId", quoteId),
   ]);
 
   if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
     await client
       .from("quote")
-      .update({ externalLinkId: externalLink.data.id })
+      .update({
+        externalLinkId: externalLink.data.id,
+        completedDate: now(getLocalTimeZone()).toAbsoluteString(),
+      })
       .eq("id", quoteId);
   }
 
@@ -96,7 +80,7 @@ export async function action(args: ActionFunctionArgs) {
       `${quote.data.quoteId} - ${new Date().toISOString().slice(0, -5)}.pdf`
     );
 
-    const documentFilePath = `${companyId}/opportunity/${opportunity.data.id}/${fileName}`;
+    const documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
 
     const documentFileUpload = await client.storage
       .from("private")
