@@ -221,7 +221,19 @@ const DraggableCell = ({
           <LuGripVertical className="w-4 h-4 flex-shrink-0" />
         )}
         <DocumentIcon type={getDocumentType(attachment.name)} />
-        <span className="font-medium" onClick={() => download(attachment)}>
+        <span
+          className="font-medium cursor-pointer"
+          onClick={() => {
+            if (isPreviewable) {
+              window.open(
+                path.to.file.previewFile(`private/${getPath(attachment)}`),
+                "_blank"
+              );
+            } else {
+              download(attachment);
+            }
+          }}
+        >
           {isPreviewable ? (
             <DocumentPreview
               bucket="private"
