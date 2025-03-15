@@ -364,7 +364,9 @@ const LinePricingForm = ({
   const quoteCurrency = quote.currencyCode ?? baseCurrency;
   const shouldConvertCurrency = quoteCurrency !== baseCurrency;
   const quoteExchangeRate = quote.exchangeRate ?? 1;
-  const formatter = useCurrencyFormatter(quoteCurrency);
+  const formatter = useCurrencyFormatter({
+    currency: quoteCurrency,
+  });
 
   return (
     <VStack spacing={8}>

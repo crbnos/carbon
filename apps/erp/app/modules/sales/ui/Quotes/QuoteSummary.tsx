@@ -667,9 +667,16 @@ const QuoteSummary = ({
       <CardHeader>
         <HStack className="justify-between items-center w-full">
           <div className="flex flex-col gap-1">
-            <CardTitle>{routeData?.quote.quoteId}</CardTitle>
+            <CardTitle className="flex items-center gap-0">
+              <span>{routeData?.quote.quoteId}</span>
+              {(routeData?.quote.revisionId ?? 0) > 0 && (
+                <span className="text-muted-foreground">
+                  -{routeData?.quote.revisionId}
+                </span>
+              )}
+            </CardTitle>
 
-            <CardDescription>Quote </CardDescription>
+            <CardDescription>Quote</CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
             <CustomerAvatar customerId={routeData?.quote.customerId ?? null} />

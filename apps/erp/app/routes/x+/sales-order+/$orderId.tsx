@@ -9,7 +9,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { useRealtime } from "~/hooks/useRealtime";
 import {
   getCustomer,
-  getOpportunityBySalesOrder,
+  getOpportunity,
   getOpportunityDocuments,
   getQuote,
   getSalesOrder,
@@ -39,11 +39,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { orderId } = params;
   if (!orderId) throw new Error("Could not find orderId");
 
-  const [salesOrder, lines, opportunity] = await Promise.all([
+  const [salesOrder, lines] = await Promise.all([
     getSalesOrder(client, orderId),
     getSalesOrderLines(client, orderId),
-    getOpportunityBySalesOrder(client, orderId),
   ]);
+
+  const opportunity = await getOpportunity(
+    client,
+    salesOrder.data?.opportunityId ?? null
+  );
 
   if (companyId !== salesOrder.data?.companyId) {
     throw redirect(path.to.salesOrders);
@@ -59,8 +63,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const [quote, customer] = await Promise.all([
-    opportunity.data.quoteId
-      ? getQuote(client, opportunity.data.quoteId)
+    opportunity.data.quotes[0]?.id
+      ? getQuote(client, opportunity.data.quotes[0].id)
       : Promise.resolve(null),
     salesOrder.data?.customerId
       ? getCustomer(client, salesOrder.data.customerId)
@@ -75,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,
-    originatedFromQuote: !!opportunity.data.quoteId,
+    originatedFromQuote: !!opportunity.data.quotes[0]?.id,
   });
 }
 

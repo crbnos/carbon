@@ -12,7 +12,7 @@ import { flash } from "@carbon/auth/session.server";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import type { SalesRFQLine } from "~/modules/sales";
 import {
-  getOpportunityBySalesRFQ,
+  getOpportunity,
   getOpportunityDocuments,
   getSalesRFQ,
   getSalesRFQLines,
@@ -41,11 +41,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [rfqSummary, lines, opportunity] = await Promise.all([
+  const [rfqSummary, lines] = await Promise.all([
     getSalesRFQ(serviceRole, rfqId),
     getSalesRFQLines(serviceRole, rfqId),
-    getOpportunityBySalesRFQ(serviceRole, rfqId),
   ]);
+
+  const opportunity = await getOpportunity(
+    serviceRole,
+    rfqSummary.data?.opportunityId ?? null
+  );
 
   if (!opportunity.data) throw new Error("Failed to get opportunity record");
 

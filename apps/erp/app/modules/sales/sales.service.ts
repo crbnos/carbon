@@ -1,6 +1,10 @@
 import type { Database, Json } from "@carbon/database";
-import { getLocalTimeZone, today } from "@internationalized/date";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import { getLocalTimeZone, now, today } from "@internationalized/date";
+import type {
+  PostgrestError,
+  PostgrestSingleResponse,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -41,6 +45,7 @@ import type {
   salesRfqValidator,
   selectedLinesValidator,
 } from "./sales.models";
+import { Quotation, SalesOrder, SalesRFQ } from "./types";
 
 export async function closeSalesOrder(
   client: SupabaseClient<Database>,
@@ -116,7 +121,7 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ copiedId: string }>("get-method", {
+  return client.functions.invoke<{ newQuoteId: string }>("get-method", {
     body: {
       ...payload,
       type: "quoteToQuote",
@@ -204,21 +209,7 @@ export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  const [quote, opportunity] = await Promise.all([
-    client.from("quote").delete().eq("id", quoteId),
-    client
-      .from("opportunity")
-      .update({
-        quoteId: null,
-      })
-      .eq("quoteId", quoteId),
-  ]);
-
-  if (opportunity.error) {
-    return opportunity;
-  }
-
-  return quote;
+  return client.from("quote").delete().eq("id", quoteId);
 }
 
 export async function deleteQuoteMakeMethod(
@@ -274,21 +265,7 @@ export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
-  const [salesOrder, opportunity] = await Promise.all([
-    client.from("salesOrder").delete().eq("id", salesOrderId),
-    client
-      .from("opportunity")
-      .update({
-        salesOrderId: null,
-      })
-      .eq("salesOrderId", salesOrderId),
-  ]);
-
-  if (opportunity.error) {
-    return opportunity;
-  }
-
-  return salesOrder;
+  return client.from("salesOrder").delete().eq("id", salesOrderId);
 }
 
 export async function deleteSalesOrderLine(
@@ -648,34 +625,44 @@ export async function getNoQuoteReasons(
 
   return query;
 }
-
-export async function getOpportunityBySalesRFQ(
+export async function getOpportunity(
   client: SupabaseClient<Database>,
-  salesRfqId: string
-) {
-  return client
-    .from("opportunity")
-    .select("*")
-    .eq("salesRfqId", salesRfqId)
-    .single();
-}
+  opportunityId: string | null
+): Promise<
+  PostgrestSingleResponse<{
+    id: string;
+    companyId: string;
+    purchaseOrderDocumentPath: string;
+    requestForQuoteDocumentPath: string;
+    salesRfqs: SalesRFQ[];
+    quotes: Quotation[];
+    salesOrders: SalesOrder[];
+  } | null>
+> {
+  if (!opportunityId) {
+    // @ts-expect-error
+    return {
+      data: null,
+      error: null,
+    };
+  }
 
-export async function getOpportunityByQuote(
-  client: SupabaseClient<Database>,
-  quoteId: string
-) {
-  return client.from("opportunity").select("*").eq("quoteId", quoteId).single();
-}
+  const response = await client.rpc("get_opportunity_with_related_records", {
+    opportunity_id: opportunityId,
+  });
 
-export async function getOpportunityBySalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string
-) {
-  return client
-    .from("opportunity")
-    .select("*")
-    .eq("salesOrderId", salesOrderId)
-    .single();
+  return {
+    data: response.data?.[0],
+    error: response.error,
+  } as unknown as PostgrestSingleResponse<{
+    id: string;
+    companyId: string;
+    purchaseOrderDocumentPath: string;
+    requestForQuoteDocumentPath: string;
+    salesRfqs: SalesRFQ[];
+    quotes: Quotation[];
+    salesOrders: SalesOrder[];
+  }>;
 }
 
 export async function getOpportunityDocuments(
@@ -751,7 +738,7 @@ export async function getQuotesList(
 ) {
   return client
     .from("quote")
-    .select("id, quoteId")
+    .select("id, quoteId, revisionId")
     .eq("companyId", companyId)
     .order("createdAt", { ascending: false });
 }
@@ -1730,10 +1717,18 @@ export async function updateSalesRFQStatus(
     updatedBy: string;
   }
 ) {
-  const { noQuoteReasonId, ...rest } = update;
+  const { noQuoteReasonId, status, ...rest } = update;
 
   // Only include noQuoteReasonId if it has a value to avoid foreign key constraint error
-  const updateData = noQuoteReasonId ? { ...rest, noQuoteReasonId } : rest;
+  // Set completedAt when status is Ready for Quote
+  const updateData = {
+    status,
+    ...rest,
+    ...(noQuoteReasonId ? { noQuoteReasonId } : {}),
+    ...(status === "Ready for Quote"
+      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+      : {}),
+  };
 
   return client.from("salesRfq").update(updateData).eq("id", update.id);
 }
@@ -1775,7 +1770,17 @@ export async function updateQuoteStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("quote").update(update).eq("id", update.id);
+  const { status, ...rest } = update;
+
+  // Set completedDate when status is Ready for Quote
+  const updateData = {
+    status,
+    ...rest,
+    ...(status === "Sent"
+      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+      : {}),
+  };
+  return client.from("quote").update(updateData).eq("id", update.id);
 }
 
 export async function upsertMakeMethodFromQuoteLine(
@@ -1854,11 +1859,17 @@ export async function upsertQuote(
       })
 ) {
   if ("createdBy" in quote) {
-    const [customerPayment, customerShipping, employee] = await Promise.all([
-      getCustomerPayment(client, quote.customerId),
-      getCustomerShipping(client, quote.customerId),
-      getEmployeeJob(client, quote.createdBy, quote.companyId),
-    ]);
+    const [customerPayment, customerShipping, employee, opportunity] =
+      await Promise.all([
+        getCustomerPayment(client, quote.customerId),
+        getCustomerShipping(client, quote.customerId),
+        getEmployeeJob(client, quote.createdBy, quote.companyId),
+        client
+          .from("opportunity")
+          .insert([{ companyId: quote.companyId }])
+          .select("id")
+          .single(),
+      ]);
 
     if (customerPayment.error) return customerPayment;
     if (customerShipping.error) return customerShipping;
@@ -1890,7 +1901,12 @@ export async function upsertQuote(
     const locationId = employee?.data?.locationId ?? null;
     const insert = await client
       .from("quote")
-      .insert([quote])
+      .insert([
+        {
+          ...quote,
+          opportunityId: opportunity.data?.id,
+        },
+      ])
       .select("id, quoteId");
     if (insert.error) {
       return insert;
@@ -1899,7 +1915,7 @@ export async function upsertQuote(
     const quoteId = insert.data?.[0]?.id;
     if (!quoteId) return insert;
 
-    const [shipment, payment, opportunity, externalLink] = await Promise.all([
+    const [shipment, payment, externalLink] = await Promise.all([
       client.from("quoteShipment").insert([
         {
           id: quoteId,
@@ -1919,9 +1935,6 @@ export async function upsertQuote(
           companyId: quote.companyId,
         },
       ]),
-      client
-        .from("opportunity")
-        .insert([{ quoteId, companyId: quote.companyId }]),
       upsertExternalLink(client, {
         documentType: "Quote",
         documentId: quoteId,
@@ -2414,7 +2427,18 @@ export async function updateSalesOrderStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("salesOrder").update(update).eq("id", update.id);
+  const { status, ...rest } = update;
+
+  // Set completedDate when status is Confirmed
+  const updateData = {
+    status,
+    ...rest,
+    ...(["To Ship", "To Ship and Invoice"].includes(status)
+      ? { completedDate: now(getLocalTimeZone()).toAbsoluteString() }
+      : {}),
+  };
+
+  return client.from("salesOrder").update(updateData).eq("id", update.id);
 }
 
 export async function upsertSalesOrder(
@@ -2463,11 +2487,17 @@ export async function upsertSalesOrder(
       .select("id, salesOrderId");
   }
 
-  const [customerPayment, customerShipping, employee] = await Promise.all([
-    getCustomerPayment(client, salesOrder.customerId),
-    getCustomerShipping(client, salesOrder.customerId),
-    getEmployeeJob(client, salesOrder.createdBy, salesOrder.companyId),
-  ]);
+  const [customerPayment, customerShipping, employee, opportunity] =
+    await Promise.all([
+      getCustomerPayment(client, salesOrder.customerId),
+      getCustomerShipping(client, salesOrder.customerId),
+      getEmployeeJob(client, salesOrder.createdBy, salesOrder.companyId),
+      client
+        .from("opportunity")
+        .insert([{ companyId: salesOrder.companyId }])
+        .select("id")
+        .single(),
+    ]);
 
   if (customerPayment.error) return customerPayment;
   if (customerShipping.error) return customerShipping;
@@ -2500,14 +2530,14 @@ export async function upsertSalesOrder(
 
   const order = await client
     .from("salesOrder")
-    .insert([{ ...salesOrder }])
+    .insert([{ ...salesOrder, opportunityId: opportunity.data?.id }])
     .select("id, salesOrderId");
 
   if (order.error) return order;
 
   const salesOrderId = order.data[0].id;
 
-  const [shipment, payment, opportunity] = await Promise.all([
+  const [shipment, payment] = await Promise.all([
     client.from("salesOrderShipment").insert([
       {
         id: salesOrderId,
@@ -2527,9 +2557,6 @@ export async function upsertSalesOrder(
         companyId: salesOrder.companyId,
       },
     ]),
-    client
-      .from("opportunity")
-      .insert([{ salesOrderId, companyId: salesOrder.companyId }]),
   ]);
 
   if (shipment.error) {
@@ -2655,19 +2682,29 @@ export async function upsertSalesRFQ(
       })
 ) {
   if ("createdBy" in rfq) {
+    const opportunity = await client
+      .from("opportunity")
+      .insert([{ companyId: rfq.companyId }])
+      .select("id")
+      .single();
+
+    if (opportunity.error) {
+      return opportunity;
+    }
+
     const insert = await client
       .from("salesRfq")
-      .insert([rfq])
+      .insert([
+        {
+          ...rfq,
+          opportunityId: opportunity.data?.id,
+        },
+      ])
       .select("id, rfqId");
     if (insert.error) {
       return insert;
     }
-    const opportunity = await client
-      .from("opportunity")
-      .insert([{ salesRfqId: insert.data[0].id, companyId: rfq.companyId }]);
-    if (opportunity.error) {
-      return opportunity;
-    }
+
     return insert;
   } else {
     return client

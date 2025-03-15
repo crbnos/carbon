@@ -189,7 +189,7 @@ const SalesRFQHeader = () => {
             action={path.to.salesRfqStatus(rfqId)}
           >
             <input type="hidden" name="status" value="Draft" />
-            {routeData?.opportunity?.quoteId === null ? (
+            {routeData?.opportunity?.quotes.length === 0 ? (
               <Button
                 isDisabled={
                   !["Ready for Quote", "Closed", "Quoted"].includes(status) ||
