@@ -123,9 +123,41 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
-[functions.seed-company]
+
+[functions.convert]
 enabled = true
+
+[functions.create-inventory-document]
+enabled = true
+
+[functions.download]
+enabled = true
+
 [functions.get-method]
 enabled = true
+
+[functions.image-resizer]
+enabled = true
+
+[functions.import-csv]
+enabled = true
+
+[functions.issue]
+enabled = true
+
 [functions.recalculate]
 enabled = true
+
+[functions.scheduler]
+enabled = true
+
+[functions.seed-company]
+enabled = true
+
+[functions.thumbnail]
+enabled = true
+
+[functions.update-purchased-prices]
+enabled = true
+
+
