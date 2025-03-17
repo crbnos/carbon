@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+import { z } from "npm:zod@^3.24.1";
 
 import type {
   PostgrestError,

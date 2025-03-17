@@ -4,7 +4,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import z from "https://deno.land/x/zod@v3.23.8/index.ts";
+import z from "npm:zod@^3.24.1";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
