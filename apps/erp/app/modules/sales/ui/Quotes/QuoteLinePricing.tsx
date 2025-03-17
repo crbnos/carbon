@@ -51,18 +51,22 @@ import type {
   Quotation,
   QuotationLine,
   QuotationPrice,
+  SalesOrderLine,
 } from "../../types";
+import QuoteLinePricingHistory from "./QuoteLinePricingHistory";
 
 const QuoteLinePricing = ({
   line,
   pricesByQuantity,
   exchangeRate,
   getLineCosts,
+  relatedSalesOrderLines,
 }: {
   line: QuotationLine;
   pricesByQuantity: Record<number, QuotationPrice>;
   exchangeRate: number;
   getLineCosts: (quantity: number) => Costs;
+  relatedSalesOrderLines: SalesOrderLine[];
 }) => {
   const permissions = usePermissions();
 
@@ -395,6 +399,11 @@ const QuoteLinePricing = ({
         )}
       </HStack>
       <CardContent>
+        {relatedSalesOrderLines.length > 0 && (
+          <QuoteLinePricingHistory
+            relatedSalesOrderLines={relatedSalesOrderLines}
+          />
+        )}
         <Table>
           <Thead>
             <Tr>

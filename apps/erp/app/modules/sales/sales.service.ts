@@ -1175,6 +1175,18 @@ export async function getSalesOrderLines(
     .order("itemReadableId", { ascending: true });
 }
 
+export async function getSalesOrderLinesByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string
+) {
+  return client
+    .from("salesOrderLines")
+    .select("*")
+    .eq("itemId", itemId)
+    .order("orderDate", { ascending: false })
+    .order("createdAt", { ascending: false });
+}
+
 export async function getSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLineId: string
