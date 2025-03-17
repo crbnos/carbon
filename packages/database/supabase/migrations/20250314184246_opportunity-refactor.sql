@@ -198,3 +198,103 @@ ALTER TABLE "salesRfq" DROP CONSTRAINT IF EXISTS "salesRfq_salesRfqId_key";
 -- Add the new constraint that includes revisionId for salesRfq
 ALTER TABLE "salesRfq" ADD CONSTRAINT "salesRfq_salesRfqId_revisionId_key" UNIQUE ("rfqId", "revisionId", "companyId");
 
+
+
+CREATE OR REPLACE FUNCTION create_rfq_from_models_v2(
+  company_id text,
+  email text,
+  sequence_number text,
+  model_data json[]
+)
+RETURNS TABLE (
+  rfq_id text,
+  rfq_readable_id text,
+  rfq_line_ids text[]
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_rfq_id text;
+  v_opportunity_id text;
+  v_line_ids text[] := '{}';
+  v_customer_id text;
+  v_line_id text;
+  model_item json;
+BEGIN
+  IF session_user = 'authenticator' THEN
+    IF NOT (has_role('employee', company_id) OR has_valid_api_key_for_company(company_id)) THEN
+      RAISE EXCEPTION 'Insufficient permissions';
+    END IF;
+  END IF;
+
+  -- Find customer ID from email
+  SELECT cc."customerId" INTO v_customer_id
+  FROM "contact" c
+  JOIN "customerContact" cc ON cc."contactId" = c.id 
+  WHERE c."email" = create_rfq_from_models_v2.email
+  AND c."companyId" = company_id
+  LIMIT 1;
+  
+  -- Create Opportunity first
+  INSERT INTO "opportunity" (
+    "companyId"
+  )
+  VALUES (
+    company_id
+  )
+  RETURNING id INTO v_opportunity_id;
+  
+  -- Create RFQ with opportunityId
+  INSERT INTO "salesRfq" (
+    "rfqId",
+    "customerId",
+    "companyId",
+    "createdBy",
+    "opportunityId"
+  )
+  VALUES ( 
+    sequence_number,
+    v_customer_id,
+    company_id,
+    'system',
+    v_opportunity_id
+  )
+  RETURNING id INTO v_rfq_id;
+
+  -- Create RFQ Lines with models
+  FOREACH model_item IN ARRAY model_data
+  LOOP
+    INSERT INTO "salesRfqLine" (
+      "salesRfqId",
+      "customerPartId", 
+      "modelUploadId",
+      "unitOfMeasureCode",
+      "internalNotes",
+      quantity,
+      "companyId",
+      "createdBy"
+    )
+    VALUES (
+      v_rfq_id,
+      (model_item->>'customer_part_id')::text,
+      (model_item->>'model_id')::text,
+      (model_item->>'unit_of_measure')::text,
+      COALESCE((model_item->>'notes')::json, '{}'::json),
+      ARRAY[1],
+      company_id,
+      'system'
+    )
+    RETURNING id INTO v_line_id;
+
+    v_line_ids := array_append(v_line_ids, v_line_id);
+  END LOOP;
+
+  RETURN QUERY SELECT v_rfq_id, sequence_number, v_line_ids;
+
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE;
+END;
+$$;
