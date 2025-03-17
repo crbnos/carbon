@@ -43,7 +43,9 @@ CREATE OR REPLACE VIEW "quoteLinePrices" WITH(SECURITY_INVOKER=true) AS (
     ic."unitCost" as "unitCost",
     qlp."quantity" as "qty",
     qlp."unitPrice",
-    q."quoteId" as "quoteReadableId"
+    q."quoteId" as "quoteReadableId",
+    q."createdAt" as "quoteCreatedAt",
+    q."customerId"
   FROM "quoteLine" ql
   INNER JOIN "quote" q ON q.id = ql."quoteId"
   LEFT JOIN "modelUpload" mu ON ql."modelUploadId" = mu."id"

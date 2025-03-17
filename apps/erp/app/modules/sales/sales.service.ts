@@ -916,6 +916,20 @@ export async function getQuoteLinePricesByQuoteId(
     .order("quoteLineId", { ascending: true });
 }
 
+export async function getHistoricalQuoteLinePricesByItemId(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  currentQuoteId: string
+) {
+  return client
+    .from("quoteLinePrices")
+    .select("*")
+    .eq("itemId", itemId)
+    .neq("quoteId", currentQuoteId)
+    .order("quoteCreatedAt", { ascending: false })
+    .order("qty", { ascending: true });
+}
+
 export async function getQuoteMaterials(
   client: SupabaseClient<Database>,
   quoteId: string
