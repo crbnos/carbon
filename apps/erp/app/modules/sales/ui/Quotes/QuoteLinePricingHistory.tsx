@@ -31,8 +31,10 @@ import { cn } from "../../../../../../../packages/react/src/utils/cn";
 import type { SalesOrderLine } from "../../types";
 
 const QuoteLinePricingHistory = ({
+  baseCurrency,
   relatedSalesOrderLines,
 }: {
+  baseCurrency: string;
   relatedSalesOrderLines: SalesOrderLine[];
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -117,7 +119,7 @@ const QuoteLinePricingHistory = ({
                                       <span className="text-sm font-medium">
                                         {new Intl.NumberFormat("en-US", {
                                           style: "currency",
-                                          currency: "USD", // TODO: get currency from line
+                                          currency: baseCurrency,
                                         }).format(line.unitPrice ?? 0)}
                                       </span>
                                     </div>

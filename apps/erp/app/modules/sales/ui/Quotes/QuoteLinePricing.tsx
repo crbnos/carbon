@@ -402,6 +402,7 @@ const QuoteLinePricing = ({
         {relatedSalesOrderLines.length > 0 && (
           <QuoteLinePricingHistory
             relatedSalesOrderLines={relatedSalesOrderLines}
+            baseCurrency={baseCurrency}
           />
         )}
         <Table>
