@@ -18,6 +18,7 @@ import type {
   QuoteMethod,
 } from "~/modules/sales";
 import {
+  getHistoricalQuoteLinePricesByItemId,
   getOpportunityLineDocuments,
   getQuoteLine,
   getQuoteLinePrices,
@@ -78,6 +79,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
+  const historicalQuoteLinePrices = await getHistoricalQuoteLinePricesByItemId(
+    serviceRole,
+    itemId,
+    quoteId
+  );
+
   return defer({
     line: line.data,
     operations: operations?.data ?? [],
@@ -89,6 +96,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       return acc;
     }, {}),
     relatedSalesOrderLines: relatedSalesOrderLines?.data ?? [],
+    historicalQuoteLinePrices: historicalQuoteLinePrices?.data ?? [],
   });
 };
 
@@ -133,8 +141,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteLine() {
-  const { line, operations, files, pricesByQuantity, relatedSalesOrderLines } =
-    useLoaderData<typeof loader>();
+  const {
+    line,
+    operations,
+    files,
+    pricesByQuantity,
+    relatedSalesOrderLines,
+    historicalQuoteLinePrices,
+  } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -199,6 +213,7 @@ export default function QuoteLine() {
           pricesByQuantity={pricesByQuantity}
           getLineCosts={getLineCosts}
           relatedSalesOrderLines={relatedSalesOrderLines}
+          historicalQuoteLinePrices={historicalQuoteLinePrices}
         />
       )}
       <OpportunityLineNotes

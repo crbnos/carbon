@@ -40408,6 +40408,12 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrices.quoteReadableId",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.quoteCreatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.customerId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -66943,6 +66949,16 @@ export default {
           format: "text",
           type: "string",
         },
+        quoteCreatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -93225,6 +93241,20 @@ export default {
     },
     "rowFilter.quoteLinePrices.quoteReadableId": {
       name: "quoteReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.quoteCreatedAt": {
+      name: "quoteCreatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.customerId": {
+      name: "customerId",
       required: false,
       format: "text",
       in: "query",

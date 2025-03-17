@@ -30,18 +30,36 @@ import {
   TabsTrigger,
 } from "../../../../../../../packages/react/src/Tabs";
 import { cn } from "../../../../../../../packages/react/src/utils/cn";
-import type { SalesOrderLine } from "../../types";
+import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
 
 const QuoteLinePricingHistory = ({
   baseCurrency,
   relatedSalesOrderLines,
+  historicalQuoteLinePrices,
 }: {
   baseCurrency: string;
   relatedSalesOrderLines: SalesOrderLine[];
+  historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  const historyCount = relatedSalesOrderLines.length;
+  const historicalQuoteLines = historicalQuoteLinePrices.reduce<
+    Record<
+      string,
+      HistoricalQuotationPrice & { quantities: Record<number, number> }
+    >
+  >((acc, linePrice) => {
+    if (!acc[linePrice.id!]) {
+      acc[linePrice.id!] = { ...linePrice, quantities: {} };
+    }
+    if (linePrice.qty && linePrice.unitPrice) {
+      acc[linePrice.id!].quantities[linePrice.qty] = linePrice.unitPrice;
+    }
+    return acc;
+  }, {});
+
+  const historyCount =
+    relatedSalesOrderLines.length + Object.keys(historicalQuoteLines).length;
 
   return (
     <div>
@@ -141,7 +159,79 @@ const QuoteLinePricingHistory = ({
                     </div>
                   </TabsContent>
                   <TabsContent value="quoteLines">
-                    <Empty className="py-6" />
+                    <div className="flex overflow-x-auto space-x-4 pb-4">
+                      {Object.keys(historicalQuoteLines).length === 0 && (
+                        <Empty className="py-6" />
+                      )}
+                      <Carousel className="w-full">
+                        <CarouselContent className="-ml-4">
+                          {Object.values(historicalQuoteLines).map((line) => (
+                            <CarouselItem
+                              key={line.id}
+                              className="pl-4 basis-full md:basis-1/2 lg:basis-1/3"
+                            >
+                              <Card className="w-full">
+                                <CardContent className="p-4">
+                                  <HStack className="flex justify-between mb-2">
+                                    <Link
+                                      to={path.to.quoteLine(
+                                        line.quoteId!,
+                                        line.id!
+                                      )}
+                                      className="text-sm font-medium hover:underline"
+                                    >
+                                      {line.quoteReadableId}
+                                    </Link>
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">
+                                        {new Date(
+                                          line.quoteCreatedAt!
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  </HStack>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-sm font-medium">
+                                        <CustomerAvatar
+                                          customerId={line.customerId}
+                                        />
+                                      </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2">
+                                      <div className="text-sm font-medium border p-2">
+                                        Quantity
+                                      </div>
+                                      <div className="text-sm font-medium border p-2">
+                                        Unit Price
+                                      </div>
+                                      {Object.entries(line.quantities).map(
+                                        ([quantity, price]) => (
+                                          <>
+                                            <div className="text-sm text-muted-foreground border p-2">
+                                              {quantity}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground border p-2">
+                                              {new Intl.NumberFormat("en-US", {
+                                                style: "currency",
+                                                currency: baseCurrency,
+                                              }).format(price)}
+                                            </div>
+                                          </>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </CarouselItem>
+                          ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </Carousel>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </div>

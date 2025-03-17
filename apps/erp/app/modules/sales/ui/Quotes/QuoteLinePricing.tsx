@@ -61,12 +61,14 @@ const QuoteLinePricing = ({
   exchangeRate,
   getLineCosts,
   relatedSalesOrderLines,
+  historicalQuoteLinePrices,
 }: {
   line: QuotationLine;
   pricesByQuantity: Record<number, QuotationPrice>;
   exchangeRate: number;
   getLineCosts: (quantity: number) => Costs;
   relatedSalesOrderLines: SalesOrderLine[];
+  historicalQuoteLinePrices: QuotationPrice[];
 }) => {
   const permissions = usePermissions();
 
@@ -402,6 +404,7 @@ const QuoteLinePricing = ({
         {relatedSalesOrderLines.length > 0 && (
           <QuoteLinePricingHistory
             relatedSalesOrderLines={relatedSalesOrderLines}
+            historicalQuoteLinePrices={historicalQuoteLinePrices}
             baseCurrency={baseCurrency}
           />
         )}

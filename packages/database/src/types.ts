@@ -32187,6 +32187,7 @@ export type Database = {
           companyId: string | null
           configuration: Json | null
           createdBy: string | null
+          customerId: string | null
           customerPartId: string | null
           customerPartRevision: string | null
           customFields: Json | null
@@ -32208,6 +32209,7 @@ export type Database = {
           noQuoteReason: string | null
           qty: number | null
           quantity: number[] | null
+          quoteCreatedAt: string | null
           quoteId: string | null
           quoteReadableId: string | null
           quoteRevisionId: number | null
@@ -32223,6 +32225,27 @@ export type Database = {
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "quote_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "quoteLine_companyId_fkey"
             columns: ["companyId"]

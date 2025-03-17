@@ -8,6 +8,7 @@ import type {
   getCustomers,
   getCustomerStatuses,
   getCustomerTypes,
+  getHistoricalQuoteLinePricesByItemId,
   getNoQuoteReasons,
   getOpportunity,
   getQuoteLinePrices,
@@ -115,6 +116,10 @@ export type QuotationOperation = NonNullable<
 
 export type QuotationPrice = NonNullable<
   Awaited<ReturnType<typeof getQuoteLinePrices>>["data"]
+>[number];
+
+export type HistoricalQuotationPrice = NonNullable<
+  Awaited<ReturnType<typeof getHistoricalQuoteLinePricesByItemId>>["data"]
 >[number];
 
 export type QuotationStatusType = Database["public"]["Enums"]["quoteStatus"];
