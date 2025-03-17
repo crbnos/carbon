@@ -17794,6 +17794,13 @@ export type Database = {
             foreignKeyName: "quoteLinePrice_quoteLineId_fkey"
             columns: ["quoteLineId"]
             isOneToOne: false
+            referencedRelation: "quoteLinePrices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLinePrice_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
             referencedRelation: "quoteLines"
             referencedColumns: ["id"]
           },
@@ -17991,6 +17998,13 @@ export type Database = {
             columns: ["quoteLineId"]
             isOneToOne: false
             referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMakeMethod_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLinePrices"
             referencedColumns: ["id"]
           },
           {
@@ -18210,6 +18224,13 @@ export type Database = {
             columns: ["quoteLineId"]
             isOneToOne: false
             referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLinePrices"
             referencedColumns: ["id"]
           },
           {
@@ -18526,6 +18547,13 @@ export type Database = {
             columns: ["quoteLineId"]
             isOneToOne: false
             referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLinePrices"
             referencedColumns: ["id"]
           },
           {
@@ -30471,14 +30499,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -32152,6 +32180,261 @@ export type Database = {
           },
         ]
       }
+      quoteLinePrices: {
+        Row: {
+          additionalCharges: Json | null
+          autodeskUrn: string | null
+          companyId: string | null
+          configuration: Json | null
+          createdBy: string | null
+          customerPartId: string | null
+          customerPartRevision: string | null
+          customFields: Json | null
+          description: string | null
+          estimatorId: string | null
+          externalNotes: Json | null
+          id: string | null
+          internalNotes: Json | null
+          itemId: string | null
+          itemReadableId: string | null
+          itemType: string | null
+          locationId: string | null
+          methodType: Database["public"]["Enums"]["methodType"] | null
+          modelId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
+          noQuoteReason: string | null
+          qty: number | null
+          quantity: number[] | null
+          quoteId: string | null
+          quoteReadableId: string | null
+          quoteRevisionId: number | null
+          status: Database["public"]["Enums"]["quoteLineStatus"] | null
+          tags: string[] | null
+          taxPercent: number | null
+          thumbnailPath: string | null
+          unitCost: number | null
+          unitOfMeasureCode: string | null
+          unitPrice: number | null
+          unitPricePrecision: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "quoteLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "quoteLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "quoteLine_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "quoteLine_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "quoteLine_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       quoteLines: {
         Row: {
           additionalCharges: Json | null
@@ -32534,6 +32817,13 @@ export type Database = {
             foreignKeyName: "quoteMaterial_quoteLineId_fkey"
             columns: ["quoteLineId"]
             isOneToOne: false
+            referencedRelation: "quoteLinePrices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
             referencedRelation: "quoteLines"
             referencedColumns: ["id"]
           },
@@ -32779,6 +33069,13 @@ export type Database = {
             columns: ["quoteLineId"]
             isOneToOne: false
             referencedRelation: "quoteLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperation_quoteLineId_fkey"
+            columns: ["quoteLineId"]
+            isOneToOne: false
+            referencedRelation: "quoteLinePrices"
             referencedColumns: ["id"]
           },
           {
@@ -33242,6 +33539,7 @@ export type Database = {
           salesOrderLineType:
             | Database["public"]["Enums"]["salesOrderLineType"]
             | null
+          salesOrderReadableId: string | null
           sentComplete: boolean | null
           setupPrice: number | null
           shelfId: string | null

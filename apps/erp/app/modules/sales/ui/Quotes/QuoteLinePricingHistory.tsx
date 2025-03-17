@@ -1,6 +1,8 @@
+import { Link } from "@remix-run/react";
 import { useState } from "react";
 import { LuChevronDown } from "react-icons/lu";
 import { CustomerAvatar, Empty } from "~/components";
+import { path } from "~/utils/path";
 import { Button } from "../../../../../../../packages/react/src/Button";
 import {
   Card,
@@ -83,6 +85,24 @@ const QuoteLinePricingHistory = ({
                             >
                               <Card className="w-full">
                                 <CardContent className="p-4">
+                                  <HStack className="flex justify-between mb-2">
+                                    <Link
+                                      to={path.to.salesOrderLine(
+                                        line.salesOrderId!,
+                                        line.id!
+                                      )}
+                                      className="text-sm font-medium hover:underline"
+                                    >
+                                      {line.salesOrderReadableId}
+                                    </Link>
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">
+                                        {new Date(
+                                          line.orderDate!
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  </HStack>
                                   <div className="space-y-2">
                                     <div className="flex justify-between">
                                       <span className="text-sm font-medium">
@@ -92,36 +112,22 @@ const QuoteLinePricingHistory = ({
                                       </span>
                                     </div>
 
-                                    <div className="flex justify-between">
-                                      <span className="text-sm text-muted-foreground">
-                                        Order Date
-                                      </span>
-                                      <span className="text-sm font-medium">
-                                        {new Date(
-                                          line.orderDate!
-                                        ).toLocaleDateString()}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex justify-between">
-                                      <span className="text-sm text-muted-foreground">
+                                    <div className="grid grid-cols-2">
+                                      <div className="text-sm font-medium border p-2">
                                         Quantity
-                                      </span>
-                                      <span className="text-sm font-medium">
-                                        {line.saleQuantity}
-                                      </span>
-                                    </div>
-
-                                    <div className="flex justify-between">
-                                      <span className="text-sm text-muted-foreground">
+                                      </div>
+                                      <div className="text-sm font-medium border p-2">
                                         Unit Price
-                                      </span>
-                                      <span className="text-sm font-medium">
+                                      </div>
+                                      <div className="text-sm text-muted-foreground border p-2">
+                                        {line.saleQuantity}
+                                      </div>
+                                      <div className="text-sm text-muted-foreground border p-2">
                                         {new Intl.NumberFormat("en-US", {
                                           style: "currency",
                                           currency: baseCurrency,
                                         }).format(line.unitPrice ?? 0)}
-                                      </span>
+                                      </div>
                                     </div>
                                   </div>
                                 </CardContent>
