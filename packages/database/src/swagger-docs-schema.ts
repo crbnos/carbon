@@ -27502,6 +27502,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.customerId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.salesOrderReadableId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -40284,6 +40287,165 @@ export default {
         tags: ["purchaseOrderTransaction"],
       },
     },
+    "/quoteLinePrices": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.quoteId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.quoteRevisionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.estimatorId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.itemType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.customerPartId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.customerPartRevision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.methodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.additionalCharges",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.noQuoteReason",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.unitPricePrecision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.configuration",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.modelId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.autodeskUrn",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.unitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.qty",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrices.quoteReadableId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/quoteLinePrices",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["quoteLinePrices"],
+      },
+    },
     "/salesRfqFavorite": {
       get: {
         parameters: [
@@ -50305,7 +50467,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50354,7 +50516,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60131,6 +60293,10 @@ export default {
           format: "text",
           type: "string",
         },
+        salesOrderReadableId: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -66594,6 +66760,187 @@ export default {
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    quoteLinePrices: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        quoteId: {
+          description:
+            "Note:\nThis is a Foreign Key to `quote.id`.<fk table='quote' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quoteRevisionId: {
+          format: "integer",
+          type: "integer",
+        },
+        status: {
+          enum: ["Not Started", "In Progress", "Complete", "No Quote"],
+          format: 'public."quoteLineStatus"',
+          type: "string",
+        },
+        estimatorId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        itemType: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+        customerPartRevision: {
+          format: "text",
+          type: "string",
+        },
+        methodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          format: "numeric[]",
+          items: {
+            type: "number",
+          },
+          type: "array",
+        },
+        additionalCharges: {
+          format: "jsonb",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        noQuoteReason: {
+          format: "text",
+          type: "string",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        unitPricePrecision: {
+          format: "integer",
+          type: "integer",
+        },
+        externalNotes: {
+          format: "jsonb",
+        },
+        configuration: {
+          format: "jsonb",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        modelId: {
+          format: "text",
+          type: "string",
+        },
+        autodeskUrn: {
+          format: "text",
+          type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number",
+        },
+        qty: {
+          format: "numeric",
+          type: "number",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        quoteReadableId: {
+          format: "text",
           type: "string",
         },
       },
@@ -84152,6 +84499,13 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrderLines.salesOrderReadableId": {
+      name: "salesOrderReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
     "body.customerAccount": {
       name: "customerAccount",
       description: "customerAccount",
@@ -92591,6 +92945,288 @@ export default {
       name: "createdAt",
       required: false,
       format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "body.quoteLinePrices": {
+      name: "quoteLinePrices",
+      description: "quoteLinePrices",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/quoteLinePrices",
+      },
+    },
+    "rowFilter.quoteLinePrices.id": {
+      name: "id",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.quoteId": {
+      name: "quoteId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.quoteRevisionId": {
+      name: "quoteRevisionId",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.status": {
+      name: "status",
+      required: false,
+      format: 'public."quoteLineStatus"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.estimatorId": {
+      name: "estimatorId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.itemId": {
+      name: "itemId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.itemType": {
+      name: "itemType",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.description": {
+      name: "description",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.customerPartRevision": {
+      name: "customerPartRevision",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.methodType": {
+      name: "methodType",
+      required: false,
+      format: 'public."methodType"',
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      format: "json",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.companyId": {
+      name: "companyId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.createdBy": {
+      name: "createdBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      format: "timestamp with time zone",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.customFields": {
+      name: "customFields",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.quantity": {
+      name: "quantity",
+      required: false,
+      format: "numeric[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.additionalCharges": {
+      name: "additionalCharges",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.locationId": {
+      name: "locationId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.noQuoteReason": {
+      name: "noQuoteReason",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.tags": {
+      name: "tags",
+      required: false,
+      format: "text[]",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.unitPricePrecision": {
+      name: "unitPricePrecision",
+      required: false,
+      format: "integer",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.configuration": {
+      name: "configuration",
+      required: false,
+      format: "jsonb",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.modelId": {
+      name: "modelId",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.autodeskUrn": {
+      name: "autodeskUrn",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.modelPath": {
+      name: "modelPath",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.modelName": {
+      name: "modelName",
+      required: false,
+      format: "text",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.modelSize": {
+      name: "modelSize",
+      required: false,
+      format: "bigint",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.unitCost": {
+      name: "unitCost",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.qty": {
+      name: "qty",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      format: "numeric",
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteLinePrices.quoteReadableId": {
+      name: "quoteReadableId",
+      required: false,
+      format: "text",
       in: "query",
       type: "string",
     },
