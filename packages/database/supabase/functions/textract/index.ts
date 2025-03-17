@@ -9,7 +9,7 @@ import {
   TextractClient,
 } from "https://deno.land/x/aws_sdk@v3.32.0-1/client-textract/mod.ts";
 
-import z from "https://deno.land/x/zod@v3.23.8/index.ts";
+import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
