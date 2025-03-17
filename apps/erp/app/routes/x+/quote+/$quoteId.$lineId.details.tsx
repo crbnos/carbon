@@ -22,6 +22,7 @@ import {
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteOperationsByLine,
+  getSalesOrderLinesByItemId,
   quoteLineValidator,
   upsertQuoteLine,
 } from "~/modules/sales";
@@ -62,6 +63,21 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     );
   }
 
+  const itemId = line.data.itemId!;
+  const relatedSalesOrderLines = await getSalesOrderLinesByItemId(
+    serviceRole,
+    itemId
+  );
+  if (relatedSalesOrderLines.error) {
+    throw redirect(
+      path.to.quote(quoteId),
+      await flash(
+        request,
+        error(relatedSalesOrderLines.error, "Failed to load line")
+      )
+    );
+  }
+
   return defer({
     line: line.data,
     operations: operations?.data ?? [],
@@ -72,6 +88,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       acc[price.quantity] = price;
       return acc;
     }, {}),
+    relatedSalesOrderLines: relatedSalesOrderLines?.data ?? [],
   });
 };
 
@@ -116,7 +133,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteLine() {
-  const { line, operations, files, pricesByQuantity } =
+  const { line, operations, files, pricesByQuantity, relatedSalesOrderLines } =
     useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
@@ -181,6 +198,7 @@ export default function QuoteLine() {
           exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
           pricesByQuantity={pricesByQuantity}
           getLineCosts={getLineCosts}
+          relatedSalesOrderLines={relatedSalesOrderLines}
         />
       )}
       <OpportunityLineNotes
