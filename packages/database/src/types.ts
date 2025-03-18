@@ -3233,6 +3233,7 @@ export type Database = {
           customerStatusId: string | null
           customerTypeId: string | null
           customFields: Json | null
+          embedding: unknown | null
           externalId: Json | null
           fax: string | null
           id: string
@@ -3256,6 +3257,7 @@ export type Database = {
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          embedding?: unknown | null
           externalId?: Json | null
           fax?: string | null
           id?: string
@@ -3279,6 +3281,7 @@ export type Database = {
           customerStatusId?: string | null
           customerTypeId?: string | null
           customFields?: Json | null
+          embedding?: unknown | null
           externalId?: Json | null
           fax?: string | null
           id?: string
@@ -5043,18 +5046,21 @@ export type Database = {
         Row: {
           active: boolean
           companyId: string
+          embedding: unknown | null
           employeeTypeId: string
           id: string
         }
         Insert: {
           active?: boolean
           companyId: string
+          embedding?: unknown | null
           employeeTypeId: string
           id: string
         }
         Update: {
           active?: boolean
           companyId?: string
+          embedding?: unknown | null
           employeeTypeId?: string
           id?: string
         }
@@ -21684,6 +21690,7 @@ export type Database = {
         Row: {
           companyId: string | null
           description: string | null
+          embedding: unknown | null
           entity: Database["public"]["Enums"]["searchEntity"] | null
           fts: unknown | null
           id: number
@@ -21694,6 +21701,7 @@ export type Database = {
         Insert: {
           companyId?: string | null
           description?: string | null
+          embedding?: unknown | null
           entity?: Database["public"]["Enums"]["searchEntity"] | null
           fts?: unknown | null
           id?: number
@@ -21704,6 +21712,7 @@ export type Database = {
         Update: {
           companyId?: string | null
           description?: string | null
+          embedding?: unknown | null
           entity?: Database["public"]["Enums"]["searchEntity"] | null
           fts?: unknown | null
           id?: number
@@ -31772,14 +31781,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -33404,14 +33413,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
