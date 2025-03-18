@@ -10,7 +10,7 @@ import { defer, redirect } from "@vercel/remix";
 import { Fragment, Suspense, useMemo } from "react";
 import { CadModel } from "~/components";
 import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRealtime, useRouteData } from "~/hooks";
+import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
 import type {
   Quotation,
   QuotationOperation,
@@ -37,6 +37,7 @@ import {
   QuoteLinePricing,
   useLineCosts,
 } from "~/modules/sales/ui/Quotes";
+import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -154,6 +155,9 @@ export default function QuoteLine() {
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
 
+  const { company } = useUser();
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
+
   // useRealtime("quoteLine", `id=eq.${lineId}`);
   useRealtime("quoteMaterial", `quoteLineId=eq.${lineId}`);
   useRealtime("quoteOperation", `quoteLineId=eq.${lineId}`);
@@ -206,15 +210,22 @@ export default function QuoteLine() {
         />
       )}
       {line.status !== "No Quote" && (
-        <QuoteLinePricing
-          key={lineId}
-          line={line}
-          exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
-          pricesByQuantity={pricesByQuantity}
-          getLineCosts={getLineCosts}
-          relatedSalesOrderLines={relatedSalesOrderLines}
-          historicalQuoteLinePrices={historicalQuoteLinePrices}
-        />
+        <>
+          <QuoteLinePricingHistory
+            relatedSalesOrderLines={relatedSalesOrderLines}
+            historicalQuoteLinePrices={historicalQuoteLinePrices}
+            baseCurrency={baseCurrency}
+          />
+          <QuoteLinePricing
+            key={lineId}
+            line={line}
+            exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
+            pricesByQuantity={pricesByQuantity}
+            getLineCosts={getLineCosts}
+            relatedSalesOrderLines={relatedSalesOrderLines}
+            historicalQuoteLinePrices={historicalQuoteLinePrices}
+          />
+        </>
       )}
       <OpportunityLineNotes
         id={line.id}
