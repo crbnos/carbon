@@ -1,22 +1,38 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
 import { createMcp } from "../lib/mcp.ts";
-import { salesTools } from "./sales.tools.ts";
+import { prompt, tools } from "./tools.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
-const tools = [...salesTools]
-
-const mcp = createMcp({ tools })
+const mcp = createMcp({ prompt, tools });
+const session = new Supabase.ai.Session('gte-small');
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
   const payload = await req.json();
-  console.log({ function: "mcp", ...payload });
+  const companyId = 'cvc4pefsi0lgbe8ksr6g';
+
+  const client = await getSupabaseServiceRole(
+    req.headers.get("Authorization"),
+    "crbn_MPtkCDknTLiABGvq3x4tN",
+    companyId
+  );
+  const userId = 'system';
   
   try {
-    const result = await mcp.process(payload);
+    const result = await mcp.process({
+      client,
+      payload,
+      context: {
+        companyId,
+        userId
+      }
+    });
     return new Response(
       JSON.stringify(result),
       {

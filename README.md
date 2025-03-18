@@ -169,9 +169,16 @@ $ npm run test -w @carbon/react
 3. Restore the database using the following command:
 
 ```bash
-npm run db:build # this should error out at the seed step
+$ npm run db:build # this should error out at the seed step
 PGPASSWORD=postgres psql -h localhost -p 54322 -U supabase_admin -d postgres < ~/Downloads/db_cluster-15-02-2025@04-37-58.backup
-npm run dev
+$ npm run dev
 ```
 
 4. Rename the `_migrations` folder back to `migrations`
+
+
+## Connecting to the MCP Server
+
+```bash
+$ npx opencontrol http://localhost:54321/functions/v1/mcp
+```
