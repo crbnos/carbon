@@ -48,12 +48,12 @@ import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
 import type {
   Costs,
+  HistoricalQuotationPrice,
   Quotation,
   QuotationLine,
   QuotationPrice,
   SalesOrderLine,
 } from "../../types";
-import QuoteLinePricingHistory from "./QuoteLinePricingHistory";
 
 const QuoteLinePricing = ({
   line,
@@ -68,7 +68,7 @@ const QuoteLinePricing = ({
   exchangeRate: number;
   getLineCosts: (quantity: number) => Costs;
   relatedSalesOrderLines: SalesOrderLine[];
-  historicalQuoteLinePrices: QuotationPrice[];
+  historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
   const permissions = usePermissions();
 
@@ -401,13 +401,6 @@ const QuoteLinePricing = ({
         )}
       </HStack>
       <CardContent>
-        {relatedSalesOrderLines.length > 0 && (
-          <QuoteLinePricingHistory
-            relatedSalesOrderLines={relatedSalesOrderLines}
-            historicalQuoteLinePrices={historicalQuoteLinePrices}
-            baseCurrency={baseCurrency}
-          />
-        )}
         <Table>
           <Thead>
             <Tr>
