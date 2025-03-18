@@ -1,6 +1,8 @@
 import { Tool } from "./tool.ts";
 import z from "npm:zod@^3.24.1";
 import { zodToJsonSchema } from "npm:zod-to-json-schema@^3.24.3";
+import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import { Database } from "./types.ts";
 
 // Define the types locally instead of importing from @modelcontextprotocol/sdk
 export interface JSONRPCRequest {
@@ -21,6 +23,7 @@ export interface JSONRPCResponse {
   };
 }
 
+// TODO: these types should be imported from the @modelcontextprotocol/sdk package
 // Initialize request and result types
 export interface InitializeParams {
   protocolVersion: string;
@@ -35,6 +38,7 @@ export const InitializeRequestSchema = z.object({
 
 export interface InitializeResult {
   protocolVersion: string;
+  prompts: Record<string, any>;
   capabilities: {
     tools: Record<string, any>;
   };
@@ -79,22 +83,28 @@ const RequestSchema = z.union([
   InitializeRequestSchema,
   ListToolsRequestSchema,
   CallToolRequestSchema,
-])
+]);
 
-export function createMcp(input: { tools: Tool[] }) {
+
+
+
+export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] }) {
   return {
-    async process(message: JSONRPCRequest) {
-      const parsed = RequestSchema.parse(message)
+    async process({client, payload, context}: {payload: JSONRPCRequest, client: SupabaseClient<Database>, context: {companyId: string, userId: string}}) {
+      const parsed = RequestSchema.parse(payload)
 
       const result = await (async () => {
         if (parsed.method === "initialize")
           return {
             protocolVersion: "2024-11-05",
+            prompts: {
+              default: input.prompt,
+            },
             capabilities: {
               tools: {},
             },
             serverInfo: {
-              name: "opencontrol",
+              name: "carbon-purchasing",
               version: "0.0.1",
             },
           } satisfies InitializeResult
@@ -137,7 +147,7 @@ export function createMcp(input: { tools: Tool[] }) {
           }
 
           return tool
-            .run(args)
+            .run(client, args, context)
             .catch(
               (error) =>
                 ({
@@ -168,7 +178,7 @@ export function createMcp(input: { tools: Tool[] }) {
 
       return {
         jsonrpc: "2.0",
-        id: message.id,
+        id: payload.id,
         result,
       } satisfies JSONRPCResponse
     },

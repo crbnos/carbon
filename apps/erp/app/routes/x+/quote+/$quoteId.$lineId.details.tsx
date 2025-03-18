@@ -55,6 +55,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     getQuoteLine(serviceRole, lineId),
     getQuoteOperationsByLine(serviceRole, lineId),
     getQuoteLinePrices(serviceRole, lineId),
+
   ]);
 
   if (line.error) {
@@ -226,6 +227,8 @@ export default function QuoteLine() {
         internalNotes={line.internalNotes as JSONContent}
         externalNotes={line.externalNotes as JSONContent}
       />
+
+      
 
       <Suspense
         fallback={

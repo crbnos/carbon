@@ -77,7 +77,7 @@
     "spin-delay": "2.0.1",
     "tailwind-merge": "^2.2.1",
     "tailwindcss-animate": "^1.0.7",
-    "zod": "^3.23.8",
+    "zod": "^3.24.1",
     "zod-form-data": "*"
   },
   "devDependencies": {
