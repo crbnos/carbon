@@ -30499,30 +30499,23 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
-            isOneToOne: false
-            referencedRelation: "supplierLocation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "partner_id_fkey"
             columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "partner_updatedBy_fkey"
-            columns: ["updatedBy"]
+            foreignKeyName: "partner_id_fkey"
+            columns: ["supplierLocationId"]
             isOneToOne: false
-            referencedRelation: "employees"
+            referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -31803,14 +31796,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -32250,14 +32243,14 @@ export type Database = {
             foreignKeyName: "quoteLine_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "company"
+            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteLine_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
-            referencedRelation: "companies"
+            referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
@@ -32278,7 +32271,14 @@ export type Database = {
             foreignKeyName: "quoteLine_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
-            referencedRelation: "user"
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
@@ -32292,14 +32292,7 @@ export type Database = {
             foreignKeyName: "quoteLine_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteLine_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -32313,7 +32306,14 @@ export type Database = {
             foreignKeyName: "quoteLine_estimatorId_fkey"
             columns: ["estimatorId"]
             isOneToOne: false
-            referencedRelation: "user"
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_estimatorId_fkey"
+            columns: ["estimatorId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
@@ -32327,14 +32327,7 @@ export type Database = {
             foreignKeyName: "quoteLine_estimatorId_fkey"
             columns: ["estimatorId"]
             isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteLine_estimatorId_fkey"
-            columns: ["estimatorId"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -32362,15 +32355,15 @@ export type Database = {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "modelUpload"
-            referencedColumns: ["id"]
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
           },
           {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["modelId"]
+            referencedRelation: "modelUpload"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
@@ -32425,7 +32418,14 @@ export type Database = {
             foreignKeyName: "quoteLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
-            referencedRelation: "user"
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
@@ -32439,14 +32439,7 @@ export type Database = {
             foreignKeyName: "quoteLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quoteLine_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -33217,6 +33210,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfq"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesRfqId_fkey"
+            columns: ["salesRfqId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqs"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quote_assignee_fkey"
             columns: ["assignee"]
             isOneToOne: false
@@ -33409,13 +33437,6 @@ export type Database = {
             foreignKeyName: "quote_opportunityId_fkey"
             columns: ["opportunityId"]
             isOneToOne: false
-            referencedRelation: "opportunity"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_salesPersonId_fkey"
-            columns: ["salesPersonId"]
-            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -33424,6 +33445,20 @@ export type Database = {
             columns: ["salesPersonId"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_salesPersonId_fkey"
+            columns: ["salesPersonId"]
+            isOneToOne: false
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -33728,14 +33763,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -33965,13 +34000,6 @@ export type Database = {
             foreignKeyName: "salesOrder_opportunityId_fkey"
             columns: ["opportunityId"]
             isOneToOne: false
-            referencedRelation: "opportunity"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -33980,6 +34008,20 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrder_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
@@ -34254,6 +34296,48 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quote"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quoteCustomerDetails"
+            referencedColumns: ["quoteId"]
+          },
+          {
+            foreignKeyName: "opportunity_quoteId_fkey"
+            columns: ["quoteId"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "salesRfq_assigneeId_fkey"
             columns: ["assignee"]
             isOneToOne: false
@@ -34432,7 +34516,14 @@ export type Database = {
             foreignKeyName: "salesRfq_noQuoteReasonId_fkey"
             columns: ["noQuoteReasonId"]
             isOneToOne: false
-            referencedRelation: "noQuoteReason"
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
@@ -34446,14 +34537,7 @@ export type Database = {
             foreignKeyName: "salesRfq_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "salesRfq_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {

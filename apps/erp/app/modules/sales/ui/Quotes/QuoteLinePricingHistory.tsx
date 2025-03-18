@@ -1,29 +1,12 @@
-import { Table, Tbody, Td, Tr } from "@carbon/react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, HStack, Table, Tabs, TabsContent, TabsList, TabsTrigger, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@carbon/react/Carousel";
 import { Link } from "@remix-run/react";
-import { CustomerAvatar, Empty } from "~/components";
+import { Empty } from "~/components";
 import { path } from "~/utils/path";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../../../../../../packages/react/src/Card";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "../../../../../../../packages/react/src/Carousel";
-import { HStack } from "../../../../../../../packages/react/src/HStack";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../../../../../../packages/react/src/Tabs";
-import { formatDate } from "../../../../../../../packages/utils/src/date";
+
 import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
+import { formatDate } from "@carbon/utils";
+import { useCustomers } from "~/stores/customers";
 
 const QuoteLinePricingHistory = ({
   baseCurrency,
@@ -51,175 +34,209 @@ const QuoteLinePricingHistory = ({
 
   const orderLineCount = relatedSalesOrderLines.length;
   const quoteLineCount = Object.keys(historicalQuoteLines).length;
-  const historyCount = orderLineCount + quoteLineCount;
+  
+  const hasOrderLines = orderLineCount > 0;
+  const hasQuoteLines = quoteLineCount > 0;
+  const hasBothTypes = hasOrderLines && hasQuoteLines;
+  
+  // Default to the tab that has items
+  const defaultTab = hasOrderLines ? "salesOrderLines" : "quoteLines";
+  const [customers] = useCustomers();
 
   return (
     <Card isCollapsible defaultCollapsed>
-      <CardHeader className="p-3">
-        <HStack>
-          <CardTitle>History ({historyCount})</CardTitle>
-        </HStack>
+      <CardHeader>
+        
+          <CardTitle>History</CardTitle>
+          <CardDescription>
+            {orderLineCount > 0 || quoteLineCount > 0 ? (
+              <span className="text-sm text-muted-foreground">
+                {orderLineCount > 0 && `${orderLineCount} order${orderLineCount !== 1 ? 's' : ''}`}
+                {orderLineCount > 0 && quoteLineCount > 0 && ' and '}
+                {quoteLineCount > 0 && `${quoteLineCount} quote${quoteLineCount !== 1 ? 's' : ''}`}
+              </span>
+            ) : (
+              <span className="text-sm text-muted-foreground">No pricing history available</span>
+            )}
+          </CardDescription>
+        
       </CardHeader>
-      <CardContent className="p-3">
+      <CardContent>
         <div className="w-full">
-          <Tabs defaultValue="salesOrderLines">
-            <TabsList>
-              <TabsTrigger value="salesOrderLines">
-                Orders ({orderLineCount})
-              </TabsTrigger>
-              <TabsTrigger value="quoteLines">
-                Quotes ({quoteLineCount})
-              </TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue={defaultTab} className="w-full">
+            {hasBothTypes && (
+              <TabsList className="mb-4">
+                <TabsTrigger value="salesOrderLines">
+                  Orders
+                </TabsTrigger>
+                <TabsTrigger value="quoteLines">
+                  Quotes
+                </TabsTrigger>
+              </TabsList>
+            )}
             <TabsContent value="salesOrderLines">
-              <div className="flex overflow-x-auto space-x-4 pb-4">
-                {relatedSalesOrderLines.length === 0 && (
+              <div className="flex overflow-x-auto space-x-4 pb-4 w-full">
+                {!hasOrderLines && (
                   <Empty className="py-6" />
                 )}
-                <Carousel className="w-full">
-                  <CarouselContent className="-ml-4">
-                    {relatedSalesOrderLines.map((line) => (
-                      <CarouselItem
-                        key={line.id}
-                        className="pl-4 basis-full md:basis-1 lg:basis-1/2 xl:basis-1/3"
-                      >
-                        <Card className="w-full">
-                          <CardContent className="p-4">
-                            <HStack className="flex justify-between mb-2">
-                              <Link
-                                to={path.to.salesOrderLine(
-                                  line.salesOrderId!,
-                                  line.id!
-                                )}
-                                className="text-sm font-medium hover:underline"
-                              >
-                                {line.salesOrderReadableId}
-                              </Link>
-                              <div>
-                                <span className="text-sm text-muted-foreground">
-                                  {formatDate(line.orderDate!)}
-                                </span>
-                              </div>
-                            </HStack>
-                            <div className="space-y-4">
-                              <div className="flex justify-between">
-                                <span className="text-sm font-medium">
-                                  <CustomerAvatar
-                                    customerId={line.customerId}
-                                  />
-                                </span>
-                              </div>
+                {hasOrderLines && (
+                  <Carousel className="w-full">
+                    <CarouselContent className="-ml-4">
+                      {relatedSalesOrderLines.map((line) => (
+                        <CarouselItem
+                          key={line.id}
+                          className="pl-4 basis-full lg:basis-1/2 xl:basis-1/3"
+                        >
+                          <Card className="w-full p-0">
+                            <CardContent className="p-4">
+                              <HStack className="flex justify-between">
+                                <Link
+                                  to={path.to.salesOrderLine(
+                                    line.salesOrderId!,
+                                    line.id!
+                                  )}
+                                  className="text-sm font-medium hover:underline"
+                                >
+                                  {line.salesOrderReadableId}
+                                </Link>
+                                <div>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(line.orderDate!)}
+                                  </span>
+                                </div>
+                              </HStack>
+                              <div className="space-y-4">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    {customers.find((customer) => customer.id === line.customerId)?.name}
+                                  </span>
+                                </div>
 
-                              <Table>
-                                <Tbody>
-                                  <Tr>
-                                    <Td>
-                                      <span className="font-medium">
-                                        Quantity
-                                      </span>
-                                    </Td>
-                                    <Td>
-                                      <span className="font-medium">
-                                        Unit Price
-                                      </span>
-                                    </Td>
-                                  </Tr>
-                                  <Tr>
-                                    <Td>{line.saleQuantity}</Td>
-                                    <Td>
-                                      {new Intl.NumberFormat("en-US", {
-                                        style: "currency",
-                                        currency: baseCurrency,
-                                      }).format(line.unitPrice ?? 0)}
-                                    </Td>
-                                  </Tr>
-                                </Tbody>
-                              </Table>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
+                                <Table>
+                                  <Thead>
+
+                                    <Tr className="border-b border-border">
+                                      <Th>
+                                        <span className="font-medium">
+                                          Quantity
+                                        </span>
+                                      </Th>
+                                      <Th>
+                                        <span className="font-medium">
+                                          Price
+                                        </span>
+                                      </Th>
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody>
+                                    <Tr>
+                                      <Td>{line.saleQuantity}</Td>
+                                      <Td>
+                                        {new Intl.NumberFormat("en-US", {
+                                          style: "currency",
+                                          currency: baseCurrency,
+                                        }).format(line.unitPrice ?? 0)}
+                                      </Td>
+                                    </Tr>
+                                  </Tbody>
+                                </Table>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {orderLineCount > 1 && (
+                      <div className="flex justify-between mt-4">
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </div>
+                    )}
+                  </Carousel>
+                )}
               </div>
             </TabsContent>
             <TabsContent value="quoteLines">
-              <div className="flex overflow-x-auto space-x-4 pb-4">
-                {Object.keys(historicalQuoteLines).length === 0 && (
+              <div className="flex overflow-x-auto space-x-4 pb-4 w-full">
+                {!hasQuoteLines && (
                   <Empty className="py-6" />
                 )}
-                <Carousel className="w-full">
-                  <CarouselContent className="-ml-4">
-                    {Object.values(historicalQuoteLines).map((line) => (
-                      <CarouselItem
-                        key={line.id}
-                        className="pl-4 basis-full md:basis-1 lg:basis-1/2 xl:basis-1/3"
-                      >
-                        <Card className="w-full">
-                          <CardContent className="p-4">
-                            <HStack className="flex justify-between mb-2">
-                              <Link
-                                to={path.to.quoteLine(line.quoteId!, line.id!)}
-                                className="text-sm font-medium hover:underline"
-                              >
-                                {line.quoteReadableId}
-                              </Link>
-                              <div>
-                                <span className="text-sm text-muted-foreground">
-                                  {formatDate(line.quoteCreatedAt!)}
-                                </span>
-                              </div>
-                            </HStack>
-                            <div className="space-y-4">
-                              <div className="flex justify-between">
-                                <span className="text-sm font-medium">
-                                  <CustomerAvatar
-                                    customerId={line.customerId}
-                                  />
-                                </span>
-                              </div>
+                {hasQuoteLines && (
+                  <Carousel className="w-full">
+                    <CarouselContent className="-ml-4">
+                      {Object.values(historicalQuoteLines).map((line) => (
+                        <CarouselItem
+                          key={line.id}
+                          className="pl-4 basis-full lg:basis-1/2 xl:basis-1/3"
+                        >
+                          <Card className="w-full p-0">
+                            <CardContent className="p-4">
+                              <HStack className="flex justify-between">
+                                <Link
+                                  to={path.to.quoteLine(line.quoteId!, line.id!)}
+                                  className="text-sm font-medium hover:underline"
+                                >
+                                  {line.quoteReadableId}
+                                </Link>
+                                <div>
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(line.quoteCreatedAt!)}
+                                  </span>
+                                </div>
+                              </HStack>
+                              <div className="space-y-4">
+                                <div className="flex justify-between">
+                                  <span className="text-sm text-muted-foreground">
+                                    {customers.find((customer) => customer.id === line.customerId)?.name}
+                                  </span>
+                                </div>
 
-                              <Table>
-                                <Tbody>
-                                  <Tr>
-                                    <Td>
-                                      <span className="font-medium">
-                                        Quantity
-                                      </span>
-                                    </Td>
-                                    <Td>
-                                      <span className="font-medium">
-                                        Unit Price
-                                      </span>
-                                    </Td>
-                                  </Tr>
-                                  {Object.entries(line.quantities).map(
-                                    ([quantity, price]) => (
-                                      <Tr key={quantity}>
-                                        <Td>{quantity}</Td>
-                                        <Td>
-                                          {new Intl.NumberFormat("en-US", {
-                                            style: "currency",
-                                            currency: baseCurrency,
-                                          }).format(price)}
-                                        </Td>
-                                      </Tr>
-                                    )
-                                  )}
-                                </Tbody>
-                              </Table>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </CarouselItem>
-                    ))}
-                  </CarouselContent>
-                  <CarouselPrevious />
-                  <CarouselNext />
-                </Carousel>
+                                <Table>
+                                  <Thead>
+
+                                    <Tr>
+                                      <Th>
+                                        <span className="font-medium">
+                                          Quantity
+                                        </span>
+                                      </Th>
+                                      <Th>
+                                        <span className="font-medium">
+                                          Price
+                                        </span>
+                                      </Th>
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody>
+                                    {Object.entries(line.quantities).map(
+                                      ([quantity, price]) => (
+                                        <Tr key={quantity}>
+                                          <Td>{quantity}</Td>
+                                          <Td>
+                                            {new Intl.NumberFormat("en-US", {
+                                              style: "currency",
+                                              currency: baseCurrency,
+                                            }).format(price as number)}
+                                          </Td>
+                                        </Tr>
+                                      )
+                                    )}
+                                  </Tbody>
+                                </Table>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </CarouselItem>
+                      ))}
+                    </CarouselContent>
+                    {quoteLineCount > 1 && (
+                      <div className="flex justify-between mt-4">
+                        <CarouselPrevious />
+                        <CarouselNext />
+                      </div>
+                    )}
+                  </Carousel>
+                )}
               </div>
             </TabsContent>
           </Tabs>

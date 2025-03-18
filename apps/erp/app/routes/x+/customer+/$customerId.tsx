@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { cn } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -14,7 +15,6 @@ import { CustomerHeader, CustomerSidebar } from "~/modules/sales/ui/Customer";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { cn } from "../../../../../../packages/react/src/utils/cn";
 
 export const handle: Handle = {
   breadcrumb: "Customers",

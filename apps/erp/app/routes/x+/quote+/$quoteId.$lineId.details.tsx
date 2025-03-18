@@ -18,12 +18,11 @@ import type {
   QuoteMethod,
 } from "~/modules/sales";
 import {
-  getHistoricalQuoteLinePricesByItemId,
   getOpportunityLineDocuments,
   getQuoteLine,
   getQuoteLinePrices,
   getQuoteOperationsByLine,
-  getSalesOrderLinesByItemId,
+  getRelatedPricesForQuoteLine,
   quoteLineValidator,
   upsertQuoteLine,
 } from "~/modules/sales";
@@ -66,25 +65,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 
   const itemId = line.data.itemId!;
-  const relatedSalesOrderLines = await getSalesOrderLinesByItemId(
-    serviceRole,
-    itemId
-  );
-  if (relatedSalesOrderLines.error) {
-    throw redirect(
-      path.to.quote(quoteId),
-      await flash(
-        request,
-        error(relatedSalesOrderLines.error, "Failed to load line")
-      )
-    );
-  }
 
-  const historicalQuoteLinePrices = await getHistoricalQuoteLinePricesByItemId(
-    serviceRole,
-    itemId,
-    quoteId
-  );
 
   return defer({
     line: line.data,
@@ -96,8 +77,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       acc[price.quantity] = price;
       return acc;
     }, {}),
-    relatedSalesOrderLines: relatedSalesOrderLines?.data ?? [],
-    historicalQuoteLinePrices: historicalQuoteLinePrices?.data ?? [],
+    relatedPrices: getRelatedPricesForQuoteLine(serviceRole, itemId, quoteId),
   });
 };
 
@@ -147,8 +127,7 @@ export default function QuoteLine() {
     operations,
     files,
     pricesByQuantity,
-    relatedSalesOrderLines,
-    historicalQuoteLinePrices,
+    relatedPrices,
   } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
@@ -211,19 +190,31 @@ export default function QuoteLine() {
       )}
       {line.status !== "No Quote" && (
         <>
-          <QuoteLinePricingHistory
-            relatedSalesOrderLines={relatedSalesOrderLines}
-            historicalQuoteLinePrices={historicalQuoteLinePrices}
-            baseCurrency={baseCurrency}
-          />
+          <Suspense
+            fallback={null}
+          >
+            <Await resolve={relatedPrices}>
+              {(resolvedPrices) => {
+                console.log({resolvedPrices});
+                const hasRelatedOrders = resolvedPrices?.relatedSalesOrderLines && resolvedPrices.relatedSalesOrderLines.length > 0;
+                const hasHistoricalPrices = resolvedPrices?.historicalQuoteLinePrices && resolvedPrices.historicalQuoteLinePrices.length > 0;
+                
+                return (hasRelatedOrders || hasHistoricalPrices) && (
+                  <QuoteLinePricingHistory
+                    relatedSalesOrderLines={resolvedPrices?.relatedSalesOrderLines ?? []}
+                    historicalQuoteLinePrices={resolvedPrices?.historicalQuoteLinePrices ?? []}
+                    baseCurrency={baseCurrency}
+                  />
+                );
+              }}
+            </Await>
+          </Suspense>
           <QuoteLinePricing
             key={lineId}
             line={line}
             exchangeRate={quoteData?.quote?.exchangeRate ?? 1}
             pricesByQuantity={pricesByQuantity}
             getLineCosts={getLineCosts}
-            relatedSalesOrderLines={relatedSalesOrderLines}
-            historicalQuoteLinePrices={historicalQuoteLinePrices}
           />
         </>
       )}
