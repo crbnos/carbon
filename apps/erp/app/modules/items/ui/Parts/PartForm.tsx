@@ -247,14 +247,16 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                 )}
 
                 <Input name="name" label="Short Description" />
+                <div className="md:col-span-full">
+                  <TextArea name="description" label="Long Description" />
+                </div>
                 <Select
                   name="itemTrackingType"
                   label="Tracking Type"
                   options={itemTrackingTypeOptions}
                 />
-                {isEditing && (
-                  <TextArea name="description" label="Long Description" />
-                )}
+                
+                
 
                 <Select
                   name="replenishmentSystem"

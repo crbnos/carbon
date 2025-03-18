@@ -3,7 +3,7 @@ import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import z from "npm:zod@^3.24.1";
-import { sql } from "https://esm.sh/kysely@0.26.3";
+import { sql } from "npm:kysely@0.27.6";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";

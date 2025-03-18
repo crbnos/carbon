@@ -213,6 +213,7 @@ const LinePricingOptions = ({
           </Tr>
         </Thead>
         <Tbody>
+        
           {!Array.isArray(options) || options.length === 0 ? (
             <Tr>
               <Td colSpan={6} className="text-center py-8">

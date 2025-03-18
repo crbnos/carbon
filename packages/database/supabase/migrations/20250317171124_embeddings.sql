@@ -23,26 +23,41 @@ COMMIT;
 
 ALTER TABLE "item" ADD COLUMN "embedding" halfvec(384);
 ALTER TABLE "supplier" ADD COLUMN "embedding" halfvec(384);
+ALTER TABLE "customer" ADD COLUMN "embedding" halfvec(384);
 
 CREATE INDEX ON "item" USING hnsw (embedding halfvec_cosine_ops);
 CREATE INDEX ON "supplier" USING hnsw (embedding halfvec_cosine_ops);
+CREATE INDEX ON "customer" USING hnsw (embedding halfvec_cosine_ops);
+CREATE INDEX ON "employee" USING hnsw (embedding halfvec_cosine_ops);
 
 
 -- Schema for utility functions
 CREATE SCHEMA util;
 
 -- Utility function to get the Supabase project URL (required for Edge Functions)
-CREATE FUNCTION util.project_url()
+CREATE FUNCTION util.api_url()
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
   api_url text;
+BEGIN
+  SELECT "apiUrl" INTO api_url FROM "config" LIMIT 1;
+  RETURN api_url;
+END;
+$$;
+
+CREATE FUNCTION util.anon_key()
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
   anon_key text;
 BEGIN
-  SELECT "apiUrl", "anonKey" INTO api_url, anon_key FROM "config" LIMIT 1;
-  RETURN api_url;
+  SELECT "anonKey" INTO  anon_key FROM "config" LIMIT 1;
+  RETURN anon_key;
 END;
 $$;
 
@@ -67,12 +82,12 @@ BEGIN
     WHEN headers_raw IS NOT NULL THEN
       (headers_raw::json->>'authorization')
     ELSE
-      NULL
+      'Bearer ' || util.anon_key()
   END;
 
   -- Perform async HTTP request to the edge function
   PERFORM net.http_post(
-    url => util.project_url() || '/functions/v1/' || name,
+    url => util.api_url() || '/functions/v1/' || name,
     headers => jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', auth_header
@@ -98,26 +113,23 @@ $$;
 -- Queue for processing embedding jobs
 SELECT pgmq.create('embedding_jobs');
 
--- Generic trigger function to queue embedding jobs
-CREATE OR REPLACE FUNCTION util.queue_embeddings()
-RETURNS TRIGGER
+-- Generic function to queue embedding jobs
+DROP FUNCTION IF EXISTS util.queue_embeddings;
+CREATE OR REPLACE FUNCTION util.queue_embeddings(
+  record_id text,
+  embedding_table text
+)
+RETURNS void
 LANGUAGE plpgsql
 AS $$
-DECLARE
-  content_function text = TG_ARGV[0];
-  embedding_column text = TG_ARGV[1];
 BEGIN
   PERFORM pgmq.send(
     queue_name => 'embedding_jobs',
     msg => jsonb_build_object(
-      'id', NEW.id,
-      'schema', TG_TABLE_SCHEMA,
-      'table', TG_TABLE_NAME,
-      'contentFunction', content_function,
-      'embeddingColumn', embedding_column
+      'id', record_id,
+      'table', embedding_table
     )
   );
-  RETURN NEW;
 END;
 $$;
 
@@ -180,3 +192,104 @@ SELECT
     $$
   );
 
+
+-- Recreate functions with updated logic
+CREATE OR REPLACE FUNCTION public.create_item_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  CASE new.type
+    WHEN 'Part' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Part', new.id, '/x/part/' || new.id, new."companyId");
+    WHEN 'Service' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Service', new.id, '/x/service/' || new.id, new."companyId");
+    WHEN 'Tool' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Tool', new.id, '/x/tool/' || new.id, new."companyId");
+    WHEN 'Consumable' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Consumable', new.id, '/x/consumable/' || new.id, new."companyId");
+    WHEN 'Material' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Material', new.id, '/x/material/' || new.id, new."companyId");
+    WHEN 'Fixture' THEN
+      INSERT INTO public.search(name, description, entity, uuid, link, "companyId")
+      VALUES (new."readableId", new.name || ' ' || COALESCE(new.description, ''), 'Fixture', new.id, '/x/fixture/' || new.id, new."companyId");
+  END CASE;
+
+  PERFORM util.queue_embeddings(new.id, 'item');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.update_item_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (old.name <> new.name OR old.description <> new.description OR old."readableId" <> new."readableId" OR old.type <> new.type) THEN
+    UPDATE public.search 
+    SET name = new."readableId", 
+        description = new.name || ' ' || COALESCE(new.description, ''),
+        link = CASE new.type
+          WHEN 'Part' THEN '/x/part/' || new.id
+          WHEN 'Service' THEN '/x/service/' || new.id
+          WHEN 'Tool' THEN '/x/tool/' || new.id
+          WHEN 'Consumable' THEN '/x/consumable/' || new.id
+          WHEN 'Material' THEN '/x/material/' || new.id
+          WHEN 'Fixture' THEN '/x/fixture/' || new.id
+        END
+    WHERE entity = 'Part' AND uuid = new.id AND "companyId" = new."companyId";
+
+    PERFORM util.queue_embeddings(new.id, 'item');
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION public.create_customer_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.search(name, entity, uuid, link, "companyId")
+  VALUES (new.name, 'Customer', new.id, '/x/customer/' || new.id, new."companyId");
+  PERFORM util.queue_embeddings(new.id, 'customer');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION public.update_customer_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (old.name <> new.name) THEN
+    UPDATE public.search SET name = new.name
+    WHERE entity = 'Customer' AND uuid = new.id;
+    PERFORM util.queue_embeddings(new.id, 'customer');
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION public.create_supplier_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.search(name, entity, uuid, link, "companyId")
+  VALUES (new.name, 'Supplier', new.id, '/x/supplier/' || new.id, new."companyId");
+  PERFORM util.queue_embeddings(new.id, 'supplier');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+CREATE OR REPLACE FUNCTION public.update_supplier_search_result()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF (old.name <> new.name) THEN
+    UPDATE public.search SET name = new.name
+    WHERE entity = 'Supplier' AND uuid = new.id;
+    PERFORM util.queue_embeddings(new.id, 'supplier');
+  END IF;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

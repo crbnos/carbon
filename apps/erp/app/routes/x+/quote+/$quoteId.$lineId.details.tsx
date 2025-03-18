@@ -55,7 +55,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     getQuoteLine(serviceRole, lineId),
     getQuoteOperationsByLine(serviceRole, lineId),
     getQuoteLinePrices(serviceRole, lineId),
-
   ]);
 
   if (line.error) {
