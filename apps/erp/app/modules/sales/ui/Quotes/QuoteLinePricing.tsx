@@ -48,11 +48,9 @@ import { path } from "~/utils/path";
 import { quoteLineAdditionalChargesValidator } from "../../sales.models";
 import type {
   Costs,
-  HistoricalQuotationPrice,
   Quotation,
   QuotationLine,
   QuotationPrice,
-  SalesOrderLine,
 } from "../../types";
 
 const QuoteLinePricing = ({
@@ -60,15 +58,11 @@ const QuoteLinePricing = ({
   pricesByQuantity,
   exchangeRate,
   getLineCosts,
-  relatedSalesOrderLines,
-  historicalQuoteLinePrices,
 }: {
   line: QuotationLine;
   pricesByQuantity: Record<number, QuotationPrice>;
   exchangeRate: number;
   getLineCosts: (quantity: number) => Costs;
-  relatedSalesOrderLines: SalesOrderLine[];
-  historicalQuoteLinePrices: HistoricalQuotationPrice[];
 }) => {
   const permissions = usePermissions();
 

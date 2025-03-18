@@ -1,4 +1,5 @@
 import { cn } from "@carbon/react";
+import type { Database } from "@carbon/database";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
@@ -44,7 +45,6 @@ import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import type { documentTypes } from "~/services/models";
 import type { Operation } from "~/services/types";
-import type { Database } from "../../../../packages/database/src/types";
 
 type FileIconProps = {
   type: (typeof documentTypes)[number];

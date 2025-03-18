@@ -1,7 +1,7 @@
 import { writeFileSync } from "fs";
 (async () => {
   const response = await fetch(
-    "http://localhost:54323/api/projects/default/api/rest"
+    "http://localhost:54323/api/platform/projects/default/api/rest"
   );
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
