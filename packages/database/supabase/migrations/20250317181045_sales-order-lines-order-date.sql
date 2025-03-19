@@ -43,7 +43,10 @@ CREATE OR REPLACE VIEW "quoteLinePrices" WITH(SECURITY_INVOKER=true) AS (
     ic."unitCost" as "unitCost",
     qlp."quantity" as "qty",
     qlp."unitPrice",
-    q."quoteId" as "quoteReadableId",
+    CASE
+      WHEN q."revisionId" > 0 THEN q."quoteId" || '-' || q."revisionId"::text
+      ELSE q."quoteId"
+    END as "quoteReadableId",
     q."createdAt" as "quoteCreatedAt",
     q."customerId"
   FROM "quoteLine" ql
