@@ -26,8 +26,9 @@ import {
   useDisclosure,
 } from "@carbon/react";
 
-import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import {
+  LuCheck,
   LuCheckCheck,
   LuChevronDown,
   LuCircleStop,
@@ -377,7 +378,7 @@ function CreateRevisionModal({
   asRevision: boolean;
   onClose: () => void;
 }) {
-  const navigate = useNavigate();
+  const [newQuoteId, setNewQuoteId] = useState<string | null>(null);
   const fetcher = useFetcher<
     | { success: false; message: string }
     | { success: true; data: { newQuoteId: string } }
@@ -394,8 +395,7 @@ function CreateRevisionModal({
           ? "Successfully created a new revision"
           : "Successfully copied quote"
       );
-      onClose();
-      navigate(path.to.quoteDetails(fetcher.data?.data.newQuoteId!));
+      setNewQuoteId(fetcher.data?.data.newQuoteId ?? null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data?.success]);
@@ -414,30 +414,51 @@ function CreateRevisionModal({
               : "Create a quote with a new quote ID"}
           </ModalDescription>
         </ModalHeader>
-        <ModalFooter>
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          <fetcher.Form
-            method="post"
-            action={path.to.quoteDuplicate(quote.id!)}
-          >
-            <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
-            <input
-              type="hidden"
-              name="asRevision"
-              value={asRevision ? "true" : "false"}
-            />
-            <Button
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
-              variant="primary"
-              type="submit"
-            >
-              {asRevision ? "Create Revision" : "Copy Quote"}
+        {newQuoteId ? (
+          <>
+            <ModalBody>
+              <div className="flex flex-col items-center justify-center py-8">
+                <div>
+                  <LuCheck className="w-16 h-16 text-green-500" />
+                </div>
+                <h2 className="animate-fade-in">The quote has been created</h2>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button asChild>
+                <Link to={path.to.quoteDetails(newQuoteId)}>Open</Link>
+              </Button>
+            </ModalFooter>
+          </>
+        ) : (
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
             </Button>
-          </fetcher.Form>
-        </ModalFooter>
+            <fetcher.Form
+              method="post"
+              action={path.to.quoteDuplicate(quote.id!)}
+            >
+              <input type="hidden" name="quoteId" value={quote?.id ?? ""} />
+              <input
+                type="hidden"
+                name="asRevision"
+                value={asRevision ? "true" : "false"}
+              />
+              <Button
+                isLoading={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle"}
+                variant="primary"
+                type="submit"
+              >
+                {asRevision ? "Create Revision" : "Copy Quote"}
+              </Button>
+            </fetcher.Form>
+          </ModalFooter>
+        )}
       </ModalContent>
     </Modal>
   );
