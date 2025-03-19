@@ -69,7 +69,7 @@ const InventoryShelves = ({
 
   const isSerial = itemTrackingType === "Serial";
   const isBatch = itemTrackingType === "Batch";
-  console.log({ isSerial, isBatch });
+
   const [quantity, setQuantity] = useState(1);
 
   return (

@@ -389,7 +389,6 @@ const OpportunityLineDocuments = ({
                         <span
                           className="font-medium cursor-pointer"
                           onClick={() => {
-                            console.log(type, file);
                             if (["PDF", "Image"].includes(type)) {
                               window.open(
                                 path.to.file.previewFile(
