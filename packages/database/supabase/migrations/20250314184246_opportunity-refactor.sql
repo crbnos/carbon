@@ -1,64 +1,129 @@
-BEGIN;
+-- Add columns if they don't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'quote' AND column_name = 'opportunityId') THEN
+        ALTER TABLE "quote" ADD COLUMN "opportunityId" TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'quote' AND column_name = 'completedDate') THEN
+        ALTER TABLE "quote" ADD COLUMN "completedDate" TIMESTAMPTZ;
+    END IF;
+END $$;
 
-ALTER TABLE "quote" ADD COLUMN "opportunityId" TEXT;
-ALTER TABLE "quote" ADD COLUMN "completedDate" TIMESTAMPTZ;
-ALTER TABLE "quote" ADD CONSTRAINT "quote_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+-- Add foreign key if it doesn't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'quote_opportunityId_fkey') THEN
+        ALTER TABLE "quote" ADD CONSTRAINT "quote_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+    END IF;
+END $$;
 
-ALTER TABLE "salesRfq" ADD COLUMN "opportunityId" TEXT;
-ALTER TABLE "salesRfq" ADD COLUMN "completedDate" TIMESTAMPTZ;
-ALTER TABLE "salesRfq" ADD CONSTRAINT "salesRfq_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+-- Add columns if they don't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'salesRfq' AND column_name = 'opportunityId') THEN
+        ALTER TABLE "salesRfq" ADD COLUMN "opportunityId" TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'salesRfq' AND column_name = 'completedDate') THEN
+        ALTER TABLE "salesRfq" ADD COLUMN "completedDate" TIMESTAMPTZ;
+    END IF;
+END $$;
 
-ALTER TABLE "salesOrder" ADD COLUMN "opportunityId" TEXT;
-ALTER TABLE "salesOrder" ADD COLUMN "completedDate" TIMESTAMPTZ;
-ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+-- Add foreign key if it doesn't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesRfq_opportunityId_fkey') THEN
+        ALTER TABLE "salesRfq" ADD CONSTRAINT "salesRfq_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+    END IF;
+END $$;
 
--- Update quote with opportunityId from opportunity table
-UPDATE "quote" q
-SET "opportunityId" = o."id"
-FROM "opportunity" o
-WHERE o."quoteId" = q."id";
+-- Add columns if they don't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'salesOrder' AND column_name = 'opportunityId') THEN
+        ALTER TABLE "salesOrder" ADD COLUMN "opportunityId" TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'salesOrder' AND column_name = 'completedDate') THEN
+        ALTER TABLE "salesOrder" ADD COLUMN "completedDate" TIMESTAMPTZ;
+    END IF;
+END $$;
 
--- Update salesRfq with opportunityId from opportunity table
-UPDATE "salesRfq" r
-SET "opportunityId" = o."id"
-FROM "opportunity" o
-WHERE o."salesRfqId" = r."id";
+-- Add foreign key if it doesn't exist
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesOrder_opportunityId_fkey') THEN
+        ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
+    END IF;
+END $$;
 
--- Update salesOrder with opportunityId from opportunity table
-UPDATE "salesOrder" s
-SET "opportunityId" = o."id"
-FROM "opportunity" o
-WHERE o."salesOrderId" = s."id";
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'quoteId') THEN
+    -- Update quote with opportunityId from opportunity table
+    UPDATE "quote" q
+    SET "opportunityId" = o."id"
+    FROM "opportunity" o
+    WHERE q."id" = o."quoteId"
+    AND q."opportunityId" IS NULL;
 
--- Update quote with completed date from opportunity table
-UPDATE "quote" q
-SET "completedDate" = o."quoteCompletedDate"
-FROM "opportunity" o
-WHERE o."quoteId" = q."id" AND o."quoteCompletedDate" IS NOT NULL;
+    -- Update salesRfq with opportunityId from opportunity table
+    UPDATE "salesRfq" r
+    SET "opportunityId" = o."id"
+    FROM "opportunity" o
+    WHERE r."id" = o."salesRfqId"
+    AND r."opportunityId" IS NULL;
 
--- Update salesRfq with completed date from opportunity table
-UPDATE "salesRfq" r
-SET "completedDate" = o."salesRfqCompletedDate"
-FROM "opportunity" o
-WHERE o."salesRfqId" = r."id" AND o."salesRfqCompletedDate" IS NOT NULL;
+    -- Update salesOrder with opportunityId from opportunity table
+    UPDATE "salesOrder" s
+    SET "opportunityId" = o."id"
+    FROM "opportunity" o
+    WHERE s."id" = o."salesOrderId"
+    AND s."opportunityId" IS NULL;
 
--- Update salesOrder with completed date from opportunity table
-UPDATE "salesOrder" s
-SET "completedDate" = o."salesOrderCompletedDate"
-FROM "opportunity" o
-WHERE o."salesOrderId" = s."id" AND o."salesOrderCompletedDate" IS NOT NULL;
+    -- Update quote with completed date from opportunity table
+    UPDATE "quote" q
+    SET "completedDate" = o."quoteCompletedDate"
+    FROM "opportunity" o
+    WHERE q."id" = o."quoteId"
+    AND o."quoteCompletedDate" IS NOT NULL
+    AND q."completedDate" IS NULL;
 
-DROP VIEW "salesRfqs";
-DROP VIEW "quotes";
-DROP VIEW "salesOrders";
+    -- Update salesRfq with completed date from opportunity table
+    UPDATE "salesRfq" r
+    SET "completedDate" = o."salesRfqCompletedDate"
+    FROM "opportunity" o
+    WHERE r."id" = o."salesRfqId"
+    AND o."salesRfqCompletedDate" IS NOT NULL
+    AND r."completedDate" IS NULL;
 
--- Drop the columns from opportunity table after data migration
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "salesRfqId";
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "quoteId";
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "salesOrderId";
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "salesRfqCompletedDate";
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "quoteCompletedDate";
-ALTER TABLE "opportunity" DROP COLUMN IF EXISTS "salesOrderCompletedDate";
+    -- Update salesOrder with completed date from opportunity table
+    UPDATE "salesOrder" s
+    SET "completedDate" = o."salesOrderCompletedDate"
+    FROM "opportunity" o
+    WHERE s."id" = o."salesOrderId"
+    AND o."salesOrderCompletedDate" IS NOT NULL
+    AND s."completedDate" IS NULL;
+  END IF;
+END $$;
+
+DROP VIEW IF EXISTS "salesRfqs";
+DROP VIEW IF EXISTS "quotes";
+DROP VIEW IF EXISTS "salesOrders";
+
+-- Drop columns if they exist
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'salesRfqId') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "salesRfqId";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'quoteId') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "quoteId";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'salesOrderId') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "salesOrderId";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'salesRfqCompletedDate') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "salesRfqCompletedDate";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'quoteCompletedDate') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "quoteCompletedDate";
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'opportunity' AND column_name = 'salesOrderCompletedDate') THEN
+        ALTER TABLE "opportunity" DROP COLUMN "salesOrderCompletedDate";
+    END IF;
+END $$;
 
 DROP VIEW IF EXISTS "salesRfqs";
 CREATE OR REPLACE VIEW "salesRfqs" WITH(SECURITY_INVOKER=true) AS
@@ -113,7 +178,6 @@ CREATE OR REPLACE VIEW "salesOrders" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "salesOrderPayment" sp ON sp."id" = s."id"
   LEFT JOIN "location" l ON l."id" = ss."locationId";
 
-
 DROP VIEW IF EXISTS "quotes";
 CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   SELECT 
@@ -144,7 +208,6 @@ CREATE OR REPLACE VIEW "quotes" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "quoteShipment" qs ON qs."id" = q."id"
   LEFT JOIN "location" l
     ON l.id = q."locationId";
-
 
 DROP FUNCTION IF EXISTS get_opportunity_with_related_records(TEXT);
 CREATE OR REPLACE FUNCTION get_opportunity_with_related_records(opportunity_id TEXT)
@@ -181,27 +244,34 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY INVOKER;
 
+-- Drop constraints if they exist and add new ones
+DO $$ BEGIN
+    -- Quote constraints
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'quote_quoteId_key') THEN
+        ALTER TABLE "quote" DROP CONSTRAINT "quote_quoteId_key";
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'quote_quoteId_revisionId_key') THEN
+        ALTER TABLE "quote" ADD CONSTRAINT "quote_quoteId_revisionId_key" UNIQUE ("quoteId", "revisionId", "companyId");
+    END IF;
 
--- Drop the existing constraint for quote
-ALTER TABLE "quote" DROP CONSTRAINT IF EXISTS "quote_quoteId_key";
+    -- SalesOrder constraints
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesOrder_salesOrderId_key') THEN
+        ALTER TABLE "salesOrder" DROP CONSTRAINT "salesOrder_salesOrderId_key";
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesOrder_salesOrderId_revisionId_key') THEN
+        ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_salesOrderId_revisionId_key" UNIQUE ("salesOrderId", "revisionId", "companyId");
+    END IF;
 
--- Add the new constraint that includes revisionId for quote
-ALTER TABLE "quote" ADD CONSTRAINT "quote_quoteId_revisionId_key" UNIQUE ("quoteId", "revisionId", "companyId");
+    -- SalesRfq constraints
+    IF EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesRfq_salesRfqId_key') THEN
+        ALTER TABLE "salesRfq" DROP CONSTRAINT "salesRfq_salesRfqId_key";
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.table_constraints WHERE constraint_name = 'salesRfq_salesRfqId_revisionId_key') THEN
+        ALTER TABLE "salesRfq" ADD CONSTRAINT "salesRfq_salesRfqId_revisionId_key" UNIQUE ("rfqId", "revisionId", "companyId");
+    END IF;
+END $$;
 
--- Drop the existing constraint for salesOrder
-ALTER TABLE "salesOrder" DROP CONSTRAINT IF EXISTS "salesOrder_salesOrderId_key";
-
--- Add the new constraint that includes revisionId for salesOrder
-ALTER TABLE "salesOrder" ADD CONSTRAINT "salesOrder_salesOrderId_revisionId_key" UNIQUE ("salesOrderId", "revisionId", "companyId");
-
--- Drop the existing constraint for salesRfq
-ALTER TABLE "salesRfq" DROP CONSTRAINT IF EXISTS "salesRfq_salesRfqId_key";
-
--- Add the new constraint that includes revisionId for salesRfq
-ALTER TABLE "salesRfq" ADD CONSTRAINT "salesRfq_salesRfqId_revisionId_key" UNIQUE ("rfqId", "revisionId", "companyId");
-
-
-
+DROP FUNCTION IF EXISTS create_rfq_from_models_v2(text, text, text, json[]);
 CREATE OR REPLACE FUNCTION create_rfq_from_models_v2(
   company_id text,
   email text,
@@ -300,5 +370,3 @@ EXCEPTION
     RAISE;
 END;
 $$;
-
-COMMIT;
