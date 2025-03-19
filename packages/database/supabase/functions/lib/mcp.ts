@@ -1,8 +1,10 @@
-import { Tool } from "./tool.ts";
+import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import { Kysely, Transaction } from "npm:kysely@0.27.6";
 import z from "npm:zod@^3.24.1";
 import { zodToJsonSchema } from "npm:zod-to-json-schema@^3.24.3";
-import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import { Tool } from "./tool.ts";
 import { Database } from "./types.ts";
+import { DB } from "./database.ts";
 
 // Define the types locally instead of importing from @modelcontextprotocol/sdk
 export interface JSONRPCRequest {
@@ -85,13 +87,19 @@ const RequestSchema = z.union([
   CallToolRequestSchema,
 ]);
 
-
-
-
-export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] }) {
+export function createMcp(input: {
+  prompt: Record<string, any>;
+  tools: Tool[];
+}) {
   return {
-    async process({client, payload, context}: {payload: JSONRPCRequest, client: SupabaseClient<Database>, context: {companyId: string, userId: string}}) {
-      const parsed = RequestSchema.parse(payload)
+    async process({
+      payload,
+      context,
+    }: {
+      payload: JSONRPCRequest;
+      context: { companyId: string; userId: string; client: SupabaseClient<Database>; db: Kysely<DB> | Transaction<DB> };
+    }) {
+      const parsed = RequestSchema.parse(payload);
 
       const result = await (async () => {
         if (parsed.method === "initialize")
@@ -107,7 +115,7 @@ export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] })
               name: "carbon-purchasing",
               version: "0.0.1",
             },
-          } satisfies InitializeResult
+          } satisfies InitializeResult;
 
         if (parsed.method === "tools/list") {
           return {
@@ -120,18 +128,18 @@ export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] })
                 : { type: "object" },
               description: tool.description,
             })),
-          } satisfies ListToolsResult
+          } satisfies ListToolsResult;
         }
 
         if (parsed.method === "tools/call") {
           const tool = input.tools.find(
-            (tool) => tool.name === parsed.params.name,
-          )
-          if (!tool) throw new Error("tool not found")
+            (tool) => tool.name === parsed.params.name
+          );
+          if (!tool) throw new Error("tool not found");
 
-          let args = parsed.params.arguments
+          let args = parsed.params.arguments;
           if (tool.args) {
-            const validated = await tool.args["~standard"].validate(args)
+            const validated = await tool.args["~standard"].validate(args);
             if (validated.issues) {
               return {
                 isError: true,
@@ -141,13 +149,13 @@ export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] })
                     text: JSON.stringify(validated.issues),
                   },
                 ],
-              } satisfies CallToolResult
+              } satisfies CallToolResult;
             }
-            args = validated.value as any
+            args = validated.value as any;
           }
 
           return tool
-            .run(client, args, context)
+            .run(args, context)
             .catch(
               (error) =>
                 ({
@@ -158,7 +166,7 @@ export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] })
                       text: error.message,
                     },
                   ],
-                }) satisfies CallToolResult,
+                } satisfies CallToolResult)
             )
             .then(
               (result) =>
@@ -169,18 +177,18 @@ export function createMcp(input: { prompt: Record<string, any>, tools: Tool[] })
                       text: JSON.stringify(result, null, 2),
                     },
                   ],
-                }) satisfies CallToolResult,
-            )
+                } satisfies CallToolResult)
+            );
         }
 
-        throw new Error("not implemented")
-      })()
+        throw new Error("not implemented");
+      })();
 
       return {
         jsonrpc: "2.0",
         id: payload.id,
         result,
-      } satisfies JSONRPCResponse
+      } satisfies JSONRPCResponse;
     },
-  }
+  };
 }

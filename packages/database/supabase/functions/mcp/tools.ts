@@ -1,9 +1,22 @@
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
 import { tool } from "../lib/tool.ts";
 import z from "npm:zod@^3.24.1";
+import { Database } from "../lib/types.ts";
+import {
+  getSupplierPayment,
+  getSupplier as getSupplierById,
+  getSupplierShipping,
+  insertSupplierInteraction,
+  deletePurchaseOrder,
+} from "../lib/api/purchasing.ts";
+import { getCurrencyByCode } from "../lib/api/accounting.ts";
+import { getNextSequence } from "../shared/get-next-sequence.ts";
 
+const model = new Supabase.ai.Session("gte-small");
 
 export const prompt = {
-  name: "carbon-purchasing-prompt",
+  name: "carbon-purchasing-mcp-prompt",
   description: "Instructions for using the Carbon Purchasing MCP effectively",
   instructions: `
 This server provides access to Carbon, an ERP for manufacturing. Use it to effectively complete the tasks of a purchasing and procurement department.
@@ -43,13 +56,13 @@ Tools:
   - Search for a part by readable id or description
   - Returns an id that can be used to create a purchase order
 - getSupplier
-  - Search for suppliers by a specific name from the prompt, a deduced description, or a list of part ids
+  - Search for suppliers by id, a specific name from the prompt, a deduced description, or a list of part ids
   - Returns an id that can be used to create a purchase order
 - suggestSupplierForParts
   - Suggest a list of suppliers for a given list of parts
 - createPurchaseOrder
-  - Create a purchase order with multiple parts
-`
+  - Create a purchase order in draft status with multiple parts
+`,
 };
 
 const createPurchaseOrder = tool({
@@ -57,52 +70,289 @@ const createPurchaseOrder = tool({
   description: "Create a purchase order",
   args: z.object({
     supplierId: z.string(),
-    parts: z.array(z.object({
-      partId: z.string(),
-      quantity: z.number().positive().default(1),
-      unitPrice: z.number().optional(),
-    })),
+    parts: z.array(
+      z.object({
+        partId: z.string(),
+        quantity: z.number().positive().default(1),
+      })
+    ),
   }),
-  async run(client, args, context) {
-    console.log('createPurchaseOrder', args);
-    console.log('context', context);
-    return '91011'
+  async run(args, context) {
+    
+    const [
+      nextSequence,
+      supplierInteraction,
+      supplier,
+      supplierPayment,
+      supplierShipping,
+      // purchaser
+    ] = await Promise.all([
+      getNextSequence(context.db, "purchaseOrder", context.companyId),
+      insertSupplierInteraction(context.db, context.companyId),
+      getSupplierById(context.db, args.supplierId),
+      getSupplierPayment(context.db, args.supplierId),
+      getSupplierShipping(context.db, args.supplierId),
+      // getEmployeeJob(client, context.userId, context.companyId),
+    ]);
+
+    if (!supplierInteraction) {
+      return {
+        error: "Failed to create supplier interaction",
+      };
+    }
+    
+    if (!supplier) {
+      return {
+        error: "Supplier not found",
+      };
+    }
+    if (!supplierPayment) {
+      return {
+        error: "Supplier payment not found",
+      };
+    }
+    if (!supplierShipping) {
+      return {
+        error: "Supplier shipping not found",
+      };
+    }
+    
+
+    const purchaseOrder = {
+      purchaseOrderId: nextSequence,
+      supplierId: args.supplierId,
+      supplierInteractionId: supplierInteraction?.id! ?? null,
+      exchangeRate: 1,
+      exchangeRateUpdatedAt: new Date().toISOString(),
+      companyId: context.companyId,
+      createdBy: context.userId,
+    };
+
+    const {
+      paymentTermId,
+      invoiceSupplierId,
+      invoiceSupplierContactId,
+      invoiceSupplierLocationId,
+    } = supplierPayment;
+
+    const { shippingMethodId, shippingTermId } = supplierShipping;
+
+    if (supplier.currencyCode) {
+      const currency = await getCurrencyByCode(
+        context.db,
+        context.companyId,
+        supplier.currencyCode
+      );
+      if (currency) {
+        purchaseOrder.exchangeRate = currency.exchangeRate ?? 1;
+        purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+      }
+    }
+
+    const order = await context.db
+      .insertInto("purchaseOrder")
+      .values([
+        purchaseOrder
+      ])
+      .returning(["id", "purchaseOrderId"])
+      .executeTakeFirst();
+
+    if (!order) {
+      return {
+        error: "Failed to create purchase order",
+      };
+    }
+
+    const purchaseOrderId = order.id;
+    const locationId = null; // TODO
+
+    if (!purchaseOrderId) {
+      return {
+        error: "Failed to create purchase order",
+      };
+    }
+
+    try {
+      await Promise.all([
+        context.db
+          .insertInto("purchaseOrderDelivery")
+          .values({
+            id: purchaseOrderId,
+            locationId: locationId,
+            shippingMethodId: shippingMethodId,
+            shippingTermId: shippingTermId,
+            companyId: context.companyId,
+          })
+          .executeTakeFirstOrThrow(),
+        context.db
+          .insertInto("purchaseOrderPayment")
+          .values({
+            id: purchaseOrderId,
+            invoiceSupplierId: invoiceSupplierId,
+            invoiceSupplierContactId: invoiceSupplierContactId,
+            invoiceSupplierLocationId: invoiceSupplierLocationId,
+            paymentTermId: paymentTermId,
+            companyId: context.companyId,
+          })
+          .executeTakeFirstOrThrow(),
+      ]);
+
+      return order;
+    } catch (error) {
+      if(purchaseOrderId) {
+        await deletePurchaseOrder(context.db, purchaseOrderId);
+      }
+      return {
+        error: `Failed to create purchase order details: ${error.message}`,
+      };
+    }
   },
 });
 
 const getPart = tool({
   name: "getPart",
   description: "Search for a part by description or readable id",
-  args: z.object({
-    readableId: z.string().optional(),
-    description: z.string().optional(),
-  }).refine((data) => data.readableId || data.description, {
-    message: "Either readableId or description must be provided",
-  }),
-  async run(client, args, context) {
-    console.log('getPart', args);
-    console.log('context', context);
-    return args.readableId || (args.description + '-1234')
+  args: z
+    .object({
+      readableId: z.string().optional(),
+      description: z.string().optional(),
+    })
+    .refine((data) => data.readableId || data.description, {
+      message: "Either readableId or description must be provided",
+    }),
+  async run(args, context) {
+    let { readableId, description } = args;
+    if (readableId) {
+      const [part, supplierPart] = await Promise.all([
+        context.client
+          .from("item")
+          .select("*")
+          .eq("readableId", readableId)
+          .eq("companyId", context.companyId)
+          .single(),
+        context.client
+          .from("supplierPart")
+          .select("*, item(*)")
+          .eq("supplierPartId", readableId)
+          .eq("companyId", context.companyId)
+          .single(),
+      ]);
+
+      if (supplierPart.data) {
+        return {
+          id: supplierPart.data.itemId,
+          name: supplierPart.data.item?.name,
+          description: supplierPart.data.item?.description,
+          supplierId: supplierPart.data.supplierId,
+        };
+      }
+      if (part.data) {
+        return {
+          id: part.data.id,
+          name: part.data.name,
+          description: part.data.description,
+        };
+      }
+
+      if (!description) {
+        description = readableId;
+      } else {
+        return null;
+      }
+    }
+
+    if (description) {
+      const embedding = await generateEmbedding(description);
+      const search = await context.client.rpc("items_search", {
+        query_embedding: JSON.stringify(embedding),
+        match_threshold: 0.7,
+        match_count: 10,
+        p_company_id: context.companyId,
+      });
+
+      if (search.data && search.data.length > 0) {
+        return {
+          ...search.data[0],
+        };
+      }
+    }
+
+    return null;
   },
 });
 
 const getSupplier = tool({
   name: "getSupplier",
-  description: "Search for suppliers by a specific name as specified by the user, a deduced description, or a list of part ids",
-  args: z.object({
-    name: z.string().optional(),
-    description: z.string().optional(),
-    partIds: z.array(z.string()).optional(),
-  }).refine((data) => data.name || data.description || data.partIds, {
-    message: "Either name, description, or partIds must be provided",
-  }),
-  async run(client, args, context) {
-    console.log('getSupplier', args);
-    console.log('context', context);
-    return '932093'
+  description:
+    "Search for suppliers by a specific name as specified by the user, a deduced description, or a list of part ids",
+  args: z
+    .object({
+      id: z.string().optional(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      partIds: z.array(z.string()).optional(),
+    })
+    .refine((data) => data.id || data.name || data.description || data.partIds, {
+      message: "Either id, name, description, or partIds must be provided",
+    }),
+  async run(args, context) {
+    let { name, description, partIds } = args;
+
+    if (args.id) {
+      const supplier = await context.client
+        .from("supplier")
+        .select("*")
+        .eq("id", args.id)
+        .eq("companyId", context.companyId)
+        .single();
+      if (supplier.data) {
+        return {
+          id: supplier.data.id,
+          name: supplier.data.name,
+        };
+      }
+    }
+
+    if (partIds && partIds.length > 0) {
+      return getSuppliersForParts(context.client, partIds, context);
+    }
+
+    if (args.name) {
+      const supplier = await context.client
+        .from("supplier")
+        .select("*")
+        .eq("name", args.name)
+        .eq("companyId", context.companyId)
+        .single();
+      if (supplier.data) {
+        return {
+          id: supplier.data.id,
+        };
+      }
+      if (!description) {
+        description = name;
+      }
+    }
+
+    if (description) {
+      const embedding = await generateEmbedding(description);
+      const search = await context.client.rpc("suppliers_search", {
+        query_embedding: JSON.stringify(embedding),
+        match_threshold: 0.8,
+        match_count: 10,
+        p_company_id: context.companyId,
+      });
+
+      if (search.data && search.data.length > 0) {
+        return {
+          ...search.data[0],
+        };
+      }
+    }
+
+    return null;
   },
 });
-
 
 const suggestSupplierForParts = tool({
   name: "suggestSupplierForParts",
@@ -110,24 +360,121 @@ const suggestSupplierForParts = tool({
   args: z.object({
     partIds: z.array(z.string()),
   }),
-  async run(client, args, context) {
-    console.log('suggestSupplierForParts', args);
-    console.log('context', context);
-    return [
-      {
-        id: "932093",
-        name: "MetalCorp",
-        description: "A supplier of metal parts",
-      },
-      {
-        id: "932094",
-        name: "SteelCo",
-        description: "A supplier of steel parts",
-      },
-    ]
+  async run(args, context) {
+    return await getSuppliersForParts(context.client, args.partIds, context);
   },
 });
 
+async function getSuppliersForParts(
+  client: SupabaseClient<Database>,
+  partIds: string[],
+  context: { companyId: string }
+) {
+  // Find suppliers that provide these parts
+  const [supplierParts, preferredSuppliers] = await Promise.all([
+    client
+      .from("supplierPart")
+      .select("itemId, supplierId")
+      .in("itemId", partIds)
+      .eq("companyId", context.companyId),
+    client
+      .from("itemRelationship")
+      .select("itemId, preferredSupplierId")
+      .in("itemId", partIds)
+      .eq("companyId", context.companyId),
+  ]);
 
+  if (partIds.length === 1) {
+    const preferredSupplier = preferredSuppliers.data?.find(
+      (p) => p.itemId === partIds[0]
+    );
+    if (preferredSupplier) {
+      return {
+        id: preferredSupplier.preferredSupplierId,
+      };
+    }
 
-export const tools = [createPurchaseOrder, getPart, getSupplier, suggestSupplierForParts];
+    const firstSupplier = supplierParts.data?.find(
+      (p) => p.itemId === partIds[0]
+    );
+    if (firstSupplier) {
+      return {
+        id: firstSupplier.supplierId,
+      };
+    }
+  }
+
+  // Count occurrences of each supplier in preferred suppliers
+  const preferredSupplierCounts =
+    preferredSuppliers.data?.reduce((counts, item) => {
+      if (item.preferredSupplierId) {
+        counts[item.preferredSupplierId] =
+          (counts[item.preferredSupplierId] || 0) + 1;
+      }
+      return counts;
+    }, {} as Record<string, number>) || {};
+
+  // Find the most frequent preferred supplier
+  let mostFrequentPreferredSupplierId: string | null = null;
+  let maxPreferredCount = 0;
+
+  for (const [supplierId, count] of Object.entries(preferredSupplierCounts)) {
+    if (count > maxPreferredCount) {
+      maxPreferredCount = count;
+      mostFrequentPreferredSupplierId = supplierId;
+    }
+  }
+
+  // If we found a preferred supplier, return it
+  if (mostFrequentPreferredSupplierId) {
+    return {
+      id: mostFrequentPreferredSupplierId,
+    };
+  }
+
+  // If no preferred supplier, count occurrences in supplierParts
+  const supplierPartCounts =
+    supplierParts.data?.reduce((counts, item) => {
+      if (item.supplierId) {
+        counts[item.supplierId] = (counts[item.supplierId] || 0) + 1;
+      }
+      return counts;
+    }, {} as Record<string, number>) || {};
+
+  // Find the most frequent supplier from supplierParts
+  let mostFrequentSupplierId: string | null = null;
+  let maxCount = 0;
+
+  for (const [supplierId, count] of Object.entries(supplierPartCounts)) {
+    if (count > maxCount) {
+      maxCount = count;
+      mostFrequentSupplierId = supplierId;
+    }
+  }
+
+  // Return the most frequent supplier if found
+  if (mostFrequentSupplierId) {
+    return {
+      id: mostFrequentSupplierId,
+    };
+  }
+
+  // Return null if no supplier was found
+  return null;
+}
+
+export const tools = [
+  createPurchaseOrder,
+  getPart,
+  getSupplier,
+  suggestSupplierForParts,
+];
+
+async function generateEmbedding(text: string): Promise<number[]> {
+  const embedding = await model.run(text, {
+    mean_pool: true,
+    normalize: true,
+  });
+
+  return embedding as number[];
+}

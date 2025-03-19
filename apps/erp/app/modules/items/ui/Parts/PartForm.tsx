@@ -255,8 +255,6 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   label="Tracking Type"
                   options={itemTrackingTypeOptions}
                 />
-                
-                
 
                 <Select
                   name="replenishmentSystem"

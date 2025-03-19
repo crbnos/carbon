@@ -600,9 +600,7 @@ export default function PurchaseDashboard() {
                 </Table>
               ) : (
                 <div className="flex justify-center items-center h-full">
-                  <p className="text-sm text-muted-foreground">
-                    No recently created documents
-                  </p>
+                  <Empty />
                 </div>
               )}
             </div>

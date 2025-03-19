@@ -176,7 +176,6 @@ $ npm run dev
 
 4. Rename the `_migrations` folder back to `migrations`
 
-
 ## Connecting to the MCP Server
 
 ```bash

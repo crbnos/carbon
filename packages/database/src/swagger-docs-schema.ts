@@ -25900,9 +25900,6 @@ export default {
             $ref: "#/parameters/rowFilter.employee.active",
           },
           {
-            $ref: "#/parameters/rowFilter.employee.embedding",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -25974,9 +25971,6 @@ export default {
             $ref: "#/parameters/rowFilter.employee.active",
           },
           {
-            $ref: "#/parameters/rowFilter.employee.embedding",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -26000,9 +25994,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.employee.active",
-          },
-          {
-            $ref: "#/parameters/rowFilter.employee.embedding",
           },
           {
             $ref: "#/parameters/body.employee",
@@ -36748,9 +36739,6 @@ export default {
             $ref: "#/parameters/rowFilter.search.fts",
           },
           {
-            $ref: "#/parameters/rowFilter.search.embedding",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -36834,9 +36822,6 @@ export default {
             $ref: "#/parameters/rowFilter.search.fts",
           },
           {
-            $ref: "#/parameters/rowFilter.search.embedding",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -36872,9 +36857,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.search.fts",
-          },
-          {
-            $ref: "#/parameters/rowFilter.search.embedding",
           },
           {
             $ref: "#/parameters/body.search",
@@ -59600,10 +59582,6 @@ export default {
           format: "boolean",
           type: "boolean",
         },
-        embedding: {
-          format: "extensions.halfvec(384)",
-          type: "string",
-        },
       },
       type: "object",
     },
@@ -64821,10 +64799,6 @@ export default {
         },
         fts: {
           format: "tsvector",
-          type: "string",
-        },
-        embedding: {
-          format: "extensions.halfvec(384)",
           type: "string",
         },
       },
@@ -81441,12 +81415,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.employee.embedding": {
-      name: "embedding",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "body.userAttributeValue": {
       name: "userAttributeValue",
       description: "userAttributeValue",
@@ -87344,12 +87312,6 @@ export default {
     },
     "rowFilter.search.fts": {
       name: "fts",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.search.embedding": {
-      name: "embedding",
       required: false,
       in: "query",
       type: "string",
