@@ -145,6 +145,10 @@ enabled = true
 [functions.issue]
 enabled = true
 
+[functions.mcp]
+enabled = true
+verify_jwt = false
+
 [functions.recalculate]
 enabled = true
 

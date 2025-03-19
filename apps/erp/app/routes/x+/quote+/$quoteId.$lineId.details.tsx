@@ -227,8 +227,6 @@ export default function QuoteLine() {
         externalNotes={line.externalNotes as JSONContent}
       />
 
-      
-
       <Suspense
         fallback={
           <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">

@@ -3,7 +3,7 @@ import { DB } from "../lib/database.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
 export async function getNextSequence(
-  trx: Transaction<DB>,
+  trx: Transaction<DB> | Kysely<DB>,
   tableName: string,
   companyId: string
 ) {

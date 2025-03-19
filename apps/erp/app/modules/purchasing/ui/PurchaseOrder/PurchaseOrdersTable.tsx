@@ -35,7 +35,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
@@ -51,6 +51,8 @@ type PurchaseOrdersTableProps = {
 
 const PurchaseOrdersTable = memo(
   ({ data, count }: PurchaseOrdersTableProps) => {
+    useRealtime("purchaseOrder");
+    
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
 
@@ -110,6 +112,26 @@ const PurchaseOrdersTable = memo(
           },
         },
         {
+          accessorKey: "status",
+          header: "Status",
+          cell: (item) => {
+            const status =
+              item.getValue<(typeof purchaseOrderStatusType)[number]>();
+            return <PurchasingStatus status={status} />;
+          },
+          meta: {
+            filter: {
+              type: "static",
+              options: purchaseOrderStatusType.map((status) => ({
+                value: status,
+                label: <PurchasingStatus status={status} />,
+              })),
+            },
+            pluralHeader: "Statuses",
+            icon: <LuStar />,
+          },
+        },
+        {
           accessorKey: "supplierReference",
           header: "Supplier Ref.",
           cell: (item) => item.getValue(),
@@ -158,26 +180,6 @@ const PurchaseOrdersTable = memo(
           },
           meta: {
             icon: <LuCalendar />,
-          },
-        },
-        {
-          accessorKey: "status",
-          header: "Status",
-          cell: (item) => {
-            const status =
-              item.getValue<(typeof purchaseOrderStatusType)[number]>();
-            return <PurchasingStatus status={status} />;
-          },
-          meta: {
-            filter: {
-              type: "static",
-              options: purchaseOrderStatusType.map((status) => ({
-                value: status,
-                label: <PurchasingStatus status={status} />,
-              })),
-            },
-            pluralHeader: "Statuses",
-            icon: <LuStar />,
           },
         },
         {

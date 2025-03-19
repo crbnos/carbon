@@ -5,9 +5,11 @@ import { corsHeaders } from "../lib/headers.ts";
 import { createMcp } from "../lib/mcp.ts";
 import { prompt, tools } from "./tools.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 const mcp = createMcp({ prompt, tools });
-const session = new Supabase.ai.Session('gte-small');
+const pool = getConnectionPool(1);
+const db = getDatabaseClient<DB>(pool);
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -15,31 +17,29 @@ serve(async (req: Request) => {
   }
 
   const payload = await req.json();
-  const companyId = 'cvc4pefsi0lgbe8ksr6g';
+  const companyId = "cvcqgb0mc0m048ha48i0";
 
   const client = await getSupabaseServiceRole(
     req.headers.get("Authorization"),
-    "crbn_MPtkCDknTLiABGvq3x4tN",
+    "crbn_8gX_n5oy_vRUmqTyCmKMD",
     companyId
   );
-  const userId = 'system';
-  
+  const userId = "system";
+
   try {
-    const result = await mcp.process({
-      client,
+    const result = await mcp.process({  
       payload,
       context: {
+        client,
+        db,
         companyId,
-        userId
-      }
+        userId,
+      },
     });
-    return new Response(
-      JSON.stringify(result),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+    });
   } catch (error) {
     console.error(error);
     return new Response(JSON.stringify(error), {
