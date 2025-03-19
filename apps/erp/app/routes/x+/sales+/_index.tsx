@@ -68,10 +68,6 @@ import type { loader as kpiLoader } from "~/routes/api+/sales.kpi.$key";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
 
-export const config = {
-  runtime: "nodejs",
-};
-
 const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"] as const;
 const OPEN_QUOTE_STATUSES = ["Sent", "Draft"] as const;
 const OPEN_SALES_ORDER_STATUSES = [
