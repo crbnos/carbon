@@ -147,7 +147,7 @@ export default function QuoteRoute() {
   const { methods } = useLoaderData<typeof loader>();
 
   return (
-    <PanelProvider>
+    <PanelProvider key={quoteId}>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full ">
         <QuoteHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
