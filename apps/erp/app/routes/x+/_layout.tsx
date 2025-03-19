@@ -43,6 +43,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   return defaultShouldRevalidate;
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
