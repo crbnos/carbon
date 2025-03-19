@@ -129,6 +129,8 @@ const LineItems = ({
           return null;
         }
 
+        const selectedLine = selectedLines[line.id] || deselectedLine;
+
         return (
           <motion.div
             key={line.id}
@@ -172,23 +174,14 @@ const LineItems = ({
                       </Button>
                     </HStack>
                     <HStack spacing={4}>
-                      {/* <span className="font-medium text-xl">
-                        {formatter.format(
-                          (selectedLines[line.id!]?.convertedNetUnitPrice ??
-                            0) *
-                            (selectedLines[line.id!]?.quantity ?? 0) +
-                            (selectedLines[line.id!]?.convertedAddOn ?? 0)
-                        )}
-                      </span> */}
                       <MotionNumber
                         className="font-bold text-xl"
                         value={
-                          ((selectedLines[line.id!]?.convertedNetUnitPrice ??
-                            0) *
-                            (selectedLines[line.id!]?.quantity ?? 0) +
-                            (selectedLines[line.id!]?.convertedAddOn ?? 0) +
-                            selectedLines[line.id!]?.convertedShippingCost) *
-                          (1 + selectedLines[line.id!]?.taxPercent)
+                          ((selectedLine.convertedNetUnitPrice ?? 0) *
+                            (selectedLine.quantity ?? 0) +
+                            (selectedLine.convertedAddOn ?? 0) +
+                            (selectedLine.convertedShippingCost ?? 0)) *
+                          (1 + (selectedLine.taxPercent ?? 0))
                         }
                         format={{
                           style: "currency",
@@ -231,7 +224,7 @@ const LineItems = ({
                 quoteExchangeRate={routeData?.quote.exchangeRate ?? 1}
                 shouldConvertCurrency={shouldConvertCurrency}
                 locale={locale}
-                selectedLine={selectedLines[line.id!]}
+                selectedLine={selectedLine}
                 setSelectedLines={setSelectedLines}
               />
             </motion.div>
@@ -473,8 +466,8 @@ const LinePricingOptions = ({
                     value={
                       (selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
-                      selectedLine.convertedAddOn +
-                      selectedLine.convertedShippingCost
+                      (selectedLine.convertedAddOn ?? 0) +
+                      (selectedLine.convertedShippingCost ?? 0)
                     }
                     format={{
                       style: "currency",
@@ -494,9 +487,9 @@ const LinePricingOptions = ({
                     value={
                       ((selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
-                        selectedLine.convertedAddOn +
-                        selectedLine.convertedShippingCost) *
-                      selectedLine.taxPercent
+                        (selectedLine.convertedAddOn ?? 0) +
+                        (selectedLine.convertedShippingCost ?? 0)) *
+                      (selectedLine.taxPercent ?? 0)
                     }
                     format={{
                       style: "currency",
@@ -514,9 +507,9 @@ const LinePricingOptions = ({
                     value={
                       ((selectedLine.convertedNetUnitPrice ?? 0) *
                         selectedLine.quantity +
-                        selectedLine.convertedAddOn +
-                        selectedLine.convertedShippingCost) *
-                      (1 + selectedLine.taxPercent)
+                        (selectedLine.convertedAddOn ?? 0) +
+                        (selectedLine.convertedShippingCost ?? 0)) *
+                      (1 + (selectedLine.taxPercent ?? 0))
                     }
                     format={{
                       style: "currency",
@@ -643,17 +636,17 @@ const QuoteSummary = ({
   const subtotal = Object.values(selectedLines).reduce((acc, line) => {
     return (
       acc +
-      line.convertedNetUnitPrice * line.quantity +
-      line.convertedAddOn +
-      line.convertedShippingCost
+      (line.convertedNetUnitPrice ?? 0) * line.quantity +
+      (line.convertedAddOn ?? 0) +
+      (line.convertedShippingCost ?? 0)
     );
   }, 0);
   const tax = Object.values(selectedLines).reduce((acc, line) => {
     return (
       acc +
-      (line.convertedNetUnitPrice * line.quantity +
-        line.convertedAddOn +
-        line.convertedShippingCost) *
+      ((line.convertedNetUnitPrice ?? 0) * line.quantity +
+        (line.convertedAddOn ?? 0) +
+        (line.convertedShippingCost ?? 0)) *
         (line.taxPercent ?? 0)
     );
   }, 0);
