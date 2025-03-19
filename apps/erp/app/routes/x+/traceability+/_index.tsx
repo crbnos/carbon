@@ -1,16 +1,20 @@
 import { useCarbon } from "@carbon/auth";
 import { Button, cn, toast, useMount } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
-import { ComponentProps, useState } from "react";
-import { forwardRef } from "react";
+import type { ComponentProps} from "react";
+import { useState , forwardRef } from "react";
 import { LuBarcode, LuQrCode } from "react-icons/lu";
-import { Handle } from "~/utils/handle";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: "Traceability",
   to: path.to.traceability,
   module: "inventory",
+};
+
+export const config = {
+  runtime: "nodejs",
 };
 
 const RECENT_SEARCHES_KEY = "traceability-searches";
