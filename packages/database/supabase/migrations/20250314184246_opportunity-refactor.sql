@@ -1,3 +1,5 @@
+BEGIN;
+
 ALTER TABLE "quote" ADD COLUMN "opportunityId" TEXT;
 ALTER TABLE "quote" ADD COLUMN "completedDate" TIMESTAMPTZ;
 ALTER TABLE "quote" ADD CONSTRAINT "quote_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE SET NULL;
@@ -298,3 +300,5 @@ EXCEPTION
     RAISE;
 END;
 $$;
+
+COMMIT;
