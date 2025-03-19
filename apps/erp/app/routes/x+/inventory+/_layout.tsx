@@ -20,10 +20,6 @@ export const handle: Handle = {
   module: "inventory",
 };
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
