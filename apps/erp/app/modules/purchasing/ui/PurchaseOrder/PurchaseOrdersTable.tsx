@@ -52,7 +52,7 @@ type PurchaseOrdersTableProps = {
 const PurchaseOrdersTable = memo(
   ({ data, count }: PurchaseOrdersTableProps) => {
     useRealtime("purchaseOrder");
-    
+
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
 

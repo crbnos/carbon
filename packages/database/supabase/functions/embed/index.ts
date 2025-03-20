@@ -197,6 +197,7 @@ async function processJob(db: Kysely<DB>, job: Job) {
  */
 function catchUnload() {
   return new Promise((reject) => {
+    // deno-lint-ignore no-explicit-any
     addEventListener("beforeunload", (ev: any) => {
       reject(new Error(ev.detail?.reason));
     });

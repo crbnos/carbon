@@ -12,12 +12,14 @@ import {
 } from "../lib/api/purchasing.ts";
 import { getCurrencyByCode } from "../lib/api/accounting.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import { DB } from "../lib/database.ts";
 
 const model = new Supabase.ai.Session("gte-small");
 
 const createPurchaseOrder = tool({
   name: "createPurchaseOrder",
-  description: "Create a purchase order",
+  description: "Create a purchase order from a list of parts and a supplier",
   args: z.object({
     supplierId: z.string(),
     parts: z.array(
@@ -28,7 +30,6 @@ const createPurchaseOrder = tool({
     ),
   }),
   async run(args, context) {
-    
     const [
       nextSequence,
       supplierInteraction,
@@ -37,7 +38,11 @@ const createPurchaseOrder = tool({
       supplierShipping,
       // purchaser
     ] = await Promise.all([
-      getNextSequence(context.db, "purchaseOrder", context.companyId),
+      getNextSequence(
+        context.db as unknown as Transaction<DB>,
+        "purchaseOrder",
+        context.companyId
+      ),
       insertSupplierInteraction(context.db, context.companyId),
       getSupplierById(context.db, args.supplierId),
       getSupplierPayment(context.db, args.supplierId),
@@ -50,7 +55,7 @@ const createPurchaseOrder = tool({
         error: "Failed to create supplier interaction",
       };
     }
-    
+
     if (!supplier) {
       return {
         error: "Supplier not found",
@@ -66,7 +71,6 @@ const createPurchaseOrder = tool({
         error: "Supplier shipping not found",
       };
     }
-    
 
     const purchaseOrder = {
       purchaseOrderId: nextSequence,
@@ -101,9 +105,7 @@ const createPurchaseOrder = tool({
 
     const order = await context.db
       .insertInto("purchaseOrder")
-      .values([
-        purchaseOrder
-      ])
+      .values([purchaseOrder])
       .returning(["id", "purchaseOrderId"])
       .executeTakeFirst();
 
@@ -147,9 +149,86 @@ const createPurchaseOrder = tool({
           .executeTakeFirstOrThrow(),
       ]);
 
+      // Create purchase order lines for each part
+      await Promise.all(
+        args.parts.map(async (part) => {
+          // Get item details
+          const [item, supplierPart] = await Promise.all([
+            context.db
+              .selectFrom("item")
+              .select(["id", "name", "readableId", "type", "unitOfMeasureCode"])
+              .where("id", "=", part.partId)
+              .where("companyId", "=", context.companyId)
+              .executeTakeFirst(),
+            context.db
+              .selectFrom("supplierPart")
+              .selectAll()
+              .where("itemId", "=", part.partId)
+              .where("companyId", "=", context.companyId)
+              .where("supplierId", "=", args.supplierId)
+              .executeTakeFirst(),
+          ]);
+
+          if (!item) {
+            throw new Error(`Item not found: ${part.partId}`);
+          }
+
+          // Get item cost and replenishment info
+          const [itemCost, itemReplenishment] = await Promise.all([
+            context.db
+              .selectFrom("itemCost")
+              .select(["unitCost"])
+              .where("itemId", "=", part.partId)
+              .executeTakeFirst(),
+            context.db
+              .selectFrom("itemReplenishment")
+              .select([
+                "purchasingUnitOfMeasureCode",
+                "conversionFactor",
+                "purchasingLeadTime",
+              ])
+              .where("itemId", "=", part.partId)
+              .executeTakeFirst(),
+          ]);
+
+          // Create the purchase order line
+          return context.db
+            .insertInto("purchaseOrderLine")
+            .values({
+              purchaseOrderId: purchaseOrderId,
+              itemId: part.partId,
+              itemReadableId: item.readableId,
+              description: item.name,
+              purchaseOrderLineType: item.type,
+              purchaseQuantity: part.quantity,
+              supplierUnitPrice:
+                (supplierPart?.unitPrice ?? itemCost?.unitCost ?? 0) /
+                purchaseOrder.exchangeRate,
+              supplierShippingCost: 0,
+              purchaseUnitOfMeasureCode:
+                supplierPart?.supplierUnitOfMeasureCode ??
+                itemReplenishment?.purchasingUnitOfMeasureCode ??
+                item.unitOfMeasureCode ??
+                "EA",
+              inventoryUnitOfMeasureCode: item.unitOfMeasureCode ?? "EA",
+              conversionFactor:
+                supplierPart?.conversionFactor ??
+                itemReplenishment?.conversionFactor ??
+                1,
+              locationId: locationId,
+              shelfId: null,
+              supplierTaxAmount: 0,
+              companyId: context.companyId,
+              createdBy: context.userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+        })
+      );
+
       return order;
     } catch (error) {
-      if(purchaseOrderId) {
+      if (purchaseOrderId) {
         await deletePurchaseOrder(context.db, purchaseOrderId);
       }
       return {
@@ -242,9 +321,12 @@ const getSupplier = tool({
       description: z.string().optional(),
       partIds: z.array(z.string()).optional(),
     })
-    .refine((data) => data.id || data.name || data.description || data.partIds, {
-      message: "Either id, name, description, or partIds must be provided",
-    }),
+    .refine(
+      (data) => data.id || data.name || data.description || data.partIds,
+      {
+        message: "Either id, name, description, or partIds must be provided",
+      }
+    ),
   async run(args, context) {
     let { name, description, partIds } = args;
 
@@ -304,8 +386,8 @@ const getSupplier = tool({
   },
 });
 
-const suggestSupplierForParts = tool({
-  name: "suggestSupplierForParts",
+const getSupplierForParts = tool({
+  name: "getSupplierForParts",
   description: "Suggest a list of suppliers for a given list of parts",
   args: z.object({
     partIds: z.array(z.string()),
@@ -426,7 +508,7 @@ export const tools = [
   createPurchaseOrder,
   getPart,
   getSupplier,
-  suggestSupplierForParts,
+  getSupplierForParts,
 ];
 
 export const prompt = {
@@ -439,7 +521,7 @@ When handling purchase order requests:
 1. First identify the part details (including quantities and measurements)
 2. Use getPart to look up the part ID
 3. If no supplier is explicitly specified in the prompt:
-   - Use suggestSupplierForParts to get recommended suppliers
+   - Use getSupplierForParts to get recommended suppliers
    - Ask the user to confirm which supplier they want to use
 4. Only proceed with createPurchaseOrder when both part and supplier are confirmed
 5. If there are multiple options for a part or supplier, ask the user to confirm which one they want to use
@@ -468,11 +550,11 @@ Key capabilities:
 Tools:
 - getPart
   - Search for a part by readable id or description
-  - Returns an id that can be used to create a purchase order
+  - Returns an id that can be used to create, update, or search for documents by part id
 - getSupplier
   - Search for suppliers by id, a specific name from the prompt, a deduced description, or a list of part ids
-  - Returns an id that can be used to create a purchase order
-- suggestSupplierForParts
+  - Returns an id that can be used to create, update, or search for documents by supplier id
+- getSupplierForParts
   - Suggest a list of suppliers for a given list of parts
 - createPurchaseOrder
   - Create a purchase order in draft status with multiple parts

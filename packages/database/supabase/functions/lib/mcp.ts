@@ -1,85 +1,22 @@
+// deno-lint-ignore-file no-explicit-any
 import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
-import { Kysely, Transaction } from "npm:kysely@0.27.6";
+import type { Kysely } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import {
+  CallToolRequestSchema,
+  CallToolResult,
+  InitializeRequestSchema,
+  InitializeResult,
+  JSONRPCRequest,
+  JSONRPCResponse,
+  ListToolsRequestSchema,
+  ListToolsResult,
+  Prompt,
+} from "npm:@modelcontextprotocol/sdk@1.7.0/types.js";
 import z from "npm:zod@^3.24.1";
 import { zodToJsonSchema } from "npm:zod-to-json-schema@^3.24.3";
 import { Tool } from "./tool.ts";
 import { Database } from "./types.ts";
 import { DB } from "./database.ts";
-
-// Define the types locally instead of importing from @modelcontextprotocol/sdk
-export interface JSONRPCRequest {
-  jsonrpc: "2.0";
-  id: string | number;
-  method: string;
-  params?: any;
-}
-
-export interface JSONRPCResponse {
-  jsonrpc: "2.0";
-  id: string | number;
-  result?: any;
-  error?: {
-    code: number;
-    message: string;
-    data?: any;
-  };
-}
-
-// TODO: these types should be imported from the @modelcontextprotocol/sdk package
-// Initialize request and result types
-export interface InitializeParams {
-  protocolVersion: string;
-}
-
-export const InitializeRequestSchema = z.object({
-  method: z.literal("initialize"),
-  params: z.object({
-    protocolVersion: z.string(),
-  }),
-});
-
-export interface InitializeResult {
-  protocolVersion: string;
-  prompts: Record<string, any>;
-  capabilities: {
-    tools: Record<string, any>;
-  };
-  serverInfo: {
-    name: string;
-    version: string;
-  };
-}
-
-// List tools request and result types
-export const ListToolsRequestSchema = z.object({
-  method: z.literal("tools/list"),
-  params: z.object({}).optional(),
-});
-
-export interface ListToolsResult {
-  tools: Array<{
-    name: string;
-    inputSchema: Record<string, any>;
-    description: string;
-  }>;
-}
-
-// Call tool request and result types
-export const CallToolRequestSchema = z.object({
-  method: z.literal("tools/call"),
-  params: z.object({
-    name: z.string(),
-    arguments: z.record(z.any()),
-  }),
-});
-
-export interface CallToolResult {
-  isError?: boolean;
-  content: Array<{
-    type: string;
-    text: string;
-  }>;
-}
 
 const RequestSchema = z.union([
   InitializeRequestSchema,
@@ -87,17 +24,19 @@ const RequestSchema = z.union([
   CallToolRequestSchema,
 ]);
 
-export function createMcp(input: {
-  prompt: Record<string, any>;
-  tools: Tool[];
-}) {
+export function createMcp(input: { prompt: Prompt; tools: Tool[] }) {
   return {
     async process({
       payload,
       context,
     }: {
       payload: JSONRPCRequest;
-      context: { companyId: string; userId: string; client: SupabaseClient<Database>; db: Kysely<DB> | Transaction<DB> };
+      context: {
+        companyId: string;
+        userId: string;
+        client: SupabaseClient<Database>;
+        db: Kysely<DB>;
+      };
     }) {
       const parsed = RequestSchema.parse(payload);
 

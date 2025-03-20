@@ -1,8 +1,11 @@
-import { Kysely } from "npm:kysely@0.27.6";
+import type {
+  Kysely,
+  Transaction,
+} from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import { DB } from "../database.ts";
 
 export async function getSupplier(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   supplierId: string
 ) {
   return await db
@@ -13,7 +16,7 @@ export async function getSupplier(
 }
 
 export async function getSupplierPayment(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   supplierId: string
 ) {
   return await db
@@ -24,7 +27,7 @@ export async function getSupplierPayment(
 }
 
 export async function getSupplierShipping(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   supplierId: string
 ) {
   return await db
@@ -35,7 +38,7 @@ export async function getSupplierShipping(
 }
 
 export async function insertSupplierInteraction(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   companyId: string
 ) {
   return await db
@@ -46,7 +49,7 @@ export async function insertSupplierInteraction(
 }
 
 export async function deletePurchaseOrder(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   purchaseOrderId: string
 ) {
   return await db
@@ -56,7 +59,7 @@ export async function deletePurchaseOrder(
 }
 
 export async function deletePurchaseOrderLine(
-  db: Kysely<DB>,
+  db: Kysely<DB> | Transaction<DB>,
   purchaseOrderLineId: string
 ) {
   return await db

@@ -118,3 +118,13 @@ p.is-editor-empty:first-child:before {
 .tiptap.ProseMirror-selectedNode div[data-loom-video] {
   @apply ring-2 ring-primary cursor-move p-2 rounded-lg;
 }
+
+@keyframes thinking-spin-outer {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes thinking-spin-inner {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(-720deg); }
+}
