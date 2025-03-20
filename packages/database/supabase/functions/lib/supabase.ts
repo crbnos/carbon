@@ -1,6 +1,43 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
 import type { Database } from "../lib/types.ts";
 
+export const getAuthFromAPIKey = async (apiKey: string) => {
+  const serviceRole = createClient<Database>(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  );
+
+  const apiKeyRow = await serviceRole
+    .from("apiKey")
+    .select("companyId, createdBy")
+    .eq("key", apiKey)
+    .single();
+
+  if (apiKeyRow.error) return null;
+
+  return {
+    client: createClient<Database>(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: {
+            "carbon-key": apiKey,
+          },
+        },
+      }
+    ),
+    companyId: apiKeyRow.data.companyId,
+    userId: apiKeyRow.data.createdBy,
+  };
+};
+
 export const getSupabase = (authorizationHeader: string | null) => {
   if (!authorizationHeader) throw new Error("Authorization header is required");
 

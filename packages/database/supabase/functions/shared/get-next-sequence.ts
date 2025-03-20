@@ -1,9 +1,9 @@
-import { Kysely, Transaction } from "https://esm.sh/kysely@0.26.3";
+import { Transaction } from "https://esm.sh/kysely@0.26.3";
 import { DB } from "../lib/database.ts";
 import { interpolateSequenceDate } from "../lib/utils.ts";
 
 export async function getNextSequence(
-  trx: Transaction<DB> | Kysely<DB>,
+  trx: Transaction<DB>,
   tableName: string,
   companyId: string
 ) {

@@ -302,6 +302,7 @@ CREATE OR REPLACE FUNCTION public.items_search(
 )
 RETURNS TABLE (
   id text,
+  "readableId" text,
   name text,
   description text,
   similarity float
@@ -311,6 +312,7 @@ SECURITY DEFINER
 AS $$
   SELECT
     item.id,
+    item."readableId",
     item.name,
     item.description,
     1 - (item.embedding <=> query_embedding) AS similarity
@@ -347,4 +349,3 @@ AS $$
 $$;
 
 
-ALTER PUBLICATION supabase_realtime ADD TABLE "purchaseOrder";

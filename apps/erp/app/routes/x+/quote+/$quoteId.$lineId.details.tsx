@@ -66,7 +66,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const itemId = line.data.itemId!;
 
-
   return defer({
     line: line.data,
     operations: operations?.data ?? [],
@@ -122,13 +121,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function QuoteLine() {
-  const {
-    line,
-    operations,
-    files,
-    pricesByQuantity,
-    relatedPrices,
-  } = useLoaderData<typeof loader>();
+  const { line, operations, files, pricesByQuantity, relatedPrices } =
+    useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -190,21 +184,29 @@ export default function QuoteLine() {
       )}
       {line.status !== "No Quote" && (
         <>
-          <Suspense
-            fallback={null}
-          >
+          <Suspense fallback={null}>
             <Await resolve={relatedPrices}>
               {(resolvedPrices) => {
-                console.log({resolvedPrices});
-                const hasRelatedOrders = resolvedPrices?.relatedSalesOrderLines && resolvedPrices.relatedSalesOrderLines.length > 0;
-                const hasHistoricalPrices = resolvedPrices?.historicalQuoteLinePrices && resolvedPrices.historicalQuoteLinePrices.length > 0;
-                
-                return (hasRelatedOrders || hasHistoricalPrices) && (
-                  <QuoteLinePricingHistory
-                    relatedSalesOrderLines={resolvedPrices?.relatedSalesOrderLines ?? []}
-                    historicalQuoteLinePrices={resolvedPrices?.historicalQuoteLinePrices ?? []}
-                    baseCurrency={baseCurrency}
-                  />
+                console.log({ resolvedPrices });
+                const hasRelatedOrders =
+                  resolvedPrices?.relatedSalesOrderLines &&
+                  resolvedPrices.relatedSalesOrderLines.length > 0;
+                const hasHistoricalPrices =
+                  resolvedPrices?.historicalQuoteLinePrices &&
+                  resolvedPrices.historicalQuoteLinePrices.length > 0;
+
+                return (
+                  (hasRelatedOrders || hasHistoricalPrices) && (
+                    <QuoteLinePricingHistory
+                      relatedSalesOrderLines={
+                        resolvedPrices?.relatedSalesOrderLines ?? []
+                      }
+                      historicalQuoteLinePrices={
+                        resolvedPrices?.historicalQuoteLinePrices ?? []
+                      }
+                      baseCurrency={baseCurrency}
+                    />
+                  )
                 );
               }}
             </Await>

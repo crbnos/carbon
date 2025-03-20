@@ -13,6 +13,12 @@ export const snakeToCamel = (str: string) =>
     group.toUpperCase().replace("-", "").replace("_", "")
   );
 
+export const camelToSnake = (str: string) =>
+  str.replace(/([A-Z])/g, (group: string) => `_${group.toLowerCase()}`);
+
+export const camelCaseToWords = (str: string) =>
+  str.replace(/([A-Z])/g, (group: string) => ` ${group}`);
+
 /**
  * Copy text content (string or Promise<string>) into Clipboard.
  * Safari doesn't support write text into clipboard async, so if you need to load

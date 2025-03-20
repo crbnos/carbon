@@ -916,7 +916,6 @@ export async function getQuoteLinePricesByQuoteId(
     .order("quoteLineId", { ascending: true });
 }
 
-
 export async function getQuoteLinePricesByItemId(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1040,18 +1039,18 @@ export async function getRelatedPricesForQuoteLine(
   itemId: string,
   quoteId: string
 ) {
-  
-  const [historicalQuoteLinePrices, relatedSalesOrderLines] = await Promise.all([
-    getQuoteLinePricesByItemId(client, itemId, quoteId),
-    getSalesOrderLinesByItemId(client, itemId),
-  ]);
+  const [historicalQuoteLinePrices, relatedSalesOrderLines] = await Promise.all(
+    [
+      getQuoteLinePricesByItemId(client, itemId, quoteId),
+      getSalesOrderLinesByItemId(client, itemId),
+    ]
+  );
 
   return {
     historicalQuoteLinePrices: historicalQuoteLinePrices.data,
     relatedSalesOrderLines: relatedSalesOrderLines.data,
   };
 }
-
 
 export async function getSalesDocumentsAssignedToMe(
   client: SupabaseClient<Database>,

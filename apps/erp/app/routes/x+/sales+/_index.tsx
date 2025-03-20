@@ -696,7 +696,7 @@ export default function SalesDashboard() {
                 </Table>
               ) : (
                 <div className="flex justify-center items-center h-full">
-                   <Empty />
+                  <Empty />
                 </div>
               )}
             </div>

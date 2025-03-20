@@ -60,8 +60,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   //   proxyRegion,
   // });
 
-  // share a client between requests
   const client = getCarbon(accessToken);
+
+  await client.functions.invoke("auth", {
+    headers: {
+      "x-company-id": companyId,
+    },
+  });
 
   // parallelize the requests
   const [

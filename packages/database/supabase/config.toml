@@ -123,6 +123,8 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
+[functions.chat]
+verify_jwt = false
 
 [functions.convert]
 enabled = true
@@ -138,6 +140,7 @@ enabled = true
 
 [functions.image-resizer]
 enabled = true
+verify_jwt = false
 
 [functions.import-csv]
 enabled = true
@@ -160,8 +163,10 @@ enabled = true
 
 [functions.thumbnail]
 enabled = true
+verify_jwt = false
 
 [functions.update-purchased-prices]
 enabled = true
+
 
 
