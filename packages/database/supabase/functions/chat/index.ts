@@ -61,8 +61,6 @@ serve(async (req: Request) => {
     const payload = await req.json();
     const body = z.custom<LanguageModelV1CallOptions>().parse(payload);
 
-    
-
     const result = await model.doGenerate(body);
 
     return new Response(JSON.stringify(result), {
@@ -70,7 +68,6 @@ serve(async (req: Request) => {
       status: 200,
     });
   } catch (error) {
-
     console.error(error);
     if (error instanceof APICallError) {
       throw new Response(

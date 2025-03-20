@@ -114,7 +114,7 @@ const CreateMenu = () => {
         <IconButton
           aria-label="Create"
           icon={<LuSquarePen />}
-          variant="secondary"
+          variant="ghost"
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="center" className="w-48">

@@ -1,5 +1,30 @@
-import { Badge, Button, cn, CodeBlock, Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
-import { LuMessageSquare } from "react-icons/lu";
+import {
+  Badge,
+  Button,
+  cn,
+  CodeBlock,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  HStack,
+  IconButton,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ShortcutDefinition,
+  ShortcutKey,
+  useDisclosure,
+  useMount,
+  useShortcutKeys,
+} from "@carbon/react";
+import {
+  LuChevronDown,
+  LuRotateCcw,
+  LuShoppingCart,
+  LuSparkles,
+} from "react-icons/lu";
 import { useUser } from "~/hooks/useUser";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -7,7 +32,12 @@ import { useCarbon } from "@carbon/auth";
 import type { LanguageModelV1Prompt } from "ai";
 import { EmployeeAvatar } from "~/components";
 import { toast } from "@carbon/react";
-import { LuCheck, LuChevronRight, LuWrench } from "react-icons/lu";
+import {
+  LuCheck,
+  LuChevronRight,
+  LuWrench,
+  LuCircleStop,
+} from "react-icons/lu";
 import { camelCaseToWords } from "~/utils/string";
 import SYSTEM_PROMPT from "./system.txt?raw";
 
@@ -17,6 +47,11 @@ const providerMetadata = {
       type: "ephemeral",
     },
   },
+};
+
+const shortcut: ShortcutDefinition = {
+  key: "I",
+  modifiers: ["meta"],
 };
 
 const getInitialPrompt = (): LanguageModelV1Prompt => [
@@ -32,12 +67,97 @@ const getInitialPrompt = (): LanguageModelV1Prompt => [
   },
 ];
 
+function ChatInput({
+  status,
+  textareaRef,
+  isInitial,
+  onSend,
+  onStop,
+  onClear,
+  className,
+}: {
+  status: "ready" | "submitted" | "streaming" | "error";
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  isInitial: boolean;
+  onClear: () => void;
+  onSend: (message: string) => void;
+  onStop: () => void;
+  className?: string;
+}) {
+  return (
+    <div className={cn("p-2", className)}>
+      <div className="bg-card rounded-xl md:rounded-lg text-base min-h-20 md:min-h-[60px] border">
+        <div className="flex flex-col items-center justify-center w-full">
+          <div className="relative w-full">
+            <textarea
+              ref={textareaRef}
+              autoFocus
+              disabled={status !== "ready"}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && status === "ready") {
+                  onSend(e.currentTarget.value);
+                  e.currentTarget.value = "";
+                  e.preventDefault();
+                }
+              }}
+              className="w-full py-4 bg-transparent border-none resize-none outline-none text-foreground p-4 md:p-3"
+              placeholder={
+                status !== "ready" ? "Thinking..." : "What can I help you with?"
+              }
+            />
+            {status !== "ready" && (
+              <IconButton
+                aria-label="Stop"
+                icon={<LuCircleStop />}
+                variant="ghost"
+                onClick={onStop}
+                className="absolute right-2 top-2 rounded-full before:rounded-full before:absolute before:inset-0 before:bg-background"
+              />
+            )}
+          </div>
+          <HStack className="w-full justify-between p-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  rightIcon={<LuChevronDown />}
+                >
+                  Purchasing Agent{" "}
+                  <ShortcutKey variant="small" shortcut={shortcut} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem>
+                  <DropdownMenuIcon icon={<LuShoppingCart />} />
+                  <span>Purchasing Agent</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {isInitial && (
+              <Button
+                size="sm"
+                variant="secondary"
+                leftIcon={<LuRotateCcw />}
+                onClick={onClear}
+              >
+                Clear
+              </Button>
+            )}
+          </HStack>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Agent() {
-  const [isOpen, setOpen] = useState(false);
-  const {
-    id: userId,
-    company: { id: companyId },
-  } = useUser();
+  const agentModal = useDisclosure();
+
+  useShortcutKeys({
+    shortcut: shortcut,
+    action: agentModal.onOpen,
+  });
 
   const rootRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -45,15 +165,23 @@ export function Agent() {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const [tools, setTools] = useState<any[]>([]);
-  const [status, setStatus] = useState<'ready' | 'submitted' | 'streaming' | 'error'>('ready');
+  const [status, setStatus] = useState<
+    "ready" | "submitted" | "streaming" | "error"
+  >("ready");
   const [isRateLimited, setIsRateLimited] = useState(false);
 
   const messagesRef = useRef<LanguageModelV1Prompt>(getInitialPrompt());
-  const [messages, setMessages] = useState<LanguageModelV1Prompt>(getInitialPrompt());
+  const [messages, setMessages] = useState<LanguageModelV1Prompt>(
+    getInitialPrompt()
+  );
 
   const { carbon } = useCarbon();
+  const {
+    id: userId,
+    company: { id: companyId },
+  } = useUser();
 
-  useEffect(() => {
+  useMount(() => {
     const initializeTools = async () => {
       if (!carbon) return;
       const tools = await carbon.functions.invoke("mcp", {
@@ -77,59 +205,92 @@ export function Agent() {
     };
 
     initializeTools();
-  }, [carbon, companyId, userId]);
+  });
+
+  useEffect(() => {
+    if (rootRef.current) {
+      const scrollHeight = rootRef.current.scrollHeight;
+      rootRef.current.scrollTo({
+        top: scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages]);
 
   const stop = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
-    setStatus('ready');
+    setStatus("ready");
   };
 
   useEffect(() => {
-    if (rootRef.current) {
-      rootRef.current.scrollTo(0, rootRef.current.scrollHeight);
-    }
-  }, [messages]);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && status !== 'ready') {
+      if (e.key === "Escape" && status !== "ready") {
         stop();
         textareaRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
   }, [status]);
 
-  async function send(message: string) {
-    const newMessage: LanguageModelV1Prompt = [{
-      role: "user",
-      content: [
-        {
-          type: "text",
-          text: message,
-          providerMetadata: messagesRef.current.length === 1 ? providerMetadata : {},
-        },
-      ],
-    }];
+  function clearConversation() {
+    const initialPrompt = getInitialPrompt();
+    messagesRef.current = initialPrompt;
+    setMessages(initialPrompt);
+  }
+
+  const addToolResult = async (toolCall: any, content: any) => {
+    const newMessage: LanguageModelV1Prompt = [
+      {
+        role: "tool",
+        content: [
+          {
+            type: "tool-result",
+            toolName: toolCall.toolName,
+            toolCallId: toolCall.toolCallId,
+            result: content,
+          },
+        ],
+      },
+    ];
 
     messagesRef.current = [...messagesRef.current, ...newMessage];
-    
     flushSync(() => {
       setMessages(messagesRef.current);
-      setStatus('submitted');
     });
 
-    await triggerRequest();
-  }
+    return triggerRequest();
+  };
+
+  const addToolCalls = async (toolCalls: any) => {
+    const newMessage: LanguageModelV1Prompt = [
+      {
+        role: "assistant",
+        content: toolCalls.map((item: any) => ({
+          type: "tool-call",
+          toolName: item.toolName,
+          args: JSON.parse(item.args),
+          toolCallId: item.toolCallId,
+        })),
+      },
+    ];
+
+    messagesRef.current = [...messagesRef.current, ...newMessage];
+    flushSync(() => {
+      setMessages(messagesRef.current);
+    });
+  };
 
   const triggerRequest = async () => {
     if (!carbon) return;
 
     try {
+      setStatus("submitted");
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
 
@@ -161,58 +322,129 @@ export function Agent() {
       }
 
       const result = response.data;
-      setStatus('streaming');
-      
+      setStatus("streaming");
+
       if (result.text) {
-        const newMessage: LanguageModelV1Prompt = [{
-          role: "assistant",
-          content: [
-            {
-              type: "text",
-              text: result.text,
-            },
-          ],
-        }];
+        const newMessage: LanguageModelV1Prompt = [
+          {
+            role: "assistant",
+            content: [
+              {
+                type: "text",
+                text: result.text,
+              },
+            ],
+          },
+        ];
 
         messagesRef.current = [...messagesRef.current, ...newMessage];
         setMessages(messagesRef.current);
       }
 
       setIsRateLimited(false);
-      setStatus('ready');
-      textareaRef.current?.focus();
 
+      if (result.finishReason === "tool-calls") {
+        for await (const toolCall of result.toolCalls) {
+          await addToolCalls(result.toolCalls);
+
+          const toolResponse = await carbon.functions.invoke("mcp", {
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              method: "tools/call",
+              id: ++idRef.current,
+              params: {
+                name: toolCall.toolName,
+                arguments: JSON.parse(toolCall.args),
+              },
+            }),
+            headers: {
+              "x-company-id": companyId,
+              "x-user-id": userId,
+            },
+          });
+
+          const response = toolResponse?.data;
+
+          if ("content" in response?.result) {
+            await addToolResult(toolCall, response.result.content);
+          }
+        }
+      }
+
+      setStatus("ready");
+      textareaRef.current?.focus();
     } catch (error) {
       console.error(error);
-      setStatus('error');
+      setStatus("error");
       toast.error("An error occurred");
     } finally {
       abortControllerRef.current = null;
     }
   };
 
+  async function send(message: string) {
+    const newMessage: LanguageModelV1Prompt = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: message,
+            providerMetadata:
+              messagesRef.current.length === 1 ? providerMetadata : {},
+          },
+        ],
+      },
+    ];
+
+    messagesRef.current = [...messagesRef.current, ...newMessage];
+
+    flushSync(() => {
+      setMessages(messagesRef.current);
+      setStatus("submitted");
+    });
+
+    await triggerRequest();
+  }
+
+  const isInitialState = messages.length === 2;
+
   return (
-    <Popover onOpenChange={setOpen} open={isOpen}>
+    <Popover
+      onOpenChange={(open) => {
+        if (!open) {
+          agentModal.onClose();
+        } else {
+          agentModal.onOpen();
+        }
+      }}
+      open={agentModal.isOpen}
+    >
       <PopoverTrigger asChild>
-        <Button
-          variant="secondary"
-          isIcon
-          className="rounded-full before:rounded-full w-8 h-8 flex items-center"
-        >
-          <LuMessageSquare size={16} />
-        </Button>
+        <IconButton variant="ghost" icon={<LuSparkles />} aria-label="Agent" />
       </PopoverTrigger>
-      <PopoverContent 
-        className="h-[calc(100vh-60px)] w-screen md:w-[480px] p-0 overflow-hidden flex flex-col"
-        align="end" 
+      <PopoverContent
+        className="h-[calc(100vh-52px)] w-screen md:w-[480px] p-0 overflow-hidden flex flex-col"
+        align="center"
         sideOffset={10}
       >
-        <div className="flex-1 overflow-y-auto p-4">
+        {isInitialState && (
+          <ChatInput
+            status={status}
+            textareaRef={textareaRef}
+            isInitial={messages.length === 2}
+            onClear={clearConversation}
+            onSend={send}
+            onStop={stop}
+          />
+        )}
+
+        <div ref={rootRef} className="flex-1 overflow-y-auto p-4">
           <div className="flex flex-col gap-y-4">
             {messages.map((item, index) => (
               <Fragment key={index}>
                 {item.role === "user" && item.content[0].type === "text" && (
-                  <div className="flex items-center gap-x-2 bg-card p-3 rounded-lg border">
+                  <div className="flex items-center gap-x-2 bg-card p-3 rounded-lg bg-card border ">
                     <div className="h-8 w-8 rounded-full flex items-center justify-center">
                       <EmployeeAvatar employeeId={userId} withName={false} />
                     </div>
@@ -222,29 +454,35 @@ export function Agent() {
                   </div>
                 )}
 
-                {item.role === "assistant" && item.content[0].type === "text" && (
-                  <div className="whitespace-pre-wrap text-foreground px-1">
-                    {item.content[0].text}
-                  </div>
-                )}
+                {item.role === "assistant" &&
+                  item.content[0].type === "tool-call" && (
+                    <ToolExecution
+                      toolCall={item.content[0]}
+                      result={
+                        messages[index + 1]?.role === "tool"
+                          ? messages[index + 1].content[0]
+                          : undefined
+                      }
+                    />
+                  )}
 
-{item.role === "assistant" && item.content[0].type === "tool-call" && (
-              <ToolExecution 
-                toolCall={item.content[0]} 
-                result={messages[index + 1]?.role === "tool" ? messages[index + 1].content[0] : undefined}
-              />
-            )}
+                {item.role === "assistant" &&
+                  item.content[0].type === "text" && (
+                    <div className="whitespace-pre-wrap text-foreground px-1">
+                      {item.content[0].text}
+                    </div>
+                  )}
 
                 {item.role === "system" && index > 1 && (
-                  <div className="whitespace-pre-wrap p-3 rounded bg-secondary border-l-[3px] border-l-muted italic opacity-80">
+                  <div className="whitespace-pre-wrap p-3 rounded-lg border italic opacity-80">
                     {item.content}
                   </div>
                 )}
               </Fragment>
             ))}
 
-            {status !== 'ready' && (
-              <div className="w-full my-3 bg-secondary border-l-[3px] border-l-muted flex items-center">
+            {status !== "ready" && (
+              <div className="w-full max-w-[480px] my-3  flex items-center mx-auto">
                 <div className="w-[18px] h-[18px] mr-3 relative">
                   <div className="absolute w-full h-full rounded-full border-2 border-transparent border-t-muted-foreground border-b-muted animate-[thinking-spin-outer_1.5s_cubic-bezier(0.6,0.2,0.4,0.8)_infinite]">
                     <div className="absolute inset-[2px] rounded-full border-2 border-transparent border-l-muted border-r-muted-foreground animate-[thinking-spin-inner_0.8s_cubic-bezier(0.3,0.7,0.7,0.3)_infinite]"></div>
@@ -258,34 +496,22 @@ export function Agent() {
           </div>
         </div>
 
-        <div className="border-t p-4">
-          <div className="bg-card rounded-xl md:rounded-lg text-base h-20 md:h-[60px] border border-input">
-            <textarea
-              ref={textareaRef}
-              disabled={status !== 'ready'}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey && status === 'ready') {
-                  send(e.currentTarget.value);
-                  e.currentTarget.value = "";
-                  e.preventDefault();
-                }
-              }}
-              className="w-full h-full bg-transparent border-none resize-none outline-none text-foreground p-4 md:p-3"
-              placeholder={
-                status !== 'ready'
-                  ? "Processing... (Press Esc to cancel)"
-                  : "Type your message here"
-              }
-            />
-          </div>
-        </div>
+        {!isInitialState && (
+          <ChatInput
+            status={status}
+            textareaRef={textareaRef}
+            isInitial={messages.length === 2}
+            onClear={clearConversation}
+            onSend={send}
+            onStop={stop}
+          />
+        )}
       </PopoverContent>
     </Popover>
   );
 }
 
-
-function ToolExecution({ toolCall, result }: { toolCall: any, result?: any }) {
+function ToolExecution({ toolCall, result }: { toolCall: any; result?: any }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -302,33 +528,45 @@ function ToolExecution({ toolCall, result }: { toolCall: any, result?: any }) {
             <LuWrench className="mr-1" />
             {camelCaseToWords(toolCall.toolName)}
           </Badge>
-          {result && (
-            <LuCheck className="text-emerald-500" />
-          )}
+          {result && <LuCheck className="text-emerald-500" />}
         </div>
-        <LuChevronRight className={cn(
-          "transition-transform duration-200",
-          isExpanded ? "rotate-90" : "rotate-0"
-        )} />
+        <LuChevronRight
+          className={cn(
+            "transition-transform duration-200",
+            isExpanded ? "rotate-90" : "rotate-0"
+          )}
+        />
       </div>
       {isExpanded && (
-        
-          <div className="mt-4 p-2 md:p-1.5">
-            <div className="mb-2 text-sm text-muted-foreground">Parameters:</div>
-            <CodeBlock className="language-json" parentClassName="max-h-[300px] md:max-h-[200px] overflow-y-auto">
-              {JSON.stringify(toolCall.args, null, 2)}
-            </CodeBlock>
-            
-            {result && (
-              <>
-                <div className="mt-3 mb-2 text-sm text-muted-foreground">Result:</div>
-                <CodeBlock className="language-json" parentClassName="max-h-[300px] md:max-h-[200px] overflow-y-auto">
-                  {JSON.stringify(result?.result?.[0]?.text ? JSON.parse(result.result[0].text) : result, null, 2)}
-                </CodeBlock>
-              </>
-            )}
-          </div>
-        
+        <div className="mt-4 p-2 md:p-1.5">
+          <div className="mb-2 text-sm text-muted-foreground">Parameters:</div>
+          <CodeBlock
+            className="language-json"
+            parentClassName="max-h-[300px] md:max-h-[200px] overflow-y-auto"
+          >
+            {JSON.stringify(toolCall.args, null, 2)}
+          </CodeBlock>
+
+          {result && (
+            <>
+              <div className="mt-3 mb-2 text-sm text-muted-foreground">
+                Result:
+              </div>
+              <CodeBlock
+                className="language-json"
+                parentClassName="max-h-[300px] md:max-h-[200px] overflow-y-auto"
+              >
+                {JSON.stringify(
+                  result?.result?.[0]?.text
+                    ? JSON.parse(result.result[0].text)
+                    : result,
+                  null,
+                  2
+                )}
+              </CodeBlock>
+            </>
+          )}
+        </div>
       )}
     </div>
   );
