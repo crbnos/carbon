@@ -134,7 +134,7 @@ function ChatInput({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            {isInitial && (
+            {!isInitial && (
               <Button
                 size="sm"
                 variant="secondary"
