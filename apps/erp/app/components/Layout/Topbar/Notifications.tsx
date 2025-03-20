@@ -267,9 +267,9 @@ const Notifications = () => {
     <Popover onOpenChange={setOpen} open={isOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="secondary"
+          variant="ghost"
           isIcon
-          className="rounded-full before:rounded-full w-8 h-8 flex items-center relative"
+          className="w-8 h-8 flex items-center relative"
         >
           {hasUnseenNotifications && (
             <div className="w-2 h-2 bg-red-500 rounded-full absolute top-0 right-0" />

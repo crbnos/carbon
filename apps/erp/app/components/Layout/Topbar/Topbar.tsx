@@ -6,11 +6,15 @@ import CreateMenu from "./CreateMenu";
 import Feedback from "./Feedback";
 import Notifications from "./Notifications";
 import Search from "./Search";
+import { useFlags } from "~/hooks/useFlags";
+import { Agent } from "~/components/Agent/Agent";
 
 const Topbar = () => {
   const permissions = usePermissions();
   const user = useUser();
   const notificationsKey = `${user.id}:${user.company.id}`;
+
+  const { isInternal } = useFlags();
 
   return (
     <div className="grid grid-cols-[1fr_200px_1fr] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
@@ -20,9 +24,10 @@ const Topbar = () => {
       <div className="flex justify-center">
         {permissions.is("employee") ? <Search /> : <div />}
       </div>
-      <HStack spacing={2} className="flex-1 justify-end py-2">
+      <HStack spacing={1} className="flex-1 justify-end py-2">
         <Feedback />
         <CreateMenu />
+        {isInternal && <Agent />}
         <Notifications key={notificationsKey} />
         <AvatarMenu />
       </HStack>

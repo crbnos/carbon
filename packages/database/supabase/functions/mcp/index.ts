@@ -21,10 +21,10 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   console.log({
-    function: 'mcp',
+    function: "mcp",
     ...payload,
   });
-  
+
   let client: SupabaseClient<Database> | null = null;
   let userId: string | null = null;
   let companyId: string | null = null;
