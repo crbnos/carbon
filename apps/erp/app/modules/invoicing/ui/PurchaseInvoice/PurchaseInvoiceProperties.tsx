@@ -108,7 +108,7 @@ const PurchaseInvoiceProperties = () => {
 
   const isDisabled =
     !permissions.can("update", "purchasing") ||
-    !["Draft", "To Review"].includes(routeData?.purchaseInvoice?.status ?? "");
+    !["Draft", "To Review", "Overdue"].includes(routeData?.purchaseInvoice?.status ?? "");
 
   return (
     <VStack
@@ -338,7 +338,6 @@ const PurchaseInvoiceProperties = () => {
           name="datePaid"
           label="Date Paid"
           inline
-          isDisabled={isDisabled}
           onChange={(date) => {
             onUpdate("datePaid", date);
           }}

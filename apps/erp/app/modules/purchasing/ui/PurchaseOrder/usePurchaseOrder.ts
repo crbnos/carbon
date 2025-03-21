@@ -61,7 +61,7 @@ export const usePurchaseOrderRelatedDocuments = (
           .eq("supplierInteractionId", supplierInteractionId),
         carbon
           .from("purchaseInvoice")
-          .select("id, invoiceId, status")
+          .select("id, invoiceId, status, datePaid, dateDue")
           .eq("supplierInteractionId", supplierInteractionId),
       ]);
 
@@ -74,7 +74,10 @@ export const usePurchaseOrderRelatedDocuments = (
       if (invoices.error) {
         toast.error("Failed to load invoices");
       } else {
-        setInvoices(invoices.data);
+        setInvoices(invoices.data?.map((invoice) => ({
+          ...invoice,
+          status: invoice.dateDue ? (!invoice.datePaid && new Date(invoice.dateDue) < new Date() ? "Overdue" : invoice.status) : invoice.status,
+        })) ?? []);
       }
     },
     [carbon]
