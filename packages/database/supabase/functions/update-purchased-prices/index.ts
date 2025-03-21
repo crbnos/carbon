@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { format } from "https://deno.land/std@0.160.0/datetime/mod.ts";

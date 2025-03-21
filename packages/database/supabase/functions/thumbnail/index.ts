@@ -1,4 +1,3 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import puppeteer from "https://deno.land/x/puppeteer@16.2.0/mod.ts";
 import { z } from "npm:zod@^3.24.1";

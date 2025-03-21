@@ -62,12 +62,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const client = getCarbon(accessToken);
 
-  await client.functions.invoke("auth", {
-    headers: {
-      "x-company-id": companyId,
-    },
-  });
-
   // parallelize the requests
   const [
     companies,
