@@ -32,6 +32,7 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
   ({ name, label, isDisabled, isRequired, defaults, ...rest }, ref) => {
     const listRef = useRef<HTMLDivElement>(null);
     const [items, { push, remove }, error] = useFieldArray<number>(name);
+
     const onAdd = () => {
       flushSync(() => {
         const next = defaults?.[items.length] ?? 0;
@@ -49,10 +50,14 @@ const ArrayNumeric = forwardRef<HTMLInputElement, FormArrayNumericProps>(
         <VStack className="mb-4" ref={listRef}>
           {items.map((item, index) => (
             <ArrayNumericInput
-              key={`${item}-${index}`}
-              id={`${name}[${index}]`}
-              name={`${name}[${index}]`}
-              onRemove={() => remove(index)}
+              key={item.key}
+              id={`${name}.${index}`}
+              name={`${name}.${index}`}
+              onRemove={() => {
+                flushSync(() => {
+                  remove(index);
+                });
+              }}
               {...rest}
             />
           ))}

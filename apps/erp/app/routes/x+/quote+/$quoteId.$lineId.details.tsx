@@ -187,7 +187,6 @@ export default function QuoteLine() {
           <Suspense fallback={null}>
             <Await resolve={relatedPrices}>
               {(resolvedPrices) => {
-                console.log({ resolvedPrices });
                 const hasRelatedOrders =
                   resolvedPrices?.relatedSalesOrderLines &&
                   resolvedPrices.relatedSalesOrderLines.length > 0;
