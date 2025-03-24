@@ -68,6 +68,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const id = createJob.data?.id!;
   if (createJob.error || !jobId) {
+    console.error(createJob.error);
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(request, error(createJob.error, "Failed to insert job"))
@@ -83,6 +84,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     if (upsertMethod.error) {
+      console.error(upsertMethod.error);
       throw redirect(
         path.to.salesOrderLine(orderId, lineId),
         await flash(
