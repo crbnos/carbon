@@ -3,6 +3,7 @@ import {
   LuCrown,
   LuFactory,
   LuFiles,
+  LuFolderCheck,
   LuLandmark,
   LuSettings,
   LuShield,
@@ -49,13 +50,12 @@ export function useModules() {
       to: path.to.purchasing,
       icon: LuShoppingCart,
     },
-
-    // {
-    //   permission: "messages",
-    //   name: "Messaging",
-    //   to: path.to.messaging,
-    //   icon: BiMessage,
-    // },
+    {
+      permission: "quality",
+      name: "Quality",
+      to: path.to.quality,
+      icon: LuFolderCheck,
+    },
     {
       permission: "accounting",
       name: "Accounting",
