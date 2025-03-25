@@ -324,6 +324,7 @@ export const path = {
     convertSupplierQuoteToOrder: (id: string) =>
       generatePath(`${x}/supplier-quote/${id}/convert`),
     currency: (id: string) => generatePath(`${x}/accounting/currencies/${id}`),
+    correctiveActions: `${x}/quality/corrective-actions`,
     currencies: `${x}/accounting/currencies`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
     customerDetails: (id: string) =>
@@ -550,6 +551,7 @@ export const path = {
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
     holidays: `${x}/people/holidays`,
     import: (tableId: string) => generatePath(`${x}/shared/import/${tableId}`),
+    inspections: `${x}/quality/inspections`,
     integration: (id: string) =>
       generatePath(`${x}/settings/integrations/${id}`),
     integrationDeactivate: (id: string) =>
@@ -787,6 +789,7 @@ export const path = {
     newUom: `${x}/items/uom/new`,
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
+    nonConformances: `${x}/quality/non-conformances`,
     noQuoteReasons: `${x}/sales/no-quote-reasons`,
     noQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/${id}`),
@@ -871,6 +874,7 @@ export const path = {
     purchaseOrders: `${x}/purchasing/orders`,
     purchasing: `${x}/purchasing`,
     purchasingSettings: `${x}/settings/purchasing`,
+    quality: `${x}/quality`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
     quoteAssembly: (quoteId: string, lineId: string, assemblyId: string) =>
       generatePath(
