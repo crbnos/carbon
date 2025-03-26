@@ -16,7 +16,6 @@ import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import type { z } from "zod";
 import {
-  Account,
   CustomFormFields,
   Hidden,
   Input,
@@ -105,7 +104,7 @@ const ShippingMethodForm = ({
                   label="Carrier"
                   options={shippingCarrierOptions}
                 />
-                <Account
+                {/* <Account
                   classes={["Expense"]}
                   name="carrierAccountId"
                   label="Carrier Account"
@@ -114,7 +113,7 @@ const ShippingMethodForm = ({
                   name="trackingUrl"
                   label="Tracking URL"
                   prefix="https://"
-                />
+                /> */}
                 <CustomFormFields table="shippingMethod" />
               </VStack>
             </ModalDrawerBody>
