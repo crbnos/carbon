@@ -168,7 +168,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         },
       },
       {
-        accessorKey: "status",
+        accessorKey: "statusWithDueDate",
         header: "Status",
         cell: (item) => {
           const status = item.getValue<(typeof jobStatus)[number]>();

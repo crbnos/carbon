@@ -41,6 +41,8 @@ export const jobStatus = [
   "Paused",
   "Completed",
   "Cancelled",
+  "Overdue",
+  "Due Today",
 ] as const;
 
 export const jobOperationStatus = [

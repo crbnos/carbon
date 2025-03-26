@@ -515,7 +515,6 @@ serve(async (req: Request) => {
             .from("job")
             .select("*")
             .eq("salesOrderId", salesOrderId)
-            .eq("status", "Completed"),
         ]);
 
         if (!salesOrder.data) throw new Error("Sales order not found");
@@ -541,7 +540,7 @@ serve(async (req: Request) => {
         );
 
         const hasShipment = !!shipment.data?.id;
-
+        
         // Group jobs by sales order line ID
         const jobsBySalesOrderLine = (jobs.data || []).reduce<
           Record<string, Database["public"]["Tables"]["job"]["Row"][]>
@@ -554,6 +553,8 @@ serve(async (req: Request) => {
           }
           return acc;
         }, {});
+
+        
 
         const previouslyShippedQuantitiesByLine = (
           salesOrderLines.data ?? []
@@ -620,6 +621,7 @@ serve(async (req: Request) => {
 
           // Process each sales order line
           for await (const salesOrderLine of salesOrderLines.data) {
+            console.log({salesOrderLine})
             if (
               !salesOrderLine.itemId ||
               !salesOrderLine.saleQuantity ||
@@ -634,13 +636,17 @@ serve(async (req: Request) => {
             const isBatch = batchItems.has(salesOrderLine.itemId);
 
             if (salesOrderLine.methodType === "Make") {
+              
               for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
                 []) {
                 if (!salesOrderLine.itemId) return;
 
-                const quantityAvailable =
-                  job.quantityComplete - job.quantityShipped;
-                if (quantityAvailable > 0) {
+                const quantityAvailable = isSerial
+                  ? Math.min(job.quantityComplete - job.quantityShipped, 0)
+                  : job.quantity - job.quantityShipped;
+
+                
+                if (!isSerial || (isSerial && quantityAvailable > 0)) {
                   const fulfillment = await trx
                     .insertInto("fulfillment")
                     .values({
@@ -670,8 +676,8 @@ serve(async (req: Request) => {
                       fulfillmentId,
                       itemId: salesOrderLine.itemId,
                       itemReadableId: salesOrderLine.itemReadableId,
-                      orderQuantity: quantityAvailable,
-                      outstandingQuantity: quantityAvailable,
+                      orderQuantity: salesOrderLine.saleQuantity,
+                      outstandingQuantity: salesOrderLine.quantityToSend ?? salesOrderLine.saleQuantity,
                       shippedQuantity: quantityAvailable,
                       requiresSerialTracking: isSerial,
                       requiresBatchTracking: isBatch,
@@ -843,8 +849,7 @@ serve(async (req: Request) => {
             client
               .from("job")
               .select("*")
-              .eq("salesOrderLineId", salesOrderLineId)
-              .eq("status", "Completed"),
+              .eq("salesOrderLineId", salesOrderLineId),
           ]);
 
         if (!salesOrder.data) throw new Error("Sales order not found");
@@ -917,9 +922,11 @@ serve(async (req: Request) => {
           if (salesOrderLine.data.methodType === "Make") {
             for await (const job of jobs.data ?? []) {
               if (!salesOrderLine.data.itemId) return;
-              const quantityAvailable =
-                job.quantityComplete - job.quantityShipped;
-              if (quantityAvailable > 0) {
+              const quantityAvailable = isSerial
+                ? Math.min(job.quantityComplete - job.quantityShipped, 0)
+                : job.quantity - job.quantityReceivedToInventory;
+
+              if (!isSerial || (isSerial && quantityAvailable > 0)) {
                 const fulfillment = await trx
                   .insertInto("fulfillment")
                   .values({

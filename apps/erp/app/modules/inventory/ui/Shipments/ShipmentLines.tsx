@@ -372,7 +372,7 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-                  isDisabled={isReadOnly || line.fulfillment?.type === "Job"}
+                  isDisabled={isReadOnly || (line.fulfillment?.type === "Job" && line.requiresSerialTracking)}
                   size="sm"
                   min={0}
                 />

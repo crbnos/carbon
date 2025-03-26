@@ -150,6 +150,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
               methodType: "Buy" | "Make" | "Pick";
             }[]) ?? [];
 
+          console.log({ jobs, lines });
           if (
             lines.length === 0 ||
             lines.every((line) => line.methodType !== "Make")

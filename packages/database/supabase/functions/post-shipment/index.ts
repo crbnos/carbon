@@ -85,7 +85,7 @@ serve(async (req: Request) => {
         .from("itemCost")
         .select("itemId, itemPostingGroupId")
         .in("itemId", itemIds),
-      client.from("job").select("id, quantityShipped").in("id", jobIds),
+      client.from("job").select("id, quantity, quantityComplete, quantityShipped, status").in("id", jobIds),
     ]);
     if (items.error) {
       throw new Error("Failed to fetch items");
@@ -159,12 +159,16 @@ serve(async (req: Request) => {
             // instead of the current DB value to avoid double counting
             if (jobUpdates[jobId]) {
               jobUpdates[jobId] = {
+                status: currentQuantityShipped + shipmentLine.shippedQuantity >= (currentJob?.quantity ?? 0) ? "Completed" : currentJob?.status,
+                quantityComplete: currentJob?.status === "Completed" ? currentJob?.quantityComplete : (currentJob?.quantityComplete ?? 0) + shipmentLine.shippedQuantity,
                 quantityShipped:
                   (jobUpdates[jobId]?.quantityShipped ?? 0) +
                   shipmentLine.shippedQuantity,
               };
             } else {
               jobUpdates[jobId] = {
+                status: currentQuantityShipped + shipmentLine.shippedQuantity >= (currentJob?.quantity ?? 0) ? "Completed" : currentJob?.status,
+                quantityComplete: currentJob?.status === "Completed" ? currentJob?.quantityComplete : (currentJob?.quantityComplete ?? 0) + shipmentLine.shippedQuantity,
                 quantityShipped:
                   currentQuantityShipped + shipmentLine.shippedQuantity,
               };

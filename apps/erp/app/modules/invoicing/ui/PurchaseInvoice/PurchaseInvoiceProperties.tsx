@@ -108,7 +108,9 @@ const PurchaseInvoiceProperties = () => {
 
   const isDisabled =
     !permissions.can("update", "purchasing") ||
-    !["Draft", "To Review", "Overdue"].includes(routeData?.purchaseInvoice?.status ?? "");
+    !["Draft", "To Review", "Overdue"].includes(
+      routeData?.purchaseInvoice?.status ?? ""
+    );
 
   return (
     <VStack

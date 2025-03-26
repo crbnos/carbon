@@ -29888,9 +29888,11 @@ export type Database = {
       jobs: {
         Row: {
           active: boolean | null;
+          actualTime: number | null;
           assignee: string | null;
           autodeskUrn: string | null;
           companyId: string | null;
+          completedDate: string | null;
           configuration: Json | null;
           createdAt: string | null;
           createdBy: string | null;
@@ -29899,6 +29901,7 @@ export type Database = {
           deadlineType: Database["public"]["Enums"]["deadlineType"] | null;
           description: string | null;
           dueDate: string | null;
+          estimatedTime: number | null;
           id: string | null;
           itemId: string | null;
           itemReadableId: string | null;
@@ -29923,6 +29926,7 @@ export type Database = {
           quoteId: string | null;
           quoteLineId: string | null;
           quoteReadableId: string | null;
+          releasedDate: string | null;
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null;
@@ -29930,7 +29934,9 @@ export type Database = {
           salesOrderLineId: string | null;
           salesOrderReadableId: string | null;
           scrapQuantity: number | null;
+          secondsToComplete: number | null;
           status: Database["public"]["Enums"]["jobStatus"] | null;
+          statusWithDueDate: Database["public"]["Enums"]["jobStatus"] | null;
           tags: string[] | null;
           thumbnailPath: string | null;
           unitOfMeasureCode: string | null;
@@ -33754,14 +33760,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["paymentCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["paymentCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -33791,8 +33797,8 @@ export type Database = {
           internalNotes: Json | null;
           itemType: Database["public"]["Enums"]["itemType"] | null;
           jobs: Json[] | null;
+          lines: Json[] | null;
           locationId: string | null;
-          locationName: string | null;
           opportunityId: string | null;
           orderDate: string | null;
           orderTotal: number | null;
@@ -36932,7 +36938,9 @@ export type Database = {
         | "In Progress"
         | "Paused"
         | "Completed"
-        | "Cancelled";
+        | "Cancelled"
+        | "Overdue"
+        | "Due Today";
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -36955,7 +36963,8 @@ export type Database = {
         | "Resources"
         | "Sales"
         | "Settings"
-        | "Users";
+        | "Users"
+        | "Quality";
       month:
         | "January"
         | "February"

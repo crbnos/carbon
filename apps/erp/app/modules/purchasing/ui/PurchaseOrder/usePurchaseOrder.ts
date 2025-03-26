@@ -74,10 +74,16 @@ export const usePurchaseOrderRelatedDocuments = (
       if (invoices.error) {
         toast.error("Failed to load invoices");
       } else {
-        setInvoices(invoices.data?.map((invoice) => ({
-          ...invoice,
-          status: invoice.dateDue ? (!invoice.datePaid && new Date(invoice.dateDue) < new Date() ? "Overdue" : invoice.status) : invoice.status,
-        })) ?? []);
+        setInvoices(
+          invoices.data?.map((invoice) => ({
+            ...invoice,
+            status: invoice.dateDue
+              ? !invoice.datePaid && new Date(invoice.dateDue) < new Date()
+                ? "Overdue"
+                : invoice.status
+              : invoice.status,
+          })) ?? []
+        );
       }
     },
     [carbon]

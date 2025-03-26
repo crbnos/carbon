@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
-  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -107,9 +106,21 @@ const JobHeader = () => {
               <span>{routeData?.job?.jobId}</span>
             </Heading>
           </Link>
-          <JobStatus status={routeData?.job?.status} />
+          <JobStatus status={routeData?.job?.statusWithDueDate} />
         </HStack>
         <HStack>
+          {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
+            <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
+              <Link
+                to={path.to.salesOrderLine(
+                  routeData?.job?.salesOrderId,
+                  routeData?.job?.salesOrderLineId
+                )}
+              >
+                Sales Order
+              </Link>
+            </Button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -146,23 +157,6 @@ const JobHeader = () => {
                   </DropdownMenuRadioItem>
                 ))}
               </DropdownMenuRadioGroup>
-              {routeData?.job?.salesOrderId &&
-                routeData?.job.salesOrderLineId && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link
-                        to={path.to.salesOrderLine(
-                          routeData?.job?.salesOrderId,
-                          routeData?.job?.salesOrderLineId
-                        )}
-                      >
-                        <DropdownMenuIcon icon={<RiProgress8Line />} />
-                        Sales Order
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
             </DropdownMenuContent>
           </DropdownMenu>
 
