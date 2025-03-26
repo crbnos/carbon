@@ -60,6 +60,7 @@ export const path = {
           `${api}/settings/sequence/rollback?table=${table}&currentSequence=${id}`
         ),
       salesKpi: (key: string) => generatePath(`${api}/sales/kpi/${key}`),
+      salesOrders: `${api}/sales/orders`,
       scrapReasons: `${api}/production/scrap-reasons`,
       sequences: (table: string) => `${api}/settings/sequences?table=${table}`,
       serialNumbers: (itemId: string, isReadOnly: boolean) =>

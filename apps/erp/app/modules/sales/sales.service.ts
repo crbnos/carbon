@@ -45,7 +45,7 @@ import type {
   salesRfqValidator,
   selectedLinesValidator,
 } from "./sales.models";
-import { Quotation, SalesOrder, SalesRFQ } from "./types";
+import type { Quotation, SalesOrder, SalesRFQ } from "./types";
 
 export async function closeSalesOrder(
   client: SupabaseClient<Database>,
@@ -1161,6 +1161,16 @@ export async function getSalesOrders(
   ]);
 
   return query;
+}
+
+export async function getSalesOrdersList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("salesOrder")
+    .select("id, salesOrderId")
+    .eq("companyId", companyId);
 }
 
 export async function getSalesOrderPayment(

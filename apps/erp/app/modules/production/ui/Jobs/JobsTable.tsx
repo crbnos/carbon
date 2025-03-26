@@ -165,6 +165,15 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           ) : null,
         meta: {
           icon: <LuBookMarked />,
+          filter: {
+            type: "fetcher",
+            endpoint: path.to.api.salesOrders,
+            transform: (data: { id: string; salesOrderId: string }[] | null) =>
+              data?.map(({ salesOrderId }) => ({
+                value: salesOrderId,
+                label: salesOrderId,
+              })) ?? [],
+          },
         },
       },
       {
