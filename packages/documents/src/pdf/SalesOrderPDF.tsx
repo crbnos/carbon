@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { Text, View } from "@react-pdf/renderer";
+import { Text, View, Image } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
@@ -22,6 +22,7 @@ interface SalesOrderPDFProps extends PDF {
   paymentTerms: { id: string; name: string }[];
   shippingMethods: { id: string; name: string }[];
   terms: JSONContent;
+  thumbnails?: Record<string, string | null>;
 }
 
 // Initialize tailwind-styled-components
@@ -50,6 +51,7 @@ const SalesOrderPDF = ({
   terms,
   paymentTerms,
   shippingMethods,
+  thumbnails,
   title = "Sales Order",
 }: SalesOrderPDFProps) => {
   const {
@@ -203,6 +205,16 @@ const SalesOrderPDF = ({
                   <Text style={tw("text-[9px] opacity-80")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
+                  
+                  {thumbnails && line.id in thumbnails && thumbnails[line.id] && (
+                    <View style={tw("mt-2")}>
+                      <Image
+                        src={thumbnails[line.id]!}
+                        style={tw("w-full h-auto")}
+                      />
+                    </View>
+                  )}
+                  
                   <View style={tw("mt-1")}>
                     {Object.keys(line.externalNotes ?? {}).length > 0 && (
                       <Note

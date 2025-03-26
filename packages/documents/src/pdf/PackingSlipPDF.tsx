@@ -21,6 +21,7 @@ interface PackingSlipProps extends PDF {
   shippingMethod: { id: string; name: string };
   terms: JSONContent;
   trackedEntities: Database["public"]["Tables"]["trackedEntity"]["Row"][];
+  thumbnails?: Record<string, string | null>;
 }
 
 // Initialize tailwind-styled-components
@@ -53,6 +54,7 @@ const PackingSlipPDF = ({
   shippingMethod,
   title = "Packing Slip",
   trackedEntities,
+  thumbnails,
 }: PackingSlipProps) => {
   const {
     addressLine1,
@@ -192,6 +194,16 @@ const PackingSlipPDF = ({
                   <Text style={tw("text-[9px] opacity-80 mb-2")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
+                  
+                  {thumbnails && line.id in thumbnails && thumbnails[line.id] && (
+                    <View style={tw("mt-2 mb-2")}>
+                      <Image
+                        src={thumbnails[line.id]!}
+                        style={tw("w-1/3 h-auto")}
+                      />
+                    </View>
+                  )}
+                  
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
                 <Text

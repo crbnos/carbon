@@ -17,6 +17,7 @@ import {
   getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getBase64ImageFromSupabase } from "~/modules/shared";
 import { getLocale } from "~/utils/request";
 
 export const config = { runtime: "nodejs" };
@@ -97,6 +98,39 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         throw new Error("Failed to load customer");
       }
 
+      const thumbnailPaths = shipmentLines.data?.reduce<Record<string, string | null>>(
+        (acc, line) => {
+          if (line.thumbnailPath) {
+            acc[line.id!] = line.thumbnailPath;
+          }
+          return acc;
+        },
+        {}
+      );
+
+      const thumbnails: Record<string, string | null> =
+        (thumbnailPaths
+          ? await Promise.all(
+              Object.entries(thumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(client, path).then((data) => ({
+                  id,
+                  data,
+                }));
+              })
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {};
+
+      
+
       const stream = await renderToStream(
         <PackingSlipPDF
           company={company.data}
@@ -118,6 +152,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
           trackedEntities={shipmentTracking.data ?? []}
           title="Packing Slip"
+          thumbnails={thumbnails}
         />
       );
 

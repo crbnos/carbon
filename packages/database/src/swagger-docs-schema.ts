@@ -8287,6 +8287,24 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.configuration",
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.releasedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.estimatedTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.actualTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.secondsToComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.statusWithDueDate",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.name",
           },
           {
@@ -36985,6 +37003,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.jobs",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.lines",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.shippingTermName",
           },
           {
@@ -37004,9 +37025,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrders.shippingCost",
-          },
-          {
-            $ref: "#/parameters/rowFilter.salesOrders.locationName",
           },
           {
             $ref: "#/parameters/select",
@@ -50861,7 +50879,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50910,7 +50928,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -51917,6 +51935,8 @@ export default {
             "Paused",
             "Completed",
             "Cancelled",
+            "Overdue",
+            "Due Today",
           ],
           format: 'public."jobStatus"',
           type: "string",
@@ -52027,6 +52047,40 @@ export default {
         },
         configuration: {
           format: "jsonb",
+        },
+        releasedDate: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        completedDate: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        estimatedTime: {
+          format: "numeric",
+          type: "number",
+        },
+        actualTime: {
+          format: "numeric",
+          type: "number",
+        },
+        secondsToComplete: {
+          format: "numeric",
+          type: "number",
+        },
+        statusWithDueDate: {
+          enum: [
+            "Draft",
+            "Ready",
+            "In Progress",
+            "Paused",
+            "Completed",
+            "Cancelled",
+            "Overdue",
+            "Due Today",
+          ],
+          format: 'public."jobStatus"',
+          type: "string",
         },
         name: {
           format: "text",
@@ -55140,6 +55194,8 @@ export default {
             "Paused",
             "Completed",
             "Cancelled",
+            "Overdue",
+            "Due Today",
           ],
           format: 'public."jobStatus"',
           type: "string",
@@ -65361,6 +65417,11 @@ export default {
           items: {},
           type: "array",
         },
+        lines: {
+          format: "json[]",
+          items: {},
+          type: "array",
+        },
         shippingTermName: {
           format: "text",
           type: "string",
@@ -65392,10 +65453,6 @@ export default {
         shippingCost: {
           format: "numeric",
           type: "number",
-        },
-        locationName: {
-          format: "text",
-          type: "string",
         },
       },
       type: "object",
@@ -73044,6 +73101,42 @@ export default {
     },
     "rowFilter.jobs.configuration": {
       name: "configuration",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.releasedDate": {
+      name: "releasedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.completedDate": {
+      name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.estimatedTime": {
+      name: "estimatedTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.actualTime": {
+      name: "actualTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.secondsToComplete": {
+      name: "secondsToComplete",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.statusWithDueDate": {
+      name: "statusWithDueDate",
       required: false,
       in: "query",
       type: "string",
@@ -88117,6 +88210,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrders.lines": {
+      name: "lines",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrders.shippingTermName": {
       name: "shippingTermName",
       required: false,
@@ -88155,12 +88254,6 @@ export default {
     },
     "rowFilter.salesOrders.shippingCost": {
       name: "shippingCost",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.salesOrders.locationName": {
-      name: "locationName",
       required: false,
       in: "query",
       type: "string",

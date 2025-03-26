@@ -12,6 +12,7 @@ import {
   getSalesTerms,
 } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
+import { getBase64ImageFromSupabase } from "~/modules/shared";
 import { getLocale } from "~/utils/request";
 
 export const config = { runtime: "nodejs" };
@@ -72,6 +73,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load sales order");
   }
 
+  const thumbnailPaths = salesOrderLines.data?.reduce<Record<string, string | null>>(
+    (acc, line) => {
+      if (line.thumbnailPath) {
+        acc[line.id!] = line.thumbnailPath;
+      }
+      return acc;
+    },
+    {}
+  );
+
+  const thumbnails: Record<string, string | null> =
+    (thumbnailPaths
+      ? await Promise.all(
+          Object.entries(thumbnailPaths).map(([id, path]) => {
+            if (!path) {
+              return null;
+            }
+            return getBase64ImageFromSupabase(client, path).then((data) => ({
+              id,
+              data,
+            }));
+          })
+        )
+      : []
+    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+      if (thumbnail) {
+        acc[thumbnail.id] = thumbnail.data;
+      }
+      return acc;
+    }, {}) ?? {};
+
   const locale = getLocale(request);
 
   const stream = await renderToStream(
@@ -90,6 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       paymentTerms={paymentTerms.data ?? []}
       shippingMethods={shippingMethods.data ?? []}
       title="Sales Order"
+      thumbnails={thumbnails}
     />
   );
 

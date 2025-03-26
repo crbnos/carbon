@@ -197,7 +197,7 @@ const ConsumableProperties = () => {
             validator={z.object({
               name: z
                 .string()
-                .min(1, { message: "Unit of Measure is required" }),
+              
             })}
             className="w-full -mt-2"
           >

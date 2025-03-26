@@ -20,5 +20,6 @@ vite.config.ts.timestamp*
 .env.production
 .env.production.local
 !packages/apps/**/.env
+packages/database/.env
 
 .vercel
