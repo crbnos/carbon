@@ -355,6 +355,9 @@ const QuoteMakeMethodTools = () => {
                 sourceId: isQuoteLineMethod
                   ? line?.itemId ?? undefined
                   : undefined,
+                targetId: isQuoteLineMethod
+                  ? line?.itemId ?? undefined
+                  : undefined,
               }}
               onSubmit={saveMethodModal.onClose}
             >
