@@ -1,7 +1,11 @@
 ALTER TYPE module ADD VALUE 'Quality';
+
+COMMIT;
+
 DROP VIEW IF EXISTS "modules";
 CREATE VIEW "modules" AS
     SELECT unnest(enum_range(NULL::module)) AS name;
+
 
 
 -- Insert Quality module permissions for Admin, Management, and Quality employee types
