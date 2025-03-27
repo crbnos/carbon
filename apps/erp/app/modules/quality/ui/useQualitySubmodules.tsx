@@ -12,7 +12,7 @@ import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 
-const inventoryRoutes: AuthenticatedRouteGroup[] = [
+const qualityRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Manage",
     routes: [
@@ -72,12 +72,12 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
     ],
   },
 ];
-export default function useAccountingSubmodules() {
+export default function useQualitySubmodules() {
   const permissions = usePermissions();
   const { addSavedViewsToRoutes } = useSavedViews();
 
   return {
-    groups: inventoryRoutes
+    groups: qualityRoutes
       .filter((group) => {
         const filteredRoutes = group.routes.filter((route) => {
           if (route.role) {

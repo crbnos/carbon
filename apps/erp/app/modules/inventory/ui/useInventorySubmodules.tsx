@@ -65,7 +65,7 @@ const inventoryRoutes: AuthenticatedRouteGroup[] = [
   },
 ];
 
-export default function useAccountingSubmodules() {
+export default function useInventorySubmodules() {
   const permissions = usePermissions();
   const { addSavedViewsToRoutes } = useSavedViews();
 
