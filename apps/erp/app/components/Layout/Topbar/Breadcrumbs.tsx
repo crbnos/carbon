@@ -196,6 +196,10 @@ function CompanyBreadcrumb() {
                 validator={companyValidator}
                 method="post"
                 onSubmit={companyForm.onClose}
+                defaultValues={{
+                  countryCode: "US",
+                  baseCurrencyCode: "USD",
+                }}
               >
                 <ModalHeader>
                   <ModalTitle>Let's set up your new company</ModalTitle>

@@ -13,20 +13,90 @@ CREATE TABLE "nonConformanceType" (
   CONSTRAINT "nonConformanceType_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+-- Insert non-conformance types for all existing companies
+WITH nc_types AS (
+  SELECT unnest(ARRAY[
+    'Design Error',
+    'Manufacturing Defect',
+    'Process Deviation',
+    'Material Non-Conformance',
+    'Testing Failure',
+    'Documentation Error',
+    'Training Issue',
+    'Equipment Malfunction',
+    'Supplier Non-Conformance',
+    'Customer Complaint'
+  ]) AS name
+)
+INSERT INTO "nonConformanceType" ("name", "companyId", "createdBy")
+SELECT 
+  nc_types.name,
+  c.id,
+  'system'
+FROM 
+  "company" c,
+  nc_types;
+
+
 CREATE TYPE "nonConformanceSource" AS ENUM (
   'Internal',
   'External'
 );
 
-CREATE STATUS "nonConformanceStatus" AS ENUM (
+CREATE TYPE "nonConformancePriority" AS ENUM (
+  'Low',
+  'Medium',
+  'High'
+);
+
+CREATE TYPE "nonConformanceStatus" AS ENUM (
   'Registered',
   'Open',
   'Completed'
 );
 
+CREATE TABLE "nonConformanceTemplate" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "content" JSONB NOT NULL DEFAULT '{}',
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceTemplate_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceTemplate_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceTemplate_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceTemplate_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceWorkflow" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "name" TEXT NOT NULL,
+  "nonConformanceTemplateId" TEXT NOT NULL,
+  "requiresApproval" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresInventoryCheck" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresWIPCheck" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresCorrectiveAction" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresPreventiveAction" BOOLEAN NOT NULL DEFAULT FALSE,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceWorkflow_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceWorkflow_nonConformanceTemplateId_fkey" FOREIGN KEY ("nonConformanceTemplateId") REFERENCES "nonConformanceTemplate"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceWorkflow_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceWorkflow_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceWorkflow_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
 CREATE TABLE "nonConformance" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
+  "description" TEXT,
   "source" "nonConformanceSource" NOT NULL,
   "status" "nonConformanceStatus" NOT NULL DEFAULT 'Registered',
   -- "nonConformanceWorkflowId" TEXT NOT NULL,
@@ -35,8 +105,6 @@ CREATE TABLE "nonConformance" (
   "openDate" DATE NOT NULL,
   "dueDate" DATE,
   "closeDate" DATE,
-  "description" JSON DEFAULT '{}',
-  "itemId" TEXT,
   "quantity" NUMERIC NOT NULL DEFAULT 0,
   "trackedEntityId" TEXT,
   "customerId" TEXT,
@@ -60,7 +128,6 @@ CREATE TABLE "nonConformance" (
   CONSTRAINT "nonConformance_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_nonConformanceTypeId_fkey" FOREIGN KEY ("nonConformanceTypeId") REFERENCES "nonConformanceType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_trackedEntityId_fkey" FOREIGN KEY ("trackedEntityId") REFERENCES "trackedEntity"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "job"("id") ON UPDATE CASCADE ON DELETE CASCADE,
