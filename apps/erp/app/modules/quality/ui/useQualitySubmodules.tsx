@@ -63,7 +63,7 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     routes: [
       {
         name: "Templates",
-        to: "#",
+        to: path.to.nonConformanceTemplates,
         icon: <LuFileText />,
       },
       {

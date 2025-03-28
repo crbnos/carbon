@@ -4,15 +4,64 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { nonConformanceTypeValidator } from "./quality.models";
+import type {
+  nonConformanceTemplateValidator,
+  nonConformanceTypeValidator,
+} from "./quality.models";
 
 export async function deleteNonConformanceType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
 ) {
-  return client.from("nonConformanceType").delete().eq("id", nonConformanceTypeId);
+  return client
+    .from("nonConformanceType")
+    .delete()
+    .eq("id", nonConformanceTypeId);
 }
 
+export async function deleteNonConformanceTemplate(
+  client: SupabaseClient<Database>,
+  nonConformanceTemplateId: string
+) {
+  return client
+    .from("nonConformanceTemplate")
+    .delete()
+    .eq("id", nonConformanceTemplateId);
+}
+
+export async function getNonConformanceTemplate(
+  client: SupabaseClient<Database>,
+  nonConformanceTemplateId: string
+) {
+  return client
+    .from("nonConformanceTemplate")
+    .select("*")
+    .eq("id", nonConformanceTemplateId)
+    .single();
+}
+
+export async function getNonConformanceTemplates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("nonConformanceTemplate")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
+}
 
 export async function getNonConformanceTypesList(
   client: SupabaseClient<Database>,
@@ -59,6 +108,31 @@ export async function getNonConformanceTypes(
   return query;
 }
 
+export async function upsertNonConformanceTemplate(
+  client: SupabaseClient<Database>,
+  nonConformanceTemplate:
+    | (Omit<z.infer<typeof nonConformanceTemplateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof nonConformanceTemplateValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in nonConformanceTemplate) {
+    return client
+      .from("nonConformanceTemplate")
+      .insert([nonConformanceTemplate])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("nonConformanceTemplate")
+      .update(sanitize(nonConformanceTemplate))
+      .eq("id", nonConformanceTemplate.id);
+  }
+}
 
 export async function upsertNonConformanceType(
   client: SupabaseClient<Database>,
@@ -75,7 +149,10 @@ export async function upsertNonConformanceType(
       })
 ) {
   if ("createdBy" in nonConformanceType) {
-    return client.from("nonConformanceType").insert([nonConformanceType]).select("id");
+    return client
+      .from("nonConformanceType")
+      .insert([nonConformanceType])
+      .select("id");
   } else {
     return client
       .from("nonConformanceType")
