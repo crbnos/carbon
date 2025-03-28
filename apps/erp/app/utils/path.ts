@@ -271,6 +271,7 @@ export const path = {
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateProcedure: `${x}/procedure/update`,
     bulkUpdateJob: `${x}/job/update`,
+    bulkUpdateNonConformanceTemplate: `${x}/non-conformance-template/update`,
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
@@ -445,6 +446,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
+    deleteNonConformanceTemplate: (id: string) =>
+      generatePath(`${x}/quality/non-conformance-templates/delete/${id}`),
     deleteNonConformanceType: (id: string) =>
       generatePath(`${x}/quality/non-conformance-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
@@ -719,6 +722,7 @@ export const path = {
     newMethodOperationAttribute: `${x}/items/methods/operation/attribute/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
+    newNonConformanceTemplate: `${x}/quality/non-conformance-templates/new`,
     newNonConformanceType: `${x}/quality/non-conformance-types/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
@@ -793,6 +797,9 @@ export const path = {
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
     nonConformances: `${x}/quality/non-conformances`,
+    nonConformanceTemplate: (id: string) =>
+      generatePath(`${x}/non-conformance-template/${id}`),
+    nonConformanceTemplates: `${x}/quality/non-conformance-templates`,
     nonConformanceType: (id: string) =>
       generatePath(`${x}/quality/non-conformance-types/${id}`),
     nonConformanceTypes: `${x}/quality/non-conformance-types`,
