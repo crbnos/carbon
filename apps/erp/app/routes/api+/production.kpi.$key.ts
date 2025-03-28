@@ -71,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .from("productionEvent")
             .select("startTime, endTime, workCenterId")
             .eq("companyId", companyId)
-            .gt("startTime", start)
+            .gte("startTime", start)
             .or(`endTime.lte.${end},endTime.is.null`)
             .order("startTime", { ascending: false })
             .order("endTime", { ascending: false }),
@@ -79,7 +79,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             .from("productionEvent")
             .select("startTime, endTime, workCenterId")
             .eq("companyId", companyId)
-            .gt("startTime", previousStart.toString())
+            .gte("startTime", previousStart.toString())
             .or(`endTime.lte.${previousEnd.toString()},endTime.is.null`)
             .order("startTime", { ascending: false })
             .order("endTime", { ascending: false }),

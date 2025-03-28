@@ -338,7 +338,7 @@ async function getPurchaseOrdersQuery(
       "To Receive and Invoice",
       "Completed",
     ])
-    .gt("orderDate", start)
+    .gte("orderDate", start)
     .lte("orderDate", end);
 
   if (supplierId) {
@@ -371,7 +371,7 @@ async function getPurchaseInvoicesQuery(
     })
     .eq("companyId", companyId)
     .in("status", ["Pending", "Partially Paid", "Paid", "Submitted", "Overdue"])
-    .gt("dateIssued", start)
+    .gte("dateIssued", start)
     .lte("dateIssued", end);
 
   if (supplierId) {
@@ -404,7 +404,7 @@ async function getSupplierQuotesQuery(
       count: "exact",
     })
     .eq("companyId", companyId)
-    .gt("createdAt", start)
+    .gte("createdAt", start)
     .lte("createdAt", endWithTime);
 
   if (supplierId) {

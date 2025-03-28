@@ -431,7 +431,7 @@ async function getSalesOrdersQuery(
       "Completed",
       "Invoiced",
     ])
-    .gt("orderDate", start)
+    .gte("orderDate", start)
     .lte("orderDate", endWithTime);
 
   if (customerId) {
@@ -467,7 +467,7 @@ async function getQuotesQuery(
     })
     .eq("companyId", companyId)
     .in("status", ["Sent", "Ordered", "Partial", "Lost", "Expired"])
-    .gt("createdAt", start)
+    .gte("createdAt", start)
     .lte("createdAt", endWithTime);
 
   if (customerId) {
@@ -503,7 +503,7 @@ async function getRfqQuery(
     })
     .eq("companyId", companyId)
     .in("status", ["Ready for Quote", "Quoted", "Closed"])
-    .gt("createdAt", start)
+    .gte("createdAt", start)
     .lte("createdAt", endWithTime);
 
   if (customerId) {
