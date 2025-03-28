@@ -1,16 +1,18 @@
 import {
   LuCircleGauge,
-  LuCircleHelp,
   LuClipboardList,
   LuDraftingCompass,
+  LuFileText,
   LuOctagonX,
   LuSearchCheck,
   LuShieldX,
   LuSpellCheck,
+  LuWorkflow,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
+import { path } from "~/utils/path";
 
 const qualityRoutes: AuthenticatedRouteGroup[] = [
   {
@@ -57,17 +59,22 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     ],
   },
   {
-    name: "Configure",
+    name: "Configure Issues",
     routes: [
       {
-        name: "Cause Codes",
+        name: "Templates",
         to: "#",
-        icon: <LuCircleHelp />,
+        icon: <LuFileText />,
       },
       {
-        name: "Non-Conformance Codes",
-        to: "#",
+        name: "Types",
+        to: path.to.nonConformanceTypes,
         icon: <LuOctagonX />,
+      },
+      {
+        name: "Workflows",
+        to: "#",
+        icon: <LuWorkflow />,
       },
     ],
   },

@@ -445,6 +445,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
+    deleteNonConformanceType: (id: string) =>
+      generatePath(`${x}/quality/non-conformance-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
@@ -717,6 +719,7 @@ export const path = {
     newMethodOperationAttribute: `${x}/items/methods/operation/attribute/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
+    newNonConformanceType: `${x}/quality/non-conformance-types/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newProcedure: `${x}/production/procedures/new`,
@@ -790,6 +793,9 @@ export const path = {
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
     nonConformances: `${x}/quality/non-conformances`,
+    nonConformanceType: (id: string) =>
+      generatePath(`${x}/quality/non-conformance-types/${id}`),
+    nonConformanceTypes: `${x}/quality/non-conformance-types`,
     noQuoteReasons: `${x}/sales/no-quote-reasons`,
     noQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/${id}`),

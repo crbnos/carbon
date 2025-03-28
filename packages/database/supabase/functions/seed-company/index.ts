@@ -11,6 +11,7 @@ import {
   fiscalYearSettings,
   groupCompanyTemplate,
   groups,
+  nonConformanceTypes,
   paymentTerms,
   postingGroupInventory,
   postingGroupPurchasing,
@@ -176,6 +177,11 @@ serve(async (req: Request) => {
         .execute();
 
       await trx
+        .insertInto("nonConformanceType")
+        .values(nonConformanceTypes.map((nc) => ({ ...nc, companyId })))
+        .execute();
+
+      await trx
         .insertInto("sequence")
         .values(sequences.map((s) => ({ ...s, companyId })))
         .execute();
@@ -245,6 +251,7 @@ serve(async (req: Request) => {
         .insertInto("fiscalYearSettings")
         .values([{ ...fiscalYearSettings, companyId }])
         .execute();
+
 
       const user = await client
         .from("userPermission")

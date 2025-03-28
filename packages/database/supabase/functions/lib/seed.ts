@@ -1561,6 +1561,53 @@ export const groups = [
   },
 ];
 
+export const nonConformanceTypes: Omit<
+  Database["public"]["Tables"]["nonConformanceType"]["Insert"],
+  "companyId"
+>[] = [
+  {
+    name: "Design Error",
+    createdBy: "system",
+  },
+  {
+    name: "Manufacturing Defect",
+    createdBy: "system",
+  },
+  {
+    name: "Process Deviation",
+    createdBy: "system",
+  },
+  {
+    name: "Material Non-Conformance",
+    createdBy: "system",
+  },
+  {
+    name: "Testing Failure",
+    createdBy: "system",
+  },
+  {
+    name: "Documentation Error",
+    createdBy: "system",
+  },
+  {
+    name: "Training Issue",
+    createdBy: "system",
+  },
+  {
+    name: "Equipment Malfunction",
+    createdBy: "system",
+  },
+  {
+    name: "Supplier Non-Conformance",
+    createdBy: "system",
+  },
+  {
+    name: "Customer Complaint",
+    createdBy: "system",
+  },
+];
+
+
 export const paymentTerms: Omit<
   Database["public"]["Tables"]["paymentTerm"]["Insert"],
   "companyId"
