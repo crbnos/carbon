@@ -470,7 +470,7 @@ const BillOfProcess = ({
             )}
           </span>
         ),
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         content: (
           <div className="flex flex-col">
             <div>
@@ -506,7 +506,7 @@ const BillOfProcess = ({
       },
       {
         id: 2,
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Parameters</span>
@@ -544,7 +544,7 @@ const BillOfProcess = ({
       },
       {
         id: 3,
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Attributes</span>
@@ -582,6 +582,7 @@ const BillOfProcess = ({
       },
       {
         id: 4,
+        disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Tools</span>
@@ -2605,7 +2606,10 @@ function makeItem(
           {operation.description}
         </h3>
         {operation.operationType === "Outside" && (
-          <SupplierProcessPreview processId={operation.processId} supplierProcessId={operation.operationSupplierProcessId} />
+          <SupplierProcessPreview
+            processId={operation.processId}
+            supplierProcessId={operation.operationSupplierProcessId}
+          />
         )}
       </VStack>
     ),
