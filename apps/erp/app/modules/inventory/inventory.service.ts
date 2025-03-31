@@ -350,7 +350,7 @@ export async function getShipmentLines(
   shipmentId: string
 ) {
   return client
-    .from("shipmentLine")
+    .from("shipmentLines")
     .select("*, fulfillment(*, job(*))")
     .eq("shipmentId", shipmentId);
 }

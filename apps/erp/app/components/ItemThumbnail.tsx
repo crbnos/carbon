@@ -12,7 +12,7 @@ interface ItemThumbnailProps {
 }
 
 const itemVariants = cva(
-  "bg-muted rounded-lg flex items-center justify-center",
+  "bg-muted rounded-lg flex items-center justify-center flex-shrink-0",
   {
     variants: {
       size: {

@@ -43,11 +43,10 @@ import {
   LuQrCode,
   LuSplit,
 } from "react-icons/lu";
-import { Empty } from "~/components";
+import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData } from "~/hooks";
 import { splitValidator } from "~/modules/inventory";
 import type {
@@ -79,7 +78,8 @@ const ShipmentLines = () => {
   }>(path.to.shipment(shipmentId));
 
   const shipmentsById = new Map<string, ShipmentLine>(
-    routeData?.shipmentLines.map((line) => [line.id, line])
+    // @ts-ignore
+    (routeData?.shipmentLines ?? []).map((line) => [line.id, line])
   );
   const pendingShipmentLines = usePendingShipmentLines();
 
@@ -99,7 +99,7 @@ const ShipmentLines = () => {
     return shipmentLines.reduce((acc, line) => {
       if (!line.requiresSerialTracking) return acc;
 
-      const trackedEntitiesForLine = routeData?.shipmentLineTracking.filter(
+      const trackedEntitiesForLine = routeData?.shipmentLineTracking?.filter(
         (t) => {
           const attributes = t.attributes as TrackedEntityAttributes;
           return attributes["Shipment Line"] === line.id;
@@ -109,7 +109,7 @@ const ShipmentLines = () => {
       if (!trackedEntitiesForLine) return acc;
       return {
         ...acc,
-        [line.id]: Array.from({ length: line.shippedQuantity }, (_, index) => {
+        [line.id!]: Array.from({ length: line.shippedQuantity || 0 }, (_, index) => {
           const serialNumberEntity = trackedEntitiesForLine.find((t) => {
             const attributes = t.attributes as TrackedEntityAttributes;
             return attributes["Shipment Line Index"] === index;
@@ -131,7 +131,7 @@ const ShipmentLines = () => {
       shipmentLines.reduce((acc, line) => {
         if (!line.requiresSerialTracking) return acc;
 
-        const trackedEntitiesForLine = routeData?.shipmentLineTracking.filter(
+        const trackedEntitiesForLine = routeData?.shipmentLineTracking?.filter(
           (t) => {
             const attributes = t.attributes as TrackedEntityAttributes;
             return attributes["Shipment Line"] === line.id;
@@ -141,8 +141,8 @@ const ShipmentLines = () => {
         if (!trackedEntitiesForLine) return acc;
         return {
           ...acc,
-          [line.id]: Array.from(
-            { length: line.shippedQuantity },
+          [line.id!]: Array.from(
+            { length: line.shippedQuantity || 0 },
             (_, index) => {
               const serialNumberEntity = trackedEntitiesForLine.find((t) => {
                 const attributes = t.attributes as TrackedEntityAttributes;
@@ -193,7 +193,7 @@ const ShipmentLines = () => {
     []
   );
 
-  const isPosted = routeData?.shipment.status === "Posted";
+  const isPosted = routeData?.shipment?.status === "Posted";
 
   return (
     <>
@@ -209,42 +209,46 @@ const ShipmentLines = () => {
             {shipmentLines.length === 0 ? (
               <Empty className="py-6" />
             ) : (
-              shipmentLines.map((line, index) => {
-                const tracking = routeData?.shipmentLineTracking?.find((t) => {
-                  const attributes = t.attributes as TrackedEntityAttributes;
-                  return attributes["Shipment Line"] === line.id;
-                });
-                return (
-                  <ShipmentLineItem
-                    key={line.id}
-                    line={line}
-                    shipment={routeData?.shipment}
-                    hasTrackingLabel={
-                      routeData?.shipmentLineTracking?.some((t) => {
-                        const attributes =
-                          t.attributes as TrackedEntityAttributes;
-                        return (
-                          attributes["Shipment Line"] === line.id &&
-                          attributes["Split Entity ID"]
-                        );
-                      }) ?? false
-                    }
-                    isReadOnly={isPosted}
-                    onUpdate={onUpdateShipmentLine}
-                    className={
-                      index === shipmentLines.length - 1 ? "border-none" : ""
-                    }
-                    serialNumbers={serialNumbersByLineId[line.id] || []}
-                    onSerialNumbersChange={(newSerialNumbers) => {
-                      setSerialNumbersByLineId((prev) => ({
-                        ...prev,
-                        [line.id]: newSerialNumbers,
-                      }));
-                    }}
-                    tracking={tracking}
-                  />
-                );
-              })
+              shipmentLines
+                .sort((a, b) => 
+                  (a.itemReadableId || "").localeCompare(b.itemReadableId || "")
+                )
+                .map((line, index) => {
+                  const tracking = routeData?.shipmentLineTracking?.find((t) => {
+                    const attributes = t.attributes as TrackedEntityAttributes;
+                    return attributes["Shipment Line"] === line.id;
+                  });
+                  return (
+                    <ShipmentLineItem
+                      key={line.id}
+                      line={line}
+                      shipment={routeData?.shipment}
+                      hasTrackingLabel={
+                        routeData?.shipmentLineTracking?.some((t) => {
+                          const attributes =
+                            t.attributes as TrackedEntityAttributes;
+                          return (
+                            attributes["Shipment Line"] === line.id &&
+                            attributes["Split Entity ID"]
+                          );
+                        }) ?? false
+                      }
+                      isReadOnly={isPosted}
+                      onUpdate={onUpdateShipmentLine}
+                      className={
+                        index === shipmentLines.length - 1 ? "border-none" : ""
+                      }
+                      serialNumbers={serialNumbersByLineId[line.id!] || []}
+                      onSerialNumbersChange={(newSerialNumbers) => {
+                        setSerialNumbersByLineId((prev) => ({
+                          ...prev,
+                          [line.id!]: newSerialNumbers,
+                        }));
+                      }}
+                      tracking={tracking}
+                    />
+                  );
+                })
             )}
           </div>
         </CardContent>
@@ -325,9 +329,8 @@ function ShipmentLineItem({
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
-            <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-              <TrackingTypeIcon type={item?.itemTrackingType ?? "Inventory"} />
-            </div>
+            <ItemThumbnail size="md" thumbnailPath={line.thumbnailPath} type={item?.type as "Part" ?? "Part"} />
+            
             <VStack spacing={0}>
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -346,10 +349,10 @@ function ShipmentLineItem({
               <label className="text-xs text-muted-foreground">Shipped</label>
 
               <NumberField
-                value={line.shippedQuantity}
+                value={line.shippedQuantity || 0}
                 onChange={(value) => {
                   onUpdate({
-                    lineId: line.id,
+                    lineId: line.id!,
                     field: "shippedQuantity",
                     value,
                   });
@@ -359,8 +362,8 @@ function ShipmentLineItem({
                       ...serialNumbers,
                       ...Array.from(
                         { length: value - serialNumbers.length },
-                        () => ({
-                          index: serialNumbers.length,
+                        (_, i) => ({
+                          index: i,
                           id: "",
                         })
                       ),
@@ -372,7 +375,7 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-                  isDisabled={isReadOnly || (line.fulfillment?.type === "Job" && line.requiresSerialTracking)}
+                  isDisabled={isReadOnly || (line.fulfillment?.type === "Job" && (line.requiresSerialTracking ?? false))}
                   size="sm"
                   min={0}
                 />
@@ -384,7 +387,7 @@ function ShipmentLineItem({
           <HStack spacing={4}>
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">Ordered</label>
-              <span className="text-sm py-1.5">{line.orderQuantity}</span>
+              <span className="text-sm py-1.5">{line.orderQuantity || 0}</span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
@@ -393,10 +396,10 @@ function ShipmentLineItem({
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
-                  {line.outstandingQuantity}
+                  {line.outstandingQuantity || 0}
                 </span>
 
-                {line.shippedQuantity > line.outstandingQuantity && (
+                {(line.shippedQuantity || 0) > (line.outstandingQuantity || 0) && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
@@ -416,7 +419,7 @@ function ShipmentLineItem({
               isReadOnly={isReadOnly}
               onChange={(shelf) => {
                 onUpdate({
-                  lineId: line.id,
+                  lineId: line.id!,
                   field: "shelfId",
                   value: shelf,
                 });
@@ -505,7 +508,7 @@ function BatchForm({
     };
   });
 
-  const { data: batchNumbers } = useBatchNumbers(line.itemId);
+  const { data: batchNumbers } = useBatchNumbers(line.itemId!);
   const [error, setError] = useState<string | null>(null);
   const { carbon } = useCarbon();
 
@@ -518,13 +521,13 @@ function BatchForm({
 
   // Verify batch quantity is sufficient for the shipped quantity
   useEffect(() => {
-    if (values.number && batchNumbers?.data && line.shippedQuantity > 0) {
+    if (values.number && batchNumbers?.data && (line.shippedQuantity || 0) > 0) {
       const batchNumber = batchNumbers.data.find((b) => b.id === values.number);
 
       if (
         batchNumber &&
         batchNumber.status === "Available" &&
-        line.shippedQuantity > batchNumber.quantity
+        (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
         setValues({
           ...values,
@@ -536,8 +539,10 @@ function BatchForm({
   }, [line.shippedQuantity]);
 
   const getShelfFromBatchNumber = async (trackedEntityId: string) => {
+    if (!carbon) return;
+    
     const response = await carbon
-      ?.from("itemLedger")
+      .from("itemLedger")
       .select("shelfId")
       .eq("trackedEntityId", trackedEntityId)
       .order("createdAt", { ascending: false })
@@ -545,7 +550,7 @@ function BatchForm({
 
     if (response?.data?.shelfId) {
       onUpdate({
-        lineId: line.id,
+        lineId: line.id!,
         field: "shelfId",
         value: response.data.shelfId,
       });
@@ -605,7 +610,7 @@ function BatchForm({
     }
 
     // Check if the shipped quantity exceeds the batch quantity
-    if (batchNumber && line.shippedQuantity > batchNumber.quantity) {
+    if (batchNumber && (line.shippedQuantity || 0) > batchNumber.quantity) {
       setError(
         `Shipped quantity exceeds batch quantity (${batchNumber.quantity})`
       );
@@ -631,13 +636,13 @@ function BatchForm({
     }
 
     const formData = new FormData();
-    formData.append("itemId", line.itemId);
+    formData.append("itemId", line.itemId!);
     formData.append("shipmentId", shipment.id);
-    formData.append("shipmentLineId", line.id);
+    formData.append("shipmentLineId", line.id!);
     formData.append("trackingType", "batch");
     formData.append("trackedEntityId", valuesToSubmit.number.trim());
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
-    formData.append("quantity", line.shippedQuantity.toString());
+    formData.append("quantity", (line.shippedQuantity || 0).toString());
 
     submit(formData, {
       method: "post",
@@ -652,7 +657,7 @@ function BatchForm({
       window.open(
         window.location.origin +
           path.to.file.shipmentLabelsZpl(shipment?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -661,7 +666,7 @@ function BatchForm({
       window.open(
         window.location.origin +
           path.to.file.shipmentLabelsPdf(shipment?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -725,7 +730,7 @@ function BatchForm({
                   (b) => b.id === values.number
                 );
                 if (batchNumber) {
-                  if (line.shippedQuantity < batchNumber.quantity) {
+                  if ((line.shippedQuantity || 0) < batchNumber.quantity) {
                     return (
                       <span className="text-xs text-muted-foreground">
                         Shipped quantity is less than batch quantity. A new
@@ -761,7 +766,7 @@ function SerialForm({
   ) => void;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
-  const { data: serialNumbersData } = useSerialNumbers(line.itemId, isReadOnly);
+  const { data: serialNumbersData } = useSerialNumbers(line.itemId!, isReadOnly);
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
@@ -815,9 +820,9 @@ function SerialForm({
 
       const formData = new FormData();
       formData.append("trackingType", "serial");
-      formData.append("itemId", line.itemId);
+      formData.append("itemId", line.itemId!);
       formData.append("shipmentId", shipment.id);
-      formData.append("shipmentLineId", line.id);
+      formData.append("shipmentLineId", line.id!);
       formData.append("index", serialNumber.index.toString());
       formData.append("trackedEntityId", serialNumber.id.trim());
 
@@ -996,8 +1001,8 @@ function SplitShipmentLineModal({
           </ModalHeader>
 
           <ModalBody>
-            <input type="hidden" name="documentId" value={line.shipmentId} />
-            <input type="hidden" name="documentLineId" value={line.id} />
+            <input type="hidden" name="documentId" value={line.shipmentId!} />
+            <input type="hidden" name="documentLineId" value={line.id!} />
             <input
               type="hidden"
               name="locationId"
@@ -1006,7 +1011,7 @@ function SplitShipmentLineModal({
             <Number
               name="quantity"
               label="Quantity"
-              maxValue={line.orderQuantity - 0.0001}
+              maxValue={(line.orderQuantity || 0) - 0.0001}
               minValue={0.0001}
             />
           </ModalBody>

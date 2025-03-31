@@ -144,7 +144,6 @@ serve(async (req: Request) => {
         const serialNumbersConsumed: string[] = [];
 
         const locationId = shipment.data.locationId;
-
         for await (const shipmentLine of shipmentLines.data) {
           if (
             shipmentLine.fulfillment?.type === "Job" &&
@@ -153,24 +152,86 @@ serve(async (req: Request) => {
             // Update quantity shipped on job, accumulating totals from multiple shipments
             const jobId = shipmentLine.fulfillment.jobId;
             const currentJob = jobs.data.find((j) => j.id === jobId);
+            
+            // Log job and shipment line data to debug NaN issues
+            console.log("Processing job update:", {
+              jobId,
+              currentJob: currentJob ? {
+                id: currentJob.id,
+                quantity: currentJob.quantity,
+                quantityShipped: currentJob.quantityShipped,
+                quantityComplete: currentJob.quantityComplete,
+                status: currentJob.status
+              } : null,
+              shipmentLine: {
+                id: shipmentLine.id,
+                shippedQuantity: shipmentLine.shippedQuantity,
+                shippedQuantityType: typeof shipmentLine.shippedQuantity
+              }
+            });
+            
             const currentQuantityShipped = currentJob?.quantityShipped ?? 0;
+            
+            // Ensure shippedQuantity is a valid number to prevent "100NaN" errors
+            const shippedQuantity = typeof shipmentLine.shippedQuantity === 'number' && !isNaN(shipmentLine.shippedQuantity) 
+              ? shipmentLine.shippedQuantity 
+              : 0;
+              
+            console.log("Calculated values:", {
+              currentQuantityShipped,
+              shippedQuantity,
+              newTotal: currentQuantityShipped + shippedQuantity,
+              jobQuantity: currentJob?.quantity
+            });
 
             // If we've already updated this job in this transaction, use that as the base
             // instead of the current DB value to avoid double counting
             if (jobUpdates[jobId]) {
+              const newQuantityShipped = (jobUpdates[jobId]?.quantityShipped ?? 0) + shippedQuantity;
+              const newQuantityComplete = currentJob?.status === "Completed" 
+                ? currentJob?.quantityComplete 
+                : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
+              const newStatus = currentQuantityShipped + shippedQuantity >= (currentJob?.quantity ?? 0) 
+                ? "Completed" 
+                : currentJob?.status;
+                
+              console.log("Updating existing job update:", {
+                jobId,
+                previousUpdate: jobUpdates[jobId],
+                newUpdate: {
+                  status: newStatus,
+                  quantityComplete: newQuantityComplete,
+                  quantityShipped: newQuantityShipped
+                }
+              });
+              
               jobUpdates[jobId] = {
-                status: currentQuantityShipped + shipmentLine.shippedQuantity >= (currentJob?.quantity ?? 0) ? "Completed" : currentJob?.status,
-                quantityComplete: currentJob?.status === "Completed" ? currentJob?.quantityComplete : (currentJob?.quantityComplete ?? 0) + shipmentLine.shippedQuantity,
-                quantityShipped:
-                  (jobUpdates[jobId]?.quantityShipped ?? 0) +
-                  shipmentLine.shippedQuantity,
+                status: newStatus,
+                quantityComplete: newQuantityComplete,
+                quantityShipped: newQuantityShipped,
               };
             } else {
+              const newQuantityShipped = currentQuantityShipped + shippedQuantity;
+              const newQuantityComplete = currentJob?.status === "Completed" 
+                ? currentJob?.quantityComplete 
+                : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
+              const newStatus = currentQuantityShipped + shippedQuantity >= (currentJob?.quantity ?? 0) 
+                ? "Completed" 
+                : currentJob?.status;
+                
+              console.log("Creating new job update:", {
+                jobId,
+                update: {
+                  status: newStatus,
+                  quantityComplete: newQuantityComplete,
+                  quantityShipped: newQuantityShipped
+                }
+              });
+              
               jobUpdates[jobId] = {
-                status: currentQuantityShipped + shipmentLine.shippedQuantity >= (currentJob?.quantity ?? 0) ? "Completed" : currentJob?.status,
-                quantityComplete: currentJob?.status === "Completed" ? currentJob?.quantityComplete : (currentJob?.quantityComplete ?? 0) + shipmentLine.shippedQuantity,
-                quantityShipped:
-                  currentQuantityShipped + shipmentLine.shippedQuantity,
+                status: newStatus,
+                quantityComplete: newQuantityComplete,
+                quantityShipped: newQuantityShipped,
               };
             }
             continue;
@@ -710,7 +771,9 @@ serve(async (req: Request) => {
           }
 
           if (Object.keys(jobUpdates).length > 0) {
+            console.log("Final job updates to be applied:", jobUpdates);
             for await (const [jobId, update] of Object.entries(jobUpdates)) {
+              console.log(`Updating job ${jobId} with:`, update);
               await trx
                 .updateTable("job")
                 .set(update)

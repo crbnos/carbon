@@ -6,7 +6,6 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
-import type { SalesOrderStatus } from "~/modules/sales";
 import { salesOrderValidator, upsertSalesOrder } from "~/modules/sales";
 import { SalesOrderForm } from "~/modules/sales/ui/SalesOrder";
 import { getNextSequence } from "~/modules/settings";
@@ -72,14 +71,16 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function SalesOrderNewRoute() {
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
-  const { id: userId, company } = useUser();
+  const { id: userId, company, defaults } = useUser();
+
   const initialValues = {
     id: undefined,
     salesOrderId: undefined,
     customerId: customerId ?? "",
     orderDate: today(getLocalTimeZone()).toString(),
-    status: "Draft" as SalesOrderStatus,
+    status: "Draft" as const,
     currencyCode: company?.baseCurrencyCode ?? "USD",
+    locationId: defaults?.locationId ?? "",
     salesPersonId: userId,
     exchangeRate: undefined,
     exchangeRateUpdatedAt: "",
