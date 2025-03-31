@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Ready" && shouldSchedule) {
     try {
       const serviceRole = getCarbonServiceRole();
-      const [scheduler, inventoryDocument] = await Promise.all([
+      const [scheduler] = await Promise.all([
         serviceRole.functions.invoke(
         "scheduler",
         {
@@ -65,6 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         "create-inventory-document",
         {
           body: {
+            type: "purchaseOrderFromJob",
             jobId: id,
             companyId,
             userId,
