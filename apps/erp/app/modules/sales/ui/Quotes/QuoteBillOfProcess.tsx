@@ -163,7 +163,10 @@ function makeItem(
           {operation.description}
         </h3>
         {operation.operationType === "Outside" && (
-          <SupplierProcessPreview processId={operation.processId} supplierProcessId={operation.operationSupplierProcessId} />
+          <SupplierProcessPreview
+            processId={operation.processId}
+            supplierProcessId={operation.operationSupplierProcessId}
+          />
         )}
       </VStack>
     ),
@@ -526,7 +529,7 @@ const QuoteBillOfProcess = ({
       },
       {
         id: 1,
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             Instructions
@@ -580,7 +583,7 @@ const QuoteBillOfProcess = ({
 
       {
         id: 2,
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Parameters</span>
@@ -615,7 +618,7 @@ const QuoteBillOfProcess = ({
       },
       {
         id: 3,
-        disabled: hasProcedure,
+        disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Attributes</span>
@@ -650,6 +653,7 @@ const QuoteBillOfProcess = ({
       },
       {
         id: 4,
+        disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Tools</span>
@@ -1628,8 +1632,7 @@ function OperationForm({
               return (acc += sp.minimumCost ?? 0);
             }, 0) / supplierProcesses.data.length
           : p.operationMinimumCost,
-      operationUnitCost:
-        item.data.operationUnitCost ?? 0,
+      operationUnitCost: item.data.operationUnitCost ?? 0,
       operationLeadTime:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {

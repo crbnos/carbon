@@ -193,7 +193,10 @@ function makeItem(
           {operation.description}
         </h3>
         {operation.operationType === "Outside" && (
-          <SupplierProcessPreview processId={operation.processId} supplierProcessId={operation.operationSupplierProcessId} />
+          <SupplierProcessPreview
+            processId={operation.processId}
+            supplierProcessId={operation.operationSupplierProcessId}
+          />
         )}
       </VStack>
     ),
@@ -711,6 +714,7 @@ const JobBillOfProcess = ({
       {
         id: 1,
         label: "Instructions",
+        disabled: item.data.operationType === "Outside",
         content: (
           <div className="flex flex-col">
             <div>
@@ -746,6 +750,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 2,
+        disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Params</span>
@@ -766,6 +771,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 3,
+        disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Attributes</span>
@@ -786,6 +792,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 4,
+        disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
             <span>Tools</span>
@@ -806,6 +813,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 5,
+        disabled: item.data.operationType === "Outside",
         label: "Events",
         content: (
           <div className="flex w-full flex-col pr-2 py-6 min-h-[300px]">
@@ -831,6 +839,7 @@ const JobBillOfProcess = ({
       },
       {
         id: 6,
+        disabled: item.data.operationType === "Outside",
         label: "Chat",
         content: <OperationChat jobOperationId={item.id} />,
       },
