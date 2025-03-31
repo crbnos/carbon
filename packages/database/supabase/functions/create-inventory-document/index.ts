@@ -753,7 +753,7 @@ serve(async (req: Request) => {
                   itemReadableId: salesOrderLine.itemReadableId,
                   orderQuantity: salesOrderLine.saleQuantity,
                   outstandingQuantity: outstandingQuantity,
-                  shippedQuantity: outstandingQuantity,
+                  shippedQuantity: outstandingQuantity ?? 0,
                   requiresSerialTracking: isSerial,
                   requiresBatchTracking: isBatch,
                   unitPrice: shippingAndTaxUnitCost,

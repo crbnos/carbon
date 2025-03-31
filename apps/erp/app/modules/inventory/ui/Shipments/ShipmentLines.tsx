@@ -91,7 +91,10 @@ const ShipmentLines = () => {
     shipmentsById.set(pendingShipmentLine.id, merged as ShipmentLine);
   }
 
-  const shipmentLines = Array.from(shipmentsById.values());
+  const shipmentLines = Array.from(shipmentsById.values().map((line) => ({
+    ...line,
+    shippedQuantity: line.shippedQuantity ?? 0,
+  })));
 
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
     Record<string, { index: number; id: string }[]>

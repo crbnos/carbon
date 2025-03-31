@@ -241,12 +241,15 @@ serve(async (req: Request) => {
             items.data.find((item) => item.id === shipmentLine.itemId)
               ?.itemTrackingType ?? "Inventory";
 
+          // Default shippedQuantity to 0 if not defined
+          const shippedQuantity = shipmentLine.shippedQuantity ?? 0;
+
           if (itemTrackingType === "Inventory") {
             itemLedgerInserts.push({
               postingDate: today,
               itemId: shipmentLine.itemId,
               itemReadableId: shipmentLine.itemReadableId ?? "",
-              quantity: -shipmentLine.shippedQuantity,
+              quantity: -shippedQuantity,
               locationId: shipmentLine.locationId ?? locationId,
               shelfId: shipmentLine.shelfId,
               entryType: "Negative Adjmt.",
@@ -263,7 +266,7 @@ serve(async (req: Request) => {
               postingDate: today,
               itemId: shipmentLine.itemId,
               itemReadableId: shipmentLine.itemReadableId ?? "",
-              quantity: -shipmentLine.shippedQuantity,
+              quantity: -shippedQuantity,
               locationId: shipmentLine.locationId ?? locationId,
               shelfId: shipmentLine.shelfId,
               entryType: "Negative Adjmt.",
