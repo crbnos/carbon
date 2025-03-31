@@ -1,6 +1,9 @@
 ALTER TYPE "purchaseOrderType" ADD VALUE 'Outside Processing';
 
 ALTER TABLE "purchaseOrder" ADD COLUMN "purchaseOrderType" "purchaseOrderType" NOT NULL DEFAULT 'Purchase';
+ALTER TABLE "purchaseOrder" ADD COLUMN "jobId" TEXT;
+ALTER TABLE "purchaseOrder" ADD CONSTRAINT "purchaseOrder_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "job" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "purchaseOrder" ADD COLUMN "jobReadableId" TEXT;
 
 ALTER TABLE "purchaseOrderLine" ADD COLUMN "jobId" TEXT;
 ALTER TABLE "purchaseOrderLine" ADD CONSTRAINT "purchaseOrderLine_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "job" ("id") ON DELETE SET NULL ON UPDATE CASCADE;

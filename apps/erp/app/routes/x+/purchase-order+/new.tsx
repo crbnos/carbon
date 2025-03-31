@@ -6,9 +6,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
-import type {
-  PurchaseOrderStatus,
-} from "~/modules/purchasing";
+import type { PurchaseOrderStatus } from "~/modules/purchasing";
 import {
   purchaseOrderValidator,
   upsertPurchaseOrder,

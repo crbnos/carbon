@@ -98,15 +98,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         throw new Error("Failed to load customer");
       }
 
-      const thumbnailPaths = shipmentLines.data?.reduce<Record<string, string | null>>(
-        (acc, line) => {
-          if (line.thumbnailPath) {
-            acc[line.id!] = line.thumbnailPath;
-          }
-          return acc;
-        },
-        {}
-      );
+      const thumbnailPaths = shipmentLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.id!] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
 
       const thumbnails: Record<string, string | null> =
         (thumbnailPaths
@@ -115,10 +114,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 if (!path) {
                   return null;
                 }
-                return getBase64ImageFromSupabase(client, path).then((data) => ({
-                  id,
-                  data,
-                }));
+                return getBase64ImageFromSupabase(client, path).then(
+                  (data) => ({
+                    id,
+                    data,
+                  })
+                );
               })
             )
           : []
@@ -128,8 +129,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           }
           return acc;
         }, {}) ?? {};
-
-      
 
       const stream = await renderToStream(
         <PackingSlipPDF

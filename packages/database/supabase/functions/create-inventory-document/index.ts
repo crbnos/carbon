@@ -77,8 +77,7 @@ serve(async (req: Request) => {
   }
   const payload = await req.json();
   console.log(payloadValidator.safeParse(payload));
-  const { type, companyId, userId } =
-    payloadValidator.parse(payload);
+  const { type, companyId, userId } = payloadValidator.parse(payload);
 
   switch (type) {
     case "purchaseOrderFromJob": {
@@ -100,23 +99,61 @@ serve(async (req: Request) => {
 
         const [job, jobOperations] = await Promise.all([
           client.from("job").select("*").eq("id", jobId).single(),
-          client.from("jobOperation").select("*, jobMakeMethod(itemId)").eq("jobId", jobId),
+          client
+            .from("jobOperation")
+            .select("*, jobMakeMethod(itemId)")
+            .eq("jobId", jobId),
         ]);
 
         if (jobOperations.error) throw new Error(jobOperations.error.message);
 
-        const outsideOperations = jobOperations.data?.filter((d) => d.operationType === "Outside");
+        const outsideOperations = jobOperations.data?.filter(
+          (d) => d.operationType === "Outside"
+        );
 
-        if(outsideOperations.length > 0) {
-          const supplierProcessIds = new Set(outsideOperations.map((d) => d.operationSupplierProcessId).filter(Boolean));
-          const [supplierProcesses] = await Promise.all([
-            client.from("supplierProcess").select("*").in("id", Array.from(supplierProcessIds)),
-          ]);
+        if (outsideOperations.length > 0) {
+          const supplierProcessIds = new Set(
+            outsideOperations
+              .map((d) => d.operationSupplierProcessId)
+              .filter(Boolean)
+          );
+          const [supplierProcesses, existingPurchaseOrderLines] =
+            await Promise.all([
+              client
+                .from("supplierProcess")
+                .select("*")
+                .in("id", Array.from(supplierProcessIds)),
+              client
+                .from("purchaseOrderLine")
+                .select("*")
+                .eq("jobId", jobId)
+                .eq(
+                  "jobOperationId",
+                  outsideOperations.map((d) => d.id)
+                ),
+            ]);
 
-          if (supplierProcesses.error) throw new Error(supplierProcesses.error.message);
+          if (supplierProcesses.error)
+            throw new Error(supplierProcesses.error.message);
 
-          const outsideOperationsBySupplierId = outsideOperations.reduce<Record<string, (Database["public"]["Tables"]["jobOperation"]["Row"] & {jobMakeMethod: {itemId: string;} | null})[]>>((acc, oo) => {
-            const supplierProcess = supplierProcesses.data?.find((d) => d.id === oo.operationSupplierProcessId);
+          const outsideOperationsBySupplierId = outsideOperations.reduce<
+            Record<
+              string,
+              (Database["public"]["Tables"]["jobOperation"]["Row"] & {
+                jobMakeMethod: { itemId: string } | null;
+              })[]
+            >
+          >((acc, oo) => {
+            const supplierProcess = supplierProcesses.data?.find(
+              (d) => d.id === oo.operationSupplierProcessId
+            );
+            if (
+              existingPurchaseOrderLines.data?.find(
+                (d) => d.jobOperationId === oo.id
+              )
+            ) {
+              return acc;
+            }
             if (!supplierProcess) return acc;
             if (!acc[supplierProcess.supplierId]) {
               acc[supplierProcess.supplierId] = [];
@@ -125,105 +162,182 @@ serve(async (req: Request) => {
             return acc;
           }, {});
 
-          const supplierIds = new Set(Object.keys(outsideOperationsBySupplierId));
-          const itemIds = new Set(outsideOperations.map((d) => d.jobMakeMethod?.itemId).filter(Boolean));
+          const supplierIds = new Set(
+            Object.keys(outsideOperationsBySupplierId)
+          );
+          const itemIds = new Set(
+            outsideOperations
+              .map((d) => d.jobMakeMethod?.itemId)
+              .filter(Boolean)
+          );
 
-          const [suppliers, supplierPayments, supplierShipping, items] = await Promise.all([
-            client.from("supplier").select("*").in("id", Array.from(supplierIds)),
-            client.from("supplierPayment").select("*").in("supplierId", Array.from(supplierIds)),
-            client.from("supplierShipping").select("*").in("supplierId", Array.from(supplierIds)),
-            client.from("item").select("*").in("id", Array.from(itemIds)),
-          ]);
+          const [suppliers, supplierPayments, supplierShipping, items] =
+            await Promise.all([
+              client
+                .from("supplier")
+                .select("*")
+                .in("id", Array.from(supplierIds)),
+              client
+                .from("supplierPayment")
+                .select("*")
+                .in("supplierId", Array.from(supplierIds)),
+              client
+                .from("supplierShipping")
+                .select("*")
+                .in("supplierId", Array.from(supplierIds)),
+              client.from("item").select("*").in("id", Array.from(itemIds)),
+            ]);
 
           if (suppliers.error) throw new Error(suppliers.error.message);
-          if (supplierPayments.error) throw new Error(supplierPayments.error.message);
-          if (supplierShipping.error) throw new Error(supplierShipping.error.message);
+          if (supplierPayments.error)
+            throw new Error(supplierPayments.error.message);
+          if (supplierShipping.error)
+            throw new Error(supplierShipping.error.message);
 
-          const currencyCodes = new Set(suppliers.data?.map((d) => d.currencyCode).filter(Boolean) as string[]);
+          const currencyCodes = new Set(
+            suppliers.data
+              ?.map((d) => d.currencyCode)
+              .filter(Boolean) as string[]
+          );
 
-          const exchangeRates = await Promise.all(Array.from(currencyCodes).map(async (currencyCode) => {
-            const exchangeRate = await client.from("currency").select("*").eq("code", currencyCode).eq("companyId", companyId).single();
-            return {
-              currencyCode,
-              exchangeRate: exchangeRate.data?.exchangeRate ?? 1,
-            };
-          }));
+          const exchangeRates = await Promise.all(
+            Array.from(currencyCodes).map(async (currencyCode) => {
+              const exchangeRate = await client
+                .from("currency")
+                .select("*")
+                .eq("code", currencyCode)
+                .eq("companyId", companyId)
+                .single();
+              return {
+                currencyCode,
+                exchangeRate: exchangeRate.data?.exchangeRate ?? 1,
+              };
+            })
+          );
 
-          
           await db.transaction().execute(async (trx) => {
-            for await (const supplier of Object.keys(outsideOperationsBySupplierId)) {
+            for await (const supplier of Object.keys(
+              outsideOperationsBySupplierId
+            )) {
               const outsideOperations = outsideOperationsBySupplierId[supplier];
 
-              const payment = supplierPayments.data?.find((d) => d.supplierId === supplier);
-              const shipping = supplierShipping.data?.find((d) => d.supplierId === supplier);
-              
-              const supplierInteraction = await trx.insertInto("supplierInteraction").values({
-                companyId,
-              }).returning(["id"]).execute();
+              const payment = supplierPayments.data?.find(
+                (d) => d.supplierId === supplier
+              );
+              const shipping = supplierShipping.data?.find(
+                (d) => d.supplierId === supplier
+              );
+
+              const supplierInteraction = await trx
+                .insertInto("supplierInteraction")
+                .values({
+                  companyId,
+                })
+                .returning(["id"])
+                .execute();
 
               const supplierInteractionId = supplierInteraction?.[0]?.id;
-              const nextSequence = await getNextSequence(trx, "purchaseOrder", companyId);
-  
-              if(!nextSequence) throw new Error("Failed to get next sequence");
-              if(!supplierInteractionId) throw new Error("Failed to create supplier interaction");
-  
-              const order = await trx.insertInto("purchaseOrder").values({
-                purchaseOrderId: nextSequence,
-                status: "Draft",
-                supplierId: supplier,
-                companyId: companyId,
-                createdBy: userId,
-                purchaseOrderType: "Outside Processing",
-                supplierInteractionId: supplierInteractionId,
-                currencyCode: suppliers.data?.find((d) => d.id === supplier)?.currencyCode ?? "USD",
-                exchangeRate: exchangeRates.find((d) => d.currencyCode === suppliers.data?.find((d) => d.id === supplier)?.currencyCode)?.exchangeRate ?? 1,
-                exchangeRateUpdatedAt: new Date().toISOString(),
-              }).returning(["id"]).execute();
-              
-              if (!order?.[0]?.id) throw new Error("Failed to create purchase order");
-              
+              const nextSequence = await getNextSequence(
+                trx,
+                "purchaseOrder",
+                companyId
+              );
+
+              if (!nextSequence) throw new Error("Failed to get next sequence");
+              if (!supplierInteractionId)
+                throw new Error("Failed to create supplier interaction");
+
+              const order = await trx
+                .insertInto("purchaseOrder")
+                .values({
+                  purchaseOrderId: nextSequence,
+                  status: "Draft",
+                  supplierId: supplier,
+                  jobId: jobId,
+                  jobReadableId: job.data?.jobId,
+                  companyId: companyId,
+                  createdBy: userId,
+                  purchaseOrderType: "Outside Processing",
+                  supplierInteractionId: supplierInteractionId,
+                  currencyCode:
+                    suppliers.data?.find((d) => d.id === supplier)
+                      ?.currencyCode ?? "USD",
+                  exchangeRate:
+                    exchangeRates.find(
+                      (d) =>
+                        d.currencyCode ===
+                        suppliers.data?.find((d) => d.id === supplier)
+                          ?.currencyCode
+                    )?.exchangeRate ?? 1,
+                  exchangeRateUpdatedAt: new Date().toISOString(),
+                })
+                .returning(["id"])
+                .execute();
+
+              if (!order?.[0]?.id)
+                throw new Error("Failed to create purchase order");
+
               const purchaseOrderId = order[0].id;
-              
+
               // Create purchase order delivery and payment
               const locationId = job.data?.locationId ?? null; // Default location
               const shippingMethodId = shipping?.shippingMethodId;
               const shippingTermId = shipping?.shippingTermId;
-              
+
               const paymentTermId = payment?.paymentTermId;
               const invoiceSupplierId = payment?.invoiceSupplierId;
-              const invoiceSupplierContactId = payment?.invoiceSupplierContactId;
-              const invoiceSupplierLocationId = payment?.invoiceSupplierLocationId;
-              
+              const invoiceSupplierContactId =
+                payment?.invoiceSupplierContactId;
+              const invoiceSupplierLocationId =
+                payment?.invoiceSupplierLocationId;
+
               await Promise.all([
-                trx.insertInto("purchaseOrderDelivery").values({
-                  id: purchaseOrderId,
-                  locationId,
-                  shippingMethodId,
-                  shippingTermId,
-                  companyId,
-                }).execute(),
-                trx.insertInto("purchaseOrderPayment").values({
-                  id: purchaseOrderId,
-                  invoiceSupplierId,
-                  invoiceSupplierContactId,
-                  invoiceSupplierLocationId,
-                  paymentTermId,
-                  companyId,
-                }).execute()
+                trx
+                  .insertInto("purchaseOrderDelivery")
+                  .values({
+                    id: purchaseOrderId,
+                    locationId,
+                    shippingMethodId,
+                    shippingTermId,
+                    companyId,
+                  })
+                  .execute(),
+                trx
+                  .insertInto("purchaseOrderPayment")
+                  .values({
+                    id: purchaseOrderId,
+                    invoiceSupplierId,
+                    invoiceSupplierContactId,
+                    invoiceSupplierLocationId,
+                    paymentTermId,
+                    companyId,
+                  })
+                  .execute(),
               ]);
 
-              const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] = [];
-              
+              const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
+                [];
+
               // Create purchase order lines for each process
               for await (const operation of outsideOperations) {
                 // Get the item associated with the operation
-                const item = items.data?.find((d) => d.id === operation.jobMakeMethod?.itemId);
-                const supplierProcess = supplierProcesses.data?.find((d) => d.id === operation.operationSupplierProcessId);
+                const item = items.data?.find(
+                  (d) => d.id === operation.jobMakeMethod?.itemId
+                );
+                const supplierProcess = supplierProcesses.data?.find(
+                  (d) => d.id === operation.operationSupplierProcessId
+                );
 
-                if(item && supplierProcess) {
-                  const totalCostWithUnitPrice = (operation.operationUnitCost ?? 0) * (operation.operationQuantity ?? 0);
-                  const totalCostWithMinimumCost = (operation.operationMinimumCost ?? 0) > totalCostWithUnitPrice ? (operation.operationMinimumCost ?? 0) : totalCostWithUnitPrice;
-                  
+                if (item && supplierProcess) {
+                  const totalCostWithUnitPrice =
+                    (operation.operationUnitCost ?? 0) *
+                    (operation.operationQuantity ?? 0);
+                  const totalCostWithMinimumCost =
+                    (operation.operationMinimumCost ?? 0) >
+                    totalCostWithUnitPrice
+                      ? operation.operationMinimumCost ?? 0
+                      : totalCostWithUnitPrice;
+
                   // Create purchase order line
                   purchaseOrderLineInserts.push({
                     purchaseOrderId,
@@ -235,22 +349,33 @@ serve(async (req: Request) => {
                     purchaseUnitOfMeasureCode: item.unitOfMeasureCode,
                     inventoryUnitOfMeasureCode: item.unitOfMeasureCode,
                     conversionFactor: 1,
-                    supplierUnitPrice: operation.operationQuantity && operation.operationQuantity > 0 
-                      ? totalCostWithMinimumCost / operation.operationQuantity 
-                      : totalCostWithMinimumCost,
+                    supplierUnitPrice:
+                      operation.operationQuantity &&
+                      operation.operationQuantity > 0
+                        ? totalCostWithMinimumCost / operation.operationQuantity
+                        : totalCostWithMinimumCost,
                     locationId: job.data?.locationId,
                     jobId: job.data?.id,
                     jobOperationId: operation.id,
                     companyId,
                     createdBy: userId,
-                    exchangeRate: exchangeRates.find((d) => d.currencyCode === suppliers.data?.find((d) => d.id === supplier)?.currencyCode)?.exchangeRate ?? 1,
+                    exchangeRate:
+                      exchangeRates.find(
+                        (d) =>
+                          d.currencyCode ===
+                          suppliers.data?.find((d) => d.id === supplier)
+                            ?.currencyCode
+                      )?.exchangeRate ?? 1,
                   });
                 }
               }
-              
+
               // Insert all purchase order lines
               if (purchaseOrderLineInserts.length > 0) {
-                await trx.insertInto("purchaseOrderLine").values(purchaseOrderLineInserts).execute();
+                await trx
+                  .insertInto("purchaseOrderLine")
+                  .values(purchaseOrderLineInserts)
+                  .execute();
               }
             }
           });
@@ -262,13 +387,16 @@ serve(async (req: Request) => {
           status: 500,
         });
       }
-      
-      return new Response(JSON.stringify({
-        success: true,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
     }
     case "receiptDefault": {
       const { locationId } = payload;
@@ -316,7 +444,11 @@ serve(async (req: Request) => {
       }
     }
     case "receiptFromPurchaseOrder": {
-      const { purchaseOrderId, receiptId: existingReceiptId, locationId } = payload;
+      const {
+        purchaseOrderId,
+        receiptId: existingReceiptId,
+        locationId,
+      } = payload;
 
       console.log({
         function: "create-inventory-document",
@@ -659,7 +791,11 @@ serve(async (req: Request) => {
       }
     }
     case "shipmentFromSalesOrder": {
-      const { salesOrderId, shipmentId: existingShipmentId, locationId } = payload;
+      const {
+        salesOrderId,
+        shipmentId: existingShipmentId,
+        locationId,
+      } = payload;
 
       console.log({
         function: "create-inventory-document",
@@ -708,10 +844,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", existingShipmentId)
             .maybeSingle(),
-          client
-            .from("job")
-            .select("*")
-            .eq("salesOrderId", salesOrderId)
+          client.from("job").select("*").eq("salesOrderId", salesOrderId),
         ]);
 
         if (!salesOrder.data) throw new Error("Sales order not found");
@@ -737,7 +870,7 @@ serve(async (req: Request) => {
         );
 
         const hasShipment = !!shipment.data?.id;
-        
+
         // Group jobs by sales order line ID
         const jobsBySalesOrderLine = (jobs.data || []).reduce<
           Record<string, Database["public"]["Tables"]["job"]["Row"][]>
@@ -750,8 +883,6 @@ serve(async (req: Request) => {
           }
           return acc;
         }, {});
-
-        
 
         const previouslyShippedQuantitiesByLine = (
           salesOrderLines.data ?? []
@@ -818,7 +949,7 @@ serve(async (req: Request) => {
 
           // Process each sales order line
           for await (const salesOrderLine of salesOrderLines.data) {
-            console.log({salesOrderLine})
+            console.log({ salesOrderLine });
             if (
               !salesOrderLine.itemId ||
               !salesOrderLine.saleQuantity ||
@@ -833,7 +964,6 @@ serve(async (req: Request) => {
             const isBatch = batchItems.has(salesOrderLine.itemId);
 
             if (salesOrderLine.methodType === "Make") {
-              
               for await (const job of jobsBySalesOrderLine[salesOrderLine.id] ??
                 []) {
                 if (!salesOrderLine.itemId) return;
@@ -842,7 +972,6 @@ serve(async (req: Request) => {
                   ? Math.min(job.quantityComplete - job.quantityShipped, 0)
                   : job.quantity - job.quantityShipped;
 
-                
                 if (!isSerial || (isSerial && quantityAvailable > 0)) {
                   const fulfillment = await trx
                     .insertInto("fulfillment")
@@ -874,7 +1003,9 @@ serve(async (req: Request) => {
                       itemId: salesOrderLine.itemId,
                       itemReadableId: salesOrderLine.itemReadableId,
                       orderQuantity: salesOrderLine.saleQuantity,
-                      outstandingQuantity: salesOrderLine.quantityToSend ?? salesOrderLine.saleQuantity,
+                      outstandingQuantity:
+                        salesOrderLine.quantityToSend ??
+                        salesOrderLine.saleQuantity,
                       shippedQuantity: quantityAvailable,
                       requiresSerialTracking: isSerial,
                       requiresBatchTracking: isBatch,
@@ -996,7 +1127,11 @@ serve(async (req: Request) => {
       }
     }
     case "shipmentFromSalesOrderLine": {
-      const { salesOrderLineId, shipmentId: existingShipmentId, locationId } = payload;
+      const {
+        salesOrderLineId,
+        shipmentId: existingShipmentId,
+        locationId,
+      } = payload;
 
       console.log({
         function: "create-inventory-document",

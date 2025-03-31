@@ -1,7 +1,11 @@
 import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ClientActionFunctionArgs, useNavigate, useParams } from "@remix-run/react";
+import {
+  ClientActionFunctionArgs,
+  useNavigate,
+  useParams,
+} from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
@@ -44,7 +48,7 @@ export async function clientAction({
   params,
 }: ClientActionFunctionArgs) {
   const { id } = params;
-  if(id) {
+  if (id) {
     const serviceRole = getCarbonServiceRole();
     const supplierProcessId = await getSupplierProcessById(serviceRole, id);
     if (supplierProcessId.data?.processId) {

@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
-AlphaOption,
+  AlphaOption,
   Gravity,
   ImageMagick,
   initializeImageMagick,
@@ -154,15 +154,15 @@ serve(async (req: Request) => {
       });
     } catch (imgError) {
       console.error("ImageMagick processing error:", imgError);
-      
+
       // Fallback processing for problematic images
       result = ImageMagick.read(bytes, (img) => {
         console.log("Using fallback processing method");
-        
+
         // Force conversion to JPEG which has better compatibility
         img.format = MagickFormat.Jpeg;
         img.quality = 90;
-        
+
         if (targetHeight) {
           const targetHeightInt = parseInt(targetHeight, 10);
           const ratio = img.width / img.height;
@@ -172,7 +172,7 @@ serve(async (req: Request) => {
           // Simple resize to 300x300 without complex operations
           img.resize(300, 300);
         }
-        
+
         img.strip();
         return img.write((data) => data);
       });
@@ -189,9 +189,12 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Image processing error:", err);
-    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: err.message, stack: err.stack }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+      }
+    );
   }
 });

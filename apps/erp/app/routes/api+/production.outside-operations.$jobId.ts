@@ -5,7 +5,6 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getOutsideOperationsByJobId } from "~/modules/production";
 
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const authorized = await requirePermissions(request, {
     view: "production",

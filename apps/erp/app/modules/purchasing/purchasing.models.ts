@@ -42,7 +42,10 @@ export const purchaseOrderLineType = [
   "Comment",
 ] as const;
 
-export const purchaseOrderTypeType = ["Purchase", "Outside Processing"] as const;
+export const purchaseOrderTypeType = [
+  "Purchase",
+  "Outside Processing",
+] as const;
 
 export const purchaseOrderStatusType = [
   "Draft",

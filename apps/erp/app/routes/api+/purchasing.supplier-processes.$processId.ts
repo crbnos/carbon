@@ -50,11 +50,9 @@ export async function clientLoader({
   const data =
     window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
 
-  console.log('clientLoader', queryKey, data);
-  
+  console.log("clientLoader", queryKey, data);
 
   if (!data) {
-    
     const serverData = await serverLoader<typeof loader>();
     window?.clientCache?.setQueryData(queryKey, serverData);
     return serverData;

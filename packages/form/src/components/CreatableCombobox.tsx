@@ -17,7 +17,7 @@ export type CreatableComboboxProps = Omit<
 > & {
   autoSelectSingleOption?: boolean;
   name: string;
-  label: string | JSX.Element;
+  label?: string | JSX.Element;
   helperText?: string;
   isConfigured?: boolean;
   isOptional?: boolean;

@@ -195,9 +195,7 @@ const ConsumableProperties = () => {
               name: routeData?.consumableSummary?.name ?? undefined,
             }}
             validator={z.object({
-              name: z
-                .string()
-              
+              name: z.string(),
             })}
             className="w-full -mt-2"
           >

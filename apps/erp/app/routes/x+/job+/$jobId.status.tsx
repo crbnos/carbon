@@ -52,25 +52,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     try {
       const serviceRole = getCarbonServiceRole();
       const [scheduler] = await Promise.all([
-        serviceRole.functions.invoke(
-        "scheduler",
-        {
+        serviceRole.functions.invoke("scheduler", {
           body: {
             jobId: id,
             companyId,
             userId,
           },
-        }
-      ), serviceRole.functions.invoke(
-        "create-inventory-document",
-        {
+        }),
+        serviceRole.functions.invoke("create-inventory-document", {
           body: {
             type: "purchaseOrderFromJob",
             jobId: id,
             companyId,
             userId,
           },
-        })
+        }),
       ]);
 
       if (scheduler.error) {

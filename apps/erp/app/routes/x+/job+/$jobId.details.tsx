@@ -11,7 +11,7 @@ import type { JSONContent } from "@carbon/react";
 import { Spinner, useMount, VStack } from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel, Documents } from "~/components";
 import { usePanels } from "~/components/Layout";
@@ -19,6 +19,7 @@ import { usePermissions, useRealtime, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJob,
+  getJobPurchaseOrderLines,
   jobValidator,
   recalculateJobRequirements,
   upsertJob,
@@ -27,10 +28,6 @@ import { JobNotes } from "~/modules/production/ui/Jobs";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-type LoaderData = {
-  notes: JSONContent;
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -48,8 +45,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json<LoaderData>({
+  return defer({
     notes: (job.data?.notes ?? {}) as JSONContent,
+    purchaseOrderLines: getJobPurchaseOrderLines(client, jobId),
   });
 }
 
@@ -105,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function JobDetailsRoute() {
-  const { notes } = useLoaderData<typeof loader>();
+  const { notes, purchaseOrderLines } = useLoaderData<typeof loader>();
   const { jobId } = useParams();
   if (!jobId) throw new Error("Could not find jobId");
   const permissions = usePermissions();
@@ -151,6 +149,13 @@ export default function JobDetailsRoute() {
               writeBucket="job"
               writeBucketPermission="production"
             />
+          )}
+        </Await>
+      </Suspense>
+      <Suspense>
+        <Await resolve={purchaseOrderLines}>
+          {(purchaseOrderLines) => (
+            <pre>{JSON.stringify(purchaseOrderLines.data, null, 2)}</pre>
           )}
         </Await>
       </Suspense>

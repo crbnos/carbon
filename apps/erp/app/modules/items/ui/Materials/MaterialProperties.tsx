@@ -214,9 +214,7 @@ const MaterialProperties = () => {
               name: routeData?.materialSummary?.name ?? undefined,
             }}
             validator={z.object({
-              name: z
-                .string()
-                
+              name: z.string(),
             })}
             className="w-full -mt-2"
           >

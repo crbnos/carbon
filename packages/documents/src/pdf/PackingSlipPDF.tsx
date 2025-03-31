@@ -194,16 +194,18 @@ const PackingSlipPDF = ({
                   <Text style={tw("text-[9px] opacity-80 mb-2")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
-                  
-                  {thumbnails && line.id in thumbnails && thumbnails[line.id] && (
-                    <View style={tw("mt-2 mb-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-1/3 h-auto")}
-                      />
-                    </View>
-                  )}
-                  
+
+                  {thumbnails &&
+                    line.id in thumbnails &&
+                    thumbnails[line.id] && (
+                      <View style={tw("mt-2 mb-2")}>
+                        <Image
+                          src={thumbnails[line.id]!}
+                          style={tw("w-1/3 h-auto")}
+                        />
+                      </View>
+                    )}
+
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
                 <Text

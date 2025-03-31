@@ -1,6 +1,7 @@
 import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
+  Badge,
   Button,
   HStack,
   IconButton,
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import {
   LuCopy,
   LuExternalLink,
+  LuHardHat,
   LuInfo,
   LuLink,
   LuRefreshCcw,
@@ -172,6 +174,19 @@ const PurchaseOrderProperties = () => {
           {routeData?.purchaseOrder?.purchaseOrderId}
         </span>
       </VStack>
+
+      {routeData?.purchaseOrder?.jobId && (
+        <VStack spacing={2}>
+          <span className="text-xs text-muted-foreground">Job</span>
+
+          <Link to={path.to.jobDetails(routeData?.purchaseOrder?.jobId)}>
+            <Badge variant="secondary">
+              <LuHardHat className="w-3 h-3 mr-1" />
+              {routeData?.purchaseOrder?.jobReadableId ?? "Job"}
+            </Badge>
+          </Link>
+        </VStack>
+      )}
 
       <Assignee
         id={orderId}

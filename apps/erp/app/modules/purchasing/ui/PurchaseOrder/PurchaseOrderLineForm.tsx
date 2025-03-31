@@ -66,7 +66,8 @@ const PurchaseOrderLineForm = ({
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
 
-  const isOutsideProcessing = routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
+  const isOutsideProcessing =
+    routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
   const [itemType, setItemType] = useState<MethodItemType>(
@@ -286,11 +287,13 @@ const PurchaseOrderLineForm = ({
                     : "New Purchase Order Line"}
                 </ModalCardTitle>
                 <ModalCardDescription>
-                  {isOutsideProcessing ? 
-                    <Badge variant="default">Outside Processing</Badge> : 
-                    isEditing ? 
+                  {isOutsideProcessing ? (
+                    <Badge variant="default">Outside Processing</Badge>
+                  ) : isEditing ? (
                     itemData?.description || itemType
-                    : "A purchase order line contains order details for a particular item"}
+                  ) : (
+                    "A purchase order line contains order details for a particular item"
+                  )}
                 </ModalCardDescription>
               </ModalCardHeader>
               <ModalCardBody>
@@ -450,14 +453,15 @@ const PurchaseOrderLineForm = ({
                       "Tool",
                       "Consumable",
                       "Fixed Asset",
-                    ].includes(itemType) && !isOutsideProcessing && (
-                      <Location
-                        name="locationId"
-                        label="Location"
-                        value={locationId}
-                        onChange={onLocationChange}
-                      />
-                    )}
+                    ].includes(itemType) &&
+                      !isOutsideProcessing && (
+                        <Location
+                          name="locationId"
+                          label="Location"
+                          value={locationId}
+                          onChange={onLocationChange}
+                        />
+                      )}
                     {[
                       "Item",
                       "Part",
@@ -466,22 +470,23 @@ const PurchaseOrderLineForm = ({
                       "Tool",
                       "Consumable",
                       "Fixed Asset",
-                    ].includes(itemType) && !isOutsideProcessing && (
-                      <Shelf
-                        name="shelfId"
-                        label="Shelf"
-                        locationId={locationId}
-                        value={itemData.shelfId ?? undefined}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            setItemData((d) => ({
-                              ...d,
-                              shelfId: newValue?.id,
-                            }));
-                          }
-                        }}
-                      />
-                    )}
+                    ].includes(itemType) &&
+                      !isOutsideProcessing && (
+                        <Shelf
+                          name="shelfId"
+                          label="Shelf"
+                          locationId={locationId}
+                          value={itemData.shelfId ?? undefined}
+                          onChange={(newValue) => {
+                            if (newValue) {
+                              setItemData((d) => ({
+                                ...d,
+                                shelfId: newValue?.id,
+                              }));
+                            }
+                          }}
+                        />
+                      )}
                     <NumberControlled
                       name="taxPercent"
                       label="Tax Percent"
@@ -532,15 +537,16 @@ const PurchaseOrderLineForm = ({
 
 export default PurchaseOrderLineForm;
 
+function JobOperationSelect(initialValues: { jobId?: string }) {
+  const [jobId, setJobId] = useState<string | null>(
+    initialValues.jobId ?? null
+  );
 
-function JobOperationSelect(initialValues: {jobId?: string}) {
-  const [jobId, setJobId] = useState<string | null>(initialValues.jobId ?? null);
-
-  const jobsFetcher = useFetcher<PostgrestResponse<{id: string; jobId: string}>>();
+  const jobsFetcher =
+    useFetcher<PostgrestResponse<{ id: string; jobId: string }>>();
   useMount(() => {
     jobsFetcher.load(path.to.api.jobs);
   });
-
 
   const jobOptions = useMemo(
     () =>
@@ -553,31 +559,42 @@ function JobOperationSelect(initialValues: {jobId?: string}) {
     [jobsFetcher.data]
   );
 
-
-  const jobOperationFetcher = useFetcher<PostgrestResponse<{id: string; description: string}>>();
+  const jobOperationFetcher =
+    useFetcher<PostgrestResponse<{ id: string; description: string }>>();
   useEffect(() => {
-    if(jobId) {
+    if (jobId) {
       jobOperationFetcher.load(path.to.api.outsideOperations(jobId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobId]);
 
   const jobOperationOptions = useMemo(() => {
-    return jobOperationFetcher.data?.data?.map((c) => ({
-      value: c.id,
-      label: c.description,
-    })) ?? [];
+    return (
+      jobOperationFetcher.data?.data?.map((c) => ({
+        value: c.id,
+        label: c.description,
+      })) ?? []
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jobOperationFetcher.data]);
-  
+
   return (
     <>
-      <Combobox name="jobId" label="Job" options={jobOptions} onChange={(value) => {
-        if(value) {
-          setJobId(value.value as string);
-        }
-      }} />  
-      <Combobox name="jobOperationId" label="Operation" options={jobOperationOptions} />  
+      <Combobox
+        name="jobId"
+        label="Job"
+        options={jobOptions}
+        onChange={(value) => {
+          if (value) {
+            setJobId(value.value as string);
+          }
+        }}
+      />
+      <Combobox
+        name="jobOperationId"
+        label="Operation"
+        options={jobOperationOptions}
+      />
     </>
   );
 }
