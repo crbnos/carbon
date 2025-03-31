@@ -50,7 +50,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (status === "Ready" && shouldSchedule) {
     try {
-      const scheduler = await getCarbonServiceRole().functions.invoke(
+      const serviceRole = getCarbonServiceRole();
+      const [scheduler, inventoryDocument] = await Promise.all([
+        serviceRole.functions.invoke(
         "scheduler",
         {
           body: {
@@ -59,7 +61,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
             userId,
           },
         }
-      );
+      ), serviceRole.functions.invoke(
+        "create-inventory-document",
+        {
+          body: {
+            jobId: id,
+            companyId,
+            userId,
+          },
+        })
+      ]);
 
       if (scheduler.error) {
         throw redirect(
