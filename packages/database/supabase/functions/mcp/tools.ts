@@ -300,7 +300,7 @@ const getPart = tool({
       });
 
       if (search.data && search.data.length > 0) {
-        return search.data
+        return search.data;
       }
     }
 

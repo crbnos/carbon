@@ -205,16 +205,18 @@ const SalesOrderPDF = ({
                   <Text style={tw("text-[9px] opacity-80")}>
                     {getLineDescriptionDetails(line)}
                   </Text>
-                  
-                  {thumbnails && line.id in thumbnails && thumbnails[line.id] && (
-                    <View style={tw("mt-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  )}
-                  
+
+                  {thumbnails &&
+                    line.id in thumbnails &&
+                    thumbnails[line.id] && (
+                      <View style={tw("mt-2")}>
+                        <Image
+                          src={thumbnails[line.id]!}
+                          style={tw("w-full h-auto")}
+                        />
+                      </View>
+                    )}
+
                   <View style={tw("mt-1")}>
                     {Object.keys(line.externalNotes ?? {}).length > 0 && (
                       <Note

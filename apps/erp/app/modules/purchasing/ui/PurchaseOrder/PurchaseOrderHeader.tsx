@@ -82,7 +82,8 @@ const PurchaseOrderHeader = () => {
               </Heading>
             </Link>
             <PurchasingStatus status={routeData?.purchaseOrder?.status} />
-            {routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing" && (
+            {routeData?.purchaseOrder?.purchaseOrderType ===
+              "Outside Processing" && (
               <Badge variant="default">
                 {routeData?.purchaseOrder?.purchaseOrderType}
               </Badge>

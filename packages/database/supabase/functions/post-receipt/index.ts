@@ -125,7 +125,8 @@ serve(async (req: Request) => {
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const lineCost =
-            Math.abs(receiptLine.receivedQuantity ?? 0) * (receiptLine.unitPrice ?? 0);
+            Math.abs(receiptLine.receivedQuantity ?? 0) *
+            (receiptLine.unitPrice ?? 0);
           return acc + lineCost;
         }, 0);
 
@@ -622,8 +623,7 @@ serve(async (req: Request) => {
             const quantityToAccrue = absReceivedQuantity - quantityToReverse;
 
             const expectedValue =
-              (absReceivedQuantity - quantityToReverse) *
-              receiptLine.unitPrice;
+              (absReceivedQuantity - quantityToReverse) * receiptLine.unitPrice;
 
             // Add proportional shipping cost to the expected value based on line value percentage
             const lineValuePercentage =
@@ -704,8 +704,9 @@ serve(async (req: Request) => {
 
           if (itemTrackingType === "Inventory") {
             // For inventory entries, use the appropriate entry type based on quantity sign
-            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
-            
+            const entryType =
+              receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
@@ -723,8 +724,9 @@ serve(async (req: Request) => {
           }
 
           if (receiptLine.requiresBatchTracking) {
-            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
-            
+            const entryType =
+              receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
@@ -755,8 +757,11 @@ serve(async (req: Request) => {
                 ] === receiptLine.id
             );
 
-            const absReceivedQuantity = Math.abs(receiptLine.receivedQuantity || 0);
-            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+            const absReceivedQuantity = Math.abs(
+              receiptLine.receivedQuantity || 0
+            );
+            const entryType =
+              receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
             const quantityPerEntry = receivedQuantity < 0 ? -1 : 1;
 
             for (let i = 0; i < absReceivedQuantity; i++) {

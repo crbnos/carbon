@@ -182,6 +182,16 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+export async function getJobPurchaseOrderLines(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  return client
+    .from("purchaseOrderLine")
+    .select("*, purchaseOrder(*)")
+    .eq("jobId", jobId);
+}
+
 export async function getJobs(
   client: SupabaseClient<Database>,
   companyId: string,

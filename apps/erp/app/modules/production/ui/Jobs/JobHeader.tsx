@@ -370,8 +370,10 @@ function JobStartModal({
   const [loading, setLoading] = useState(true);
   const [eachAssemblyHasAnOperation, setEachAssemblyHasAnOperation] =
     useState(false);
-  const [eachOutsideOperationHasASupplier, setEachOutsideOperationHasASupplier] =
-    useState(false);
+  const [
+    eachOutsideOperationHasASupplier,
+    setEachOutsideOperationHasASupplier,
+  ] = useState(false);
 
   const validate = async () => {
     if (!carbon || !job) return;
@@ -410,7 +412,11 @@ function JobStartModal({
       );
 
       setEachOutsideOperationHasASupplier(
-        operations.data?.every((op) => op.operationType === "Inside" || op.operationSupplierProcessId !== null) ?? false
+        operations.data?.every(
+          (op) =>
+            op.operationType === "Inside" ||
+            op.operationSupplierProcessId !== null
+        ) ?? false
       );
     });
 
@@ -446,12 +452,14 @@ function JobStartModal({
         ) : (
           <>
             <ModalBody>
-              {eachAssemblyHasAnOperation && eachOutsideOperationHasASupplier && (
-                <p>
-                  Are you sure you want to start this job? It will become
-                  available to the shop floor and purchase orders will be created for any outside operations.
-                </p>
-              )}
+              {eachAssemblyHasAnOperation &&
+                eachOutsideOperationHasASupplier && (
+                  <p>
+                    Are you sure you want to start this job? It will become
+                    available to the shop floor and purchase orders will be
+                    created for any outside operations.
+                  </p>
+                )}
               {!eachAssemblyHasAnOperation && (
                 <Alert variant="warning">
                   <LuTriangleAlert />
@@ -475,7 +483,7 @@ function JobStartModal({
                 </Alert>
               )}
             </ModalBody>
-            
+
             <ModalFooter>
               <Button variant="secondary" onClick={onClose}>
                 Cancel
@@ -492,7 +500,9 @@ function JobStartModal({
                     fetcher.formData?.get("status") === "Ready"
                   }
                   isDisabled={
-                    fetcher.state !== "idle" || !eachAssemblyHasAnOperation || !eachOutsideOperationHasASupplier
+                    fetcher.state !== "idle" ||
+                    !eachAssemblyHasAnOperation ||
+                    !eachOutsideOperationHasASupplier
                   }
                   type="submit"
                 >

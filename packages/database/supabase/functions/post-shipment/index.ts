@@ -85,7 +85,10 @@ serve(async (req: Request) => {
         .from("itemCost")
         .select("itemId, itemPostingGroupId")
         .in("itemId", itemIds),
-      client.from("job").select("id, quantity, quantityComplete, quantityShipped, status").in("id", jobIds),
+      client
+        .from("job")
+        .select("id, quantity, quantityComplete, quantityShipped, status")
+        .in("id", jobIds),
     ]);
     if (items.error) {
       throw new Error("Failed to fetch items");
@@ -152,82 +155,94 @@ serve(async (req: Request) => {
             // Update quantity shipped on job, accumulating totals from multiple shipments
             const jobId = shipmentLine.fulfillment.jobId;
             const currentJob = jobs.data.find((j) => j.id === jobId);
-            
+
             // Log job and shipment line data to debug NaN issues
             console.log("Processing job update:", {
               jobId,
-              currentJob: currentJob ? {
-                id: currentJob.id,
-                quantity: currentJob.quantity,
-                quantityShipped: currentJob.quantityShipped,
-                quantityComplete: currentJob.quantityComplete,
-                status: currentJob.status
-              } : null,
+              currentJob: currentJob
+                ? {
+                    id: currentJob.id,
+                    quantity: currentJob.quantity,
+                    quantityShipped: currentJob.quantityShipped,
+                    quantityComplete: currentJob.quantityComplete,
+                    status: currentJob.status,
+                  }
+                : null,
               shipmentLine: {
                 id: shipmentLine.id,
                 shippedQuantity: shipmentLine.shippedQuantity,
-                shippedQuantityType: typeof shipmentLine.shippedQuantity
-              }
+                shippedQuantityType: typeof shipmentLine.shippedQuantity,
+              },
             });
-            
+
             const currentQuantityShipped = currentJob?.quantityShipped ?? 0;
-            
+
             // Ensure shippedQuantity is a valid number to prevent "100NaN" errors
-            const shippedQuantity = typeof shipmentLine.shippedQuantity === 'number' && !isNaN(shipmentLine.shippedQuantity) 
-              ? shipmentLine.shippedQuantity 
-              : 0;
-              
+            const shippedQuantity =
+              typeof shipmentLine.shippedQuantity === "number" &&
+              !isNaN(shipmentLine.shippedQuantity)
+                ? shipmentLine.shippedQuantity
+                : 0;
+
             console.log("Calculated values:", {
               currentQuantityShipped,
               shippedQuantity,
               newTotal: currentQuantityShipped + shippedQuantity,
-              jobQuantity: currentJob?.quantity
+              jobQuantity: currentJob?.quantity,
             });
 
             // If we've already updated this job in this transaction, use that as the base
             // instead of the current DB value to avoid double counting
             if (jobUpdates[jobId]) {
-              const newQuantityShipped = (jobUpdates[jobId]?.quantityShipped ?? 0) + shippedQuantity;
-              const newQuantityComplete = currentJob?.status === "Completed" 
-                ? currentJob?.quantityComplete 
-                : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
-              const newStatus = currentQuantityShipped + shippedQuantity >= (currentJob?.quantity ?? 0) 
-                ? "Completed" 
-                : currentJob?.status;
-                
+              const newQuantityShipped =
+                (jobUpdates[jobId]?.quantityShipped ?? 0) + shippedQuantity;
+              const newQuantityComplete =
+                currentJob?.status === "Completed"
+                  ? currentJob?.quantityComplete
+                  : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
+              const newStatus =
+                currentQuantityShipped + shippedQuantity >=
+                (currentJob?.quantity ?? 0)
+                  ? "Completed"
+                  : currentJob?.status;
+
               console.log("Updating existing job update:", {
                 jobId,
                 previousUpdate: jobUpdates[jobId],
                 newUpdate: {
                   status: newStatus,
                   quantityComplete: newQuantityComplete,
-                  quantityShipped: newQuantityShipped
-                }
+                  quantityShipped: newQuantityShipped,
+                },
               });
-              
+
               jobUpdates[jobId] = {
                 status: newStatus,
                 quantityComplete: newQuantityComplete,
                 quantityShipped: newQuantityShipped,
               };
             } else {
-              const newQuantityShipped = currentQuantityShipped + shippedQuantity;
-              const newQuantityComplete = currentJob?.status === "Completed" 
-                ? currentJob?.quantityComplete 
-                : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
-              const newStatus = currentQuantityShipped + shippedQuantity >= (currentJob?.quantity ?? 0) 
-                ? "Completed" 
-                : currentJob?.status;
-                
+              const newQuantityShipped =
+                currentQuantityShipped + shippedQuantity;
+              const newQuantityComplete =
+                currentJob?.status === "Completed"
+                  ? currentJob?.quantityComplete
+                  : (currentJob?.quantityComplete ?? 0) + shippedQuantity;
+              const newStatus =
+                currentQuantityShipped + shippedQuantity >=
+                (currentJob?.quantity ?? 0)
+                  ? "Completed"
+                  : currentJob?.status;
+
               console.log("Creating new job update:", {
                 jobId,
                 update: {
                   status: newStatus,
                   quantityComplete: newQuantityComplete,
-                  quantityShipped: newQuantityShipped
-                }
+                  quantityShipped: newQuantityShipped,
+                },
               });
-              
+
               jobUpdates[jobId] = {
                 status: newStatus,
                 quantityComplete: newQuantityComplete,

@@ -71,8 +71,6 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
-  
-
   const fetcher = useFetcher<typeof receiptLinesUpdateAction>();
   const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
@@ -113,22 +111,25 @@ const ReceiptLines = () => {
       if (!trackedEntitiesForLine) return acc;
       return {
         ...acc,
-        [line.id!]: Array.from({ length: line.receivedQuantity ?? 0 }, (_, index) => {
-          const serialNumberEntity = trackedEntitiesForLine.find((t) => {
-            const attributes = t.attributes as TrackedEntityAttributes;
-            return attributes["Receipt Line Index"] === index;
-          });
+        [line.id!]: Array.from(
+          { length: line.receivedQuantity ?? 0 },
+          (_, index) => {
+            const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+              const attributes = t.attributes as TrackedEntityAttributes;
+              return attributes["Receipt Line Index"] === index;
+            });
 
-          const attributes = serialNumberEntity?.attributes as
-            | TrackedEntityAttributes
-            | undefined;
-          const serialNumber = attributes?.["Serial Number"] || "";
+            const attributes = serialNumberEntity?.attributes as
+              | TrackedEntityAttributes
+              | undefined;
+            const serialNumber = attributes?.["Serial Number"] || "";
 
-          return {
-            index,
-            number: serialNumber,
-          };
-        }),
+            return {
+              index,
+              number: serialNumber,
+            };
+          }
+        ),
       };
     }, {});
   });
@@ -328,7 +329,11 @@ function ReceiptLineItem({
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
-            <ItemThumbnail size="md" thumbnailPath={line.thumbnailPath} type={item?.type as "Part" ?? "Part"} />
+            <ItemThumbnail
+              size="md"
+              thumbnailPath={line.thumbnailPath}
+              type={(item?.type as "Part") ?? "Part"}
+            />
             <VStack spacing={0}>
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -397,7 +402,8 @@ function ReceiptLineItem({
                   {line.outstandingQuantity ?? 0}
                 </span>
 
-                {(line.receivedQuantity ?? 0) > (line.outstandingQuantity ?? 0) && (
+                {(line.receivedQuantity ?? 0) >
+                  (line.outstandingQuantity ?? 0) && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
@@ -949,7 +955,11 @@ function SplitReceiptLineModal({
           </ModalHeader>
 
           <ModalBody>
-            <input type="hidden" name="documentId" value={line.receiptId ?? ""} />
+            <input
+              type="hidden"
+              name="documentId"
+              value={line.receiptId ?? ""}
+            />
             <input type="hidden" name="documentLineId" value={line.id!} />
             <input
               type="hidden"

@@ -325,7 +325,6 @@ export const jobOperationValidator = baseJobOperationValidator
 export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   .merge(
     z.object({
-
       workCenterId: z.string().min(1, { message: "Work center is required" }),
     })
   )

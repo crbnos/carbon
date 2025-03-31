@@ -73,15 +73,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load sales order");
   }
 
-  const thumbnailPaths = salesOrderLines.data?.reduce<Record<string, string | null>>(
-    (acc, line) => {
-      if (line.thumbnailPath) {
-        acc[line.id!] = line.thumbnailPath;
-      }
-      return acc;
-    },
-    {}
-  );
+  const thumbnailPaths = salesOrderLines.data?.reduce<
+    Record<string, string | null>
+  >((acc, line) => {
+    if (line.thumbnailPath) {
+      acc[line.id!] = line.thumbnailPath;
+    }
+    return acc;
+  }, {});
 
   const thumbnails: Record<string, string | null> =
     (thumbnailPaths

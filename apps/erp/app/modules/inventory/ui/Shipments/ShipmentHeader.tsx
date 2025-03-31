@@ -36,7 +36,6 @@ const ShipmentHeader = () => {
     routeData.shipmentLines.length > 0 &&
     routeData.shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0);
 
-
   const isPosted = routeData.shipment.status === "Posted";
   const hasTrackingLabels = routeData.shipmentLineTracking.some(
     (line) => "Split Entity ID" in (line.attributes as TrackedEntityAttributes)

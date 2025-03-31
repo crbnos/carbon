@@ -5736,6 +5736,114 @@ export default {
         tags: ["quoteOperation"],
       },
     },
+    "/receiptLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.receiptId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.lineId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.orderQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.outstandingQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.receivedQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.conversionFactor",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.receiptLines.description",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/receiptLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["receiptLines"],
+      },
+    },
     "/invite": {
       get: {
         parameters: [
@@ -27181,6 +27289,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27318,6 +27432,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27407,6 +27527,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.jobReadableId",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -38972,6 +39098,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.purchaseOrderType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.jobReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.thumbnailPath",
@@ -50778,6 +50910,112 @@ export default {
       },
       type: "object",
     },
+    receiptLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        receiptId: {
+          description:
+            "Note:\nThis is a Foreign Key to `receipt.id`.<fk table='receipt' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        lineId: {
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        orderQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        outstandingQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        receivedQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        conversionFactor: {
+          format: "numeric",
+          type: "number",
+        },
+        requiresSerialTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresBatchTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     invite: {
       required: [
         "id",
@@ -50909,7 +51147,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -50958,7 +51196,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60581,6 +60819,16 @@ export default {
           format: 'public."purchaseOrderType"',
           type: "string",
         },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobReadableId: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -66427,6 +66675,16 @@ export default {
           format: 'public."purchaseOrderType"',
           type: "string",
         },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobReadableId: {
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -71649,6 +71907,147 @@ export default {
     },
     "rowFilter.quoteOperation.procedureId": {
       name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.receiptLines": {
+      name: "receiptLines",
+      description: "receiptLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/receiptLines",
+      },
+    },
+    "rowFilter.receiptLines.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.receiptId": {
+      name: "receiptId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.lineId": {
+      name: "lineId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.orderQuantity": {
+      name: "orderQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.outstandingQuantity": {
+      name: "outstandingQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.receivedQuantity": {
+      name: "receivedQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.conversionFactor": {
+      name: "conversionFactor",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.requiresSerialTracking": {
+      name: "requiresSerialTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.requiresBatchTracking": {
+      name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.receiptLines.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",
@@ -82711,6 +83110,18 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrder.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.jobReadableId": {
+      name: "jobReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.salesOrderLines": {
       name: "salesOrderLines",
       description: "salesOrderLines",
@@ -89421,6 +89832,18 @@ export default {
     },
     "rowFilter.purchaseOrders.purchaseOrderType": {
       name: "purchaseOrderType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.jobReadableId": {
+      name: "jobReadableId",
       required: false,
       in: "query",
       type: "string",
