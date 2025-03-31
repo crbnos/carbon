@@ -36,7 +36,7 @@ const ReceiptHeader = () => {
 
   const canPost =
     routeData.receiptLines.length > 0 &&
-    routeData.receiptLines.some((line) => line.receivedQuantity > 0);
+    routeData.receiptLines.some((line) => (line.receivedQuantity ?? 0) !== 0);
 
   const isPosted = routeData.receipt.status === "Posted";
 

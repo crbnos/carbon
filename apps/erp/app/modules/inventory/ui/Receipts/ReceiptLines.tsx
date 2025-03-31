@@ -42,13 +42,12 @@ import {
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { LuCircleAlert, LuGroup, LuQrCode, LuSplit, LuX } from "react-icons/lu";
-import { DocumentPreview, Empty } from "~/components";
+import { DocumentPreview, Empty, ItemThumbnail } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
 import FileDropzone from "~/components/FileDropzone";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { TrackingTypeIcon } from "~/components/Icons";
 import { useRouteData, useUser } from "~/hooks";
 import {
   ShelfForm,
@@ -72,6 +71,8 @@ const ReceiptLines = () => {
   const { receiptId } = useParams();
   if (!receiptId) throw new Error("receiptId not found");
 
+  
+
   const fetcher = useFetcher<typeof receiptLinesUpdateAction>();
   const { upload, deleteFile, getPath } = useReceiptFiles(receiptId);
   const routeData = useRouteData<{
@@ -83,6 +84,7 @@ const ReceiptLines = () => {
   }>(path.to.receipt(receiptId));
 
   const receiptsById = new Map<string, ReceiptLine>(
+    // @ts-ignore
     routeData?.receiptLines.map((line) => [line.id, line])
   );
   const pendingReceiptLines = usePendingReceiptLines();
@@ -111,7 +113,7 @@ const ReceiptLines = () => {
       if (!trackedEntitiesForLine) return acc;
       return {
         ...acc,
-        [line.id]: Array.from({ length: line.receivedQuantity }, (_, index) => {
+        [line.id!]: Array.from({ length: line.receivedQuantity ?? 0 }, (_, index) => {
           const serialNumberEntity = trackedEntitiesForLine.find((t) => {
             const attributes = t.attributes as TrackedEntityAttributes;
             return attributes["Receipt Line Index"] === index;
@@ -146,8 +148,8 @@ const ReceiptLines = () => {
         if (!trackedEntitiesForLine) return acc;
         return {
           ...acc,
-          [line.id]: Array.from(
-            { length: line.receivedQuantity },
+          [line.id!]: Array.from(
+            { length: line.receivedQuantity ?? 0 },
             (_, index) => {
               const serialNumberEntity = trackedEntitiesForLine.find((t) => {
                 const attributes = t.attributes as TrackedEntityAttributes;
@@ -233,18 +235,18 @@ const ReceiptLines = () => {
                     className={
                       index === receiptLines.length - 1 ? "border-none" : ""
                     }
-                    serialNumbers={serialNumbersByLineId[line.id] || []}
-                    getPath={(file) => getPath(file, line.id)}
+                    serialNumbers={serialNumbersByLineId[line.id!] || []}
+                    getPath={(file) => getPath(file, line.id!)}
                     onSerialNumbersChange={(newSerialNumbers) => {
                       setSerialNumbersByLineId((prev) => ({
                         ...prev,
-                        [line.id]: newSerialNumbers,
+                        [line.id!]: newSerialNumbers,
                       }));
                     }}
                     batchProperties={routeData?.batchProperties}
                     tracking={tracking}
-                    upload={(files) => upload(files, line.id)}
-                    deleteFile={(file) => deleteFile(file, line.id)}
+                    upload={(files) => upload(files, line.id!)}
+                    deleteFile={(file) => deleteFile(file, line.id!)}
                   />
                 );
               })
@@ -326,9 +328,7 @@ function ReceiptLineItem({
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
-            <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-              <TrackingTypeIcon type={item?.itemTrackingType ?? "Inventory"} />
-            </div>
+            <ItemThumbnail size="md" thumbnailPath={line.thumbnailPath} type={item?.type as "Part" ?? "Part"} />
             <VStack spacing={0}>
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -347,10 +347,10 @@ function ReceiptLineItem({
               <label className="text-xs text-muted-foreground">Received</label>
 
               <NumberField
-                value={line.receivedQuantity}
+                value={line.receivedQuantity ?? 0}
                 onChange={(value) => {
                   onUpdate({
-                    lineId: line.id,
+                    lineId: line.id!,
                     field: "receivedQuantity",
                     value,
                   });
@@ -385,7 +385,7 @@ function ReceiptLineItem({
           <HStack spacing={4}>
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">Ordered</label>
-              <span className="text-sm py-1.5">{line.orderQuantity}</span>
+              <span className="text-sm py-1.5">{line.orderQuantity ?? 0}</span>
             </VStack>
 
             <VStack spacing={1} className="text-center items-center">
@@ -394,10 +394,10 @@ function ReceiptLineItem({
               </label>
               <HStack className="justify-center">
                 <span className="text-sm py-1.5">
-                  {line.outstandingQuantity}
+                  {line.outstandingQuantity ?? 0}
                 </span>
 
-                {line.receivedQuantity > line.outstandingQuantity && (
+                {(line.receivedQuantity ?? 0) > (line.outstandingQuantity ?? 0) && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
@@ -416,7 +416,7 @@ function ReceiptLineItem({
             isReadOnly={isReadOnly}
             onChange={(shelf) => {
               onUpdate({
-                lineId: line.id,
+                lineId: line.id!,
                 field: "shelfId",
                 value: shelf,
               });
@@ -572,13 +572,13 @@ function BatchForm({
     }
 
     const formData = new FormData();
-    formData.append("itemId", line.itemId);
+    formData.append("itemId", line.itemId!);
     formData.append("receiptId", receipt.id);
-    formData.append("receiptLineId", line.id);
+    formData.append("receiptLineId", line.id!);
     formData.append("trackingType", "batch");
     formData.append("batchNumber", valuesToSubmit.number.trim());
     formData.append("properties", JSON.stringify(valuesToSubmit.properties));
-    formData.append("quantity", line.receivedQuantity.toString());
+    formData.append("quantity", (line.receivedQuantity ?? 0).toString());
 
     submit(formData, {
       method: "post",
@@ -602,7 +602,7 @@ function BatchForm({
       window.open(
         window.location.origin +
           path.to.file.receiptLabelsZpl(receipt?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -611,7 +611,7 @@ function BatchForm({
       window.open(
         window.location.origin +
           path.to.file.receiptLabelsPdf(receipt?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -674,7 +674,7 @@ function BatchForm({
             {(resolvedBatchProperties) => {
               return (
                 <BatchPropertiesFields
-                  itemId={line.itemId}
+                  itemId={line.itemId!}
                   properties={
                     resolvedBatchProperties?.data?.filter(
                       (p) => p.itemId === line.itemId
@@ -697,7 +697,7 @@ function BatchForm({
             {(resolvedBatchProperties) => {
               return (
                 <BatchPropertiesConfig
-                  itemId={line.itemId}
+                  itemId={line.itemId!}
                   properties={resolvedBatchProperties?.data ?? []}
                   type="modal"
                   onClose={propertiesDisclosure.onClose}
@@ -759,9 +759,9 @@ function SerialForm({
       }
 
       const formData = new FormData();
-      formData.append("itemId", line.itemId);
+      formData.append("itemId", line.itemId!);
       formData.append("receiptId", receipt.id);
-      formData.append("receiptLineId", line.id);
+      formData.append("receiptLineId", line.id!);
       formData.append("trackingType", "serial");
       formData.append("index", serialNumber.index.toString());
       formData.append("serialNumber", serialNumber.number.trim());
@@ -803,7 +803,7 @@ function SerialForm({
       window.open(
         window.location.origin +
           path.to.file.receiptLabelsZpl(receipt?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -812,7 +812,7 @@ function SerialForm({
       window.open(
         window.location.origin +
           path.to.file.receiptLabelsPdf(receipt?.id ?? "", {
-            lineId: line.id,
+            lineId: line.id!,
             labelSize,
           }),
         "_blank"
@@ -903,7 +903,7 @@ function SerialForm({
               {(resolvedBatchProperties) => {
                 return (
                   <BatchPropertiesConfig
-                    itemId={line.itemId}
+                    itemId={line.itemId!}
                     properties={resolvedBatchProperties?.data ?? []}
                     type="modal"
                     onClose={propertiesDisclosure.onClose}
@@ -949,8 +949,8 @@ function SplitReceiptLineModal({
           </ModalHeader>
 
           <ModalBody>
-            <input type="hidden" name="documentId" value={line.receiptId} />
-            <input type="hidden" name="documentLineId" value={line.id} />
+            <input type="hidden" name="documentId" value={line.receiptId ?? ""} />
+            <input type="hidden" name="documentLineId" value={line.id!} />
             <input
               type="hidden"
               name="locationId"
@@ -959,7 +959,7 @@ function SplitReceiptLineModal({
             <Number
               name="quantity"
               label="Quantity"
-              maxValue={line.orderQuantity - 0.0001}
+              maxValue={line.orderQuantity ?? 0 - 0.0001}
               minValue={0.0001}
             />
           </ModalBody>

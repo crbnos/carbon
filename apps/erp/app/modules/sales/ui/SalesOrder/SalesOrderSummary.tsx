@@ -252,7 +252,7 @@ function LineItems({
           (j) => (j as unknown as SalesOrderJob).salesOrderLineId === line.id
         ) ?? []) as SalesOrderJob[];
 
-        console.log({ jobs });
+        
 
         const isMade = line.methodType === "Make";
 

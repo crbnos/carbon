@@ -54,10 +54,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let itemsWithBatchProperties: string[] = [];
 
   if (receiptLines.data) {
-    receiptLineIds = receiptLines.data.map((line) => line.id);
+    receiptLineIds = receiptLines.data.map((line) => line.id!).filter(Boolean);
     itemsWithBatchProperties = receiptLines.data
-      .filter((line) => line.itemId && line.requiresBatchTracking)
-      .map((line) => line.itemId);
+      .filter((line) => line && line.itemId && line.requiresBatchTracking)
+      .map((line) => line.itemId)
+      .filter((itemId) => itemId !== null);
   }
 
   return defer({

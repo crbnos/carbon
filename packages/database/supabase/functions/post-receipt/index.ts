@@ -125,7 +125,7 @@ serve(async (req: Request) => {
 
         const totalLinesCost = receiptLines.data.reduce((acc, receiptLine) => {
           const lineCost =
-            (receiptLine.receivedQuantity ?? 0) * (receiptLine.unitPrice ?? 0);
+            Math.abs(receiptLine.receivedQuantity ?? 0) * (receiptLine.unitPrice ?? 0);
           return acc + lineCost;
         }, 0);
 
@@ -401,7 +401,7 @@ serve(async (req: Request) => {
           const quantityToReverse = Math.max(
             0,
             Math.min(
-              receiptLine.receivedQuantity ?? 0,
+              Math.abs(receiptLine.receivedQuantity ?? 0),
               quantityInvoiced - quantityReceived
             )
           );
@@ -613,13 +613,16 @@ serve(async (req: Request) => {
             });
           }
 
-          if (receiptLine.receivedQuantity > quantityToReverse) {
+          const receivedQuantity = receiptLine.receivedQuantity ?? 0;
+          const isNegativeReceipt = receivedQuantity < 0;
+          const absReceivedQuantity = Math.abs(receivedQuantity);
+
+          if (absReceivedQuantity > quantityToReverse) {
             // create the accrual entries for received not invoiced
-            const quantityToAccrue =
-              receiptLine.receivedQuantity - quantityToReverse;
+            const quantityToAccrue = absReceivedQuantity - quantityToReverse;
 
             const expectedValue =
-              (receiptLine.receivedQuantity - quantityToReverse) *
+              (absReceivedQuantity - quantityToReverse) *
               receiptLine.unitPrice;
 
             // Add proportional shipping cost to the expected value based on line value percentage
@@ -631,48 +634,86 @@ serve(async (req: Request) => {
 
             const journalLineReference = nanoid();
 
-            journalLineInserts.push({
-              accountNumber:
-                postingGroupInventory.inventoryInterimAccrualAccount,
-              description: "Interim Inventory Accrual",
-              accrual: true,
-              amount: debit("asset", expectedValueWithShipping),
-              quantity: quantityToAccrue,
-              documentType: "Receipt",
-              documentId: receipt.data?.id ?? undefined,
-              externalDocumentId:
-                purchaseOrder.data?.supplierReference ?? undefined,
-              documentLineReference: `receipt:${receiptLine.lineId}`,
-              journalLineReference,
-              companyId,
-            });
+            // For negative receipts, we need to reverse the debit/credit entries
+            if (isNegativeReceipt) {
+              journalLineInserts.push({
+                accountNumber:
+                  postingGroupInventory.inventoryInterimAccrualAccount,
+                description: "Interim Inventory Accrual",
+                accrual: true,
+                amount: credit("asset", expectedValueWithShipping),
+                quantity: quantityToAccrue,
+                documentType: "Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: `receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
 
-            journalLineInserts.push({
-              accountNumber:
-                postingGroupInventory.inventoryReceivedNotInvoicedAccount,
-              description: "Inventory Received Not Invoiced",
-              accrual: true,
-              amount: credit("liability", expectedValueWithShipping),
-              quantity: quantityToAccrue,
-              documentType: "Receipt",
-              documentId: receipt.data?.id ?? undefined,
-              externalDocumentId:
-                purchaseOrder.data?.supplierReference ?? undefined,
-              documentLineReference: `receipt:${receiptLine.lineId}`,
-              journalLineReference,
-              companyId,
-            });
+              journalLineInserts.push({
+                accountNumber:
+                  postingGroupInventory.inventoryReceivedNotInvoicedAccount,
+                description: "Inventory Received Not Invoiced",
+                accrual: true,
+                amount: debit("liability", expectedValueWithShipping),
+                quantity: quantityToAccrue,
+                documentType: "Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: `receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
+            } else {
+              journalLineInserts.push({
+                accountNumber:
+                  postingGroupInventory.inventoryInterimAccrualAccount,
+                description: "Interim Inventory Accrual",
+                accrual: true,
+                amount: debit("asset", expectedValueWithShipping),
+                quantity: quantityToAccrue,
+                documentType: "Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: `receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
+
+              journalLineInserts.push({
+                accountNumber:
+                  postingGroupInventory.inventoryReceivedNotInvoicedAccount,
+                description: "Inventory Received Not Invoiced",
+                accrual: true,
+                amount: credit("liability", expectedValueWithShipping),
+                quantity: quantityToAccrue,
+                documentType: "Receipt",
+                documentId: receipt.data?.id ?? undefined,
+                externalDocumentId:
+                  purchaseOrder.data?.supplierReference ?? undefined,
+                documentLineReference: `receipt:${receiptLine.lineId}`,
+                journalLineReference,
+                companyId,
+              });
+            }
           }
 
           if (itemTrackingType === "Inventory") {
+            // For inventory entries, use the appropriate entry type based on quantity sign
+            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+            
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
               itemReadableId: receiptLine.itemReadableId ?? "",
-              quantity: receiptLine.receivedQuantity,
+              quantity: receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,
-              entryType: "Positive Adjmt.",
+              entryType,
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
@@ -682,14 +723,16 @@ serve(async (req: Request) => {
           }
 
           if (receiptLine.requiresBatchTracking) {
+            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+            
             itemLedgerInserts.push({
               postingDate: today,
               itemId: receiptLine.itemId,
               itemReadableId: receiptLine.itemReadableId ?? "",
-              quantity: receiptLine.receivedQuantity,
+              quantity: receivedQuantity,
               locationId: receiptLine.locationId,
               shelfId: receiptLine.shelfId,
-              entryType: "Positive Adjmt.",
+              entryType,
               documentType: "Purchase Receipt",
               documentId: receipt.data?.id ?? undefined,
               trackedEntityId: receiptLineTracking.data?.find(
@@ -712,9 +755,11 @@ serve(async (req: Request) => {
                 ] === receiptLine.id
             );
 
-            const receivedQuantity = receiptLine.receivedQuantity || 0;
+            const absReceivedQuantity = Math.abs(receiptLine.receivedQuantity || 0);
+            const entryType = receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
+            const quantityPerEntry = receivedQuantity < 0 ? -1 : 1;
 
-            for (let i = 0; i < receivedQuantity; i++) {
+            for (let i = 0; i < absReceivedQuantity; i++) {
               const trackingWithIndex = lineTracking?.find(
                 (tracking) =>
                   (
@@ -726,10 +771,10 @@ serve(async (req: Request) => {
                 postingDate: today,
                 itemId: receiptLine.itemId,
                 itemReadableId: receiptLine.itemReadableId ?? "",
-                quantity: 1,
+                quantity: quantityPerEntry,
                 locationId: receiptLine.locationId,
                 shelfId: receiptLine.shelfId,
-                entryType: "Positive Adjmt.",
+                entryType,
                 documentType: "Purchase Receipt",
                 documentId: receipt.data?.id ?? undefined,
                 trackedEntityId: trackingWithIndex?.id,

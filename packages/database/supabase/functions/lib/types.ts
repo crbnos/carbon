@@ -15589,6 +15589,7 @@ export type Database = {
           internalNotes: Json | null
           orderDate: string | null
           purchaseOrderId: string
+          purchaseOrderType: Database["public"]["Enums"]["purchaseOrderType"]
           revisionId: number
           status: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId: string | null
@@ -15616,6 +15617,7 @@ export type Database = {
           internalNotes?: Json | null
           orderDate?: string | null
           purchaseOrderId: string
+          purchaseOrderType?: Database["public"]["Enums"]["purchaseOrderType"]
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId?: string | null
@@ -15643,6 +15645,7 @@ export type Database = {
           internalNotes?: Json | null
           orderDate?: string | null
           purchaseOrderId?: string
+          purchaseOrderType?: Database["public"]["Enums"]["purchaseOrderType"]
           revisionId?: number
           status?: Database["public"]["Enums"]["purchaseOrderStatus"]
           supplierContactId?: string | null
@@ -16148,6 +16151,8 @@ export type Database = {
           invoicedComplete: boolean
           itemId: string | null
           itemReadableId: string | null
+          jobId: string | null
+          jobOperationId: string | null
           locationId: string | null
           modelUploadId: string | null
           purchaseOrderId: string
@@ -16192,6 +16197,8 @@ export type Database = {
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
+          jobId?: string | null
+          jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           purchaseOrderId: string
@@ -16236,6 +16243,8 @@ export type Database = {
           invoicedComplete?: boolean
           itemId?: string | null
           itemReadableId?: string | null
+          jobId?: string | null
+          jobOperationId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           purchaseOrderId?: string
@@ -16324,6 +16333,34 @@ export type Database = {
             columns: ["itemId"]
             isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_jobOperationId_fkey"
+            columns: ["jobOperationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {
@@ -30505,14 +30542,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -31809,14 +31846,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -31846,6 +31883,9 @@ export type Database = {
           orderTotal: number | null
           paymentTermId: string | null
           purchaseOrderId: string | null
+          purchaseOrderType:
+            | Database["public"]["Enums"]["purchaseOrderType"]
+            | null
           receiptPromisedDate: string | null
           receiptRequestedDate: string | null
           revisionId: number | null
@@ -33490,6 +33530,132 @@ export type Database = {
           },
         ]
       }
+      receiptLines: {
+        Row: {
+          companyId: string | null
+          conversionFactor: number | null
+          createdAt: string | null
+          createdBy: string | null
+          description: string | null
+          id: string | null
+          itemId: string | null
+          itemReadableId: string | null
+          lineId: string | null
+          locationId: string | null
+          orderQuantity: number | null
+          outstandingQuantity: number | null
+          receiptId: string | null
+          receivedQuantity: number | null
+          requiresBatchTracking: boolean | null
+          requiresSerialTracking: boolean | null
+          shelfId: string | null
+          thumbnailPath: string | null
+          unitOfMeasure: string | null
+          unitPrice: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_receiptId_fkey"
+            columns: ["receiptId"]
+            isOneToOne: false
+            referencedRelation: "receipt"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       salesOrderCustomers: {
         Row: {
           companyId: string | null
@@ -33758,14 +33924,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -37035,7 +37201,7 @@ export type Database = {
         | "Approved"
         | "Reject"
         | "Request Approval"
-      purchaseOrderType: "Purchase" | "Return"
+      purchaseOrderType: "Purchase" | "Return" | "Outside Processing"
       quoteLineStatus: "Not Started" | "In Progress" | "Complete" | "No Quote"
       quoteStatus:
         | "Draft"

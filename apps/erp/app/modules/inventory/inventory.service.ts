@@ -185,7 +185,7 @@ export async function getReceiptLines(
   client: SupabaseClient<Database>,
   receiptId: string
 ) {
-  return client.from("receiptLine").select("*").eq("receiptId", receiptId);
+  return client.from("receiptLines").select("*").eq("receiptId", receiptId);
 }
 
 export async function getReceiptTracking(
