@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { Select, ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
@@ -25,7 +25,7 @@ import {
   SupplierLocation,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import { purchaseOrderValidator } from "~/modules/purchasing";
+import { purchaseOrderTypeType, purchaseOrderValidator } from "~/modules/purchasing";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderValidator>;
 
@@ -147,7 +147,10 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                   }
                 }}
               />
-
+              <Select name="purchaseOrderType" label="Type" options={purchaseOrderTypeType.map(type => ({
+                label: type,
+                value: type,
+              }))} />
               <CustomFormFields table="purchaseOrder" />
             </div>
           </VStack>
@@ -169,3 +172,4 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
 };
 
 export default PurchaseOrderForm;
+

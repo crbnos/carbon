@@ -94,6 +94,11 @@ export const supplierLocationsQuery = (supplierId: string) => ({
   staleTime: RefreshRate.Low,
 });
 
+export const supplierProcessesQuery = (processId: string) => ({
+  queryKey: ["supplierProcesses", processId],
+  staleTime: RefreshRate.Low,
+});
+
 export const supplierTypesQuery = (companyId: string | null) => ({
   queryKey: ["supplierTypes", companyId ?? "null"],
   staleTime: RefreshRate.Low,

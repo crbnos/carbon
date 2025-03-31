@@ -115,6 +115,7 @@ import type { ConfigurationParameter, ConfigurationRule } from "../../types";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import Procedure from "~/components/Form/Procedure";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -785,6 +786,7 @@ const BillOfProcess = ({
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
+          // @ts-ignore
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
         />
@@ -2598,9 +2600,14 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <h3 className="font-semibold truncate cursor-pointer">
-        {operation.description}
-      </h3>
+      <VStack spacing={0}>
+        <h3 className="font-semibold truncate cursor-pointer">
+          {operation.description}
+        </h3>
+        {operation.operationType === "Outside" && (
+          <SupplierProcessPreview processId={operation.processId} supplierProcessId={operation.operationSupplierProcessId} />
+        )}
+      </VStack>
     ),
     checked: false,
     order: operation.operationOrder,

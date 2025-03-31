@@ -1,4 +1,5 @@
 import {
+  Badge,
   Button,
   DropdownMenu,
   DropdownMenuContent,
@@ -81,6 +82,11 @@ const PurchaseOrderHeader = () => {
               </Heading>
             </Link>
             <PurchasingStatus status={routeData?.purchaseOrder?.status} />
+            {routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing" && (
+              <Badge variant="default">
+                {routeData?.purchaseOrder?.purchaseOrderType}
+              </Badge>
+            )}
           </HStack>
           <HStack>
             <DropdownMenu>

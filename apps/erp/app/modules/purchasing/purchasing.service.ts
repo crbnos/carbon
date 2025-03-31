@@ -429,6 +429,13 @@ export async function getSupplierPayment(
     .single();
 }
 
+export async function getSupplierProcessById(
+  client: SupabaseClient<Database>,
+  supplierProcessId: string
+) {
+  return client.from("supplierProcesses").select("*").eq("id", supplierProcessId).single();
+}
+
 export async function getSupplierProcessesByProcess(
   client: SupabaseClient<Database>,
   processId: string

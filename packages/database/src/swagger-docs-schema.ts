@@ -16579,6 +16579,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -16764,6 +16770,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -16901,6 +16913,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine",
@@ -27160,6 +27178,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27294,6 +27315,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27380,6 +27404,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrder.supplierInteractionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrder.purchaseOrderType",
           },
           {
             $ref: "#/parameters/body.purchaseOrder",
@@ -38942,6 +38969,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.supplierInteractionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrders.purchaseOrderType",
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrders.thumbnailPath",
@@ -55903,6 +55933,18 @@ export default {
           format: "numeric",
           type: "number",
         },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -60394,6 +60436,7 @@ export default {
         "createdAt",
         "createdBy",
         "supplierInteractionId",
+        "purchaseOrderType",
       ],
       properties: {
         id: {
@@ -60530,6 +60573,12 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        purchaseOrderType: {
+          default: "Purchase",
+          enum: ["Purchase", "Return", "Outside Processing"],
+          format: 'public."purchaseOrderType"',
           type: "string",
         },
       },
@@ -66371,6 +66420,11 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        purchaseOrderType: {
+          enum: ["Purchase", "Return", "Outside Processing"],
+          format: 'public."purchaseOrderType"',
           type: "string",
         },
         thumbnailPath: {
@@ -77476,6 +77530,18 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLine.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLine.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.accountDefault": {
       name: "accountDefault",
       description: "accountDefault",
@@ -82635,6 +82701,12 @@ export default {
     },
     "rowFilter.purchaseOrder.supplierInteractionId": {
       name: "supplierInteractionId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrder.purchaseOrderType": {
+      name: "purchaseOrderType",
       required: false,
       in: "query",
       type: "string",
@@ -89343,6 +89415,12 @@ export default {
     },
     "rowFilter.purchaseOrders.supplierInteractionId": {
       name: "supplierInteractionId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrders.purchaseOrderType": {
+      name: "purchaseOrderType",
       required: false,
       in: "query",
       type: "string",

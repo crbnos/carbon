@@ -144,6 +144,7 @@ import { JobOperationStatus } from "./JobOperationStatus";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import Procedure from "~/components/Form/Procedure";
 import { useNumberFormatter } from "@react-aria/i18n";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 
 export type Operation = z.infer<typeof jobOperationValidator> & {
   assignee: string | null;
@@ -187,11 +188,14 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <HStack>
+      <VStack spacing={0}>
         <h3 className="font-semibold truncate cursor-pointer">
           {operation.description}
         </h3>
-      </HStack>
+        {operation.operationType === "Outside" && (
+          <SupplierProcessPreview processId={operation.processId} supplierProcessId={operation.operationSupplierProcessId} />
+        )}
+      </VStack>
     ),
     checked: false,
     order: operation.operationOrder,
@@ -1848,12 +1852,7 @@ function OperationForm({
               return (acc += sp.minimumCost ?? 0);
             }, 0) / supplierProcesses.data.length
           : p.operationMinimumCost,
-      operationUnitCost:
-        supplierProcesses.data && supplierProcesses.data.length > 0
-          ? supplierProcesses.data.reduce((acc, sp) => {
-              return (acc += sp.minimumCost ?? 0);
-            }, 0) / supplierProcesses.data.length
-          : p.operationUnitCost,
+      operationUnitCost: item.data.operationUnitCost ?? 0,
       operationLeadTime:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {
@@ -1906,7 +1905,7 @@ function OperationForm({
     setProcessData((d) => ({
       ...d,
       operationMinimumCost: data?.minimumCost ?? 0,
-      operationUnitCost: data?.minimumCost ?? 0,
+      operationUnitCost: 0, // TODO: get the unit cost from the purchase order history
       operationLeadTime: data?.leadTime ?? 0,
     }));
   };

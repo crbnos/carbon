@@ -458,6 +458,19 @@ export async function getJobOperationsByMethodId(
     .order("order", { ascending: true });
 }
 
+export async function getOutsideOperationsByJobId(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, description")
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .eq("operationType", "Outside");
+}
+
 export async function getProcedure(
   client: SupabaseClient<Database>,
   id: string

@@ -40,12 +40,15 @@ export const path = {
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
+      jobs: `${api}/production/jobs`,
       locations: `${api}/resources/locations`,
       itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       modelUpload: `${api}/model/upload`,
+      outsideOperations: (jobId: string) =>
+        generatePath(`${api}/production/outside-operations/${jobId}`),
       purchasingKpi: (key: string) =>
         generatePath(`${api}/purchasing/kpi/${key}`),
       procedures: `${api}/production/procedures`,
@@ -77,7 +80,7 @@ export const path = {
       supplierLocations: (id: string) =>
         generatePath(`${api}/purchasing/supplier-locations/${id}`),
       supplierProcesses: (id?: string) =>
-        generatePath(`${api}/purchasing/supplier-processes?processId=${id}`),
+        generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierStatuses: `${api}/purchasing/supplier-statuses`,
       supplierTypes: `${api}/purchasing/supplier-types`,
       tags: (table?: string) =>
