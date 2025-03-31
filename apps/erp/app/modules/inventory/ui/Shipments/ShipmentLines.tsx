@@ -91,10 +91,10 @@ const ShipmentLines = () => {
     shipmentsById.set(pendingShipmentLine.id, merged as ShipmentLine);
   }
 
-  const shipmentLines = Array.from(shipmentsById.values().map((line) => ({
+  const shipmentLines = Array.from(shipmentsById.values()).map((line) => ({
     ...line,
     shippedQuantity: line.shippedQuantity ?? 0,
-  })));
+  }));
 
   const [serialNumbersByLineId, setSerialNumbersByLineId] = useState<
     Record<string, { index: number; id: string }[]>
@@ -112,19 +112,22 @@ const ShipmentLines = () => {
       if (!trackedEntitiesForLine) return acc;
       return {
         ...acc,
-        [line.id!]: Array.from({ length: line.shippedQuantity || 0 }, (_, index) => {
-          const serialNumberEntity = trackedEntitiesForLine.find((t) => {
-            const attributes = t.attributes as TrackedEntityAttributes;
-            return attributes["Shipment Line Index"] === index;
-          });
+        [line.id!]: Array.from(
+          { length: line.shippedQuantity || 0 },
+          (_, index) => {
+            const serialNumberEntity = trackedEntitiesForLine.find((t) => {
+              const attributes = t.attributes as TrackedEntityAttributes;
+              return attributes["Shipment Line Index"] === index;
+            });
 
-          const serialNumber = serialNumberEntity?.id || "";
+            const serialNumber = serialNumberEntity?.id || "";
 
-          return {
-            index,
-            id: serialNumber,
-          };
-        }),
+            return {
+              index,
+              id: serialNumber,
+            };
+          }
+        ),
       };
     }, {});
   });
@@ -213,14 +216,17 @@ const ShipmentLines = () => {
               <Empty className="py-6" />
             ) : (
               shipmentLines
-                .sort((a, b) => 
+                .sort((a, b) =>
                   (a.itemReadableId || "").localeCompare(b.itemReadableId || "")
                 )
                 .map((line, index) => {
-                  const tracking = routeData?.shipmentLineTracking?.find((t) => {
-                    const attributes = t.attributes as TrackedEntityAttributes;
-                    return attributes["Shipment Line"] === line.id;
-                  });
+                  const tracking = routeData?.shipmentLineTracking?.find(
+                    (t) => {
+                      const attributes =
+                        t.attributes as TrackedEntityAttributes;
+                      return attributes["Shipment Line"] === line.id;
+                    }
+                  );
                   return (
                     <ShipmentLineItem
                       key={line.id}
@@ -332,8 +338,12 @@ function ShipmentLineItem({
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
           <HStack spacing={4} className="flex-1">
-            <ItemThumbnail size="md" thumbnailPath={line.thumbnailPath} type={item?.type as "Part" ?? "Part"} />
-            
+            <ItemThumbnail
+              size="md"
+              thumbnailPath={line.thumbnailPath}
+              type={(item?.type as "Part") ?? "Part"}
+            />
+
             <VStack spacing={0}>
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
@@ -378,7 +388,11 @@ function ShipmentLineItem({
               >
                 <NumberInput
                   className="disabled:bg-transparent disabled:opacity-100 min-w-[100px]"
-                  isDisabled={isReadOnly || (line.fulfillment?.type === "Job" && (line.requiresSerialTracking ?? false))}
+                  isDisabled={
+                    isReadOnly ||
+                    (line.fulfillment?.type === "Job" &&
+                      (line.requiresSerialTracking ?? false))
+                  }
                   size="sm"
                   min={0}
                 />
@@ -402,7 +416,8 @@ function ShipmentLineItem({
                   {line.outstandingQuantity || 0}
                 </span>
 
-                {(line.shippedQuantity || 0) > (line.outstandingQuantity || 0) && (
+                {(line.shippedQuantity || 0) >
+                  (line.outstandingQuantity || 0) && (
                   <Tooltip>
                     <TooltipTrigger>
                       <LuCircleAlert className="text-red-500" />
@@ -524,7 +539,11 @@ function BatchForm({
 
   // Verify batch quantity is sufficient for the shipped quantity
   useEffect(() => {
-    if (values.number && batchNumbers?.data && (line.shippedQuantity || 0) > 0) {
+    if (
+      values.number &&
+      batchNumbers?.data &&
+      (line.shippedQuantity || 0) > 0
+    ) {
       const batchNumber = batchNumbers.data.find((b) => b.id === values.number);
 
       if (
@@ -543,7 +562,7 @@ function BatchForm({
 
   const getShelfFromBatchNumber = async (trackedEntityId: string) => {
     if (!carbon) return;
-    
+
     const response = await carbon
       .from("itemLedger")
       .select("shelfId")
@@ -769,7 +788,10 @@ function SerialForm({
   ) => void;
 }) {
   const [errors, setErrors] = useState<Record<number, string>>({});
-  const { data: serialNumbersData } = useSerialNumbers(line.itemId!, isReadOnly);
+  const { data: serialNumbersData } = useSerialNumbers(
+    line.itemId!,
+    isReadOnly
+  );
 
   // Check for duplicates within the current form
   const validateSerialNumber = useCallback(
