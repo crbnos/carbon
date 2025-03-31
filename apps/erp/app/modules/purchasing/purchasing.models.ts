@@ -42,7 +42,7 @@ export const purchaseOrderLineType = [
   "Comment",
 ] as const;
 
-export const purchaseOrderTypeType = ["Purchase", "Return"] as const;
+export const purchaseOrderTypeType = ["Purchase", "Outside Processing"] as const;
 
 export const purchaseOrderStatusType = [
   "Draft",
@@ -58,6 +58,11 @@ export const purchaseOrderStatusType = [
 export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
+  purchaseOrderType: z.enum(purchaseOrderTypeType, {
+    errorMap: (issue, ctx) => ({
+      message: "Type is required",
+    }),
+  }),
   supplierId: z.string().min(36, { message: "Supplier is required" }),
   supplierLocationId: zfd.text(z.string().optional()),
   supplierContactId: zfd.text(z.string().optional()),
@@ -131,6 +136,8 @@ export const purchaseOrderLineValidator = z
     supplierTaxAmount: zfd.numeric(z.number().optional()),
     locationId: zfd.text(z.string().optional()),
     shelfId: zfd.text(z.string().optional()),
+    jobId: zfd.text(z.string().optional()),
+    jobOperationId: zfd.text(z.string().optional()),
     exchangeRate: zfd.numeric(z.number().optional()),
   })
   .refine(

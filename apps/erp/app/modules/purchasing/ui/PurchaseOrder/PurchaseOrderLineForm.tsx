@@ -1,4 +1,5 @@
 import {
+  Badge,
   cn,
   FormControl,
   FormLabel,
@@ -12,13 +13,14 @@ import {
   ModalCardProvider,
   ModalCardTitle,
   useDisclosure,
+  useMount,
   VStack,
 } from "@carbon/react";
 
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { Combobox, ValidatedForm } from "@carbon/form";
 import { useFetcher, useParams } from "@remix-run/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { z } from "zod";
 import {
   ConversionFactor,
@@ -38,6 +40,7 @@ import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 type PurchaseOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseOrderLineValidator>;
@@ -63,6 +66,7 @@ const PurchaseOrderLineForm = ({
     purchaseOrder: PurchaseOrder;
   }>(path.to.purchaseOrder(orderId));
 
+  const isOutsideProcessing = routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
   const isEditable = ["Draft"].includes(routeData?.purchaseOrder?.status ?? "");
 
   const [itemType, setItemType] = useState<MethodItemType>(
@@ -282,8 +286,10 @@ const PurchaseOrderLineForm = ({
                     : "New Purchase Order Line"}
                 </ModalCardTitle>
                 <ModalCardDescription>
-                  {isEditing
-                    ? itemData?.description || itemType
+                  {isOutsideProcessing ? 
+                    <Badge variant="default">Outside Processing</Badge> : 
+                    isEditing ? 
+                    itemData?.description || itemType
                     : "A purchase order line contains order details for a particular item"}
                 </ModalCardDescription>
               </ModalCardHeader>
@@ -327,6 +333,10 @@ const PurchaseOrderLineForm = ({
                         }
                       />
                     </FormControl>
+
+                    {isOutsideProcessing && (
+                      <JobOperationSelect jobId={initialValues.jobId} />
+                    )}
 
                     <NumberControlled
                       minValue={itemData.minimumOrderQuantity}
@@ -440,7 +450,7 @@ const PurchaseOrderLineForm = ({
                       "Tool",
                       "Consumable",
                       "Fixed Asset",
-                    ].includes(itemType) && (
+                    ].includes(itemType) && !isOutsideProcessing && (
                       <Location
                         name="locationId"
                         label="Location"
@@ -456,7 +466,7 @@ const PurchaseOrderLineForm = ({
                       "Tool",
                       "Consumable",
                       "Fixed Asset",
-                    ].includes(itemType) && (
+                    ].includes(itemType) && !isOutsideProcessing && (
                       <Shelf
                         name="shelfId"
                         label="Shelf"
@@ -521,3 +531,53 @@ const PurchaseOrderLineForm = ({
 };
 
 export default PurchaseOrderLineForm;
+
+
+function JobOperationSelect(initialValues: {jobId?: string}) {
+  const [jobId, setJobId] = useState<string | null>(initialValues.jobId ?? null);
+
+  const jobsFetcher = useFetcher<PostgrestResponse<{id: string; jobId: string}>>();
+  useMount(() => {
+    jobsFetcher.load(path.to.api.jobs);
+  });
+
+
+  const jobOptions = useMemo(
+    () =>
+      jobsFetcher.data?.data
+        ? jobsFetcher.data?.data.map((c) => ({
+            value: c.id,
+            label: c.jobId,
+          }))
+        : [],
+    [jobsFetcher.data]
+  );
+
+
+  const jobOperationFetcher = useFetcher<PostgrestResponse<{id: string; description: string}>>();
+  useEffect(() => {
+    if(jobId) {
+      jobOperationFetcher.load(path.to.api.outsideOperations(jobId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobId]);
+
+  const jobOperationOptions = useMemo(() => {
+    return jobOperationFetcher.data?.data?.map((c) => ({
+      value: c.id,
+      label: c.description,
+    })) ?? [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jobOperationFetcher.data]);
+  
+  return (
+    <>
+      <Combobox name="jobId" label="Job" options={jobOptions} onChange={(value) => {
+        if(value) {
+          setJobId(value.value as string);
+        }
+      }} />  
+      <Combobox name="jobOperationId" label="Operation" options={jobOperationOptions} />  
+    </>
+  );
+}

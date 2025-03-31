@@ -2,7 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useNavigate, useParams } from "@remix-run/react";
+import { ClientActionFunctionArgs, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
@@ -14,6 +14,7 @@ import {
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -55,6 +56,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(path.to.supplierProcesses(supplierId));
+}
+
+export async function clientAction({
+  request,
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const formData = await await request.clone().formData(); // if we. don't clone it we can't access it in the action
+  const validation = await validator(supplierProcessValidator).validate(formData);
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  if (validation.data.processId) {
+    window.clientCache?.setQueryData(
+      supplierProcessesQuery(validation.data.processId).queryKey,
+      null
+    );
+  }
+  return await serverAction();
 }
 
 export default function SupplierProcessRoute() {

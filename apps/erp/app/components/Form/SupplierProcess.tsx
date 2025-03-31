@@ -38,6 +38,7 @@ const SupplierProcess = ({
         ref={triggerRef}
         options={options}
         {...props}
+        // @ts-ignore
         label={props?.label ?? "Work Center"}
         onCreateOption={(option) => {
           newSupplierProcessModal.onOpen();
@@ -81,4 +82,17 @@ export const useSupplierProcesses = (args: { processId?: string }) => {
   );
 
   return supplierProcesses;
+};
+
+export const SupplierProcessPreview = ({ processId, supplierProcessId }: { processId: string, supplierProcessId?: string }) => {
+  const [suppliers] = useSuppliers();
+  const supplierProcess = useSupplierProcesses({ processId: processId });
+  
+  if (!supplierProcessId) return null;
+  const supplierId = supplierProcess.find((supplierProcess) => supplierProcess.id === supplierProcessId)?.supplierId;
+  if(!supplierId) return null;
+
+  const supplier = suppliers.find((supplier) => supplier.id === supplierId);
+
+  return <span className="text-xs text-muted-foreground">{supplier?.name}</span>;
 };

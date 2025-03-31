@@ -8,7 +8,6 @@ import { redirect } from "@vercel/remix";
 import { useUrlParams } from "~/hooks";
 import type {
   PurchaseOrderStatus,
-  PurchaseOrderType,
 } from "~/modules/purchasing";
 import {
   purchaseOrderValidator,
@@ -87,7 +86,7 @@ export default function PurchaseOrderNewRoute() {
     supplierId: supplierId ?? "",
     orderDate: today(getLocalTimeZone()).toString(),
     status: "Draft" as PurchaseOrderStatus,
-    type: "Purchase" as PurchaseOrderType,
+    purchaseOrderType: "Purchase" as const,
   };
 
   return (

@@ -1,16 +1,18 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { useNavigate, useParams } from "@remix-run/react";
+import { ClientActionFunctionArgs, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import {
   deleteSupplierProcess,
+  getSupplierProcessById,
   type SupplierProcess,
 } from "~/modules/purchasing";
 import { path } from "~/utils/path";
+import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -35,6 +37,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(path.to.supplierProcesses(supplierId));
+}
+
+export async function clientAction({
+  serverAction,
+  params,
+}: ClientActionFunctionArgs) {
+  const { id } = params;
+  if(id) {
+    const serviceRole = getCarbonServiceRole();
+    const supplierProcessId = await getSupplierProcessById(serviceRole, id);
+    if (supplierProcessId.data?.processId) {
+      window.clientCache?.setQueryData(
+        supplierProcessesQuery(supplierProcessId.data.processId).queryKey,
+        null
+      );
+    }
+  }
+  return await serverAction();
 }
 
 export default function DeleteSupplierProcessRoute() {

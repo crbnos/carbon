@@ -197,7 +197,7 @@ export function Agent() {
       });
 
       if (!tools?.data?.result) {
-        toast.error("Failed to fetch tools");
+        // toast.error("Failed to fetch tools");
         return;
       }
 
