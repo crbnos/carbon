@@ -370,6 +370,8 @@ function JobStartModal({
   const [loading, setLoading] = useState(true);
   const [eachAssemblyHasAnOperation, setEachAssemblyHasAnOperation] =
     useState(false);
+  const [eachOutsideOperationHasASupplier, setEachOutsideOperationHasASupplier] =
+    useState(false);
 
   const validate = async () => {
     if (!carbon || !job) return;
@@ -406,6 +408,10 @@ function JobStartModal({
             ) ?? false
         )
       );
+
+      setEachOutsideOperationHasASupplier(
+        operations.data?.every((op) => op.operationType === "Inside" || op.operationSupplierProcessId !== null) ?? false
+      );
     });
 
     setLoading(false);
@@ -440,12 +446,13 @@ function JobStartModal({
         ) : (
           <>
             <ModalBody>
-              {eachAssemblyHasAnOperation ? (
+              {eachAssemblyHasAnOperation && eachOutsideOperationHasASupplier && (
                 <p>
                   Are you sure you want to start this job? It will become
-                  available to the shop floor.
+                  available to the shop floor and purchase orders will be created for any outside operations.
                 </p>
-              ) : (
+              )}
+              {!eachAssemblyHasAnOperation && (
                 <Alert variant="warning">
                   <LuTriangleAlert />
                   <AlertTitle>Missing Operations</AlertTitle>
@@ -456,7 +463,19 @@ function JobStartModal({
                   </AlertDescription>
                 </Alert>
               )}
+              {!eachOutsideOperationHasASupplier && (
+                <Alert variant="warning">
+                  <LuTriangleAlert />
+                  <AlertTitle>Missing Suppliers</AlertTitle>
+                  <AlertDescription>
+                    There are outside operations associated with this job that
+                    have no suppliers. Please assign a supplier to each outside
+                    operation before releasing it.
+                  </AlertDescription>
+                </Alert>
+              )}
             </ModalBody>
+            
             <ModalFooter>
               <Button variant="secondary" onClick={onClose}>
                 Cancel
@@ -473,7 +492,7 @@ function JobStartModal({
                     fetcher.formData?.get("status") === "Ready"
                   }
                   isDisabled={
-                    fetcher.state !== "idle" || !eachAssemblyHasAnOperation
+                    fetcher.state !== "idle" || !eachAssemblyHasAnOperation || !eachOutsideOperationHasASupplier
                   }
                   type="submit"
                 >

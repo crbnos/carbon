@@ -325,6 +325,7 @@ export const jobOperationValidator = baseJobOperationValidator
 export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   .merge(
     z.object({
+
       workCenterId: z.string().min(1, { message: "Work center is required" }),
     })
   )
@@ -362,6 +363,18 @@ export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
     {
       message: "Lead time is required",
       path: ["operationLeadTime"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Outside") {
+        return !!data.operationSupplierProcessId;
+      }
+      return true;
+    },
+    {
+      message: "Supplier is required",
+      path: ["operationSupplierProcessId"],
     }
   )
   .refine(
