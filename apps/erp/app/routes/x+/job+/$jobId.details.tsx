@@ -231,7 +231,8 @@ function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
   const isShipped = (line.quantityShipped ?? 0) >= (line.purchaseQuantity ?? 0);
 
   const isPartiallyReceived = (line.quantityReceived ?? 0) > 0;
-  const isReceived = (line.quantityReceived ?? 0) >= (line.purchaseQuantity ?? 0);
+  const isReceived =
+    (line.quantityReceived ?? 0) >= (line.purchaseQuantity ?? 0);
 
   const status = isReceived
     ? "Received"
@@ -267,9 +268,7 @@ function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
             >
               {line.purchaseOrder.purchaseOrderId}
             </Hyperlink>
-            <PurchasingStatus
-              status={line.purchaseOrder.status}     
-            />
+            <PurchasingStatus status={line.purchaseOrder.status} />
           </VStack>
           <VStack className="items-center" spacing={0}>
             <span className="text-sm font-medium text-center">
@@ -282,8 +281,11 @@ function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
         </HStack>
       </HStack>
       <div className="flex flex-col items-end justify-center gap-1">
-            <SupplierAvatar className="text-sm" supplierId={line.purchaseOrder.supplierId} />
-          <Badge variant={statusColor}>{status}</Badge>
+        <SupplierAvatar
+          className="text-sm"
+          supplierId={line.purchaseOrder.supplierId}
+        />
+        <Badge variant={statusColor}>{status}</Badge>
       </div>
     </div>
   );

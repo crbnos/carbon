@@ -921,11 +921,8 @@ function OperationForm({
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
-    const [process, supplierProcesses ]= await Promise.all([carbon
-      .from("process")
-      .select("*")
-      .eq("id", processId)
-      .single(),
+    const [process, supplierProcesses] = await Promise.all([
+      carbon.from("process").select("*").eq("id", processId).single(),
       carbon.from("supplierProcess").select("*").eq("processId", processId),
     ]);
 
@@ -940,7 +937,8 @@ function OperationForm({
       laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
       machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
       machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
-      operationType: process.data?.processType === "Outside" ? "Outside" : "Inside",
+      operationType:
+        process.data?.processType === "Outside" ? "Outside" : "Inside",
       operationMinimumCost:
         supplierProcesses.data && supplierProcesses.data.length > 0
           ? supplierProcesses.data.reduce((acc, sp) => {
@@ -1027,9 +1025,7 @@ function OperationForm({
           }}
         />
 
-        
-
-  <Select
+        <Select
           name="operationOrder"
           label="Operation Order"
           placeholder="Operation Order"
@@ -1125,7 +1121,7 @@ function OperationForm({
           }
         />
 
-  {processData.operationType === "Outside" ? (
+        {processData.operationType === "Outside" ? (
           <>
             <SupplierProcess
               name="operationSupplierProcessId"
@@ -1133,7 +1129,7 @@ function OperationForm({
               processId={processData.processId}
               isOptional
             />
-<NumberControlled
+            <NumberControlled
               name="operationMinimumCost"
               label="Minimum Cost"
               minValue={0}
@@ -1211,7 +1207,6 @@ function OperationForm({
             />
           </>
         )}
-        
       </div>
 
       {processData.operationType === "Inside" && (

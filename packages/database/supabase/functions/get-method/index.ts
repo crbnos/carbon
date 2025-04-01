@@ -1769,7 +1769,7 @@ serve(async (req: Request) => {
                 operationSupplierProcessId: op.operationSupplierProcessId,
                 ...getOutsideOperationRates(
                   op.processId,
-                  op.operationSupplierProcessId,
+                  op.operationSupplierProcessId
                 ),
                 tags: op.tags ?? [],
                 workInstruction: op.workInstruction,
