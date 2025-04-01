@@ -32455,6 +32455,15 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.procedureId",
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationUnitCost",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32586,6 +32595,15 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperation.procedureId",
           },
           {
+            $ref: "#/parameters/rowFilter.methodOperation.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationUnitCost",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -32669,6 +32687,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperation.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperation.operationUnitCost",
           },
           {
             $ref: "#/parameters/body.methodOperation",
@@ -63522,6 +63549,21 @@ export default {
           format: "text",
           type: "string",
         },
+        operationMinimumCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        operationLeadTime: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        operationUnitCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -86236,6 +86278,24 @@ export default {
     },
     "rowFilter.methodOperation.procedureId": {
       name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.operationMinimumCost": {
+      name: "operationMinimumCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.operationLeadTime": {
+      name: "operationLeadTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperation.operationUnitCost": {
+      name: "operationUnitCost",
       required: false,
       in: "query",
       type: "string",
