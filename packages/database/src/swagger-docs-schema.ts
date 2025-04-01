@@ -16693,6 +16693,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -16884,6 +16887,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -17027,6 +17033,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine",
@@ -23926,6 +23935,12 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shipment.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -24057,6 +24072,12 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.customFields",
           },
           {
+            $ref: "#/parameters/rowFilter.shipment.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24140,6 +24161,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
           },
           {
             $ref: "#/parameters/body.shipment",
@@ -56183,6 +56210,10 @@ export default {
           format: "text",
           type: "string",
         },
+        quantityShipped: {
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -59575,6 +59606,18 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierInteractionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierInteraction.id`.<fk table='supplierInteraction' column='id'/>",
+          format: "text",
+          type: "string",
         },
       },
       type: "object",
@@ -77941,6 +77984,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLine.quantityShipped": {
+      name: "quantityShipped",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.accountDefault": {
       name: "accountDefault",
       description: "accountDefault",
@@ -81741,6 +81790,18 @@ export default {
     },
     "rowFilter.shipment.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipment.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.shipment.supplierInteractionId": {
+      name: "supplierInteractionId",
       required: false,
       in: "query",
       type: "string",

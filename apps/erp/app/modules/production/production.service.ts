@@ -188,8 +188,9 @@ export async function getJobPurchaseOrderLines(
 ) {
   return client
     .from("purchaseOrderLine")
-    .select("*, purchaseOrder(*)")
+    .select("id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)")
     .eq("jobId", jobId);
+
 }
 
 export async function getJobs(

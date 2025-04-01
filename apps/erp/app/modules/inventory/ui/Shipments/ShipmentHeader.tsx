@@ -6,7 +6,12 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { Link, useParams } from "@remix-run/react";
-import { LuCheckCheck, LuBarcode, LuQrCode } from "react-icons/lu";
+import {
+  LuCheckCheck,
+  LuBarcode,
+  LuQrCode,
+  LuShoppingCart,
+} from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
 
@@ -144,6 +149,15 @@ function SourceDocumentLink({
         <Button variant="secondary" leftIcon={<RiProgress8Line />} asChild>
           <Link to={path.to.salesOrderDetails(sourceDocumentId!)}>
             Sales Order
+          </Link>
+        </Button>
+      );
+    case "Purchase Order":
+      if (!permissions.can("view", "purchasing")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+          <Link to={path.to.purchaseOrderDetails(sourceDocumentId!)}>
+            Purchase Order
           </Link>
         </Button>
       );

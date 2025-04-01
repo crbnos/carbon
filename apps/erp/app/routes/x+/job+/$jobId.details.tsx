@@ -8,15 +8,27 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { Spinner, useMount, VStack } from "@carbon/react";
+import {
+  Badge,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  cn,
+  HStack,
+  Spinner,
+  useMount,
+  VStack,
+} from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
-import { CadModel, Documents } from "~/components";
+import { LuShoppingCart } from "react-icons/lu";
+import { CadModel, Documents, Hyperlink, SupplierAvatar } from "~/components";
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRealtime, useRouteData } from "~/hooks";
-import type { Job } from "~/modules/production";
+import type { Job, JobPurchaseOrderLine } from "~/modules/production";
 import {
   getJob,
   getJobPurchaseOrderLines,
@@ -25,6 +37,8 @@ import {
   upsertJob,
 } from "~/modules/production";
 import { JobNotes } from "~/modules/production/ui/Jobs";
+import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
+import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -155,7 +169,9 @@ export default function JobDetailsRoute() {
       <Suspense>
         <Await resolve={purchaseOrderLines}>
           {(purchaseOrderLines) => (
-            <pre>{JSON.stringify(purchaseOrderLines.data, null, 2)}</pre>
+            <JobPurchaseOrderLines
+              purchaseOrderLines={purchaseOrderLines.data ?? []}
+            />
           )}
         </Await>
       </Suspense>
@@ -171,5 +187,104 @@ export default function JobDetailsRoute() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
     </VStack>
+  );
+}
+
+function JobPurchaseOrderLines({
+  purchaseOrderLines,
+}: {
+  purchaseOrderLines: JobPurchaseOrderLine[];
+}) {
+  if (purchaseOrderLines.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Purchase Orders</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="border rounded-lg">
+          {purchaseOrderLines.map((line, index) => (
+            <div
+              key={line.id}
+              className={cn(
+                "border-b p-6",
+                index === purchaseOrderLines.length - 1 && "border-b-0"
+              )}
+            >
+              <JobPurchaseOrderLineItem line={line} />
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
+  const [items] = useItems();
+  const item = items.find((i) => i.id === line.itemId);
+
+  const isPartiallyShipped = (line.quantityShipped ?? 0) > 0;
+  const isShipped = (line.quantityShipped ?? 0) >= (line.purchaseQuantity ?? 0);
+
+  const isPartiallyReceived = (line.quantityReceived ?? 0) > 0;
+  const isReceived = (line.quantityReceived ?? 0) >= (line.purchaseQuantity ?? 0);
+
+  const status = isReceived
+    ? "Received"
+    : isPartiallyReceived
+    ? "Partially Received"
+    : isShipped
+    ? "Shipped"
+    : isPartiallyShipped
+    ? "Partially Shipped"
+    : "To Ship";
+
+  const statusColor = isReceived
+    ? "blue"
+    : isPartiallyReceived
+    ? "yellow"
+    : isShipped
+    ? "green"
+    : isPartiallyShipped
+    ? "orange"
+    : "gray";
+
+  return (
+    <div className="flex flex-1 justify-between items-center w-full">
+      <HStack spacing={4} className="w-2/3">
+        <HStack spacing={4} className="flex-1">
+          <div className="bg-muted border rounded-full flex items-center justify-center p-2">
+            <LuShoppingCart className="size-4" />
+          </div>
+          <VStack spacing={0}>
+            <Hyperlink
+              className="text-sm font-medium"
+              to={path.to.purchaseOrder(line.purchaseOrder.id)}
+            >
+              {line.purchaseOrder.purchaseOrderId}
+            </Hyperlink>
+            <PurchasingStatus
+              status={line.purchaseOrder.status}     
+            />
+          </VStack>
+          <VStack className="items-center" spacing={0}>
+            <span className="text-sm font-medium text-center">
+              {item?.readableId}
+            </span>
+            <span className="text-xs text-muted-foreground text-center">
+              {item?.name}
+            </span>
+          </VStack>
+        </HStack>
+      </HStack>
+      <div className="flex flex-col items-end justify-center gap-1">
+            <SupplierAvatar className="text-sm" supplierId={line.purchaseOrder.supplierId} />
+          <Badge variant={statusColor}>{status}</Badge>
+      </div>
+    </div>
   );
 }

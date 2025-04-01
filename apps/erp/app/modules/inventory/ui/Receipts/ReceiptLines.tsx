@@ -416,6 +416,7 @@ function ReceiptLineItem({
               </HStack>
             </VStack>
           </HStack>
+
           <Shelf
             locationId={line.locationId}
             shelfId={line.shelfId}

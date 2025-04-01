@@ -25,6 +25,7 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuRefreshCw,
+  LuTruck,
 } from "react-icons/lu";
 
 import { usePanels } from "~/components/Layout";
@@ -40,6 +41,7 @@ import {
   usePurchaseOrder,
   usePurchaseOrderRelatedDocuments,
 } from "./usePurchaseOrder";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
@@ -58,12 +60,18 @@ const PurchaseOrderHeader = () => {
   const permissions = usePermissions();
 
   const statusFetcher = useFetcher<{}>();
-  const { receive, invoice } = usePurchaseOrder();
-  const { receipts, invoices } = usePurchaseOrderRelatedDocuments(
-    routeData?.purchaseOrder?.supplierInteractionId ?? ""
+  const { receive, invoice, ship } = usePurchaseOrder();
+  const { receipts, invoices, shipments } = usePurchaseOrderRelatedDocuments(
+    routeData?.purchaseOrder?.supplierInteractionId ?? "",
+    routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing"
   );
 
   const finalizeDisclosure = useDisclosure();
+
+  const isOutsideProcessing =
+    routeData?.purchaseOrder?.purchaseOrderType === "Outside Processing";
+  const hasShipments = shipments.length > 0;
+  const requiresShipment = isOutsideProcessing && !hasShipments;
 
   return (
     <>
@@ -129,6 +137,71 @@ const PurchaseOrderHeader = () => {
             >
               Finalize
             </Button>
+            {routeData?.purchaseOrder?.purchaseOrderType ===
+              "Outside Processing" &&
+              (shipments.length > 0 ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      leftIcon={<LuTruck />}
+                      variant="secondary"
+                      rightIcon={<LuChevronDown />}
+                    >
+                      Shipments
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      disabled={
+                        ![
+                          "To Receive",
+                          "To Receive and Invoice",
+                          "To Invoice",
+                        ].includes(routeData?.purchaseOrder?.status ?? "")
+                      }
+                      onClick={() => {
+                        ship(routeData?.purchaseOrder);
+                      }}
+                    >
+                      <DropdownMenuIcon icon={<LuCirclePlus />} />
+                      New Shipment
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {shipments.map((shipment) => (
+                      <DropdownMenuItem key={shipment.id} asChild>
+                        <Link to={path.to.shipment(shipment.id)}>
+                          <DropdownMenuIcon icon={<LuTruck />} />
+                          <HStack spacing={8}>
+                            <span>{shipment.shipmentId}</span>
+                            <ShipmentStatus status={shipment.status} />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  leftIcon={<LuTruck />}
+                  isDisabled={
+                    !["To Receive", "To Receive and Invoice"].includes(
+                      routeData?.purchaseOrder?.status ?? ""
+                    )
+                  }
+                  variant={
+                    ["To Receive", "To Receive and Invoice"].includes(
+                      routeData?.purchaseOrder?.status ?? ""
+                    )
+                      ? "primary"
+                      : "secondary"
+                  }
+                  onClick={() => {
+                    ship(routeData?.purchaseOrder);
+                  }}
+                >
+                  Ship
+                </Button>
+              ))}
             {receipts.length > 0 ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -137,7 +210,7 @@ const PurchaseOrderHeader = () => {
                     variant={
                       ["To Receive", "To Receive and Invoice"].includes(
                         routeData?.purchaseOrder?.status ?? ""
-                      )
+                      ) && !requiresShipment
                         ? "primary"
                         : "secondary"
                     }
@@ -187,7 +260,7 @@ const PurchaseOrderHeader = () => {
                 variant={
                   ["To Receive", "To Receive and Invoice"].includes(
                     routeData?.purchaseOrder?.status ?? ""
-                  )
+                  ) && !requiresShipment
                     ? "primary"
                     : "secondary"
                 }
@@ -208,7 +281,7 @@ const PurchaseOrderHeader = () => {
                     variant={
                       ["To Invoice", "To Receive and Invoice"].includes(
                         routeData?.purchaseOrder?.status ?? ""
-                      )
+                      ) && !requiresShipment
                         ? "primary"
                         : "secondary"
                     }
@@ -255,7 +328,7 @@ const PurchaseOrderHeader = () => {
                 variant={
                   ["To Invoice", "To Receive and Invoice"].includes(
                     routeData?.purchaseOrder?.status ?? ""
-                  )
+                  ) && !requiresShipment
                     ? "primary"
                     : "secondary"
                 }

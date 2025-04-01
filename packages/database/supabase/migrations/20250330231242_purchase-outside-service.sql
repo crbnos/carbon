@@ -46,3 +46,16 @@ CREATE OR REPLACE VIEW "purchaseOrders" WITH(SECURITY_INVOKER=true) AS
   LEFT JOIN "purchaseOrderDelivery" pd ON pd."id" = p."id"
   LEFT JOIN "shippingTerm" st ON st."id" = pd."shippingTermId"
   LEFT JOIN "purchaseOrderPayment" pp ON pp."id" = p."id";
+
+
+ALTER TABLE "purchaseOrderLine" ADD COLUMN "quantityShipped" NUMERIC;
+
+ALTER TABLE "shipment" ADD COLUMN "supplierId" TEXT;
+ALTER TABLE "shipment" ADD CONSTRAINT "shipment_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "shipment" ADD COLUMN "supplierInteractionId" TEXT;
+ALTER TABLE "shipment" ADD CONSTRAINT "shipment_supplierInteractionId_fkey" FOREIGN KEY ("supplierInteractionId") REFERENCES "supplierInteraction" ("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+ALTER TABLE "methodOperation" ADD COLUMN "operationMinimumCost" NUMERIC DEFAULT 0;
+ALTER TABLE "methodOperation" ADD COLUMN "operationLeadTime" NUMERIC DEFAULT 0;
+ALTER TABLE "methodOperation" ADD COLUMN "operationUnitCost" NUMERIC DEFAULT 0;
+

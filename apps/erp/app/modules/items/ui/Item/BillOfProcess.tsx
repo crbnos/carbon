@@ -170,6 +170,9 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
   tags: [],
   workCenterId: "",
   workInstruction: {},
+  operationMinimumCost: 0,
+  operationLeadTime: 0,
+  operationUnitCost: 0,
 };
 
 const BillOfProcess = ({
@@ -824,10 +827,11 @@ function OperationForm({
   setTemporaryItems,
 }: OperationFormProps) {
   const methodOperationFetcher = useFetcher<{ id: string }>();
-  const { id: userId } = useUser();
+  const { id: userId, company } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
   const addingWorkInstruction = useRef(false);
+  const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
   useEffect(() => {
     // replace the temporary id with the actual id
@@ -891,6 +895,9 @@ function OperationForm({
     setupTime: number;
     setupUnit: string;
     setupUnitHint: string;
+    operationMinimumCost: number;
+    operationLeadTime: number;
+    operationUnitCost: number;
   }>({
     description: item.data.description ?? "",
     laborTime: item.data.laborTime ?? 0,
@@ -907,28 +914,46 @@ function OperationForm({
     setupTime: item.data.setupTime ?? 0,
     setupUnit: item.data.setupUnit ?? "Total Minutes",
     setupUnitHint: getUnitHint(item.data.setupUnit),
+    operationMinimumCost: item.data.operationMinimumCost ?? 0,
+    operationLeadTime: item.data.operationLeadTime ?? 0,
+    operationUnitCost: item.data.operationUnitCost ?? 0,
   });
 
   const onProcessChange = async (processId: string) => {
     if (!carbon || !processId) return;
-    const { data, error } = await carbon
+    const [process, supplierProcesses ]= await Promise.all([carbon
       .from("process")
       .select("*")
       .eq("id", processId)
-      .single();
+      .single(),
+      carbon.from("supplierProcess").select("*").eq("processId", processId),
+    ]);
 
-    if (error) throw new Error(error.message);
+    if (process.error) throw new Error(process.error.message);
 
     setProcessData((p) => ({
       ...p,
       processId,
       procedureId: "",
-      description: data?.name ?? "",
-      laborUnit: data?.defaultStandardFactor ?? "Hours/Piece",
-      laborUnitHint: getUnitHint(data?.defaultStandardFactor),
-      machineUnit: data?.defaultStandardFactor ?? "Hours/Piece",
-      machineUnitHint: getUnitHint(data?.defaultStandardFactor),
-      operationType: data?.processType === "Outside" ? "Outside" : "Inside",
+      description: process.data?.name ?? "",
+      laborUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
+      laborUnitHint: getUnitHint(process.data?.defaultStandardFactor),
+      machineUnit: process.data?.defaultStandardFactor ?? "Hours/Piece",
+      machineUnitHint: getUnitHint(process.data?.defaultStandardFactor),
+      operationType: process.data?.processType === "Outside" ? "Outside" : "Inside",
+      operationMinimumCost:
+        supplierProcesses.data && supplierProcesses.data.length > 0
+          ? supplierProcesses.data.reduce((acc, sp) => {
+              return (acc += sp.minimumCost ?? 0);
+            }, 0) / supplierProcesses.data.length
+          : p.operationMinimumCost,
+      operationUnitCost: item.data.operationUnitCost ?? 0,
+      operationLeadTime:
+        supplierProcesses.data && supplierProcesses.data.length > 0
+          ? supplierProcesses.data.reduce((acc, sp) => {
+              return (acc += sp.leadTime ?? 0);
+            }, 0) / supplierProcesses.data.length
+          : p.operationLeadTime,
     }));
   };
 
@@ -1002,48 +1027,40 @@ function OperationForm({
           }}
         />
 
-        {processData.operationType === "Outside" ? (
-          <>
-            <SupplierProcess
-              name="operationSupplierProcessId"
-              label="Supplier"
-              processId={processData.processId}
-              isOptional
-            />
-          </>
-        ) : (
-          <>
-            <WorkCenter
-              name="workCenterId"
-              label="Work Center"
-              isOptional
-              processId={processData.processId}
-              isConfigured={rulesByField.has(key("workCenterId"))}
-              onConfigure={
-                configurable && !isTemporaryId(item.id)
-                  ? () => {
-                      onConfigure({
-                        label: "Work Center",
-                        field: key("workCenterId"),
-                        code: rulesByField.get(key("workCenterId"))?.code,
-                        defaultValue: processData.workCenterId,
-                        returnType: {
-                          type: "text",
-                          helperText:
-                            "the unique identifier for the work center. you can get this from the URL when editing a work center",
-                        },
-                      });
-                    }
-                  : undefined
-              }
-              onChange={(value) => {
-                if (value) {
-                  onWorkCenterChange(value?.value as string);
+        
+
+  <Select
+          name="operationOrder"
+          label="Operation Order"
+          placeholder="Operation Order"
+          options={methodOperationOrders.map((o) => ({
+            value: o,
+            label: o,
+          }))}
+          onChange={(value) => {
+            setProcessData((d) => ({
+              ...d,
+              operationOrder: value?.value as string,
+            }));
+          }}
+          isConfigured={rulesByField.has(key("operationOrder"))}
+          onConfigure={
+            configurable && !isTemporaryId(item.id)
+              ? () => {
+                  onConfigure({
+                    label: "Operation Order",
+                    field: key("operationOrder"),
+                    code: rulesByField.get(key("operationOrder"))?.code,
+                    defaultValue: processData.operationOrder,
+                    returnType: {
+                      type: "enum",
+                      listOptions: ["After Previous", "With Previous"],
+                    },
+                  });
                 }
-              }}
-            />
-          </>
-        )}
+              : undefined
+          }
+        />
 
         <SelectControlled
           name="operationType"
@@ -1108,38 +1125,93 @@ function OperationForm({
           }
         />
 
-        <Select
-          name="operationOrder"
-          label="Operation Order"
-          placeholder="Operation Order"
-          options={methodOperationOrders.map((o) => ({
-            value: o,
-            label: o,
-          }))}
-          onChange={(value) => {
-            setProcessData((d) => ({
-              ...d,
-              operationOrder: value?.value as string,
-            }));
-          }}
-          isConfigured={rulesByField.has(key("operationOrder"))}
-          onConfigure={
-            configurable && !isTemporaryId(item.id)
-              ? () => {
-                  onConfigure({
-                    label: "Operation Order",
-                    field: key("operationOrder"),
-                    code: rulesByField.get(key("operationOrder"))?.code,
-                    defaultValue: processData.operationOrder,
-                    returnType: {
-                      type: "enum",
-                      listOptions: ["After Previous", "With Previous"],
-                    },
-                  });
+  {processData.operationType === "Outside" ? (
+          <>
+            <SupplierProcess
+              name="operationSupplierProcessId"
+              label="Supplier"
+              processId={processData.processId}
+              isOptional
+            />
+<NumberControlled
+              name="operationMinimumCost"
+              label="Minimum Cost"
+              minValue={0}
+              value={processData.operationMinimumCost}
+              formatOptions={{
+                style: "currency",
+                currency: baseCurrency,
+              }}
+              onChange={(newValue) =>
+                setProcessData((d) => ({
+                  ...d,
+                  operationMinimumCost: newValue,
+                }))
+              }
+            />
+            <NumberControlled
+              name="operationUnitCost"
+              label="Unit Cost"
+              minValue={0}
+              value={processData.operationUnitCost}
+              formatOptions={{
+                style: "currency",
+                currency: baseCurrency,
+              }}
+              onChange={(newValue) =>
+                setProcessData((d) => ({
+                  ...d,
+                  operationUnitCost: newValue,
+                }))
+              }
+            />
+            <NumberControlled
+              name="operationLeadTime"
+              label="Lead Time"
+              minValue={0}
+              value={processData.operationLeadTime}
+              onChange={(newValue) =>
+                setProcessData((d) => ({
+                  ...d,
+                  operationLeadTime: newValue,
+                }))
+              }
+            />
+          </>
+        ) : (
+          <>
+            <WorkCenter
+              name="workCenterId"
+              label="Work Center"
+              isOptional
+              processId={processData.processId}
+              isConfigured={rulesByField.has(key("workCenterId"))}
+              onConfigure={
+                configurable && !isTemporaryId(item.id)
+                  ? () => {
+                      onConfigure({
+                        label: "Work Center",
+                        field: key("workCenterId"),
+                        code: rulesByField.get(key("workCenterId"))?.code,
+                        defaultValue: processData.workCenterId,
+                        returnType: {
+                          type: "text",
+                          helperText:
+                            "the unique identifier for the work center. you can get this from the URL when editing a work center",
+                        },
+                      });
+                    }
+                  : undefined
+              }
+              onChange={(value) => {
+                if (value) {
+                  onWorkCenterChange(value?.value as string);
                 }
-              : undefined
-          }
-        />
+              }}
+            />
+          </>
+        )}
+        
       </div>
 
       {processData.operationType === "Inside" && (

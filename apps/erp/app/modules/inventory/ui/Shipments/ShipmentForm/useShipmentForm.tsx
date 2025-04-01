@@ -64,7 +64,24 @@ export default function useShipmentForm({
               );
             }
           });
-
+      case "Purchase Order":
+        carbon
+          ?.from("purchaseOrder")
+          .select("id, purchaseOrderId")
+          .eq("companyId", user.company.id)
+          .or("status.eq.To Receive, status.eq.To Receive and Invoice")
+          .then((response) => {
+            if (response.error) {
+              setError(response.error.message);
+            } else {
+              setSourceDocuments(
+                response.data.map((d) => ({
+                  name: d.purchaseOrderId,
+                  id: d.id,
+                }))
+              );
+            }
+          });
       default:
         setSourceDocuments([]);
     }

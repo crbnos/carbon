@@ -94,7 +94,16 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
                   {row.original.sourceDocumentReadableId}
                 </Hyperlink>
               );
-
+            case "Purchase Order":
+              return (
+                <Hyperlink
+                  to={path.to.purchaseOrderDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             default:
               return null;
           }

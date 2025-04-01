@@ -47,6 +47,14 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("shipmentFromPurchaseOrder"),
+    locationId: z.string(),
+    purchaseOrderId: z.string(),
+    shipmentId: z.string().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("shipmentFromSalesOrder"),
     locationId: z.string(),
     salesOrderId: z.string(),
@@ -776,6 +784,217 @@ serve(async (req: Request) => {
         return new Response(
           JSON.stringify({
             id: createdDocumentId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
+      } catch (err) {
+        console.error(err);
+        return new Response(JSON.stringify(err), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 500,
+        });
+      }
+    }
+    case "shipmentFromPurchaseOrder": {
+      const {
+        purchaseOrderId,
+        shipmentId: existingShipmentId,
+        locationId,
+      } = payload;
+
+      console.log({
+        function: "create-inventory-document",
+        type,
+        companyId,
+        locationId,
+        purchaseOrderId,
+        existingShipmentId,
+        userId,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [
+          purchaseOrder,
+          purchaseOrderLines,
+          purchaseOrderDelivery,
+          shipment,
+        ] = await Promise.all([
+          client
+            .from("purchaseOrder")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .single(),
+          client
+            .from("purchaseOrderLine")
+            .select("*")
+            .eq("purchaseOrderId", purchaseOrderId)
+            .in("purchaseOrderLineType", [
+              "Part",
+              "Material",
+              "Tool",
+              "Fixture",
+              "Consumable",
+            ])
+            .eq("locationId", locationId),
+          client
+            .from("purchaseOrderDelivery")
+            .select("*")
+            .eq("id", purchaseOrderId)
+            .maybeSingle(),
+          client
+            .from("shipment")
+            .select("*")
+            .eq("id", existingShipmentId)
+            .maybeSingle(),
+        ]);
+
+        if (!purchaseOrder.data) throw new Error("Purchase order not found");
+        if (purchaseOrderLines.error)
+          throw new Error(purchaseOrderLines.error.message);
+
+        const items = await client
+          .from("item")
+          .select("id, itemTrackingType")
+          .in(
+            "id",
+            purchaseOrderLines.data.map((d) => d.itemId)
+          );
+        const serializedItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Serial")
+            .map((d) => d.id)
+        );
+        const batchItems = new Set(
+          items.data
+            ?.filter((d) => d.itemTrackingType === "Batch")
+            .map((d) => d.id)
+        );
+
+        const hasShipment = !!shipment.data?.id;
+
+        const previouslyShippedQuantitiesByLine = (
+          purchaseOrderLines.data ?? []
+        ).reduce<Record<string, number>>((acc, d) => {
+          if (d.id) acc[d.id] = d.quantityShipped ?? 0;
+          return acc;
+        }, {});
+
+        let shipmentId = hasShipment ? shipment.data?.id! : "";
+        let shipmentIdReadable = hasShipment ? shipment.data?.shipmentId! : "";
+
+        await db.transaction().execute(async (trx) => {
+          if (hasShipment) {
+            // update existing shipment
+            await trx
+              .updateTable("shipment")
+              .set({
+                sourceDocument: "Purchase Order",
+                sourceDocumentId: purchaseOrder.data.id,
+                sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+                supplierId: purchaseOrder.data.supplierId,
+                supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+                shippingMethodId: purchaseOrderDelivery.data?.shippingMethodId,
+                locationId: locationId,
+                updatedBy: userId,
+              })
+              .where("id", "=", shipmentId)
+              .returning(["id", "shipmentId"])
+              .execute();
+            // delete existing shipment lines
+            await trx
+              .deleteFrom("shipmentLine")
+              .where("shipmentId", "=", shipmentId)
+              .execute();
+          } else {
+            shipmentIdReadable = await getNextSequence(
+              trx,
+              "shipment",
+              companyId
+            );
+
+            const newShipment = await trx
+              .insertInto("shipment")
+              .values({
+                shipmentId: shipmentIdReadable,
+                sourceDocument: "Purchase Order",
+                sourceDocumentId: purchaseOrder.data.id,
+                sourceDocumentReadableId: purchaseOrder.data.purchaseOrderId,
+                supplierId: purchaseOrder.data.supplierId,
+                supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+                shippingMethodId: purchaseOrderDelivery.data?.shippingMethodId,
+                companyId: companyId,
+                locationId: locationId,
+                createdBy: userId,
+              })
+              .returning(["id", "shipmentId"])
+              .execute();
+
+            shipmentId = newShipment?.[0]?.id!;
+            shipmentIdReadable = newShipment?.[0]?.shipmentId!;
+          }
+
+          // Process each sales order line
+          for await (const purchaseOrderLine of purchaseOrderLines.data) {
+            console.log({ purchaseOrderLine });
+            if (
+              !purchaseOrderLine.itemId ||
+              !purchaseOrderLine.purchaseQuantity ||
+              purchaseOrderLine.unitPrice === null ||
+              purchaseOrderLine.purchaseOrderLineType === "Service" ||
+              isNaN(purchaseOrderLine.unitPrice)
+            ) {
+              continue;
+            }
+
+            const isSerial = serializedItems.has(purchaseOrderLine.itemId);
+            const isBatch = batchItems.has(purchaseOrderLine.itemId);
+
+            const outstandingQuantity =
+              (purchaseOrderLine.purchaseQuantity ?? 0) -
+                previouslyShippedQuantitiesByLine[purchaseOrderLine.id] ?? 0;
+
+            const shippingAndTaxUnitCost =
+              ((purchaseOrderLine.shippingCost ?? 0) /
+                (purchaseOrderLine.purchaseQuantity ?? 0) +
+                (purchaseOrderLine.unitPrice ?? 0)) *
+              (1 + (purchaseOrderLine.taxPercent ?? 0));
+
+            await trx
+              .insertInto("shipmentLine")
+              .values({
+                shipmentId: shipmentId,
+                lineId: purchaseOrderLine.id,
+                companyId: companyId,
+                itemId: purchaseOrderLine.itemId,
+                itemReadableId: purchaseOrderLine.itemReadableId,
+                orderQuantity: purchaseOrderLine.purchaseQuantity,
+                outstandingQuantity: outstandingQuantity,
+                shippedQuantity: outstandingQuantity ?? 0,
+                requiresSerialTracking: isSerial,
+                requiresBatchTracking: isBatch,
+                unitPrice: shippingAndTaxUnitCost,
+                unitOfMeasure:
+                  purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",
+                locationId: purchaseOrderLine.locationId,
+                shelfId: purchaseOrderLine.shelfId,
+                createdBy: userId ?? "",
+              })
+              .execute();
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: shipmentId,
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -5,6 +5,7 @@ import type {
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOperations,
+  getJobPurchaseOrderLines,
   getProcedure,
   getProcedureAttributes,
   getProcedureParameters,
@@ -34,6 +35,10 @@ export type JobMethod = NonNullable<
 
 export type JobOperation = NonNullable<
   Awaited<ReturnType<typeof getJobOperations>>["data"]
+>[number];
+
+export type JobPurchaseOrderLine = NonNullable<
+  Awaited<ReturnType<typeof getJobPurchaseOrderLines>>["data"]
 >[number];
 
 export type ProductionEvent = NonNullable<

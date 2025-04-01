@@ -143,7 +143,7 @@ export const shipmentSourceDocumentType = [
   "Sales Order",
   // "Sales Invoice",
   // "Sales Return Order",
-  // "Purchase Order",
+  "Purchase Order",
   // "Purchase Invoice",
   // "Purchase Return Order",
   // "Inbound Transfer",
