@@ -1,7 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { ClientLoaderFunctionArgs } from "@remix-run/react";
+import type { ClientLoaderFunctionArgs } from "@remix-run/react";
 import type { LoaderFunctionArgs, SerializeFrom } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { getSupplierProcessesByProcess } from "~/modules/purchasing";
@@ -49,8 +49,6 @@ export async function clientLoader({
   const queryKey = supplierProcessesQuery(processId).queryKey;
   const data =
     window?.clientCache?.getQueryData<SerializeFrom<typeof loader>>(queryKey);
-
-  console.log("clientLoader", queryKey, data);
 
   if (!data) {
     const serverData = await serverLoader<typeof loader>();
