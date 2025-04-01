@@ -51,6 +51,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }
 
       throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
+    case "Purchase Order":
+      const purchaseOrderShipment = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create-inventory-document", {
+        body: {
+          type: "shipmentFromPurchaseOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          purchaseOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId,
+        },
+      });
+      if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
+        throw redirect(
+          path.to.purchaseOrder(sourceDocumentId),
+          await flash(
+            request,
+            error(purchaseOrderShipment.error, "Failed to create shipment")
+          )
+        );
+      }
+
+      throw redirect(path.to.shipmentDetails(purchaseOrderShipment.data.id));
     default:
       const defaultShipment = await serviceRole.functions.invoke<{
         id: string;

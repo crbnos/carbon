@@ -430,20 +430,21 @@ function ShipmentLineItem({
               </HStack>
             </VStack>
           </HStack>
-          {line.fulfillment?.type !== "Job" && (
-            <Shelf
-              locationId={line.locationId}
-              shelfId={line.shelfId}
-              isReadOnly={isReadOnly}
-              onChange={(shelf) => {
-                onUpdate({
-                  lineId: line.id!,
-                  field: "shelfId",
-                  value: shelf,
-                });
-              }}
-            />
-          )}
+          {line.fulfillment?.type !== "Job" &&
+            shipment?.sourceDocument !== "Purchase Order" && (
+              <Shelf
+                locationId={line.locationId}
+                shelfId={line.shelfId}
+                isReadOnly={isReadOnly}
+                onChange={(shelf) => {
+                  onUpdate({
+                    lineId: line.id!,
+                    field: "shelfId",
+                    value: shelf,
+                  });
+                }}
+              />
+            )}
         </div>
       </div>
       {line.requiresBatchTracking && (

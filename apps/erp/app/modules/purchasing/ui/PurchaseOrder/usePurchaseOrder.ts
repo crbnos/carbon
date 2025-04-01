@@ -2,7 +2,7 @@ import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
-import type { Receipt } from "~/modules/inventory";
+import type { Receipt, Shipment } from "~/modules/inventory";
 import type { PurchaseInvoice } from "~/modules/invoicing";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
@@ -32,15 +32,25 @@ export const usePurchaseOrder = () => {
     [navigate]
   );
 
+  const ship = useCallback(
+    (purchaseOrder: PurchaseOrder) =>
+      navigate(
+        `${path.to.newShipment}?sourceDocument=Purchase Order&sourceDocumentId=${purchaseOrder.id}`
+      ),
+    [navigate]
+  );
+
   return {
     edit,
     invoice,
     receive,
+    ship,
   };
 };
 
 export const usePurchaseOrderRelatedDocuments = (
-  supplierInteractionId: string
+  supplierInteractionId: string,
+  isOutsideProcessing: boolean
 ) => {
   const [receipts, setReceipts] = useState<
     Pick<Receipt, "id" | "receiptId" | "status">[]
@@ -48,13 +58,16 @@ export const usePurchaseOrderRelatedDocuments = (
   const [invoices, setInvoices] = useState<
     Pick<PurchaseInvoice, "id" | "invoiceId" | "status">[]
   >([]);
+  const [shipments, setShipments] = useState<
+    Pick<Shipment, "id" | "shipmentId" | "status">[]
+  >([]);
 
   const { carbon } = useCarbon();
 
   const getRelatedDocuments = useCallback(
     async (supplierInteractionId: string) => {
       if (!carbon || !supplierInteractionId) return;
-      const [receipts, invoices] = await Promise.all([
+      const [receipts, invoices, shipments] = await Promise.all([
         carbon
           .from("receipt")
           .select("id, receiptId, status")
@@ -63,6 +76,12 @@ export const usePurchaseOrderRelatedDocuments = (
           .from("purchaseInvoice")
           .select("id, invoiceId, status, datePaid, dateDue")
           .eq("supplierInteractionId", supplierInteractionId),
+        isOutsideProcessing
+          ? carbon
+              .from("shipment")
+              .select("id, shipmentId, status")
+              .eq("supplierInteractionId", supplierInteractionId)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (receipts.error) {
@@ -85,13 +104,18 @@ export const usePurchaseOrderRelatedDocuments = (
           })) ?? []
         );
       }
+      if (shipments.error) {
+        toast.error("Failed to load shipments");
+      } else {
+        setShipments(shipments.data);
+      }
     },
-    [carbon]
+    [carbon, isOutsideProcessing]
   );
 
   useEffect(() => {
     getRelatedDocuments(supplierInteractionId);
   }, [getRelatedDocuments, supplierInteractionId]);
 
-  return { receipts, invoices };
+  return { receipts, invoices, shipments };
 };

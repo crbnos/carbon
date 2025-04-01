@@ -11,9 +11,12 @@ import type { PDF } from "../types";
 import { Header, Note, Summary, Template } from "./components";
 
 interface PackingSlipProps extends PDF {
-  customer: Database["public"]["Tables"]["customer"]["Row"];
-  purchaseOrder?: string;
-  salesOrder?: string;
+  customer:
+    | Database["public"]["Tables"]["customer"]["Row"]
+    | Database["public"]["Tables"]["supplier"]["Row"];
+  customerReference?: string;
+  sourceDocument?: string;
+  sourceDocumentId?: string;
   shipment: Database["public"]["Tables"]["shipment"]["Row"];
   shipmentLines: Database["public"]["Views"]["shipmentLines"]["Row"][];
   shippingAddress: Database["public"]["Tables"]["address"]["Row"] | null;
@@ -44,8 +47,9 @@ const PackingSlipPDF = ({
   company,
   customer,
   meta,
-  purchaseOrder,
-  salesOrder,
+  customerReference,
+  sourceDocument,
+  sourceDocumentId,
   shipment,
   shipmentLines,
   shippingAddress,
@@ -76,17 +80,17 @@ const PackingSlipPDF = ({
     },
   ];
 
-  if (purchaseOrder) {
+  if (sourceDocument) {
     details.push({
-      label: "Purchase Order",
-      value: purchaseOrder,
+      label: sourceDocument,
+      value: sourceDocumentId,
     });
   }
 
-  if (salesOrder) {
+  if (customerReference) {
     details.push({
-      label: "Sales Order",
-      value: salesOrder,
+      label: "Reference",
+      value: customerReference,
     });
   }
 

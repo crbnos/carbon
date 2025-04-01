@@ -85,8 +85,31 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
         break;
+      case "Purchase Order":
+        const purchaseOrderShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create-inventory-document", {
+          body: {
+            type: "shipmentFromPurchaseOrder",
+            companyId,
+            locationId: data.locationId,
+            purchaseOrderId: data.sourceDocumentId,
+            shipmentId: id,
+            userId: userId,
+          },
+        });
+        if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(purchaseOrderShipment.error, "Failed to create shipment")
+            )
+          );
+        }
+        break;
       default:
-        throw new Error("Unsupported source document");
+        throw new Error(`Unsupported source document: ${data.sourceDocument}`);
     }
   } else {
     const updateShipment = await upsertShipment(client, {

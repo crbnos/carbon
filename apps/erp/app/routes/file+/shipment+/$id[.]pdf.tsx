@@ -11,6 +11,11 @@ import {
   getShippingMethod,
 } from "~/modules/inventory";
 import {
+  getPurchaseOrder,
+  getPurchaseOrderDelivery,
+  getSupplierLocation,
+} from "~/modules/purchasing";
+import {
   getCustomerLocation,
   getSalesOrder,
   getSalesOrderShipment,
@@ -66,7 +71,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const locale = getLocale(request);
 
   switch (shipment.data.sourceDocument) {
-    case "Sales Order":
+    case "Sales Order": {
       const [salesOrder, salesOrderShipment] = await Promise.all([
         getSalesOrder(client, shipment.data.sourceDocumentId),
         getSalesOrderShipment(client, shipment.data.sourceDocumentId),
@@ -140,8 +145,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             keywords: "packing slip",
             subject: "Packing Slip",
           }}
-          purchaseOrder={salesOrder.data?.customerReference ?? undefined}
-          salesOrder={salesOrder.data?.salesOrderId ?? undefined}
+          customerReference={salesOrder.data?.customerReference ?? undefined}
+          sourceDocument="Sales Order"
+          sourceDocumentId={salesOrder.data?.salesOrderId ?? undefined}
           shipment={shipment.data}
           shipmentLines={shipmentLines.data ?? []}
           // @ts-ignore
@@ -168,7 +174,111 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       const headers = new Headers({ "Content-Type": "application/pdf" });
       return new Response(body, { status: 200, headers });
+    }
+    case "Purchase Order": {
+      const [purchaseOrder, purchaseOrderDelivery] = await Promise.all([
+        getPurchaseOrder(client, shipment.data.sourceDocumentId),
+        getPurchaseOrderDelivery(client, shipment.data.sourceDocumentId),
+      ]);
 
+      const [
+        supplier,
+        supplierLocation,
+        poPaymentTerm,
+        poShippingMethod,
+        poShipmentTracking,
+      ] = await Promise.all([
+        client
+          .from("supplier")
+          .select("*")
+          .eq("id", purchaseOrder.data?.supplierId ?? "")
+          .single(),
+        getSupplierLocation(client, purchaseOrder.data?.locationId ?? ""),
+        getPaymentTerm(client, purchaseOrder.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          client,
+          purchaseOrderDelivery.data?.shippingMethodId ?? ""
+        ),
+        getShipmentTracking(client, shipment.data.id, companyId),
+      ]);
+
+      if (supplier.error) {
+        console.error(supplier.error);
+        throw new Error("Failed to load supplier");
+      }
+
+      const poThumbnailPaths = shipmentLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.id!] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
+
+      const poThumbnails: Record<string, string | null> =
+        (poThumbnailPaths
+          ? await Promise.all(
+              Object.entries(poThumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(client, path).then(
+                  (data) => ({
+                    id,
+                    data,
+                  })
+                );
+              })
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {};
+
+      const poStream = await renderToStream(
+        <PackingSlipPDF
+          company={company.data}
+          customer={supplier.data}
+          locale={locale}
+          meta={{
+            author: "CarbonOS",
+            keywords: "packing slip",
+            subject: "Packing Slip",
+          }}
+          customerReference={purchaseOrder.data?.supplierReference ?? undefined}
+          sourceDocument="Purchase Order"
+          sourceDocumentId={purchaseOrder.data?.purchaseOrderId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-ignore
+          shippingAddress={supplierLocation.data?.address}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={poPaymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={poShippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={poShipmentTracking.data ?? []}
+          title="Packing Slip"
+          thumbnails={poThumbnails}
+        />
+      );
+
+      const poBody: Buffer = await new Promise((resolve, reject) => {
+        const buffers: Uint8Array[] = [];
+        poStream.on("data", (data) => {
+          buffers.push(data);
+        });
+        poStream.on("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+        poStream.on("error", reject);
+      });
+
+      const poHeaders = new Headers({ "Content-Type": "application/pdf" });
+      return new Response(poBody, { status: 200, headers: poHeaders });
+    }
     default:
       throw new Error("Invalid source document");
   }

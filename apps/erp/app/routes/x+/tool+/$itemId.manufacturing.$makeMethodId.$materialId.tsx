@@ -110,6 +110,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         operationSupplierProcessId:
           operation.operationSupplierProcessId ?? undefined,
+          operationMinimumCost: operation.operationMinimumCost ?? 0,
+        operationLeadTime: operation.operationLeadTime ?? 0,
+        operationUnitCost: operation.operationUnitCost ?? 0,
         tags: operation.tags ?? [],
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],

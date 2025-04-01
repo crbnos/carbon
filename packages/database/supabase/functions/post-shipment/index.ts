@@ -802,8 +802,381 @@ serve(async (req: Request) => {
         });
         break;
       }
-      default: {
+      case "Purchase Order": {
+        if (!shipment.data.sourceDocumentId)
+          throw new Error("Shipment has no sourceDocumentId");
+
+        const [purchaseOrder, purchaseOrderLines] = await Promise.all([
+          client
+            .from("purchaseOrder")
+            .select("*")
+            .eq("id", shipment.data.sourceDocumentId)
+            .single(),
+          client
+            .from("purchaseOrderLine")
+            .select("*")
+            .eq("purchaseOrderId", shipment.data.sourceDocumentId),
+        ]);
+        if (purchaseOrder.error)
+          throw new Error("Failed to fetch purchase order");
+        if (purchaseOrderLines.error)
+          throw new Error("Failed to fetch purchase order lines");
+
+        const supplier = await client
+          .from("supplier")
+          .select("*")
+          .eq("id", purchaseOrder.data.supplierId)
+          .eq("companyId", companyId)
+          .single();
+        if (supplier.error) throw new Error("Failed to fetch supplier");
+
+        const jobOperationsUpdates: Record<
+          string,
+          Database["public"]["Tables"]["jobOperation"]["Update"]
+        > = {};
+
+        for await (const shipmentLine of shipmentLines.data) {
+          const purchaseOrderLine = purchaseOrderLines.data.find(
+            (pol) => pol.id === shipmentLine.lineId
+          );
+
+          if (purchaseOrderLine?.jobId && purchaseOrderLine.jobOperationId) {
+            // Update quantity shipped on job, accumulating totals from multiple shipments
+            const jobOperationId = purchaseOrderLine.jobOperationId;
+
+            jobOperationsUpdates[jobOperationId] = {
+              status: "In Progress",
+            };
+            continue;
+          }
+        }
+
+        const shipmentLinesByPurchaseOrderLineId = shipmentLines.data.reduce<
+          Record<string, Database["public"]["Tables"]["shipmentLine"]["Row"][]>
+        >((acc, shipmentLine) => {
+          if (shipmentLine.lineId) {
+            acc[shipmentLine.lineId] = [
+              ...(acc[shipmentLine.lineId] ?? []),
+              shipmentLine,
+            ];
+          }
+          return acc;
+        }, {});
+
+        const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
+          Record<
+            string,
+            Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+          >
+        >((acc, purchaseOrderLine) => {
+          const shipmentLines =
+            shipmentLinesByPurchaseOrderLineId[purchaseOrderLine.id];
+          if (
+            shipmentLines &&
+            shipmentLines.length > 0 &&
+            purchaseOrderLine.purchaseQuantity &&
+            purchaseOrderLine.purchaseQuantity > 0
+          ) {
+            const shippedQuantity = shipmentLines.reduce(
+              (acc, shipmentLine) => {
+                return acc + (shipmentLine.shippedQuantity ?? 0);
+              },
+              0
+            );
+
+            const newQuantityShipped =
+              (purchaseOrderLine.quantityShipped ?? 0) + shippedQuantity;
+
+            const updates: Record<
+              string,
+              Database["public"]["Tables"]["purchaseOrderLine"]["Update"]
+            > = {
+              ...acc,
+              [purchaseOrderLine.id]: {
+                quantityShipped: newQuantityShipped,
+              },
+            };
+
+            return updates;
+          }
+
+          return acc;
+        }, {});
+
+        const trackedEntitySplits: Record<
+          string,
+          {
+            originalEntityId: string;
+            originalQuantity: number;
+            shippedQuantity: number;
+            remainingQuantity: number;
+            attributes: TrackedEntityAttributes;
+            sourceDocument: string;
+            sourceDocumentId: string;
+            sourceDocumentReadableId: string | null;
+            companyId: string;
+          }
+        > = {};
+
+        const trackedEntityUpdates =
+          shipmentLineTracking.data?.reduce<
+            Record<
+              string,
+              Database["public"]["Tables"]["trackedEntity"]["Update"]
+            >
+          >((acc, trackedEntity) => {
+            const shipmentLine = shipmentLines.data?.find(
+              (shipmentLine) =>
+                shipmentLine.id ===
+                (trackedEntity.attributes as TrackedEntityAttributes)?.[
+                  "Shipment Line"
+                ]
+            );
+
+            if (
+              shipmentLine?.shippedQuantity !== undefined &&
+              trackedEntity.quantity !== undefined &&
+              shipmentLine.shippedQuantity < trackedEntity.quantity
+            ) {
+              // Need to split the batch
+              trackedEntitySplits[trackedEntity.id] = {
+                originalEntityId: trackedEntity.id,
+                originalQuantity: trackedEntity.quantity,
+                shippedQuantity: shipmentLine.shippedQuantity,
+                remainingQuantity:
+                  trackedEntity.quantity - shipmentLine.shippedQuantity,
+                attributes: trackedEntity.attributes as TrackedEntityAttributes,
+                sourceDocument: trackedEntity.sourceDocument,
+                sourceDocumentId: trackedEntity.sourceDocumentId,
+                sourceDocumentReadableId:
+                  trackedEntity.sourceDocumentReadableId,
+                companyId: trackedEntity.companyId,
+              };
+            }
+
+            acc[trackedEntity.id] = {
+              status: "On Hold",
+              quantity: shipmentLine?.shippedQuantity ?? trackedEntity.quantity,
+            };
+
+            return acc;
+          }, {}) ?? {};
+
+        await db.transaction().execute(async (trx) => {
+          for await (const [purchaseOrderLineId, update] of Object.entries(
+            purchaseOrderLineUpdates
+          )) {
+            await trx
+              .updateTable("purchaseOrderLine")
+              .set(update)
+              .where("id", "=", purchaseOrderLineId)
+              .execute();
+          }
+
+          await trx
+            .updateTable("shipment")
+            .set({
+              status: "Posted",
+              postingDate: today,
+              postedBy: userId,
+            })
+            .where("id", "=", shipmentId)
+            .execute();
+
+          if (Object.keys(trackedEntityUpdates).length > 0) {
+            const trackedActivity = await trx
+              .insertInto("trackedActivity")
+              .values({
+                type: "Shipment",
+                sourceDocument: "Shipment",
+                sourceDocumentId: shipmentId,
+                sourceDocumentReadableId: shipment.data.shipmentId,
+                attributes: {
+                  Shipment: shipmentId,
+                  "Purchase Order": purchaseOrder.data.id,
+                },
+                companyId,
+                createdBy: userId,
+                createdAt: today,
+              })
+              .returning(["id"])
+              .execute();
+
+            const trackedActivityId = trackedActivity[0].id;
+
+            // Handle batch splits first
+            for await (const splitInfo of Object.values(trackedEntitySplits)) {
+              // Create a split activity
+              const splitActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Split",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data.shipmentId,
+                  attributes: {
+                    "Original Quantity": splitInfo.originalQuantity,
+                    "Shipped Quantity": splitInfo.shippedQuantity,
+                    "Remaining Quantity": splitInfo.remainingQuantity,
+                  },
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+
+              const splitActivityId = splitActivity[0].id!;
+
+              // Record the original entity as input to the split
+              await trx
+                .insertInto("trackedActivityInput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: splitInfo.originalEntityId,
+                  quantity: splitInfo.originalQuantity,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+
+              // Create a new tracked entity for the remaining quantity
+              const newTrackedEntity = await trx
+                .insertInto("trackedEntity")
+                .values({
+                  quantity: splitInfo.remainingQuantity,
+                  status: "Available",
+                  sourceDocument: splitInfo.sourceDocument,
+                  sourceDocumentId: splitInfo.sourceDocumentId,
+                  sourceDocumentReadableId: splitInfo.sourceDocumentReadableId,
+                  attributes: splitInfo.attributes as unknown as Json,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+
+              const newTrackedEntityId = newTrackedEntity[0].id!;
+
+              // Update the original entity's attributes to include the split entity ID
+              const originalEntity = await trx
+                .selectFrom("trackedEntity")
+                .select(["attributes"])
+                .where("id", "=", splitInfo.originalEntityId)
+                .executeTakeFirst();
+
+              if (originalEntity) {
+                const updatedAttributes = {
+                  ...((originalEntity.attributes as TrackedEntityAttributes) ||
+                    {}),
+                  "Split Entity ID": newTrackedEntityId,
+                };
+
+                // Remove Shipment and Shipment Line attributes from the new entity
+                const updatedAttributesObj = {
+                  ...((originalEntity.attributes as TrackedEntityAttributes) ||
+                    {}),
+                };
+
+                // Delete shipment-related attributes
+                delete updatedAttributesObj["Shipment"];
+                delete updatedAttributesObj["Shipment Line"];
+                delete updatedAttributesObj["Shipment Line Index"];
+
+                // Add the split entity reference
+                updatedAttributesObj["Split Entity ID"] = newTrackedEntityId;
+
+                // Update the original entity with the reference to the new split entity
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({
+                    attributes: updatedAttributes,
+                  })
+                  .where("id", "=", splitInfo.originalEntityId)
+                  .execute();
+              }
+
+              // Record the new entity as output from the split
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: newTrackedEntityId,
+                  quantity: splitInfo.remainingQuantity,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+
+              // Record the shipped portion as output (will be consumed by shipment)
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values({
+                  trackedActivityId: splitActivityId,
+                  trackedEntityId: splitInfo.originalEntityId,
+                  quantity: splitInfo.shippedQuantity,
+                  companyId: splitInfo.companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .execute();
+            }
+
+            // Now handle the shipment consumption
+            for await (const [id, update] of Object.entries(
+              trackedEntityUpdates
+            )) {
+              await trx
+                .updateTable("trackedEntity")
+                .set(update)
+                .where("id", "=", id)
+                .execute();
+
+              if (trackedActivityId) {
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values({
+                    trackedActivityId,
+                    trackedEntityId: id,
+                    quantity: update.quantity ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .execute();
+              }
+            }
+          }
+
+          if (Object.keys(jobOperationsUpdates).length > 0) {
+            console.log(
+              "Final job updates to be applied:",
+              jobOperationsUpdates
+            );
+            for await (const [jobOperationId, update] of Object.entries(
+              jobOperationsUpdates
+            )) {
+              console.log(
+                `Updating job operation ${jobOperationId} with:`,
+                update
+              );
+              await trx
+                .updateTable("jobOperation")
+                .set(update)
+                .where("id", "=", jobOperationId)
+                .execute();
+            }
+          }
+        });
         break;
+      }
+      default: {
+        throw new Error(
+          `Invalid source document type: ${shipment.data.sourceDocument}`
+        );
       }
     }
 

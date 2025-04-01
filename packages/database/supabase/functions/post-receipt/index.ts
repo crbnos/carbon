@@ -145,6 +145,9 @@ serve(async (req: Request) => {
           "journalId"
         >[] = [];
 
+        const isOutsideProcessing =
+          purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
         const receiptLinesByPurchaseOrderLineId = receiptLines.data.reduce<
           Record<string, Database["public"]["Tables"]["receiptLine"]["Row"][]>
         >((acc, receiptLine) => {
@@ -183,6 +186,45 @@ serve(async (req: Request) => {
 
             return acc;
           }, {}) ?? {};
+
+        const jobOperationUpdates = isOutsideProcessing
+          ? purchaseOrderLines.data.reduce<
+              Record<
+                string,
+                Database["public"]["Tables"]["jobOperation"]["Update"]
+              >
+            >((acc, purchaseOrderLine) => {
+              const receiptLines =
+                receiptLinesByPurchaseOrderLineId[purchaseOrderLine.id];
+              if (
+                receiptLines &&
+                receiptLines.length > 0 &&
+                purchaseOrderLine.purchaseQuantity &&
+                purchaseOrderLine.purchaseQuantity > 0 &&
+                purchaseOrderLine.jobOperationId
+              ) {
+                const recivedQuantityInPurchaseUnit =
+                  receiptLines.reduce((acc, receiptLine) => {
+                    return acc + (receiptLine.receivedQuantity ?? 0);
+                  }, 0) / (receiptLines[0].conversionFactor ?? 1);
+
+                const receivedComplete =
+                  purchaseOrderLine.receivedComplete ||
+                  recivedQuantityInPurchaseUnit >=
+                    (purchaseOrderLine.quantityToReceive ??
+                      purchaseOrderLine.purchaseQuantity);
+
+                return {
+                  ...acc,
+                  [purchaseOrderLine.jobOperationId]: {
+                    status: receivedComplete ? "Done" : "In Progress",
+                  },
+                };
+              }
+
+              return acc;
+            }, {})
+          : {};
 
         const purchaseOrderLineUpdates = purchaseOrderLines.data.reduce<
           Record<
@@ -513,11 +555,15 @@ serve(async (req: Request) => {
 
             let journalLineReference = nanoid();
 
-            if (itemTrackingType === "Inventory") {
+            if (itemTrackingType !== "Non-Inventory") {
               // debit the inventory account
               journalLineInserts.push({
-                accountNumber: postingGroupInventory.inventoryAccount,
-                description: "Inventory Account",
+                accountNumber: isOutsideProcessing
+                  ? postingGroupInventory.workInProgressAccount
+                  : postingGroupInventory.inventoryAccount,
+                description: isOutsideProcessing
+                  ? "WIP Account"
+                  : "Inventory Account",
                 amount: debit("asset", reversedValue),
                 quantity: quantityToReverse,
                 documentType: "Receipt",
@@ -530,7 +576,7 @@ serve(async (req: Request) => {
                 companyId,
               });
 
-              // creidt the direct cost applied account
+              // credit the direct cost applied account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.directCostAppliedAccount,
                 description: "Direct Cost Applied",
@@ -562,7 +608,7 @@ serve(async (req: Request) => {
                 companyId,
               });
 
-              // creidt the overhead cost applied account
+              // credit the overhead cost applied account
               journalLineInserts.push({
                 accountNumber: postingGroupInventory.overheadCostAppliedAccount,
                 description: "Overhead Cost Applied",
@@ -702,7 +748,7 @@ serve(async (req: Request) => {
             }
           }
 
-          if (itemTrackingType === "Inventory") {
+          if (itemTrackingType === "Inventory" && !isOutsideProcessing) {
             // For inventory entries, use the appropriate entry type based on quantity sign
             const entryType =
               receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
@@ -723,7 +769,7 @@ serve(async (req: Request) => {
             });
           }
 
-          if (receiptLine.requiresBatchTracking) {
+          if (receiptLine.requiresBatchTracking && !isOutsideProcessing) {
             const entryType =
               receivedQuantity < 0 ? "Negative Adjmt." : "Positive Adjmt.";
 
@@ -749,7 +795,7 @@ serve(async (req: Request) => {
             });
           }
 
-          if (receiptLine.requiresSerialTracking) {
+          if (receiptLine.requiresSerialTracking && !isOutsideProcessing) {
             const lineTracking = receiptLineTracking.data?.filter(
               (tracking) =>
                 (tracking.attributes as TrackedEntityAttributes | undefined)?.[
@@ -806,6 +852,16 @@ serve(async (req: Request) => {
               .updateTable("purchaseOrderLine")
               .set(update)
               .where("id", "=", purchaseOrderLineId)
+              .execute();
+          }
+
+          for await (const [jobOperationId, update] of Object.entries(
+            jobOperationUpdates
+          )) {
+            await trx
+              .updateTable("jobOperation")
+              .set(update)
+              .where("id", "=", jobOperationId)
               .execute();
           }
 
