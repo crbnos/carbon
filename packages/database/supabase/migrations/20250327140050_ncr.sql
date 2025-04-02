@@ -46,40 +46,55 @@ CREATE TYPE "nonConformanceSource" AS ENUM (
 CREATE TYPE "nonConformancePriority" AS ENUM (
   'Low',
   'Medium',
-  'High'
+  'High',
+  'Critical'
 );
 
 CREATE TYPE "nonConformanceStatus" AS ENUM (
   'Registered',
-  'Open',
-  'Completed'
+  'Under Investigation',
+  'Pending Approval',
+  'In Progress',
+  'On Hold',
+  'Rejected',
+  'Completed',
+  'Closed'
 );
 
-CREATE TABLE "nonConformanceTemplate" (
-  "id" TEXT NOT NULL DEFAULT xid(),
-  "name" TEXT NOT NULL,
-  "content" JSONB NOT NULL DEFAULT '{}',
-  "companyId" TEXT NOT NULL,
-  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  "createdBy" TEXT NOT NULL,
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
-  "updatedBy" TEXT,
+CREATE TYPE "nonConformanceInvestigation" AS ENUM (
+  'Inventory',
+  'WIP',
+  'Finished Goods',
+  'Incoming Materials',
+  'Process',
+  'Documentation'
+);
 
-  CONSTRAINT "nonConformanceTemplate_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "nonConformanceTemplate_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "nonConformanceTemplate_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "nonConformanceTemplate_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+CREATE TYPE "nonConformanceAction" AS ENUM (
+  'Root Cause Analysis',
+  'Corrective Action',
+  'Preventive Action',
+  'Containment Action',
+  'Verification',
+  'Customer Communication'
+);
+
+CREATE TYPE "nonConformanceApproval" AS ENUM (
+  'MRB'
 );
 
 CREATE TABLE "nonConformanceWorkflow" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
-  "nonConformanceTemplateId" TEXT NOT NULL,
-  "requiresApproval" BOOLEAN NOT NULL DEFAULT FALSE,
-  "requiresInventoryCheck" BOOLEAN NOT NULL DEFAULT FALSE,
-  "requiresWIPCheck" BOOLEAN NOT NULL DEFAULT FALSE,
-  "requiresCorrectiveAction" BOOLEAN NOT NULL DEFAULT FALSE,
-  "requiresPreventiveAction" BOOLEAN NOT NULL DEFAULT FALSE,
+  "description" TEXT,
+  "content" JSONB NOT NULL DEFAULT '{}',
+  "steps" JSONB NOT NULL DEFAULT '[]',
+  "investigationTypes" "nonConformanceInvestigation"[] DEFAULT '{}',
+  "requiredActions" "nonConformanceAction"[] DEFAULT '{}',
+  "approvalRequirements" "nonConformanceApproval"[] DEFAULT '{}',
+  "defaultPriority" "nonConformancePriority" DEFAULT 'Medium',
+  "estimatedDuration" INTEGER, -- in days
+  "isActive" BOOLEAN NOT NULL DEFAULT TRUE,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -87,11 +102,11 @@ CREATE TABLE "nonConformanceWorkflow" (
   "updatedBy" TEXT,
 
   CONSTRAINT "nonConformanceWorkflow_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "nonConformanceWorkflow_nonConformanceTemplateId_fkey" FOREIGN KEY ("nonConformanceTemplateId") REFERENCES "nonConformanceTemplate"("id") ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceWorkflow_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceWorkflow_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceWorkflow_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
+
 
 CREATE TABLE "nonConformance" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -99,13 +114,14 @@ CREATE TABLE "nonConformance" (
   "description" TEXT,
   "source" "nonConformanceSource" NOT NULL,
   "status" "nonConformanceStatus" NOT NULL DEFAULT 'Registered',
-  -- "nonConformanceWorkflowId" TEXT NOT NULL,
+  "nonConformanceWorkflowId" TEXT NOT NULL,
   "locationId" TEXT NOT NULL,
   "nonConformanceTypeId" TEXT NOT NULL,
   "openDate" DATE NOT NULL,
   "dueDate" DATE,
   "closeDate" DATE,
   "quantity" NUMERIC NOT NULL DEFAULT 0,
+  "itemId" TEXT,
   "trackedEntityId" TEXT,
   "customerId" TEXT,
   "supplierId" TEXT,
@@ -149,7 +165,7 @@ CREATE INDEX "nonConformance_locationId_idx" ON "nonConformance" ("locationId");
 CREATE INDEX "nonConformance_nonConformanceTypeId_idx" ON "nonConformance" ("nonConformanceTypeId");
 CREATE INDEX "nonConformance_itemId_idx" ON "nonConformance" ("itemId");
 CREATE INDEX "nonConformance_supplierId_idx" ON "nonConformance" ("supplierId");
-CREATE INDEX "nonConformance_assigneeId_idx" ON "nonConformance" ("assigneeId");
+CREATE INDEX "nonConformance_assignee_idx" ON "nonConformance" ("assignee");
 
 
 CREATE TABLE "nonConformanceReviewer" (

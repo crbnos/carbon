@@ -2,12 +2,13 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { ScrollArea } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { nonConformanceTemplateValidator } from "~/modules/quality/quality.models";
-import { upsertNonConformanceTemplate } from "~/modules/quality/quality.service";
-import NonConformanceTemplateForm from "~/modules/quality/ui/NonConformanceTemplates/NonConformanceTemplateForm";
+import { nonConformanceWorkflowValidator } from "~/modules/quality/quality.models";
+import { upsertNonConformanceWorkflow } from "~/modules/quality/quality.service";
+import NonConformanceWorkflowForm from "~/modules/quality/ui/NonConformanceWorkflows/NonConformanceWorkflowForm";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "quality",
   });
   const formData = await request.formData();
-  const validation = await validator(nonConformanceTemplateValidator).validate(
+  const validation = await validator(nonConformanceWorkflowValidator).validate(
     formData
   );
 
@@ -34,7 +35,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertNonConformanceTemplate = await upsertNonConformanceTemplate(
+  const insertNonConformanceWorkflow = await upsertNonConformanceWorkflow(
     client,
     {
       ...data,
@@ -44,39 +45,43 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (
-    insertNonConformanceTemplate.error ||
-    !insertNonConformanceTemplate.data?.id
+    insertNonConformanceWorkflow.error ||
+    !insertNonConformanceWorkflow.data?.id
   ) {
     return json(
       {},
       await flash(
         request,
         error(
-          insertNonConformanceTemplate.error,
-          "Failed to insert non-conformance template"
+          insertNonConformanceWorkflow.error,
+          "Failed to insert non-conformance workflow"
         )
       )
     );
   }
 
   return redirect(
-    path.to.nonConformanceTemplate(insertNonConformanceTemplate.data.id),
-    await flash(request, success("Non-conformance template created"))
+    path.to.nonConformanceWorkflow(insertNonConformanceWorkflow.data.id),
+    await flash(request, success("Non-conformance workflow created"))
   );
 }
 
-export default function NewNonConformanceTemplateRoute() {
+export default function NewNonConformanceWorkflowRoute() {
   const navigate = useNavigate();
   const initialValues = {
     name: "",
-    version: 0,
-    processId: "",
+    content: "{}",
+    investigationTypes: [],
+    requiredActions: [],
+    approvalRequirements: [],
   };
 
   return (
-    <NonConformanceTemplateForm
-      initialValues={initialValues}
-      onClose={() => navigate(-1)}
-    />
+    <ScrollArea className="w-full h-[calc(100dvh-49px)] bg-card">
+      <NonConformanceWorkflowForm
+        initialValues={initialValues}
+        onClose={() => navigate(-1)}
+      />
+    </ScrollArea>
   );
 }

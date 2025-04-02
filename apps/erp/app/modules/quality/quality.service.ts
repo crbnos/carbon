@@ -5,7 +5,7 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  nonConformanceTemplateValidator,
+  nonConformanceWorkflowValidator,
   nonConformanceTypeValidator,
 } from "./quality.models";
 
@@ -19,34 +19,34 @@ export async function deleteNonConformanceType(
     .eq("id", nonConformanceTypeId);
 }
 
-export async function deleteNonConformanceTemplate(
+export async function deleteNonConformanceWorkflow(
   client: SupabaseClient<Database>,
-  nonConformanceTemplateId: string
+  nonConformanceWorkflowId: string
 ) {
   return client
-    .from("nonConformanceTemplate")
+    .from("nonConformanceWorkflow")
     .delete()
-    .eq("id", nonConformanceTemplateId);
+    .eq("id", nonConformanceWorkflowId);
 }
 
-export async function getNonConformanceTemplate(
+export async function getNonConformanceWorkflow(
   client: SupabaseClient<Database>,
-  nonConformanceTemplateId: string
+  nonConformanceWorkflowId: string
 ) {
   return client
-    .from("nonConformanceTemplate")
+    .from("nonConformanceWorkflow")
     .select("*")
-    .eq("id", nonConformanceTemplateId)
+    .eq("id", nonConformanceWorkflowId)
     .single();
 }
 
-export async function getNonConformanceTemplates(
+export async function getNonConformanceWorkflows(
   client: SupabaseClient<Database>,
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
-    .from("nonConformanceTemplate")
+    .from("nonConformanceWorkflow")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
@@ -108,29 +108,29 @@ export async function getNonConformanceTypes(
   return query;
 }
 
-export async function upsertNonConformanceTemplate(
+export async function upsertNonConformanceWorkflow(
   client: SupabaseClient<Database>,
-  nonConformanceTemplate:
-    | (Omit<z.infer<typeof nonConformanceTemplateValidator>, "id"> & {
+  nonConformanceWorkflow:
+    | (Omit<z.infer<typeof nonConformanceWorkflowValidator>, "id"> & {
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof nonConformanceTemplateValidator>, "id"> & {
+    | (Omit<z.infer<typeof nonConformanceWorkflowValidator>, "id"> & {
         id: string;
         updatedBy: string;
       })
 ) {
-  if ("createdBy" in nonConformanceTemplate) {
+  if ("createdBy" in nonConformanceWorkflow) {
     return client
-      .from("nonConformanceTemplate")
-      .insert([nonConformanceTemplate])
+      .from("nonConformanceWorkflow")
+      .insert([nonConformanceWorkflow])
       .select("id")
       .single();
   } else {
     return client
-      .from("nonConformanceTemplate")
-      .update(sanitize(nonConformanceTemplate))
-      .eq("id", nonConformanceTemplate.id);
+      .from("nonConformanceWorkflow")
+      .update(sanitize(nonConformanceWorkflow))
+      .eq("id", nonConformanceWorkflow.id);
   }
 }
 
