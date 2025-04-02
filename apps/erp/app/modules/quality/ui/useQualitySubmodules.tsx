@@ -1,11 +1,9 @@
 import {
   LuCircleGauge,
-  LuClipboardList,
   LuDraftingCompass,
   LuOctagonX,
   LuSearchCheck,
   LuShieldX,
-  LuSpellCheck,
   LuWorkflow,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -18,21 +16,10 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     name: "Manage",
     routes: [
       {
-        name: "Quality Plans",
-        to: "#",
-        icon: <LuClipboardList />,
-      },
-      {
         name: "Issues",
         to: "#",
         icon: <LuShieldX />,
         table: "qualityIssue",
-      },
-      {
-        name: "Corrective Actions",
-        to: "#",
-        icon: <LuSpellCheck />,
-        table: "correctiveAction",
       },
       {
         name: "Inspections",
