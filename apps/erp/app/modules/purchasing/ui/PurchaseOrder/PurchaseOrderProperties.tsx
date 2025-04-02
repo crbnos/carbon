@@ -24,7 +24,7 @@ import {
 } from "react-icons/lu";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Hyperlink, useOptimisticAssignment } from "~/components";
 import {
   Currency,
   Location,
@@ -179,12 +179,12 @@ const PurchaseOrderProperties = () => {
         <VStack spacing={2}>
           <span className="text-xs text-muted-foreground">Job</span>
 
-          <Link to={path.to.jobDetails(routeData?.purchaseOrder?.jobId)}>
+          <Hyperlink to={path.to.jobDetails(routeData?.purchaseOrder?.jobId)}>
             <Badge variant="secondary">
               <LuHardHat className="w-3 h-3 mr-1" />
               {routeData?.purchaseOrder?.jobReadableId ?? "Job"}
             </Badge>
-          </Link>
+          </Hyperlink>
         </VStack>
       )}
 
