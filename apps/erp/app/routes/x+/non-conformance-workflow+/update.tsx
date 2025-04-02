@@ -19,7 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "name":
       return json(
         await client
-          .from("nonConformanceTemplate")
+          .from("nonConformanceWorkflow")
           .update({
             [field]: value,
             updatedBy: userId,

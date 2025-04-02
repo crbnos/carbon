@@ -2,7 +2,6 @@ import {
   LuCircleGauge,
   LuClipboardList,
   LuDraftingCompass,
-  LuFileText,
   LuOctagonX,
   LuSearchCheck,
   LuShieldX,
@@ -62,18 +61,13 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure Issues",
     routes: [
       {
-        name: "Templates",
-        to: path.to.nonConformanceTemplates,
-        icon: <LuFileText />,
-      },
-      {
         name: "Types",
         to: path.to.nonConformanceTypes,
         icon: <LuOctagonX />,
       },
       {
         name: "Workflows",
-        to: "#",
+        to: path.to.nonConformanceWorkflows,
         icon: <LuWorkflow />,
       },
     ],

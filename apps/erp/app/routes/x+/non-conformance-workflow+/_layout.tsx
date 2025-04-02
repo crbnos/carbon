@@ -4,7 +4,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Non-Conformance Templates" }];
+  return [{ title: "Carbon | Non-Conformance Workflows" }];
 };
 
 export const config = {

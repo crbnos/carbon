@@ -9,29 +9,29 @@ import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
-import type { NonConformanceTemplate } from "../../types";
+import type { NonConformanceWorkflow } from "../../types";
 
-type NonConformanceTemplatesTableProps = {
-  data: NonConformanceTemplate[];
+type NonConformanceWorkflowsTableProps = {
+  data: NonConformanceWorkflow[];
   count: number;
 };
 
-const NonConformanceTemplatesTable = memo(
-  ({ data, count }: NonConformanceTemplatesTableProps) => {
+const NonConformanceWorkflowsTable = memo(
+  ({ data, count }: NonConformanceWorkflowsTableProps) => {
     const navigate = useNavigate();
     const permissions = usePermissions();
     const deleteDisclosure = useDisclosure();
-    const [selectedNonConformanceTemplate, setSelectedNonConformanceTemplate] =
-      useState<NonConformanceTemplate | null>(null);
+    const [selectedNonConformanceWorkflow, setSelectedNonConformanceWorkflow] =
+      useState<NonConformanceWorkflow | null>(null);
 
-    const columns = useMemo<ColumnDef<NonConformanceTemplate>[]>(() => {
-      const defaultColumns: ColumnDef<NonConformanceTemplate>[] = [
+    const columns = useMemo<ColumnDef<NonConformanceWorkflow>[]>(() => {
+      const defaultColumns: ColumnDef<NonConformanceWorkflow>[] = [
         {
           accessorKey: "name",
           header: "Name",
           cell: ({ row }) => (
             <div className="flex flex-col gap-0">
-              <Hyperlink to={path.to.nonConformanceTemplate(row.original.id!)}>
+              <Hyperlink to={path.to.nonConformanceWorkflow(row.original.id!)}>
                 {row.original.name}
               </Hyperlink>
             </div>
@@ -45,13 +45,13 @@ const NonConformanceTemplatesTable = memo(
     }, []);
 
     const renderContextMenu = useCallback(
-      (row: NonConformanceTemplate) => {
+      (row: NonConformanceWorkflow) => {
         return (
           <>
             <MenuItem
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
-                navigate(`${path.to.nonConformanceTemplate(row.id!)}`);
+                navigate(`${path.to.nonConformanceWorkflow(row.id!)}`);
               }}
             >
               <MenuIcon icon={<LuPencil />} />
@@ -62,7 +62,7 @@ const NonConformanceTemplatesTable = memo(
               disabled={!permissions.can("delete", "quality")}
               onClick={() => {
                 flushSync(() => {
-                  setSelectedNonConformanceTemplate(row);
+                  setSelectedNonConformanceWorkflow(row);
                 });
                 deleteDisclosure.onOpen();
               }}
@@ -78,39 +78,39 @@ const NonConformanceTemplatesTable = memo(
 
     return (
       <>
-        <Table<NonConformanceTemplate>
+        <Table<NonConformanceWorkflow>
           data={data}
           columns={columns}
           count={count}
           primaryAction={
             permissions.can("create", "quality") && (
               <New
-                label="Non-Conformance Template"
-                to={path.to.newNonConformanceTemplate}
+                label="Non-Conformance Workflow"
+                to={path.to.newNonConformanceWorkflow}
               />
             )
           }
           renderContextMenu={renderContextMenu}
-          title="Non-Conformance Templates"
-          table="nonConformanceTemplate"
+          title="Non-Conformance Workflows"
+          table="nonConformanceWorkflow"
           withSavedView
         />
-        {deleteDisclosure.isOpen && selectedNonConformanceTemplate && (
+        {deleteDisclosure.isOpen && selectedNonConformanceWorkflow && (
           <ConfirmDelete
-            action={path.to.deleteNonConformanceTemplate(
-              selectedNonConformanceTemplate.id!
+            action={path.to.deleteNonConformanceWorkflow(
+              selectedNonConformanceWorkflow.id!
             )}
             isOpen
             onCancel={() => {
-              setSelectedNonConformanceTemplate(null);
+              setSelectedNonConformanceWorkflow(null);
               deleteDisclosure.onClose();
             }}
             onSubmit={() => {
-              setSelectedNonConformanceTemplate(null);
+              setSelectedNonConformanceWorkflow(null);
               deleteDisclosure.onClose();
             }}
             name={
-              selectedNonConformanceTemplate.name ?? "non-conformance template"
+              selectedNonConformanceWorkflow.name ?? "non-conformance template"
             }
             text="Are you sure you want to delete this non-conformance template?"
           />
@@ -120,5 +120,5 @@ const NonConformanceTemplatesTable = memo(
   }
 );
 
-NonConformanceTemplatesTable.displayName = "NonConformanceTemplatesTable";
-export default NonConformanceTemplatesTable;
+NonConformanceWorkflowsTable.displayName = "NonConformanceWorkflowsTable";
+export default NonConformanceWorkflowsTable;
