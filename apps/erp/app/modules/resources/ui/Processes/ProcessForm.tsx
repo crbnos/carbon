@@ -174,7 +174,7 @@ function SupplierProcesses({ processId }: { processId?: string }) {
             {processes.map((sp) => (
               <HStack
                 key={sp.id}
-                className="w-full justify-between rounded-md border border-border p-2"
+                className="w-full justify-between rounded-md border border-border p-2 text-sm"
               >
                 <SupplierAvatar supplierId={sp.supplierId} />
                 <DropdownMenu>

@@ -46,6 +46,7 @@ import {
   LuPanelRight,
   LuRefreshCw,
   LuSettings,
+  LuShoppingCart,
   LuSquareSigma,
   LuTable,
   LuTriangleAlert,
@@ -374,6 +375,7 @@ function JobStartModal({
     eachOutsideOperationHasASupplier,
     setEachOutsideOperationHasASupplier,
   ] = useState(false);
+  const [hasOutsideOperations, setHasOutsideOperations] = useState(false);
 
   const validate = async () => {
     if (!carbon || !job) return;
@@ -409,6 +411,12 @@ function JobStartModal({
               (op) => op.jobMakeMethodId === makeMethodId
             ) ?? false
         )
+      );
+
+      setHasOutsideOperations(
+        Array.isArray(operations?.data) &&
+          operations.data.length > 0 &&
+          operations.data.some((op) => op.operationType === "Outside")
       );
 
       setEachOutsideOperationHasASupplier(
@@ -452,36 +460,47 @@ function JobStartModal({
         ) : (
           <>
             <ModalBody>
-              {eachAssemblyHasAnOperation &&
-                eachOutsideOperationHasASupplier && (
-                  <p>
-                    Are you sure you want to start this job? It will become
-                    available to the shop floor and purchase orders will be
-                    created for any outside operations.
-                  </p>
+              <VStack>
+                {eachAssemblyHasAnOperation &&
+                  eachOutsideOperationHasASupplier && (
+                    <p>
+                      Are you sure you want to start this job? It will become
+                      available to the shop floor.
+                    </p>
+                  )}
+                {hasOutsideOperations && eachOutsideOperationHasASupplier && (
+                  <Alert>
+                    <LuShoppingCart />
+                    <AlertTitle>Purchase orders will be created</AlertTitle>
+                    <AlertDescription>
+                      Purchase orders will be created for any outside
+                      operations.
+                    </AlertDescription>
+                  </Alert>
                 )}
-              {!eachAssemblyHasAnOperation && (
-                <Alert variant="warning">
-                  <LuTriangleAlert />
-                  <AlertTitle>Missing Operations</AlertTitle>
-                  <AlertDescription>
-                    There are Bills of Processes associated with this job that
-                    have no operations. Please assign an operation to each make
-                    method before releasing it.
-                  </AlertDescription>
-                </Alert>
-              )}
-              {!eachOutsideOperationHasASupplier && (
-                <Alert variant="warning">
-                  <LuTriangleAlert />
-                  <AlertTitle>Missing Suppliers</AlertTitle>
-                  <AlertDescription>
-                    There are outside operations associated with this job that
-                    have no suppliers. Please assign a supplier to each outside
-                    operation before releasing it.
-                  </AlertDescription>
-                </Alert>
-              )}
+                {!eachAssemblyHasAnOperation && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>Missing Operations</AlertTitle>
+                    <AlertDescription>
+                      There are Bills of Processes associated with this job that
+                      have no operations. Please assign an operation to each
+                      make method before releasing it.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                {!eachOutsideOperationHasASupplier && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>Missing Suppliers</AlertTitle>
+                    <AlertDescription>
+                      There are outside operations associated with this job that
+                      have no suppliers. Please assign a supplier to each
+                      outside operation before releasing it.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </VStack>
             </ModalBody>
 
             <ModalFooter>

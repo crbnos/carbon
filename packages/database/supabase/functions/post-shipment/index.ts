@@ -955,7 +955,6 @@ serve(async (req: Request) => {
             }
 
             acc[trackedEntity.id] = {
-              status: "On Hold",
               quantity: shipmentLine?.shippedQuantity ?? trackedEntity.quantity,
             };
 

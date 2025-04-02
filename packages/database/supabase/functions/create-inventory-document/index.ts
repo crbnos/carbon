@@ -523,6 +523,8 @@ serve(async (req: Request) => {
         );
 
         const hasReceipt = !!receipt.data?.id;
+        const isOutsideOperation =
+          purchaseOrder.data.purchaseOrderType === "Outside Processing";
 
         const previouslyReceivedQuantitiesByLine = (
           purchaseOrderLines.data ?? []
@@ -562,8 +564,10 @@ serve(async (req: Request) => {
               outstandingQuantity * (d.conversionFactor ?? 1),
             receivedQuantity: outstandingQuantity * (d.conversionFactor ?? 1),
             conversionFactor: d.conversionFactor ?? 1,
-            requiresSerialTracking: serializedItems.has(d.itemId),
-            requiresBatchTracking: batchItems.has(d.itemId),
+            requiresSerialTracking:
+              serializedItems.has(d.itemId) && !isOutsideOperation,
+            requiresBatchTracking:
+              batchItems.has(d.itemId) && !isOutsideOperation,
             unitPrice:
               d.unitPrice / (d.conversionFactor ?? 1) + shippingAndTaxUnitCost,
             unitOfMeasure: d.inventoryUnitOfMeasureCode ?? "EA",
@@ -880,6 +884,8 @@ serve(async (req: Request) => {
         );
 
         const hasShipment = !!shipment.data?.id;
+        const isOutsideOperation =
+          purchaseOrder.data.purchaseOrderType === "Outside Processing";
 
         const previouslyShippedQuantitiesByLine = (
           purchaseOrderLines.data ?? []
@@ -979,8 +985,8 @@ serve(async (req: Request) => {
                 orderQuantity: purchaseOrderLine.purchaseQuantity,
                 outstandingQuantity: outstandingQuantity,
                 shippedQuantity: outstandingQuantity ?? 0,
-                requiresSerialTracking: isSerial,
-                requiresBatchTracking: isBatch,
+                requiresSerialTracking: isSerial && !isOutsideOperation,
+                requiresBatchTracking: isBatch && !isOutsideOperation,
                 unitPrice: shippingAndTaxUnitCost,
                 unitOfMeasure:
                   purchaseOrderLine.purchaseUnitOfMeasureCode ?? "EA",

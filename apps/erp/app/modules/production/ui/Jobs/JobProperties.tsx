@@ -8,7 +8,7 @@ import {
   VStack,
   toast,
 } from "@carbon/react";
-import { Link, useFetcher, useParams } from "@remix-run/react";
+import { useFetcher, useParams } from "@remix-run/react";
 import { useCallback, useEffect, useState } from "react";
 import { LuBox, LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -24,7 +24,7 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import { Assignee, Hyperlink, useOptimisticAssignment } from "~/components";
 import {
   Customer,
   Item,
@@ -185,7 +185,7 @@ const JobProperties = () => {
         routeData?.job?.salesOrderId &&
         routeData?.job?.salesOrderLineId ? (
           <HStack className="group" spacing={1}>
-            <Link
+            <Hyperlink
               to={path.to.salesOrderLine(
                 routeData.job.salesOrderId,
                 routeData?.job.salesOrderLineId
@@ -195,7 +195,7 @@ const JobProperties = () => {
                 <RiProgress8Line className="w-3 h-3 mr-1" />
                 {routeData?.job.salesOrderReadableId ?? "Make to Order"}
               </Badge>
-            </Link>
+            </Hyperlink>
             <Button
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-200"
               variant="ghost"

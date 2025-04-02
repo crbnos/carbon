@@ -245,11 +245,11 @@ function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
     : "To Ship";
 
   const statusColor = isReceived
-    ? "blue"
+    ? "green"
     : isPartiallyReceived
     ? "yellow"
     : isShipped
-    ? "green"
+    ? "blue"
     : isPartiallyShipped
     ? "orange"
     : "gray";
