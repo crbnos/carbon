@@ -93,7 +93,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         getPaymentTerm(client, salesOrder.data?.paymentTermId ?? ""),
         getShippingMethod(
           client,
-          salesOrderShipment.data?.shippingMethodId ?? ""
+          shipment.data.shippingMethodId ??
+            salesOrderShipment.data?.shippingMethodId ??
+            ""
         ),
         getShipmentTracking(client, shipment.data.id, companyId),
       ]);
