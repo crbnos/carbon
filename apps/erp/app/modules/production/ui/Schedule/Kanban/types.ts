@@ -49,6 +49,7 @@ const itemValidator = z.object({
   employeeIds: z.array(z.string()).optional(),
   itemDescription: z.string().optional(),
   itemReadableId: z.string(),
+  jobId: z.string(),
   jobReadableId: z.string(),
   laborDuration: z.number().optional(),
   link: z.string().optional(),

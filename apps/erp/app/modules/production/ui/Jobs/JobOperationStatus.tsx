@@ -30,10 +30,13 @@ function useOptimisticJobStatus(operationId: string) {
 
 export function JobOperationStatus({
   operation,
+  className,
 }: {
-  operation: { id?: string; status: JobOperation["status"] };
+  operation: { id?: string; status: JobOperation["status"]; jobId?: string };
+  className?: string;
 }) {
-  const { jobId } = useParams();
+  const params = useParams();
+  const jobId = params.jobId ?? operation.jobId;
   if (!jobId) throw new Error("Job ID is required");
 
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
@@ -71,6 +74,7 @@ export function JobOperationStatus({
         <IconButton
           size="sm"
           variant="ghost"
+          className={className}
           aria-label="Change status"
           icon={<OperationStatusIcon status={currentStatus} />}
           isDisabled={isDisabled}

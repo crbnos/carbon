@@ -252,6 +252,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           operation.setupDuration +
           operation.laborDuration +
           operation.machineDuration,
+        jobId: op.jobId,
         jobReadableId: op.jobReadableId,
         itemReadableId: op.itemReadableId,
         itemDescription: op.itemDescription,

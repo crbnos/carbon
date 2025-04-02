@@ -27,8 +27,6 @@ import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarDays,
-  LuCircleCheck,
-  LuCircleX,
   LuClipboardCheck,
   LuEllipsisVertical,
   LuFlashlight,
@@ -45,9 +43,6 @@ import {
 
 import { Link } from "@remix-run/react";
 import { RiProgress8Line } from "react-icons/ri";
-import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
-import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
-import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 
 import { ValidatedForm } from "@carbon/form";
@@ -56,7 +51,11 @@ import { z } from "zod";
 import { Tags } from "~/components/Form";
 import { useTags } from "~/hooks/useTags";
 import { getPrivateUrl, path } from "~/utils/path";
-import { getDeadlineIcon, getDeadlineText } from "../../../Jobs/Deadline";
+import {
+  getDeadlineIcon,
+  getDeadlineText,
+} from "~/modules/production/ui/Jobs/Deadline";
+import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { useKanban } from "../context/KanbanContext";
 import type { Item } from "../types";
 
@@ -314,8 +313,15 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
           </HStack>
         )}
         {displaySettings.showStatus && status && (
-          <HStack className="justify-start space-x-2">
-            {getStatusIcon(status)}
+          <HStack className="justify-start space-x-1.5">
+            <JobOperationStatus
+              operation={{
+                id: item.id,
+                status: status ?? "Todo",
+                jobId: item.jobId,
+              }}
+              className="size-4 p-0 hover:bg-transparent"
+            />
             <span className="text-sm">{status}</span>
           </HStack>
         )}
@@ -443,23 +449,4 @@ function JobOperationTags({
       />
     </ValidatedForm>
   );
-}
-
-function getStatusIcon(status: Item["status"]) {
-  switch (status) {
-    case "Ready":
-    case "Todo":
-      return <TodoStatusIcon className="text-foreground" />;
-    case "Waiting":
-    case "Canceled":
-      return <LuCircleX className="text-muted-foreground" />;
-    case "Done":
-      return <LuCircleCheck className="text-blue-600" />;
-    case "In Progress":
-      return <AlmostDoneIcon />;
-    case "Paused":
-      return <InProgressStatusIcon />;
-    default:
-      return null;
-  }
 }
