@@ -60,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  return redirect(
+  throw redirect(
     path.to.nonConformanceWorkflow(insertNonConformanceWorkflow.data.id),
     await flash(request, success("Non-conformance workflow created"))
   );
@@ -71,6 +71,8 @@ export default function NewNonConformanceWorkflowRoute() {
   const initialValues = {
     name: "",
     content: "{}",
+    priority: "Medium" as const,
+    source: "Internal" as const,
     investigationTypes: [],
     requiredActions: [],
     approvalRequirements: [],

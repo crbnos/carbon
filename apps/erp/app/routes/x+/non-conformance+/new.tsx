@@ -1,0 +1,128 @@
+import { assertIsPost, error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import { validationError, validator } from "@carbon/form";
+import { getLocalTimeZone, today } from "@internationalized/date";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
+import { useUrlParams } from "~/hooks";
+import {
+  nonConformanceValidator,
+  upsertNonConformance,
+} from "~/modules/quality";
+import NonConformanceForm from "~/modules/quality/ui/NonConformance/NonConformanceForm";
+
+import { getNextSequence } from "~/modules/settings";
+import { setCustomFields } from "~/utils/form";
+import type { Handle } from "~/utils/handle";
+import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  breadcrumb: "Non-Conformance",
+  to: path.to.nonConformances,
+};
+
+export async function action({ request }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    create: "quality",
+    bypassRls: true,
+  });
+
+  const formData = await request.formData();
+  const validation = await validator(nonConformanceValidator).validate(
+    formData
+  );
+
+  if (validation.error) {
+    return validationError(validation.error);
+  }
+
+  const nextSequence = await getNextSequence(
+    client,
+    "nonConformance",
+    companyId
+  );
+  if (nextSequence.error) {
+    throw redirect(
+      path.to.newNonConformance,
+      await flash(
+        request,
+        error(nextSequence.error, "Failed to get next sequence")
+      )
+    );
+  }
+
+  const createNonConformance = await upsertNonConformance(client, {
+    ...validation.data,
+    nonConformanceId: nextSequence.data,
+    companyId,
+    createdBy: userId,
+    customFields: setCustomFields(formData),
+  });
+
+  if (createNonConformance.error || !createNonConformance.data) {
+    throw redirect(
+      path.to.nonConformances,
+      await flash(
+        request,
+        error(createNonConformance.error, "Failed to insert non-conformance")
+      )
+    );
+  }
+
+  const ncrId = createNonConformance.data?.id;
+
+  throw redirect(path.to.nonConformance(ncrId!));
+}
+
+export default function NonConformanceNewRoute() {
+  const [params] = useUrlParams();
+  const supplierId = params.get("supplierId");
+  const customerId = params.get("customerId");
+  const jobId = params.get("jobId");
+  const salesOrderId = params.get("salesOrderId");
+  const shipmentId = params.get("shipmentId");
+  const purchaseOrderId = params.get("purchaseOrderId");
+  const purchaseOrderLineId = params.get("purchaseOrderLineId");
+  const salesOrderLineId = params.get("salesOrderLineId");
+  const shipmentLineId = params.get("shipmentLineId");
+
+  const initialValues = {
+    id: undefined,
+    nonConformanceId: undefined,
+    approvalRequirements: [],
+    customerId: customerId ?? "",
+    description: "",
+    investigationTypes: [],
+    itemId: "",
+    jobId: jobId ?? "",
+    locationId: "",
+    name: "",
+    nonConformanceTypeId: "",
+    nonConformanceWorkflowId: "",
+    openDate: today(getLocalTimeZone()).toString(),
+    priority: "Medium" as const,
+    purchaseOrderId: purchaseOrderId ?? "",
+    purchaseOrderLineId: purchaseOrderLineId ?? "",
+    quantity: 1,
+    requiredActions: [],
+    salesOrderId: salesOrderId ?? "",
+    salesOrderLineId: salesOrderLineId ?? "",
+    shipmentId: shipmentId ?? "",
+    shipmentLineId: shipmentLineId ?? "",
+    source: "Internal" as const,
+    supplierId: supplierId ?? "",
+    trackedEntityId: "",
+  };
+
+  return (
+    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+      <NonConformanceForm
+        initialValues={initialValues}
+        nonConformanceWorkflows={[]}
+        nonConformanceTypes={[]}
+      />
+    </div>
+  );
+}

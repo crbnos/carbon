@@ -16,10 +16,10 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
     name: "Manage",
     routes: [
       {
-        name: "Issues",
-        to: "#",
+        name: "Non-Conformances",
+        to: path.to.nonConformances,
         icon: <LuShieldX />,
-        table: "qualityIssue",
+        table: "nonConformance",
       },
       {
         name: "Inspections",

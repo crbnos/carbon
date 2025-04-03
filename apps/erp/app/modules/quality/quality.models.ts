@@ -21,6 +21,52 @@ export const nonConformanceRequiredAction = [
 
 export const nonConformanceApprovalRequirement = ["MRB"] as const;
 
+export const nonConformanceSource = ["Internal", "External"] as const;
+
+export const nonConformancePriority = [
+  "Low",
+  "Medium",
+  "High",
+  "Critical",
+] as const;
+
+export const nonConformanceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  nonConformanceId: zfd.text(z.string().optional()),
+  priority: z.enum(nonConformancePriority),
+  source: z.enum(nonConformanceSource),
+  name: z.string().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().optional()),
+  investigationTypes: z
+    .array(z.enum(nonConformanceInvestigationType))
+    .optional(),
+  requiredActions: z.array(z.enum(nonConformanceRequiredAction)).optional(),
+  approvalRequirements: z
+    .array(z.enum(nonConformanceApprovalRequirement))
+    .optional(),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  nonConformanceWorkflowId: z
+    .string()
+    .min(1, { message: "Workflow is required" }),
+  nonConformanceTypeId: z.string().min(1, { message: "Type is required" }),
+  openDate: z.string().min(1, { message: "Open date is required" }),
+  dueDate: zfd.text(z.string().optional()),
+  closeDate: zfd.text(z.string().optional()),
+  quantity: z.number().min(1, { message: "Quantity is required" }),
+  itemId: zfd.text(z.string().optional()),
+  trackedEntityId: zfd.text(z.string().optional()),
+  customerId: zfd.text(z.string().optional()),
+  supplierId: zfd.text(z.string().optional()),
+  jobId: zfd.text(z.string().optional()),
+  jobOperationId: zfd.text(z.string().optional()),
+  purchaseOrderId: zfd.text(z.string().optional()),
+  purchaseOrderLineId: zfd.text(z.string().optional()),
+  salesOrderId: zfd.text(z.string().optional()),
+  salesOrderLineId: zfd.text(z.string().optional()),
+  shipmentId: zfd.text(z.string().optional()),
+  shipmentLineId: zfd.text(z.string().optional()),
+});
+
 export const nonConformanceTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),
@@ -39,6 +85,8 @@ export const nonConformanceWorkflowValidator = z.object({
         return {};
       }
     }),
+  priority: z.enum(nonConformancePriority),
+  source: z.enum(nonConformanceSource),
   investigationTypes: z
     .array(z.enum(nonConformanceInvestigationType))
     .optional(),

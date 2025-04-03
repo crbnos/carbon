@@ -11696,26 +11696,40 @@ export type Database = {
       };
       nonConformance: {
         Row: {
+          approvalRequirements:
+            | Database["public"]["Enums"]["nonConformanceApproval"][]
+            | null;
           assignee: string | null;
           closeDate: string | null;
           companyId: string | null;
           createdAt: string;
           createdBy: string;
           customerId: string | null;
+          customFields: Json | null;
           description: string | null;
           dueDate: string | null;
           id: string;
+          investigationTypes:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"][]
+            | null;
           itemId: string | null;
           jobId: string | null;
           jobOperationId: string | null;
           locationId: string;
           name: string;
+          nonConformanceId: string;
           nonConformanceTypeId: string;
           nonConformanceWorkflowId: string;
           openDate: string;
+          priority:
+            | Database["public"]["Enums"]["nonConformancePriority"]
+            | null;
           purchaseOrderId: string | null;
           purchaseOrderLineId: string | null;
           quantity: number;
+          requiredActions:
+            | Database["public"]["Enums"]["nonConformanceAction"][]
+            | null;
           salesOrderId: string | null;
           salesOrderLineId: string | null;
           shipmentId: string | null;
@@ -11728,26 +11742,40 @@ export type Database = {
           updatedBy: string | null;
         };
         Insert: {
+          approvalRequirements?:
+            | Database["public"]["Enums"]["nonConformanceApproval"][]
+            | null;
           assignee?: string | null;
           closeDate?: string | null;
           companyId?: string | null;
           createdAt?: string;
           createdBy: string;
           customerId?: string | null;
+          customFields?: Json | null;
           description?: string | null;
           dueDate?: string | null;
           id?: string;
+          investigationTypes?:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"][]
+            | null;
           itemId?: string | null;
           jobId?: string | null;
           jobOperationId?: string | null;
           locationId: string;
           name: string;
+          nonConformanceId: string;
           nonConformanceTypeId: string;
           nonConformanceWorkflowId: string;
           openDate: string;
+          priority?:
+            | Database["public"]["Enums"]["nonConformancePriority"]
+            | null;
           purchaseOrderId?: string | null;
           purchaseOrderLineId?: string | null;
           quantity?: number;
+          requiredActions?:
+            | Database["public"]["Enums"]["nonConformanceAction"][]
+            | null;
           salesOrderId?: string | null;
           salesOrderLineId?: string | null;
           shipmentId?: string | null;
@@ -11760,26 +11788,40 @@ export type Database = {
           updatedBy?: string | null;
         };
         Update: {
+          approvalRequirements?:
+            | Database["public"]["Enums"]["nonConformanceApproval"][]
+            | null;
           assignee?: string | null;
           closeDate?: string | null;
           companyId?: string | null;
           createdAt?: string;
           createdBy?: string;
           customerId?: string | null;
+          customFields?: Json | null;
           description?: string | null;
           dueDate?: string | null;
           id?: string;
+          investigationTypes?:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"][]
+            | null;
           itemId?: string | null;
           jobId?: string | null;
           jobOperationId?: string | null;
           locationId?: string;
           name?: string;
+          nonConformanceId?: string;
           nonConformanceTypeId?: string;
           nonConformanceWorkflowId?: string;
           openDate?: string;
+          priority?:
+            | Database["public"]["Enums"]["nonConformancePriority"]
+            | null;
           purchaseOrderId?: string | null;
           purchaseOrderLineId?: string | null;
           quantity?: number;
+          requiredActions?:
+            | Database["public"]["Enums"]["nonConformanceAction"][]
+            | null;
           salesOrderId?: string | null;
           salesOrderLineId?: string | null;
           shipmentId?: string | null;
@@ -11961,6 +12003,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "nonConformance_nonConformanceWorkflowId_fkey";
+            columns: ["nonConformanceWorkflowId"];
+            isOneToOne: false;
+            referencedRelation: "nonConformanceWorkflow";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "nonConformance_purchaseOrderId_fkey";
             columns: ["purchaseOrderId"];
             isOneToOne: false;
@@ -12116,6 +12165,507 @@ export type Database = {
           },
           {
             foreignKeyName: "nonConformance_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          }
+        ];
+      };
+      nonConformanceActionTask: {
+        Row: {
+          actionType:
+            | Database["public"]["Enums"]["nonConformanceAction"]
+            | null;
+          assigneeId: string | null;
+          completedDate: string | null;
+          createdAt: string;
+          createdBy: string;
+          dueDate: string | null;
+          id: string;
+          nonConformanceId: string;
+          notes: string | null;
+          sortOrder: number;
+          status: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt: string | null;
+          updatedBy: string | null;
+        };
+        Insert: {
+          actionType?:
+            | Database["public"]["Enums"]["nonConformanceAction"]
+            | null;
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy: string;
+          dueDate?: string | null;
+          id?: string;
+          nonConformanceId: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Update: {
+          actionType?:
+            | Database["public"]["Enums"]["nonConformanceAction"]
+            | null;
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy?: string;
+          dueDate?: string | null;
+          id?: string;
+          nonConformanceId?: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_nonConformanceId_fkey";
+            columns: ["nonConformanceId"];
+            isOneToOne: false;
+            referencedRelation: "nonConformance";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceActionTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          }
+        ];
+      };
+      nonConformanceApprovalTask: {
+        Row: {
+          approvalType:
+            | Database["public"]["Enums"]["nonConformanceApproval"]
+            | null;
+          assigneeId: string | null;
+          completedDate: string | null;
+          createdAt: string;
+          createdBy: string;
+          dueDate: string | null;
+          id: string;
+          nonConformanceId: string;
+          notes: string | null;
+          sortOrder: number;
+          status: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt: string | null;
+          updatedBy: string | null;
+        };
+        Insert: {
+          approvalType?:
+            | Database["public"]["Enums"]["nonConformanceApproval"]
+            | null;
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy: string;
+          dueDate?: string | null;
+          id?: string;
+          nonConformanceId: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Update: {
+          approvalType?:
+            | Database["public"]["Enums"]["nonConformanceApproval"]
+            | null;
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy?: string;
+          dueDate?: string | null;
+          id?: string;
+          nonConformanceId?: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_nonConformanceId_fkey";
+            columns: ["nonConformanceId"];
+            isOneToOne: false;
+            referencedRelation: "nonConformance";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceApprovalTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          }
+        ];
+      };
+      nonConformanceInvestigationTask: {
+        Row: {
+          assigneeId: string | null;
+          completedDate: string | null;
+          createdAt: string;
+          createdBy: string;
+          dueDate: string | null;
+          id: string;
+          investigationType:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"]
+            | null;
+          nonConformanceId: string;
+          notes: string | null;
+          sortOrder: number;
+          status: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt: string | null;
+          updatedBy: string | null;
+        };
+        Insert: {
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy: string;
+          dueDate?: string | null;
+          id?: string;
+          investigationType?:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"]
+            | null;
+          nonConformanceId: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Update: {
+          assigneeId?: string | null;
+          completedDate?: string | null;
+          createdAt?: string;
+          createdBy?: string;
+          dueDate?: string | null;
+          id?: string;
+          investigationType?:
+            | Database["public"]["Enums"]["nonConformanceInvestigation"]
+            | null;
+          nonConformanceId?: string;
+          notes?: string | null;
+          sortOrder?: number;
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"];
+          updatedAt?: string | null;
+          updatedBy?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey";
+            columns: ["assigneeId"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_createdBy_fkey";
+            columns: ["createdBy"];
+            isOneToOne: false;
+            referencedRelation: "userDefaults";
+            referencedColumns: ["userId"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_nonConformanceId_fkey";
+            columns: ["nonConformanceId"];
+            isOneToOne: false;
+            referencedRelation: "nonConformance";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employees";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeesAcrossCompanies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "employeeSummary";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey";
+            columns: ["updatedBy"];
+            isOneToOne: false;
+            referencedRelation: "user";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey";
             columns: ["updatedBy"];
             isOneToOne: false;
             referencedRelation: "userDefaults";
@@ -12388,6 +12938,7 @@ export type Database = {
       };
       nonConformanceWorkflow: {
         Row: {
+          active: boolean;
           approvalRequirements:
             | Database["public"]["Enums"]["nonConformanceApproval"][]
             | null;
@@ -12395,25 +12946,22 @@ export type Database = {
           content: Json;
           createdAt: string;
           createdBy: string;
-          defaultPriority:
-            | Database["public"]["Enums"]["nonConformancePriority"]
-            | null;
           description: string | null;
-          estimatedDuration: number | null;
           id: string;
           investigationTypes:
             | Database["public"]["Enums"]["nonConformanceInvestigation"][]
             | null;
-          isActive: boolean;
           name: string;
+          priority: Database["public"]["Enums"]["nonConformancePriority"];
           requiredActions:
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null;
-          steps: Json;
+          source: Database["public"]["Enums"]["nonConformanceSource"];
           updatedAt: string | null;
           updatedBy: string | null;
         };
         Insert: {
+          active?: boolean;
           approvalRequirements?:
             | Database["public"]["Enums"]["nonConformanceApproval"][]
             | null;
@@ -12421,25 +12969,22 @@ export type Database = {
           content?: Json;
           createdAt?: string;
           createdBy: string;
-          defaultPriority?:
-            | Database["public"]["Enums"]["nonConformancePriority"]
-            | null;
           description?: string | null;
-          estimatedDuration?: number | null;
           id?: string;
           investigationTypes?:
             | Database["public"]["Enums"]["nonConformanceInvestigation"][]
             | null;
-          isActive?: boolean;
           name: string;
+          priority?: Database["public"]["Enums"]["nonConformancePriority"];
           requiredActions?:
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null;
-          steps?: Json;
+          source?: Database["public"]["Enums"]["nonConformanceSource"];
           updatedAt?: string | null;
           updatedBy?: string | null;
         };
         Update: {
+          active?: boolean;
           approvalRequirements?:
             | Database["public"]["Enums"]["nonConformanceApproval"][]
             | null;
@@ -12447,21 +12992,17 @@ export type Database = {
           content?: Json;
           createdAt?: string;
           createdBy?: string;
-          defaultPriority?:
-            | Database["public"]["Enums"]["nonConformancePriority"]
-            | null;
           description?: string | null;
-          estimatedDuration?: number | null;
           id?: string;
           investigationTypes?:
             | Database["public"]["Enums"]["nonConformanceInvestigation"][]
             | null;
-          isActive?: boolean;
           name?: string;
+          priority?: Database["public"]["Enums"]["nonConformancePriority"];
           requiredActions?:
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null;
-          steps?: Json;
+          source?: Database["public"]["Enums"]["nonConformanceSource"];
           updatedAt?: string | null;
           updatedBy?: string | null;
         };
@@ -38129,15 +38670,12 @@ export type Database = {
         | "Documentation";
       nonConformancePriority: "Low" | "Medium" | "High" | "Critical";
       nonConformanceSource: "Internal" | "External";
-      nonConformanceStatus:
-        | "Registered"
-        | "Under Investigation"
-        | "Pending Approval"
+      nonConformanceStatus: "Registered" | "In Progress" | "Closed";
+      nonConformanceTaskStatus:
+        | "Pending"
         | "In Progress"
-        | "On Hold"
-        | "Rejected"
         | "Completed"
-        | "Closed";
+        | "Skipped";
       operationType: "Inside" | "Outside";
       payableLineType:
         | "Comment"

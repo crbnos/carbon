@@ -7,7 +7,18 @@ import { sanitize } from "~/utils/supabase";
 import type {
   nonConformanceWorkflowValidator,
   nonConformanceTypeValidator,
+  nonConformanceValidator,
 } from "./quality.models";
+
+export async function deleteNonConformance(
+  client: SupabaseClient<Database>,
+  nonConformanceTypeId: string
+) {
+  return client
+    .from("nonConformanceType")
+    .delete()
+    .eq("id", nonConformanceTypeId);
+}
 
 export async function deleteNonConformanceType(
   client: SupabaseClient<Database>,
@@ -25,8 +36,42 @@ export async function deleteNonConformanceWorkflow(
 ) {
   return client
     .from("nonConformanceWorkflow")
-    .delete()
+    .update({ active: false })
     .eq("id", nonConformanceWorkflowId);
+}
+
+export async function getNonConformance(
+  client: SupabaseClient<Database>,
+  nonConformanceId: string
+) {
+  return client
+    .from("nonConformance")
+    .select("*")
+    .eq("id", nonConformanceId)
+    .single();
+}
+
+export async function getNonConformances(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("nonConformance")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getNonConformanceWorkflow(
@@ -48,7 +93,8 @@ export async function getNonConformanceWorkflows(
   let query = client
     .from("nonConformanceWorkflow")
     .select("*", { count: "exact" })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("active", true);
 
   if (args?.search) {
     query = query.ilike("name", `%${args.search}%`);
@@ -71,6 +117,7 @@ export async function getNonConformanceTypesList(
     .from("nonConformanceType")
     .select("id, name")
     .eq("companyId", companyId)
+    .eq("active", true)
     .order("name");
 }
 
@@ -106,6 +153,42 @@ export async function getNonConformanceTypes(
   }
 
   return query;
+}
+
+export async function upsertNonConformance(
+  client: SupabaseClient<Database>,
+  nonConformance:
+    | (Omit<
+        z.infer<typeof nonConformanceValidator>,
+        "id" | "nonConformanceId"
+      > & {
+        nonConformanceId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<
+        z.infer<typeof nonConformanceValidator>,
+        "id" | "nonConformanceId"
+      > & {
+        id: string;
+        nonConformanceId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in nonConformance) {
+    return client
+      .from("nonConformance")
+      .insert([nonConformance])
+      .select("id")
+      .single();
+  } else {
+    return client
+      .from("nonConformance")
+      .update(sanitize(nonConformance))
+      .eq("id", nonConformance.id);
+  }
 }
 
 export async function upsertNonConformanceWorkflow(

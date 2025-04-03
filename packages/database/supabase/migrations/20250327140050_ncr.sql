@@ -52,12 +52,7 @@ CREATE TYPE "nonConformancePriority" AS ENUM (
 
 CREATE TYPE "nonConformanceStatus" AS ENUM (
   'Registered',
-  'Under Investigation',
-  'Pending Approval',
   'In Progress',
-  'On Hold',
-  'Rejected',
-  'Completed',
   'Closed'
 );
 
@@ -83,18 +78,24 @@ CREATE TYPE "nonConformanceApproval" AS ENUM (
   'MRB'
 );
 
+CREATE TYPE "nonConformanceTaskStatus" AS ENUM (
+  'Pending',
+  'In Progress',
+  'Completed',
+  'Skipped'
+);
+
 CREATE TABLE "nonConformanceWorkflow" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
   "description" TEXT,
   "content" JSONB NOT NULL DEFAULT '{}',
-  "steps" JSONB NOT NULL DEFAULT '[]',
+  "priority" "nonConformancePriority" NOT NULL DEFAULT 'Medium',
+  "source" "nonConformanceSource" NOT NULL DEFAULT 'Internal',
   "investigationTypes" "nonConformanceInvestigation"[] DEFAULT '{}',
   "requiredActions" "nonConformanceAction"[] DEFAULT '{}',
   "approvalRequirements" "nonConformanceApproval"[] DEFAULT '{}',
-  "defaultPriority" "nonConformancePriority" DEFAULT 'Medium',
-  "estimatedDuration" INTEGER, -- in days
-  "isActive" BOOLEAN NOT NULL DEFAULT TRUE,
+  "active" BOOLEAN NOT NULL DEFAULT TRUE,
   "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -110,10 +111,15 @@ CREATE TABLE "nonConformanceWorkflow" (
 
 CREATE TABLE "nonConformance" (
   "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "description" TEXT,
   "source" "nonConformanceSource" NOT NULL,
   "status" "nonConformanceStatus" NOT NULL DEFAULT 'Registered',
+  "priority" "nonConformancePriority",
+  "investigationTypes" "nonConformanceInvestigation"[],
+  "requiredActions" "nonConformanceAction"[],
+  "approvalRequirements" "nonConformanceApproval"[],
   "nonConformanceWorkflowId" TEXT NOT NULL,
   "locationId" TEXT NOT NULL,
   "nonConformanceTypeId" TEXT NOT NULL,
@@ -134,6 +140,7 @@ CREATE TABLE "nonConformance" (
   "shipmentId" TEXT,
   "shipmentLineId" TEXT,
   "assignee" TEXT,
+  "customFields" JSONB,
   "companyId" TEXT,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
@@ -143,6 +150,7 @@ CREATE TABLE "nonConformance" (
   CONSTRAINT "nonConformance_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "nonConformance_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_nonConformanceTypeId_fkey" FOREIGN KEY ("nonConformanceTypeId") REFERENCES "nonConformanceType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformance_nonConformanceWorkflowId_fkey" FOREIGN KEY ("nonConformanceWorkflowId") REFERENCES "nonConformanceWorkflow"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer"("id") ON UPDATE CASCADE ON DELETE CASCADE,
@@ -166,6 +174,87 @@ CREATE INDEX "nonConformance_nonConformanceTypeId_idx" ON "nonConformance" ("non
 CREATE INDEX "nonConformance_itemId_idx" ON "nonConformance" ("itemId");
 CREATE INDEX "nonConformance_supplierId_idx" ON "nonConformance" ("supplierId");
 CREATE INDEX "nonConformance_assignee_idx" ON "nonConformance" ("assignee");
+
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('nonConformance', 'Non-Conformance', 'Quality');
+
+CREATE TABLE "nonConformanceInvestigationTask" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "investigationType" "nonConformanceInvestigation",
+  "status" "nonConformanceTaskStatus" NOT NULL DEFAULT 'Pending',
+  "dueDate" DATE,
+  "completedDate" DATE,
+  "assigneeId" TEXT,
+  "notes" TEXT,
+  "sortOrder" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceInvestigationTask_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceInvestigationTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceInvestigationTask_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceInvestigationTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceInvestigationTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "nonConformanceInvestigationTask_nonConformanceId_idx" ON "nonConformanceInvestigationTask" ("nonConformanceId");
+CREATE INDEX "nonConformanceInvestigationTask_assigneeId_idx" ON "nonConformanceInvestigationTask" ("assigneeId");
+CREATE INDEX "nonConformanceInvestigationTask_status_idx" ON "nonConformanceInvestigationTask" ("status");
+
+CREATE TABLE "nonConformanceActionTask" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "actionType" "nonConformanceAction",
+  "status" "nonConformanceTaskStatus" NOT NULL DEFAULT 'Pending',
+  "dueDate" DATE,
+  "completedDate" DATE,
+  "assigneeId" TEXT,
+  "notes" TEXT,
+  "sortOrder" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceActionTask_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceActionTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceActionTask_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceActionTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceActionTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "nonConformanceActionTask_nonConformanceId_idx" ON "nonConformanceActionTask" ("nonConformanceId");
+CREATE INDEX "nonConformanceActionTask_assigneeId_idx" ON "nonConformanceActionTask" ("assigneeId");
+CREATE INDEX "nonConformanceActionTask_status_idx" ON "nonConformanceActionTask" ("status");
+
+CREATE TABLE "nonConformanceApprovalTask" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "approvalType" "nonConformanceApproval",
+  "status" "nonConformanceTaskStatus" NOT NULL DEFAULT 'Pending',
+  "dueDate" DATE,
+  "completedDate" DATE,
+  "assigneeId" TEXT,
+  "notes" TEXT,
+  "sortOrder" INTEGER NOT NULL DEFAULT 0,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceApprovalTask_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceApprovalTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceApprovalTask_assigneeId_fkey" FOREIGN KEY ("assigneeId") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceApprovalTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceApprovalTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "nonConformanceApprovalTask_nonConformanceId_idx" ON "nonConformanceApprovalTask" ("nonConformanceId");
+CREATE INDEX "nonConformanceApprovalTask_assigneeId_idx" ON "nonConformanceApprovalTask" ("assigneeId");
+CREATE INDEX "nonConformanceApprovalTask_status_idx" ON "nonConformanceApprovalTask" ("status");
 
 
 CREATE TABLE "nonConformanceReviewer" (
@@ -196,3 +285,15 @@ CREATE TABLE "nonConformanceOwner" (
   CONSTRAINT "nonConformanceOwner_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "user"("id") ON UPDATE CASCADE 
 );
 
+
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 
+  'nonConformance',
+  'Non-Conformance',
+  'NCR',
+  NULL,
+  0,
+  6,
+  1,
+  "id"
+FROM "company";

@@ -107,6 +107,8 @@ export default function NonConformanceWorkflowRoute() {
     id: loaderData?.workflow?.id,
     name: loaderData?.workflow?.name,
     content: JSON.stringify(loaderData?.workflow?.content),
+    priority: (loaderData?.workflow?.priority ?? "Medium") as "Medium",
+    source: (loaderData?.workflow?.source ?? "Internal") as "Internal",
     investigationTypes: loaderData?.workflow?.investigationTypes ?? [],
     requiredActions: loaderData?.workflow?.requiredActions ?? [],
     approvalRequirements: loaderData?.workflow?.approvalRequirements ?? [],
