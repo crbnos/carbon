@@ -136,6 +136,8 @@ export default function EditPurchaseOrderLineRoute() {
     locationId: line?.locationId ?? "",
     purchaseUnitOfMeasureCode: line?.purchaseUnitOfMeasureCode ?? "",
     inventoryUnitOfMeasureCode: line?.inventoryUnitOfMeasureCode ?? "",
+    jobId: line?.jobId ?? "",
+    jobOperationId: line?.jobOperationId ?? "",
     conversionFactor: line?.conversionFactor ?? 1,
     shelfId: line?.shelfId ?? "",
     taxPercent: line?.taxPercent ?? 0,

@@ -317,7 +317,9 @@ const PurchaseOrderLineForm = ({
                       label={itemType}
                       // @ts-ignore
                       type={itemType}
-                      replenishmentSystem="Buy"
+                      replenishmentSystem={
+                        isOutsideProcessing ? undefined : "Buy"
+                      }
                       onChange={(value) => {
                         onItemChange(value?.value as string);
                       }}
