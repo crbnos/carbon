@@ -14,6 +14,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("purchaseOrderFromJob"),
     jobId: z.string(),
+    purchaseOrdersBySupplierId: z.record(z.string(), z.string()),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -89,7 +90,7 @@ serve(async (req: Request) => {
 
   switch (type) {
     case "purchaseOrderFromJob": {
-      const { jobId } = payload;
+      const { jobId, purchaseOrdersBySupplierId } = payload;
 
       console.log({
         function: "create-inventory-document",
@@ -236,92 +237,100 @@ serve(async (req: Request) => {
                 (d) => d.supplierId === supplier
               );
 
-              const supplierInteraction = await trx
-                .insertInto("supplierInteraction")
-                .values({
-                  companyId,
-                })
-                .returning(["id"])
-                .execute();
+              let purchaseOrderId =
+                purchaseOrdersBySupplierId[supplier] === "new"
+                  ? undefined
+                  : purchaseOrdersBySupplierId[supplier];
 
-              const supplierInteractionId = supplierInteraction?.[0]?.id;
-              const nextSequence = await getNextSequence(
-                trx,
-                "purchaseOrder",
-                companyId
-              );
-
-              if (!nextSequence) throw new Error("Failed to get next sequence");
-              if (!supplierInteractionId)
-                throw new Error("Failed to create supplier interaction");
-
-              const order = await trx
-                .insertInto("purchaseOrder")
-                .values({
-                  purchaseOrderId: nextSequence,
-                  status: "Draft",
-                  supplierId: supplier,
-                  jobId: jobId,
-                  jobReadableId: job.data?.jobId,
-                  companyId: companyId,
-                  createdBy: userId,
-                  purchaseOrderType: "Outside Processing",
-                  supplierInteractionId: supplierInteractionId,
-                  currencyCode:
-                    suppliers.data?.find((d) => d.id === supplier)
-                      ?.currencyCode ?? "USD",
-                  exchangeRate:
-                    exchangeRates.find(
-                      (d) =>
-                        d.currencyCode ===
-                        suppliers.data?.find((d) => d.id === supplier)
-                          ?.currencyCode
-                    )?.exchangeRate ?? 1,
-                  exchangeRateUpdatedAt: new Date().toISOString(),
-                })
-                .returning(["id"])
-                .execute();
-
-              if (!order?.[0]?.id)
-                throw new Error("Failed to create purchase order");
-
-              const purchaseOrderId = order[0].id;
-
-              // Create purchase order delivery and payment
-              const locationId = job.data?.locationId ?? null; // Default location
-              const shippingMethodId = shipping?.shippingMethodId;
-              const shippingTermId = shipping?.shippingTermId;
-
-              const paymentTermId = payment?.paymentTermId;
-              const invoiceSupplierId = payment?.invoiceSupplierId;
-              const invoiceSupplierContactId =
-                payment?.invoiceSupplierContactId;
-              const invoiceSupplierLocationId =
-                payment?.invoiceSupplierLocationId;
-
-              await Promise.all([
-                trx
-                  .insertInto("purchaseOrderDelivery")
+              if (!purchaseOrderId) {
+                const supplierInteraction = await trx
+                  .insertInto("supplierInteraction")
                   .values({
-                    id: purchaseOrderId,
-                    locationId,
-                    shippingMethodId,
-                    shippingTermId,
                     companyId,
                   })
-                  .execute(),
-                trx
-                  .insertInto("purchaseOrderPayment")
+                  .returning(["id"])
+                  .execute();
+
+                const supplierInteractionId = supplierInteraction?.[0]?.id;
+                const nextSequence = await getNextSequence(
+                  trx,
+                  "purchaseOrder",
+                  companyId
+                );
+
+                if (!nextSequence)
+                  throw new Error("Failed to get next sequence");
+                if (!supplierInteractionId)
+                  throw new Error("Failed to create supplier interaction");
+
+                const order = await trx
+                  .insertInto("purchaseOrder")
                   .values({
-                    id: purchaseOrderId,
-                    invoiceSupplierId,
-                    invoiceSupplierContactId,
-                    invoiceSupplierLocationId,
-                    paymentTermId,
-                    companyId,
+                    purchaseOrderId: nextSequence,
+                    status: "Draft",
+                    supplierId: supplier,
+                    jobId: jobId,
+                    jobReadableId: job.data?.jobId,
+                    companyId: companyId,
+                    createdBy: userId,
+                    purchaseOrderType: "Outside Processing",
+                    supplierInteractionId: supplierInteractionId,
+                    currencyCode:
+                      suppliers.data?.find((d) => d.id === supplier)
+                        ?.currencyCode ?? "USD",
+                    exchangeRate:
+                      exchangeRates.find(
+                        (d) =>
+                          d.currencyCode ===
+                          suppliers.data?.find((d) => d.id === supplier)
+                            ?.currencyCode
+                      )?.exchangeRate ?? 1,
+                    exchangeRateUpdatedAt: new Date().toISOString(),
                   })
-                  .execute(),
-              ]);
+                  .returning(["id"])
+                  .execute();
+
+                if (!order?.[0]?.id)
+                  throw new Error("Failed to create purchase order");
+
+                purchaseOrderId = order[0].id;
+
+                // Create purchase order delivery and payment
+                const locationId = job.data?.locationId ?? null; // Default location
+                const shippingMethodId = shipping?.shippingMethodId;
+                const shippingTermId = shipping?.shippingTermId;
+
+                const paymentTermId = payment?.paymentTermId;
+                const invoiceSupplierId = payment?.invoiceSupplierId;
+                const invoiceSupplierContactId =
+                  payment?.invoiceSupplierContactId;
+                const invoiceSupplierLocationId =
+                  payment?.invoiceSupplierLocationId;
+
+                await Promise.all([
+                  trx
+                    .insertInto("purchaseOrderDelivery")
+                    .values({
+                      id: purchaseOrderId,
+                      locationId,
+                      shippingMethodId,
+                      shippingTermId,
+                      companyId,
+                    })
+                    .execute(),
+                  trx
+                    .insertInto("purchaseOrderPayment")
+                    .values({
+                      id: purchaseOrderId,
+                      invoiceSupplierId,
+                      invoiceSupplierContactId,
+                      invoiceSupplierLocationId,
+                      paymentTermId,
+                      companyId,
+                    })
+                    .execute(),
+                ]);
+              }
 
               const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
                 [];

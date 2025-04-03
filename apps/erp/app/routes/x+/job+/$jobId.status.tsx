@@ -25,6 +25,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const status = formData.get("status") as (typeof jobStatus)[number];
+  const selectedPurchaseOrdersBySupplierId = formData.get(
+    "selectedPurchaseOrdersBySupplierId"
+  ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
     throw redirect(
@@ -50,6 +53,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (status === "Ready" && shouldSchedule) {
     try {
+      const purchaseOrdersBySupplierId = JSON.parse(
+        selectedPurchaseOrdersBySupplierId ?? "{}"
+      );
+
       const serviceRole = getCarbonServiceRole();
       const [scheduler] = await Promise.all([
         serviceRole.functions.invoke("scheduler", {
@@ -63,6 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           body: {
             type: "purchaseOrderFromJob",
             jobId: id,
+            purchaseOrdersBySupplierId,
             companyId,
             userId,
           },

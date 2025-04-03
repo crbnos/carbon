@@ -59,6 +59,8 @@ import { path } from "~/utils/path";
 import { jobCompleteValidator } from "../../production.models";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
+import SupplierAvatar from "~/components/SupplierAvatar";
+import Select from "~/components/Select";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -376,6 +378,14 @@ function JobStartModal({
     setEachOutsideOperationHasASupplier,
   ] = useState(false);
   const [hasOutsideOperations, setHasOutsideOperations] = useState(false);
+  const [
+    existingPurchaseOrdersBySupplierId,
+    setExistingPurchaseOrdersBySupplierId,
+  ] = useState<Record<string, { id: string; purchaseOrderId: string }[]>>({});
+  const [
+    selectedPurchaseOrdersBySupplierId,
+    setSelectedPurchaseOrdersBySupplierId,
+  ] = useState<Record<string, string>>({});
 
   const validate = async () => {
     if (!carbon || !job) return;
@@ -392,6 +402,54 @@ function JobStartModal({
         .eq("jobId", job.id!),
       carbon.from("jobOperation").select("*").eq("jobId", job.id!),
     ]);
+
+    const uniqueOutsideProcessIds =
+      operations.data?.reduce<string[]>((acc, op) => {
+        if (op.operationType === "Outside" && op.operationSupplierProcessId) {
+          acc.push(op.operationSupplierProcessId);
+        }
+        return acc;
+      }, []) || [];
+
+    const supplierProcesses = await carbon
+      .from("supplierProcess")
+      .select("supplierId")
+      .in("id", uniqueOutsideProcessIds);
+
+    const uniqueSupplierIds = new Set(
+      supplierProcesses.data?.map((sp) => sp.supplierId) ?? []
+    );
+
+    if (uniqueSupplierIds.size) {
+      const draftPurchaseOrders = await carbon
+        .from("purchaseOrder")
+        .select("id, purchaseOrderId, supplierId")
+        .eq("status", "Draft")
+        .in("supplierId", Array.from(uniqueSupplierIds));
+
+      setExistingPurchaseOrdersBySupplierId(
+        draftPurchaseOrders.data?.reduce<
+          Record<string, { id: string; purchaseOrderId: string }[]>
+        >((acc, po) => {
+          acc[po.supplierId] = acc[po.supplierId] || [];
+          acc[po.supplierId].push({
+            id: po.id,
+            purchaseOrderId: po.purchaseOrderId,
+          });
+          return acc;
+        }, {}) ?? {}
+      );
+    }
+
+    setSelectedPurchaseOrdersBySupplierId(
+      Array.from(uniqueSupplierIds).reduce<Record<string, string>>(
+        (acc, supplierId) => {
+          acc[supplierId] = "new";
+          return acc;
+        },
+        {}
+      )
+    );
 
     // make methods for materials
     const uniqueMakeMethodIds = new Set(
@@ -446,9 +504,21 @@ function JobStartModal({
         }
       }}
     >
-      <ModalContent>
+      <ModalContent
+        size={
+          hasOutsideOperations && eachOutsideOperationHasASupplier
+            ? "large"
+            : "medium"
+        }
+      >
         <ModalHeader>
-          <ModalTitle>Start {job?.jobId}</ModalTitle>
+          <ModalTitle>Release Job {job?.jobId}</ModalTitle>
+          {eachAssemblyHasAnOperation && eachOutsideOperationHasASupplier && (
+            <ModalDescription>
+              Are you sure you want to release this job? It will become
+              available to the shop floor, and drive purchasing and production.
+            </ModalDescription>
+          )}
         </ModalHeader>
         {loading ? (
           <ModalBody>
@@ -461,22 +531,59 @@ function JobStartModal({
           <>
             <ModalBody>
               <VStack>
-                {eachAssemblyHasAnOperation &&
-                  eachOutsideOperationHasASupplier && (
-                    <p>
-                      Are you sure you want to start this job? It will become
-                      available to the shop floor.
-                    </p>
-                  )}
                 {hasOutsideOperations && eachOutsideOperationHasASupplier && (
-                  <Alert>
-                    <LuShoppingCart />
-                    <AlertTitle>Purchase orders will be created</AlertTitle>
-                    <AlertDescription>
-                      Purchase orders will be created for any outside
-                      operations.
-                    </AlertDescription>
-                  </Alert>
+                  <>
+                    <Alert>
+                      <LuShoppingCart />
+                      <AlertTitle>Purchase orders required</AlertTitle>
+                      <AlertDescription>
+                        A new purchase order will be created for each supplier.
+                        Alternatively, you can choose an existing draft purchase
+                        order for the supplier to add the outside operations to.
+                      </AlertDescription>
+                    </Alert>
+                    {Object.entries(selectedPurchaseOrdersBySupplierId).map(
+                      ([supplierId, purchaseOrderId]) => {
+                        const purchaseOrders =
+                          existingPurchaseOrdersBySupplierId[supplierId] ?? [];
+                        return (
+                          <div
+                            key={supplierId}
+                            className="flex justify-between items-center text-sm rounded-lg border p-4 w-full"
+                          >
+                            <SupplierAvatar supplierId={supplierId} />
+
+                            <Select
+                              size="sm"
+                              value={purchaseOrderId}
+                              isReadOnly={
+                                !Array.isArray(purchaseOrders) ||
+                                purchaseOrders.length === 0
+                              }
+                              options={[
+                                {
+                                  value: "new",
+                                  label: "Create New",
+                                },
+                                ...purchaseOrders.map((po) => ({
+                                  label: po.purchaseOrderId,
+                                  value: po.id,
+                                })),
+                              ]}
+                              onChange={(value) => {
+                                setSelectedPurchaseOrdersBySupplierId(
+                                  (prev) => ({
+                                    ...prev,
+                                    [supplierId]: value,
+                                  })
+                                );
+                              }}
+                            />
+                          </div>
+                        );
+                      }
+                    )}
+                  </>
                 )}
                 {!eachAssemblyHasAnOperation && (
                   <Alert variant="warning">
@@ -513,6 +620,11 @@ function JobStartModal({
                 action={`${path.to.jobStatus(job.id!)}?schedule=1`}
               >
                 <input type="hidden" name="status" value="Ready" />
+                <input
+                  type="hidden"
+                  name="selectedPurchaseOrdersBySupplierId"
+                  value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
+                />
                 <Button
                   isLoading={
                     fetcher.state !== "idle" &&
