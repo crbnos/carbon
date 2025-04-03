@@ -380,6 +380,7 @@ const PurchaseInvoiceLineForm = ({
                         name="supplierShippingCost"
                         label="Shipping"
                         value={itemData.supplierShippingCost}
+                        minValue={0}
                         formatOptions={{
                           style: "currency",
                           currency:

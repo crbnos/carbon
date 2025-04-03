@@ -94,6 +94,7 @@ const QuoteShipmentForm = forwardRef<
                 style: "currency",
                 currency: company?.baseCurrencyCode,
               }}
+              minValue={0}
               ref={shippingCostRef}
             />
             <Location

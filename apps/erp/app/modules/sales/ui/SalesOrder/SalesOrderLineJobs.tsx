@@ -6,7 +6,10 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   HStack,
+  IconButton,
+  Loading,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,17 +17,21 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  Progress,
+  toast,
   useDisclosure,
+  useMount,
+  VStack,
 } from "@carbon/react";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
-import { LuCirclePlus, LuHardHat } from "react-icons/lu";
+import {
+  LuChevronRight,
+  LuChevronDown,
+  LuCirclePlus,
+  LuHardHat,
+  LuSettings2,
+} from "react-icons/lu";
 import { Assignee, Empty, Hyperlink } from "~/components";
 import {
   DatePicker,
@@ -41,7 +48,7 @@ import {
   deadlineTypes,
   salesOrderToJobValidator,
 } from "~/modules/production/production.models";
-import type { Job } from "~/modules/production/types";
+import type { Job, JobOperation } from "~/modules/production/types";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
@@ -49,6 +56,10 @@ import {
   getDeadlineIcon,
   getDeadlineText,
 } from "~/modules/production/ui/Jobs/Deadline";
+import { useCarbon } from "@carbon/auth";
+import { flushSync } from "react-dom";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
+import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 
 type SalesOrderLineJobsProps = {
   salesOrder: SalesOrder;
@@ -65,7 +76,6 @@ export function SalesOrderLineJobs({
   jobs,
   itemReplenishment,
 }: SalesOrderLineJobsProps) {
-  const permissions = usePermissions();
   const { orderId, lineId } = useParams();
   if (!orderId) throw new Error("orderId not found");
   if (!lineId) throw new Error("lineId not found");
@@ -113,47 +123,21 @@ export function SalesOrderLineJobs({
 
         <CardContent>
           {jobs.length > 0 ? (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>Job ID</Th>
-                  <Th>Status</Th>
-                  <Th className="text-right">Complete</Th>
-                  <Th className="text-right">Shipped</Th>
-                  <Th>Assignee</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {jobs.map((job) => (
-                  <Tr key={job.id}>
-                    <Td>
-                      <Hyperlink to={path.to.job(job.id!)}>
-                        {job.jobId}
-                      </Hyperlink>
-                    </Td>
-                    <Td>
-                      <JobStatus status={job.status} />
-                    </Td>
-
-                    <Td className="text-right">
-                      {job.quantityComplete}/{job.productionQuantity}
-                    </Td>
-                    <Td className="text-right">
-                      {job.quantityShipped}/{job.quantityComplete}
-                    </Td>
-
-                    <Td>
-                      <Assignee
-                        id={job.id!}
-                        table="job"
-                        value={job.assignee ?? ""}
-                        isReadOnly={!permissions.can("update", "production")}
-                      />
-                    </Td>
-                  </Tr>
+            <div className="border rounded-lg">
+              {jobs
+                .sort((a, b) => (a.jobId ?? "").localeCompare(b.jobId ?? ""))
+                .map((job, index) => (
+                  <div
+                    key={job.id}
+                    className={cn(
+                      "border-b p-6",
+                      index === jobs.length - 1 && "border-b-0"
+                    )}
+                  >
+                    <SalesOrderJobItem job={job} />
+                  </div>
                 ))}
-              </Tbody>
-            </Table>
+            </div>
           ) : (
             <Empty className="pb-12">
               <Button
@@ -266,5 +250,196 @@ export function SalesOrderLineJobs({
         </Modal>
       )}
     </>
+  );
+}
+
+export function SalesOrderJobItem({ job }: { job: Job }) {
+  const disclosure = useDisclosure();
+  const permissions = usePermissions();
+
+  return (
+    <VStack>
+      <HStack className="w-full justify-between">
+        <HStack>
+          <Hyperlink to={path.to.job(job.id!)}>
+            <div className="flex flex-col gap-0">
+              {job.jobId}
+              <div>
+                <JobStatus status={job.status} />
+              </div>
+            </div>
+          </Hyperlink>
+          <Assignee
+            id={job.id!}
+            table="job"
+            size="sm"
+            value={job.assignee ?? ""}
+            isReadOnly={!permissions.can("update", "production")}
+          />
+        </HStack>
+        <HStack className="justify-between items-center" spacing={8}>
+          <div>
+            <label className="text-xs text-muted-foreground">Complete</label>
+            <p className="text-sm">
+              {job.quantityComplete ?? 0}/{job.productionQuantity ?? 0}
+            </p>
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Shipped</label>
+            <p className="text-sm">
+              {job.quantityShipped ?? 0}/{job.quantityComplete ?? 0}
+            </p>
+          </div>
+        </HStack>
+        <IconButton
+          aria-label={disclosure.isOpen ? "Collapse" : "Expand"}
+          icon={disclosure.isOpen ? <LuChevronDown /> : <LuChevronRight />}
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            disclosure.onToggle();
+          }}
+        />
+      </HStack>
+
+      {disclosure.isOpen && <JobDetails job={job} />}
+    </VStack>
+  );
+}
+
+function JobDetails({ job }: { job: Job }) {
+  const { carbon } = useCarbon();
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [jobOperations, setJobOperations] = useState<JobOperation[]>([]);
+
+  const getJobOperations = async () => {
+    if (!carbon) {
+      toast.error("Failed to load job operations");
+      return;
+    }
+
+    const [operations] = await Promise.all([
+      carbon
+        .from("jobOperation")
+        .select("*, jobMakeMethod(parentMaterialId, item(readableId))")
+        .eq("jobId", job.id!),
+    ]);
+
+    if (operations.error) {
+      toast.error("Failed to load job operations");
+      return;
+    }
+
+    flushSync(() => {
+      setJobOperations(operations.data);
+      setIsLoading(false);
+    });
+  };
+
+  useMount(() => {
+    getJobOperations();
+  });
+
+  if (jobOperations.length === 0 && !isLoading) {
+    return <Empty>No operations found</Empty>;
+  }
+
+  return (
+    <Loading isLoading={isLoading} className="min-h-[200px]">
+      <VStack spacing={2} className="pt-4">
+        {jobOperations
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((operation) => (
+            <div className="flex w-full items-center" key={operation.id}>
+              <div className="grow h-full bg-muted/30 border border-border rounded-lg w-full">
+                <div className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 px-3 md:px-4 py-2 md:py-3">
+                  <VStack spacing={0}>
+                    <h3 className="font-semibold truncate">
+                      {operation.description}
+                    </h3>
+                    {operation.operationType === "Outside" ? (
+                      <SupplierProcessPreview
+                        processId={operation.processId}
+                        supplierProcessId={
+                          operation.operationSupplierProcessId ?? undefined
+                        }
+                      />
+                    ) : (
+                      <div className="py-2 w-full">
+                        <Progress
+                          value={Math.min(
+                            ((operation.quantityComplete ?? 0) /
+                              (operation.operationQuantity ?? 0)) *
+                              100,
+                            100
+                          )}
+                          numerator={(
+                            operation.quantityComplete ?? 0
+                          ).toString()}
+                          denominator={(
+                            operation.operationQuantity ?? 0
+                          ).toString()}
+                        />
+                      </div>
+                    )}
+                  </VStack>
+
+                  <IconButton
+                    aria-label="Edit"
+                    icon={<LuSettings2 />}
+                    variant="ghost"
+                    onClick={() => {
+                      navigate(
+                        `${
+                          operation.jobMakeMethod?.parentMaterialId
+                            ? path.to.jobMakeMethod(
+                                operation.jobId,
+                                operation.jobMakeMethodId ?? "",
+                                operation.jobMakeMethod?.parentMaterialId
+                              )
+                            : path.to.jobMethod(
+                                operation.jobId,
+                                operation.jobMakeMethodId ?? ""
+                              )
+                        }?selectedOperation=${operation.id}`
+                      );
+                    }}
+                  />
+                </div>
+                <div className="flex w-full items-center justify-between border-t border-border px-3 md:px-4 py-2 md:py-3">
+                  <HStack>
+                    <JobOperationStatus
+                      operation={operation}
+                      onChange={(status) => {
+                        setJobOperations((prev) =>
+                          prev.map((op) =>
+                            op.id === operation.id ? { ...op, status } : op
+                          )
+                        );
+                      }}
+                    />
+                    <Assignee
+                      id={operation.id!}
+                      table="jobOperation"
+                      size="sm"
+                      onChange={(selected) => {
+                        setJobOperations((prev) =>
+                          prev.map((op) =>
+                            op.id === operation.id
+                              ? { ...op, assignee: selected }
+                              : op
+                          )
+                        );
+                      }}
+                      value={operation.assignee ?? undefined}
+                    />
+                  </HStack>
+                </div>
+              </div>
+            </div>
+          ))}
+      </VStack>
+    </Loading>
   );
 }

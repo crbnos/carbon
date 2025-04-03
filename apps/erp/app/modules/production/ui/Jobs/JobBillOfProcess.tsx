@@ -76,7 +76,7 @@ import {
   LuWaypoints,
   LuX,
 } from "react-icons/lu";
-import { z } from "zod";
+import type { z } from "zod";
 import {
   Assignee,
   DirectionAwareTabs,
@@ -96,7 +96,6 @@ import {
   StandardFactor,
   Submit,
   SupplierProcess,
-  Tags,
   Tool,
   UnitHint,
   WorkCenter,
@@ -107,7 +106,6 @@ import { ConfirmDelete } from "~/components/Modals";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUrlParams, useUser } from "~/hooks";
-import { useTags } from "~/hooks/useTags";
 import type {
   OperationAttribute,
   OperationParameter,
@@ -140,7 +138,7 @@ import type { Job, JobOperation } from "../../types";
 import UnitOfMeasure, {
   useUnitOfMeasure,
 } from "~/components/Form/UnitOfMeasure";
-import { JobOperationStatus } from "./JobOperationStatus";
+import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import Procedure from "~/components/Form/Procedure";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -242,6 +240,7 @@ function makeItem(
             value={operation.assignee ?? undefined}
           />
         </HStack>
+
         <JobOperationTags operation={operation} availableTags={tags} />
       </HStack>
     ),
@@ -3046,36 +3045,5 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
         </form>
       </div>
     </div>
-  );
-}
-
-function JobOperationTags({
-  operation,
-  availableTags,
-}: {
-  operation: Operation;
-  availableTags: { name: string }[];
-}) {
-  const { onUpdateTags } = useTags({ id: operation.id, table: "jobOperation" });
-
-  return (
-    <ValidatedForm
-      defaultValues={{
-        tags: operation.tags ?? [],
-      }}
-      validator={z.object({
-        tags: z.array(z.string()).optional(),
-      })}
-    >
-      <Tags
-        availableTags={availableTags}
-        label=""
-        name="tags"
-        table="operation"
-        maxPreview={3}
-        inline
-        onChange={onUpdateTags}
-      />
-    </ValidatedForm>
   );
 }

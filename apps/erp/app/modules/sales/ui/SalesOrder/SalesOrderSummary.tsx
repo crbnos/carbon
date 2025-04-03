@@ -6,13 +6,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   Heading,
   HStack,
   Table,
   Tbody,
   Td,
-  Th,
-  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -31,8 +30,8 @@ import {
   LuImage,
   LuInfo,
 } from "react-icons/lu";
-import { Assignee, CustomerAvatar, Empty, Hyperlink } from "~/components";
-import { usePercentFormatter, usePermissions, useRouteData } from "~/hooks";
+import { CustomerAvatar, Hyperlink } from "~/components";
+import { usePercentFormatter, useRouteData } from "~/hooks";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
@@ -42,6 +41,8 @@ import type {
   SalesOrderJob,
   SalesOrderLine,
 } from "../../types";
+import { SalesOrderJobItem } from "./SalesOrderLineJobs";
+import type { Job } from "~/modules/production/types";
 
 const SalesOrderSummary = ({
   onEditShippingCost,
@@ -219,7 +220,6 @@ const SalesOrderSummary = ({
 
 function LineItems({
   currencyCode,
-  formatter,
   locale,
   lines,
   salesOrder,
@@ -232,7 +232,6 @@ function LineItems({
 }) {
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
-  const permissions = usePermissions();
 
   const percentFormatter = usePercentFormatter();
   const [openItems, setOpenItems] = useState<string[]>([]);
@@ -367,7 +366,7 @@ function LineItems({
                                 >
                                   <Hyperlink
                                     to={path.to.jobDetails(job.id)}
-                                    className="flex items-center justify-start gap-1"
+                                    className="flex items-center justify-start gap-1 min-w-[200px]"
                                   >
                                     {job.jobId}
                                   </Hyperlink>
@@ -506,52 +505,24 @@ function LineItems({
                   </Tbody>
                 </Table>
 
-                {isMade && (
-                  <Table>
-                    <Thead>
-                      <Tr>
-                        <Th>Job ID</Th>
-                        <Th>Status</Th>
-                        <Th>Quantity</Th>
-                        <Th>Assignee</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {jobs.length > 0 ? (
-                        jobs.map((job) => (
-                          <Tr key={job.id}>
-                            <Td>
-                              <Hyperlink to={path.to.job(job.id!)}>
-                                {job.jobId}
-                              </Hyperlink>
-                            </Td>
-                            <Td>
-                              <JobStatus status={job.status} />
-                            </Td>
-                            <Td>
-                              {job.quantityComplete}/{job.productionQuantity}
-                            </Td>
-                            <Td>
-                              <Assignee
-                                id={job.id!}
-                                table="job"
-                                value={job.assignee ?? ""}
-                                isReadOnly={
-                                  !permissions.can("update", "production")
-                                }
-                              />
-                            </Td>
-                          </Tr>
-                        ))
-                      ) : (
-                        <Tr>
-                          <Td colSpan={4} className="py-8">
-                            <Empty />
-                          </Td>
-                        </Tr>
-                      )}
-                    </Tbody>
-                  </Table>
+                {isMade && jobs.length > 0 && (
+                  <div className="border rounded-lg">
+                    {jobs
+                      .sort((a, b) =>
+                        (a.jobId ?? "").localeCompare(b.jobId ?? "")
+                      )
+                      .map((job, index) => (
+                        <div
+                          key={job.id}
+                          className={cn(
+                            "border-b p-6",
+                            index === jobs.length - 1 && "border-b-0"
+                          )}
+                        >
+                          <SalesOrderJobItem job={job as Job} />
+                        </div>
+                      ))}
+                  </div>
                 )}
               </div>
             </motion.div>

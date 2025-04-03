@@ -15,6 +15,10 @@ import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import { jobOperationStatus } from "../../production.models";
 import type { Job, JobOperation } from "../../types";
+import { z } from "zod";
+import { ValidatedForm } from "@carbon/form";
+import { Tags } from "~/components/Form";
+import { useTags } from "~/hooks/useTags";
 
 function useOptimisticJobStatus(operationId: string) {
   const fetchers = useFetchers();
@@ -31,9 +35,11 @@ function useOptimisticJobStatus(operationId: string) {
 export function JobOperationStatus({
   operation,
   className,
+  onChange,
 }: {
   operation: { id?: string; status: JobOperation["status"]; jobId?: string };
   className?: string;
+  onChange?: (status: JobOperation["status"]) => void;
 }) {
   const params = useParams();
   const jobId = params.jobId ?? operation.jobId;
@@ -49,6 +55,7 @@ export function JobOperationStatus({
 
   const onOperationStatusChange = useCallback(
     (id: string, status: JobOperation["status"]) => {
+      onChange?.(status);
       submit(
         {
           id,
@@ -62,7 +69,7 @@ export function JobOperationStatus({
         }
       );
     },
-    [submit]
+    [submit, onChange]
   );
 
   const currentStatus =
@@ -103,5 +110,38 @@ export function JobOperationStatus({
         </DropdownMenuContent>
       )}
     </DropdownMenu>
+  );
+}
+
+export function JobOperationTags({
+  operation,
+  availableTags,
+}: {
+  operation: { id?: string; tags: string[] | null };
+  availableTags: { name: string }[];
+}) {
+  const { onUpdateTags } = useTags({ id: operation.id, table: "jobOperation" });
+
+  if (!operation.id) return null;
+
+  return (
+    <ValidatedForm
+      defaultValues={{
+        tags: operation.tags ?? [],
+      }}
+      validator={z.object({
+        tags: z.array(z.string()).optional(),
+      })}
+    >
+      <Tags
+        availableTags={availableTags}
+        label=""
+        name="tags"
+        table="operation"
+        maxPreview={3}
+        inline
+        onChange={onUpdateTags}
+      />
+    </ValidatedForm>
   );
 }

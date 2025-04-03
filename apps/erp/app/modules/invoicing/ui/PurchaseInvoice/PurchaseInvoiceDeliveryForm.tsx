@@ -93,6 +93,7 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
             <Number
               name="supplierShippingCost"
               label="Shipping Cost"
+              minValue={0}
               formatOptions={{
                 style: "currency",
                 currency: currencyCode,

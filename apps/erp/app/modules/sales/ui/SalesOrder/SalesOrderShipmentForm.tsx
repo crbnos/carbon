@@ -98,6 +98,7 @@ const SalesOrderShipmentForm = forwardRef<
             <Number
               name="shippingCost"
               label="Shipping Cost"
+              minValue={0}
               formatOptions={{
                 style: "currency",
                 currency:

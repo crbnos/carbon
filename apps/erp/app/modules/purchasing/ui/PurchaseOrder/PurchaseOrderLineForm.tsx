@@ -40,7 +40,7 @@ import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
-import { PostgrestResponse } from "@supabase/supabase-js";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 
 type PurchaseOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseOrderLineValidator>;
@@ -411,6 +411,7 @@ const PurchaseOrderLineForm = ({
                     <NumberControlled
                       name="supplierShippingCost"
                       label="Shipping"
+                      minValue={0}
                       value={itemData.supplierShippingCost}
                       formatOptions={{
                         style: "currency",
