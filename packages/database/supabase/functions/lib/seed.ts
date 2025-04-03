@@ -1607,7 +1607,6 @@ export const nonConformanceTypes: Omit<
   },
 ];
 
-
 export const paymentTerms: Omit<
   Database["public"]["Tables"]["paymentTerm"]["Insert"],
   "companyId"
@@ -1731,6 +1730,15 @@ export const sequences = [
     table: "job",
     name: "Job",
     prefix: "J",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1,
+  },
+  {
+    table: "nonConformance",
+    name: "Non-Conformance",
+    prefix: "NCR",
     suffix: null,
     next: 0,
     size: 6,

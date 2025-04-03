@@ -1,4 +1,4 @@
-import { MultiSelect, ValidatedForm } from "@carbon/form";
+import { MultiSelect, Select, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -16,13 +16,16 @@ import { usePermissions, useUser } from "~/hooks";
 import {
   nonConformanceApprovalRequirement,
   nonConformanceInvestigationType,
+  nonConformancePriority,
   nonConformanceRequiredAction,
+  nonConformanceSource,
   nonConformanceWorkflowValidator,
 } from "../../quality.models";
 import { useState } from "react";
 import { useCarbon } from "@carbon/auth";
 import { nanoid } from "nanoid";
 import { getPrivateUrl, path } from "~/utils/path";
+import { getPriorityIcon } from "../NonConformance/NonConformancePriority";
 
 type NonConformanceWorkflowFormProps = {
   initialValues: z.infer<typeof nonConformanceWorkflowValidator>;
@@ -145,9 +148,32 @@ const NonConformanceWorkflowForm = ({
             </CardContent>
           </Card>
         </VStack>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+          <Select
+            name="priority"
+            label="Priority"
+            options={nonConformancePriority.map((priority) => ({
+              label: (
+                <div className="flex gap-1 items-center">
+                  {getPriorityIcon(priority, false)}
+                  <span>{priority}</span>
+                </div>
+              ),
+              value: priority,
+            }))}
+          />
+          <Select
+            name="source"
+            label="Source"
+            options={nonConformanceSource.map((source) => ({
+              label: source,
+              value: source,
+            }))}
+          />
+        </div>
         <MultiSelect
           name="investigationTypes"
-          label="Investigation"
+          label="Investigation Types"
           options={nonConformanceInvestigationType.map((type) => ({
             label: type,
             value: type,

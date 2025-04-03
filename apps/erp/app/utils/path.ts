@@ -722,8 +722,9 @@ export const path = {
     newMethodOperationAttribute: `${x}/items/methods/operation/attribute/new`,
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
-    newNonConformanceWorkflow: `${x}/non-conformance-workflow/new`,
+    newNonConformance: `${x}/non-conformance/new`,
     newNonConformanceType: `${x}/quality/non-conformance-types/new`,
+    newNonConformanceWorkflow: `${x}/non-conformance-workflow/new`,
     newNote: `${x}/shared/notes/new`,
     newPart: `${x}/part/new`,
     newProcedure: `${x}/production/procedures/new`,
@@ -797,6 +798,7 @@ export const path = {
     newWorkCenter: `${x}/resources/work-centers/new`,
     newWebhook: `${x}/settings/webhooks/new`,
     nonConformances: `${x}/quality/non-conformances`,
+    nonConformance: (id: string) => generatePath(`${x}/non-conformance/${id}`),
     nonConformanceWorkflow: (id: string) =>
       generatePath(`${x}/non-conformance-workflow/${id}`),
     nonConformanceWorkflows: `${x}/quality/non-conformance-workflows`,

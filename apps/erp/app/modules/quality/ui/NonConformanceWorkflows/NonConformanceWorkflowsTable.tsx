@@ -10,6 +10,7 @@ import { path } from "~/utils/path";
 import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
 import type { NonConformanceWorkflow } from "../../types";
+import { getPriorityIcon } from "../NonConformance/NonConformancePriority";
 
 type NonConformanceWorkflowsTableProps = {
   data: NonConformanceWorkflow[];
@@ -39,6 +40,21 @@ const NonConformanceWorkflowsTable = memo(
           meta: {
             icon: <LuBookMarked />,
           },
+        },
+        {
+          accessorKey: "source",
+          header: "Default Source",
+          cell: ({ row }) => row.original.source,
+        },
+        {
+          accessorKey: "priority",
+          header: "Default Priority",
+          cell: ({ row }) => (
+            <div className="flex gap-2 items-center">
+              {getPriorityIcon(row.original.priority, false)}
+              {row.original.priority}
+            </div>
+          ),
         },
       ];
       return [...defaultColumns];
