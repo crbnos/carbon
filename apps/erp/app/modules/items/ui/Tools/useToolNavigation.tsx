@@ -40,6 +40,7 @@ export function useToolNavigation() {
       to: path.to.toolPurchasing(itemId),
       isDisabled: replenishment === "Make",
       role: ["employee", "supplier"],
+      permission: "purchasing",
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
     },
@@ -55,6 +56,7 @@ export function useToolNavigation() {
       name: "Costing",
       to: path.to.toolCosting(itemId),
       role: ["employee"],
+      permission: "purchasing",
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
@@ -77,6 +79,8 @@ export function useToolNavigation() {
     (item) =>
       !item.isDisabled &&
       (item.role === undefined ||
-        item.role.some((role) => permissions.is(role as Role)))
+        item.role.some((role) => permissions.is(role as Role))) &&
+      (item.permission === undefined ||
+        permissions.can("view", item.permission))
   );
 }

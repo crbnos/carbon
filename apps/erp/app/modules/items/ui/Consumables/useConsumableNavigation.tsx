@@ -30,6 +30,7 @@ export function useConsumableNavigation() {
       name: "Purchasing",
       to: path.to.consumablePurchasing(itemId),
       role: ["employee", "supplier"],
+      permission: "purchasing",
       icon: LuShoppingCart,
       shortcut: "Command+Shift+p",
     },
@@ -37,6 +38,7 @@ export function useConsumableNavigation() {
       name: "Costing",
       to: path.to.consumableCosting(itemId),
       role: ["employee"],
+      permission: "purchasing",
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
@@ -59,6 +61,8 @@ export function useConsumableNavigation() {
     (item) =>
       !item.isDisabled &&
       (item.role === undefined ||
-        item.role.some((role) => permissions.is(role as Role)))
+        item.role.some((role) => permissions.is(role as Role))) &&
+      (item.permission === undefined ||
+        permissions.can("view", item.permission))
   );
 }
