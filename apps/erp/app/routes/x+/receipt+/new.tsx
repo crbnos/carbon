@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     case "Purchase Order":
       const purchaseOrderReceipt = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-inventory-document", {
+      }>("create", {
         body: {
           type: "receiptFromPurchaseOrder",
           companyId,
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     default:
       const defaultReceipt = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-inventory-document", {
+      }>("create", {
         body: {
           type: "receiptDefault",
           companyId,

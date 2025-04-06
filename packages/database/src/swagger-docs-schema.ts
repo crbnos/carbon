@@ -4570,7 +4570,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.notes",
@@ -4668,7 +4668,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.notes",
@@ -4720,7 +4720,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.notes",
@@ -9340,7 +9340,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.notes",
@@ -9438,7 +9438,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.notes",
@@ -9490,7 +9490,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.notes",
@@ -21526,141 +21526,6 @@ export default {
           },
         },
         tags: ["trackedActivity"],
-      },
-    },
-    "/nonConformanceOwner": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.nonConformanceId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.ownerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdBy",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/nonConformanceOwner",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["nonConformanceOwner"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.nonConformanceOwner",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["nonConformanceOwner"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.nonConformanceId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.ownerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdBy",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["nonConformanceOwner"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.nonConformanceId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.ownerId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformanceOwner.createdBy",
-          },
-          {
-            $ref: "#/parameters/body.nonConformanceOwner",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["nonConformanceOwner"],
       },
     },
     "/suppliers": {
@@ -34858,7 +34723,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.notes",
@@ -34956,7 +34821,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.notes",
@@ -35008,7 +34873,7 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.completedDate",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assigneeId",
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.assignee",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.notes",
@@ -38602,7 +38467,22 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.status",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformance.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformance.nonConformanceWorkflowId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.content",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.locationId",
@@ -38660,18 +38540,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.assignee",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.priority",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
@@ -38769,7 +38637,22 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.status",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformance.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformance.nonConformanceWorkflowId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.content",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.locationId",
@@ -38827,18 +38710,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.assignee",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.priority",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
@@ -38890,7 +38761,22 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.status",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformance.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformance.nonConformanceWorkflowId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.content",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.locationId",
@@ -38948,18 +38834,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.assignee",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.priority",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.investigationTypes",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.requiredActions",
-          },
-          {
-            $ref: "#/parameters/rowFilter.nonConformance.approvalRequirements",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
@@ -52196,7 +52070,7 @@ export default {
           format: "date",
           type: "string",
         },
-        assigneeId: {
+        assignee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
@@ -53019,7 +52893,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -53068,7 +52942,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -54603,7 +54477,7 @@ export default {
           format: "date",
           type: "string",
         },
-        assigneeId: {
+        assignee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
@@ -57811,7 +57685,7 @@ export default {
           type: "string",
         },
         content: {
-          format: "jsonb",
+          format: "json",
         },
         priority: {
           default: "Medium",
@@ -60033,39 +59907,6 @@ export default {
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    nonConformanceOwner: {
-      required: ["id", "nonConformanceId", "ownerId", "createdAt", "createdBy"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        nonConformanceId: {
-          description:
-            "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        ownerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string",
-        },
-        createdBy: {
           format: "text",
           type: "string",
         },
@@ -66193,7 +66034,7 @@ export default {
           format: "date",
           type: "string",
         },
-        assigneeId: {
+        assignee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
@@ -68082,6 +67923,7 @@ export default {
         "source",
         "status",
         "nonConformanceWorkflowId",
+        "content",
         "locationId",
         "nonConformanceTypeId",
         "openDate",
@@ -68119,11 +67961,40 @@ export default {
           format: 'public."nonConformanceStatus"',
           type: "string",
         },
+        priority: {
+          enum: ["Low", "Medium", "High", "Critical"],
+          format: 'public."nonConformancePriority"',
+          type: "string",
+        },
+        investigationTypes: {
+          format: 'public."nonConformanceInvestigation"[]',
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        requiredActions: {
+          format: 'public."nonConformanceAction"[]',
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        approvalRequirements: {
+          format: 'public."nonConformanceApproval"[]',
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         nonConformanceWorkflowId: {
           description:
             "Note:\nThis is a Foreign Key to `nonConformanceWorkflow.id`.<fk table='nonConformanceWorkflow' column='id'/>",
           format: "text",
           type: "string",
+        },
+        content: {
+          format: "json",
         },
         locationId: {
           description:
@@ -68229,32 +68100,6 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
-        },
-        priority: {
-          enum: ["Low", "Medium", "High", "Critical"],
-          format: 'public."nonConformancePriority"',
-          type: "string",
-        },
-        investigationTypes: {
-          format: 'public."nonConformanceInvestigation"[]',
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        requiredActions: {
-          format: 'public."nonConformanceAction"[]',
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        approvalRequirements: {
-          format: 'public."nonConformanceApproval"[]',
-          items: {
-            type: "string",
-          },
-          type: "array",
         },
         customFields: {
           format: "jsonb",
@@ -73972,8 +73817,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.nonConformanceActionTask.assigneeId": {
-      name: "assigneeId",
+    "rowFilter.nonConformanceActionTask.assignee": {
+      name: "assignee",
       required: false,
       in: "query",
       type: "string",
@@ -76642,8 +76487,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.nonConformanceApprovalTask.assigneeId": {
-      name: "assigneeId",
+    "rowFilter.nonConformanceApprovalTask.assignee": {
+      name: "assignee",
       required: false,
       in: "query",
       type: "string",
@@ -82697,45 +82542,6 @@ export default {
       type: "string",
     },
     "rowFilter.trackedActivity.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "body.nonConformanceOwner": {
-      name: "nonConformanceOwner",
-      description: "nonConformanceOwner",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/nonConformanceOwner",
-      },
-    },
-    "rowFilter.nonConformanceOwner.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformanceOwner.nonConformanceId": {
-      name: "nonConformanceId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformanceOwner.ownerId": {
-      name: "ownerId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformanceOwner.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformanceOwner.createdBy": {
       name: "createdBy",
       required: false,
       in: "query",
@@ -89728,8 +89534,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.nonConformanceInvestigationTask.assigneeId": {
-      name: "assigneeId",
+    "rowFilter.nonConformanceInvestigationTask.assignee": {
+      name: "assignee",
       required: false,
       in: "query",
       type: "string",
@@ -91906,8 +91712,38 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.nonConformance.priority": {
+      name: "priority",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformance.investigationTypes": {
+      name: "investigationTypes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformance.requiredActions": {
+      name: "requiredActions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformance.approvalRequirements": {
+      name: "approvalRequirements",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.nonConformance.nonConformanceWorkflowId": {
       name: "nonConformanceWorkflowId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformance.content": {
+      name: "content",
       required: false,
       in: "query",
       type: "string",
@@ -92022,30 +91858,6 @@ export default {
     },
     "rowFilter.nonConformance.assignee": {
       name: "assignee",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformance.priority": {
-      name: "priority",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformance.investigationTypes": {
-      name: "investigationTypes",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformance.requiredActions": {
-      name: "requiredActions",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.nonConformance.approvalRequirements": {
-      name: "approvalRequirements",
       required: false,
       in: "query",
       type: "string",

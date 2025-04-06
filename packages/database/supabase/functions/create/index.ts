@@ -12,6 +12,12 @@ const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
+    type: z.literal("nonConformanceTasks"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("purchaseOrderFromJob"),
     jobId: z.string(),
     purchaseOrdersBySupplierId: z.record(z.string(), z.string()),
@@ -87,13 +93,226 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
-
   switch (type) {
+    case "nonConformanceTasks": {
+      const { id } = payload;
+
+      console.log({
+        function: "create",
+        type,
+        id,
+      });
+
+      try {
+        const client = await getSupabaseServiceRole(
+          req.headers.get("Authorization"),
+          req.headers.get("carbon-key") ?? "",
+          companyId
+        );
+
+        const [nonConformance, investigationTasks, actionTasks, approvalTasks] =
+          await Promise.all([
+            client.from("nonConformance").select("*").eq("id", id).single(),
+            client
+              .from("nonConformanceInvestigationTask")
+              .select("*")
+              .eq("nonConformanceId", id),
+            client
+              .from("nonConformanceActionTask")
+              .select("*")
+              .eq("nonConformanceId", id),
+            client
+              .from("nonConformanceApprovalTask")
+              .select("*")
+              .eq("nonConformanceId", id),
+          ]);
+
+        if (nonConformance.error) throw new Error(nonConformance.error.message);
+
+        const workflow = await client
+          .from("nonConformanceWorkflow")
+          .select("*")
+          .eq("id", nonConformance.data?.nonConformanceWorkflowId)
+          .single();
+
+        if (workflow.error) throw new Error(workflow.error.message);
+
+        const currentInvestigationTasks =
+          investigationTasks.data?.reduce<Record<string, string>>((acc, d) => {
+            if (d.investigationType && !acc[d.investigationType]) {
+              acc[d.investigationType] = d.id;
+            }
+            return acc;
+          }, {}) ?? {};
+
+        const currentActionTasks =
+          actionTasks.data?.reduce<Record<string, string>>((acc, d) => {
+            if (d.actionType && !acc[d.actionType]) {
+              acc[d.actionType] = d.id;
+            }
+            return acc;
+          }, {}) ?? {};
+
+        const currentApprovalTasks =
+          approvalTasks.data?.reduce<Record<string, string>>((acc, d) => {
+            if (d.approvalType && !acc[d.approvalType]) {
+              acc[d.approvalType] = d.id;
+            }
+            return acc;
+          }, {}) ?? {};
+
+        const investigationTasksToDelete: string[] = [];
+        const actionTasksToDelete: string[] = [];
+        const approvalTasksToDelete: string[] = [];
+
+        Object.keys(currentInvestigationTasks).forEach((investigationType) => {
+          if (
+            !(nonConformance.data?.investigationTypes ?? []).some(
+              (d) => d === investigationType
+            )
+          ) {
+            investigationTasksToDelete.push(
+              currentInvestigationTasks[investigationType]
+            );
+          }
+        });
+
+        Object.keys(currentActionTasks).forEach((actionType) => {
+          if (
+            !(nonConformance.data?.requiredActions ?? []).some(
+              (d) => d === actionType
+            )
+          ) {
+            actionTasksToDelete.push(currentActionTasks[actionType]);
+          }
+        });
+
+        Object.keys(currentApprovalTasks).forEach((approvalType) => {
+          if (
+            !(nonConformance.data?.approvalRequirements ?? []).some(
+              (d) => d === approvalType
+            )
+          ) {
+            approvalTasksToDelete.push(currentApprovalTasks[approvalType]);
+          }
+        });
+
+        const investigationTaskInserts: Database["public"]["Tables"]["nonConformanceInvestigationTask"]["Insert"][] =
+          [];
+        const actionTaskInserts: Database["public"]["Tables"]["nonConformanceActionTask"]["Insert"][] =
+          [];
+        const approvalTaskInserts: Database["public"]["Tables"]["nonConformanceApprovalTask"]["Insert"][] =
+          [];
+
+        nonConformance.data?.investigationTypes?.forEach(
+          (investigationType) => {
+            if (!currentInvestigationTasks[investigationType]) {
+              investigationTaskInserts.push({
+                nonConformanceId: id,
+                investigationType,
+                createdBy: userId,
+              });
+            }
+          }
+        );
+
+        nonConformance.data?.requiredActions?.forEach((actionType) => {
+          if (!currentActionTasks[actionType]) {
+            actionTaskInserts.push({
+              nonConformanceId: id,
+              actionType,
+              createdBy: userId,
+            });
+          }
+        });
+
+        nonConformance.data?.approvalRequirements?.forEach((approvalType) => {
+          if (!currentApprovalTasks[approvalType]) {
+            approvalTaskInserts.push({
+              nonConformanceId: id,
+              approvalType,
+              createdBy: userId,
+            });
+          }
+        });
+
+        await db.transaction().execute(async (trx) => {
+          if (
+            typeof nonConformance.data?.content === "object" &&
+            // @ts-ignore -- content is json
+            Object.keys(nonConformance.data?.content ?? {}).length === 0
+          ) {
+            console.log("updating workflow content");
+            await trx
+              .updateTable("nonConformance")
+              .set({
+                content: workflow.data?.content,
+              })
+              .where("id", "=", id)
+              .execute();
+          }
+
+          if (investigationTaskInserts.length > 0) {
+            await trx
+              .insertInto("nonConformanceInvestigationTask")
+              .values(investigationTaskInserts)
+              .execute();
+          }
+          if (actionTaskInserts.length > 0) {
+            await trx
+              .insertInto("nonConformanceActionTask")
+              .values(actionTaskInserts)
+              .execute();
+          }
+          if (approvalTaskInserts.length > 0) {
+            await trx
+              .insertInto("nonConformanceApprovalTask")
+              .values(approvalTaskInserts)
+              .execute();
+          }
+
+          if (investigationTasksToDelete.length > 0) {
+            await trx
+              .deleteFrom("nonConformanceInvestigationTask")
+              .where("id", "=", investigationTasksToDelete)
+              .execute();
+          }
+          if (actionTasksToDelete.length > 0) {
+            await trx
+              .deleteFrom("nonConformanceActionTask")
+              .where("id", "=", actionTasksToDelete)
+              .execute();
+          }
+          if (approvalTasksToDelete.length > 0) {
+            await trx
+              .deleteFrom("nonConformanceApprovalTask")
+              .where("id", "=", approvalTasksToDelete)
+              .execute();
+          }
+        });
+      } catch (error) {
+        console.error(error);
+        return new Response(error.message, {
+          status: 500,
+          headers: corsHeaders,
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          success: true,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
+
     case "purchaseOrderFromJob": {
       const { jobId, purchaseOrdersBySupplierId } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         jobId,
         companyId,
@@ -419,7 +638,7 @@ serve(async (req: Request) => {
       const { locationId } = payload;
       let createdDocumentId;
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         locationId,
         companyId,
@@ -468,7 +687,7 @@ serve(async (req: Request) => {
       } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         companyId,
         locationId,
@@ -676,7 +895,7 @@ serve(async (req: Request) => {
       const { receiptId, receiptLineId, quantity, locationId } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         locationId,
         receiptId,
@@ -769,7 +988,7 @@ serve(async (req: Request) => {
       let createdDocumentId;
       const { locationId } = payload;
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         companyId,
         locationId,
@@ -819,7 +1038,7 @@ serve(async (req: Request) => {
       } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         companyId,
         locationId,
@@ -1032,7 +1251,7 @@ serve(async (req: Request) => {
       } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         companyId,
         locationId,
@@ -1372,7 +1591,7 @@ serve(async (req: Request) => {
       } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         companyId,
         locationId,
@@ -1638,7 +1857,7 @@ serve(async (req: Request) => {
       const { shipmentId, shipmentLineId, quantity, locationId } = payload;
 
       console.log({
-        function: "create-inventory-document",
+        function: "create",
         type,
         locationId,
         shipmentId,
