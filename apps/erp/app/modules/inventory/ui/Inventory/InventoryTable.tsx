@@ -57,16 +57,16 @@ const InventoryTable = memo(
                 type={row.original.type}
               />
 
-              <VStack spacing={0}>
-                <Hyperlink
-                  to={`${path.to.inventoryItem(row.original.id!)}/?${params}`}
-                >
+              <Hyperlink
+                to={`${path.to.inventoryItem(row.original.id!)}/?${params}`}
+              >
+                <VStack spacing={0}>
                   {row.original.readableId}
-                </Hyperlink>
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
-              </VStack>
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                </VStack>
+              </Hyperlink>
             </HStack>
           ),
           meta: {

@@ -446,6 +446,8 @@ export const path = {
       generatePath(`${x}/items/methods/operation/parameter/delete/${id}`),
     deleteMethodOperationTool: (id: string) =>
       generatePath(`${x}/items/methods/operation/tool/delete/${id}`),
+    deleteNonConformance: (id: string) =>
+      generatePath(`${x}/quality/non-conformances/delete/${id}`),
     deleteNonConformanceWorkflow: (id: string) =>
       generatePath(`${x}/non-conformance-workflow/delete/${id}`),
     deleteNonConformanceType: (id: string) =>

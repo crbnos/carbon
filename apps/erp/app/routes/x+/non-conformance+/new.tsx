@@ -3,10 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
-import { useUrlParams } from "~/hooks";
+import { useLoaderData } from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
+import { useUrlParams, useUser } from "~/hooks";
 import {
+  getNonConformanceTypesList,
+  getNonConformanceWorkflowsList,
   nonConformanceValidator,
   upsertNonConformance,
 } from "~/modules/quality";
@@ -18,9 +21,25 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Non-Conformance",
+  breadcrumb: "Non-Conformances",
   to: path.to.nonConformances,
 };
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "quality",
+  });
+
+  const [workflows, types] = await Promise.all([
+    getNonConformanceWorkflowsList(client, companyId),
+    getNonConformanceTypesList(client, companyId),
+  ]);
+
+  return json({
+    workflows: workflows.data ?? [],
+    types: types.data ?? [],
+  });
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -53,8 +72,10 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const { id, ...nonConformance } = validation.data;
+
   const createNonConformance = await upsertNonConformance(client, {
-    ...validation.data,
+    ...nonConformance,
     nonConformanceId: nextSequence.data,
     companyId,
     createdBy: userId,
@@ -77,6 +98,9 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NonConformanceNewRoute() {
+  const { workflows, types } = useLoaderData<typeof loader>();
+
+  const { defaults } = useUser();
   const [params] = useUrlParams();
   const supplierId = params.get("supplierId");
   const customerId = params.get("customerId");
@@ -93,11 +117,10 @@ export default function NonConformanceNewRoute() {
     nonConformanceId: undefined,
     approvalRequirements: [],
     customerId: customerId ?? "",
-    description: "",
     investigationTypes: [],
     itemId: "",
     jobId: jobId ?? "",
-    locationId: "",
+    locationId: defaults.locationId ?? "",
     name: "",
     nonConformanceTypeId: "",
     nonConformanceWorkflowId: "",
@@ -120,8 +143,8 @@ export default function NonConformanceNewRoute() {
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <NonConformanceForm
         initialValues={initialValues}
-        nonConformanceWorkflows={[]}
-        nonConformanceTypes={[]}
+        nonConformanceWorkflows={workflows}
+        nonConformanceTypes={types}
       />
     </div>
   );

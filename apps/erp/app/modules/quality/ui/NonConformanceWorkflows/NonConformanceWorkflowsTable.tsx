@@ -2,7 +2,13 @@ import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
-import { LuBookMarked, LuPencil, LuTrash } from "react-icons/lu";
+import {
+  LuBookMarked,
+  LuChartNoAxesColumnIncreasing,
+  LuDna,
+  LuPencil,
+  LuTrash,
+} from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 
 import { usePermissions } from "~/hooks";
@@ -10,7 +16,10 @@ import { path } from "~/utils/path";
 import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
 import type { NonConformanceWorkflow } from "../../types";
-import { getPriorityIcon } from "../NonConformance/NonConformancePriority";
+import {
+  getPriorityIcon,
+  getSourceIcon,
+} from "../NonConformance/NonConformanceIcons";
 
 type NonConformanceWorkflowsTableProps = {
   data: NonConformanceWorkflow[];
@@ -44,7 +53,15 @@ const NonConformanceWorkflowsTable = memo(
         {
           accessorKey: "source",
           header: "Default Source",
-          cell: ({ row }) => row.original.source,
+          cell: ({ row }) => (
+            <div className="flex gap-2 items-center">
+              {getSourceIcon(row.original.source, false)}
+              {row.original.source}
+            </div>
+          ),
+          meta: {
+            icon: <LuDna />,
+          },
         },
         {
           accessorKey: "priority",
@@ -55,6 +72,9 @@ const NonConformanceWorkflowsTable = memo(
               {row.original.priority}
             </div>
           ),
+          meta: {
+            icon: <LuChartNoAxesColumnIncreasing />,
+          },
         },
       ];
       return [...defaultColumns];
@@ -126,9 +146,9 @@ const NonConformanceWorkflowsTable = memo(
               deleteDisclosure.onClose();
             }}
             name={
-              selectedNonConformanceWorkflow.name ?? "non-conformance template"
+              selectedNonConformanceWorkflow.name ?? "non-conformance workflow"
             }
-            text="Are you sure you want to delete this non-conformance template?"
+            text="Are you sure you want to delete this non-conformance workflow?"
           />
         )}
       </>

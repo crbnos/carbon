@@ -2,7 +2,7 @@ import { MenuIcon, MenuItem } from "@carbon/react";
 import { useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuPencil, LuTrash } from "react-icons/lu";
+import { LuOctagonX, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
@@ -14,78 +14,83 @@ type NonConformanceTypesTableProps = {
   count: number;
 };
 
-const NonConformanceTypesTable = memo(({ data, count }: NonConformanceTypesTableProps) => {
-  const [params] = useUrlParams();
-  const navigate = useNavigate();
-  const permissions = usePermissions();
+const NonConformanceTypesTable = memo(
+  ({ data, count }: NonConformanceTypesTableProps) => {
+    const [params] = useUrlParams();
+    const navigate = useNavigate();
+    const permissions = usePermissions();
 
-  
-  const columns = useMemo<ColumnDef<NonConformanceType>[]>(() => {
-    const defaultColumns: ColumnDef<NonConformanceType>[] = [
-      {
-        accessorKey: "name",
-        header: "Non Conformance Type",
-        cell: ({ row }) => (
-          <Hyperlink to={row.original.id}>
-            <Enumerable value={row.original.name} />
-          </Hyperlink>
-        ),
-        meta: {
-          icon: <LuTrash />,
+    const columns = useMemo<ColumnDef<NonConformanceType>[]>(() => {
+      const defaultColumns: ColumnDef<NonConformanceType>[] = [
+        {
+          accessorKey: "name",
+          header: "Non Conformance Type",
+          cell: ({ row }) => (
+            <Hyperlink to={row.original.id}>
+              <Enumerable value={row.original.name} />
+            </Hyperlink>
+          ),
+          meta: {
+            icon: <LuOctagonX />,
+          },
         },
+      ];
+      return [...defaultColumns];
+    }, []);
+
+    const renderContextMenu = useCallback(
+      (row: NonConformanceType) => {
+        return (
+          <>
+            <MenuItem
+              onClick={() => {
+                navigate(
+                  `${path.to.nonConformanceType(row.id)}?${params.toString()}`
+                );
+              }}
+            >
+              <MenuIcon icon={<LuPencil />} />
+              Edit Type
+            </MenuItem>
+            <MenuItem
+              destructive
+              disabled={!permissions.can("delete", "sales")}
+              onClick={() => {
+                navigate(
+                  `${path.to.deleteNonConformanceType(
+                    row.id
+                  )}?${params.toString()}`
+                );
+              }}
+            >
+              <MenuIcon icon={<LuTrash />} />
+              Delete Type
+            </MenuItem>
+          </>
+        );
       },
-    ];
-    return [...defaultColumns];
-  }, []);
+      [navigate, params, permissions]
+    );
 
-  const renderContextMenu = useCallback(
-    (row: NonConformanceType) => {
-      return (
-        <>
-          <MenuItem
-            onClick={() => {
-              navigate(`${path.to.nonConformanceType(row.id)}?${params.toString()}`);
-            }}
-          >
-            <MenuIcon icon={<LuPencil />} />
-            Edit Type
-          </MenuItem>
-          <MenuItem
-            destructive
-            disabled={!permissions.can("delete", "sales")}
-            onClick={() => {
-              navigate(
-                `${path.to.deleteNonConformanceType(row.id)}?${params.toString()}`
-              );
-            }}
-          >
-            <MenuIcon icon={<LuTrash />} />
-            Delete Type
-          </MenuItem>
-        </>
-      );
-    },
-    [navigate, params, permissions]
-  );
-
-  return (
-    <Table<NonConformanceType>
-      data={data}
-      columns={columns}
-      count={count}
-      primaryAction={
-        permissions.can("create", "sales") && (
-          <New
-            label="Non-Conformance Type"
-            to={`${path.to.newNonConformanceType}?${params.toString()}`}
-          />
-        )
-      }
-      renderContextMenu={renderContextMenu}
-      title="Non-Conformance Types"
-    />
-  );
-});
+    return (
+      <Table<NonConformanceType>
+        data={data}
+        columns={columns}
+        count={count}
+        primaryAction={
+          permissions.can("create", "sales") && (
+            <New
+              label="Non-Conformance Type"
+              to={`${path.to.newNonConformanceType}?${params.toString()}`}
+            />
+          )
+        }
+        renderContextMenu={renderContextMenu}
+        title="Non-Conformance Types"
+      />
+    );
+  }
+);
 
 NonConformanceTypesTable.displayName = "NonConformanceTypesTable";
 export default NonConformanceTypesTable;

@@ -23,6 +23,12 @@ export const nonConformanceApprovalRequirement = ["MRB"] as const;
 
 export const nonConformanceSource = ["Internal", "External"] as const;
 
+export const nonConformanceStatus = [
+  "Registered",
+  "In Progress",
+  "Closed",
+] as const;
+
 export const nonConformancePriority = [
   "Low",
   "Medium",
@@ -36,7 +42,6 @@ export const nonConformanceValidator = z.object({
   priority: z.enum(nonConformancePriority),
   source: z.enum(nonConformanceSource),
   name: z.string().min(1, { message: "Name is required" }),
-  description: zfd.text(z.string().optional()),
   investigationTypes: z
     .array(z.enum(nonConformanceInvestigationType))
     .optional(),
@@ -52,7 +57,7 @@ export const nonConformanceValidator = z.object({
   openDate: z.string().min(1, { message: "Open date is required" }),
   dueDate: zfd.text(z.string().optional()),
   closeDate: zfd.text(z.string().optional()),
-  quantity: z.number().min(1, { message: "Quantity is required" }),
+  quantity: zfd.numeric(z.number().optional()),
   itemId: zfd.text(z.string().optional()),
   trackedEntityId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional()),
