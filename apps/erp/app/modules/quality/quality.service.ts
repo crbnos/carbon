@@ -12,12 +12,9 @@ import type {
 
 export async function deleteNonConformance(
   client: SupabaseClient<Database>,
-  nonConformanceTypeId: string
+  nonConformanceId: string
 ) {
-  return client
-    .from("nonConformanceType")
-    .delete()
-    .eq("id", nonConformanceTypeId);
+  return client.from("nonConformance").delete().eq("id", nonConformanceId);
 }
 
 export async function deleteNonConformanceType(
