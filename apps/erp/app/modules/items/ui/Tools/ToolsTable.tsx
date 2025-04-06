@@ -86,14 +86,14 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
               thumbnailPath={row.original.thumbnailPath}
               type="Tool"
             />
-            <VStack spacing={0}>
-              <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
+            <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
+              <VStack spacing={0}>
                 {row.original.id}
-              </Hyperlink>
-              <div className="w-full truncate text-muted-foreground text-xs">
-                {row.original.name}
-              </div>
-            </VStack>
+                <div className="w-full truncate text-muted-foreground text-xs">
+                  {row.original.name}
+                </div>
+              </VStack>
+            </Hyperlink>
           </HStack>
         ),
         meta: {

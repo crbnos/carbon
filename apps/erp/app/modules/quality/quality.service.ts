@@ -62,7 +62,9 @@ export async function getNonConformances(
     .eq("companyId", companyId);
 
   if (args?.search) {
-    query = query.ilike("name", `%${args.search}%`);
+    query = query.or(
+      `nonConformanceId.ilike.%${args.search}%,name.ilike.%${args.search}%`
+    );
   }
 
   if (args) {
@@ -109,6 +111,18 @@ export async function getNonConformanceWorkflows(
   return query;
 }
 
+export async function getNonConformanceWorkflowsList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceWorkflow")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name");
+}
+
 export async function getNonConformanceTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -117,7 +131,6 @@ export async function getNonConformanceTypesList(
     .from("nonConformanceType")
     .select("id, name")
     .eq("companyId", companyId)
-    .eq("active", true)
     .order("name");
 }
 

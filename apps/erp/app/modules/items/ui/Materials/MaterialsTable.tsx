@@ -87,14 +87,14 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
               thumbnailPath={row.original.thumbnailPath}
               type="Material"
             />
-            <VStack spacing={0}>
-              <Hyperlink to={path.to.material(row.original.itemId!)}>
+            <Hyperlink to={path.to.material(row.original.itemId!)}>
+              <VStack spacing={0}>
                 {row.original.id}
-              </Hyperlink>
-              <div className="w-full truncate text-muted-foreground text-xs">
-                {row.original.name}
-              </div>
-            </VStack>
+                <div className="w-full truncate text-muted-foreground text-xs">
+                  {row.original.name}
+                </div>
+              </VStack>
+            </Hyperlink>
           </HStack>
         ),
         meta: {

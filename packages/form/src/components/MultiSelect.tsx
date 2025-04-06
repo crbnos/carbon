@@ -8,6 +8,7 @@ import {
 } from "@carbon/react";
 
 import { useControlField, useField } from "../hooks";
+import { useEffect } from "react";
 
 export type MultiSelectProps = Omit<
   MultiSelectBaseProps,
@@ -16,6 +17,7 @@ export type MultiSelectProps = Omit<
   name: string;
   label?: string;
   helperText?: string;
+  value?: string[];
   onChange?: (newValue: { value: string; label: string }[]) => void;
 };
 
@@ -27,6 +29,11 @@ const MultiSelect = ({
 }: MultiSelectProps) => {
   const { error } = useField(name);
   const [value, setValue] = useControlField<string[]>(name);
+
+  useEffect(() => {
+    if (props.value !== null && props.value !== undefined)
+      setValue(props.value);
+  }, [props.value, setValue]);
 
   const onChange = (value: string[]) => {
     props?.onChange?.(props.options.filter((o) => value.includes(o.value)));

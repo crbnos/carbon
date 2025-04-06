@@ -81,14 +81,14 @@ const ConsumablesTable = memo(
                 thumbnailPath={row.original.thumbnailPath}
                 type="Consumable"
               />
-              <VStack spacing={0}>
-                <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
+              <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
+                <VStack spacing={0}>
                   {row.original.id}
-                </Hyperlink>
-                <div className="w-full truncate text-muted-foreground text-xs">
-                  {row.original.name}
-                </div>
-              </VStack>
+                  <div className="w-full truncate text-muted-foreground text-xs">
+                    {row.original.name}
+                  </div>
+                </VStack>
+              </Hyperlink>
             </HStack>
           ),
           meta: {

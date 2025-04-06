@@ -25,10 +25,14 @@ import { useState } from "react";
 import { useCarbon } from "@carbon/auth";
 import { nanoid } from "nanoid";
 import { getPrivateUrl, path } from "~/utils/path";
-import { getPriorityIcon } from "../NonConformance/NonConformancePriority";
+import { getPriorityIcon } from "../NonConformance/NonConformanceIcons";
+import type { ListItem } from "~/types";
+import type { NonConformanceWorkflow } from "../../types";
 
 type NonConformanceWorkflowFormProps = {
   initialValues: z.infer<typeof nonConformanceWorkflowValidator>;
+  nonConformanceWorkflows: NonConformanceWorkflow[];
+  nonConformanceTypes: ListItem[];
   onClose: () => void;
 };
 
