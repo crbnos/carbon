@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -8,6 +8,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import {
+  deleteNonConformance,
   getNonConformanceTypesList,
   getNonConformanceWorkflowsList,
   nonConformanceValidator,
@@ -43,10 +44,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "quality",
-    bypassRls: true,
   });
+
+  const serviceRole = await getCarbonServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(nonConformanceValidator).validate(
@@ -58,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const nextSequence = await getNextSequence(
-    client,
+    serviceRole,
     "nonConformance",
     companyId
   );
@@ -74,7 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...nonConformance } = validation.data;
 
-  const createNonConformance = await upsertNonConformance(client, {
+  const createNonConformance = await upsertNonConformance(serviceRole, {
     ...nonConformance,
     nonConformanceId: nextSequence.data,
     companyId,
@@ -93,7 +95,29 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const ncrId = createNonConformance.data?.id;
+  if (!ncrId) {
+    throw redirect(
+      path.to.nonConformances,
+      await flash(request, error("Failed to insert non-conformance"))
+    );
+  }
 
+  const tasks = await serviceRole.functions.invoke("create", {
+    body: {
+      type: "nonConformanceTasks",
+      id: ncrId,
+      companyId,
+      userId,
+    },
+  });
+
+  if (tasks.error) {
+    await deleteNonConformance(serviceRole, ncrId);
+    throw redirect(
+      path.to.nonConformance(ncrId!),
+      await flash(request, error("Failed to create tasks"))
+    );
+  }
   throw redirect(path.to.nonConformance(ncrId!));
 }
 

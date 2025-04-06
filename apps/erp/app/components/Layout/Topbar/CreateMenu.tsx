@@ -11,6 +11,7 @@ import { Link } from "@remix-run/react";
 import {
   LuContainer,
   LuHardHat,
+  LuShieldX,
   LuShoppingCart,
   LuSquarePen,
   LuSquareStack,
@@ -39,6 +40,14 @@ function useCreate(): Route[] {
         name: "Part",
         to: path.to.newPart,
         icon: <LuSquareStack />,
+      });
+    }
+
+    if (permissions.can("create", "quality")) {
+      links.push({
+        name: "Non-Conformance",
+        to: path.to.newNonConformance,
+        icon: <LuShieldX />,
       });
     }
 

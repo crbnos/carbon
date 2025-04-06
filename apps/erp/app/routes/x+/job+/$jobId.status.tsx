@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             userId,
           },
         }),
-        serviceRole.functions.invoke("create-inventory-document", {
+        serviceRole.functions.invoke("create", {
           body: {
             type: "purchaseOrderFromJob",
             jobId: id,

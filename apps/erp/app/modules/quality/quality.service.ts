@@ -66,7 +66,7 @@ export async function getNonConformances(
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true },
+      { column: "name", ascending: false },
     ]);
   }
 

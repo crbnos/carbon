@@ -30,7 +30,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     case "Sales Order":
       const salesOrderShipment = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-inventory-document", {
+      }>("create", {
         body: {
           type: "shipmentFromSalesOrder",
           companyId,
@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     case "Purchase Order":
       const purchaseOrderShipment = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-inventory-document", {
+      }>("create", {
         body: {
           type: "shipmentFromPurchaseOrder",
           companyId,
@@ -78,7 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     default:
       const defaultShipment = await serviceRole.functions.invoke<{
         id: string;
-      }>("create-inventory-document", {
+      }>("create", {
         body: {
           type: "shipmentDefault",
           companyId,

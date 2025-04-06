@@ -43,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const salesOrderShipment = await serviceRole.functions.invoke<{
     id: string;
-  }>("create-inventory-document", {
+  }>("create", {
     body: {
       type: "shipmentFromSalesOrderLine",
       locationId: salesOrderLine.data.locationId,

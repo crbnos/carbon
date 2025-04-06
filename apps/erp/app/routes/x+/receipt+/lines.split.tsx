@@ -43,7 +43,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const salesOrderShipment = await serviceRole.functions.invoke<{
     id: string;
-  }>("create-inventory-document", {
+  }>("create", {
     body: {
       type: "receiptLineSplit",
       companyId,

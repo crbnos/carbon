@@ -65,7 +65,7 @@ export async function action({ request }: ActionFunctionArgs) {
       case "Sales Order":
         const salesOrderShipment = await serviceRole.functions.invoke<{
           id: string;
-        }>("create-inventory-document", {
+        }>("create", {
           body: {
             type: "shipmentFromSalesOrder",
             companyId,
@@ -88,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
       case "Purchase Order":
         const purchaseOrderShipment = await serviceRole.functions.invoke<{
           id: string;
-        }>("create-inventory-document", {
+        }>("create", {
           body: {
             type: "shipmentFromPurchaseOrder",
             companyId,
