@@ -15,6 +15,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Checkbox,
   Count,
   DropdownMenu,
   DropdownMenuContent,
@@ -39,10 +40,10 @@ import {
   TooltipTrigger,
   VStack,
   cn,
+  toast,
   useDebounce,
   useDisclosure,
   useMount,
-  Checkbox,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
 import {
@@ -67,8 +68,8 @@ import {
   LuHammer,
   LuInfo,
   LuMaximize2,
-  LuPaperclip,
   LuMinimize2,
+  LuPaperclip,
   LuRefreshCcw,
   LuSend,
   LuSettings2,
@@ -122,10 +123,17 @@ import {
 
 import type { action as editJobOperationAttributeAction } from "~/routes/x+/job+/methods+/operation.attribute.$id";
 import type { action as editJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.$id";
-import type { action as editJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.$id";
 import type { action as newJobOperationParameterAction } from "~/routes/x+/job+/methods+/operation.parameter.new";
+import type { action as editJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.$id";
 import type { action as newJobOperationToolAction } from "~/routes/x+/job+/methods+/operation.tool.new";
 
+import { useNumberFormatter } from "@react-aria/i18n";
+import Procedure from "~/components/Form/Procedure";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
+import UnitOfMeasure, {
+  useUnitOfMeasure,
+} from "~/components/Form/UnitOfMeasure";
+import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { usePeople, useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
@@ -135,14 +143,7 @@ import {
 } from "../../production.models";
 import { getProductionEventsPage } from "../../production.service";
 import type { Job, JobOperation } from "../../types";
-import UnitOfMeasure, {
-  useUnitOfMeasure,
-} from "~/components/Form/UnitOfMeasure";
 import { JobOperationStatus, JobOperationTags } from "./JobOperationStatus";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
-import Procedure from "~/components/Form/Procedure";
-import { useNumberFormatter } from "@react-aria/i18n";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 
 export type Operation = z.infer<typeof jobOperationValidator> & {
   assignee: string | null;
@@ -773,7 +774,7 @@ const JobBillOfProcess = ({
         disabled: item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
-            <span>Attributes</span>
+            <span>Steps</span>
             {attributes.length > 0 && <Count count={attributes.length} />}
           </span>
         ),
@@ -990,7 +991,6 @@ export default JobBillOfProcess;
 function isTemporaryId(id: string) {
   return id.length < 20;
 }
-
 function AttributesForm({
   operationId,
   isDisabled,
@@ -1001,7 +1001,8 @@ function AttributesForm({
   attributes: JobOperationAttribute[];
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
-  const [type, setType] = useState<OperationAttribute["type"]>("Value");
+  const [type, setType] = useState<OperationAttribute["type"]>("Task");
+  const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
   const typeOptions = useMemo(
     () =>
@@ -1017,6 +1018,29 @@ function AttributesForm({
     []
   );
 
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
   if (isDisabled && isTemporaryId(operationId)) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
@@ -1030,8 +1054,11 @@ function AttributesForm({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg">
+    <Loading
+      className="flex flex-col gap-6"
+      isLoading={fetcher.state !== "idle"}
+    >
+      <div className="p-6 border rounded-lg mb-6">
         <ValidatedForm
           action={path.to.newJobOperationAttribute}
           method="post"
@@ -1042,7 +1069,7 @@ function AttributesForm({
             id: undefined,
             name: "",
             description: "",
-            type: "Value",
+            type: "Task",
             unitOfMeasureCode: "",
             minValue: 0,
             maxValue: 0,
@@ -1061,6 +1088,7 @@ function AttributesForm({
         >
           <Hidden name="operationId" />
           <Hidden name="sortOrder" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -1076,6 +1104,18 @@ function AttributesForm({
               />
               <Input name="name" label="Name" />
             </div>
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
 
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -1131,14 +1171,14 @@ function AttributesForm({
               isDisabled={isDisabled || fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >
-              Add Attribute
+              Add Step
             </Submit>
           </VStack>
         </ValidatedForm>
       </div>
 
       {attributes.length > 0 && (
-        <div className="border rounded-lg">
+        <div className="border rounded-lg ">
           {[...attributes]
             .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .map((a, index) => (
@@ -1152,7 +1192,7 @@ function AttributesForm({
             ))}
         </div>
       )}
-    </div>
+    </Loading>
   );
 }
 
@@ -1183,6 +1223,13 @@ function AttributesListItem({
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
   const fetcher = useFetcher<typeof editJobOperationAttributeAction>();
+  const [description, setDescription] = useState<JSONContent>(() => {
+    try {
+      return attribute.description ? JSON.parse(attribute.description) : {};
+    } catch (e) {
+      return {};
+    }
+  });
 
   useEffect(() => {
     if (submitted.current && fetcher.state === "idle") {
@@ -1211,6 +1258,28 @@ function AttributesListItem({
   const date = updatedAt ?? createdAt;
 
   const unitOfMeasures = useUnitOfMeasure();
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
 
   if (!id) return null;
 
@@ -1233,6 +1302,7 @@ function AttributesListItem({
           className="w-full"
         >
           <Hidden name="operationId" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -1247,7 +1317,19 @@ function AttributesListItem({
               />
               <Input name="name" label="Name" />
             </div>
-            <Input name="description" label="Description" />
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
+
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <UnitOfMeasure

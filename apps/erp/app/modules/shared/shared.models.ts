@@ -71,6 +71,7 @@ export const noteValidator = z.object({
 export const operationTypes = ["Inside", "Outside"] as const;
 
 export const procedureAttributeType = [
+  "Task",
   "Value",
   "Measurement",
   "Checkbox",
@@ -97,7 +98,16 @@ export const operationAttributeValidator = z
     id: zfd.text(z.string().optional()),
     operationId: z.string().min(1, { message: "Operation is required" }),
     name: z.string().min(1, { message: "Name is required" }),
-    description: zfd.text(z.string().optional()),
+    description: z
+      .string()
+      .min(1, { message: "Description is required" })
+      .transform((val) => {
+        try {
+          return JSON.parse(val);
+        } catch (e) {
+          return {};
+        }
+      }),
     type: z.enum(procedureAttributeType, {
       errorMap: () => ({ message: "Type is required" }),
     }),

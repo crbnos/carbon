@@ -21,6 +21,7 @@ import {
   HStack,
   IconButton,
   Label,
+  Loading,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -28,6 +29,7 @@ import {
   TooltipTrigger,
   VStack,
   cn,
+  toast,
   useDebounce,
   useDisclosure,
 } from "@carbon/react";
@@ -621,7 +623,7 @@ const QuoteBillOfProcess = ({
         disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
-            <span>Attributes</span>
+            <span>Steps</span>
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
@@ -831,8 +833,34 @@ function AttributesForm({
   attributes: OperationAttribute[];
 }) {
   const fetcher = useFetcher<typeof newQuoteOperationParameterAction>();
-  const [type, setType] = useState<OperationAttribute["type"]>("Value");
+  const [type, setType] = useState<OperationAttribute["type"]>("Task");
   const [numericControls, setNumericControls] = useState<string[]>([]);
+
+  const [description, setDescription] = useState<JSONContent>({});
+
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
   const typeOptions = useMemo(
     () =>
       procedureAttributeType.map((type) => ({
@@ -860,8 +888,12 @@ function AttributesForm({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg">
+    <Loading
+      className="flex flex-col gap-6"
+      isLoading={fetcher.state !== "idle"}
+      // this is a hack to re-render the editor component when the form is submitted with the default values
+    >
+      <div className="p-6 border rounded-lg mb-6">
         <ValidatedForm
           action={path.to.newQuoteOperationAttribute}
           method="post"
@@ -872,7 +904,7 @@ function AttributesForm({
             id: undefined,
             name: "",
             description: "",
-            type: "Value",
+            type: "Task",
             unitOfMeasureCode: "",
             minValue: 0,
             maxValue: 0,
@@ -886,11 +918,13 @@ function AttributesForm({
           }}
           onSubmit={() => {
             setType("Value");
+            setDescription([]);
           }}
           className="w-full"
         >
           <Hidden name="operationId" />
           <Hidden name="sortOrder" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -906,6 +940,18 @@ function AttributesForm({
               />
               <Input name="name" label="Name" />
             </div>
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
 
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -961,7 +1007,7 @@ function AttributesForm({
               isDisabled={isDisabled || fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >
-              Add Attribute
+              Add Step
             </Submit>
           </VStack>
         </ValidatedForm>
@@ -982,7 +1028,7 @@ function AttributesForm({
             ))}
         </div>
       )}
-    </div>
+    </Loading>
   );
 }
 
@@ -1023,6 +1069,7 @@ function AttributesListItem({
   }, [fetcher.state]);
 
   const [type, setType] = useState<OperationAttribute["type"]>(attribute.type);
+
   const [numericControls, setNumericControls] = useState<string[]>(() => {
     const controls = [];
     if (type === "Measurement") {
@@ -1042,6 +1089,33 @@ function AttributesListItem({
 
   const unitOfMeasures = useUnitOfMeasure();
 
+  const [description, setDescription] = useState<JSONContent>(
+    attribute.description ?? {}
+  );
+
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
   if (!id) return null;
 
   return (
@@ -1055,6 +1129,8 @@ function AttributesListItem({
           resetAfterSubmit
           onSubmit={() => {
             disclosure.onClose();
+            setType("Task");
+            setDescription({});
           }}
           defaultValues={{
             ...attribute,
@@ -1063,6 +1139,7 @@ function AttributesListItem({
           className="w-full"
         >
           <Hidden name="operationId" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -1077,7 +1154,19 @@ function AttributesListItem({
               />
               <Input name="name" label="Name" />
             </div>
-            <Input name="description" label="Description" />
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
+
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <UnitOfMeasure
@@ -1157,9 +1246,12 @@ function AttributesListItem({
                         <LuInfo className="text-muted-foreground size-3" />
                       </TooltipTrigger>
                       <TooltipContent side="right">
-                        <p className="text-foreground text-sm">
-                          {attribute.description}
-                        </p>
+                        <p
+                          className="prose prose-sm dark:prose-invert text-foreground text-sm"
+                          dangerouslySetInnerHTML={{
+                            __html: generateHTML(attribute.description),
+                          }}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   )}

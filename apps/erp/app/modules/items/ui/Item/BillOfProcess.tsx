@@ -21,6 +21,7 @@ import {
   HStack,
   IconButton,
   Label,
+  Loading,
   ToggleGroup,
   ToggleGroupItem,
   Tooltip,
@@ -28,6 +29,7 @@ import {
   TooltipTrigger,
   VStack,
   cn,
+  toast,
   useDebounce,
   useDisclosure,
   useThrottle,
@@ -48,13 +50,13 @@ import {
   LuHammer,
   LuInfo,
   LuList,
-  LuMinimize2,
   LuMaximize2,
+  LuMinimize2,
   LuSettings2,
   LuSquareFunction,
   LuTriangleAlert,
-  LuX,
   LuWaypoints,
+  LuX,
 } from "react-icons/lu";
 import { z } from "zod";
 import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
@@ -104,18 +106,18 @@ import {
 
 import type { action as editMethodOperationAttributeAction } from "~/routes/x+/items+/methods+/operation.attribute.$id";
 import type { action as editMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.$id";
+import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
 import type { action as editMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.$id";
 import type { action as newMethodOperationToolAction } from "~/routes/x+/items+/methods+/operation.tool.new";
-import type { action as newMethodOperationParameterAction } from "~/routes/x+/items+/methods+/operation.parameter.new";
 
+import Procedure from "~/components/Form/Procedure";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
+import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
 import type { ConfigurationParameter, ConfigurationRule } from "../../types";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
-import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -550,7 +552,7 @@ const BillOfProcess = ({
         disabled: hasProcedure || item.data.operationType === "Outside",
         label: (
           <span className="flex items-center gap-2">
-            <span>Attributes</span>
+            <span>Steps</span>
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
@@ -1653,7 +1655,8 @@ function AttributesForm({
   onConfigure?: (c: Configuration) => void;
 }) {
   const fetcher = useFetcher<typeof newMethodOperationParameterAction>();
-  const [type, setType] = useState<OperationAttribute["type"]>("Value");
+  const [type, setType] = useState<OperationAttribute["type"]>("Task");
+  const [description, setDescription] = useState<JSONContent>({});
   const [numericControls, setNumericControls] = useState<string[]>([]);
   const typeOptions = useMemo(
     () =>
@@ -1669,6 +1672,29 @@ function AttributesForm({
     []
   );
 
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
   if (isDisabled && isTemporaryId(operationId)) {
     return (
       <Alert className="max-w-[420px] mx-auto my-8">
@@ -1682,8 +1708,12 @@ function AttributesForm({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg">
+    <Loading
+      className="flex flex-col gap-6"
+      isLoading={fetcher.state !== "idle"}
+      // this is a hack to re-render the editor component when the form is submitted with the default values
+    >
+      <div className="p-6 border rounded-lg mb-6">
         <ValidatedForm
           action={path.to.newMethodOperationAttribute}
           method="post"
@@ -1693,8 +1723,8 @@ function AttributesForm({
           defaultValues={{
             id: undefined,
             name: "",
-            description: "",
-            type: "Value",
+            description: {},
+            type: "Task",
             unitOfMeasureCode: "",
             minValue: 0,
             maxValue: 0,
@@ -1707,12 +1737,14 @@ function AttributesForm({
             operationId,
           }}
           onSubmit={() => {
-            setType("Value");
+            setType("Task");
+            setDescription({});
           }}
           className="w-full"
         >
           <Hidden name="operationId" />
           <Hidden name="sortOrder" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -1728,6 +1760,18 @@ function AttributesForm({
               />
               <Input name="name" label="Name" />
             </div>
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
 
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
@@ -1783,7 +1827,7 @@ function AttributesForm({
               isDisabled={isDisabled || fetcher.state !== "idle"}
               isLoading={fetcher.state !== "idle"}
             >
-              Add Attribute
+              Add Step
             </Submit>
           </VStack>
         </ValidatedForm>
@@ -1807,7 +1851,7 @@ function AttributesForm({
             ))}
         </div>
       )}
-    </div>
+    </Loading>
   );
 }
 
@@ -1872,6 +1916,32 @@ function AttributesListItem({
   const date = updatedAt ?? createdAt;
 
   const unitOfMeasures = useUnitOfMeasure();
+  const [description, setDescription] = useState<JSONContent>(
+    attribute.description ?? {}
+  );
+
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
+
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
 
   if (!id) return null;
 
@@ -1900,6 +1970,7 @@ function AttributesListItem({
           className="w-full"
         >
           <Hidden name="operationId" />
+          <Hidden name="description" value={JSON.stringify(description)} />
           <VStack spacing={4}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
               <SelectControlled
@@ -1914,7 +1985,19 @@ function AttributesListItem({
               />
               <Input name="name" label="Name" />
             </div>
-            <Input name="description" label="Description" />
+
+            <VStack spacing={2} className="w-full col-span-2">
+              <Label>Description</Label>
+              <Editor
+                initialValue={description}
+                onUpload={onUploadImage}
+                onChange={(value) => {
+                  setDescription(value);
+                }}
+                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+              />
+            </VStack>
+
             {type === "Measurement" && (
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
                 <UnitOfMeasure
@@ -2046,9 +2129,12 @@ function AttributesListItem({
                         <LuInfo className="text-muted-foreground size-3" />
                       </TooltipTrigger>
                       <TooltipContent side="right">
-                        <p className="text-foreground text-sm">
-                          {attribute.description}
-                        </p>
+                        <p
+                          className="prose prose-sm dark:prose-invert text-foreground text-sm"
+                          dangerouslySetInnerHTML={{
+                            __html: generateHTML(attribute.description),
+                          }}
+                        />
                       </TooltipContent>
                     </Tooltip>
                   )}

@@ -9,6 +9,7 @@ import {
   LuCircle,
   LuCircleCheck,
   LuCircleX,
+  LuClipboardCheck,
   LuClock,
   LuClock3,
   LuExternalLink,
@@ -185,6 +186,8 @@ export const ProcedureAttributeTypeIcon = ({
   className?: string;
 }) => {
   switch (type) {
+    case "Task":
+      return <LuClipboardCheck className={cn("text-amber-500", className)} />;
     case "Value":
       return <LuQrCode className={cn("text-foreground", className)} />;
     case "Measurement":

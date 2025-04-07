@@ -1,15 +1,17 @@
-import { cn } from "@carbon/react";
 import type { Database } from "@carbon/database";
+import { cn } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
   LuAtom,
   LuBarcode,
+  LuBox,
   LuCircleCheck,
   LuCircleX,
+  LuClipboardCheck,
   LuClock,
-  LuGroup,
   LuFlaskConical,
+  LuGroup,
   LuHammer,
   LuHeadphones,
   LuImage,
@@ -20,7 +22,6 @@ import {
   LuSquare,
   LuToggleLeft,
   LuUser,
-  LuBox,
 } from "react-icons/lu";
 
 import {
@@ -213,6 +214,8 @@ export const ProcedureAttributeTypeIcon = ({
   className?: string;
 }) => {
   switch (type) {
+    case "Task":
+      return <LuClipboardCheck className={cn("text-amber-500", className)} />;
     case "Value":
       return <LuQrCode className={cn("text-foreground", className)} />;
     case "Measurement":

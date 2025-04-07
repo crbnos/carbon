@@ -159,6 +159,7 @@ import {
   LuCheck,
   LuChevronDown,
   LuChevronLeft,
+  LuChevronRight,
   LuChevronUp,
   LuCircleCheck,
   LuCirclePlus,
@@ -566,6 +567,106 @@ export const JobOperation = ({
               </div>
             </div>
 
+            <Suspense key={`attributes-${operationId}`}>
+              <Await resolve={procedure}>
+                {(resolvedProcedure) => {
+                  const { attributes, parameters } = resolvedProcedure;
+
+                  return (
+                    <>
+                      {attributes.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="flex flex-col items-start justify-between w-full">
+                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                              <HStack className="justify-between w-full">
+                                <Heading size="h3">Steps</Heading>
+                                <div className="flex items-center gap-2">
+                                  {attributes.length > 0 && (
+                                    <>
+                                      <Progress
+                                        value={
+                                          (attributes.filter(
+                                            (a) => a.jobOperationAttributeRecord
+                                          ).length /
+                                            attributes.length) *
+                                          100
+                                        }
+                                        className="h-2 w-24"
+                                      />
+                                      <span className="text-xs text-muted-foreground">
+                                        {
+                                          attributes.filter(
+                                            (a) => a.jobOperationAttributeRecord
+                                          ).length
+                                        }{" "}
+                                        of {attributes.length} complete
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </HStack>
+                              <div className="border rounded-lg">
+                                {attributes
+                                  .sort(
+                                    (a, b) =>
+                                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+                                  )
+                                  .map((a, index) => (
+                                    <AttributesListItem
+                                      key={`attribute-${a.id}`}
+                                      attribute={a}
+                                      onRecord={onRecordAttributeRecord}
+                                      onDelete={onDeleteAttributeRecord}
+                                      operationId={operationId}
+                                      className={
+                                        index === attributes.length - 1
+                                          ? "border-none"
+                                          : ""
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {parameters.length > 0 && (
+                        <>
+                          <Separator />
+                          <div className="flex flex-col items-start justify-between w-full">
+                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                              <HStack className="justify-between w-full">
+                                <Heading size="h3">Process Parameters</Heading>
+                              </HStack>
+                              <div className="border rounded-lg">
+                                {parameters
+                                  .sort((a, b) =>
+                                    (a.key ?? "").localeCompare(b.key ?? "")
+                                  )
+                                  .map((p, index) => (
+                                    <ParametersListItem
+                                      key={`parameter-${p.id}`}
+                                      parameter={p}
+                                      operationId={operationId}
+                                      className={
+                                        index === parameters.length - 1
+                                          ? "border-none"
+                                          : ""
+                                      }
+                                    />
+                                  ))}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                }}
+              </Await>
+            </Suspense>
+
             <Separator />
             <div className="flex flex-col items-start justify-between w-full">
               <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
@@ -776,82 +877,6 @@ export const JobOperation = ({
                 </Suspense>
               </div>
             </div>
-
-            <Suspense key={`attributes-${operationId}`}>
-              <Await resolve={procedure}>
-                {(resolvedProcedure) => {
-                  const { attributes, parameters } = resolvedProcedure;
-
-                  return (
-                    <>
-                      {attributes.length > 0 && (
-                        <>
-                          <Separator />
-                          <div className="flex flex-col items-start justify-between w-full">
-                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                              <HStack className="justify-between w-full">
-                                <Heading size="h3">Quality Attributes</Heading>
-                              </HStack>
-                              <div className="border rounded-lg">
-                                {attributes
-                                  .sort(
-                                    (a, b) =>
-                                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                                  )
-                                  .map((a, index) => (
-                                    <AttributesListItem
-                                      key={`attribute-${a.id}`}
-                                      attribute={a}
-                                      onRecord={onRecordAttributeRecord}
-                                      onDelete={onDeleteAttributeRecord}
-                                      operationId={operationId}
-                                      className={
-                                        index === attributes.length - 1
-                                          ? "border-none"
-                                          : ""
-                                      }
-                                    />
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {parameters.length > 0 && (
-                        <>
-                          <Separator />
-                          <div className="flex flex-col items-start justify-between w-full">
-                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                              <HStack className="justify-between w-full">
-                                <Heading size="h3">Process Parameters</Heading>
-                              </HStack>
-                              <div className="border rounded-lg">
-                                {parameters
-                                  .sort((a, b) =>
-                                    (a.key ?? "").localeCompare(b.key ?? "")
-                                  )
-                                  .map((p, index) => (
-                                    <ParametersListItem
-                                      key={`parameter-${p.id}`}
-                                      parameter={p}
-                                      operationId={operationId}
-                                      className={
-                                        index === parameters.length - 1
-                                          ? "border-none"
-                                          : ""
-                                      }
-                                    />
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  );
-                }}
-              </Await>
-            </Suspense>
 
             <Separator />
             <div className="flex flex-col items-start justify-between w-full">
@@ -1139,9 +1164,7 @@ export const JobOperation = ({
                       >
                         <div className="w-full py-2 px-4 sticky top-0 z-10">
                           <TabsList className="w-full grid grid-cols-2">
-                            <TabsTrigger value="attributes">
-                              Attributes
-                            </TabsTrigger>
+                            <TabsTrigger value="attributes">Steps</TabsTrigger>
                             <TabsTrigger value="parameters">
                               Parameters
                             </TabsTrigger>
@@ -4004,7 +4027,6 @@ function IssueModal({
     </Modal>
   );
 }
-
 function AttributesListItem({
   attribute,
   compact = false,
@@ -4020,9 +4042,13 @@ function AttributesListItem({
   onRecord: (attribute: JobOperationAttribute) => void;
   onDelete: (attribute: JobOperationAttribute) => void;
 }) {
+  const disclosure = useDisclosure();
+  const fetcher = useFetcher<{ success: boolean }>();
   const user = useUser();
   const { name, description, type, unitOfMeasureCode, minValue, maxValue } =
     attribute;
+
+  const hasDescription = description && Object.keys(description).length > 0;
 
   if (!operationId) return null;
 
@@ -4039,11 +4065,6 @@ function AttributesListItem({
                 <span className="text-foreground text-sm font-medium">
                   {name}
                 </span>
-                {description && (
-                  <span className="text-muted-foreground text-sm">
-                    {description}
-                  </span>
-                )}
               </HStack>
               {type === "Measurement" && (
                 <span className="text-xs text-muted-foreground">
@@ -4063,41 +4084,42 @@ function AttributesListItem({
         <div className="flex items-center justify-end gap-2">
           {attribute.jobOperationAttributeRecord ? (
             <div className="flex items-center gap-2">
-              {compact ? (
-                <IconButton
-                  aria-label="Update attribute"
-                  variant="secondary"
-                  icon={<LuCircleCheck />}
-                  isDisabled={
-                    attribute.jobOperationAttributeRecord?.createdBy !==
-                    user?.id
-                  }
-                  onClick={() => onRecord(attribute)}
-                  className={cn(
-                    "text-emerald-500",
-                    attribute.minValue !== null &&
-                      attribute.jobOperationAttributeRecord?.numericValue !=
-                        null &&
-                      attribute.jobOperationAttributeRecord.numericValue <
-                        attribute.minValue &&
-                      "text-red-500",
-                    attribute.maxValue !== null &&
-                      attribute.jobOperationAttributeRecord?.numericValue !=
-                        null &&
-                      attribute.jobOperationAttributeRecord.numericValue >
-                        attribute.maxValue &&
-                      "text-red-500"
-                  )}
-                />
-              ) : (
-                <Button
-                  variant="secondary"
-                  rightIcon={<LuCircleCheck />}
-                  onClick={() => onRecord(attribute)}
-                >
-                  Update
-                </Button>
-              )}
+              {type !== "Task" &&
+                (compact ? (
+                  <IconButton
+                    aria-label="Update attribute"
+                    variant="secondary"
+                    icon={<LuCircleCheck />}
+                    isDisabled={
+                      attribute.jobOperationAttributeRecord?.createdBy !==
+                      user?.id
+                    }
+                    onClick={() => onRecord(attribute)}
+                    className={cn(
+                      "text-emerald-500",
+                      attribute.minValue !== null &&
+                        attribute.jobOperationAttributeRecord?.numericValue !=
+                          null &&
+                        attribute.jobOperationAttributeRecord.numericValue <
+                          attribute.minValue &&
+                        "text-red-500",
+                      attribute.maxValue !== null &&
+                        attribute.jobOperationAttributeRecord?.numericValue !=
+                          null &&
+                        attribute.jobOperationAttributeRecord.numericValue >
+                          attribute.maxValue &&
+                        "text-red-500"
+                    )}
+                  />
+                ) : (
+                  <Button
+                    variant="secondary"
+                    rightIcon={<LuCircleCheck />}
+                    onClick={() => onRecord(attribute)}
+                  >
+                    Update
+                  </Button>
+                ))}
               <IconButton
                 aria-label="Delete attribute"
                 variant="secondary"
@@ -4106,6 +4128,36 @@ function AttributesListItem({
                 onClick={() => onDelete(attribute)}
               />
             </div>
+          ) : type === "Task" ? (
+            <fetcher.Form method="post" action={path.to.record}>
+              <input
+                type="hidden"
+                name="jobOperationAttributeId"
+                value={attribute.id}
+              />
+
+              <input type="hidden" name="booleanValue" value="true" />
+              {compact ? (
+                <IconButton
+                  aria-label="Record attribute"
+                  variant="secondary"
+                  icon={<LuCircleCheck />}
+                  type="submit"
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle"}
+                />
+              ) : (
+                <Button
+                  type="submit"
+                  variant="secondary"
+                  rightIcon={<LuCircleCheck />}
+                  isLoading={fetcher.state !== "idle"}
+                  isDisabled={fetcher.state !== "idle"}
+                >
+                  Complete
+                </Button>
+              )}
+            </fetcher.Form>
           ) : compact ? (
             <IconButton
               aria-label="Record attribute"
@@ -4122,8 +4174,26 @@ function AttributesListItem({
               Record
             </Button>
           )}
+          {hasDescription && (
+            <IconButton
+              aria-label={
+                disclosure.isOpen ? "Hide description" : "Show description"
+              }
+              variant="ghost"
+              icon={disclosure.isOpen ? <LuChevronDown /> : <LuChevronRight />}
+              onClick={disclosure.onToggle}
+            />
+          )}
         </div>
       </div>
+      {disclosure.isOpen && hasDescription && (
+        <div
+          className="mt-4 text-sm prose prose-sm dark:prose-invert"
+          dangerouslySetInnerHTML={{
+            __html: generateHTML(description as JSONContent),
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -4139,6 +4209,11 @@ function PreviewAttributeRecord({
   if (!attribute.jobOperationAttributeRecord) return null;
   return (
     <div className="min-w-[200px] truncate text-right font-medium">
+      {attribute.type === "Task" && (
+        <Checkbox
+          checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
+        />
+      )}
       {attribute.type === "Checkbox" && (
         <Checkbox
           checked={attribute.jobOperationAttributeRecord.booleanValue ?? false}
@@ -4320,7 +4395,6 @@ function RecordModal({
         >
           <ModalHeader>
             <ModalTitle>{attribute.name}</ModalTitle>
-            <ModalDescription>{attribute.description}</ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="jobOperationAttributeId" />
@@ -4334,6 +4408,14 @@ function RecordModal({
               <Hidden name="value" value={filePath ?? ""} />
             )}
             <VStack spacing={4}>
+              {attribute.description && (
+                <div
+                  className="flex flex-col gap-2"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(attribute.description as JSONContent),
+                  }}
+                />
+              )}
               {attribute.type === "Value" && (
                 <InputField name="value" label="" />
               )}

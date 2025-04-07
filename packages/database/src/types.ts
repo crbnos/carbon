@@ -8972,7 +8972,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -8991,7 +8991,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -9010,7 +9010,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11150,7 +11150,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -11169,7 +11169,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11188,7 +11188,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11702,6 +11702,7 @@ export type Database = {
           assignee: string | null
           closeDate: string | null
           companyId: string | null
+          content: Json
           createdAt: string
           createdBy: string
           customerId: string | null
@@ -11746,6 +11747,7 @@ export type Database = {
           assignee?: string | null
           closeDate?: string | null
           companyId?: string | null
+          content?: Json
           createdAt?: string
           createdBy: string
           customerId?: string | null
@@ -11792,6 +11794,7 @@ export type Database = {
           assignee?: string | null
           closeDate?: string | null
           companyId?: string | null
+          content?: Json
           createdAt?: string
           createdBy?: string
           customerId?: string | null
@@ -12173,7 +12176,7 @@ export type Database = {
       nonConformanceActionTask: {
         Row: {
           actionType: Database["public"]["Enums"]["nonConformanceAction"] | null
-          assigneeId: string | null
+          assignee: string | null
           completedDate: string | null
           createdAt: string
           createdBy: string
@@ -12190,7 +12193,7 @@ export type Database = {
           actionType?:
             | Database["public"]["Enums"]["nonConformanceAction"]
             | null
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy: string
@@ -12207,7 +12210,7 @@ export type Database = {
           actionType?:
             | Database["public"]["Enums"]["nonConformanceAction"]
             | null
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy?: string
@@ -12222,36 +12225,36 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceActionTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceActionTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -12340,7 +12343,7 @@ export type Database = {
           approvalType:
             | Database["public"]["Enums"]["nonConformanceApproval"]
             | null
-          assigneeId: string | null
+          assignee: string | null
           completedDate: string | null
           createdAt: string
           createdBy: string
@@ -12357,7 +12360,7 @@ export type Database = {
           approvalType?:
             | Database["public"]["Enums"]["nonConformanceApproval"]
             | null
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy: string
@@ -12374,7 +12377,7 @@ export type Database = {
           approvalType?:
             | Database["public"]["Enums"]["nonConformanceApproval"]
             | null
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy?: string
@@ -12389,36 +12392,36 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceApprovalTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceApprovalTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceApprovalTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceApprovalTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceApprovalTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceApprovalTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -12504,7 +12507,7 @@ export type Database = {
       }
       nonConformanceInvestigationTask: {
         Row: {
-          assigneeId: string | null
+          assignee: string | null
           completedDate: string | null
           createdAt: string
           createdBy: string
@@ -12521,7 +12524,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy: string
@@ -12538,7 +12541,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
-          assigneeId?: string | null
+          assignee?: string | null
           completedDate?: string | null
           createdAt?: string
           createdBy?: string
@@ -12556,36 +12559,36 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceInvestigationTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceInvestigationTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceInvestigationTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceInvestigationTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceInvestigationTask_assigneeId_fkey"
-            columns: ["assigneeId"]
+            foreignKeyName: "nonConformanceInvestigationTask_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -12663,73 +12666,6 @@ export type Database = {
           {
             foreignKeyName: "nonConformanceInvestigationTask_updatedBy_fkey"
             columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
-      nonConformanceOwner: {
-        Row: {
-          createdAt: string
-          createdBy: string
-          id: string
-          nonConformanceId: string
-          ownerId: string
-        }
-        Insert: {
-          createdAt?: string
-          createdBy: string
-          id?: string
-          nonConformanceId: string
-          ownerId: string
-        }
-        Update: {
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          nonConformanceId?: string
-          ownerId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nonConformanceOwner_nonConformanceId_fkey"
-            columns: ["nonConformanceId"]
-            isOneToOne: false
-            referencedRelation: "nonConformance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceOwner_ownerId_fkey"
-            columns: ["ownerId"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceOwner_ownerId_fkey"
-            columns: ["ownerId"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceOwner_ownerId_fkey"
-            columns: ["ownerId"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceOwner_ownerId_fkey"
-            columns: ["ownerId"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceOwner_ownerId_fkey"
-            columns: ["ownerId"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -15200,7 +15136,7 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -15219,7 +15155,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -15238,7 +15174,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -20111,7 +20047,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -20130,7 +20066,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -20149,7 +20085,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -33366,14 +33302,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -35460,14 +35396,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -38721,6 +38657,7 @@ export type Database = {
         | "Person"
         | "List"
         | "File"
+        | "Task"
       procedureStatus: "Draft" | "Active" | "Archived"
       processType: "Inside" | "Outside" | "Inside and Outside"
       productionEventType: "Setup" | "Labor" | "Machine"

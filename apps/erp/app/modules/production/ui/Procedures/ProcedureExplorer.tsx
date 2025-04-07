@@ -1,3 +1,4 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Array as ArrayInput,
   Hidden,
@@ -5,73 +6,76 @@ import {
   Number,
   SelectControlled,
   Submit,
-  TextArea,
   ValidatedForm,
 } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import {
   Button,
-  HStack,
-  Kbd,
+  cn,
   Drawer,
   DrawerBody,
   DrawerContent,
-  DrawerTitle,
-  DrawerHeader,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  useDisclosure,
-  useKeyboardShortcuts,
-  VStack,
-  ToggleGroup,
-  ToggleGroupItem,
   DrawerFooter,
-  IconButton,
+  DrawerHeader,
+  DrawerTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  useDebounce,
-  cn,
+  HStack,
+  IconButton,
+  Kbd,
+  Label,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
+  toast,
+  ToggleGroup,
+  ToggleGroupItem,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useDebounce,
+  useDisclosure,
+  useKeyboardShortcuts,
+  VStack,
 } from "@carbon/react";
+import { Editor } from "@carbon/react/Editor";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useFetcher, useParams } from "@remix-run/react";
+import { Reorder } from "framer-motion";
+import { nanoid } from "nanoid";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   LuActivity,
   LuCirclePlus,
   LuEllipsisVertical,
   LuGripVertical,
-  LuInfo,
   LuMaximize2,
   LuMinimize2,
   LuPencil,
   LuTrash,
 } from "react-icons/lu";
+import type { z } from "zod";
 import { Empty } from "~/components";
-import { usePermissions, useRouteData } from "~/hooks";
-import { path } from "~/utils/path";
+import { UnitOfMeasure } from "~/components/Form";
+import { ProcedureAttributeTypeIcon } from "~/components/Icons";
+import { ConfirmDelete } from "~/components/Modals";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { procedureAttributeType } from "~/modules/shared";
+import { getPrivateUrl, path } from "~/utils/path";
+import {
+  procedureAttributeValidator,
+  procedureParameterValidator,
+} from "../../production.models";
 import type {
   Procedure,
   ProcedureAttribute,
   ProcedureParameter,
 } from "../../types";
-import { ConfirmDelete } from "~/components/Modals";
-import {
-  procedureAttributeValidator,
-  procedureParameterValidator,
-} from "../../production.models";
-import { ProcedureAttributeTypeIcon } from "~/components/Icons";
-import { UnitOfMeasure } from "~/components/Form";
-import type { z } from "zod";
-import { Reorder } from "framer-motion";
-import { flushSync } from "react-dom";
-import { procedureAttributeType } from "~/modules/shared";
 
 export default function ProcedureExplorer() {
   const { id } = useParams();
@@ -111,8 +115,8 @@ export default function ProcedureExplorer() {
     id: selectedAttribute?.id,
     procedureId: id,
     name: selectedAttribute?.name ?? "",
-    description: selectedAttribute?.description ?? "",
-    type: selectedAttribute?.type ?? "Measurement",
+    description: selectedAttribute?.description ?? {},
+    type: selectedAttribute?.type ?? "Task",
     sortOrder: selectedAttribute?.sortOrder ?? maxSortOrder + 1,
     unitOfMeasureCode: selectedAttribute?.unitOfMeasureCode ?? "",
     minValue: selectedAttribute ? selectedAttribute?.minValue ?? undefined : 0,
@@ -242,7 +246,7 @@ export default function ProcedureExplorer() {
         >
           <div className="w-full p-2">
             <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="attributes">Attributes</TabsTrigger>
+              <TabsTrigger value="attributes">Steps</TabsTrigger>
               <TabsTrigger value="parameters">Parameters</TabsTrigger>
             </TabsList>
           </div>
@@ -292,7 +296,7 @@ export default function ProcedureExplorer() {
                         procedureAttributeDisclosure.onOpen();
                       }}
                     >
-                      Add Attribute
+                      Add Step
                     </Button>
                   )}
                 </Empty>
@@ -316,12 +320,12 @@ export default function ProcedureExplorer() {
                       procedureAttributeDisclosure.onOpen();
                     }}
                   >
-                    Add Attribute
+                    Add Step
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
                   <HStack>
-                    <span>Add Attribute</span>
+                    <span>Add Step</span>
                     <Kbd>{prettifyKeyboardShortcut("Command+Shift+a")}</Kbd>
                   </HStack>
                 </TooltipContent>
@@ -402,6 +406,7 @@ export default function ProcedureExplorer() {
       </VStack>
       {procedureAttributeDisclosure.isOpen && (
         <ProcedureAttributeForm
+          // @ts-ignore
           initialValues={procedureAttribtueInitialValues}
           isDisabled={isDisabled}
           onClose={procedureAttributeDisclosure.onClose}
@@ -446,7 +451,6 @@ function ProcedureAttributeItem({
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const permissions = usePermissions();
-
   if (!attribute || !attribute.id || !attribute.name) return null;
 
   return (
@@ -478,18 +482,6 @@ function ProcedureAttributeItem({
           <VStack spacing={0} className="flex-grow">
             <HStack>
               <p className="text-foreground text-sm">{attribute.name}</p>
-              {attribute.description && (
-                <Tooltip>
-                  <TooltipTrigger>
-                    <LuInfo className="text-muted-foreground size-3" />
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p className="text-foreground text-sm">
-                      {attribute.description}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </HStack>
             {(attribute.minValue !== null || attribute.maxValue !== null) && (
               <p className="text-muted-foreground text-xs">
@@ -525,7 +517,7 @@ function ProcedureAttributeItem({
                 }}
               >
                 <DropdownMenuIcon icon={<LuPencil />} />
-                Edit Attribute
+                Edit Step
               </DropdownMenuItem>
               <DropdownMenuItem
                 destructive
@@ -634,7 +626,6 @@ function ProcedureParameterItem({
     </VStack>
   );
 }
-
 function ProcedureAttributeForm({
   initialValues,
   isDisabled,
@@ -650,6 +641,7 @@ function ProcedureAttributeForm({
   const [type, setType] = useState<ProcedureAttribute["type"]>(
     initialValues.type
   );
+
   const [numericControls, setNumericControls] = useState<string[]>(() => {
     const controls = [];
     if (initialValues.type === "Measurement") {
@@ -662,6 +654,30 @@ function ProcedureAttributeForm({
     }
     return controls;
   });
+
+  // Fix for JSON parsing error - safely parse description or use empty object
+  const [description, setDescription] = useState<JSONContent>(() => {
+    try {
+      // Handle both string and object cases
+      if (typeof initialValues.description === "string") {
+        return JSON.parse(initialValues.description || "{}") as JSONContent;
+      } else if (
+        initialValues.description &&
+        typeof initialValues.description === "object"
+      ) {
+        return initialValues.description as JSONContent;
+      }
+      return {} as JSONContent;
+    } catch (e) {
+      console.error("Error parsing description:", e);
+      return {} as JSONContent;
+    }
+  });
+
+  const { carbon } = useCarbon();
+  const {
+    company: { id: companyId },
+  } = useUser();
 
   const fetcher = useFetcher<{
     success: boolean;
@@ -689,6 +705,24 @@ function ProcedureAttributeForm({
 
   const isEditing = !!initialValues.id;
 
+  const onUploadImage = async (file: File) => {
+    const fileType = file.name.split(".").pop();
+    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+
+    const result = await carbon?.storage.from("private").upload(fileName, file);
+
+    if (result?.error) {
+      toast.error("Failed to upload image");
+      throw new Error(result.error.message);
+    }
+
+    if (!result?.data) {
+      throw new Error("Failed to upload image");
+    }
+
+    return getPrivateUrl(result.data.path);
+  };
+
   return (
     <Drawer
       open
@@ -712,14 +746,13 @@ function ProcedureAttributeForm({
           className="flex flex-col h-full"
         >
           <DrawerHeader>
-            <DrawerTitle>
-              {isEditing ? "Edit Attribute" : "Add Attribute"}
-            </DrawerTitle>
+            <DrawerTitle>{isEditing ? "Edit Step" : "Add Step"}</DrawerTitle>
           </DrawerHeader>
           <DrawerBody>
             <Hidden name="procedureId" />
             <Hidden name="sortOrder" />
             <Hidden name="id" />
+            <Hidden name="description" value={JSON.stringify(description)} />
             <VStack spacing={4}>
               <SelectControlled
                 name="type"
@@ -733,7 +766,17 @@ function ProcedureAttributeForm({
                 }}
               />
               <Input name="name" label="Name" />
-              <TextArea name="description" label="Description" />
+              <VStack spacing={2} className="w-full">
+                <Label>Description</Label>
+                <Editor
+                  initialValue={description}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setDescription(value);
+                  }}
+                  className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+                />
+              </VStack>
               {type === "Measurement" && (
                 <>
                   <UnitOfMeasure
