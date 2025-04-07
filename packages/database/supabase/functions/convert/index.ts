@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
 import {
   getLocalTimeZone,
   now,
   toCalendarDate,
 } from "npm:@internationalized/date";
+import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
@@ -836,6 +836,7 @@ serve(async (req: Request) => {
       }
       case "supplierQuoteToPurchaseOrder": {
         const { selectedLines } = payload;
+
         const [quote, quoteLines, company, employeeJob] = await Promise.all([
           client.from("supplierQuote").select("*").eq("id", id).single(),
           client
@@ -1005,17 +1006,34 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          const supplierPartToItemInserts = quoteLines.data
-            .map((line) => ({
-              companyId,
-              supplierId: quote.data?.supplierId!,
-              supplierPartId: line.supplierPartId!,
-              supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-              conversionFactor: line.conversionFactor,
-              itemId: line.itemId!,
-              createdBy: userId,
-            }))
-            .filter((line) => !!line.itemId);
+          // Create a map to deduplicate supplier parts by itemId and supplierId
+          const supplierPartMap = new Map();
+
+          quoteLines.data
+            .filter(
+              (line) =>
+                !!line.itemId &&
+                line.id &&
+                selectedLines &&
+                line.id in selectedLines
+            )
+            .forEach((line) => {
+              const key = `${line.itemId}-${quote.data.supplierId}`;
+              supplierPartMap.set(key, {
+                companyId,
+                supplierId: quote.data?.supplierId!,
+                supplierPartId: line.supplierPartId!,
+                supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+                conversionFactor: line.conversionFactor,
+                itemId: line.itemId!,
+                createdBy: userId,
+              });
+            });
+
+          const supplierPartToItemInserts = Array.from(
+            supplierPartMap.values()
+          );
+
           if (supplierPartToItemInserts.length > 0) {
             await trx
               .insertInto("supplierPart")
