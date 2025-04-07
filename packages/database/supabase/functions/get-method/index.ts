@@ -11,6 +11,12 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 
+import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import {
+  getLocalTimeZone,
+  now,
+  toCalendarDate,
+} from "npm:@internationalized/date";
 import { corsHeaders } from "../lib/headers.ts";
 import {
   getJobMethodTree,
@@ -23,16 +29,10 @@ import {
   traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { importTypeScript } from "../lib/sandbox.ts";
-import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import {
   getNextRevisionSequence,
   getNextSequence,
 } from "../shared/get-next-sequence.ts";
-import {
-  toCalendarDate,
-  now,
-  getLocalTimeZone,
-} from "npm:@internationalized/date";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -233,12 +233,14 @@ serve(async (req: Request) => {
                   await trx
                     .insertInto("methodOperationAttribute")
                     .values(
-                      methodOperationAttribute.map((attribute) => ({
-                        ...attribute,
-                        operationId: operationId!,
-                        companyId,
-                        createdBy: userId,
-                      }))
+                      methodOperationAttribute.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          operationId: operationId!,
+                          companyId,
+                          createdBy: userId,
+                        })
+                      )
                     )
                     .execute();
                 }
@@ -598,22 +600,24 @@ serve(async (req: Request) => {
                       methodOperationAttribute.length > 0
                     ) {
                       const attributes = await Promise.all(
-                        methodOperationAttribute.map(async (attribute) => ({
-                          ...attribute,
-                          operationId,
-                          minValue: await getConfiguredValue({
-                            id: operation.id,
-                            field: `attribute:${attribute.id}:minValue`,
-                            defaultValue: attribute.minValue,
-                          }),
-                          maxValue: await getConfiguredValue({
-                            id: operation.id,
-                            field: `attribute:${attribute.id}:maxValue`,
-                            defaultValue: attribute.maxValue,
-                          }),
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        methodOperationAttribute.map(
+                          async ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            minValue: await getConfiguredValue({
+                              id: operation.id,
+                              field: `attribute:${_id}:minValue`,
+                              defaultValue: attribute.minValue,
+                            }),
+                            maxValue: await getConfiguredValue({
+                              id: operation.id,
+                              field: `attribute:${_id}:maxValue`,
+                              defaultValue: attribute.maxValue,
+                            }),
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       );
 
                       await trx
@@ -1002,12 +1006,14 @@ serve(async (req: Request) => {
                       await trx
                         .insertInto("jobOperationAttribute")
                         .values(
-                          methodOperationAttribute.map((attribute) => ({
-                            ...attribute,
-                            operationId,
-                            companyId,
-                            createdBy: userId,
-                          }))
+                          methodOperationAttribute.map(
+                            ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              operationId,
+                              companyId,
+                              createdBy: userId,
+                            })
+                          )
                         )
                         .execute();
                     }
@@ -1454,22 +1460,24 @@ serve(async (req: Request) => {
                       methodOperationAttribute.length > 0
                     ) {
                       const attributes = await Promise.all(
-                        methodOperationAttribute.map(async (attribute) => ({
-                          ...attribute,
-                          operationId,
-                          minValue: await getConfiguredValue({
-                            id: operation.id,
-                            field: `attribute:${attribute.id}:minValue`,
-                            defaultValue: attribute.minValue,
-                          }),
-                          maxValue: await getConfiguredValue({
-                            id: operation.id,
-                            field: `attribute:${attribute.id}:maxValue`,
-                            defaultValue: attribute.maxValue,
-                          }),
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        methodOperationAttribute.map(
+                          async ({ id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            minValue: await getConfiguredValue({
+                              id: operation.id,
+                              field: `attribute:${id}:minValue`,
+                              defaultValue: attribute.minValue,
+                            }),
+                            maxValue: await getConfiguredValue({
+                              id: operation.id,
+                              field: `attribute:${id}:maxValue`,
+                              defaultValue: attribute.maxValue,
+                            }),
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       );
 
                       await trx
@@ -1843,12 +1851,14 @@ serve(async (req: Request) => {
                       await trx
                         .insertInto("quoteOperationAttribute")
                         .values(
-                          methodOperationAttribute.map((attribute) => ({
-                            ...attribute,
-                            operationId,
-                            companyId,
-                            createdBy: userId,
-                          }))
+                          methodOperationAttribute.map(
+                            ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              operationId,
+                              companyId,
+                              createdBy: userId,
+                            })
+                          )
                         )
                         .execute();
                     }
@@ -2190,12 +2200,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("jobOperationAttribute")
                       .values(
-                        jobOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        jobOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
@@ -2451,12 +2463,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("jobOperationAttribute")
                       .values(
-                        jobOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        jobOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
@@ -2850,12 +2864,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("quoteOperationAttribute")
                       .values(
-                        quoteOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        quoteOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
@@ -3134,12 +3150,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("quoteOperationAttribute")
                       .values(
-                        quoteOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        quoteOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
@@ -3412,12 +3430,14 @@ serve(async (req: Request) => {
                   await trx
                     .insertInto("quoteOperationAttribute")
                     .values(
-                      quoteOperationAttribute.map((attribute) => ({
-                        ...attribute,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
+                      quoteOperationAttribute.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          operationId,
+                          companyId,
+                          createdBy: userId,
+                        })
+                      )
                     )
                     .execute();
                 }
@@ -3681,12 +3701,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("methodOperationAttribute")
                       .values(
-                        quoteOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        quoteOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
@@ -4152,12 +4174,14 @@ serve(async (req: Request) => {
                     await trx
                       .insertInto("quoteOperationAttribute")
                       .values(
-                        quoteOperationAttribute.map((attribute) => ({
-                          ...attribute,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
+                        quoteOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
                       )
                       .execute();
                   }
