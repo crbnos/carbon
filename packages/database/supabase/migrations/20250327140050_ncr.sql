@@ -129,7 +129,6 @@ CREATE TABLE "nonConformance" (
   "closeDate" DATE,
   "quantity" NUMERIC NOT NULL DEFAULT 0,
   "itemId" TEXT,
-  "trackedEntityId" TEXT,
   "customerId" TEXT,
   "supplierId" TEXT,
   "jobId" TEXT,
