@@ -60,7 +60,16 @@ serve(async (req: Request) => {
       throw new Error("File too large, maximum size is 10MB");
     }
 
+    // Enhanced JPG detection - check both file extension and MIME type
+    const isJpgFile =
+      file.name.toLowerCase().endsWith(".jpg") ||
+      file.name.toLowerCase().endsWith(".jpeg") ||
+      file.type === "image/jpg" ||
+      file.type === "image/jpeg";
+
     let result: Uint8Array;
+    let outputFormat: MagickFormat = MagickFormat.Png;
+
     try {
       // First just read the image dimensions without full processing
       const dimensions = await new Promise<{ width: number; height: number }>(
@@ -107,6 +116,7 @@ serve(async (req: Request) => {
               originalHeight: img.height,
               originalDepth: img.depth,
               originalColorSpace: img.colorSpace,
+              isJpgFile,
             });
 
             // Apply initial scaling for large images
@@ -121,8 +131,19 @@ serve(async (req: Request) => {
               img.resize(newWidth, newHeight);
             }
 
-            // First convert to PNG to ensure consistent handling
-            img.format = MagickFormat.Png;
+            // Enhanced JPG handling
+            if (isJpgFile) {
+              console.log("Enhanced handling for JPG/JPEG file");
+              // First ensure it's in a consistent format
+              img.format = MagickFormat.Jpeg;
+              // Apply quality settings for JPEG
+              img.quality = 95;
+              // Then convert to PNG for further processing
+              img.format = MagickFormat.Png;
+            } else {
+              // For non-JPG images, just convert to PNG
+              img.format = MagickFormat.Png;
+            }
 
             const width = img.width;
             const height = img.height;
@@ -226,7 +247,16 @@ serve(async (req: Request) => {
             // Strip metadata to reduce size
             img.strip();
 
-            console.log("Final processing complete");
+            // Set the output format
+            if (isJpgFile) {
+              img.format = MagickFormat.Jpeg;
+              outputFormat = MagickFormat.Jpeg;
+            } else {
+              img.format = MagickFormat.Png;
+              outputFormat = MagickFormat.Png;
+            }
+
+            console.log(`Final processing complete, format: ${img.format}`);
             return img.write((data) => {
               console.log("Image data generated, size:", data.length);
               return data;
@@ -245,11 +275,25 @@ serve(async (req: Request) => {
     } catch (imgError) {
       console.error("ImageMagick processing error:", imgError);
 
-      // Simplified fallback for problematic images
+      // Enhanced fallback for problematic images, especially JPGs
       result = await new Promise<Uint8Array>((resolve, reject) => {
         try {
           const data = ImageMagick.read(bytes, (img) => {
-            console.log("Using simplified fallback processing method");
+            console.log("Using enhanced fallback processing method");
+
+            // Special handling for JPG files in fallback
+            if (isJpgFile) {
+              console.log("Fallback: Enhanced handling for JPG/JPEG file");
+              // Force conversion to JPEG with high quality
+              img.format = MagickFormat.Jpeg;
+              img.quality = 100;
+              outputFormat = MagickFormat.Jpeg;
+
+              // Apply a blur to help with problematic JPGs
+              img.blur(0, 0.5);
+            } else {
+              outputFormat = MagickFormat.Png;
+            }
 
             // Aggressively downscale first
             const scaleFactor = 800 / Math.max(img.width, img.height);
@@ -259,8 +303,10 @@ serve(async (req: Request) => {
             console.log(`Fallback: downscaling to ${newWidth}x${newHeight}`);
             img.resize(newWidth, newHeight);
 
-            // Convert to PNG to maintain transparency
-            img.format = MagickFormat.Png;
+            if (!isJpgFile) {
+              // Convert to PNG to maintain transparency for non-JPG images
+              img.format = MagickFormat.Png;
+            }
 
             if (contained) {
               // Simple contained mode for fallback
@@ -277,7 +323,7 @@ serve(async (req: Request) => {
             }
 
             img.strip();
-            img.quality = 85;
+            img.quality = 90;
 
             return img.write((data) => data);
           });
@@ -299,11 +345,14 @@ serve(async (req: Request) => {
       throw new Error("Failed to generate image data");
     }
 
-    console.log("Returning processed image");
+    // Determine the correct content type based on the output format
+    const contentType = isJpgFile ? "image/jpeg" : "image/png";
+
+    console.log(`Returning processed image with content type: ${contentType}`);
     return new Response(result, {
       headers: {
         ...corsHeaders,
-        "Content-Type": "image/png",
+        "Content-Type": contentType,
         "Content-Length": result.length.toString(),
         "Cache-Control": "public, max-age=31536000",
       },
