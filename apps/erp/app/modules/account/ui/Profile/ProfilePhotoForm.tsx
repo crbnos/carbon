@@ -21,7 +21,6 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
       const fileExtension = avatarFile.name.substring(
         avatarFile.name.lastIndexOf(".") + 1
       );
-
       const formData = new FormData();
       formData.append("file", avatarFile);
 
@@ -38,9 +37,14 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
           throw new Error("Failed to resize image");
         }
 
+        // Get content type from response to determine if it's JPG or PNG
+        const contentType = response.headers.get("Content-Type") || "image/png";
+        const isJpg = contentType.includes("image/jpeg");
+        const outputExtension = isJpg ? "jpg" : "png";
+
         const blob = await response.blob();
-        const resizedFile = new File([blob], `${user.id}.${fileExtension}`, {
-          type: "image/png",
+        const resizedFile = new File([blob], `${user.id}.${outputExtension}`, {
+          type: contentType,
         });
 
         avatarFile = resizedFile;

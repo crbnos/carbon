@@ -86,8 +86,15 @@ export function ItemThumbnailUpload({
               body: formData,
             }
           );
+
+          // Get content type from response to determine if it's JPG or PNG
+          const contentType =
+            response.headers.get("Content-Type") || "image/png";
+          const isJpg = contentType.includes("image/jpeg");
+          const fileExtension = isJpg ? "jpg" : "png";
+
           const blob = new Blob([await response.arrayBuffer()], {
-            type: "image/png",
+            type: contentType,
           });
 
           const reader = new FileReader();
@@ -99,9 +106,9 @@ export function ItemThumbnailUpload({
           };
           reader.readAsDataURL(blob);
 
-          const fileName = `${nanoid()}.png`;
+          const fileName = `${nanoid()}.${fileExtension}`;
           const thumbnailFile = new File([blob], fileName, {
-            type: "image/png",
+            type: contentType,
           });
 
           const { data, error } = await carbon.storage
@@ -135,7 +142,8 @@ export function ItemThumbnailUpload({
             setThumbnailPath(getPrivateUrl(data.path));
             toast.success("Thumbnail uploaded");
           }
-        } catch {
+        } catch (error) {
+          console.error("Image processing error:", error);
           toast.error("Failed to resize image");
         }
       }
@@ -158,7 +166,12 @@ export function ItemThumbnailUpload({
       )}
       <HStack className="absolute bottom-2 right-2">
         {thumbnailPath && (
-          <Button variant="secondary" size="sm" onClick={onFileRemove}>
+          <Button
+            variant="secondary"
+            className="bg-card opacity-100"
+            size="sm"
+            onClick={onFileRemove}
+          >
             Remove
           </Button>
         )}
@@ -166,6 +179,7 @@ export function ItemThumbnailUpload({
           accept="image/*"
           variant="secondary"
           size="sm"
+          className="bg-card opacity-100"
           onChange={onFileChange}
         >
           Upload

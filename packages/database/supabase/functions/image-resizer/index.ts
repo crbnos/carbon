@@ -201,11 +201,12 @@ serve(async (req: Request) => {
               );
               containedGeometry.ignoreAspectRatio = true;
 
-              img.extent(
-                containedGeometry,
-                Gravity.Center,
-                new MagickColor("transparent")
-              );
+              // Use white background for JPG files, transparent for others
+              const backgroundColor = isJpgFile
+                ? new MagickColor("white")
+                : new MagickColor("transparent");
+
+              img.extent(containedGeometry, Gravity.Center, backgroundColor);
 
               console.log("Resizing to 300x300");
               const resizeGeometry = new MagickGeometry(300, 300);
@@ -312,11 +313,13 @@ serve(async (req: Request) => {
               // Simple contained mode for fallback
               const size = 300;
               const canvas = new MagickGeometry(0, 0, size, size);
-              img.extent(
-                canvas,
-                Gravity.Center,
-                new MagickColor("transparent")
-              );
+
+              // Use white background for JPG files, transparent for others
+              const backgroundColor = isJpgFile
+                ? new MagickColor("white")
+                : new MagickColor("transparent");
+
+              img.extent(canvas, Gravity.Center, backgroundColor);
             } else {
               // Simple resize to 300x300
               img.resize(300, 300);

@@ -33,7 +33,15 @@ export async function getBase64ImageFromSupabase(
 
   const arrayBuffer = await data.arrayBuffer();
   const base64String = arrayBufferToBase64(arrayBuffer);
-  return `data:image/png;base64,${base64String}`;
+
+  // Determine the mime type based on file extension
+  const fileExtension = path.split(".").pop()?.toLowerCase();
+  const mimeType =
+    fileExtension === "jpg" || fileExtension === "jpeg"
+      ? "image/jpeg"
+      : "image/png";
+
+  return `data:${mimeType};base64,${base64String}`;
 }
 
 export async function getCountries(client: SupabaseClient<Database>) {
