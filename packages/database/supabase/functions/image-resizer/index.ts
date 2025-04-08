@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
-  AlphaOption,
   Gravity,
   ImageMagick,
   initializeImageMagick,
@@ -18,6 +17,11 @@ const wasmBytes = await Deno.readFile(
 await initializeImageMagick(wasmBytes);
 
 import { corsHeaders } from "../lib/headers.ts";
+
+// Maximum dimensions to process without aggressive downscaling
+const MAX_SAFE_DIMENSION = 2000;
+// Maximum dimensions to attempt processing at all
+const MAX_ALLOWED_DIMENSION = 5000;
 
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -50,8 +54,50 @@ serve(async (req: Request) => {
       contained,
     });
 
+    // For extremely large files, reject immediately
+    if (bytes.length > 10 * 1024 * 1024) {
+      // 10MB limit
+      throw new Error("File too large, maximum size is 10MB");
+    }
+
     let result;
     try {
+      // First just read the image dimensions without full processing
+      const dimensions = await new Promise<{ width: number; height: number }>(
+        (resolve, reject) => {
+          try {
+            ImageMagick.read(bytes, (img) => {
+              resolve({ width: img.width, height: img.height });
+            });
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+
+      // Reject extremely large images that would cause CPU timeouts
+      if (
+        dimensions.width > MAX_ALLOWED_DIMENSION ||
+        dimensions.height > MAX_ALLOWED_DIMENSION
+      ) {
+        throw new Error(
+          `Image dimensions too large (${dimensions.width}x${dimensions.height}). Maximum allowed is ${MAX_ALLOWED_DIMENSION}x${MAX_ALLOWED_DIMENSION}`
+        );
+      }
+
+      // Calculate initial scale factor for large images
+      let initialScaleFactor = 1.0;
+      const maxDimension = Math.max(dimensions.width, dimensions.height);
+
+      if (maxDimension > MAX_SAFE_DIMENSION) {
+        initialScaleFactor = MAX_SAFE_DIMENSION / maxDimension;
+        console.log(
+          `Large image detected. Initial scale factor: ${initialScaleFactor.toFixed(
+            2
+          )}`
+        );
+      }
+
       result = ImageMagick.read(bytes, (img) => {
         console.log({
           originalFormat: img.format,
@@ -61,19 +107,18 @@ serve(async (req: Request) => {
           originalColorSpace: img.colorSpace,
         });
 
-        // First convert to PNG to ensure consistent handling
-        img.format = MagickFormat.Png;
-        // Apply background for transparent PNGs to avoid issues
-        if (img.hasAlpha) {
-          console.log("Image has alpha channel");
-          // Flatten the image with a white background to avoid transparency issues
-          const background = new MagickColor("white");
-          img.backgroundColor = background;
-          img.alpha(AlphaOption.Off); // Remove alpha channel after flattening
+        // Apply initial scaling for large images
+        if (initialScaleFactor < 1.0) {
+          const newWidth = Math.floor(img.width * initialScaleFactor);
+          const newHeight = Math.floor(img.height * initialScaleFactor);
+          console.log(`Pre-scaling large image to ${newWidth}x${newHeight}`);
+
+          // Use faster resize for initial downscaling
+          img.resize(newWidth, newHeight);
         }
 
-        // Write to PNG first to ensure format conversion is applied
-        img.write((data) => data);
+        // First convert to PNG to ensure consistent handling
+        img.format = MagickFormat.Png;
 
         const width = img.width;
         const height = img.height;
@@ -87,18 +132,36 @@ serve(async (req: Request) => {
             throw new Error("Invalid target height");
           }
 
-          const ratio = img.width / img.height;
+          const ratio = width / height;
           const targetWidthInt = Math.round(targetHeightInt * ratio);
 
           console.log(`Resizing to ${targetWidthInt}x${targetHeightInt}`);
-          // Add quality settings for resize
           img.resize(targetWidthInt, targetHeightInt);
           img.quality = 90;
         } else if (contained) {
           console.log("Processing with contained mode");
+
+          // For contained mode, use a more efficient approach
+          // First resize to a reasonable size while maintaining aspect ratio
+          const targetSize = 500; // Target size for the longer dimension
+          let newWidth, newHeight;
+
+          if (width > height) {
+            newWidth = targetSize;
+            newHeight = Math.round(targetSize * (height / width));
+          } else {
+            newHeight = targetSize;
+            newWidth = Math.round(targetSize * (width / height));
+          }
+
+          console.log(
+            `Resizing to ${newWidth}x${newHeight} before containment`
+          );
+          img.resize(newWidth, newHeight);
+
           // Calculate size with 10% padding
           const padding = 0.1; // 10% padding
-          const maxDimension = Math.max(width, height);
+          const maxDimension = Math.max(newWidth, newHeight);
           const sizeWithPadding = Math.ceil(maxDimension * (1 + 2 * padding));
 
           console.log(`Extending to ${sizeWithPadding}x${sizeWithPadding}`);
@@ -124,21 +187,30 @@ serve(async (req: Request) => {
           img.quality = 90;
         } else {
           console.log("Processing with default square crop mode");
-          // Calculate the size for cropping
-          const size = Math.min(width, height);
 
-          // Calculate offsets for centering the crop
-          const x = Math.floor((width - size) / 2);
-          const y = Math.floor((height - size) / 2);
+          // For square crop, first resize to a reasonable size to reduce CPU usage
+          const maxDimension = Math.max(width, height);
+          if (maxDimension > 600) {
+            const scaleFactor = 600 / maxDimension;
+            const newWidth = Math.floor(width * scaleFactor);
+            const newHeight = Math.floor(height * scaleFactor);
+            console.log(
+              `Pre-scaling to ${newWidth}x${newHeight} before cropping`
+            );
+            img.resize(newWidth, newHeight);
+          }
+
+          // Now perform the square crop
+          const size = Math.min(img.width, img.height);
+          const x = Math.floor((img.width - size) / 2);
+          const y = Math.floor((img.height - size) / 2);
 
           console.log(`Cropping to ${size}x${size} from position ${x},${y}`);
-          // Crop to square with explicit geometry
           const cropGeometry = new MagickGeometry(x, y, size, size);
           cropGeometry.ignoreAspectRatio = true;
           img.crop(cropGeometry);
 
           console.log("Resizing to 300x300");
-          // Resize with quality settings
           img.resize(300, 300);
           img.quality = 90;
         }
@@ -155,25 +227,34 @@ serve(async (req: Request) => {
     } catch (imgError) {
       console.error("ImageMagick processing error:", imgError);
 
-      // Fallback processing for problematic images
+      // Simplified fallback for problematic images
       result = ImageMagick.read(bytes, (img) => {
-        console.log("Using fallback processing method");
+        console.log("Using simplified fallback processing method");
 
-        // Force conversion to JPEG which has better compatibility
-        img.format = MagickFormat.Jpeg;
-        img.quality = 90;
+        // Aggressively downscale first
+        const scaleFactor = 800 / Math.max(img.width, img.height);
+        const newWidth = Math.floor(img.width * scaleFactor);
+        const newHeight = Math.floor(img.height * scaleFactor);
 
-        if (targetHeight) {
-          const targetHeightInt = parseInt(targetHeight, 10);
-          const ratio = img.width / img.height;
-          const targetWidthInt = Math.round(targetHeightInt * ratio);
-          img.resize(targetWidthInt, targetHeightInt);
+        console.log(`Fallback: downscaling to ${newWidth}x${newHeight}`);
+        img.resize(newWidth, newHeight);
+
+        // Convert to PNG to maintain transparency
+        img.format = MagickFormat.Png;
+
+        if (contained) {
+          // Simple contained mode for fallback
+          const size = 300;
+          const canvas = new MagickGeometry(0, 0, size, size);
+          img.extent(canvas, Gravity.Center, new MagickColor("transparent"));
         } else {
-          // Simple resize to 300x300 without complex operations
+          // Simple resize to 300x300
           img.resize(300, 300);
         }
 
         img.strip();
+        img.quality = 85;
+
         return img.write((data) => data);
       });
     }
@@ -189,12 +270,9 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("Image processing error:", err);
-    return new Response(
-      JSON.stringify({ error: err.message, stack: err.stack }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
-    );
+    return new Response(JSON.stringify({ error: err.message }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });
