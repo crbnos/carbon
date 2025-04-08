@@ -271,6 +271,7 @@ export const path = {
     bulkUpdateItems: `${x}/items/update`,
     bulkUpdateProcedure: `${x}/procedure/update`,
     bulkUpdateJob: `${x}/job/update`,
+    bulkUpdateNonConformance: `${x}/non-conformance/update`,
     bulkUpdateNonConformanceWorkflow: `${x}/non-conformance-workflow/update`,
     bulkUpdatePurchaseOrder: `${x}/purchase-order/update`,
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
@@ -801,6 +802,8 @@ export const path = {
     newWebhook: `${x}/settings/webhooks/new`,
     nonConformances: `${x}/quality/non-conformances`,
     nonConformance: (id: string) => generatePath(`${x}/non-conformance/${id}`),
+    nonConformanceDetails: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/details`),
     nonConformanceWorkflow: (id: string) =>
       generatePath(`${x}/non-conformance-workflow/${id}`),
     nonConformanceWorkflows: `${x}/quality/non-conformance-workflows`,

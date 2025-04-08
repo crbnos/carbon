@@ -38,7 +38,7 @@ import { stripSpecialCharacters } from "~/utils/string";
 type DocumentsProps = {
   files: StorageItem[];
   modelUpload?: ModelUpload;
-  sourceDocument?: "Job";
+  sourceDocument?: "Job" | "Non-Conformance";
   sourceDocumentId?: string;
   sourceDocumentLineId?: string;
   writeBucket: string;
@@ -153,8 +153,8 @@ const Documents = ({
         toast.error(`Error removing model from ${sourceDocument}`);
         return;
       }
-    } else if (sourceDocument === "Purchase Order") {
-      // TODO
+    } else if (sourceDocument === "Non-Conformance") {
+      // no action required
     } else {
       toast.error(`Unsupported source document type: ${sourceDocument}`);
       return;

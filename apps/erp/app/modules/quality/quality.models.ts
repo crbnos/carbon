@@ -59,7 +59,6 @@ export const nonConformanceValidator = z.object({
   closeDate: zfd.text(z.string().optional()),
   quantity: zfd.numeric(z.number().optional()),
   itemId: zfd.text(z.string().optional()),
-  trackedEntityId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional()),
   supplierId: zfd.text(z.string().optional()),
   jobId: zfd.text(z.string().optional()),

@@ -4579,6 +4579,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
           },
           {
@@ -4677,6 +4680,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
           },
           {
@@ -4727,6 +4733,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
@@ -9349,6 +9358,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
           },
           {
@@ -9447,6 +9459,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
           },
           {
@@ -9497,6 +9512,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
@@ -16540,6 +16558,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.active",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceWorkflow.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.companyId",
           },
           {
@@ -16644,6 +16665,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.active",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceWorkflow.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.companyId",
           },
           {
@@ -16700,6 +16724,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.active",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceWorkflow.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceWorkflow.companyId",
@@ -34732,6 +34759,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
           },
           {
@@ -34830,6 +34860,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.sortOrder",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
           },
           {
@@ -34880,6 +34913,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.sortOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
@@ -38506,9 +38542,6 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformance.trackedEntityId",
-          },
-          {
             $ref: "#/parameters/rowFilter.nonConformance.customerId",
           },
           {
@@ -38543,6 +38576,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.companyId",
@@ -38676,9 +38712,6 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformance.trackedEntityId",
-          },
-          {
             $ref: "#/parameters/rowFilter.nonConformance.customerId",
           },
           {
@@ -38713,6 +38746,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.companyId",
@@ -38800,9 +38836,6 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformance.itemId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformance.trackedEntityId",
-          },
-          {
             $ref: "#/parameters/rowFilter.nonConformance.customerId",
           },
           {
@@ -38837,6 +38870,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformance.tags",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformance.companyId",
@@ -52085,6 +52121,13 @@ export default {
           format: "integer",
           type: "integer",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
@@ -54491,6 +54534,13 @@ export default {
           default: 0,
           format: "integer",
           type: "integer",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         createdAt: {
           default: "now()",
@@ -57724,6 +57774,13 @@ export default {
           default: true,
           format: "boolean",
           type: "boolean",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         companyId: {
           description:
@@ -66049,6 +66106,13 @@ export default {
           format: "integer",
           type: "integer",
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
         createdAt: {
           default: "now()",
           format: "timestamp with time zone",
@@ -68031,10 +68095,6 @@ export default {
           format: "text",
           type: "string",
         },
-        trackedEntityId: {
-          format: "text",
-          type: "string",
-        },
         customerId: {
           description:
             "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
@@ -68103,6 +68163,13 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         companyId: {
           description:
@@ -73835,6 +73902,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.nonConformanceActionTask.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.nonConformanceActionTask.createdAt": {
       name: "createdAt",
       required: false,
@@ -76501,6 +76574,12 @@ export default {
     },
     "rowFilter.nonConformanceApprovalTask.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceApprovalTask.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -80164,6 +80243,12 @@ export default {
     },
     "rowFilter.nonConformanceWorkflow.active": {
       name: "active",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceWorkflow.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -89552,6 +89637,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.nonConformanceInvestigationTask.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.nonConformanceInvestigationTask.createdAt": {
       name: "createdAt",
       required: false,
@@ -91790,12 +91881,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.nonConformance.trackedEntityId": {
-      name: "trackedEntityId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.nonConformance.customerId": {
       name: "customerId",
       required: false,
@@ -91864,6 +91949,12 @@ export default {
     },
     "rowFilter.nonConformance.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformance.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",

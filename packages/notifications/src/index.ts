@@ -14,6 +14,7 @@ export enum NotificationEvent {
   JobAssignment = "job-assignment",
   JobOperationAssignment = "job-operation-assignment",
   JobOperationMessage = "job-operation-message",
+  NonConformanceAssignment = "non-conformance-assignment",
   ProcedureAssignment = "procedure-assignment",
   PurchaseInvoiceAssignment = "purchase-invoice-assignment",
   PurchaseOrderAssignment = "purchase-order-assignment",

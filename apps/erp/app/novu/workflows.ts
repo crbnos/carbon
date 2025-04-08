@@ -14,6 +14,7 @@ const payloadSchema = z.object({
     NotificationEvent.JobAssignment,
     NotificationEvent.JobOperationAssignment,
     NotificationEvent.JobOperationMessage,
+    NotificationEvent.NonConformanceAssignment,
     NotificationEvent.ProcedureAssignment,
     NotificationEvent.PurchaseInvoiceAssignment,
     NotificationEvent.PurchaseOrderAssignment,

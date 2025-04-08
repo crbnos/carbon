@@ -25,6 +25,7 @@ import {
   LuInbox,
   LuMailCheck,
   LuMessageSquare,
+  LuShieldX,
   LuShoppingCart,
   LuWaypoints,
 } from "react-icons/lu";
@@ -158,6 +159,14 @@ function GenericNotification({
             )
           }
           to={`${link}?selectedOperation=${operationId}`}
+          {...props}
+        />
+      );
+    case NotificationEvent.NonConformanceAssignment:
+      return (
+        <Notification
+          icon={<LuShieldX />}
+          to={path.to.nonConformance(id)}
           {...props}
         />
       );
