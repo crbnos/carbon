@@ -8972,7 +8972,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -8991,7 +8991,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -9010,7 +9010,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11150,7 +11150,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -11169,7 +11169,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11188,7 +11188,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -11736,7 +11736,7 @@ export type Database = {
           source: Database["public"]["Enums"]["nonConformanceSource"]
           status: Database["public"]["Enums"]["nonConformanceStatus"]
           supplierId: string | null
-          trackedEntityId: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -11783,7 +11783,7 @@ export type Database = {
           source: Database["public"]["Enums"]["nonConformanceSource"]
           status?: Database["public"]["Enums"]["nonConformanceStatus"]
           supplierId?: string | null
-          trackedEntityId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -11830,7 +11830,7 @@ export type Database = {
           source?: Database["public"]["Enums"]["nonConformanceSource"]
           status?: Database["public"]["Enums"]["nonConformanceStatus"]
           supplierId?: string | null
-          trackedEntityId?: string | null
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12186,6 +12186,7 @@ export type Database = {
           notes: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12203,6 +12204,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12220,6 +12222,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12353,6 +12356,7 @@ export type Database = {
           notes: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12370,6 +12374,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12387,6 +12392,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12520,6 +12526,7 @@ export type Database = {
           notes: string | null
           sortOrder: number
           status: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12537,6 +12544,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12554,6 +12562,7 @@ export type Database = {
           notes?: string | null
           sortOrder?: number
           status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12889,6 +12898,7 @@ export type Database = {
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null
           source: Database["public"]["Enums"]["nonConformanceSource"]
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -12912,6 +12922,7 @@ export type Database = {
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null
           source?: Database["public"]["Enums"]["nonConformanceSource"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -12935,6 +12946,7 @@ export type Database = {
             | Database["public"]["Enums"]["nonConformanceAction"][]
             | null
           source?: Database["public"]["Enums"]["nonConformanceSource"]
+          tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -15136,7 +15148,7 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -15155,7 +15167,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -15174,7 +15186,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -20047,7 +20059,7 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          description: string | null
+          description: Json | null
           fileTypes: string[] | null
           id: string
           listValues: string[] | null
@@ -20066,7 +20078,7 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -20085,7 +20097,7 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          description?: string | null
+          description?: Json | null
           fileTypes?: string[] | null
           id?: string
           listValues?: string[] | null
@@ -38657,6 +38669,7 @@ export type Database = {
         | "Person"
         | "List"
         | "File"
+        | "Task"
       procedureStatus: "Draft" | "Active" | "Archived"
       processType: "Inside" | "Outside" | "Inside and Outside"
       productionEventType: "Setup" | "Labor" | "Machine"

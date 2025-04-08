@@ -15,6 +15,7 @@ import {
   CardTitle,
   VStack,
 } from "@carbon/react";
+import { useState } from "react";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -25,6 +26,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import type { ListItem } from "~/types";
 import {
   nonConformanceApprovalRequirement,
   nonConformanceInvestigationType,
@@ -33,10 +35,8 @@ import {
   nonConformanceSource,
   nonConformanceValidator,
 } from "../../quality.models";
-import { getPriorityIcon, getSourceIcon } from "./NonConformanceIcons";
-import type { ListItem } from "~/types";
 import type { NonConformanceWorkflow } from "../../types";
-import { useState } from "react";
+import { getPriorityIcon, getSourceIcon } from "./NonConformanceIcons";
 
 type NonConformanceFormValues = z.infer<typeof nonConformanceValidator>;
 
@@ -117,7 +117,6 @@ const NonConformanceForm = ({
           <Hidden name="salesOrderLineId" />
           <Hidden name="shipmentId" />
           <Hidden name="shipmentLineId" />
-          <Hidden name="trackedEntityId" />
 
           <VStack spacing={4}>
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">

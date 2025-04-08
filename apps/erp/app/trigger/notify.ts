@@ -49,6 +49,7 @@ export const notifyTask = task({
       switch (type) {
         case NotificationEvent.JobAssignment:
         case NotificationEvent.JobOperationAssignment:
+        case NotificationEvent.NonConformanceAssignment:
         case NotificationEvent.ProcedureAssignment:
         case NotificationEvent.PurchaseInvoiceAssignment:
         case NotificationEvent.PurchaseOrderAssignment:
@@ -114,6 +115,19 @@ export const notifyTask = task({
 
           return `Sales Order ${salesOrder?.data?.salesOrderId} assigned to you`;
 
+        case NotificationEvent.NonConformanceAssignment:
+          const nonConformance = await client
+            .from("nonConformance")
+            .select("*")
+            .eq("id", documentId)
+            .single();
+
+          if (nonConformance.error) {
+            console.error("Failed to get nonConformance", nonConformance.error);
+            throw nonConformance.error;
+          }
+
+          return `Non-Conformance ${nonConformance?.data?.nonConformanceId} assigned to you`;
         case NotificationEvent.JobAssignment:
           const job = await client
             .from("job")
