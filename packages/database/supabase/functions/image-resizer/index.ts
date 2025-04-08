@@ -8,21 +8,13 @@ import {
   MagickGeometry,
 } from "npm:@imagemagick/magick-wasm@0.0.30";
 
-// Initialize ImageMagick with proper error handling
-let wasmInitialized = false;
-try {
-  const wasmBytes = await Deno.readFile(
-    new URL(
-      "magick.wasm",
-      import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
-    )
-  );
-  await initializeImageMagick(wasmBytes);
-  wasmInitialized = true;
-  console.log("ImageMagick WASM initialized successfully");
-} catch (error) {
-  console.error("Failed to initialize ImageMagick WASM:", error);
-}
+const wasmBytes = await Deno.readFile(
+  new URL(
+    "magick.wasm",
+    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
+  )
+);
+await initializeImageMagick(wasmBytes);
 
 import { corsHeaders } from "../lib/headers.ts";
 
@@ -34,17 +26,6 @@ const MAX_ALLOWED_DIMENSION = 5000;
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
-  }
-
-  // Check if ImageMagick was properly initialized
-  if (!wasmInitialized) {
-    return new Response(
-      JSON.stringify({ error: "Image processing service unavailable" }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 503,
-      }
-    );
   }
 
   try {
@@ -251,6 +232,11 @@ serve(async (req: Request) => {
               return data;
             });
           });
+
+          if (!data) {
+            throw new Error("Failed to process image: No data returned");
+          }
+
           resolve(data);
         } catch (err) {
           reject(err);
@@ -295,11 +281,22 @@ serve(async (req: Request) => {
 
             return img.write((data) => data);
           });
+
+          if (!data) {
+            throw new Error(
+              "Failed to process image in fallback: No data returned"
+            );
+          }
+
           resolve(data);
         } catch (err) {
           reject(err);
         }
       });
+    }
+
+    if (!result || result.length === 0) {
+      throw new Error("Failed to generate image data");
     }
 
     console.log("Returning processed image");
