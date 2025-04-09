@@ -8068,9 +8068,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
           },
           {
@@ -8111,6 +8108,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
           },
           {
             $ref: "#/parameters/select",
@@ -8178,9 +8178,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
           },
           {
@@ -8221,6 +8218,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -8242,9 +8242,6 @@ export default {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.required",
           },
           {
@@ -8285,6 +8282,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteOperationAttribute.description",
           },
           {
             $ref: "#/parameters/body.quoteOperationAttribute",
@@ -30292,9 +30292,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
           },
           {
@@ -30335,6 +30332,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
           },
           {
             $ref: "#/parameters/select",
@@ -30402,9 +30402,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
           },
           {
@@ -30445,6 +30442,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -30466,9 +30466,6 @@ export default {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.required",
           },
           {
@@ -30509,6 +30506,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodOperationAttribute.description",
           },
           {
             $ref: "#/parameters/body.methodOperationAttribute",
@@ -37519,6 +37519,15 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.jobOperationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLines.quantityShipped",
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseOrderLines.thumbnailPath",
           },
           {
@@ -37600,9 +37609,6 @@ export default {
             $ref: "#/parameters/rowFilter.procedureAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.procedureAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.procedureAttribute.required",
           },
           {
@@ -37640,6 +37646,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
           },
           {
             $ref: "#/parameters/select",
@@ -37710,9 +37719,6 @@ export default {
             $ref: "#/parameters/rowFilter.procedureAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.procedureAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.procedureAttribute.required",
           },
           {
@@ -37750,6 +37756,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -37774,9 +37783,6 @@ export default {
             $ref: "#/parameters/rowFilter.procedureAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.procedureAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.procedureAttribute.required",
           },
           {
@@ -37814,6 +37820,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.procedureAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.procedureAttribute.description",
           },
           {
             $ref: "#/parameters/body.procedureAttribute",
@@ -43261,9 +43270,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
           },
           {
@@ -43304,6 +43310,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
           },
           {
             $ref: "#/parameters/select",
@@ -43371,9 +43380,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
           },
           {
@@ -43414,6 +43420,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -43435,9 +43444,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.name",
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.required",
           },
           {
@@ -43478,6 +43484,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationAttribute.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationAttribute.description",
           },
           {
             $ref: "#/parameters/body.jobOperationAttribute",
@@ -51201,7 +51210,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -51250,7 +51259,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -52129,10 +52138,6 @@ export default {
           format: "text",
           type: "string",
         },
-        description: {
-          format: "text",
-          type: "string",
-        },
         required: {
           default: false,
           format: "boolean",
@@ -52152,6 +52157,7 @@ export default {
             "Person",
             "List",
             "File",
+            "Task",
           ],
           format: 'public."procedureAttributeType"',
           type: "string",
@@ -52212,6 +52218,9 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        description: {
+          format: "json",
         },
       },
       type: "object",
@@ -62431,10 +62440,6 @@ export default {
           format: "text",
           type: "string",
         },
-        description: {
-          format: "text",
-          type: "string",
-        },
         required: {
           default: false,
           format: "boolean",
@@ -62454,6 +62459,7 @@ export default {
             "Person",
             "List",
             "File",
+            "Task",
           ],
           format: 'public."procedureAttributeType"',
           type: "string",
@@ -62514,6 +62520,9 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        description: {
+          format: "json",
         },
       },
       type: "object",
@@ -66057,6 +66066,22 @@ export default {
           format: "numeric",
           type: "number",
         },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantityShipped: {
+          format: "numeric",
+          type: "number",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -66127,10 +66152,6 @@ export default {
           format: "text",
           type: "string",
         },
-        description: {
-          format: "text",
-          type: "string",
-        },
         required: {
           default: false,
           format: "boolean",
@@ -66150,6 +66171,7 @@ export default {
             "Person",
             "List",
             "File",
+            "Task",
           ],
           format: 'public."procedureAttributeType"',
           type: "string",
@@ -66206,6 +66228,9 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        description: {
+          format: "json",
         },
       },
       type: "object",
@@ -68845,10 +68870,6 @@ export default {
           format: "text",
           type: "string",
         },
-        description: {
-          format: "text",
-          type: "string",
-        },
         required: {
           default: false,
           format: "boolean",
@@ -68868,6 +68889,7 @@ export default {
             "Person",
             "List",
             "File",
+            "Task",
           ],
           format: 'public."procedureAttributeType"',
           type: "string",
@@ -68928,6 +68950,9 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        description: {
+          format: "json",
         },
       },
       type: "object",
@@ -73364,12 +73389,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.quoteOperationAttribute.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.quoteOperationAttribute.required": {
       name: "required",
       required: false,
@@ -73450,6 +73469,12 @@ export default {
     },
     "rowFilter.quoteOperationAttribute.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteOperationAttribute.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",
@@ -85040,12 +85065,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.methodOperationAttribute.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.methodOperationAttribute.required": {
       name: "required",
       required: false,
@@ -85126,6 +85145,12 @@ export default {
     },
     "rowFilter.methodOperationAttribute.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodOperationAttribute.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",
@@ -89150,6 +89175,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseOrderLines.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLines.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLines.quantityShipped": {
+      name: "quantityShipped",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.purchaseOrderLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -89237,12 +89280,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.procedureAttribute.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.procedureAttribute.required": {
       name: "required",
       required: false,
@@ -89317,6 +89354,12 @@ export default {
     },
     "rowFilter.procedureAttribute.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.procedureAttribute.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",
@@ -92276,12 +92319,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobOperationAttribute.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobOperationAttribute.required": {
       name: "required",
       required: false,
@@ -92362,6 +92399,12 @@ export default {
     },
     "rowFilter.jobOperationAttribute.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationAttribute.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",

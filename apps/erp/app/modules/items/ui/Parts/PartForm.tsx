@@ -176,7 +176,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
     initialValues.replenishmentSystem ?? "Buy"
   );
   const [defaultMethodType, setDefaultMethodType] = useState<string>(
-    initialValues.defaultMethodType ?? "Buy"
+    initialValues.defaultMethodType ?? "Pick"
   );
   const itemReplenishmentSystemOptions =
     itemReplenishmentSystems.map((itemReplenishmentSystem) => ({
@@ -263,7 +263,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
                   onChange={(newValue) => {
                     setReplenishmentSystem(newValue?.value ?? "Buy");
                     if (newValue?.value === "Buy") {
-                      setDefaultMethodType("Buy");
+                      setDefaultMethodType("Pick");
                     } else {
                       setDefaultMethodType("Make");
                     }

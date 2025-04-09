@@ -10,6 +10,11 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   toast,
@@ -25,7 +30,12 @@ import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
-import { LuSettings2, LuSquareFunction, LuX } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuSettings2,
+  LuSquareFunction,
+  LuX,
+} from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import type { Configuration } from "~/components/Configurator/types";
@@ -46,6 +56,7 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useUser } from "~/hooks";
 
+import type { Database } from "@carbon/database";
 import { ConfigurationEditor } from "~/components/Configurator/ConfigurationEditor";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
@@ -57,7 +68,6 @@ import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
 import type { ConfigurationParameter, ConfigurationRule } from "../../types";
-import type { Database } from "@carbon/database";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -564,6 +574,7 @@ function MaterialForm({
     description: string;
     unitOfMeasureCode: string;
     quantity: number;
+    kit: boolean;
   }>({
     itemId: item.data.itemId ?? "",
     itemReadableId: item.data.itemReadableId ?? "",
@@ -571,6 +582,7 @@ function MaterialForm({
     description: item.data.description ?? "",
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
+    kit: item.data.kit ?? false,
   });
 
   const onTypeChange = (value: MethodItemType | "Item") => {
@@ -584,6 +596,7 @@ function MaterialForm({
       quantity: 1,
       description: "",
       unitOfMeasureCode: "EA",
+      kit: false,
     });
   };
 
@@ -613,6 +626,7 @@ function MaterialForm({
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",
+      kit: false,
     }));
     if (item.data?.type) {
       setItemType(item.data.type as MethodItemType);
@@ -631,7 +645,7 @@ function MaterialForm({
       method="post"
       defaultValues={item.data}
       validator={methodMaterialValidator}
-      className="w-full"
+      className="w-full py-2"
       fetcher={methodMaterialFetcher}
       onSubmit={() => {
         if (!isTemporaryId(item.id)) {
@@ -643,6 +657,7 @@ function MaterialForm({
       <Hidden name="makeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
       <Hidden name="order" />
+      <Hidden name="kit" value={itemData.kit.toString()} />
       <VStack className="pt-4">
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <Item
@@ -776,7 +791,7 @@ function MaterialForm({
         </div>
 
         <motion.div
-          className="flex w-full items-center justify-end p-2"
+          className="flex flex-1 items-center justify-end w-full pt-2"
           initial={{ opacity: 0, filter: "blur(4px)" }}
           animate={{ opacity: 1, filter: "blur(0px)" }}
           transition={{
@@ -785,7 +800,45 @@ function MaterialForm({
             duration: 0.55,
           }}
         >
-          <motion.div layout className="ml-auto mr-1 pt-2">
+          <motion.div
+            layout
+            className="flex items-center justify-between gap-2 w-full"
+          >
+            {itemData.methodType === "Make" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<MethodIcon type={"Make"} isKit={itemData.kit} />}
+                    variant="secondary"
+                    size="sm"
+                    rightIcon={<LuChevronDown />}
+                  >
+                    {itemData.kit ? "Kit" : "Subassembly"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuRadioGroup
+                    value={itemData.kit ? "Kit" : "Subassembly"}
+                    onValueChange={(value) => {
+                      setItemData((d) => ({
+                        ...d,
+                        kit: value === "Kit",
+                      }));
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="Subassembly">
+                      Subassembly
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="Kit">
+                      Kit
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div />
+            )}
+
             <Submit isDisabled={!permissions.can("update", "parts")}>
               Save
             </Submit>
@@ -850,7 +903,7 @@ function makeItem(
         <Tooltip>
           <TooltipTrigger>
             <Badge variant="secondary">
-              <MethodIcon type={material.methodType} />
+              <MethodIcon type={material.methodType} isKit={material.kit} />
             </Badge>
           </TooltipTrigger>
           <TooltipContent>{material.methodType}</TooltipContent>

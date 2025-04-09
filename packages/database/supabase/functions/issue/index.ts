@@ -3,10 +3,10 @@ import { z } from "npm:zod@^3.24.1";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import { corsHeaders } from "../lib/headers.ts";
-import { Database } from "../lib/types.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
+import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { Database } from "../lib/types.ts";
 import { TrackedEntityAttributes } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
@@ -274,6 +274,35 @@ serve(async (req: Request) => {
             .where("requiresSerialTracking", "=", false)
             .selectAll()
             .execute();
+
+          const kittedChildren = await trx
+            .selectFrom("jobMaterialWithMakeMethodId")
+            .where("jobOperationId", "=", id)
+            .where("itemType", "in", ["Material", "Part", "Consumable"])
+            .where("methodType", "=", "Make")
+            .where("kit", "=", true)
+            .selectAll()
+            .execute();
+
+          const jobMakeMethodIdsOfKittedChildren = kittedChildren.map(
+            (kittedChild) => kittedChild.jobMaterialMakeMethodId
+          );
+
+          if (jobMakeMethodIdsOfKittedChildren.length > 0) {
+            const materialsToIssueFromKittedChildren = await trx
+              .selectFrom("jobMaterial")
+              .where("jobMakeMethodId", "in", jobMakeMethodIdsOfKittedChildren)
+              .where("quantityToIssue", ">", 0)
+              .where("itemType", "in", ["Material", "Part", "Consumable"])
+              .where("methodType", "!=", "Make")
+              .where("estimatedQuantity", ">", 0)
+              .where("requiresBatchTracking", "=", false)
+              .where("requiresSerialTracking", "=", false)
+              .selectAll()
+              .execute();
+
+            materialsToIssue.push(...materialsToIssueFromKittedChildren);
+          }
 
           if (materialsToIssue.length > 0) {
             const itemIds = new Set(

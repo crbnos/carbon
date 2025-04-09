@@ -54,13 +54,13 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Location, Shelf } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
+import Select from "~/components/Select";
+import SupplierAvatar from "~/components/SupplierAvatar";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import { jobCompleteValidator } from "../../production.models";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
-import SupplierAvatar from "~/components/SupplierAvatar";
-import Select from "~/components/Select";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -451,10 +451,21 @@ function JobStartModal({
       )
     );
 
+    const kittedMakeMethodIds = new Set(
+      materials.data
+        ?.filter((m) => m.jobMaterialMakeMethodId && m.kit)
+        .map((m) => m.jobMaterialMakeMethodId) ?? []
+    );
+
     // make methods for materials
     const uniqueMakeMethodIds = new Set(
       materials.data
-        ?.filter((m) => m.jobMaterialMakeMethodId && m.methodType === "Make")
+        ?.filter(
+          (m) =>
+            m.jobMaterialMakeMethodId &&
+            m.methodType === "Make" &&
+            !kittedMakeMethodIds.has(m.jobMaterialMakeMethodId)
+        )
         .map((m) => m.jobMaterialMakeMethodId) ?? []
     );
 

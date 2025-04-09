@@ -39,7 +39,10 @@ export type Job = NonNullable<
 
 export type JobMaterial = NonNullable<
   Awaited<ReturnType<typeof getJobMaterialsByOperationId>>
->["materials"][number];
+>["materials"][number] & {
+  isKitComponent?: boolean;
+  kitParentId?: string;
+};
 
 export type TrackedInput = NonNullable<
   Awaited<ReturnType<typeof getTrackedInputs>>["data"]

@@ -177,6 +177,7 @@ const QuoteBoMExplorer = ({
                             // node.data.isRoot ? "Method" :
                             node.data.methodType
                           }
+                          isKit={node.data.kit}
                           className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
                         />
                         <NodeText node={node} />

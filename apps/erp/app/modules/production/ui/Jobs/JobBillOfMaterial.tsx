@@ -10,6 +10,11 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   toast,
   Tooltip,
@@ -22,7 +27,7 @@ import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuSettings2, LuX } from "react-icons/lu";
+import { LuChevronDown, LuSettings2, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import {
@@ -137,7 +142,7 @@ function makeItem(
         <Tooltip>
           <TooltipTrigger>
             <Badge variant="secondary">
-              <MethodIcon type={material.methodType} />
+              <MethodIcon type={material.methodType} isKit={material.kit} />
             </Badge>
           </TooltipTrigger>
           <TooltipContent>{material.methodType}</TooltipContent>
@@ -627,6 +632,7 @@ function MaterialForm({
     unitCost: number;
     unitOfMeasureCode: string;
     quantity: number;
+    kit: boolean;
     requiresBatchTracking: boolean;
     requiresSerialTracking: boolean;
   }>({
@@ -637,6 +643,7 @@ function MaterialForm({
     unitCost: item.data.unitCost ?? 0,
     unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
     quantity: item.data.quantity ?? 1,
+    kit: item.data.kit ?? false,
     requiresBatchTracking: item.data.requiresBatchTracking ?? false,
     requiresSerialTracking: item.data.requiresSerialTracking ?? false,
   });
@@ -653,6 +660,7 @@ function MaterialForm({
       unitCost: 0,
       description: "",
       unitOfMeasureCode: "EA",
+      kit: false,
       requiresBatchTracking: false,
       requiresSerialTracking: false,
     });
@@ -709,7 +717,7 @@ function MaterialForm({
       method="post"
       defaultValues={item.data}
       validator={
-        job?.status === "Draft"
+        job?.status === "Draft" || jobOperations?.length === 0
           ? jobMaterialValidator
           : jobMaterialValidatorForReleasedJob
       }
@@ -724,6 +732,7 @@ function MaterialForm({
       <Hidden name="id" />
       <Hidden name="jobMakeMethodId" />
       <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+      <Hidden name="kit" value={itemData.kit.toString()} />
       <Hidden name="order" />
       <Hidden
         name="requiresBatchTracking"
@@ -802,7 +811,7 @@ function MaterialForm({
         </div>
 
         <motion.div
-          className="flex w-full items-center justify-end p-2"
+          className="flex flex-1 items-center justify-end w-full pt-2"
           initial={{ opacity: 0, filter: "blur(4px)" }}
           animate={{ opacity: 1, filter: "blur(0px)" }}
           transition={{
@@ -811,7 +820,45 @@ function MaterialForm({
             duration: 0.55,
           }}
         >
-          <motion.div layout className="ml-auto mr-1 pt-2">
+          <motion.div
+            layout
+            className="flex items-center justify-between gap-2 w-full"
+          >
+            {itemData.methodType === "Make" ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={<MethodIcon type={"Make"} isKit={itemData.kit} />}
+                    variant="secondary"
+                    size="sm"
+                    rightIcon={<LuChevronDown />}
+                  >
+                    {itemData.kit ? "Kit" : "Subassembly"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuRadioGroup
+                    value={itemData.kit ? "Kit" : "Subassembly"}
+                    onValueChange={(value) => {
+                      setItemData((d) => ({
+                        ...d,
+                        kit: value === "Kit",
+                      }));
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="Subassembly">
+                      Subassembly
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="Kit">
+                      Kit
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div />
+            )}
+
             <Submit isDisabled={isDisabled}>Save</Submit>
           </motion.div>
         </motion.div>

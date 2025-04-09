@@ -11,7 +11,8 @@ export type ConfiguratorDataType =
   | "list"
   | "numeric"
   | "text"
-  | "enum";
+  | "enum"
+  | "date";
 
 export type BatchPropertyDataType = ConfiguratorDataType | "date";
 
@@ -48,4 +49,5 @@ export const typeMap: TypeMap = {
   numeric: "number",
   text: "string",
   enum: "string",
+  date: "string",
 };

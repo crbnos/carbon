@@ -1,5 +1,7 @@
 import type { Database } from "@carbon/database";
+import type { TrackedActivityAttributes } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -10,8 +12,6 @@ import type {
   scrapQuantityValidator,
 } from "./models";
 import type { BaseOperationWithDetails, Job, StorageItem } from "./types";
-import { TrackedActivityAttributes } from "@carbon/utils";
-import { nanoid } from "nanoid";
 
 export async function deleteAttributeRecord(
   client: SupabaseClient<Database>,
@@ -250,13 +250,47 @@ export async function getJobMaterialsByOperationId(
 
   const [materials, trackedInputs] = await Promise.all([
     client
-      .from("jobMaterial")
+      .from("jobMaterialWithMakeMethodId")
       .select("*")
       .eq("jobMakeMethodId", operation.jobMakeMethodId)
       .order("itemReadableId", { ascending: true })
       .order("id", { ascending: true }),
     getTrackedInputs(client, trackedEntityId),
   ]);
+
+  const kittedMakeMethodIds = new Set(
+    materials.data
+      ?.filter((m) => m.kit)
+      .map((m) => m.jobMaterialMakeMethodId) ?? []
+  );
+  if (kittedMakeMethodIds.size) {
+    const kittedMaterials = await client
+      .from("jobMaterialWithMakeMethodId")
+      .select("*")
+      .in("jobMakeMethodId", Array.from(kittedMakeMethodIds))
+      .neq("methodType", "Make");
+
+    // Create a map of parent kit materials by their make method ID
+    const kitParentMap = new Map();
+    materials.data?.forEach((material) => {
+      if (material.kit && material.jobMaterialMakeMethodId) {
+        kitParentMap.set(material.jobMaterialMakeMethodId, material);
+      }
+    });
+
+    // Add parent reference to each kitted material
+    const processedKittedMaterials = (kittedMaterials.data ?? []).map(
+      (material) => ({
+        ...material,
+        isKitComponent: true,
+        kitParentId: Array.from(kitParentMap.entries()).find(
+          ([makeMethodId]) => makeMethodId === material.jobMakeMethodId
+        )?.[1]?.id,
+      })
+    );
+
+    materials.data = [...(materials.data ?? []), ...processedKittedMaterials];
+  }
 
   if (requiresSerialTracking) {
     return {

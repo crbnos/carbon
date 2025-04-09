@@ -14,6 +14,7 @@ import {
   LuGroup,
   LuHammer,
   LuHeadphones,
+  LuHexagon,
   LuImage,
   LuList,
   LuPizza,
@@ -138,9 +139,11 @@ export const FileIcon = ({ type, className }: FileIconProps) => {
 export const MethodIcon = ({
   type,
   className,
+  isKit,
 }: {
   type: string;
   className?: string;
+  isKit?: boolean;
 }) => {
   switch (type) {
     case "Method":
@@ -150,7 +153,9 @@ export const MethodIcon = ({
     case "Buy":
       return <LuShoppingCart className={cn("text-blue-500", className)} />;
     case "Make":
-      return (
+      return isKit ? (
+        <LuHexagon className={cn("text-emerald-500", className)} />
+      ) : (
         <RxCodesandboxLogo className={cn("text-emerald-500", className)} />
       );
     case "Pick":

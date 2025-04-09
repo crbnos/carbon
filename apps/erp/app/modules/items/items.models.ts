@@ -186,6 +186,7 @@ export const methodMaterialValidator = z
         message: "Item type is required",
       }),
     }),
+    kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
     methodType: z.enum(methodType, {
       errorMap: (issue, ctx) => ({
         message: "Method type is required",
