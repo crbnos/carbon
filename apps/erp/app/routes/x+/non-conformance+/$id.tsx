@@ -13,7 +13,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Parts",
+  breadcrumb: "Non-Conformances",
   to: path.to.parts,
   module: "items",
 };
