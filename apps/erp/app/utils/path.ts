@@ -804,6 +804,12 @@ export const path = {
     nonConformance: (id: string) => generatePath(`${x}/non-conformance/${id}`),
     nonConformanceDetails: (id: string) =>
       generatePath(`${x}/non-conformance/${id}/details`),
+    nonConformanceSupplier: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/supplier`),
+    nonConformanceTasks: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/tasks`),
+    nonConformanceReview: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/review`),
     nonConformanceWorkflow: (id: string) =>
       generatePath(`${x}/non-conformance-workflow/${id}`),
     nonConformanceWorkflows: `${x}/quality/non-conformance-workflows`,
