@@ -11,7 +11,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId, userId } = await requirePermissions(request, {
-    update: "sales",
+    update: "production",
   });
 
   const formData = await request.formData();
