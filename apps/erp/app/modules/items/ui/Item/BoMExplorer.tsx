@@ -11,6 +11,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Spinner,
   VStack,
   cn,
   toast,
@@ -108,6 +109,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
         <OnshapeSync
           documentId={"b769cd1538f9c9aacf88ab06"}
           versionId={"f71af59ac5406d573dcb964a"}
+          elementId={"76c15dd77696f26035f6674f"}
           mode={"manual"}
           lastSyncedAt={"2025-04-10T12:16:32.063Z"}
         />
@@ -340,17 +342,19 @@ function getMaterialLink(
 export const OnshapeSync = ({
   documentId: initialDocumentId,
   versionId: initialVersionId,
+  elementId: initialElementId,
   mode,
   lastSyncedAt,
 }: {
   documentId: string | null;
   versionId: string | null;
+  elementId: string | null;
   mode: "manual" | "automatic";
   lastSyncedAt?: string;
 }) => {
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [versionId, setVersionId] = useState(initialVersionId);
-
+  const [elementId, setElementId] = useState(initialElementId);
   const disclosure = useDisclosure();
 
   const documentsFetcher = useFetcher<
@@ -404,10 +408,50 @@ export const OnshapeSync = ({
       );
     }, [versionsFetcher.data]) ?? [];
 
-  console.log({ versionsData: versionsFetcher.data });
+  const elementsFetcher = useFetcher<
+    | { data: { id: string; name: string }[]; error: null }
+    | { data: null; error: string }
+  >({});
+
+  useEffect(() => {
+    if (documentId && versionId) {
+      elementsFetcher.load(path.to.api.onShapeElements(documentId, versionId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId, versionId]);
+
+  const elementOptions =
+    useMemo(() => {
+      return (
+        elementsFetcher.data?.data?.map((c) => ({
+          value: c.id,
+          label: c.name,
+        })) ?? []
+      );
+    }, [elementsFetcher.data]) ?? [];
 
   const isDataLoading =
-    documentsFetcher.state === "loading" || versionsFetcher.state === "loading";
+    documentsFetcher.state === "loading" ||
+    versionsFetcher.state === "loading" ||
+    elementsFetcher.state === "loading";
+
+  const isReadyForSync =
+    documentId &&
+    versionId &&
+    elementId &&
+    documentOptions.some((c) => c.value === documentId) &&
+    versionOptions.some((c) => c.value === versionId) &&
+    elementOptions.some((c) => c.value === elementId);
+
+  const bomFetcher = useFetcher<unknown>();
+
+  const loadBom = () => {
+    if (isReadyForSync) {
+      bomFetcher.load(path.to.api.onShapeBom(documentId, versionId, elementId));
+    }
+  };
+
+  console.log(bomFetcher.data);
 
   return (
     <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
@@ -433,6 +477,7 @@ export const OnshapeSync = ({
                 options={documentOptions}
                 onChange={(value) => {
                   setVersionId(null);
+                  setElementId(null);
                   setDocumentId(value);
                 }}
                 size="sm"
@@ -450,10 +495,27 @@ export const OnshapeSync = ({
                 options={versionOptions}
                 onChange={(value) => {
                   setVersionId(value);
+                  setElementId(null);
                 }}
                 size="sm"
                 className="text-xs"
                 value={versionId ?? undefined}
+              />
+            </div>
+          </div>
+
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Element:</span>
+            <div className="w-[180px]">
+              <Combobox
+                isLoading={elementsFetcher.state === "loading"}
+                options={elementOptions}
+                onChange={(value) => {
+                  setElementId(value);
+                }}
+                size="sm"
+                className="text-xs"
+                value={elementId ?? undefined}
               />
             </div>
           </div>
@@ -496,9 +558,18 @@ export const OnshapeSync = ({
           <span className="text-xs text-muted-foreground">
             Last synced: {formatDateTime(lastSyncedAt)}
           </span>
-          <Button isDisabled={isDataLoading} size="sm">
-            Sync
-          </Button>
+          {isDataLoading ? (
+            <Spinner className="size-3" />
+          ) : (
+            <Button
+              isLoading={bomFetcher.state !== "idle"}
+              isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
+              size="sm"
+              onClick={loadBom}
+            >
+              Sync
+            </Button>
+          )}
         </div>
       )}
     </div>

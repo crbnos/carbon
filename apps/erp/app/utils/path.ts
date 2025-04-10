@@ -47,10 +47,16 @@ export const path = {
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       modelUpload: `${api}/model/upload`,
+      onShapeBom: (documentId: string, versionId: string, elementId: string) =>
+        generatePath(
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
+        ),
       onShapeDocuments: `${api}/integrations/onshape/documents`,
       onShapeVersions: (documentId: string) =>
+        generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
+      onShapeElements: (documentId: string, versionId: string) =>
         generatePath(
-          `${api}/integrations/onshape/documents/${documentId}/versions`
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),

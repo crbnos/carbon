@@ -13,8 +13,8 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => {
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
-  const { documentId } = params;
-  if (!documentId) {
+  const { did } = params;
+  if (!did) {
     return json({
       data: [],
       error: "Document ID is required",
@@ -53,13 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     let allDocuments: Array<{ id: string; name: string }> = [];
 
     while (true) {
-      const response = await onshapeClient.getVersions(
-        documentId,
-        limit,
-        offset
-      );
-
-      console.log({ response });
+      const response = await onshapeClient.getVersions(did, limit, offset);
 
       if (!response || response.length === 0) {
         break;

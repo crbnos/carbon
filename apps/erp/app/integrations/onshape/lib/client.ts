@@ -1,5 +1,3 @@
-import { z } from "zod";
-
 interface OnshapeClientConfig {
   baseUrl: string;
   accessKey: string;
@@ -14,15 +12,6 @@ export interface OnshapePart {
   description: string;
   metadata: Record<string, string>;
 }
-
-const OnshapePartSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  partNumber: z.string().optional().default(""),
-  revision: z.string().optional().default(""),
-  description: z.string().optional().default(""),
-  metadata: z.record(z.string()).optional().default({}),
-});
 
 export class OnshapeClient {
   private baseUrl: string;
@@ -99,76 +88,14 @@ export class OnshapeClient {
     );
   }
 
-  /**
-   * Get parts from a specific document
-   */
-  async getParts(
+  async getBillOfMaterials(
     documentId: string,
-    workspaceId: string
-  ): Promise<OnshapePart[]> {
-    const response = await this.request<any>(
+    versionId: string,
+    elementId: string
+  ): Promise<any> {
+    return this.request(
       "GET",
-      `/api/documents/${documentId}/workspaces/${workspaceId}/parts`
-    );
-
-    return response.map((part: any) =>
-      OnshapePartSchema.parse({
-        id: part.partId,
-        name: part.name,
-        partNumber: part.partNumber,
-        revision: part.revision,
-        description: part.description,
-        metadata: part.properties || {},
-      })
-    );
-  }
-
-  /**
-   * Get a specific part by ID
-   */
-  async getPart(
-    documentId: string,
-    workspaceId: string,
-    elementId: string,
-    partId: string
-  ): Promise<OnshapePart> {
-    const response = await this.request<any>(
-      "GET",
-      `/api/parts/d/${documentId}/w/${workspaceId}/e/${elementId}/partid/${partId}`
-    );
-
-    return OnshapePartSchema.parse({
-      id: response.id,
-      name: response.name,
-      partNumber: response.partNumber,
-      revision: response.revision,
-      description: response.description,
-      metadata: response.properties || {},
-    });
-  }
-
-  /**
-   * Sync a part from Onshape to Carbon
-   */
-  async syncPart(part: OnshapePart): Promise<void> {
-    // Implementation would depend on how Carbon expects to receive the part data
-    console.log(`Syncing part ${part.name} (${part.id}) to Carbon`);
-    // This would typically involve transforming the Onshape part data
-    // and then sending it to a Carbon API endpoint
-  }
-
-  /**
-   * Sync all parts from a document to Carbon
-   */
-  async syncAllParts(documentId: string, workspaceId: string): Promise<void> {
-    const parts = await this.getParts(documentId, workspaceId);
-
-    for (const part of parts) {
-      await this.syncPart(part);
-    }
-
-    console.log(
-      `Synced ${parts.length} parts from document ${documentId} to Carbon`
+      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=true&includeItemMicroversions=false&includeTopLevelAssemblyRow=true&thumbnail=false`
     );
   }
 }

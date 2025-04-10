@@ -7,7 +7,7 @@ export const Onshape: IntegrationConfig = {
   name: "Onshape",
   id: "onshape",
   active: true,
-  category: "PLM",
+  category: "CAD",
   logo: Logo,
   description:
     "Onshape is a CAD software that allows you to create 2D and 3D designs. This integration will sync data from Onshape to Carbon.",
@@ -37,6 +37,13 @@ export const Onshape: IntegrationConfig = {
       required: true,
       value: "",
     },
+    {
+      name: "companyId",
+      label: "Company ID",
+      type: "text",
+      required: true,
+      value: "",
+    },
   ],
   schema: z.object({
     baseUrl: z
@@ -45,8 +52,10 @@ export const Onshape: IntegrationConfig = {
       .regex(/^https:\/\/.*onshape\.com$/, {
         message: "URL must start with https:// and end with onshape.com",
       }),
+
     accessKey: z.string().min(1, { message: "Access Key is required" }),
     secretKey: z.string().min(1, { message: "Secret Key is required" }),
+    companyId: z.string().min(1, { message: "Company ID is required" }),
   }),
   onInitialize: () => {},
   onUninstall: () => {},
@@ -68,7 +77,8 @@ function SetupInstructions({ companyId }: { companyId: string }) {
       </p>
       <p className="text-sm text-muted-foreground">
         Next, copy the API Key and Secret Key from your Onshape account and
-        paste them into the API Key and Secret Key fields below:
+        paste them into the API Key and Secret Key fields below. Finally, enter
+        the Company ID of your Onshape account.
       </p>
     </>
   );
