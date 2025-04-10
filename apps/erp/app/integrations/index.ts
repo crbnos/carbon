@@ -9,9 +9,9 @@ import { Zapier } from "./zapier/config";
 
 export const integrations = [
   ExchangeRates,
-  Onshape,
-  PaperlessParts,
   Resend,
+  PaperlessParts,
+  Onshape,
   Slack,
   QuickBooks,
   Xero,

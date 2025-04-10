@@ -47,6 +47,11 @@ export const path = {
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       modelUpload: `${api}/model/upload`,
+      onShapeDocuments: `${api}/integrations/onshape/documents`,
+      onShapeVersions: (documentId: string) =>
+        generatePath(
+          `${api}/integrations/onshape/documents/${documentId}/versions`
+        ),
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       purchasingKpi: (key: string) =>

@@ -1,5 +1,4 @@
-import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
-import { isBrowser } from "@carbon/utils";
+import { Badge } from "@carbon/react";
 import type { SVGProps } from "react";
 import { z } from "zod";
 import type { IntegrationConfig } from "../types";
@@ -25,23 +24,28 @@ export const Onshape: IntegrationConfig = {
       value: "https://cad.onshape.com",
     },
     {
-      name: "apiKey",
-      label: "API Key",
+      name: "accessKey",
+      label: "Access Key/Username",
       type: "text",
       required: true,
       value: "",
     },
     {
       name: "secretKey",
-      label: "Secret Key",
+      label: "Secret Key/Password",
       type: "text",
       required: true,
       value: "",
     },
   ],
   schema: z.object({
-    baseUrl: z.string().min(1, { message: "Base URL is required" }),
-    apiKey: z.string().min(1, { message: "API Key is required" }),
+    baseUrl: z
+      .string()
+      .min(1, { message: "Base URL is required" })
+      .regex(/^https:\/\/.*onshape\.com$/, {
+        message: "URL must start with https:// and end with onshape.com",
+      }),
+    accessKey: z.string().min(1, { message: "Access Key is required" }),
     secretKey: z.string().min(1, { message: "Secret Key is required" }),
   }),
   onInitialize: () => {},
@@ -49,21 +53,19 @@ export const Onshape: IntegrationConfig = {
 };
 
 function SetupInstructions({ companyId }: { companyId: string }) {
-  const webhookUrl = isBrowser
-    ? `${window.location.origin}/api/webhook/onshape/${companyId}`
-    : "";
   return (
     <>
       <p className="text-sm text-muted-foreground">
-        First, copy and paste the following URL into the Webhook URL field in
-        your Onshape account:
+        First, get the base URL of your Onshape account. This is either{" "}
+        <Badge className="font-mono lowercase" variant="gray">
+          https://cad.onshape.com
+        </Badge>{" "}
+        or something like{" "}
+        <Badge className="font-mono lowercase" variant="gray">
+          https://your-company.onshape.com/
+        </Badge>
+        .
       </p>
-      <InputGroup className="mb-8">
-        <Input value={webhookUrl} />
-        <InputRightElement>
-          <Copy text={webhookUrl} />
-        </InputRightElement>
-      </InputGroup>
       <p className="text-sm text-muted-foreground">
         Next, copy the API Key and Secret Key from your Onshape account and
         paste them into the API Key and Secret Key fields below:
@@ -72,7 +74,7 @@ function SetupInstructions({ companyId }: { companyId: string }) {
   );
 }
 
-function Logo(props: SVGProps<SVGSVGElement>) {
+export function Logo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       width="216"

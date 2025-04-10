@@ -38,20 +38,11 @@ export class OnshapeClient {
   /**
    * Generate the authorization headers for Onshape API requests
    */
-  private getAuthHeaders(
-    method: string,
-    path: string,
-    date: string
-  ): Record<string, string> {
-    const hmacString = `${method}\n${date}\n${path}\n`;
-    const hmac = require("crypto").createHmac("sha256", this.secretKey);
-    hmac.update(hmacString);
-    const signature = hmac.digest("base64");
-
+  private getAuthHeaders(): Record<string, string> {
     return {
-      Date: date,
       "Content-Type": "application/json",
-      Authorization: `On ${this.accessKey}:${signature}`,
+      Accept: "application/json;charset=UTF-8; qs=0.09",
+      Authorization: `Basic ${btoa(`${this.accessKey}:${this.secretKey}`)}`,
     };
   }
 
@@ -63,8 +54,7 @@ export class OnshapeClient {
     path: string,
     body?: Record<string, unknown>
   ): Promise<T> {
-    const date = new Date().toUTCString();
-    const headers = this.getAuthHeaders(method, path, date);
+    const headers = this.getAuthHeaders();
     const url = `${this.baseUrl}${path}`;
 
     const response = await fetch(url, {
@@ -84,15 +74,29 @@ export class OnshapeClient {
   /**
    * Get a list of documents
    */
-  async getDocuments(): Promise<any> {
-    return this.request("GET", "/api/documents");
+  async getDocuments(limit: number = 20, offset: number = 0): Promise<any> {
+    return this.request(
+      "GET",
+      `/api/v10/documents?limit=${limit}&offset=${offset}`
+    );
   }
 
-  /**
-   * Get a specific document by ID
-   */
-  async getDocument(documentId: string): Promise<any> {
-    return this.request("GET", `/api/documents/${documentId}`);
+  async getVersions(
+    documentId: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<any> {
+    return this.request(
+      "GET",
+      `/api/v10/documents/d/${documentId}/versions?limit=${limit}&offset=${offset}`
+    );
+  }
+
+  async getElements(documentId: string, versionId: string): Promise<any> {
+    return this.request(
+      "GET",
+      `/api/v10/documents/d/${documentId}/v/${versionId}/elements`
+    );
   }
 
   /**

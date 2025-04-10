@@ -1,23 +1,31 @@
 import {
   Badge,
+  Button,
+  Combobox,
   Copy,
   HStack,
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
   VStack,
   cn,
+  toast,
+  useDisclosure,
   useMount,
 } from "@carbon/react";
-import { useNavigate, useParams } from "@remix-run/react";
-import { useRef, useState } from "react";
+import { formatDateTime } from "@carbon/utils";
+import { useFetcher, useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
+import { useIntegrations } from "~/hooks/useIntegrations";
+import { Logo } from "~/integrations/onshape/config";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { Method } from "../../types";
@@ -31,6 +39,7 @@ type BoMExplorerProps = {
 const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
+  const integrations = useIntegrations();
 
   const {
     nodes,
@@ -95,6 +104,14 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
           />
         </InputGroup>
       </HStack>
+      {integrations.has("onshape") && (
+        <OnshapeSync
+          documentId={"b769cd1538f9c9aacf88ab06"}
+          versionId={"f71af59ac5406d573dcb964a"}
+          mode={"manual"}
+          lastSyncedAt={"2025-04-10T12:16:32.063Z"}
+        />
+      )}
       <TreeView
         parentRef={parentRef}
         virtualizer={virtualizer}
@@ -319,3 +336,171 @@ function getMaterialLink(
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }
 }
+
+export const OnshapeSync = ({
+  documentId: initialDocumentId,
+  versionId: initialVersionId,
+  mode,
+  lastSyncedAt,
+}: {
+  documentId: string | null;
+  versionId: string | null;
+  mode: "manual" | "automatic";
+  lastSyncedAt?: string;
+}) => {
+  const [documentId, setDocumentId] = useState(initialDocumentId);
+  const [versionId, setVersionId] = useState(initialVersionId);
+
+  const disclosure = useDisclosure();
+
+  const documentsFetcher = useFetcher<
+    | { data: { items: { id: string; name: string }[] }; error: null }
+    | { data: null; error: string }
+  >({});
+
+  useMount(() => {
+    documentsFetcher.load(path.to.api.onShapeDocuments);
+  });
+
+  useEffect(() => {
+    if (documentsFetcher.data?.error) {
+      toast.error(documentsFetcher.data.error);
+    }
+  }, [documentsFetcher.data]);
+
+  const documentOptions =
+    useMemo(() => {
+      return (
+        documentsFetcher.data?.data?.items
+          ?.map((c) => ({
+            value: c.id,
+            label: c.name,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label)) ?? []
+      );
+    }, [documentsFetcher.data]) ?? [];
+
+  const versionsFetcher = useFetcher<
+    | { data: { id: string; name: string }[]; error: null }
+    | { data: null; error: string }
+  >({});
+
+  useEffect(() => {
+    if (documentId) {
+      versionsFetcher.load(path.to.api.onShapeVersions(documentId));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documentId]);
+
+  const versionOptions =
+    useMemo(() => {
+      return (
+        versionsFetcher.data?.data
+          ?.map((c) => ({
+            value: c.id,
+            label: c.name,
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label)) ?? []
+      );
+    }, [versionsFetcher.data]) ?? [];
+
+  console.log({ versionsData: versionsFetcher.data });
+
+  const isDataLoading =
+    documentsFetcher.state === "loading" || versionsFetcher.state === "loading";
+
+  return (
+    <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
+      <div className="flex items-center w-full justify-between">
+        <Logo className="h-5 w-auto" />
+        <IconButton
+          aria-label="Show sync options"
+          variant="ghost"
+          size="sm"
+          icon={<LuChevronRight />}
+          className={cn(disclosure.isOpen && "rotate-90")}
+          onClick={disclosure.onToggle}
+        />
+      </div>
+
+      {disclosure.isOpen && (
+        <>
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Document:</span>
+            <div className="w-[180px]">
+              <Combobox
+                isLoading={documentsFetcher.state === "loading"}
+                options={documentOptions}
+                onChange={(value) => {
+                  setVersionId(null);
+                  setDocumentId(value);
+                }}
+                size="sm"
+                className="text-xs"
+                value={documentId ?? undefined}
+              />
+            </div>
+          </div>
+
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Version:</span>
+            <div className="w-[180px]">
+              <Combobox
+                isLoading={versionsFetcher.state === "loading"}
+                options={versionOptions}
+                onChange={(value) => {
+                  setVersionId(value);
+                }}
+                size="sm"
+                className="text-xs"
+                value={versionId ?? undefined}
+              />
+            </div>
+          </div>
+
+          <div className="flex w-full items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Sync mode:</span>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="manual"
+                  name="syncMode"
+                  value="manual"
+                  className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
+                  defaultChecked={mode === "manual"}
+                />
+                <label htmlFor="manual" className="text-xs cursor-pointer">
+                  Manual
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="automatic"
+                  name="syncMode"
+                  value="automatic"
+                  className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
+                  defaultChecked={mode === "automatic"}
+                />
+                <label htmlFor="automatic" className="text-xs cursor-pointer">
+                  Automatic
+                </label>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {lastSyncedAt && (
+        <div className="flex items-center gap-1 w-full justify-between">
+          <span className="text-xs text-muted-foreground">
+            Last synced: {formatDateTime(lastSyncedAt)}
+          </span>
+          <Button isDisabled={isDataLoading} size="sm">
+            Sync
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
