@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
+import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import z from "npm:zod@^3.24.1";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -1078,7 +1078,11 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", existingShipmentId)
             .maybeSingle(),
-          client.from("job").select("*").eq("salesOrderId", salesOrderId),
+          client
+            .from("job")
+            .select("*")
+            .eq("salesOrderId", salesOrderId)
+            .neq("status", "Cancelled"),
         ]);
 
         if (!salesOrder.data) throw new Error("Sales order not found");
@@ -1415,7 +1419,8 @@ serve(async (req: Request) => {
             client
               .from("job")
               .select("*")
-              .eq("salesOrderLineId", salesOrderLineId),
+              .eq("salesOrderLineId", salesOrderLineId)
+              .neq("status", "Cancelled"),
           ]);
 
         if (!salesOrder.data) throw new Error("Sales order not found");

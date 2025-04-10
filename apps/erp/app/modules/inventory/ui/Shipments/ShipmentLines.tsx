@@ -1,3 +1,5 @@
+import { useCarbon } from "@carbon/auth";
+import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -9,9 +11,16 @@ import {
   Heading,
   HStack,
   IconButton,
-  ModalHeader,
-  ModalContent,
+  Input,
+  InputGroup,
+  InputRightElement,
   Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
   NumberField,
   NumberInput,
   SplitButton,
@@ -20,14 +29,9 @@ import {
   TooltipTrigger,
   useDisclosure,
   VStack,
-  ModalBody,
-  ModalFooter,
-  ModalTitle,
-  ModalDescription,
-  Input,
-  InputGroup,
-  InputRightElement,
 } from "@carbon/react";
+import type { TrackedEntityAttributes } from "@carbon/utils";
+import { labelSizes } from "@carbon/utils";
 import {
   Outlet,
   useFetcher,
@@ -48,22 +52,18 @@ import { Enumerable } from "~/components/Enumerable";
 import { useShelves } from "~/components/Form/Shelf";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useRouteData } from "~/hooks";
-import { splitValidator } from "~/modules/inventory";
 import type {
   getBatchNumbersForItem,
   getSerialNumbersForItem,
+  ItemTracking,
   Shipment,
   ShipmentLine,
   ShipmentLineTracking,
-  ItemTracking,
 } from "~/modules/inventory";
+import { splitValidator } from "~/modules/inventory";
 import type { action as shipmentLinesUpdateAction } from "~/routes/x+/shipment+/lines.update";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
-import { ValidatedForm, Submit, Number } from "@carbon/form";
-import type { TrackedEntityAttributes } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
-import { useCarbon } from "@carbon/auth";
 
 const ShipmentLines = () => {
   const { shipmentId } = useParams();
@@ -423,7 +423,7 @@ function ShipmentLineItem({
                       <LuCircleAlert className="text-red-500" />
                     </TooltipTrigger>
                     <TooltipContent>
-                      There are more received than ordered
+                      There are more shipped than ordered
                     </TooltipContent>
                   </Tooltip>
                 )}
