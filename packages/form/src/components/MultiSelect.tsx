@@ -1,5 +1,6 @@
 import type { MultiSelectProps as MultiSelectBaseProps } from "@carbon/react";
 import {
+  Badge,
   FormControl,
   FormErrorMessage,
   FormHelperText,
@@ -7,24 +8,57 @@ import {
   MultiSelect as MultiSelectBase,
 } from "@carbon/react";
 
-import { useControlField, useField } from "../hooks";
 import { useEffect } from "react";
+import { useControlField, useField } from "../hooks";
 
 export type MultiSelectProps = Omit<
   MultiSelectBaseProps,
-  "onChange" | "value"
+  "onChange" | "value" | "inline"
 > & {
   name: string;
   label?: string;
   helperText?: string;
   value?: string[];
   onChange?: (newValue: { value: string; label: string }[]) => void;
+  inline?: boolean;
+  inlineIcon?: React.ReactElement;
+  maxPreview?: number;
+};
+
+const MultiSelectPreview = (
+  value: string[],
+  options: { value: string; label: string; helper?: string }[],
+  maxPreview?: number
+) => {
+  return (
+    <div className="flex flex-wrap gap-1 items-start">
+      {maxPreview && value.length > maxPreview ? (
+        <Badge
+          variant="secondary"
+          className="border dark:border-none dark:shadow-button-base"
+        >
+          {value.length} selected
+        </Badge>
+      ) : (
+        value.sort().map((label: string) => (
+          <Badge
+            className="max-w-[160px] truncate border dark:border-none dark:shadow-button-base"
+            key={label}
+            variant="secondary"
+          >
+            {label}
+          </Badge>
+        ))
+      )}
+    </div>
+  );
 };
 
 const MultiSelect = ({
   name,
   label,
   helperText,
+  maxPreview,
   ...props
 }: MultiSelectProps) => {
   const { error } = useField(name);
@@ -50,9 +84,11 @@ const MultiSelect = ({
           value={selection}
         />
       ))}
+
       <MultiSelectBase
         {...props}
         value={value.filter(Boolean)}
+        inline={props.inline ? MultiSelectPreview : undefined}
         onChange={(newValue) => {
           setValue(newValue ?? []);
           onChange(newValue ?? []);

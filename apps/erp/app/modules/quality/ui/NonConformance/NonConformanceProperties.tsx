@@ -1,5 +1,11 @@
 import type { Json } from "@carbon/database";
-import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
+import {
+  DatePicker,
+  InputControlled,
+  MultiSelect,
+  Select,
+  ValidatedForm,
+} from "@carbon/form";
 import {
   Button,
   HStack,
@@ -14,14 +20,22 @@ import { useCallback, useEffect } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
 import { Assignee, useOptimisticAssignment } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
-import type { StorageItem } from "~/types";
+import type { ListItem, StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+import {
+  nonConformanceApprovalRequirement,
+  nonConformanceInvestigationType,
+  nonConformanceRequiredAction,
+  nonConformanceSource,
+} from "../../quality.models";
 import type { NonConformance } from "../../types";
+import { getSourceIcon } from "./NonConformanceIcons";
 
 const NonConformanceProperties = () => {
   const { id } = useParams();
@@ -31,6 +45,7 @@ const NonConformanceProperties = () => {
 
   const routeData = useRouteData<{
     nonConformance: NonConformance;
+    nonConformanceTypes: ListItem[];
     files: Promise<StorageItem[]>;
     tags: { name: string }[];
   }>(path.to.nonConformance(id));
@@ -122,6 +137,8 @@ const NonConformanceProperties = () => {
     [id]
   );
 
+  const disableStructureUpdate = !permissions.can("delete", "quality");
+
   return (
     <VStack
       spacing={4}
@@ -210,8 +227,8 @@ const NonConformanceProperties = () => {
               <InputControlled
                 label=""
                 name="name"
-                inline
                 size="sm"
+                inline
                 value={routeData?.nonConformance?.name ?? ""}
                 onBlur={(e) => {
                   onUpdate("name", e.target.value ?? null);
@@ -233,6 +250,157 @@ const NonConformanceProperties = () => {
           isReadOnly={!permissions.can("update", "quality")}
         />
       </VStack>
+
+      <ValidatedForm
+        defaultValues={{
+          nonConformanceTypeId:
+            routeData?.nonConformance?.nonConformanceTypeId ?? "",
+        }}
+        validator={z.object({
+          nonConformanceTypeId: z.string().optional(),
+        })}
+        className="w-full"
+      >
+        <Select
+          options={(routeData?.nonConformanceTypes ?? []).map((type) => ({
+            value: type.id,
+            label: <Enumerable value={type.name} />,
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Non-conformance Type"
+          name="nonConformanceTypeId"
+          inline={(value, options) => {
+            return (
+              <Enumerable
+                value={
+                  routeData?.nonConformanceTypes.find((t) => t.id === value)
+                    ?.name ?? null
+                }
+              />
+            );
+          }}
+          onChange={(value) => {
+            if (value) {
+              onUpdate("source", value.value);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          source: routeData?.nonConformance?.source ?? "",
+        }}
+        validator={z.object({
+          source: z.string().optional(),
+        })}
+        className="w-full"
+      >
+        <Select
+          options={nonConformanceSource.map((source) => ({
+            value: source,
+            label: (
+              <div className="flex gap-2 items-center">
+                {getSourceIcon(source, false)}
+                <span>{source}</span>
+              </div>
+            ),
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Source"
+          name="source"
+          inline={(value, options) => {
+            return (
+              <div className="flex gap-2 items-center">
+                {getSourceIcon(value as "External" | "Internal", false)}
+                <span>{value}</span>
+              </div>
+            );
+          }}
+          onChange={(value) => {
+            if (value) {
+              onUpdate("source", value.value);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          investigationTypes:
+            routeData?.nonConformance?.investigationTypes ?? [],
+        }}
+        validator={z.object({
+          investigationTypes: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <MultiSelect
+          options={nonConformanceInvestigationType.map((type) => ({
+            value: type,
+            label: type,
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Investigation Types"
+          name="investigationTypes"
+          inline
+          onChange={(value) => {
+            onUpdate("investigationTypes", value.map((v) => v.value).join(","));
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          requiredActions: routeData?.nonConformance?.requiredActions ?? [],
+        }}
+        validator={z.object({
+          requiredActions: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <MultiSelect
+          options={nonConformanceRequiredAction.map((type) => ({
+            value: type,
+            label: type,
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Required Actions"
+          name="requiredActions"
+          inline
+          onChange={(value) => {
+            onUpdate("requiredActions", value.map((v) => v.value).join(","));
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          approvalRequirements:
+            routeData?.nonConformance?.approvalRequirements ?? [],
+        }}
+        validator={z.object({
+          approvalRequirements: z.array(z.string()).optional(),
+        })}
+        className="w-full"
+      >
+        <MultiSelect
+          options={nonConformanceApprovalRequirement.map((type) => ({
+            value: type,
+            label: type,
+          }))}
+          isReadOnly={disableStructureUpdate}
+          label="Approval Requirements"
+          name="approvalRequirements"
+          inline
+          onChange={(value) => {
+            onUpdate(
+              "approvalRequirements",
+              value.map((v) => v.value).join(",")
+            );
+          }}
+        />
+      </ValidatedForm>
 
       <ValidatedForm
         defaultValues={{

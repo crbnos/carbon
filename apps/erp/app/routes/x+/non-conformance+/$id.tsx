@@ -5,7 +5,10 @@ import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { getItemFiles } from "~/modules/items";
-import { getNonConformance } from "~/modules/quality";
+import {
+  getNonConformance,
+  getNonConformanceTypesList,
+} from "~/modules/quality";
 import NonConformanceHeader from "~/modules/quality/ui/NonConformance/NonConformanceHeader";
 import NonConformanceProperties from "~/modules/quality/ui/NonConformance/NonConformanceProperties";
 import { getTagsList } from "~/modules/shared";
@@ -14,8 +17,8 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: "Non-Conformances",
-  to: path.to.parts,
-  module: "items",
+  to: path.to.nonConformances,
+  module: "quality",
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -27,8 +30,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [nonConformance, tags] = await Promise.all([
+  const [nonConformance, nonConformanceTypes, tags] = await Promise.all([
     getNonConformance(client, id),
+    getNonConformanceTypesList(client, companyId),
     getTagsList(client, companyId, "nonConformance"),
   ]);
 
@@ -44,6 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     nonConformance: nonConformance.data,
+    nonConformanceTypes: nonConformanceTypes.data ?? [],
     files: getItemFiles(client, id, companyId),
     tags: tags.data ?? [],
   });
