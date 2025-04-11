@@ -26,6 +26,7 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
+import type { MethodItemType } from "~/modules/shared";
 import type { ListItem } from "~/types";
 import {
   nonConformanceApprovalRequirement,
@@ -67,6 +68,8 @@ const NonConformanceForm = ({
     requiredActions: initialValues.requiredActions ?? [],
     approvalRequirements: initialValues.approvalRequirements ?? [],
   });
+
+  const [itemType, setItemType] = useState<string>("Item");
 
   const onWorkflowChange = (value: { value: string } | null) => {
     if (value) {
@@ -121,7 +124,14 @@ const NonConformanceForm = ({
           <VStack spacing={4}>
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
               <Input name="name" label="Name" />
-              <Item name="itemId" label="Item" type="Item" />
+              <Item
+                name="itemId"
+                label="Item"
+                type={itemType as MethodItemType}
+                onTypeChange={(value) => {
+                  setItemType(value as string);
+                }}
+              />
             </div>
             <TextArea name="description" label="Description" />
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">

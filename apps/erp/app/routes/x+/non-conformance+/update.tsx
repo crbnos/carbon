@@ -27,16 +27,19 @@ export async function action({ request }: ActionFunctionArgs) {
     case "investigationTypes":
     case "requiredActions":
     case "approvalRequirements":
+      console.log(value);
+      const arrayValue = value ? value.split(",") : [];
       const update = await client
         .from("nonConformance")
         .update({
-          [field]: value ? value : null,
+          [field]: arrayValue,
           updatedBy: userId,
           updatedAt: new Date().toISOString(),
         })
         .in("id", ids as string[]);
 
       if (update.error) {
+        console.error(update.error);
         return json({
           error: { message: "Failed to update non-conformance" },
           data: null,
