@@ -115,7 +115,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         return {
           ...row,
           readableId: row["Part number"],
-          itemId: itemsMap?.get(row["Part number"]) ?? undefined,
+          id: itemsMap?.get(row["Part number"]) ?? undefined,
           replenishmentSystem:
             row["Purchasing Level"] === "Purchased" ? "Buy" : "Make", // TODO: this is not a standard field
           quantity: row["Quantity"],
