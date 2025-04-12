@@ -8,10 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  ScrollArea,
   Spinner,
   toast,
   useDebounce,
@@ -114,56 +110,37 @@ export default function NonConformanceDetailsRoute() {
   const permissions = usePermissions();
 
   return (
-    <div className="flex flex-grow overflow-hidden">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel
-          order={1}
-          minSize={10}
-          defaultSize={20}
-          className="bg-card"
-        >
-          <ScrollArea className="h-[calc(100dvh-99px)]">
-            <div className="grid h-full overflow-hidden p-2"></div>
-          </ScrollArea>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel order={2} minSize={40} defaultSize={60}>
-          <ScrollArea className="h-[calc(100dvh-99px)]">
-            <VStack spacing={2} className="p-2">
-              <NonConformanceContent
-                id={id}
-                title={routeData.nonConformance?.name ?? ""}
-                subTitle={routeData.nonConformance?.nonConformanceId ?? ""}
-                content={routeData.nonConformance?.content as JSONContent}
-              />
-              {permissions.is("employee") && (
-                <>
-                  <Suspense
-                    fallback={
-                      <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
-                        <Spinner className="h-10 w-10" />
-                      </div>
-                    }
-                  >
-                    <Await resolve={routeData?.files}>
-                      {(resolvedFiles) => (
-                        <Documents
-                          files={resolvedFiles}
-                          sourceDocument="Non-Conformance"
-                          sourceDocumentId={id}
-                          writeBucket="parts"
-                          writeBucketPermission="parts"
-                        />
-                      )}
-                    </Await>
-                  </Suspense>
-                </>
+    <VStack spacing={2} className="p-2">
+      <NonConformanceContent
+        id={id}
+        title={routeData.nonConformance?.name ?? ""}
+        subTitle={routeData.nonConformance?.nonConformanceId ?? ""}
+        content={routeData.nonConformance?.content as JSONContent}
+      />
+      {permissions.is("employee") && (
+        <>
+          <Suspense
+            fallback={
+              <div className="flex w-full h-full rounded bg-gradient-to-tr from-background to-card items-center justify-center">
+                <Spinner className="h-10 w-10" />
+              </div>
+            }
+          >
+            <Await resolve={routeData?.files}>
+              {(resolvedFiles) => (
+                <Documents
+                  files={resolvedFiles}
+                  sourceDocument="Non-Conformance"
+                  sourceDocumentId={id}
+                  writeBucket="parts"
+                  writeBucketPermission="parts"
+                />
               )}
-            </VStack>
-          </ScrollArea>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
+            </Await>
+          </Suspense>
+        </>
+      )}
+    </VStack>
   );
 }
 
@@ -208,7 +185,7 @@ function NonConformanceContent({
   const onUpdateContent = useDebounce(
     async (content: JSONContent) => {
       await carbon
-        ?.from("job")
+        ?.from("nonConformance")
         .update({
           content: content,
           updatedAt: now(getLocalTimeZone()).toString(),

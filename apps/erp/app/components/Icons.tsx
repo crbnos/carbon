@@ -42,6 +42,7 @@ import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
 import { useMode } from "~/hooks/useMode";
 import type { JobOperation } from "~/modules/production/types";
+import type { nonConformanceTaskStatus } from "~/modules/quality";
 import type { MethodType } from "~/modules/shared";
 
 export const ModuleIcon = ({ icon }: { icon: ReactNode }) => {
@@ -163,6 +164,27 @@ export function OperationStatusIcon({
       return null;
   }
 }
+
+export const NonConformanceTaskStatusIcon = ({
+  status,
+  className,
+}: {
+  status: (typeof nonConformanceTaskStatus)[number];
+  className?: string;
+}) => {
+  switch (status) {
+    case "Pending":
+      return <TodoStatusIcon className={cn("text-foreground", className)} />;
+    case "Skipped":
+      return <LuCircleX className={cn("text-muted-foreground", className)} />;
+    case "Completed":
+      return <LuCircleCheck className={cn("text-blue-600", className)} />;
+    case "In Progress":
+      return <AlmostDoneIcon className={className} />;
+    default:
+      return null;
+  }
+};
 
 export const QuoteLineStatusIcon = ({
   status,

@@ -39,14 +39,15 @@ import {
   LuEye,
   LuFile,
   LuGitBranchPlus,
+  LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
-  LuRefreshCw,
   LuShare,
   LuTrophy,
 } from "react-icons/lu";
 import { usePanels } from "~/components/Layout";
 
+import { useEffect, useState } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type {
@@ -59,7 +60,6 @@ import type {
 import QuoteFinalizeModal from "./QuoteFinalizeModal";
 import QuoteStatus from "./QuoteStatus";
 import QuoteToOrderDrawer from "./QuoteToOrderDrawer";
-import { useEffect, useState } from "react";
 
 const QuoteHeader = () => {
   const permissions = usePermissions();
@@ -296,7 +296,7 @@ const QuoteHeader = () => {
                       statusFetcher.state !== "idle" &&
                       statusFetcher.formData?.get("status") === "Draft"
                     }
-                    leftIcon={<LuRefreshCw />}
+                    leftIcon={<LuLoaderCircle />}
                     type="submit"
                     variant="secondary"
                   >
@@ -306,7 +306,7 @@ const QuoteHeader = () => {
                   <Tooltip>
                     <TooltipTrigger>
                       <Button
-                        leftIcon={<LuRefreshCw />}
+                        leftIcon={<LuLoaderCircle />}
                         isDisabled
                         variant="secondary"
                       >

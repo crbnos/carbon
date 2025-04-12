@@ -188,9 +188,10 @@ CREATE TABLE "nonConformanceInvestigationTask" (
   "dueDate" DATE,
   "completedDate" DATE,
   "assignee" TEXT,
-  "notes" TEXT,
+  "notes" JSON NOT NULL DEFAULT '{}',
   "sortOrder" INTEGER NOT NULL DEFAULT 0,
   "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -198,6 +199,7 @@ CREATE TABLE "nonConformanceInvestigationTask" (
 
   CONSTRAINT "nonConformanceInvestigationTask_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "nonConformanceInvestigationTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceInvestigationTask_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceInvestigationTask_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceInvestigationTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceInvestigationTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
@@ -215,9 +217,10 @@ CREATE TABLE "nonConformanceActionTask" (
   "dueDate" DATE,
   "completedDate" DATE,
   "assignee" TEXT,
-  "notes" TEXT,
+  "notes" JSON NOT NULL DEFAULT '{}',
   "sortOrder" INTEGER NOT NULL DEFAULT 0,
   "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -225,6 +228,7 @@ CREATE TABLE "nonConformanceActionTask" (
 
   CONSTRAINT "nonConformanceActionTask_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "nonConformanceActionTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceActionTask_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceActionTask_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceActionTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceActionTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
@@ -242,9 +246,10 @@ CREATE TABLE "nonConformanceApprovalTask" (
   "dueDate" DATE,
   "completedDate" DATE,
   "assignee" TEXT,
-  "notes" TEXT,
+  "notes" JSON NOT NULL DEFAULT '{}',
   "sortOrder" INTEGER NOT NULL DEFAULT 0,
   "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
+  "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
   "updatedAt" TIMESTAMP WITH TIME ZONE,
@@ -252,6 +257,7 @@ CREATE TABLE "nonConformanceApprovalTask" (
 
   CONSTRAINT "nonConformanceApprovalTask_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "nonConformanceApprovalTask_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceApprovalTask_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceApprovalTask_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceApprovalTask_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceApprovalTask_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE

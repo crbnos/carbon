@@ -1,9 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
+import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getItemFiles } from "~/modules/items";
 import {
   getNonConformance,
@@ -56,14 +58,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function NonConformanceRoute() {
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-      <NonConformanceHeader />
-      <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
-          <Outlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
+        <NonConformanceHeader />
+        <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorer={null}
+              content={
+                <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={2} className="p-2">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+              properties={<NonConformanceProperties />}
+            />
+          </div>
         </div>
-        <NonConformanceProperties />
       </div>
-    </div>
+    </PanelProvider>
   );
 }

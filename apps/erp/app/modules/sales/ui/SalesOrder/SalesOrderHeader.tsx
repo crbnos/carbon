@@ -22,9 +22,9 @@ import {
   LuEye,
   LuFile,
   LuGitCompare,
+  LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
-  LuRefreshCw,
   LuTruck,
 } from "react-icons/lu";
 
@@ -37,12 +37,12 @@ import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 import { Suspense, useMemo } from "react";
 import { CSVLink } from "react-csv";
 import Confirm from "~/components/Modals/Confirm/Confirm";
-import { useCustomers } from "~/stores/customers";
+import { Shipment } from "~/modules/inventory/types";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
+import { Job } from "~/modules/production/types";
+import { useCustomers } from "~/stores/customers";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
-import { Shipment } from "~/modules/inventory/types";
-import { Job } from "~/modules/production/types";
 
 const SalesOrderHeader = () => {
   const { orderId } = useParams();
@@ -400,7 +400,7 @@ const SalesOrderHeader = () => {
               <Button
                 type="submit"
                 variant="secondary"
-                leftIcon={<LuRefreshCw />}
+                leftIcon={<LuLoaderCircle />}
                 isDisabled={
                   ["Draft"].includes(routeData?.salesOrder?.status ?? "") ||
                   statusFetcher.state !== "idle" ||

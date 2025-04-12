@@ -210,6 +210,7 @@ serve(async (req: Request) => {
               investigationTaskInserts.push({
                 nonConformanceId: id,
                 investigationType,
+                companyId,
                 createdBy: userId,
               });
             }
@@ -221,6 +222,7 @@ serve(async (req: Request) => {
             actionTaskInserts.push({
               nonConformanceId: id,
               actionType,
+              companyId,
               createdBy: userId,
             });
           }
@@ -231,6 +233,7 @@ serve(async (req: Request) => {
             approvalTaskInserts.push({
               nonConformanceId: id,
               approvalType,
+              companyId,
               createdBy: userId,
             });
           }

@@ -27,8 +27,8 @@ import {
   LuBookMarked,
   LuCalendar,
   LuCheck,
+  LuLoaderCircle,
   LuPencil,
-  LuRefreshCw,
   LuTag,
   LuTrash,
   LuUser,
@@ -175,7 +175,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
               label: <Enumerable value={type} />,
             })),
           },
-          icon: <LuRefreshCw />,
+          icon: <LuLoaderCircle />,
         },
       },
       {

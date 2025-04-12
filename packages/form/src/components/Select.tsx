@@ -144,12 +144,6 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
   ) => {
     const isInlinePreview = !!inline;
 
-    console.log({
-      isInlinePreview,
-      value,
-      options,
-    });
-
     return (
       <HStack spacing={1}>
         {isInlinePreview && value && (

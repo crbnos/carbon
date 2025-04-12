@@ -22,9 +22,9 @@ import {
   LuEye,
   LuFile,
   LuHandCoins,
+  LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
-  LuRefreshCw,
   LuTruck,
 } from "react-icons/lu";
 
@@ -34,6 +34,7 @@ import { path } from "~/utils/path";
 import type { PurchaseOrder, PurchaseOrderLine } from "../../types";
 
 import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import PurchaseOrderFinalizeModal from "./PurchaseOrderFinalizeModal";
 import PurchasingStatus from "./PurchasingStatus";
@@ -41,7 +42,6 @@ import {
   usePurchaseOrder,
   usePurchaseOrderRelatedDocuments,
 } from "./usePurchaseOrder";
-import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 
 const PurchaseOrderHeader = () => {
   const { orderId } = useParams();
@@ -348,7 +348,7 @@ const PurchaseOrderHeader = () => {
               <Button
                 type="submit"
                 variant="secondary"
-                leftIcon={<LuRefreshCw />}
+                leftIcon={<LuLoaderCircle />}
                 isDisabled={
                   ["Draft", "Cancelled", "Closed", "Completed"].includes(
                     routeData?.purchaseOrder?.status ?? ""

@@ -29,9 +29,9 @@ import { useEffect, useState } from "react";
 import {
   LuCircleCheck,
   LuCircleX,
+  LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
-  LuRefreshCw,
   LuTriangleAlert,
 } from "react-icons/lu";
 import { RiProgress4Line } from "react-icons/ri";
@@ -200,7 +200,7 @@ const SalesRFQHeader = () => {
                   statusFetcher.state !== "idle" &&
                   statusFetcher.formData?.get("status") === "Draft"
                 }
-                leftIcon={<LuRefreshCw />}
+                leftIcon={<LuLoaderCircle />}
                 type="submit"
                 variant="secondary"
               >
@@ -210,7 +210,7 @@ const SalesRFQHeader = () => {
               <Tooltip>
                 <TooltipTrigger>
                   <Button
-                    leftIcon={<LuRefreshCw />}
+                    leftIcon={<LuLoaderCircle />}
                     isDisabled
                     variant="secondary"
                   >

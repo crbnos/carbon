@@ -5,9 +5,9 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
-  nonConformanceWorkflowValidator,
   nonConformanceTypeValidator,
   nonConformanceValidator,
+  nonConformanceWorkflowValidator,
 } from "./quality.models";
 
 export async function deleteNonConformance(
@@ -82,6 +82,33 @@ export async function getNonConformanceWorkflow(
     .select("*")
     .eq("id", nonConformanceWorkflowId)
     .single();
+}
+
+export async function getNonConformanceTasks(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return Promise.all([
+    client
+      .from("nonConformanceInvestigationTask")
+      .select("*")
+      .eq("nonConformanceId", id)
+      .eq("companyId", companyId)
+      .order("investigationType", { ascending: true }),
+    client
+      .from("nonConformanceActionTask")
+      .select("*")
+      .eq("nonConformanceId", id)
+      .eq("companyId", companyId)
+      .order("actionType", { ascending: true }),
+    client
+      .from("nonConformanceApprovalTask")
+      .select("*")
+      .eq("nonConformanceId", id)
+      .eq("companyId", companyId)
+      .order("approvalType", { ascending: true }),
+  ]);
 }
 
 export async function getNonConformanceWorkflows(
@@ -163,6 +190,32 @@ export async function getNonConformanceTypes(
   }
 
   return query;
+}
+
+export async function updateNonConformanceTaskStatus(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    status: "Pending" | "Completed" | "Skipped" | "In Progress";
+    type: "investigation" | "action" | "approval";
+    userId: string;
+    assignee: string | null;
+  }
+) {
+  const { id, status, type, userId, assignee } = args;
+  const table =
+    type === "investigation"
+      ? "nonConformanceInvestigationTask"
+      : type === "action"
+      ? "nonConformanceActionTask"
+      : "nonConformanceApprovalTask";
+
+  const finalAssignee = assignee || userId;
+
+  return client
+    .from(table)
+    .update({ status, updatedBy: userId, assignee: finalAssignee })
+    .eq("id", id);
 }
 
 export async function upsertNonConformance(
