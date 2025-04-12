@@ -443,7 +443,19 @@ export const OnshapeSync = ({
     versionOptions.some((c) => c.value === versionId) &&
     elementOptions.some((c) => c.value === elementId);
 
-  const bomFetcher = useFetcher<unknown>();
+  const bomFetcher = useFetcher<
+    | { data: null; error: string }
+    | {
+        data: {
+          id?: string;
+          readableId: string;
+          quantity: number;
+          unitOfMeasure: string;
+          replenishmentSystem: string;
+        }[];
+        error: null;
+      }
+  >();
 
   const loadBom = () => {
     if (isReadyForSync) {
@@ -451,125 +463,130 @@ export const OnshapeSync = ({
     }
   };
 
-  console.log(bomFetcher.data);
-
   return (
-    <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
-      <div className="flex items-center w-full justify-between">
-        <Logo className="h-5 w-auto" />
-        <IconButton
-          aria-label="Show sync options"
-          variant="ghost"
-          size="sm"
-          icon={<LuChevronRight />}
-          className={cn(disclosure.isOpen && "rotate-90")}
-          onClick={disclosure.onToggle}
-        />
+    <div className="flex flex-col gap-2 w-full">
+      <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
+        <div className="flex items-center w-full justify-between">
+          <Logo className="h-5 w-auto" />
+          <IconButton
+            aria-label="Show sync options"
+            variant="ghost"
+            size="sm"
+            icon={<LuChevronRight />}
+            className={cn(disclosure.isOpen && "rotate-90")}
+            onClick={disclosure.onToggle}
+          />
+        </div>
+
+        {disclosure.isOpen && (
+          <>
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Document:</span>
+              <div className="w-[180px]">
+                <Combobox
+                  isLoading={documentsFetcher.state === "loading"}
+                  options={documentOptions}
+                  onChange={(value) => {
+                    setVersionId(null);
+                    setElementId(null);
+                    setDocumentId(value);
+                  }}
+                  size="sm"
+                  className="text-xs"
+                  value={documentId ?? undefined}
+                />
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Version:</span>
+              <div className="w-[180px]">
+                <Combobox
+                  isLoading={versionsFetcher.state === "loading"}
+                  options={versionOptions}
+                  onChange={(value) => {
+                    setVersionId(value);
+                    setElementId(null);
+                  }}
+                  size="sm"
+                  className="text-xs"
+                  value={versionId ?? undefined}
+                />
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Element:</span>
+              <div className="w-[180px]">
+                <Combobox
+                  isLoading={elementsFetcher.state === "loading"}
+                  options={elementOptions}
+                  onChange={(value) => {
+                    setElementId(value);
+                  }}
+                  size="sm"
+                  className="text-xs"
+                  value={elementId ?? undefined}
+                />
+              </div>
+            </div>
+
+            <div className="flex w-full items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Sync mode:</span>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="manual"
+                    name="syncMode"
+                    value="manual"
+                    className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
+                    defaultChecked={mode === "manual"}
+                  />
+                  <label htmlFor="manual" className="text-xs cursor-pointer">
+                    Manual
+                  </label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    id="automatic"
+                    name="syncMode"
+                    value="automatic"
+                    className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
+                    defaultChecked={mode === "automatic"}
+                  />
+                  <label htmlFor="automatic" className="text-xs cursor-pointer">
+                    Automatic
+                  </label>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        {lastSyncedAt && (
+          <div className="flex items-center gap-1 w-full justify-between">
+            <span className="text-xs text-muted-foreground">
+              Last synced: {formatDateTime(lastSyncedAt)}
+            </span>
+            {isDataLoading ? (
+              <Spinner className="size-3" />
+            ) : (
+              <Button
+                isLoading={bomFetcher.state !== "idle"}
+                isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
+                size="sm"
+                onClick={loadBom}
+              >
+                Sync
+              </Button>
+            )}
+          </div>
+        )}
       </div>
-
-      {disclosure.isOpen && (
-        <>
-          <div className="flex w-full items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground">Document:</span>
-            <div className="w-[180px]">
-              <Combobox
-                isLoading={documentsFetcher.state === "loading"}
-                options={documentOptions}
-                onChange={(value) => {
-                  setVersionId(null);
-                  setElementId(null);
-                  setDocumentId(value);
-                }}
-                size="sm"
-                className="text-xs"
-                value={documentId ?? undefined}
-              />
-            </div>
-          </div>
-
-          <div className="flex w-full items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground">Version:</span>
-            <div className="w-[180px]">
-              <Combobox
-                isLoading={versionsFetcher.state === "loading"}
-                options={versionOptions}
-                onChange={(value) => {
-                  setVersionId(value);
-                  setElementId(null);
-                }}
-                size="sm"
-                className="text-xs"
-                value={versionId ?? undefined}
-              />
-            </div>
-          </div>
-
-          <div className="flex w-full items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground">Element:</span>
-            <div className="w-[180px]">
-              <Combobox
-                isLoading={elementsFetcher.state === "loading"}
-                options={elementOptions}
-                onChange={(value) => {
-                  setElementId(value);
-                }}
-                size="sm"
-                className="text-xs"
-                value={elementId ?? undefined}
-              />
-            </div>
-          </div>
-
-          <div className="flex w-full items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground">Sync mode:</span>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="manual"
-                  name="syncMode"
-                  value="manual"
-                  className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
-                  defaultChecked={mode === "manual"}
-                />
-                <label htmlFor="manual" className="text-xs cursor-pointer">
-                  Manual
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  id="automatic"
-                  name="syncMode"
-                  value="automatic"
-                  className="h-4 w-4 text-primary border-muted-foreground focus:ring-primary"
-                  defaultChecked={mode === "automatic"}
-                />
-                <label htmlFor="automatic" className="text-xs cursor-pointer">
-                  Automatic
-                </label>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-      {lastSyncedAt && (
-        <div className="flex items-center gap-1 w-full justify-between">
-          <span className="text-xs text-muted-foreground">
-            Last synced: {formatDateTime(lastSyncedAt)}
-          </span>
-          {isDataLoading ? (
-            <Spinner className="size-3" />
-          ) : (
-            <Button
-              isLoading={bomFetcher.state !== "idle"}
-              isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
-              size="sm"
-              onClick={loadBom}
-            >
-              Sync
-            </Button>
-          )}
+      {bomFetcher.data?.data && (
+        <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
+          <pre>{JSON.stringify(bomFetcher.data.data, null, 2)}</pre>
         </div>
       )}
     </div>

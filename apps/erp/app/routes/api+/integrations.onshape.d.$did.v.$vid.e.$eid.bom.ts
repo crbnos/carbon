@@ -76,7 +76,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const rows = response.rows;
 
       // Create an array of objects where each object represents a row with properties named after headers
-      const transformedData = rows.map((row) => {
+      const flattenedData = rows.map((row) => {
         const rowData: Record<string, any> = {};
 
         // Map each header to its corresponding value in the row
@@ -94,9 +94,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         return rowData;
       });
 
+      const uniquePartNumbers = new Set(
+        flattenedData.map((row) => row["Part number"])
+      );
+
+      let itemsMap: Map<string, string> | null = null;
+
+      if (uniquePartNumbers.size) {
+        const items = await client
+          .from("item")
+          .select("id, readableId")
+          .in("readableId", Array.from(uniquePartNumbers));
+
+        itemsMap = new Map(
+          items.data?.map((item) => [item.readableId, item.id])
+        );
+      }
+
+      const result = flattenedData.map((row) => {
+        return {
+          ...row,
+          readableId: row["Part number"],
+          itemId: itemsMap?.get(row["Part number"]) ?? undefined,
+          replenishmentSystem:
+            row["Purchasing Level"] === "Purchased" ? "Buy" : "Make", // TODO: this is not a standard field
+          quantity: row["Quantity"],
+        };
+      });
+
       // Return the transformed data instead of the raw response
       return json({
-        data: transformedData,
+        data: result,
         error: null,
       });
     }
