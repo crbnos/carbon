@@ -29,6 +29,13 @@ export const nonConformanceStatus = [
   "Closed",
 ] as const;
 
+export const nonConformanceTaskStatus = [
+  "Pending",
+  "In Progress",
+  "Completed",
+  "Skipped",
+] as const;
+
 export const nonConformancePriority = [
   "Low",
   "Medium",

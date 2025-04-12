@@ -4582,6 +4582,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
           },
           {
@@ -4683,6 +4686,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
           },
           {
@@ -4736,6 +4742,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceActionTask.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceActionTask.createdAt",
@@ -9361,6 +9370,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
           },
           {
@@ -9462,6 +9474,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
           },
           {
@@ -9515,6 +9530,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceApprovalTask.createdAt",
@@ -34762,6 +34780,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
           },
           {
@@ -34863,6 +34884,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
           },
           {
@@ -34916,6 +34940,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceInvestigationTask.createdAt",
@@ -52063,7 +52090,9 @@ export default {
         "id",
         "nonConformanceId",
         "status",
+        "notes",
         "sortOrder",
+        "companyId",
         "createdAt",
         "createdBy",
       ],
@@ -52113,8 +52142,7 @@ export default {
           type: "string",
         },
         notes: {
-          format: "text",
-          type: "string",
+          format: "json",
         },
         sortOrder: {
           default: 0,
@@ -52127,6 +52155,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
         createdAt: {
           default: "now()",
@@ -54484,7 +54518,9 @@ export default {
         "id",
         "nonConformanceId",
         "status",
+        "notes",
         "sortOrder",
+        "companyId",
         "createdAt",
         "createdBy",
       ],
@@ -54527,8 +54563,7 @@ export default {
           type: "string",
         },
         notes: {
-          format: "text",
-          type: "string",
+          format: "json",
         },
         sortOrder: {
           default: 0,
@@ -54541,6 +54576,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
         createdAt: {
           default: "now()",
@@ -66048,7 +66089,9 @@ export default {
         "id",
         "nonConformanceId",
         "status",
+        "notes",
         "sortOrder",
+        "companyId",
         "createdAt",
         "createdBy",
       ],
@@ -66098,8 +66141,7 @@ export default {
           type: "string",
         },
         notes: {
-          format: "text",
-          type: "string",
+          format: "json",
         },
         sortOrder: {
           default: 0,
@@ -66112,6 +66154,12 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
         },
         createdAt: {
           default: "now()",
@@ -73908,6 +73956,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.nonConformanceActionTask.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.nonConformanceActionTask.createdAt": {
       name: "createdAt",
       required: false,
@@ -76580,6 +76634,12 @@ export default {
     },
     "rowFilter.nonConformanceApprovalTask.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceApprovalTask.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -89639,6 +89699,12 @@ export default {
     },
     "rowFilter.nonConformanceInvestigationTask.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceInvestigationTask.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",

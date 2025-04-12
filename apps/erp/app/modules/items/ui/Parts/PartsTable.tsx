@@ -27,8 +27,8 @@ import {
   LuBookMarked,
   LuCalendar,
   LuCheck,
+  LuLoaderCircle,
   LuPencil,
-  LuRefreshCw,
   LuTag,
   LuTrash,
   LuUser,
@@ -176,7 +176,7 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
               label: <Enumerable value={type} />,
             })),
           },
-          icon: <LuRefreshCw />,
+          icon: <LuLoaderCircle />,
         },
       },
       {

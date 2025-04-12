@@ -9,7 +9,7 @@ import {
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
 import React, { useMemo } from "react";
-import { LuInfo, LuRefreshCw } from "react-icons/lu";
+import { LuInfo, LuLoaderCircle } from "react-icons/lu";
 import { NumberControlled } from "~/components/Form";
 
 interface ExchangeRateProps
@@ -91,7 +91,7 @@ const ExchangeRate: React.FC<ExchangeRateProps> = ({
           <IconButton
             aria-label="Refresh exchange rate"
             className="flex-shrink-0 h-10 w-10 px-3 rounded-l-none border-l-0 shadow-sm"
-            icon={<LuRefreshCw />}
+            icon={<LuLoaderCircle />}
             variant="secondary"
             size="md"
             onClick={onRefresh}

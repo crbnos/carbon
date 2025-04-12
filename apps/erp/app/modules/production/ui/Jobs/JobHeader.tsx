@@ -41,10 +41,10 @@ import {
   LuClock,
   LuHardHat,
   LuList,
+  LuLoaderCircle,
   LuPackage,
   LuPanelLeft,
   LuPanelRight,
-  LuRefreshCw,
   LuSettings,
   LuShoppingCart,
   LuSquareSigma,
@@ -272,7 +272,7 @@ const JobHeader = () => {
                 statusFetcher.state !== "idle" ||
                 !permissions.can("update", "production")
               }
-              leftIcon={<LuRefreshCw />}
+              leftIcon={<LuLoaderCircle />}
               type="submit"
               variant="secondary"
             >
