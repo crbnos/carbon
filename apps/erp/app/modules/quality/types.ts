@@ -1,7 +1,9 @@
 import type { Database } from "@carbon/database";
 import type {
   getNonConformance,
-  getNonConformanceTasks,
+  getNonConformanceActionTasks,
+  getNonConformanceApprovalTasks,
+  getNonConformanceInvestigationTasks,
   getNonConformanceTypes,
   getNonConformanceWorkflow,
 } from "./quality.service";
@@ -22,13 +24,13 @@ export type NonConformanceWorkflow = NonNullable<
 >;
 
 export type NonConformanceInvestigationTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceTasks>>[0]["data"]
+  Awaited<ReturnType<typeof getNonConformanceInvestigationTasks>>["data"]
 >[number];
 
 export type NonConformanceActionTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceTasks>>[1]["data"]
+  Awaited<ReturnType<typeof getNonConformanceActionTasks>>["data"]
 >[number];
 
 export type NonConformanceApprovalTask = NonNullable<
-  Awaited<ReturnType<typeof getNonConformanceTasks>>[2]["data"]
+  Awaited<ReturnType<typeof getNonConformanceApprovalTasks>>["data"]
 >[number];

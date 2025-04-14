@@ -84,6 +84,45 @@ export async function getNonConformanceWorkflow(
     .single();
 }
 
+export async function getNonConformanceInvestigationTasks(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceInvestigationTask")
+    .select("*")
+    .eq("nonConformanceId", id)
+    .eq("companyId", companyId)
+    .order("investigationType", { ascending: true });
+}
+
+export async function getNonConformanceActionTasks(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceActionTask")
+    .select("*")
+    .eq("nonConformanceId", id)
+    .eq("companyId", companyId)
+    .order("actionType", { ascending: true });
+}
+
+export async function getNonConformanceApprovalTasks(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceApprovalTask")
+    .select("*")
+    .eq("nonConformanceId", id)
+    .eq("companyId", companyId)
+    .order("approvalType", { ascending: true });
+}
+
 export async function getNonConformanceTasks(
   client: SupabaseClient<Database>,
   id: string,

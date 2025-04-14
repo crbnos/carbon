@@ -5,6 +5,7 @@ import {
   LuContainer,
   LuFileText,
   LuListChecks,
+  LuSearch,
 } from "react-icons/lu";
 import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -19,8 +20,11 @@ export function useNonConformanceNavigation() {
   );
   if (!routeData?.nonConformance?.source)
     throw new Error("Could not find source in routeData");
-  const hasTasks =
-    (routeData.nonConformance.investigationTypes?.length ?? 0) > 0 ||
+
+  const hasInvestigations =
+    (routeData.nonConformance.investigationTypes?.length ?? 0) > 0;
+
+  const hasActions =
     (routeData.nonConformance.requiredActions?.length ?? 0) > 0;
 
   const requiresManagementReview =
@@ -36,18 +40,25 @@ export function useNonConformanceNavigation() {
       shortcut: "Command+Shift+d",
     },
     {
+      name: "Investigation",
+      to: path.to.nonConformanceInvestigations(id),
+      icon: LuSearch,
+      shortcut: "Command+Shift+i",
+      isDisabled: !hasInvestigations,
+    },
+    {
+      name: "Actions",
+      to: path.to.nonConformanceActions(id),
+      icon: LuListChecks,
+      shortcut: "Command+Shift+a",
+      isDisabled: !hasActions,
+    },
+    {
       name: "Supplier",
       to: path.to.nonConformanceSupplier(id),
       icon: LuContainer,
       shortcut: "Command+Shift+s",
       isDisabled: !isExternal,
-    },
-    {
-      name: "Tasks",
-      to: path.to.nonConformanceTasks(id),
-      icon: LuListChecks,
-      shortcut: "Command+Shift+t",
-      isDisabled: !hasTasks,
     },
     {
       name: "Review",

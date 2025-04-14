@@ -2,6 +2,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 
 export const nonConformanceInvestigationType = [
+  "Root Cause Analysis",
   "Inventory",
   "WIP",
   "Finished Goods",
@@ -11,7 +12,6 @@ export const nonConformanceInvestigationType = [
 ] as const;
 
 export const nonConformanceRequiredAction = [
-  "Root Cause Analysis",
   "Corrective Action",
   "Preventive Action",
   "Containment Action",
