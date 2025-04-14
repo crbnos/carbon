@@ -57,6 +57,7 @@ CREATE TYPE "nonConformanceStatus" AS ENUM (
 );
 
 CREATE TYPE "nonConformanceInvestigation" AS ENUM (
+  'Root Cause Analysis',
   'Inventory',
   'WIP',
   'Finished Goods',
@@ -66,7 +67,6 @@ CREATE TYPE "nonConformanceInvestigation" AS ENUM (
 );
 
 CREATE TYPE "nonConformanceAction" AS ENUM (
-  'Root Cause Analysis',
   'Corrective Action',
   'Preventive Action',
   'Containment Action',

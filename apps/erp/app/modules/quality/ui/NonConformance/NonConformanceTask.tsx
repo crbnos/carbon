@@ -1,12 +1,7 @@
 import { useCarbon } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -16,14 +11,13 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Progress,
   toast,
   useDebounce,
   useDisclosure,
-  VStack,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useFetchers, useLoaderData, useSubmit } from "@remix-run/react";
+import { useFetchers, useSubmit } from "@remix-run/react";
 import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
 import {
@@ -37,102 +31,30 @@ import { Assignee } from "~/components";
 import { NonConformanceTaskStatusIcon } from "~/components/Icons";
 import { usePermissions, useUser } from "~/hooks";
 
-import type { NonConformanceInvestigationTask } from "~/modules/quality";
-import {
-  getNonConformanceTasks,
-  nonConformanceTaskStatus,
+import type {
+  NonConformanceActionTask,
+  NonConformanceInvestigationTask,
 } from "~/modules/quality";
+import { nonConformanceTaskStatus } from "~/modules/quality";
 import { getPrivateUrl, path } from "~/utils/path";
 
-export async function loader({ params, request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
-  });
-
-  const { id } = params;
-  if (!id) throw new Error("Non-conformance ID is required");
-
-  const [investigationTasks, actionTasks, approvalTasks] =
-    await getNonConformanceTasks(client, id, companyId);
-
-  return json({
-    investigationTasks: investigationTasks.data || [],
-    actionTasks: actionTasks.data || [],
-    approvalTasks: approvalTasks.data || [],
-  });
-}
-
-export default function NonConformanceTasks() {
-  const { investigationTasks, actionTasks, approvalTasks } =
-    useLoaderData<typeof loader>();
+export function TaskProgress({
+  tasks,
+}: {
+  tasks: NonConformanceInvestigationTask[] | NonConformanceActionTask[];
+}) {
+  const completedOrSkippedTasks = tasks.filter(
+    (task) => task.status === "Completed" || task.status === "Skipped"
+  ).length;
+  const progressPercentage = (completedOrSkippedTasks / tasks.length) * 100;
 
   return (
-    <VStack spacing={4} className="w-full">
-      <InvestigationTasksList tasks={investigationTasks} />
-      <ActionTasksList tasks={actionTasks} />
-      <ApprovalTasksList tasks={approvalTasks} />
-    </VStack>
-  );
-}
-
-function InvestigationTasksList({ tasks }: { tasks: any[] }) {
-  if (tasks.length === 0) return null;
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Investigation Tasks
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <VStack spacing={3}>
-          {tasks.map((task) => (
-            <InvestigationTaskItem key={task.id} task={task} />
-          ))}
-        </VStack>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ActionTasksList({ tasks }: { tasks: any[] }) {
-  if (tasks.length === 0) return null;
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">Action Tasks</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <VStack spacing={3}>
-          {tasks.map((task) => (
-            <ActionTaskItem key={task.id} task={task} />
-          ))}
-        </VStack>
-      </CardContent>
-    </Card>
-  );
-}
-
-function ApprovalTasksList({ tasks }: { tasks: any[] }) {
-  if (tasks.length === 0) return null;
-
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          Approval Tasks
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <VStack spacing={3}>
-          {tasks.map((task) => (
-            <ApprovalTaskItem key={task.id} task={task} />
-          ))}
-        </VStack>
-      </CardContent>
-    </Card>
+    <div className="flex flex-col items-end gap-2 pt-2 pr-14">
+      <Progress value={progressPercentage} className="h-2 w-24" />
+      <span className="text-xs text-muted-foreground">
+        {completedOrSkippedTasks} of {tasks.length} complete
+      </span>
+    </div>
   );
 }
 
@@ -159,29 +81,40 @@ const statusActions = {
   },
 } as const;
 
-function InvestigationTaskItem({
+export function TaskItem({
   task,
+  type,
 }: {
-  task: NonConformanceInvestigationTask;
+  task: NonConformanceInvestigationTask | NonConformanceActionTask;
+  type: "investigation" | "action";
 }) {
   const permissions = usePermissions();
-  const disclosure = useDisclosure();
+  const disclosure = useDisclosure({
+    defaultIsOpen: true,
+  });
   const { currentStatus, onOperationStatusChange, isDisabled } = useTaskStatus({
     task,
-    type: "investigation",
+    type,
   });
   const statusAction = statusActions[currentStatus];
   const { content, setContent, onUpdateContent, onUploadImage } = useTaskNotes({
     initialContent: (task.notes ?? {}) as JSONContent,
     taskId: task.id!,
-    type: "investigation",
+    type,
   });
+
+  const taskTitle =
+    type === "investigation"
+      ? (task as NonConformanceInvestigationTask).investigationType
+      : (task as NonConformanceActionTask).actionType;
 
   return (
     <div className="rounded-lg border w-full flex flex-col">
       <div className="flex w-full justify-between px-4 py-2 items-center">
         <div className="flex flex-col">
-          <span className="text-sm font-medium">{task.investigationType}</span>
+          <span className="text-base font-semibold tracking-tight">
+            {taskTitle}
+          </span>
         </div>
         <IconButton
           icon={<LuChevronRight />}
@@ -253,14 +186,6 @@ function InvestigationTaskItem({
       </div>
     </div>
   );
-}
-
-function ActionTaskItem({ task }: { task: any }) {
-  return <pre>{JSON.stringify(task, null, 2)}</pre>;
-}
-
-function ApprovalTaskItem({ task }: { task: any }) {
-  return <pre>{JSON.stringify(task, null, 2)}</pre>;
 }
 
 function useTaskNotes({

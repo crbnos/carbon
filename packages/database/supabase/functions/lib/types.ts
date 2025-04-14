@@ -38720,7 +38720,6 @@ export type Database = {
         | "November"
         | "December"
       nonConformanceAction:
-        | "Root Cause Analysis"
         | "Corrective Action"
         | "Preventive Action"
         | "Containment Action"
@@ -38728,6 +38727,7 @@ export type Database = {
         | "Customer Communication"
       nonConformanceApproval: "MRB"
       nonConformanceInvestigation:
+        | "Root Cause Analysis"
         | "Inventory"
         | "WIP"
         | "Finished Goods"

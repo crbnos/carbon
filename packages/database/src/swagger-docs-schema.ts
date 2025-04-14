@@ -52111,7 +52111,6 @@ export default {
         },
         actionType: {
           enum: [
-            "Root Cause Analysis",
             "Corrective Action",
             "Preventive Action",
             "Containment Action",
@@ -66110,6 +66109,7 @@ export default {
         },
         investigationType: {
           enum: [
+            "Root Cause Analysis",
             "Inventory",
             "WIP",
             "Finished Goods",

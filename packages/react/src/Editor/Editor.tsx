@@ -25,6 +25,7 @@ import {
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "../Separator";
+import { cn } from "../utils/cn";
 import { ColorSelector } from "./components/ColorSelector";
 import { LinkSelector } from "./components/LinkSelector";
 import { NodeSelector } from "./components/NodeSelector";
@@ -95,7 +96,7 @@ const Editor = ({
   return (
     <EditorRoot>
       <EditorContent
-        className={className}
+        className={cn("[&_.is-empty]:text-muted-foreground", className)}
         {...(initialValue && { initialContent: initialValue })}
         extensions={extensions}
         editorProps={{

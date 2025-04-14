@@ -15,7 +15,7 @@ import {
   type JSONContent,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
-import { Await, useLoaderData, useParams } from "@remix-run/react";
+import { Await, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense, useState } from "react";
@@ -96,8 +96,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function NonConformanceDetailsRoute() {
-  const {} = useLoaderData<typeof loader>();
-
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -110,7 +108,7 @@ export default function NonConformanceDetailsRoute() {
   const permissions = usePermissions();
 
   return (
-    <VStack spacing={2} className="p-2">
+    <VStack spacing={2}>
       <NonConformanceContent
         id={id}
         title={routeData.nonConformance?.name ?? ""}
