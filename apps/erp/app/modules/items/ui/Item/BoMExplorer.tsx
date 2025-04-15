@@ -3,6 +3,12 @@ import {
   Button,
   Combobox,
   Copy,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   HStack,
   HoverCard,
   HoverCardContent,
@@ -11,6 +17,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  PulsingDot,
   Spinner,
   VStack,
   cn,
@@ -27,17 +34,24 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { Logo } from "~/integrations/onshape/config";
-import type { MethodItemType } from "~/modules/shared";
+import { methodType, type MethodItemType } from "~/modules/shared";
+import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
 import type { Method } from "../../types";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;
+  makeMethodId: string;
   methods: FlatTreeItem<Method>[];
   selectedId?: string;
 };
 
-const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
+const BoMExplorer = ({
+  itemType,
+  makeMethodId,
+  methods,
+  selectedId,
+}: BoMExplorerProps) => {
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
   const integrations = useIntegrations();
@@ -107,6 +121,7 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
       </HStack>
       {integrations.has("onshape") && (
         <OnshapeSync
+          makeMethodId={makeMethodId}
           documentId={"b769cd1538f9c9aacf88ab06"}
           versionId={"f71af59ac5406d573dcb964a"}
           elementId={"76c15dd77696f26035f6674f"}
@@ -225,7 +240,7 @@ function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex flex-col items-start gap-0">
       <span className="text-sm truncate font-medium">
-        {node.data.description || node.data.itemReadableId}
+        {node.data.itemReadableId || node.data.description}
       </span>
     </div>
   );
@@ -339,22 +354,44 @@ function getMaterialLink(
   }
 }
 
+interface TreeNode {
+  data: TreeData;
+  children: TreeNode[];
+  level: number;
+}
+
+interface TreeData {
+  id?: string;
+  index: string;
+  readableId: string;
+  name?: string;
+  quantity: number;
+  unitOfMeasure: string;
+  replenishmentSystem: string;
+  defaultMethodType: string;
+  mass: number;
+  level: number;
+}
+
 export const OnshapeSync = ({
   documentId: initialDocumentId,
   versionId: initialVersionId,
   elementId: initialElementId,
+  makeMethodId,
   mode,
   lastSyncedAt,
 }: {
   documentId: string | null;
   versionId: string | null;
   elementId: string | null;
+  makeMethodId: string;
   mode: "manual" | "automatic";
   lastSyncedAt?: string;
 }) => {
   const [documentId, setDocumentId] = useState(initialDocumentId);
   const [versionId, setVersionId] = useState(initialVersionId);
   const [elementId, setElementId] = useState(initialElementId);
+  const [bomRows, setBomRows] = useState<TreeData[]>([]);
   const disclosure = useDisclosure();
 
   const documentsFetcher = useFetcher<
@@ -447,21 +484,54 @@ export const OnshapeSync = ({
     | { data: null; error: string }
     | {
         data: {
-          id?: string;
-          readableId: string;
-          quantity: number;
-          unitOfMeasure: string;
-          replenishmentSystem: string;
-        }[];
+          tree: TreeNode[];
+          rows: TreeData[];
+        };
         error: null;
       }
   >();
+
+  useEffect(() => {
+    if (bomFetcher.data?.data?.rows) {
+      setBomRows(bomFetcher.data.data.rows);
+    }
+  }, [bomFetcher.data]);
 
   const loadBom = () => {
     if (isReadyForSync) {
       bomFetcher.load(path.to.api.onShapeBom(documentId, versionId, elementId));
     }
   };
+
+  const upsertBomFetcher = useFetcher<typeof onShapeSyncAction>();
+  const syncSubmitted = useRef(false);
+  const saveBom = () => {
+    syncSubmitted.current = true;
+    const formData = new FormData();
+    formData.append("makeMethodId", makeMethodId);
+    formData.append("rows", JSON.stringify(bomRows));
+    upsertBomFetcher.submit(formData, {
+      method: "post",
+      action: path.to.api.onShapeSync,
+    });
+  };
+
+  useEffect(() => {
+    if (
+      syncSubmitted.current &&
+      upsertBomFetcher.data?.success &&
+      bomRows.length > 0
+    ) {
+      setBomRows([]);
+      syncSubmitted.current = false;
+      toast.success("BOM synced successfully");
+    }
+
+    if (upsertBomFetcher.data?.success === false) {
+      toast.error(upsertBomFetcher.data.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bomRows.length, upsertBomFetcher.data]);
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -573,20 +643,94 @@ export const OnshapeSync = ({
               <Spinner className="size-3" />
             ) : (
               <Button
+                variant={bomRows.length > 0 ? "secondary" : "primary"}
                 isLoading={bomFetcher.state !== "idle"}
                 isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
                 size="sm"
                 onClick={loadBom}
               >
-                Sync
+                {bomRows.length > 0 ? "Refresh" : "Sync"}
               </Button>
             )}
           </div>
         )}
       </div>
-      {bomFetcher.data?.data && (
+      {bomRows.length > 0 && (
         <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
-          <pre>{JSON.stringify(bomFetcher.data.data, null, 2)}</pre>
+          <HStack className="w-full justify-between">
+            <span className="text-xs text-muted-foreground font-light mb-1">
+              Bill of Materials
+            </span>
+            <Button
+              size="sm"
+              onClick={saveBom}
+              isLoading={upsertBomFetcher.state !== "idle"}
+              isDisabled={upsertBomFetcher.state !== "idle"}
+            >
+              Save
+            </Button>
+          </HStack>
+
+          <div className="max-h-60 overflow-y-auto flex flex-col">
+            {bomRows.map((row) => (
+              <div
+                key={row.index}
+                className={cn(
+                  "flex min-h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 w-full gap-1 hover:bg-muted/90"
+                )}
+                style={{
+                  paddingLeft: `${row.level * 12}px`,
+                }}
+              >
+                <div
+                  className={cn(
+                    "flex items-center gap-2 font-medium text-sm w-full",
+                    row.level > 1 && "opacity-50"
+                  )}
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger>
+                      <MethodIcon type={row.defaultMethodType} />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuRadioGroup
+                        value={row.defaultMethodType}
+                        onValueChange={(value) => {
+                          setBomRows((prevRows) =>
+                            prevRows.map((r) =>
+                              r.index === row.index
+                                ? { ...r, defaultMethodType: value }
+                                : r
+                            )
+                          );
+                        }}
+                      >
+                        {methodType.map((type) => (
+                          <DropdownMenuRadioItem key={type} value={type}>
+                            <DropdownMenuIcon
+                              icon={<MethodIcon type={type} />}
+                            />
+                            {type}
+                          </DropdownMenuRadioItem>
+                        ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="line-clamp-1">
+                      {row.readableId || row.name}
+                    </span>
+                    {!row.id && <PulsingDot className="mt-0.5" />}
+                  </div>
+                </div>
+                <HStack spacing={1}>
+                  <Badge className="text-xs" variant="outline">
+                    {row.quantity}
+                  </Badge>
+                </HStack>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

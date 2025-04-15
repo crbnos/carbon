@@ -21,6 +21,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "name":
     case "replenishmentSystem":
     case "unitOfMeasureCode":
+      // For other fields, just update the specified field
       return json(
         await client
           .from("item")

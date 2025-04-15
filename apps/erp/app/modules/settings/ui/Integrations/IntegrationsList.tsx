@@ -64,7 +64,7 @@ function IntegrationCard({
 
   return (
     <Card>
-      <div className="pt-6 px-6 h-16 flex items-center justify-between">
+      <div className="pt-6 px-6 h-16 flex items-center justify-between gap-6">
         <integration.logo className="h-10 w-auto" />
         {integration.active ? (
           installed ? (

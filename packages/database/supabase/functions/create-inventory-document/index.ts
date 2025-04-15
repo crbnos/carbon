@@ -1,11 +1,11 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
+import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
+import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import z from "npm:zod@^3.24.1";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);

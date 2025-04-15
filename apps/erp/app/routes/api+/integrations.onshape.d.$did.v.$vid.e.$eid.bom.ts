@@ -95,36 +95,72 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
 
       const uniquePartNumbers = new Set(
-        flattenedData.map((row) => row["Part number"])
+        flattenedData.map((row) => row["Part number"] || row["Name"])
       );
 
-      let itemsMap: Map<string, string> | null = null;
+      let itemsMap: Map<
+        string,
+        {
+          itemId: string;
+          defaultMethodType: string;
+          replenishmentSystem: string;
+        }
+      > | null = null;
 
       if (uniquePartNumbers.size) {
         const items = await client
           .from("item")
-          .select("id, readableId")
+          .select("id, readableId, defaultMethodType, replenishmentSystem")
           .in("readableId", Array.from(uniquePartNumbers));
 
         itemsMap = new Map(
-          items.data?.map((item) => [item.readableId, item.id])
+          items.data?.map((item) => [
+            item.readableId,
+            {
+              itemId: item.id,
+              defaultMethodType: item.defaultMethodType,
+              replenishmentSystem: item.replenishmentSystem,
+            },
+          ])
         );
       }
 
-      const result = flattenedData.map((row) => {
+      const flattenedDataWithMetadata = flattenedData.map((row) => {
+        const item = itemsMap?.get(row["Part number"] || row["Name"]);
+        let replenishmentSystem = item?.replenishmentSystem;
+        let defaultMethodType = item?.defaultMethodType;
+
+        if (!replenishmentSystem) {
+          if (row["Purchasing Level"] === "Purchased") {
+            replenishmentSystem = "Buy";
+          } else {
+            replenishmentSystem = "Make";
+          }
+        }
+
+        if (!defaultMethodType) {
+          defaultMethodType =
+            row["Purchasing Level"] === "Purchased" ? "Pick" : "Make";
+        }
+
         return {
-          ...row,
+          mass: row["Mass"],
+          index: row["Item"],
           readableId: row["Part number"],
-          id: itemsMap?.get(row["Part number"]) ?? undefined,
-          replenishmentSystem:
-            row["Purchasing Level"] === "Purchased" ? "Buy" : "Make", // TODO: this is not a standard field
+          name: row["Name"],
+          id: item?.itemId ?? undefined,
+          replenishmentSystem,
+          defaultMethodType,
           quantity: row["Quantity"],
+          level: row["Item"].toString().split(".").length,
         };
       });
 
       // Return the transformed data instead of the raw response
       return json({
-        data: result,
+        data: {
+          rows: flattenedDataWithMetadata,
+        },
         error: null,
       });
     }

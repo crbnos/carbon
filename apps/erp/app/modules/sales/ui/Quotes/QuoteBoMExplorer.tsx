@@ -212,7 +212,7 @@ function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
   return (
     <div className="flex items-center gap-1">
       <span className="font-medium text-sm truncate">
-        {node.data.description || node.data.itemReadableId}
+        {node.data.itemReadableId || node.data.description}
       </span>
     </div>
   );
