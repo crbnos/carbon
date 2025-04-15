@@ -8,9 +8,7 @@ import { getSupplierProcessesByProcess } from "~/modules/purchasing";
 import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const authorized = await requirePermissions(request, {
-    view: "purchasing",
-  });
+  const authorized = await requirePermissions(request, {});
 
   const { processId } = params;
 

@@ -8654,7 +8654,6 @@ export type Database = {
           id: string
           jobId: string
           jobMakeMethodId: string | null
-          kit: boolean
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -8695,7 +8694,6 @@ export type Database = {
           id?: string
           jobId: string
           jobMakeMethodId?: string | null
-          kit?: boolean
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -8736,7 +8734,6 @@ export type Database = {
           id?: string
           jobId?: string
           jobMakeMethodId?: string | null
-          kit?: boolean
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -10896,7 +10893,6 @@ export type Database = {
           customFields: Json | null
           description: string
           id: string
-          kit: boolean
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
           machineTime: number
@@ -10926,7 +10922,6 @@ export type Database = {
           customFields?: Json | null
           description: string
           id?: string
-          kit?: boolean
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
@@ -10956,7 +10951,6 @@ export type Database = {
           customFields?: Json | null
           description?: string
           id?: string
-          kit?: boolean
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
           machineTime?: number
@@ -18404,7 +18398,6 @@ export type Database = {
           customFields: Json | null
           description: string | null
           id: string
-          kit: boolean
           laborRate: number
           laborTime: number
           laborUnit: Database["public"]["Enums"]["factor"]
@@ -18439,7 +18432,6 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           id?: string
-          kit?: boolean
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -18474,7 +18466,6 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           id?: string
-          kit?: boolean
           laborRate?: number
           laborTime?: number
           laborUnit?: Database["public"]["Enums"]["factor"]
@@ -34073,14 +34064,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -36605,7 +36596,6 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
-          kit: boolean
         }[]
       }
       get_job_methods_by_method_id: {
@@ -36628,7 +36618,6 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
-          kit: boolean
         }[]
       }
       get_job_operation_by_id: {
@@ -36827,7 +36816,6 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
-          kit: boolean
         }[]
       }
       get_quote_methods_by_method_id: {

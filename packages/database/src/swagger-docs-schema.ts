@@ -6373,6 +6373,15 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.quantityToIssue",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.requiresSerialTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.kit",
+          },
+          {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.jobMaterialMakeMethodId",
           },
           {
@@ -6586,6 +6595,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.kit",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -6705,6 +6717,9 @@ export default {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.methodMaterial.kit",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -6776,6 +6791,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.methodMaterial.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.methodMaterial.kit",
           },
           {
             $ref: "#/parameters/body.methodMaterial",
@@ -7034,6 +7052,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.kit",
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId",
@@ -21607,6 +21628,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.kit",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -21735,6 +21759,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMaterial.kit",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -21815,6 +21842,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterial.productionQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterial.kit",
           },
           {
             $ref: "#/parameters/body.quoteMaterial",
@@ -32797,6 +32827,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.kit",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -32937,6 +32970,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterial.kit",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33029,6 +33065,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMaterial.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMaterial.kit",
           },
           {
             $ref: "#/parameters/body.jobMaterial",
@@ -51210,7 +51249,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -51259,7 +51298,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -51406,6 +51445,18 @@ export default {
           format: "numeric",
           type: "number",
         },
+        requiresSerialTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresBatchTracking: {
+          format: "boolean",
+          type: "boolean",
+        },
+        kit: {
+          format: "boolean",
+          type: "boolean",
+        },
         jobMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -51444,6 +51495,7 @@ export default {
         "itemReadableId",
         "order",
         "scrapQuantity",
+        "kit",
       ],
       properties: {
         id: {
@@ -51549,6 +51601,11 @@ export default {
         productionQuantity: {
           format: "numeric",
           type: "number",
+        },
+        kit: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -51720,6 +51777,10 @@ export default {
         productionQuantity: {
           format: "numeric",
           type: "number",
+        },
+        kit: {
+          format: "boolean",
+          type: "boolean",
         },
         quoteMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -58345,6 +58406,7 @@ export default {
         "createdBy",
         "quoteMakeMethodId",
         "scrapQuantity",
+        "kit",
       ],
       properties: {
         id: {
@@ -58466,6 +58528,11 @@ export default {
         productionQuantity: {
           format: "numeric",
           type: "number",
+        },
+        kit: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
         },
       },
       type: "object",
@@ -63595,6 +63662,7 @@ export default {
         "jobMakeMethodId",
         "requiresSerialTracking",
         "requiresBatchTracking",
+        "kit",
       ],
       properties: {
         id: {
@@ -63731,6 +63799,11 @@ export default {
           type: "boolean",
         },
         requiresBatchTracking: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        kit: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -72564,6 +72637,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobMaterialWithMakeMethodId.requiresSerialTracking": {
+      name: "requiresSerialTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.requiresBatchTracking": {
+      name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterialWithMakeMethodId.kit": {
+      name: "kit",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.jobMaterialWithMakeMethodId.jobMaterialMakeMethodId": {
       name: "jobMaterialMakeMethodId",
       required: false,
@@ -72716,6 +72807,12 @@ export default {
     },
     "rowFilter.methodMaterial.productionQuantity": {
       name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.methodMaterial.kit": {
+      name: "kit",
       required: false,
       in: "query",
       type: "string",
@@ -72926,6 +73023,12 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.productionQuantity": {
       name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMaterialWithMakeMethodId.kit": {
+      name: "kit",
       required: false,
       in: "query",
       type: "string",
@@ -80475,6 +80578,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quoteMaterial.kit": {
+      name: "kit",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.customerStatus": {
       name: "customerStatus",
       description: "customerStatus",
@@ -86492,6 +86601,12 @@ export default {
     },
     "rowFilter.jobMaterial.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMaterial.kit": {
+      name: "kit",
       required: false,
       in: "query",
       type: "string",
