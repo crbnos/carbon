@@ -16,7 +16,7 @@ import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks";
 import {
-  getQuoteMaterial,
+  getQuoteMakeMethod,
   getQuoteMaterialsByMethodId,
   getQuoteOperationsByMethodId,
 } from "~/modules/sales";
@@ -24,7 +24,6 @@ import {
   QuoteBillOfMaterial,
   QuoteBillOfProcess,
   QuoteMakeMethodTools,
-  QuoteMaterialForm,
 } from "~/modules/sales/ui/Quotes";
 import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -34,29 +33,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "sales",
   });
 
-  const { quoteId, lineId, methodId, materialId } = params;
+  const { quoteId, lineId, methodId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
   if (!methodId) throw new Error("Could not find methodId");
-  if (!materialId) throw new Error("Could not find materialId");
 
-  const [material, materials, operations, tags] = await Promise.all([
-    getQuoteMaterial(client, materialId),
+  const [makeMethod, materials, operations, tags] = await Promise.all([
+    getQuoteMakeMethod(client, methodId),
     getQuoteMaterialsByMethodId(client, methodId),
     getQuoteOperationsByMethodId(client, methodId),
     getTagsList(client, companyId, "operation"),
   ]);
 
-  if (material.error) {
+  if (makeMethod.error) {
     throw redirect(
       path.to.quoteLine(quoteId, lineId),
       await flash(
         request,
-        error(material.error, "Failed to load quote material")
+        error(makeMethod.error, "Failed to load quote make method")
       )
     );
   }
-
   if (materials.error) {
     throw redirect(
       path.to.quoteLine(quoteId, lineId),
@@ -78,22 +75,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return defer({
-    material: {
-      ...material.data,
-      id: material.data.id ?? "",
-      description: material.data.description ?? "",
-      itemId: material.data.itemId ?? "",
-      itemReadableId: material.data.itemReadableId ?? "",
-      itemType: material.data.itemType as "Part",
-      methodType: material.data.methodType ?? "Make",
-      order: material.data.order ?? 1,
-      quantity: material.data.quantity ?? 0,
-      quoteMakeMethodId: material.data.quoteMakeMethodId ?? "",
-      quoteMaterialMakeMethodId: material.data.quoteMaterialMakeMethodId,
-      quoteOperationId: material.data.quoteOperationId ?? undefined,
-      unitCost: material.data.unitCost ?? 0,
-      unitOfMeasureCode: material.data.unitOfMeasureCode ?? "",
-    },
     materials:
       materials?.data.map((m) => ({
         ...m,
@@ -116,7 +97,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         tags: o.tags ?? [],
       })) ?? [],
     tags: tags.data ?? [],
-    model: getModelByItemId(client, material.data.itemId!),
+    model: getModelByItemId(client, makeMethod.data.itemId!),
   });
 }
 
@@ -126,19 +107,16 @@ export default function QuoteMakeMethodRoute() {
   if (!methodId) throw new Error("Could not find methodId");
 
   const loaderData = useLoaderData<typeof loader>();
-  const { material, materials, operations, tags } = loaderData;
+  const { materials, operations, tags } = loaderData;
 
   return (
     <VStack spacing={2}>
       <QuoteMakeMethodTools />
-      <QuoteMaterialForm
-        key={material.id}
-        initialValues={material}
-        operations={operations}
-      />
+
       <QuoteBillOfProcess
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
+        // @ts-ignore
         operations={operations}
         tags={tags}
       />

@@ -1,4 +1,5 @@
 import type { Database, Json } from "@carbon/database";
+import type { JSONContent } from "@carbon/react";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
@@ -24,7 +25,6 @@ import type {
   scrapReasonValidator,
 } from "./production.models";
 import type { Job } from "./types";
-import { JSONContent } from "@carbon/react";
 
 export async function deleteJob(
   client: SupabaseClient<Database>,
@@ -247,7 +247,7 @@ export async function getJobMakeMethodById(
 ) {
   return client
     .from("jobMakeMethod")
-    .select("*")
+    .select("*, ...item(itemType:type)")
     .eq("id", jobMakeMethodId)
     .single();
 }

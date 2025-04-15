@@ -803,7 +803,7 @@ export async function getQuoteMakeMethod(
 ) {
   return client
     .from("quoteMakeMethod")
-    .select("*")
+    .select("*, ...item(itemType:type)")
     .eq("id", quoteMakeMethodId)
     .single();
 }

@@ -26,7 +26,12 @@ import {
   useMount,
 } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
-import { useFetcher, useNavigate, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
@@ -94,16 +99,22 @@ const BoMExplorer = ({
 
   const navigate = useNavigate();
   const params = useParams();
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
+
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
 
-  useMount(() => {
-    if (params.materialId) {
-      selectNode(params.materialId);
+  useEffect(() => {
+    if (materialId) {
+      const node = methods.find((m) => m.data.methodMaterialId === materialId);
+
+      selectNode(node?.id ?? methods[0].id);
     } else if (methods?.length > 0) {
       selectNode(methods[0].id);
     }
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [materialId]);
 
   return (
     <VStack>
@@ -137,98 +148,100 @@ const BoMExplorer = ({
         nodes={nodes}
         getNodeProps={getNodeProps}
         getTreeProps={getTreeProps}
-        renderNode={({ node, state }) => (
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <div
-                key={node.id}
-                className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-                  state.selected
-                    ? "bg-muted hover:bg-muted/90"
-                    : "bg-transparent hover:bg-muted/90"
-                )}
-                onClick={() => {
-                  selectNode(node.id);
-                  if (node.data.isRoot) {
-                    navigate(getRootLink(itemType, itemId));
-                  } else {
-                    navigate(
-                      getMaterialLink(
-                        itemType,
-                        itemId,
-                        node.data.materialMakeMethodId ??
-                          node.data.methodType.toLowerCase(),
-                        node.data.methodMaterialId
-                      )
-                    );
-                  }
-                }}
-              >
-                <div className="flex h-8 items-center">
-                  {Array.from({ length: node.level }).map((_, index) => (
-                    <LevelLine key={index} isSelected={state.selected} />
-                  ))}
-                  <div
-                    className={cn(
-                      "flex h-8 w-4 items-center",
-                      node.hasChildren && "hover:bg-accent"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (e.altKey) {
-                        if (state.expanded) {
-                          collapseAllBelowDepth(node.level);
-                        } else {
-                          expandAllBelowDepth(node.level);
-                        }
-                      } else {
-                        toggleExpandNode(node.id);
-                      }
-                      scrollToNode(node.id);
-                    }}
-                  >
-                    {node.hasChildren ? (
-                      state.expanded ? (
-                        <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                      ) : (
-                        <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                      )
-                    ) : (
-                      <div className="h-8 w-4" />
-                    )}
-                  </div>
-                </div>
+        renderNode={({ node, state }) => {
+          return (
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <div
+                  key={node.id}
+                  className={cn(
+                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                    state.selected
+                      ? "bg-muted hover:bg-muted/90"
+                      : "bg-transparent hover:bg-muted/90"
+                  )}
+                  onClick={() => {
+                    selectNode(node.id);
 
-                <div className="flex w-full items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 overflow-x-hidden">
-                    <MethodIcon
-                      type={
-                        // node.data.isRoot ? "Method" :
-                        node.data.methodType
-                      }
-                      isKit={node.data.kit}
-                      className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                    />
-                    <NodeText node={node} />
+                    if (node.data.isRoot) {
+                      navigate(getRootLink(itemType, itemId));
+                    } else {
+                      navigate(
+                        getMaterialLink(
+                          itemType,
+                          itemId,
+                          node.data.makeMethodId,
+                          node.data.methodMaterialId
+                        )
+                      );
+                    }
+                  }}
+                >
+                  <div className="flex h-8 items-center">
+                    {Array.from({ length: node.level }).map((_, index) => (
+                      <LevelLine key={index} isSelected={state.selected} />
+                    ))}
+                    <div
+                      className={cn(
+                        "flex h-8 w-4 items-center",
+                        node.hasChildren && "hover:bg-accent"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (e.altKey) {
+                          if (state.expanded) {
+                            collapseAllBelowDepth(node.level);
+                          } else {
+                            expandAllBelowDepth(node.level);
+                          }
+                        } else {
+                          toggleExpandNode(node.id);
+                        }
+                        scrollToNode(node.id);
+                      }}
+                    >
+                      {node.hasChildren ? (
+                        state.expanded ? (
+                          <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        ) : (
+                          <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        )
+                      ) : (
+                        <div className="h-8 w-4" />
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    {node.data.isRoot ? (
-                      <Badge variant="outline" className="text-xs">
-                        Method
-                      </Badge>
-                    ) : (
-                      <NodeData node={node} />
-                    )}
+
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 overflow-x-hidden">
+                      <MethodIcon
+                        type={
+                          // node.data.isRoot ? "Method" :
+                          node.data.methodType
+                        }
+                        isKit={node.data.kit}
+                        className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
+                      />
+                      <NodeText node={node} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {node.data.isRoot ? (
+                        <Badge variant="outline" className="text-xs">
+                          Method
+                        </Badge>
+                      ) : (
+                        <NodeData node={node} />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </HoverCardTrigger>
-            <HoverCardContent side="right">
-              <NodePreview node={node} />
-            </HoverCardContent>
-          </HoverCard>
-        )}
+              </HoverCardTrigger>
+              <HoverCardContent side="right">
+                <NodePreview node={node} />
+              </HoverCardContent>
+            </HoverCard>
+          );
+        }}
       />
     </VStack>
   );
@@ -337,12 +350,6 @@ function getMaterialLink(
         makeMethodId,
         materialId
       );
-    // case "Fixture":
-    //   return path.to.fixtureManufacturingMaterial(
-    //     itemId,
-    //     makeMethodId,
-    //     materialId
-    //   );
     case "Tool":
       return path.to.toolManufacturingMaterial(
         itemId,
@@ -601,7 +608,7 @@ export const OnshapeSync = ({
               </div>
             </div>
 
-            <div className="flex w-full items-center justify-between gap-2">
+            {/* <div className="flex w-full items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">Sync mode:</span>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
@@ -631,7 +638,7 @@ export const OnshapeSync = ({
                   </label>
                 </div>
               </div>
-            </div>
+            </div> */}
           </>
         )}
         {lastSyncedAt && (
@@ -716,12 +723,11 @@ export const OnshapeSync = ({
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="line-clamp-1">
-                      {row.readableId || row.name}
-                    </span>
-                    {!row.id && <PulsingDot className="mt-0.5" />}
-                  </div>
+
+                  <span className="line-clamp-1">
+                    {row.readableId || row.name}
+                  </span>
+                  {!row.id && <PulsingDot className="mt-0.5" />}
                 </div>
                 <HStack spacing={1}>
                   <Badge className="text-xs" variant="outline">

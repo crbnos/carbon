@@ -657,6 +657,19 @@ export async function getMakeMethod(
     .single();
 }
 
+export async function getMakeMethodById(
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) {
+  return client
+    .from("makeMethod")
+    .select("*")
+    .eq("id", makeMethodId)
+    .eq("companyId", companyId)
+    .single();
+}
+
 export async function getMaterial(
   client: SupabaseClient<Database>,
   itemId: string,

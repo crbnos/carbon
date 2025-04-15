@@ -25,14 +25,15 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
+import { labelSizes } from "@carbon/utils";
 import {
   Await,
   Link,
   useFetcher,
   useLocation,
   useParams,
+  useSearchParams,
 } from "@remix-run/react";
-import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect, useState } from "react";
 import {
   LuGitBranch,
@@ -52,21 +53,18 @@ import type {
   ConfigurationParameterGroup,
 } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { QuoteLineMethodForm } from "~/modules/sales/ui/Quotes/QuoteLineMethodForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getJobMethodValidator } from "../../production.models";
-import type { Job, JobMakeMethod, JobMaterial, JobMethod } from "../../types";
-import { labelSizes } from "@carbon/utils";
-import { QuoteLineMethodForm } from "~/modules/sales/ui/Quotes/QuoteLineMethodForm";
+import type { Job, JobMakeMethod, JobMethod } from "../../types";
 
-const JobMakeMethodTools = ({
-  makeMethod,
-}: {
-  makeMethod?: Promise<PostgrestSingleResponse<JobMakeMethod>>;
-}) => {
+const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
   const permissions = usePermissions();
-  const { jobId, methodId, materialId } = useParams();
+  const { jobId, methodId } = useParams();
   if (!jobId) throw new Error("jobId not found");
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{ error: string | null }>();
   const routeData = useRouteData<{
@@ -79,13 +77,13 @@ const JobMakeMethodTools = ({
   }>(path.to.job(jobId));
 
   const materialRouteData = useRouteData<{
-    material: JobMaterial;
+    makeMethod: JobMakeMethod;
   }>(path.to.jobMakeMethod(jobId, methodId!, materialId!));
 
   const itemId =
-    materialRouteData?.material?.jobMaterialItemId ?? routeData?.job?.itemId;
+    materialRouteData?.makeMethod?.itemId ?? routeData?.job?.itemId;
   const itemType =
-    materialRouteData?.material?.type ?? routeData?.job?.itemType;
+    materialRouteData?.makeMethod?.itemType ?? routeData?.job?.itemType;
 
   const itemLink =
     itemType && itemId
@@ -123,7 +121,7 @@ const JobMakeMethodTools = ({
   const isJobMakeMethod =
     methodId &&
     materialId &&
-    pathname === path.to.jobMakeMethod(jobId, methodId, materialId);
+    pathname === path.to.jobMakeMethod(jobId, methodId);
 
   const { carbon } = useCarbon();
 
@@ -237,40 +235,26 @@ const JobMakeMethodTools = ({
                     </Link>
                   </MenubarItem>
                 )}
-                {makeMethod && (
-                  <Suspense fallback={null}>
-                    <Await resolve={makeMethod}>
-                      {(resolvedMakeMethod) =>
-                        resolvedMakeMethod.data?.requiresSerialTracking ||
-                        resolvedMakeMethod.data?.requiresBatchTracking ? (
-                          <SplitButton
-                            dropdownItems={labelSizes.map((size) => ({
-                              label: size.name,
-                              onClick: () =>
-                                navigateToTrackingLabels(
-                                  resolvedMakeMethod.data?.id,
-                                  !!size.zpl,
-                                  {
-                                    labelSize: size.id,
-                                  }
-                                ),
-                            }))}
-                            leftIcon={<LuQrCode />}
-                            variant="ghost"
-                            onClick={() =>
-                              navigateToTrackingLabels(
-                                resolvedMakeMethod.data?.id,
-                                false
-                              )
-                            }
-                          >
-                            Tracking Labels
-                          </SplitButton>
-                        ) : null
+                {makeMethod &&
+                  (makeMethod.requiresSerialTracking ||
+                    makeMethod.requiresBatchTracking) && (
+                    <SplitButton
+                      dropdownItems={labelSizes.map((size) => ({
+                        label: size.name,
+                        onClick: () =>
+                          navigateToTrackingLabels(makeMethod.id, !!size.zpl, {
+                            labelSize: size.id,
+                          }),
+                      }))}
+                      leftIcon={<LuQrCode />}
+                      variant="ghost"
+                      onClick={() =>
+                        navigateToTrackingLabels(makeMethod.id, false)
                       }
-                    </Await>
-                  </Suspense>
-                )}
+                    >
+                      Tracking Labels
+                    </SplitButton>
+                  )}
               </HStack>
             </HStack>
           </Menubar>

@@ -25,7 +25,12 @@ import {
   useThrottle,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -127,7 +132,8 @@ const BillOfMaterial = ({
 }: BillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
-
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
@@ -303,6 +309,7 @@ const BillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
+        isHighlighted={item.id === materialId}
         onSelectItem={setSelectedItemId}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
@@ -434,8 +441,6 @@ const BillOfMaterial = ({
   const rulesByField = new Map(
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
-
-  const { materialId } = useParams();
 
   return (
     <Card>
@@ -928,8 +933,8 @@ function makeItem(
   };
 }
 
-function getFieldKey(field: string, materialId: string) {
-  return `${field}:${materialId}`;
+function getFieldKey(field: string, itemId: string) {
+  return `${field}:${itemId}`;
 }
 
 const usePendingMaterials = () => {

@@ -123,7 +123,7 @@ const QuoteBoMExplorer = ({
                     key={node.id}
                     className={cn(
                       "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-                      getNodePath(node) === location.pathname
+                      state.selected
                         ? "bg-muted hover:bg-muted/90"
                         : "bg-transparent hover:bg-muted/90"
                     )}
@@ -296,17 +296,9 @@ function getNodePath(node: FlatTreeItem<QuoteMethod>) {
         node.data.quoteLineId,
         node.data.quoteMaterialMakeMethodId
       )
-    : node.data.methodType === "Make"
-    ? path.to.quoteLineMakeMethod(
+    : path.to.quoteLineMakeMethod(
         node.data.quoteId,
         node.data.quoteLineId,
-        node.data.quoteMaterialMakeMethodId,
-        node.data.methodMaterialId
-      )
-    : path.to.quoteLineMethodMaterial(
-        node.data.quoteId,
-        node.data.quoteLineId,
-        node.data.methodType.toLowerCase(),
         node.data.quoteMakeMethodId,
         node.data.methodMaterialId
       );

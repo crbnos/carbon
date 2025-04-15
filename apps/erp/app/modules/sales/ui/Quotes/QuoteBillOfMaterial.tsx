@@ -24,7 +24,12 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -218,6 +223,8 @@ const QuoteBillOfMaterial = ({
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
@@ -404,6 +411,7 @@ const QuoteBillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
+        isHighlighted={item.id === materialId}
         onSelectItem={setSelectedItemId}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}

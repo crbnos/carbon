@@ -30,6 +30,7 @@ import {
   useFetcher,
   useLocation,
   useParams,
+  useSearchParams,
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
@@ -40,6 +41,7 @@ import {
   LuSquareStack,
   LuTriangleAlert,
 } from "react-icons/lu";
+import { RiProgress4Line } from "react-icons/ri";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
@@ -53,13 +55,15 @@ import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getMethodValidator } from "../../sales.models";
 import type { Quotation, QuotationLine, QuoteMethod } from "../../types";
-import { RiProgress4Line } from "react-icons/ri";
 import { QuoteLineMethodForm } from "./QuoteLineMethodForm";
 
 const QuoteMakeMethodTools = () => {
   const permissions = usePermissions();
-  const { quoteId, lineId, methodId, materialId } = useParams();
+  const { quoteId, lineId, methodId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
+
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{ error: string | null }>();
   const routeData = useRouteData<{
@@ -69,14 +73,21 @@ const QuoteMakeMethodTools = () => {
   }>(path.to.quote(quoteId));
 
   const materialRouteData = useRouteData<{
-    material: { itemId: string; itemType: MethodItemType | null };
-  }>(path.to.quoteLineMakeMethod(quoteId, lineId!, methodId!, materialId!));
+    makeMethod: { itemId: string; itemType: MethodItemType | null };
+  }>(
+    path.to.quoteLineMakeMethod(
+      quoteId,
+      lineId!,
+      methodId!,
+      materialId ?? undefined
+    )
+  );
 
   const itemId =
-    materialRouteData?.material?.itemId ??
+    materialRouteData?.makeMethod?.itemId ??
     routeData?.lines.find((line) => line.id === lineId)?.itemId;
   const itemType =
-    materialRouteData?.material?.itemType ??
+    materialRouteData?.makeMethod?.itemType ??
     routeData?.lines.find((line) => line.id === lineId)?.itemType;
 
   const itemLink =
@@ -121,9 +132,7 @@ const QuoteMakeMethodTools = () => {
     pathname === path.to.quoteLineMethod(quoteId, lineId!, methodId!);
   const isQuoteMakeMethod =
     methodId &&
-    materialId &&
-    pathname ===
-      path.to.quoteLineMakeMethod(quoteId, lineId!, methodId, materialId);
+    pathname === path.to.quoteLineMakeMethod(quoteId, lineId!, methodId);
 
   const { carbon } = useCarbon();
 
