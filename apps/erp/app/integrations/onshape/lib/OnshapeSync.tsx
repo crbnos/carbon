@@ -13,6 +13,7 @@ import {
   IconButton,
   PulsingDot,
   Spinner,
+  Status,
   cn,
   toast,
   useDisclosure,
@@ -366,63 +367,70 @@ export const OnshapeSync = ({
           </HStack>
 
           <div className="max-h-60 overflow-y-auto flex flex-col">
-            {bomRows.map((row) => (
-              <div
-                key={row.index}
-                className={cn(
-                  "flex min-h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 w-full gap-1 hover:bg-muted/90"
-                )}
-                style={{
-                  paddingLeft: `${row.level * 12}px`,
-                }}
-              >
+            {bomRows.map((row) => {
+              const isSynced = row.id;
+              const partId = row.readableId || row.name;
+              return (
                 <div
+                  key={row.index}
                   className={cn(
-                    "flex items-center gap-2 font-medium text-sm w-full",
-                    row.level > 1 && "opacity-50"
+                    "flex min-h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 w-full gap-1 hover:bg-muted/90"
                   )}
+                  style={{
+                    paddingLeft: `${row.level * 12}px`,
+                  }}
                 >
-                  <DropdownMenu>
-                    <DropdownMenuTrigger>
-                      <MethodIcon type={row.defaultMethodType} />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                      <DropdownMenuRadioGroup
-                        value={row.defaultMethodType}
-                        onValueChange={(value) => {
-                          setBomRows((prevRows) =>
-                            prevRows.map((r) =>
-                              r.index === row.index
-                                ? { ...r, defaultMethodType: value }
-                                : r
-                            )
-                          );
-                        }}
-                      >
-                        {methodType.map((type) => (
-                          <DropdownMenuRadioItem key={type} value={type}>
-                            <DropdownMenuIcon
-                              icon={<MethodIcon type={type} />}
-                            />
-                            {type}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 font-medium text-sm w-full"
+                    )}
+                  >
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <MethodIcon type={row.defaultMethodType} />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuRadioGroup
+                          value={row.defaultMethodType}
+                          onValueChange={(value) => {
+                            setBomRows((prevRows) =>
+                              prevRows.map((r) =>
+                                r.index === row.index
+                                  ? { ...r, defaultMethodType: value }
+                                  : r
+                              )
+                            );
+                          }}
+                        >
+                          {methodType.map((type) => (
+                            <DropdownMenuRadioItem key={type} value={type}>
+                              <DropdownMenuIcon
+                                icon={<MethodIcon type={type} />}
+                              />
+                              {type}
+                            </DropdownMenuRadioItem>
+                          ))}
+                        </DropdownMenuRadioGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
 
-                  <span className="line-clamp-1">
-                    {row.readableId || row.name}
-                  </span>
-                  {!row.id && <PulsingDot className="mt-0.5" />}
+                    {partId ? (
+                      <span className="line-clamp-1">
+                        {row.readableId || row.name}
+                      </span>
+                    ) : (
+                      <Status color="red">No part ID</Status>
+                    )}
+                    {!isSynced && partId && <PulsingDot className="mt-0.5" />}
+                  </div>
+                  <HStack spacing={1}>
+                    <Badge className="text-xs" variant="outline">
+                      {row.quantity}
+                    </Badge>
+                  </HStack>
                 </div>
-                <HStack spacing={1}>
-                  <Badge className="text-xs" variant="outline">
-                    {row.quantity}
-                  </Badge>
-                </HStack>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
