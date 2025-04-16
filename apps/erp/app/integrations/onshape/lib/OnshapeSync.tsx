@@ -326,26 +326,28 @@ export const OnshapeSync = ({
             </div> */}
           </>
         )}
-        {lastSyncedAt && (
-          <div className="flex items-center gap-1 w-full justify-between">
+        <div className="flex items-center gap-1 w-full justify-between">
+          {lastSyncedAt ? (
             <span className="text-xs text-muted-foreground">
               Last synced: {formatDateTime(lastSyncedAt)}
             </span>
-            {isDataLoading ? (
-              <Spinner className="size-3" />
-            ) : (
-              <Button
-                variant={bomRows.length > 0 ? "secondary" : "primary"}
-                isLoading={bomFetcher.state !== "idle"}
-                isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
-                size="sm"
-                onClick={loadBom}
-              >
-                {bomRows.length > 0 ? "Refresh" : "Sync"}
-              </Button>
-            )}
-          </div>
-        )}
+          ) : (
+            <div />
+          )}
+          {isDataLoading ? (
+            <Spinner className="size-3" />
+          ) : (
+            <Button
+              variant={bomRows.length > 0 ? "secondary" : "primary"}
+              isLoading={bomFetcher.state !== "idle"}
+              isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
+              size="sm"
+              onClick={loadBom}
+            >
+              {bomRows.length > 0 ? "Refresh" : "Sync"}
+            </Button>
+          )}
+        </div>
       </div>
       {bomRows.length > 0 && (
         <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
