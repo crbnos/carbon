@@ -85,7 +85,7 @@ serve(async (req: Request) => {
     return new Response("ok", { headers: corsHeaders });
   }
   const payload = await req.json();
-  console.log(payloadValidator.safeParse(payload));
+
   const { type, companyId, userId } = payloadValidator.parse(payload);
 
   switch (type) {
