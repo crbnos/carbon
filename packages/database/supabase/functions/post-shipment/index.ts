@@ -24,9 +24,6 @@ serve(async (req: Request) => {
   const payload = await req.json();
   const today = format(new Date(), "yyyy-MM-dd");
 
-  console.log(payload);
-  console.log(payloadValidator.safeParse(payload));
-
   try {
     const { shipmentId, userId, companyId } = payloadValidator.parse(payload);
 

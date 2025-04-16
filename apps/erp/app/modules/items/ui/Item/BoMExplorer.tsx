@@ -18,20 +18,30 @@ import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
-import type { MethodItemType } from "~/modules/shared";
+import { useIntegrations } from "~/hooks/useIntegrations";
+import { OnshapeSync } from "~/integrations/onshape/lib/OnshapeSync";
+import { type MethodItemType } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { Method } from "../../types";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;
+  makeMethodId: string;
   methods: FlatTreeItem<Method>[];
   selectedId?: string;
 };
 
-const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
+const BoMExplorer = ({
+  itemType,
+  makeMethodId,
+  methods,
+  selectedId,
+}: BoMExplorerProps) => {
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
-
+  const integrations = useIntegrations();
+  const params = useParams();
   const {
     nodes,
     getTreeProps,
@@ -69,13 +79,22 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
   });
 
   const navigate = useNavigate();
-  const params = useParams();
+
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
   useMount(() => {
-    if (params.materialId) {
-      selectNode(params.materialId);
+    if (selectedMaterialId) {
+      const node = methods.find(
+        (m) => m.data.methodMaterialId === selectedMaterialId
+      );
+      selectNode(node?.id ?? methods[0].id);
+    } else if (params.makeMethodId) {
+      const node = methods.find(
+        (m) => m.data.materialMakeMethodId === params.makeMethodId
+      );
+      selectNode(node?.id ?? methods[0].id);
     } else if (methods?.length > 0) {
       selectNode(methods[0].id);
     }
@@ -95,6 +114,9 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
           />
         </InputGroup>
       </HStack>
+      {integrations.has("onshape") && (
+        <OnshapeSync makeMethodId={makeMethodId} itemId={itemId} />
+      )}
       <TreeView
         parentRef={parentRef}
         virtualizer={virtualizer}
@@ -103,98 +125,99 @@ const BoMExplorer = ({ itemType, methods, selectedId }: BoMExplorerProps) => {
         nodes={nodes}
         getNodeProps={getNodeProps}
         getTreeProps={getTreeProps}
-        renderNode={({ node, state }) => (
-          <HoverCard>
-            <HoverCardTrigger asChild>
-              <div
-                key={node.id}
-                className={cn(
-                  "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-                  state.selected
-                    ? "bg-muted hover:bg-muted/90"
-                    : "bg-transparent hover:bg-muted/90"
-                )}
-                onClick={() => {
-                  selectNode(node.id);
-                  if (node.data.isRoot) {
-                    navigate(getRootLink(itemType, itemId));
-                  } else {
-                    navigate(
-                      getMaterialLink(
-                        itemType,
-                        itemId,
-                        node.data.materialMakeMethodId ??
-                          node.data.methodType.toLowerCase(),
-                        node.data.methodMaterialId
-                      )
-                    );
-                  }
-                }}
-              >
-                <div className="flex h-8 items-center">
-                  {Array.from({ length: node.level }).map((_, index) => (
-                    <LevelLine key={index} isSelected={state.selected} />
-                  ))}
-                  <div
-                    className={cn(
-                      "flex h-8 w-4 items-center",
-                      node.hasChildren && "hover:bg-accent"
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (e.altKey) {
-                        if (state.expanded) {
-                          collapseAllBelowDepth(node.level);
+        renderNode={({ node, state }) => {
+          return (
+            <HoverCard>
+              <HoverCardTrigger asChild>
+                <div
+                  key={node.id}
+                  className={cn(
+                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                    state.selected
+                      ? "bg-muted hover:bg-muted/90"
+                      : "bg-transparent hover:bg-muted/90"
+                  )}
+                  onClick={() => {
+                    selectNode(node.id);
+                    setSelectedMaterialId(node.data.methodMaterialId);
+                    if (node.data.isRoot) {
+                      navigate(getRootLink(itemType, itemId));
+                    } else {
+                      navigate(
+                        getMaterialLink(
+                          itemType,
+                          itemId,
+                          node.data.makeMethodId
+                        )
+                      );
+                    }
+                  }}
+                >
+                  <div className="flex h-8 items-center">
+                    {Array.from({ length: node.level }).map((_, index) => (
+                      <LevelLine key={index} isSelected={state.selected} />
+                    ))}
+                    <div
+                      className={cn(
+                        "flex h-8 w-4 items-center",
+                        node.hasChildren && "hover:bg-accent"
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (e.altKey) {
+                          if (state.expanded) {
+                            collapseAllBelowDepth(node.level);
+                          } else {
+                            expandAllBelowDepth(node.level);
+                          }
                         } else {
-                          expandAllBelowDepth(node.level);
+                          toggleExpandNode(node.id);
                         }
-                      } else {
-                        toggleExpandNode(node.id);
-                      }
-                      scrollToNode(node.id);
-                    }}
-                  >
-                    {node.hasChildren ? (
-                      state.expanded ? (
-                        <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        scrollToNode(node.id);
+                      }}
+                    >
+                      {node.hasChildren ? (
+                        state.expanded ? (
+                          <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        ) : (
+                          <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                        )
                       ) : (
-                        <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                      )
-                    ) : (
-                      <div className="h-8 w-4" />
-                    )}
+                        <div className="h-8 w-4" />
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex w-full items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 overflow-x-hidden">
-                    <MethodIcon
-                      type={
-                        // node.data.isRoot ? "Method" :
-                        node.data.methodType
-                      }
-                      isKit={node.data.kit}
-                      className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                    />
-                    <NodeText node={node} />
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {node.data.isRoot ? (
-                      <Badge variant="outline" className="text-xs">
-                        Method
-                      </Badge>
-                    ) : (
-                      <NodeData node={node} />
-                    )}
+                  <div className="flex w-full items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 overflow-x-hidden">
+                      <MethodIcon
+                        type={
+                          // node.data.isRoot ? "Method" :
+                          node.data.methodType
+                        }
+                        isKit={node.data.kit}
+                        className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
+                      />
+                      <NodeText node={node} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      {node.data.isRoot ? (
+                        <Badge variant="outline" className="text-xs">
+                          Method
+                        </Badge>
+                      ) : (
+                        <NodeData node={node} />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </HoverCardTrigger>
-            <HoverCardContent side="right">
-              <NodePreview node={node} />
-            </HoverCardContent>
-          </HoverCard>
-        )}
+              </HoverCardTrigger>
+              <HoverCardContent side="right">
+                <NodePreview node={node} />
+              </HoverCardContent>
+            </HoverCard>
+          );
+        }}
       />
     </VStack>
   );
@@ -206,7 +229,7 @@ function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
     <div className="flex flex-col items-start gap-0">
       <span className="text-sm truncate font-medium">
-        {node.data.description || node.data.itemReadableId}
+        {node.data.itemReadableId || node.data.description}
       </span>
     </div>
   );
@@ -293,28 +316,13 @@ function getRootLink(itemType: MethodItemType, itemId: string) {
 function getMaterialLink(
   itemType: MethodItemType,
   itemId: string,
-  makeMethodId: string,
-  materialId: string
+  makeMethodId: string
 ) {
   switch (itemType) {
     case "Part":
-      return path.to.partManufacturingMaterial(
-        itemId,
-        makeMethodId,
-        materialId
-      );
-    // case "Fixture":
-    //   return path.to.fixtureManufacturingMaterial(
-    //     itemId,
-    //     makeMethodId,
-    //     materialId
-    //   );
+      return path.to.partManufacturingMaterial(itemId, makeMethodId);
     case "Tool":
-      return path.to.toolManufacturingMaterial(
-        itemId,
-        makeMethodId,
-        materialId
-      );
+      return path.to.toolManufacturingMaterial(itemId, makeMethodId);
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }

@@ -130,7 +130,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function PartManufacturing() {
-  const { methods } = useLoaderData<typeof loader>();
+  const { makeMethod, methods } = useLoaderData<typeof loader>();
 
   const params = useParams();
   const { itemId } = params;
@@ -149,6 +149,7 @@ export default function PartManufacturing() {
             <div className="grid h-full overflow-hidden p-2">
               <BoMExplorer
                 itemType="Part"
+                makeMethodId={makeMethod.id}
                 // @ts-ignore
                 methods={methods}
               />

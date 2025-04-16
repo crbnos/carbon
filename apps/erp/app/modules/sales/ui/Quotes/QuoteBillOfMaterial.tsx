@@ -24,7 +24,12 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -49,6 +54,7 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
@@ -218,6 +224,8 @@ const QuoteBillOfMaterial = ({
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
   if (!lineId) throw new Error("lineId not found");
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
@@ -388,6 +396,12 @@ const QuoteBillOfMaterial = ({
     });
   }, [items]);
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+  const onSelectItem = (id: string | null) => {
+    setSelectedMaterialId(id);
+    setSelectedItemId(id);
+  };
+
   const renderListItem = ({
     item,
     items,
@@ -404,7 +418,8 @@ const QuoteBillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
-        onSelectItem={setSelectedItemId}
+        isHighlighted={item.id === selectedMaterialId}
+        onSelectItem={onSelectItem}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
@@ -422,10 +437,10 @@ const QuoteBillOfMaterial = ({
               onClick={
                 isOpen
                   ? () => {
-                      setSelectedItemId(null);
+                      onSelectItem(null);
                     }
                   : () => {
-                      setSelectedItemId(item.id);
+                      onSelectItem(item.id);
                     }
               }
               key="collapse"

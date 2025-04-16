@@ -561,6 +561,7 @@ export function reducer(state: TreeState, action: Action): TreeState {
     case "UPDATE_TREE": {
       //update the tree but try and keep the selected and expanded states
       const selectedId = selectedIdFromState(state.nodes);
+
       const collapsedIds = collapsedIdsFromState(state.nodes);
       const newState = concreteStateFromInput({
         ...state,

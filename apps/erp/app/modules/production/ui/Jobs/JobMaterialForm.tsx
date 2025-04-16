@@ -33,6 +33,7 @@ import {
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import { jobMaterialValidator } from "../../production.models";
@@ -128,40 +129,17 @@ const JobMaterialForm = ({
     }
   };
 
+  const [, setSelectedMaterialId] = useBom();
+
   useEffect(() => {
-    const newPath =
-      initialValues.methodType === "Make"
-        ? path.to.jobMakeMethod(
-            jobId,
-            initialValues.jobMaterialMakeMethodId!,
-            initialValues.id!
-          )
-        : path.to.jobMethodMaterial(
-            jobId,
-            initialValues.methodType.toLowerCase(),
-            initialValues.jobMakeMethodId,
-            initialValues.id!
-          );
-    if (
-      fetcher.data?.methodType === "Make" &&
-      !location.pathname.includes("make")
-    ) {
-      navigate(newPath);
-    }
+    const newPath = path.to.jobMakeMethod(
+      jobId,
+      initialValues.jobMakeMethodId!,
+      initialValues.id!
+    );
 
-    if (
-      fetcher.data?.methodType === "Buy" &&
-      !location.pathname.includes("buy")
-    ) {
-      navigate(newPath);
-    }
-
-    if (
-      fetcher.data?.methodType === "Pick" &&
-      !location.pathname.includes("pick")
-    ) {
-      navigate(newPath);
-    }
+    setSelectedMaterialId(initialValues.id ?? null);
+    navigate(newPath);
   }, [
     fetcher.data,
     initialValues,
@@ -171,6 +149,7 @@ const JobMaterialForm = ({
     jobId,
     location.pathname,
     navigate,
+    setSelectedMaterialId,
   ]);
 
   const isDisabled = ["Completed", "Cancelled"].includes(

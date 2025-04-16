@@ -14,11 +14,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Suspense } from "react";
 import { CadModel } from "~/components";
+import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
   getJobMakeMethodById,
-  getJobMaterial,
   getJobMaterialsByMethodId,
   getJobOperationsByMethodId,
   getProductionDataByOperations,
@@ -27,12 +27,10 @@ import {
   JobBillOfMaterial,
   JobBillOfProcess,
   JobEstimatesVsActuals,
-  JobMaterialForm,
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { getModelByItemId, getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { usePanels } from "~/components/Layout";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -40,21 +38,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bypassRls: true,
   });
 
-  const { jobId, methodId, materialId } = params;
+  const { jobId, methodId } = params;
   if (!jobId) throw new Error("Could not find jobId");
   if (!methodId) throw new Error("Could not find methodId");
-  if (!materialId) throw new Error("Could not find materialId");
 
-  const [material, materials, operations, tags] = await Promise.all([
-    getJobMaterial(client, materialId),
+  const [makeMethod, materials, operations, tags] = await Promise.all([
+    getJobMakeMethodById(client, methodId),
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
     getTagsList(client, companyId, "operation"),
   ]);
-  if (material.error) {
+  if (makeMethod.error) {
     throw redirect(
       path.to.job(jobId),
-      await flash(request, error(material.error, "Failed to load job material"))
+      await flash(
+        request,
+        error(makeMethod.error, "Failed to load job make method")
+      )
     );
   }
 
@@ -79,22 +79,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return defer({
-    material: {
-      ...material.data,
-      id: material.data.id ?? "",
-      description: material.data.description ?? "",
-      itemId: material.data.itemId ?? "",
-      itemReadableId: material.data.itemReadableId ?? "",
-      itemType: material.data.itemType as "Part",
-      methodType: material.data.methodType ?? "Make",
-      order: material.data.order ?? 1,
-      quantity: material.data.quantity ?? 0,
-      jobMakeMethodId: material.data.jobMakeMethodId ?? "",
-      jobMaterialMakeMethodId: material.data.jobMaterialMakeMethodId,
-      jobOperationId: material.data.jobOperationId ?? undefined,
-      unitCost: material.data.unitCost ?? 0,
-      unitOfMeasureCode: material.data.unitOfMeasureCode ?? "",
-    },
     materials:
       materials?.data.map((m) => ({
         ...m,
@@ -113,25 +97,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent | null,
       })) ?? [],
-    makeMethod: getJobMakeMethodById(client, methodId),
+    makeMethod: makeMethod.data,
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
     ),
-    model: getModelByItemId(client, material.data.itemId!),
+    model: getModelByItemId(client, makeMethod.data.itemId!),
     tags: tags.data ?? [],
   });
 }
 
 export default function JobMakeMethodRoute() {
-  const { makeMethod } = useLoaderData<typeof loader>();
   const permissions = usePermissions();
   const { methodId, jobId } = useParams();
   if (!methodId) throw new Error("Could not find methodId");
   if (!jobId) throw new Error("Could not find jobId");
   const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
   const loaderData = useLoaderData<typeof loader>();
-  const { material, materials, operations, productionData, tags } = loaderData;
+  const { makeMethod, materials, operations, productionData, tags } =
+    loaderData;
 
   const { setIsExplorerCollapsed, isExplorerCollapsed } = usePanels();
 
@@ -144,14 +128,11 @@ export default function JobMakeMethodRoute() {
   return (
     <VStack spacing={2} className="p-2">
       <JobMakeMethodTools makeMethod={makeMethod} />
-      <JobMaterialForm
-        key={material.id}
-        initialValues={material}
-        operations={operations}
-      />
+
       <JobBillOfProcess
         key={`bop:${methodId}`}
         jobMakeMethodId={methodId}
+        // @ts-expect-error
         operations={operations}
         locationId={routeData?.job?.locationId ?? ""}
         tags={tags}
@@ -160,6 +141,7 @@ export default function JobMakeMethodRoute() {
         key={`bom:${methodId}`}
         jobMakeMethodId={methodId}
         materials={materials}
+        // @ts-expect-error
         operations={operations}
       />
       <Suspense
@@ -172,7 +154,9 @@ export default function JobMakeMethodRoute() {
         <Await resolve={productionData}>
           {(resolvedProductionData) => (
             <JobEstimatesVsActuals
+              // @ts-expect-error
               materials={materials ?? []}
+              // @ts-expect-error
               operations={operations}
               productionEvents={resolvedProductionData.events}
               productionQuantities={resolvedProductionData.quantities}

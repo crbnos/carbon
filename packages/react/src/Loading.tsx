@@ -6,8 +6,11 @@ export function Loading({
   children,
   isLoading,
   className,
+  spinnerClassName,
   ...props
-}: PropsWithChildren<ComponentProps<"div"> & { isLoading: boolean }>) {
+}: PropsWithChildren<
+  ComponentProps<"div"> & { isLoading: boolean; spinnerClassName?: string }
+>) {
   return isLoading ? (
     <div
       className={cn(
@@ -16,7 +19,7 @@ export function Loading({
       )}
       {...props}
     >
-      <Spinner className="size-8" />
+      <Spinner className={spinnerClassName ?? "size-8"} />
     </div>
   ) : (
     <>{children}</>

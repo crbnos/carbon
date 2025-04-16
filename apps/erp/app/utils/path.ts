@@ -47,6 +47,18 @@ export const path = {
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
       modelUpload: `${api}/model/upload`,
+      onShapeBom: (documentId: string, versionId: string, elementId: string) =>
+        generatePath(
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/e/${elementId}/bom`
+        ),
+      onShapeDocuments: `${api}/integrations/onshape/documents`,
+      onShapeVersions: (documentId: string) =>
+        generatePath(`${api}/integrations/onshape/d/${documentId}/versions`),
+      onShapeElements: (documentId: string, versionId: string) =>
+        generatePath(
+          `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
+        ),
+      onShapeSync: `${api}/integrations/onshape/sync`,
       outsideOperations: (jobId: string) =>
         generatePath(`${api}/production/outside-operations/${jobId}`),
       purchasingKpi: (key: string) =>
@@ -565,17 +577,13 @@ export const path = {
     jobMaterials: (id: string) => generatePath(`${x}/job/${id}/materials`),
     jobMethod: (jobId: string, methodId: string) =>
       generatePath(`${x}/job/${jobId}/method/${methodId}`),
-    jobMakeMethod: (jobId: string, makeMethodId: string, materialId: string) =>
-      generatePath(`${x}/job/${jobId}/make/${makeMethodId}/${materialId}`),
-    jobMethodMaterial: (
-      jobId: string,
-      methodType: string,
-      makeMethodId: string,
-      materialId: string
-    ) =>
+    jobMakeMethod: (jobId: string, makeMethodId: string, materialId?: string) =>
       generatePath(
-        `${x}/job/${jobId}/${methodType}/${makeMethodId}/${materialId}`
+        `${x}/job/${jobId}/make/${makeMethodId}${
+          materialId ? `?materialId=${materialId}` : ""
+        }`
       ),
+
     jobMaterialsOrder: `${x}/job/methods/material/order`,
     jobMethodGet: `${x}/job/methods/get`,
     jobMethodSave: `${x}/job/methods/save`,
@@ -793,14 +801,8 @@ export const path = {
       generatePath(`${x}/part/${id}/manufacturing/method`),
     partManufacturing: (id: string) =>
       generatePath(`${x}/part/${id}/manufacturing`),
-    partManufacturingMaterial: (
-      itemId: string,
-      makeMethodId: string,
-      methodMaterialId: string
-    ) =>
-      generatePath(
-        `${x}/part/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
-      ),
+    partManufacturingMaterial: (itemId: string, makeMethodId: string) =>
+      generatePath(`${x}/part/${itemId}/manufacturing/${makeMethodId}`),
     partPlanning: (id: string) => generatePath(`${x}/part/${id}/planning`),
     partPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/planning?location=${locationId}`),
@@ -890,24 +892,17 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${lineId}/configure`),
     quoteLineCost: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/cost/update`),
-    quoteLineMethodMaterial: (
-      quoteId: string,
-      lineId: string,
-      methodType: string,
-      methodId: string,
-      id: string
-    ) =>
-      generatePath(
-        `${x}/quote/${quoteId}/${lineId}/${methodType}/${methodId}/${id}`
-      ),
+
     quoteLineMakeMethod: (
       quoteId: string,
       lineId: string,
       makeMethodId: string,
-      materialId: string
+      materialId?: string
     ) =>
       generatePath(
-        `${x}/quote/${quoteId}/${lineId}/make/${makeMethodId}/${materialId}`
+        `${x}/quote/${quoteId}/${lineId}/make/${makeMethodId}${
+          materialId ? `?materialId=${materialId}` : ""
+        }`
       ),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
@@ -1088,15 +1083,8 @@ export const path = {
       generatePath(`${x}/tool/${id}/manufacturing/method`),
     toolManufacturing: (id: string) =>
       generatePath(`${x}/tool/${id}/manufacturing`),
-    toolManufacturingMaterial: (
-      itemId: string,
-      makeMethodId: string,
-      methodMaterialId: string
-    ) =>
-      generatePath(
-        `${x}/tool/${itemId}/manufacturing/${makeMethodId}/${methodMaterialId}`
-      ),
-
+    toolManufacturingMaterial: (itemId: string, makeMethodId: string) =>
+      generatePath(`${x}/tool/${itemId}/manufacturing/${makeMethodId}`),
     toolPlanning: (id: string) => generatePath(`${x}/tool/${id}/planning`),
     toolPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/planning?location=${locationId}`),

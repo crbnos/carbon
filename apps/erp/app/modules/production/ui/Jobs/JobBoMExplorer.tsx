@@ -15,13 +15,14 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useFetchers, useNavigate } from "@remix-run/react";
-import { useRef, useState } from "react";
+import { useFetchers, useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { JobMethod } from "../../production.service";
 
@@ -34,6 +35,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [filterText, setFilterText] = useState("");
+  const { methodId } = useParams();
 
   const fetchers = useFetchers();
   const getMethodFetcher = fetchers.find(
@@ -78,6 +80,24 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
     isEager: true,
   });
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+  useEffect(() => {
+    if (selectedMaterialId) {
+      const node = method.find(
+        (m) => m.data.methodMaterialId === selectedMaterialId
+      );
+      selectNode(node?.id ?? method[0].id);
+    } else if (methodId) {
+      const node = method.find(
+        (m) => m.data.jobMaterialMakeMethodId === methodId
+      );
+      selectNode(node?.id ?? method[0].id);
+    } else if (method?.length > 0) {
+      selectNode(method[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMaterialId, methodId]);
+
   return (
     <VStack>
       {isLoading ? (
@@ -113,12 +133,13 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                     key={node.id}
                     className={cn(
                       "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-                      getNodePath(node) === location.pathname
+                      state.selected
                         ? "bg-muted hover:bg-muted/90"
                         : "bg-transparent hover:bg-muted/90"
                     )}
                     onClick={(e) => {
                       selectNode(node.id);
+                      setSelectedMaterialId(node.data.methodMaterialId);
                       navigate(getNodePath(node));
                     }}
                   >
@@ -202,7 +223,7 @@ function NodeText({ node }: { node: FlatTreeItem<JobMethod> }) {
   return (
     <div className="flex items-center gap-1">
       <span className="font-medium text-sm truncate">
-        {node.data.description || node.data.itemReadableId}
+        {node.data.itemReadableId || node.data.description}
       </span>
     </div>
   );
@@ -282,15 +303,8 @@ function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
 function getNodePath(node: FlatTreeItem<JobMethod>) {
   return node.data.isRoot
     ? path.to.jobMethod(node.data.jobId, node.data.jobMaterialMakeMethodId)
-    : node.data.methodType === "Make"
-    ? path.to.jobMakeMethod(
+    : path.to.jobMakeMethod(
         node.data.jobId,
-        node.data.jobMaterialMakeMethodId,
-        node.data.methodMaterialId
-      )
-    : path.to.jobMethodMaterial(
-        node.data.jobId,
-        node.data.methodType.toLowerCase(),
         node.data.jobMakeMethodId,
         node.data.methodMaterialId
       );

@@ -25,7 +25,12 @@ import {
   useThrottle,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import {
+  useFetcher,
+  useFetchers,
+  useParams,
+  useSearchParams,
+} from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -64,6 +69,7 @@ import {
   type MethodItemType,
   type MethodType,
 } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
@@ -127,7 +133,8 @@ const BillOfMaterial = ({
 }: BillOfMaterialProps) => {
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
-
+  const [searchParams] = useSearchParams();
+  const materialId = searchParams.get("materialId");
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
@@ -287,6 +294,8 @@ const BillOfMaterial = ({
     });
   }, [materials]);
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+
   const renderListItem = ({
     item,
     items,
@@ -295,6 +304,10 @@ const BillOfMaterial = ({
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === selectedItemId;
+    const onSelectItem = (id: string | null) => {
+      setSelectedMaterialId(id);
+      setSelectedItemId(id);
+    };
 
     return (
       <SortableListItem<Material>
@@ -303,7 +316,8 @@ const BillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
-        onSelectItem={setSelectedItemId}
+        isHighlighted={item.id === selectedMaterialId}
+        onSelectItem={onSelectItem}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
@@ -321,10 +335,10 @@ const BillOfMaterial = ({
               onClick={
                 isOpen
                   ? () => {
-                      setSelectedItemId(null);
+                      onSelectItem(null);
                     }
                   : () => {
-                      setSelectedItemId(item.id);
+                      onSelectItem(item.id);
                     }
               }
               key="collapse"
@@ -434,8 +448,6 @@ const BillOfMaterial = ({
   const rulesByField = new Map(
     configurationRules?.map((rule) => [rule.field, rule]) ?? []
   );
-
-  const { materialId } = useParams();
 
   return (
     <Card>
@@ -928,8 +940,8 @@ function makeItem(
   };
 }
 
-function getFieldKey(field: string, materialId: string) {
-  return `${field}:${materialId}`;
+function getFieldKey(field: string, itemId: string) {
+  return `${field}:${itemId}`;
 }
 
 const usePendingMaterials = () => {

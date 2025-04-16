@@ -2,7 +2,7 @@
 
 import { LayoutGroup, Reorder, motion, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Checkbox, HStack, cn } from "@carbon/react";
 import { flushSync } from "react-dom";
@@ -32,6 +32,7 @@ interface SortableListItemProps<T> {
   onRemoveItem: (id: string) => void;
   renderExtra?: (item: SortableItem<T>) => React.ReactNode;
   isExpanded?: boolean;
+  isHighlighted?: boolean;
   className?: string;
   handleDrag: () => void;
 }
@@ -46,11 +47,13 @@ function SortableListItem<T>({
   renderExtra,
   handleDrag,
   isExpanded,
+  isHighlighted,
   className,
 }: SortableListItemProps<T>) {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggable] = useState(!isExpanded);
   const dragControls = useDragControls();
+  const itemRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (event: any) => {
     if (isExpanded) return;
@@ -63,8 +66,18 @@ function SortableListItem<T>({
     setIsDragging(false);
   };
 
+  // Scroll into view when highlighted
+  useEffect(() => {
+    if (isHighlighted && itemRef.current) {
+      itemRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [isHighlighted]);
+
   return (
-    <div className={cn("", className)} key={item.id}>
+    <div className={cn("", className)} key={item.id} ref={itemRef}>
       <div className="flex w-full items-center">
         <Reorder.Item
           value={item}
@@ -73,6 +86,7 @@ function SortableListItem<T>({
             "h-full rounded-md bg-muted/30",
             "border border-border rounded-lg ",
             !isExpanded && "cursor-grab",
+            isHighlighted && "border-2 border-primary",
             item.checked && !isDragging ? "w-7/10" : "w-full"
           )}
           key={item.id}
