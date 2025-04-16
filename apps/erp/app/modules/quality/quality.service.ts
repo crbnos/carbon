@@ -5,6 +5,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
+  nonConformanceReviewerValidator,
+  nonConformanceStatus,
   nonConformanceTypeValidator,
   nonConformanceValidator,
   nonConformanceWorkflowValidator,
@@ -123,6 +125,19 @@ export async function getNonConformanceApprovalTasks(
     .order("approvalType", { ascending: true });
 }
 
+export async function getNonConformanceReviewers(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformanceReviewer")
+    .select("*")
+    .eq("nonConformanceId", id)
+    .eq("companyId", companyId)
+    .order("id", { ascending: true });
+}
+
 export async function getNonConformanceTasks(
   client: SupabaseClient<Database>,
   id: string,
@@ -231,12 +246,34 @@ export async function getNonConformanceTypes(
   return query;
 }
 
+export async function insertNonConformanceReviewer(
+  client: SupabaseClient<Database>,
+  reviewer: z.infer<typeof nonConformanceReviewerValidator> & {
+    nonConformanceId: string;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client.from("nonConformanceReviewer").insert(reviewer);
+}
+
+export async function updateNonConformanceStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof nonConformanceStatus)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  return client.from("nonConformance").update(update).eq("id", update.id);
+}
 export async function updateNonConformanceTaskStatus(
   client: SupabaseClient<Database>,
   args: {
     id: string;
     status: "Pending" | "Completed" | "Skipped" | "In Progress";
-    type: "investigation" | "action" | "approval";
+    type: "investigation" | "action" | "approval" | "review";
     userId: string;
     assignee: string | null;
   }
@@ -247,6 +284,8 @@ export async function updateNonConformanceTaskStatus(
       ? "nonConformanceInvestigationTask"
       : type === "action"
       ? "nonConformanceActionTask"
+      : type === "review"
+      ? "nonConformanceReviewer"
       : "nonConformanceApprovalTask";
 
   const finalAssignee = assignee || userId;

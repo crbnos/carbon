@@ -78,6 +78,10 @@ export const nonConformanceValidator = z.object({
   shipmentLineId: zfd.text(z.string().optional()),
 });
 
+export const nonConformanceReviewerValidator = z.object({
+  title: z.string().min(1, { message: "Title is required" }),
+});
+
 export const nonConformanceTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }),

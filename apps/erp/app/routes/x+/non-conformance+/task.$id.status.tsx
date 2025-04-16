@@ -23,7 +23,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const status = formData.get(
     "status"
   ) as NonConformanceInvestigationTask["status"];
-  const type = formData.get("type") as "investigation" | "action" | "approval";
+  const type = formData.get("type") as
+    | "investigation"
+    | "action"
+    | "approval"
+    | "review";
   const assignee = formData.get("assignee") as string;
 
   const update = await updateNonConformanceTaskStatus(client, {
