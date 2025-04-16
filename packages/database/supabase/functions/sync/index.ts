@@ -150,6 +150,10 @@ serve(async (req: Request) => {
             .where("makeMethodId", "=", makeMethodId)
             .execute();
 
+          // Track newly created items and make methods to avoid duplicate inserts
+          const newlyCreatedItemsByPartId = new Map<string, string>();
+          const newlyCreatedMakeMethodsByItemId = new Map<string, string>();
+
           async function traverseTree(
             node: TreeNode,
             parentMakeMethodId: string,
@@ -172,48 +176,98 @@ serve(async (req: Request) => {
             let itemId = id;
 
             if (!itemId) {
-              const item = await trx
-                .insertInto("item")
-                .values({
-                  readableId: partId,
-                  name,
-                  type: "Part",
-                  unitOfMeasureCode: "EA",
-                  itemTrackingType: "Inventory",
-                  replenishmentSystem,
-                  defaultMethodType,
-                  companyId,
-                  createdBy: userId,
-                })
-                .returning(["id"])
-                .executeTakeFirst();
+              // Check if we've already created this part in this transaction
+              itemId = newlyCreatedItemsByPartId.get(partId);
 
-              itemId = item?.id;
+              if (!itemId) {
+                // Create new item and part
+                const item = await trx
+                  .insertInto("item")
+                  .values({
+                    readableId: partId,
+                    name,
+                    type: "Part",
+                    unitOfMeasureCode: "EA",
+                    itemTrackingType: "Inventory",
+                    replenishmentSystem,
+                    defaultMethodType,
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirst();
 
-              await trx
-                .insertInto("part")
-                .values({
-                  id: partId,
-                  itemId: itemId!,
-                  companyId,
-                  createdBy: userId,
-                })
-                .execute();
+                itemId = item?.id;
+
+                await trx
+                  .insertInto("part")
+                  .values({
+                    id: partId,
+                    itemId: itemId!,
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .execute();
+
+                // Store the newly created item to avoid duplicate inserts
+                if (itemId) {
+                  newlyCreatedItemsByPartId.set(partId, itemId);
+                  // Also update our existing items map for later reference
+                  existingItemsByItemId.set(itemId, {
+                    id: itemId,
+                    readableId: partId,
+                    unitOfMeasureCode: "EA",
+                    type: "Part",
+                  });
+                }
+              }
             }
 
             if (!itemId) throw new Error("Failed to create item");
 
             let materialMakeMethodId =
-              existingMakeMethodIdsByItemId.get(itemId);
-            if (defaultMethodType === "Make" || isMade) {
-              if (!materialMakeMethodId) {
-                const makeMethod = await trx
-                  .selectFrom("makeMethod")
-                  .select(["id"])
-                  .where("itemId", "=", itemId)
+              existingMakeMethodIdsByItemId.get(itemId) ||
+              newlyCreatedMakeMethodsByItemId.get(itemId);
+
+            if (
+              (defaultMethodType === "Make" || isMade) &&
+              !materialMakeMethodId
+            ) {
+              const makeMethod = await trx
+                .selectFrom("makeMethod")
+                .select(["id"])
+                .where("itemId", "=", itemId)
+                .executeTakeFirst();
+
+              materialMakeMethodId = makeMethod?.id;
+
+              if (
+                !materialMakeMethodId &&
+                (defaultMethodType === "Make" || isMade)
+              ) {
+                // Create a new make method if needed
+                const newMakeMethod = await trx
+                  .insertInto("makeMethod")
+                  .values({
+                    itemId,
+                    companyId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
                   .executeTakeFirst();
 
-                materialMakeMethodId = makeMethod?.id;
+                materialMakeMethodId = newMakeMethod?.id;
+
+                if (materialMakeMethodId) {
+                  newlyCreatedMakeMethodsByItemId.set(
+                    itemId,
+                    materialMakeMethodId
+                  );
+                  existingMakeMethodIdsByItemId.set(
+                    itemId,
+                    materialMakeMethodId
+                  );
+                }
               }
             }
 
