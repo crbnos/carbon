@@ -270,18 +270,27 @@ CREATE INDEX "nonConformanceApprovalTask_status_idx" ON "nonConformanceApprovalT
 
 CREATE TABLE "nonConformanceReviewer" (
   "id" TEXT NOT NULL DEFAULT xid(),
+  "title" TEXT NOT NULL,
+  "status" "nonConformanceTaskStatus" NOT NULL DEFAULT 'Pending',
   "nonConformanceId" TEXT NOT NULL,
-  "reviewerId" TEXT NOT NULL,
+  "notes" JSON NOT NULL DEFAULT '{}',
+  "assignee" TEXT,
+  "companyId" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
   "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
 
   CONSTRAINT "nonConformanceReviewer_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceReviewer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceReviewer_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "nonConformanceReviewer_reviewerId_fkey" FOREIGN KEY ("reviewerId") REFERENCES "user"("id") ON UPDATE CASCADE
+  CONSTRAINT "nonConformanceReviewer_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceReviewer_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceReviewer_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
 CREATE INDEX "nonConformanceReviewer_nonConformanceId_idx" ON "nonConformanceReviewer" ("nonConformanceId");
-CREATE INDEX "nonConformanceReviewer_reviewerId_idx" ON "nonConformanceReviewer" ("reviewerId");
+CREATE INDEX "nonConformanceReviewer_assignee_idx" ON "nonConformanceReviewer" ("assignee");
 
 
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
@@ -295,3 +304,4 @@ SELECT
   1,
   "id"
 FROM "company";
+

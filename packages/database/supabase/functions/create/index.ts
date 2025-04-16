@@ -204,6 +204,9 @@ serve(async (req: Request) => {
         const approvalTaskInserts: Database["public"]["Tables"]["nonConformanceApprovalTask"]["Insert"][] =
           [];
 
+        const reviewerInserts: Database["public"]["Tables"]["nonConformanceReviewer"]["Insert"][] =
+          [];
+
         nonConformance.data?.investigationTypes?.forEach(
           (investigationType) => {
             if (!currentInvestigationTasks[investigationType]) {
@@ -238,6 +241,25 @@ serve(async (req: Request) => {
             });
           }
         });
+
+        if (
+          Array.isArray(nonConformance.data?.approvalRequirements) &&
+          nonConformance.data?.approvalRequirements.includes("MRB")
+        ) {
+          reviewerInserts.push({
+            nonConformanceId: id,
+            title: "Engineering",
+            companyId,
+            createdBy: userId,
+          });
+
+          reviewerInserts.push({
+            nonConformanceId: id,
+            title: "Quality",
+            companyId,
+            createdBy: userId,
+          });
+        }
 
         await db.transaction().execute(async (trx) => {
           if (
@@ -290,6 +312,13 @@ serve(async (req: Request) => {
             await trx
               .deleteFrom("nonConformanceApprovalTask")
               .where("id", "=", approvalTasksToDelete)
+              .execute();
+          }
+
+          if (reviewerInserts.length > 0) {
+            await trx
+              .insertInto("nonConformanceReviewer")
+              .values(reviewerInserts)
               .execute();
           }
         });

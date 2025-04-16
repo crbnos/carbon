@@ -8404,6 +8404,7 @@ export type Database = {
           jobId: string
           jobMakeMethodId: string
           jobOperationId: string | null
+          kit: boolean
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           quantity: number
@@ -8433,6 +8434,7 @@ export type Database = {
           jobId: string
           jobMakeMethodId: string
           jobOperationId?: string | null
+          kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
@@ -8462,6 +8464,7 @@ export type Database = {
           jobId?: string
           jobMakeMethodId?: string
           jobOperationId?: string | null
+          kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           quantity?: number
@@ -10658,6 +10661,7 @@ export type Database = {
           itemId: string
           itemReadableId: string
           itemType: string
+          kit: boolean
           makeMethodId: string
           materialMakeMethodId: string | null
           methodOperationId: string | null
@@ -10680,6 +10684,7 @@ export type Database = {
           itemId: string
           itemReadableId: string
           itemType?: string
+          kit?: boolean
           makeMethodId: string
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
@@ -10702,6 +10707,7 @@ export type Database = {
           itemId?: string
           itemReadableId?: string
           itemType?: string
+          kit?: boolean
           makeMethodId?: string
           materialMakeMethodId?: string | null
           methodOperationId?: string | null
@@ -12776,27 +12782,143 @@ export type Database = {
       }
       nonConformanceReviewer: {
         Row: {
+          assignee: string | null
+          companyId: string
           createdAt: string
           createdBy: string
           id: string
           nonConformanceId: string
-          reviewerId: string
+          notes: Json
+          status: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          title: string
+          updatedAt: string | null
+          updatedBy: string | null
         }
         Insert: {
+          assignee?: string | null
+          companyId: string
           createdAt?: string
           createdBy: string
           id?: string
           nonConformanceId: string
-          reviewerId: string
+          notes?: Json
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          title: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Update: {
+          assignee?: string | null
+          companyId?: string
           createdAt?: string
           createdBy?: string
           id?: string
           nonConformanceId?: string
-          reviewerId?: string
+          notes?: Json
+          status?: Database["public"]["Enums"]["nonConformanceTaskStatus"]
+          title?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "nonConformanceReviewer_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReviewer_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "nonConformanceReviewer_nonConformanceId_fkey"
             columns: ["nonConformanceId"]
@@ -12805,36 +12927,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceReviewer_reviewerId_fkey"
-            columns: ["reviewerId"]
+            foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceReviewer_reviewerId_fkey"
-            columns: ["reviewerId"]
+            foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceReviewer_reviewerId_fkey"
-            columns: ["reviewerId"]
+            foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceReviewer_reviewerId_fkey"
-            columns: ["reviewerId"]
+            foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "nonConformanceReviewer_reviewerId_fkey"
-            columns: ["reviewerId"]
+            foreignKeyName: "nonConformanceReviewer_updatedBy_fkey"
+            columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -19581,6 +19703,7 @@ export type Database = {
           itemId: string
           itemReadableId: string
           itemType: string
+          kit: boolean
           methodType: Database["public"]["Enums"]["methodType"]
           order: number
           productionQuantity: number | null
@@ -19606,6 +19729,7 @@ export type Database = {
           itemId: string
           itemReadableId: string
           itemType?: string
+          kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           productionQuantity?: number | null
@@ -19631,6 +19755,7 @@ export type Database = {
           itemId?: string
           itemReadableId?: string
           itemType?: string
+          kit?: boolean
           methodType?: Database["public"]["Enums"]["methodType"]
           order?: number
           productionQuantity?: number | null
@@ -31026,11 +31151,14 @@ export type Database = {
           jobMakeMethodId: string | null
           jobMaterialMakeMethodId: string | null
           jobOperationId: string | null
+          kit: boolean | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
           quantity: number | null
           quantityIssued: number | null
           quantityToIssue: number | null
+          requiresBatchTracking: boolean | null
+          requiresSerialTracking: boolean | null
           scrapQuantity: number | null
           shelfId: string | null
           unitCost: number | null
@@ -32072,14 +32200,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -33407,14 +33535,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -34344,6 +34472,7 @@ export type Database = {
           itemId: string | null
           itemReadableId: string | null
           itemType: string | null
+          kit: boolean | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           order: number | null
           productionQuantity: number | null
@@ -38033,6 +38162,7 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_job_methods_by_method_id: {
@@ -38176,6 +38306,7 @@ export type Database = {
           order: number
           operationId: string
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_my_claim: {
@@ -38252,6 +38383,7 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_quote_methods_by_method_id: {
@@ -38276,6 +38408,7 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_recent_job_operations_by_employee: {

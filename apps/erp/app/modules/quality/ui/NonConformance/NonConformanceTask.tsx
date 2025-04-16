@@ -34,6 +34,7 @@ import { usePermissions, useUser } from "~/hooks";
 import type {
   NonConformanceActionTask,
   NonConformanceInvestigationTask,
+  NonConformanceReviewer,
 } from "~/modules/quality";
 import { nonConformanceTaskStatus } from "~/modules/quality";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -41,7 +42,7 @@ import { getPrivateUrl, path } from "~/utils/path";
 export function TaskProgress({
   tasks,
 }: {
-  tasks: NonConformanceInvestigationTask[] | NonConformanceActionTask[];
+  tasks: { status: NonConformanceInvestigationTask["status"] }[];
 }) {
   const completedOrSkippedTasks = tasks.filter(
     (task) => task.status === "Completed" || task.status === "Skipped"
@@ -85,8 +86,11 @@ export function TaskItem({
   task,
   type,
 }: {
-  task: NonConformanceInvestigationTask | NonConformanceActionTask;
-  type: "investigation" | "action";
+  task:
+    | NonConformanceInvestigationTask
+    | NonConformanceActionTask
+    | NonConformanceReviewer;
+  type: "investigation" | "action" | "review";
 }) {
   const permissions = usePermissions();
   const disclosure = useDisclosure({
@@ -106,7 +110,9 @@ export function TaskItem({
   const taskTitle =
     type === "investigation"
       ? (task as NonConformanceInvestigationTask).investigationType
-      : (task as NonConformanceActionTask).actionType;
+      : type === "action"
+      ? (task as NonConformanceActionTask).actionType
+      : (task as NonConformanceReviewer).title;
 
   return (
     <div className="rounded-lg border w-full flex flex-col">
@@ -151,7 +157,7 @@ export function TaskItem({
         <HStack>
           <NonConformanceTaskStatus task={task} type="investigation" />
           <Assignee
-            table="nonConformanceInvestigationTask"
+            table={getTable(type)}
             id={task.id}
             size="sm"
             value={task.assignee ?? undefined}
@@ -195,7 +201,7 @@ function useTaskNotes({
 }: {
   initialContent: JSONContent;
   taskId: string;
-  type: "investigation" | "action" | "approval";
+  type: "investigation" | "action" | "approval" | "review";
 }) {
   const {
     id: userId,
@@ -223,12 +229,7 @@ function useTaskNotes({
     return getPrivateUrl(result.data.path);
   };
 
-  const table =
-    type === "investigation"
-      ? "nonConformanceInvestigationTask"
-      : type === "action"
-      ? "nonConformanceActionTask"
-      : "nonConformanceApprovalTask";
+  const table = getTable(type);
 
   const onUpdateContent = useDebounce(
     async (content: JSONContent) => {
@@ -274,7 +275,7 @@ function useTaskStatus({
     status: NonConformanceInvestigationTask["status"];
     assignee: string | null;
   };
-  type: "investigation" | "action" | "approval";
+  type: "investigation" | "action" | "approval" | "review";
   onChange?: (status: NonConformanceInvestigationTask["status"]) => void;
 }) {
   const submit = useSubmit();
@@ -324,7 +325,7 @@ export function NonConformanceTaskStatus({
     status: NonConformanceInvestigationTask["status"];
     assignee: string | null;
   };
-  type: "investigation" | "action" | "approval";
+  type: "investigation" | "action" | "approval" | "review";
   className?: string;
   onChange?: (status: NonConformanceInvestigationTask["status"]) => void;
 }) {
@@ -370,4 +371,17 @@ export function NonConformanceTaskStatus({
       )}
     </DropdownMenu>
   );
+}
+
+function getTable(type: "investigation" | "action" | "approval" | "review") {
+  switch (type) {
+    case "investigation":
+      return "nonConformanceInvestigationTask";
+    case "action":
+      return "nonConformanceActionTask";
+    case "approval":
+      return "nonConformanceApprovalTask";
+    case "review":
+      return "nonConformanceReviewer";
+  }
 }

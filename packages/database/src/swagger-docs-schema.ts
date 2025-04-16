@@ -26776,16 +26776,34 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.id",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.status",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.nonConformanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceReviewer.reviewerId",
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdAt",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedBy",
           },
           {
             $ref: "#/parameters/select",
@@ -26850,16 +26868,34 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.id",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.status",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.nonConformanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceReviewer.reviewerId",
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdAt",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedBy",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -26878,16 +26914,34 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.id",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.title",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.status",
+          },
+          {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.nonConformanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.nonConformanceReviewer.reviewerId",
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdAt",
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceReviewer.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceReviewer.updatedBy",
           },
           {
             $ref: "#/parameters/body.nonConformanceReviewer",
@@ -52969,7 +53023,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -53018,7 +53072,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62330,8 +62384,11 @@ export default {
     nonConformanceReviewer: {
       required: [
         "id",
+        "title",
+        "status",
         "nonConformanceId",
-        "reviewerId",
+        "notes",
+        "companyId",
         "createdAt",
         "createdBy",
       ],
@@ -62342,15 +62399,34 @@ export default {
           format: "text",
           type: "string",
         },
+        title: {
+          format: "text",
+          type: "string",
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "In Progress", "Completed", "Skipped"],
+          format: 'public."nonConformanceTaskStatus"',
+          type: "string",
+        },
         nonConformanceId: {
           description:
             "Note:\nThis is a Foreign Key to `nonConformance.id`.<fk table='nonConformance' column='id'/>",
           format: "text",
           type: "string",
         },
-        reviewerId: {
+        notes: {
+          format: "json",
+        },
+        assignee: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62360,6 +62436,18 @@ export default {
           type: "string",
         },
         createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -85401,14 +85489,38 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.nonConformanceReviewer.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceReviewer.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.nonConformanceReviewer.nonConformanceId": {
       name: "nonConformanceId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.nonConformanceReviewer.reviewerId": {
-      name: "reviewerId",
+    "rowFilter.nonConformanceReviewer.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceReviewer.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceReviewer.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -85421,6 +85533,18 @@ export default {
     },
     "rowFilter.nonConformanceReviewer.createdBy": {
       name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceReviewer.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceReviewer.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",

@@ -806,6 +806,8 @@ export const path = {
       generatePath(`${x}/non-conformance/${id}/details`),
     nonConformanceSupplier: (id: string) =>
       generatePath(`${x}/non-conformance/${id}/supplier`),
+    nonConformanceStatus: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/status`),
     nonConformanceInvestigations: (id: string) =>
       generatePath(`${x}/non-conformance/${id}/investigations`),
     nonConformanceActions: (id: string) =>

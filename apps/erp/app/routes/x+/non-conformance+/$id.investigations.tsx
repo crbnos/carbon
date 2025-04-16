@@ -10,6 +10,7 @@ import {
 import { json, type LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 
+import type { NonConformanceInvestigationTask } from "~/modules/quality";
 import { getNonConformanceInvestigationTasks } from "~/modules/quality";
 import {
   TaskItem,
@@ -45,7 +46,11 @@ export default function NonConformanceTasks() {
   );
 }
 
-function InvestigationTasksList({ tasks }: { tasks: any[] }) {
+function InvestigationTasksList({
+  tasks,
+}: {
+  tasks: NonConformanceInvestigationTask[];
+}) {
   if (tasks.length === 0) return null;
 
   return (

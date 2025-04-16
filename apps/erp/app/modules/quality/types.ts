@@ -4,6 +4,7 @@ import type {
   getNonConformanceActionTasks,
   getNonConformanceApprovalTasks,
   getNonConformanceInvestigationTasks,
+  getNonConformanceReviewers,
   getNonConformanceTypes,
   getNonConformanceWorkflow,
 } from "./quality.service";
@@ -33,4 +34,8 @@ export type NonConformanceActionTask = NonNullable<
 
 export type NonConformanceApprovalTask = NonNullable<
   Awaited<ReturnType<typeof getNonConformanceApprovalTasks>>["data"]
+>[number];
+
+export type NonConformanceReviewer = NonNullable<
+  Awaited<ReturnType<typeof getNonConformanceReviewers>>["data"]
 >[number];
