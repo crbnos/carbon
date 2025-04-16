@@ -26,12 +26,7 @@ import {
   useMount,
 } from "@carbon/react";
 import { formatDateTime } from "@carbon/utils";
-import {
-  useFetcher,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "@remix-run/react";
+import { useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
@@ -41,6 +36,7 @@ import { useIntegrations } from "~/hooks/useIntegrations";
 import { Logo } from "~/integrations/onshape/config";
 import { methodType, type MethodItemType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { Method } from "../../types";
 
@@ -60,7 +56,7 @@ const BoMExplorer = ({
   const [filterText, setFilterText] = useState("");
   const parentRef = useRef<HTMLDivElement>(null);
   const integrations = useIntegrations();
-
+  const params = useParams();
   const {
     nodes,
     getTreeProps,
@@ -98,23 +94,26 @@ const BoMExplorer = ({
   });
 
   const navigate = useNavigate();
-  const params = useParams();
-  const [searchParams] = useSearchParams();
-  const materialId = searchParams.get("materialId");
 
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
 
-  useEffect(() => {
-    if (materialId) {
-      const node = methods.find((m) => m.data.methodMaterialId === materialId);
-
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+  useMount(() => {
+    if (selectedMaterialId) {
+      const node = methods.find(
+        (m) => m.data.methodMaterialId === selectedMaterialId
+      );
+      selectNode(node?.id ?? methods[0].id);
+    } else if (params.makeMethodId) {
+      const node = methods.find(
+        (m) => m.data.materialMakeMethodId === params.makeMethodId
+      );
       selectNode(node?.id ?? methods[0].id);
     } else if (methods?.length > 0) {
       selectNode(methods[0].id);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId]);
+  });
 
   return (
     <VStack>
@@ -162,7 +161,7 @@ const BoMExplorer = ({
                   )}
                   onClick={() => {
                     selectNode(node.id);
-
+                    setSelectedMaterialId(node.data.methodMaterialId);
                     if (node.data.isRoot) {
                       navigate(getRootLink(itemType, itemId));
                     } else {
@@ -170,8 +169,7 @@ const BoMExplorer = ({
                         getMaterialLink(
                           itemType,
                           itemId,
-                          node.data.makeMethodId,
-                          node.data.methodMaterialId
+                          node.data.makeMethodId
                         )
                       );
                     }
@@ -340,22 +338,13 @@ function getRootLink(itemType: MethodItemType, itemId: string) {
 function getMaterialLink(
   itemType: MethodItemType,
   itemId: string,
-  makeMethodId: string,
-  materialId: string
+  makeMethodId: string
 ) {
   switch (itemType) {
     case "Part":
-      return path.to.partManufacturingMaterial(
-        itemId,
-        makeMethodId,
-        materialId
-      );
+      return path.to.partManufacturingMaterial(itemId, makeMethodId);
     case "Tool":
-      return path.to.toolManufacturingMaterial(
-        itemId,
-        makeMethodId,
-        materialId
-      );
+      return path.to.toolManufacturingMaterial(itemId, makeMethodId);
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }

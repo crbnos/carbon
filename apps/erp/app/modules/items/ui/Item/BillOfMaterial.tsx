@@ -69,6 +69,7 @@ import {
   type MethodItemType,
   type MethodType,
 } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
@@ -293,6 +294,8 @@ const BillOfMaterial = ({
     });
   }, [materials]);
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+
   const renderListItem = ({
     item,
     items,
@@ -301,6 +304,10 @@ const BillOfMaterial = ({
     onRemoveItem,
   }: SortableItemRenderProps<ItemWithData>) => {
     const isOpen = item.id === selectedItemId;
+    const onSelectItem = (id: string | null) => {
+      setSelectedMaterialId(id);
+      setSelectedItemId(id);
+    };
 
     return (
       <SortableListItem<Material>
@@ -309,8 +316,8 @@ const BillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
-        isHighlighted={item.id === materialId}
-        onSelectItem={setSelectedItemId}
+        isHighlighted={item.id === selectedMaterialId}
+        onSelectItem={onSelectItem}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
@@ -328,10 +335,10 @@ const BillOfMaterial = ({
               onClick={
                 isOpen
                   ? () => {
-                      setSelectedItemId(null);
+                      onSelectItem(null);
                     }
                   : () => {
-                      setSelectedItemId(item.id);
+                      onSelectItem(item.id);
                     }
               }
               key="collapse"

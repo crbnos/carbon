@@ -15,13 +15,14 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useFetchers, useNavigate, useSearchParams } from "@remix-run/react";
+import { useFetchers, useNavigate, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { JobMethod } from "../../production.service";
 
@@ -34,9 +35,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [filterText, setFilterText] = useState("");
-
-  const [searchParams] = useSearchParams();
-  const materialId = searchParams.get("materialId");
+  const { methodId } = useParams();
 
   const fetchers = useFetchers();
   const getMethodFetcher = fetchers.find(
@@ -81,15 +80,23 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
     isEager: true,
   });
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
   useEffect(() => {
-    if (materialId) {
-      const node = method.find((m) => m.data.methodMaterialId === materialId);
+    if (selectedMaterialId) {
+      const node = method.find(
+        (m) => m.data.methodMaterialId === selectedMaterialId
+      );
+      selectNode(node?.id ?? method[0].id);
+    } else if (methodId) {
+      const node = method.find(
+        (m) => m.data.jobMaterialMakeMethodId === methodId
+      );
       selectNode(node?.id ?? method[0].id);
     } else if (method?.length > 0) {
       selectNode(method[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [materialId]);
+  }, [selectedMaterialId, methodId]);
 
   return (
     <VStack>
@@ -132,6 +139,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                     )}
                     onClick={(e) => {
                       selectNode(node.id);
+                      setSelectedMaterialId(node.data.methodMaterialId);
                       navigate(getNodePath(node));
                     }}
                   >

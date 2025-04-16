@@ -25,9 +25,9 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { methodType } from "~/modules/shared";
+import { useBom, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { Job, JobMaterial } from "../../types";
-import { useItems } from "~/stores";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
@@ -45,6 +45,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const unitsOfMeasure = useUnitOfMeasure();
   const locations = useLocations();
   const [items] = useItems();
+  const [, setSelectedMaterialId] = useBom();
 
   const columns = useMemo<ColumnDef<JobMaterial>[]>(() => {
     return [
@@ -61,12 +62,14 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
 
             <VStack spacing={0}>
               <Hyperlink
-                to={path.to.jobMethodMaterial(
+                to={path.to.jobMakeMethod(
                   jobId,
-                  row.original.methodType.toLowerCase(),
                   row.original.jobMakeMethodId,
                   row.original.id
                 )}
+                onClick={() => {
+                  setSelectedMaterialId(row.original.id ?? null);
+                }}
                 className="max-w-[260px] truncate"
               >
                 {row.original.itemReadableId}

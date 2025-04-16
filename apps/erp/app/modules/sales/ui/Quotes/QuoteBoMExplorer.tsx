@@ -15,13 +15,14 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useFetchers, useNavigate } from "@remix-run/react";
-import { useRef, useState } from "react";
+import { useFetchers, useNavigate, useParams } from "@remix-run/react";
+import { useEffect, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { QuoteMethod } from "../../types";
 
@@ -86,6 +87,23 @@ const QuoteBoMExplorer = ({
     isEager: true,
   });
 
+  const params = useParams();
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+  useEffect(() => {
+    if (selectedMaterialId) {
+      const node = methods.find(
+        (m) => m.data.methodMaterialId === selectedMaterialId
+      );
+      if (node?.id) selectNode(node?.id);
+    } else if (params.methodId) {
+      const node = methods.find(
+        (m) => m.data.quoteMaterialMakeMethodId === params.methodId
+      );
+      if (node?.id) selectNode(node?.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMaterialId, params.methodId]);
+
   return (
     <VStack>
       {isLoading ? (
@@ -129,6 +147,7 @@ const QuoteBoMExplorer = ({
                     )}
                     onClick={(e) => {
                       selectNode(node.id);
+                      setSelectedMaterialId(node.data.methodMaterialId);
                       navigate(getNodePath(node), { replace: true });
                     }}
                   >

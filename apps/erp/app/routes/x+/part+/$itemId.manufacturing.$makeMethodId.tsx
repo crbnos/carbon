@@ -87,8 +87,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  console.log("loader");
-
   return defer({
     makeMethod: makeMethod.data,
 

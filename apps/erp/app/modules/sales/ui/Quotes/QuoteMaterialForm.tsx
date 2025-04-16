@@ -33,6 +33,7 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { quoteOperationValidator } from "../../sales.models";
 import { quoteMaterialValidator } from "../../sales.models";
@@ -122,42 +123,17 @@ const QuoteMaterialForm = ({
     }));
   };
 
+  const [, setSelectedMaterialId] = useBom();
+
   useEffect(() => {
-    const newPath =
-      initialValues.methodType === "Make"
-        ? path.to.quoteLineMakeMethod(
-            quoteId,
-            lineId,
-            initialValues.quoteMaterialMakeMethodId!,
-            initialValues.id!
-          )
-        : path.to.quoteLineMethodMaterial(
-            quoteId,
-            lineId,
-            initialValues.methodType.toLowerCase(),
-            initialValues.quoteMakeMethodId,
-            initialValues.id!
-          );
-    if (
-      fetcher.data?.methodType === "Make" &&
-      !location.pathname.includes("make")
-    ) {
-      navigate(newPath);
-    }
+    const newPath = path.to.quoteLineMakeMethod(
+      quoteId,
+      lineId,
+      initialValues.quoteMaterialMakeMethodId!
+    );
 
-    if (
-      fetcher.data?.methodType === "Buy" &&
-      !location.pathname.includes("buy")
-    ) {
-      navigate(newPath);
-    }
-
-    if (
-      fetcher.data?.methodType === "Pick" &&
-      !location.pathname.includes("pick")
-    ) {
-      navigate(newPath);
-    }
+    setSelectedMaterialId(initialValues.id ?? null);
+    navigate(newPath);
   }, [
     fetcher.data,
     initialValues,
@@ -168,6 +144,7 @@ const QuoteMaterialForm = ({
     location.pathname,
     navigate,
     quoteId,
+    setSelectedMaterialId,
   ]);
 
   return (

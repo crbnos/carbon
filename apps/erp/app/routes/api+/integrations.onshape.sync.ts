@@ -12,8 +12,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const makeMethodId = formData.get("makeMethodId");
   const rows = formData.get("rows");
 
-  console.log({ makeMethodId, rows });
-
   if (!makeMethodId || !rows) {
     return json(
       { success: false, message: "Missing required fields" },

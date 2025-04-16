@@ -53,6 +53,7 @@ import type {
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { MethodItemType, MethodType } from "~/modules/shared";
+import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { jobOperationValidator } from "../../production.models";
 import {
@@ -387,6 +388,12 @@ const JobBillOfMaterial = ({
     });
   }, [items]);
 
+  const [selectedMaterialId, setSelectedMaterialId] = useBom();
+  const onSelectItem = (id: string | null) => {
+    setSelectedMaterialId(id);
+    setSelectedItemId(id);
+  };
+
   const renderListItem = ({
     item,
     items,
@@ -403,8 +410,8 @@ const JobBillOfMaterial = ({
         order={order}
         key={item.id}
         isExpanded={isOpen}
-        isHighlighted={item.id === materialId}
-        onSelectItem={setSelectedItemId}
+        isHighlighted={item.id === selectedMaterialId}
+        onSelectItem={onSelectItem}
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
@@ -437,10 +444,10 @@ const JobBillOfMaterial = ({
                           };
                         });
                       }
-                      setSelectedItemId(null);
+                      onSelectItem(null);
                     }
                   : () => {
-                      setSelectedItemId(item.id);
+                      onSelectItem(item.id);
                     }
               }
               key="collapse"

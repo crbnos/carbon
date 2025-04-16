@@ -189,6 +189,16 @@ serve(async (req: Request) => {
                 .executeTakeFirst();
 
               itemId = item?.id;
+
+              await trx
+                .insertInto("part")
+                .values({
+                  id: partId,
+                  itemId: itemId!,
+                  companyId,
+                  createdBy: userId,
+                })
+                .execute();
             }
 
             if (!itemId) throw new Error("Failed to create item");
@@ -198,13 +208,9 @@ serve(async (req: Request) => {
             if (defaultMethodType === "Make" || isMade) {
               if (!materialMakeMethodId) {
                 const makeMethod = await trx
-                  .insertInto("makeMethod")
-                  .values({
-                    itemId,
-                    companyId,
-                    createdBy: userId,
-                  })
-                  .returning(["id"])
+                  .selectFrom("makeMethod")
+                  .select(["id"])
+                  .where("itemId", "=", itemId)
                   .executeTakeFirst();
 
                 materialMakeMethodId = makeMethod?.id;

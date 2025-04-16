@@ -22,6 +22,36 @@ export async function action({ request }: ActionFunctionArgs) {
     case "replenishmentSystem":
     case "unitOfMeasureCode":
       // For other fields, just update the specified field
+      if (field === "replenishmentSystem") {
+        return json(
+          await client
+            .from("item")
+            .update({
+              // @ts-expect-error
+              [field]: value,
+              // @ts-expect-error
+              defaultMethodType: value,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString(),
+            })
+            .in("id", items as string[])
+        );
+      }
+      if (field === "defaultMethodType" && value !== "Pick") {
+        return json(
+          await client
+            .from("item")
+            .update({
+              // @ts-expect-error
+              defaultMethodType: value,
+              // @ts-expect-error
+              replenishmentSystem: value,
+              updatedBy: userId,
+              updatedAt: new Date().toISOString(),
+            })
+            .in("id", items as string[])
+        );
+      }
       return json(
         await client
           .from("item")
