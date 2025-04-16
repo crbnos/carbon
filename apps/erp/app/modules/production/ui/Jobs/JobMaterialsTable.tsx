@@ -21,13 +21,12 @@ import {
 } from "~/components";
 import { EditableNumber, EditableText } from "~/components/Editable";
 import { Enumerable } from "~/components/Enumerable";
-import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import { useBom, useItems } from "~/stores";
 import { path } from "~/utils/path";
-import type { Job, JobMaterial } from "../../types";
+import type { JobMaterial } from "../../types";
 
 type JobMaterialsTableProps = {
   data: JobMaterial[];
@@ -37,13 +36,10 @@ type JobMaterialsTableProps = {
 const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("Job ID is required");
-  const routeData = useRouteData<{
-    job: Job;
-  }>(path.to.job(jobId));
 
   const fetcher = useFetcher<{}>();
   const unitsOfMeasure = useUnitOfMeasure();
-  const locations = useLocations();
+
   const [items] = useItems();
   const [, setSelectedMaterialId] = useBom();
 
@@ -209,7 +205,7 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
         },
       },
     ];
-  }, [jobId, locations, items, routeData?.job.locationId, unitsOfMeasure]);
+  }, [items, jobId, setSelectedMaterialId, unitsOfMeasure]);
 
   const permissions = usePermissions();
   const { carbon } = useCarbon();

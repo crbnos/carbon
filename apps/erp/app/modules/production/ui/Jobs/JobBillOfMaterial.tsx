@@ -23,12 +23,7 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useSearchParams,
-} from "@remix-run/react";
+import { useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -222,9 +217,6 @@ const JobBillOfMaterial = ({
 }: JobBillOfMaterialProps) => {
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
-
-  const [searchParams] = useSearchParams();
-  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{}>();
   const permissions = usePermissions();

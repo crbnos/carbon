@@ -9,6 +9,10 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
+  const documentId = formData.get("documentId");
+  const versionId = formData.get("versionId");
+  const elementId = formData.get("elementId");
+
   const makeMethodId = formData.get("makeMethodId");
   const rows = formData.get("rows");
 
@@ -21,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const record = await client
     .from("makeMethod")
-    .select("companyId")
+    .select("itemId, companyId")
     .eq("id", makeMethodId as string)
     .single();
 
@@ -36,17 +40,55 @@ export async function action({ request }: ActionFunctionArgs) {
     const data = onShapeDataValidator.parse(JSON.parse(rows as string));
     const serviceRole = await getCarbonServiceRole();
 
-    await serviceRole.functions.invoke("sync", {
-      body: {
-        type: "onshape",
-        makeMethodId,
-        data,
-        companyId,
-        userId,
-      },
-    });
+    const [sync, item] = await Promise.all([
+      serviceRole.functions.invoke("sync", {
+        body: {
+          type: "onshape",
+          makeMethodId,
+          data,
+          companyId,
+          userId,
+        },
+      }),
+      serviceRole
+        .from("item")
+        .select("externalId")
+        .eq("id", record.data?.itemId as string)
+        .single(),
+    ]);
+
+    if (sync.error) {
+      return json(
+        { success: false, message: "Failed to sync onshape data" },
+        { status: 400 }
+      );
+    }
+
+    if (item.error) {
+      return json(
+        { success: false, message: "Failed to get item" },
+        { status: 400 }
+      );
+    }
+
+    const currentExternalId =
+      (item.data?.externalId as Record<string, any>) ?? {};
+
+    currentExternalId["onshape"] = {
+      documentId,
+      versionId,
+      elementId,
+      lastSyncedAt: new Date().toISOString(),
+    };
+
+    await client
+      .from("item")
+      .update({
+        externalId: currentExternalId,
+      })
+      .eq("id", record.data?.itemId as string);
   } catch (error) {
-    console.error(error);
+    console.error("Failed to sync onshape data");
     return json(
       { success: false, message: "Invalid rows data" },
       { status: 400 }
