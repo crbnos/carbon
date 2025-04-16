@@ -140,7 +140,9 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                     onClick={(e) => {
                       selectNode(node.id);
                       setSelectedMaterialId(node.data.methodMaterialId);
-                      navigate(getNodePath(node));
+                      if (location.pathname !== getNodePath(node)) {
+                        navigate(getNodePath(node));
+                      }
                     }}
                   >
                     <div className="flex h-8 items-center">
@@ -303,9 +305,5 @@ function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
 function getNodePath(node: FlatTreeItem<JobMethod>) {
   return node.data.isRoot
     ? path.to.jobMethod(node.data.jobId, node.data.jobMaterialMakeMethodId)
-    : path.to.jobMakeMethod(
-        node.data.jobId,
-        node.data.jobMakeMethodId,
-        node.data.methodMaterialId
-      );
+    : path.to.jobMakeMethod(node.data.jobId, node.data.jobMakeMethodId);
 }

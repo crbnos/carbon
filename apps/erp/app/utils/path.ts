@@ -896,14 +896,8 @@ export const path = {
     quoteLineMakeMethod: (
       quoteId: string,
       lineId: string,
-      makeMethodId: string,
-      materialId?: string
-    ) =>
-      generatePath(
-        `${x}/quote/${quoteId}/${lineId}/make/${makeMethodId}${
-          materialId ? `?materialId=${materialId}` : ""
-        }`
-      ),
+      makeMethodId: string
+    ) => generatePath(`${x}/quote/${quoteId}/${lineId}/make/${makeMethodId}`),
     quoteLineMethod: (quoteId: string, quoteLineId: string, methodId: string) =>
       generatePath(`${x}/quote/${quoteId}/${quoteLineId}/method/${methodId}`),
     quoteLinePriceUpdate: (quoteId: string, lineId: string) =>

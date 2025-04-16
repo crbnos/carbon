@@ -148,7 +148,9 @@ const QuoteBoMExplorer = ({
                     onClick={(e) => {
                       selectNode(node.id);
                       setSelectedMaterialId(node.data.methodMaterialId);
-                      navigate(getNodePath(node), { replace: true });
+                      if (location.pathname !== getNodePath(node)) {
+                        navigate(getNodePath(node), { replace: true });
+                      }
                     }}
                   >
                     <div className="flex h-8 items-center">
@@ -318,7 +320,6 @@ function getNodePath(node: FlatTreeItem<QuoteMethod>) {
     : path.to.quoteLineMakeMethod(
         node.data.quoteId,
         node.data.quoteLineId,
-        node.data.quoteMakeMethodId,
-        node.data.methodMaterialId
+        node.data.quoteMakeMethodId
       );
 }

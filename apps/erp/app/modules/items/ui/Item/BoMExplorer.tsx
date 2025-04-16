@@ -12,6 +12,7 @@ import {
   cn,
   useMount,
 } from "@carbon/react";
+import { useOptimisticLocation } from "@carbon/remix";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
@@ -79,6 +80,7 @@ const BoMExplorer = ({
   });
 
   const navigate = useNavigate();
+  const location = useOptimisticLocation();
 
   const { itemId } = params;
   if (!itemId) throw new Error("itemId not found");
@@ -141,15 +143,26 @@ const BoMExplorer = ({
                     selectNode(node.id);
                     setSelectedMaterialId(node.data.methodMaterialId);
                     if (node.data.isRoot) {
-                      navigate(getRootLink(itemType, itemId));
+                      if (location.pathname !== getRootLink(itemType, itemId)) {
+                        navigate(getRootLink(itemType, itemId));
+                      }
                     } else {
-                      navigate(
+                      if (
+                        location.pathname !==
                         getMaterialLink(
                           itemType,
                           itemId,
                           node.data.makeMethodId
                         )
-                      );
+                      ) {
+                        navigate(
+                          getMaterialLink(
+                            itemType,
+                            itemId,
+                            node.data.makeMethodId
+                          )
+                        );
+                      }
                     }
                   }}
                 >
