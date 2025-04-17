@@ -1,0 +1,1 @@
+ALTER TABLE "department" DROP CONSTRAINT "department_name_key";
