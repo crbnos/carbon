@@ -8,7 +8,12 @@ import {
   CardHeader,
   CardTitle,
   Copy,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -25,10 +30,13 @@ import {
   VStack,
 } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
+import { nanoid } from "nanoid";
 import { useMemo, useState } from "react";
+import { LuEllipsisVertical, LuQrCode } from "react-icons/lu";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
 import { Input, Location, Select, Shelf } from "~/components/Form";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions } from "~/hooks";
 import type {
   ItemShelfQuantities,
@@ -38,9 +46,6 @@ import type {
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { inventoryAdjustmentValidator } from "../../inventory.models";
-import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { LuQrCode } from "react-icons/lu";
-import { nanoid } from "nanoid";
 
 type InventoryShelvesProps = {
   pickMethod: z.infer<typeof pickMethodValidator>;
@@ -71,6 +76,12 @@ const InventoryShelves = ({
   const isBatch = itemTrackingType === "Batch";
 
   const [quantity, setQuantity] = useState(1);
+  const [selectedShelfId, setSelectedShelfId] = useState<string | null>(null);
+
+  const openAdjustmentModal = (shelfId?: string) => {
+    setSelectedShelfId(shelfId || pickMethod.defaultShelfId || null);
+    adjustmentModal.onOpen();
+  };
 
   return (
     <>
@@ -89,7 +100,9 @@ const InventoryShelves = ({
             </CardDescription>
           </CardHeader>
           <CardAction>
-            <Button onClick={adjustmentModal.onOpen}>Update Inventory</Button>
+            <Button onClick={() => openAdjustmentModal()}>
+              Update Inventory
+            </Button>
           </CardAction>
         </HStack>
         <CardContent>
@@ -100,6 +113,7 @@ const InventoryShelves = ({
 
                 <Th>QoH</Th>
                 <Th>Tracking ID</Th>
+                <Th className="flex flex-shrink-0 justify-end" />
               </Tr>
             </Thead>
             <Tbody>
@@ -112,7 +126,7 @@ const InventoryShelves = ({
                         item.shelfId}
                     </Td>
 
-                    <Td className="flex items-center gap-2">
+                    <Td>
                       <span>{item.quantity}</span>
                     </Td>
                     <Td>
@@ -123,6 +137,24 @@ const InventoryShelves = ({
                           withTextInTooltip
                         />
                       )}
+                    </Td>
+                    <Td className="flex flex-shrink-0 justify-end items-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <IconButton
+                            aria-label="Actions"
+                            variant="ghost"
+                            icon={<LuEllipsisVertical />}
+                          />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuItem
+                            onClick={() => openAdjustmentModal(item.shelfId)}
+                          >
+                            Update Quantity
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </Td>
                   </Tr>
                 ))}
@@ -148,7 +180,7 @@ const InventoryShelves = ({
                 itemId: pickMethod.itemId,
                 quantity: quantity,
                 locationId: pickMethod.locationId,
-                shelfId: pickMethod.defaultShelfId,
+                shelfId: selectedShelfId || pickMethod.defaultShelfId,
                 adjustmentType: isSerial ? "Positive Adjmt." : "Set Quantity",
                 trackedEntityId: nanoid(),
               }}
