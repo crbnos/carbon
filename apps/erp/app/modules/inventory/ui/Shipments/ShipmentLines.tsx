@@ -337,18 +337,22 @@ function ShipmentLineItem({
       </div>
       <div className="flex flex-1 justify-between items-center w-full">
         <HStack spacing={4} className="w-1/2">
-          <HStack spacing={4} className="flex-1">
+          <HStack spacing={4}>
             <ItemThumbnail
               size="md"
               thumbnailPath={line.thumbnailPath}
               type={(item?.type as "Part") ?? "Part"}
             />
 
-            <VStack spacing={0}>
-              <span className="text-sm font-medium">{item?.name}</span>
-              <span className="text-xs text-muted-foreground line-clamp-2">
-                {item?.readableId}
-              </span>
+            <VStack spacing={0} className="max-w-[380px] w-full">
+              <div className="w-full overflow-hidden">
+                <span className="text-sm font-medium truncate block w-full">
+                  {item?.name}
+                </span>
+                <span className="text-xs text-muted-foreground truncate block w-full">
+                  {item?.readableId}
+                </span>
+              </div>
               <div className="mt-2">
                 <Enumerable
                   value={
@@ -358,6 +362,10 @@ function ShipmentLineItem({
                 />
               </div>
             </VStack>
+          </HStack>
+        </HStack>
+        <div className="flex flex-grow items-center justify-between gap-2 pl-4 w-1/2">
+          <HStack spacing={4}>
             <VStack spacing={1}>
               <label className="text-xs text-muted-foreground">Shipped</label>
 
@@ -398,10 +406,6 @@ function ShipmentLineItem({
                 />
               </NumberField>
             </VStack>
-          </HStack>
-        </HStack>
-        <div className="flex flex-grow items-center justify-between gap-2 pl-4">
-          <HStack spacing={4}>
             <VStack spacing={1} className="text-center items-center">
               <label className="text-xs text-muted-foreground">Ordered</label>
               <span className="text-sm py-1.5">{line.orderQuantity || 0}</span>

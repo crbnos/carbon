@@ -36596,6 +36596,7 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_job_methods_by_method_id: {
@@ -36816,6 +36817,7 @@ export type Database = {
           parentMaterialId: string
           order: number
           isRoot: boolean
+          kit: boolean
         }[]
       }
       get_quote_methods_by_method_id: {
