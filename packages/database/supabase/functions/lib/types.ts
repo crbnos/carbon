@@ -12735,166 +12735,15 @@ export type Database = {
           },
         ]
       }
-      nonConformanceJob: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          jobId: string
-          nonConformanceId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          jobId: string
-          nonConformanceId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          jobId?: string
-          nonConformanceId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nonConformanceJob_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_jobId_fkey"
-            columns: ["jobId"]
-            isOneToOne: false
-            referencedRelation: "job"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_jobId_fkey"
-            columns: ["jobId"]
-            isOneToOne: false
-            referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_nonConformanceId_fkey"
-            columns: ["nonConformanceId"]
-            isOneToOne: false
-            referencedRelation: "nonConformance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceJob_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       nonConformanceJobOperation: {
         Row: {
           companyId: string
           createdAt: string
           createdBy: string
           id: string
+          jobId: string | null
           jobOperationId: string
+          jobReadableId: string | null
           nonConformanceId: string
           updatedAt: string | null
           updatedBy: string | null
@@ -12904,7 +12753,9 @@ export type Database = {
           createdAt?: string
           createdBy: string
           id?: string
+          jobId?: string | null
           jobOperationId: string
+          jobReadableId?: string | null
           nonConformanceId: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12914,7 +12765,9 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           id?: string
+          jobId?: string | null
           jobOperationId?: string
+          jobReadableId?: string | null
           nonConformanceId?: string
           updatedAt?: string | null
           updatedBy?: string | null
@@ -12982,6 +12835,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceJobOperation_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "nonConformanceJobOperation_jobOperationId_fkey"
@@ -13041,166 +12908,6 @@ export type Database = {
           },
         ]
       }
-      nonConformancePurchaseOrder: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          nonConformanceId: string
-          purchaseOrderId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          nonConformanceId: string
-          purchaseOrderId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          nonConformanceId?: string
-          purchaseOrderId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_nonConformanceId_fkey"
-            columns: ["nonConformanceId"]
-            isOneToOne: false
-            referencedRelation: "nonConformance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrder"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrderLocations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_purchaseOrderId_fkey"
-            columns: ["purchaseOrderId"]
-            isOneToOne: false
-            referencedRelation: "purchaseOrders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformancePurchaseOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       nonConformancePurchaseOrderLine: {
         Row: {
           companyId: string
@@ -13208,7 +12915,9 @@ export type Database = {
           createdBy: string
           id: string
           nonConformanceId: string
+          purchaseOrderId: string | null
           purchaseOrderLineId: string
+          purchaseOrderReadableId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13218,7 +12927,9 @@ export type Database = {
           createdBy: string
           id?: string
           nonConformanceId: string
+          purchaseOrderId?: string | null
           purchaseOrderLineId: string
+          purchaseOrderReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13228,7 +12939,9 @@ export type Database = {
           createdBy?: string
           id?: string
           nonConformanceId?: string
+          purchaseOrderId?: string | null
           purchaseOrderLineId?: string
+          purchaseOrderReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13304,6 +13017,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderId_fkey"
+            columns: ["purchaseOrderId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "nonConformancePurchaseOrderLine_purchaseOrderLineId_fkey"
             columns: ["purchaseOrderLineId"]
             isOneToOne: false
@@ -13347,6 +13081,172 @@ export type Database = {
           },
           {
             foreignKeyName: "nonConformancePurchaseOrderLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      nonConformanceReceiptLine: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          nonConformanceId: string
+          receiptId: string | null
+          receiptLineId: string
+          receiptReadableId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          nonConformanceId: string
+          receiptId?: string | null
+          receiptLineId: string
+          receiptReadableId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          nonConformanceId?: string
+          receiptId?: string | null
+          receiptLineId?: string
+          receiptReadableId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonConformanceReceiptLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "nonConformance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_receiptId_fkey"
+            columns: ["receiptId"]
+            isOneToOne: false
+            referencedRelation: "receipt"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_receiptLineId_fkey"
+            columns: ["receiptLineId"]
+            isOneToOne: false
+            referencedRelation: "receiptLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceReceiptLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -13537,166 +13437,6 @@ export type Database = {
           },
         ]
       }
-      nonConformanceSalesOrder: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          nonConformanceId: string
-          salesOrderId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          nonConformanceId: string
-          salesOrderId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          nonConformanceId?: string
-          salesOrderId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nonConformanceSalesOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_nonConformanceId_fkey"
-            columns: ["nonConformanceId"]
-            isOneToOne: false
-            referencedRelation: "nonConformance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_salesOrderId_fkey"
-            columns: ["salesOrderId"]
-            isOneToOne: false
-            referencedRelation: "salesOrder"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_salesOrderId_fkey"
-            columns: ["salesOrderId"]
-            isOneToOne: false
-            referencedRelation: "salesOrderLocations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_salesOrderId_fkey"
-            columns: ["salesOrderId"]
-            isOneToOne: false
-            referencedRelation: "salesOrders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceSalesOrder_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       nonConformanceSalesOrderLine: {
         Row: {
           companyId: string
@@ -13704,7 +13444,9 @@ export type Database = {
           createdBy: string
           id: string
           nonConformanceId: string
+          salesOrderId: string | null
           salesOrderLineId: string
+          salesOrderReadableId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -13714,7 +13456,9 @@ export type Database = {
           createdBy: string
           id?: string
           nonConformanceId: string
+          salesOrderId?: string | null
           salesOrderLineId: string
+          salesOrderReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13724,7 +13468,9 @@ export type Database = {
           createdBy?: string
           id?: string
           nonConformanceId?: string
+          salesOrderId?: string | null
           salesOrderLineId?: string
+          salesOrderReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -13800,6 +13546,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "nonConformanceSalesOrderLine_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrder"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceSalesOrderLine_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceSalesOrderLine_salesOrderId_fkey"
+            columns: ["salesOrderId"]
+            isOneToOne: false
+            referencedRelation: "salesOrders"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "nonConformanceSalesOrderLine_salesOrderLineId_fkey"
             columns: ["salesOrderLineId"]
             isOneToOne: false
@@ -13850,152 +13617,6 @@ export type Database = {
           },
         ]
       }
-      nonConformanceShipment: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          nonConformanceId: string
-          shipmentId: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy: string
-          id?: string
-          nonConformanceId: string
-          shipmentId: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          nonConformanceId?: string
-          shipmentId?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nonConformanceShipment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_nonConformanceId_fkey"
-            columns: ["nonConformanceId"]
-            isOneToOne: false
-            referencedRelation: "nonConformance"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_shipmentId_fkey"
-            columns: ["shipmentId"]
-            isOneToOne: false
-            referencedRelation: "shipment"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "nonConformanceShipment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       nonConformanceShipmentLine: {
         Row: {
           companyId: string
@@ -14003,7 +13624,9 @@ export type Database = {
           createdBy: string
           id: string
           nonConformanceId: string
+          shipmentId: string | null
           shipmentLineId: string
+          shipmentReadableId: string | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -14013,7 +13636,9 @@ export type Database = {
           createdBy: string
           id?: string
           nonConformanceId: string
+          shipmentId?: string | null
           shipmentLineId: string
+          shipmentReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14023,7 +13648,9 @@ export type Database = {
           createdBy?: string
           id?: string
           nonConformanceId?: string
+          shipmentId?: string | null
           shipmentLineId?: string
+          shipmentReadableId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -14096,6 +13723,13 @@ export type Database = {
             columns: ["nonConformanceId"]
             isOneToOne: false
             referencedRelation: "nonConformance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceShipmentLine_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
             referencedColumns: ["id"]
           },
           {
@@ -14316,6 +13950,152 @@ export type Database = {
           },
           {
             foreignKeyName: "nonConformanceSupplier_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      nonConformanceTrackedEntity: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          nonConformanceId: string
+          trackedEntityId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          nonConformanceId: string
+          trackedEntityId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          nonConformanceId?: string
+          trackedEntityId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_nonConformanceId_fkey"
+            columns: ["nonConformanceId"]
+            isOneToOne: false
+            referencedRelation: "nonConformance"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_trackedEntityId_fkey"
+            columns: ["trackedEntityId"]
+            isOneToOne: false
+            referencedRelation: "trackedEntity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformanceTrackedEntity_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"

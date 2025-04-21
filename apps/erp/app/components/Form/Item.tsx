@@ -185,6 +185,7 @@ const Item = ({
               onChange(newValue?.replace(/"/g, '\\"') ?? "");
             }}
             isClearable={isOptional && !props.isReadOnly}
+            // @ts-ignore
             label={label === "Item" ? "Item" : label}
             itemHeight={44}
             onCreateOption={(option) => {

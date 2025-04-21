@@ -726,6 +726,8 @@ export const path = {
     newMethodOperationTool: `${x}/items/methods/operation/tool/new`,
     newMethodOperationParameter: `${x}/items/methods/operation/parameter/new`,
     newNonConformance: `${x}/non-conformance/new`,
+    newNonConformanceAssociation: (id: string) =>
+      generatePath(`${x}/non-conformance/${id}/association/new`),
     newNonConformanceType: `${x}/quality/non-conformance-types/new`,
     newNonConformanceWorkflow: `${x}/non-conformance-workflow/new`,
     newNote: `${x}/shared/notes/new`,
@@ -906,7 +908,7 @@ export const path = {
     purchaseOrders: `${x}/purchasing/orders`,
     purchasing: `${x}/purchasing`,
     purchasingSettings: `${x}/settings/purchasing`,
-    quality: `${x}/quality`,
+    quality: `${x}/quality/non-conformances`,
     quote: (id: string) => generatePath(`${x}/quote/${id}`),
     quoteAssembly: (quoteId: string, lineId: string, assemblyId: string) =>
       generatePath(
