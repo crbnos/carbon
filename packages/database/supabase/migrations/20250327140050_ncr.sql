@@ -130,16 +130,6 @@ CREATE TABLE "nonConformance" (
   "closeDate" DATE,
   "quantity" NUMERIC NOT NULL DEFAULT 0,
   "itemId" TEXT,
-  "customerId" TEXT,
-  "supplierId" TEXT,
-  "jobId" TEXT,
-  "jobOperationId" TEXT,
-  "purchaseOrderId" TEXT,
-  "purchaseOrderLineId" TEXT,
-  "salesOrderId" TEXT,
-  "salesOrderLineId" TEXT,
-  "shipmentId" TEXT,
-  "shipmentLineId" TEXT,
   "assignee" TEXT,
   "customFields" JSONB,
   "tags" TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -154,28 +144,221 @@ CREATE TABLE "nonConformance" (
   CONSTRAINT "nonConformance_nonConformanceTypeId_fkey" FOREIGN KEY ("nonConformanceTypeId") REFERENCES "nonConformanceType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_nonConformanceWorkflowId_fkey" FOREIGN KEY ("nonConformanceWorkflowId") REFERENCES "nonConformanceWorkflow"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "job"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_jobOperationId_fkey" FOREIGN KEY ("jobOperationId") REFERENCES "jobOperation"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_purchaseOrderId_fkey" FOREIGN KEY ("purchaseOrderId") REFERENCES "purchaseOrder"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_purchaseOrderLineId_fkey" FOREIGN KEY ("purchaseOrderLineId") REFERENCES "purchaseOrderLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_salesOrderId_fkey" FOREIGN KEY ("salesOrderId") REFERENCES "salesOrder"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_salesOrderLineId_fkey" FOREIGN KEY ("salesOrderLineId") REFERENCES "salesOrderLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_shipmentId_fkey" FOREIGN KEY ("shipmentId") REFERENCES "shipment"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-  CONSTRAINT "nonConformance_shipmentLineId_fkey" FOREIGN KEY ("shipmentLineId") REFERENCES "shipmentLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT "nonConformance_assignee_fkey" FOREIGN KEY ("assignee") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformance_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+-- Create join tables for many-to-one relationships
+
+CREATE TABLE "nonConformanceSupplier" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "supplierId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceSupplier_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceSupplier_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSupplier_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceSupplier_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSupplier_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSupplier_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceCustomer" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "customerId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceCustomer_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceCustomer_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceCustomer_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceCustomer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceCustomer_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceCustomer_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceJob" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "jobId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceJob_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceJob_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJob_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "job"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceJob_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJob_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJob_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceJobOperation" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "jobOperationId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceJobOperation_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceJobOperation_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJobOperation_jobOperationId_fkey" FOREIGN KEY ("jobOperationId") REFERENCES "jobOperation"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceJobOperation_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJobOperation_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceJobOperation_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformancePurchaseOrder" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "purchaseOrderId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformancePurchaseOrder_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformancePurchaseOrder_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrder_purchaseOrderId_fkey" FOREIGN KEY ("purchaseOrderId") REFERENCES "purchaseOrder"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrder_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrder_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrder_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformancePurchaseOrderLine" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "purchaseOrderLineId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformancePurchaseOrderLine_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformancePurchaseOrderLine_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrderLine_purchaseOrderLineId_fkey" FOREIGN KEY ("purchaseOrderLineId") REFERENCES "purchaseOrderLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrderLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrderLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformancePurchaseOrderLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceSalesOrder" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "salesOrderId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceSalesOrder_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceSalesOrder_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrder_salesOrderId_fkey" FOREIGN KEY ("salesOrderId") REFERENCES "salesOrder"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrder_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrder_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrder_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceSalesOrderLine" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "salesOrderLineId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceSalesOrderLine_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceSalesOrderLine_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrderLine_salesOrderLineId_fkey" FOREIGN KEY ("salesOrderLineId") REFERENCES "salesOrderLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrderLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrderLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceSalesOrderLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceShipment" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "shipmentId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceShipment_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceShipment_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipment_shipmentId_fkey" FOREIGN KEY ("shipmentId") REFERENCES "shipment"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceShipment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE TABLE "nonConformanceShipmentLine" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "nonConformanceId" TEXT NOT NULL,
+  "shipmentLineId" TEXT NOT NULL,
+  "companyId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "nonConformanceShipmentLine_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "nonConformanceShipmentLine_nonConformanceId_fkey" FOREIGN KEY ("nonConformanceId") REFERENCES "nonConformance"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipmentLine_shipmentLineId_fkey" FOREIGN KEY ("shipmentLineId") REFERENCES "shipmentLine"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+  CONSTRAINT "nonConformanceShipmentLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipmentLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "nonConformanceShipmentLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
 CREATE INDEX "nonConformance_companyId_idx" ON "nonConformance" ("companyId");
 CREATE INDEX "nonConformance_locationId_idx" ON "nonConformance" ("locationId");
 CREATE INDEX "nonConformance_nonConformanceTypeId_idx" ON "nonConformance" ("nonConformanceTypeId");
 CREATE INDEX "nonConformance_itemId_idx" ON "nonConformance" ("itemId");
-CREATE INDEX "nonConformance_supplierId_idx" ON "nonConformance" ("supplierId");
 CREATE INDEX "nonConformance_assignee_idx" ON "nonConformance" ("assignee");
+
+-- Create indexes for join tables
+CREATE INDEX "nonConformanceSupplier_nonConformanceId_idx" ON "nonConformanceSupplier" ("nonConformanceId");
+CREATE INDEX "nonConformanceSupplier_supplierId_idx" ON "nonConformanceSupplier" ("supplierId");
+CREATE INDEX "nonConformanceCustomer_nonConformanceId_idx" ON "nonConformanceCustomer" ("nonConformanceId");
+CREATE INDEX "nonConformanceCustomer_customerId_idx" ON "nonConformanceCustomer" ("customerId");
+CREATE INDEX "nonConformanceJob_nonConformanceId_idx" ON "nonConformanceJob" ("nonConformanceId");
+CREATE INDEX "nonConformanceJob_jobId_idx" ON "nonConformanceJob" ("jobId");
+CREATE INDEX "nonConformanceJobOperation_nonConformanceId_idx" ON "nonConformanceJobOperation" ("nonConformanceId");
+CREATE INDEX "nonConformanceJobOperation_jobOperationId_idx" ON "nonConformanceJobOperation" ("jobOperationId");
+CREATE INDEX "nonConformancePurchaseOrder_nonConformanceId_idx" ON "nonConformancePurchaseOrder" ("nonConformanceId");
+CREATE INDEX "nonConformancePurchaseOrder_purchaseOrderId_idx" ON "nonConformancePurchaseOrder" ("purchaseOrderId");
+CREATE INDEX "nonConformancePurchaseOrderLine_nonConformanceId_idx" ON "nonConformancePurchaseOrderLine" ("nonConformanceId");
+CREATE INDEX "nonConformancePurchaseOrderLine_purchaseOrderLineId_idx" ON "nonConformancePurchaseOrderLine" ("purchaseOrderLineId");
+CREATE INDEX "nonConformanceSalesOrder_nonConformanceId_idx" ON "nonConformanceSalesOrder" ("nonConformanceId");
+CREATE INDEX "nonConformanceSalesOrder_salesOrderId_idx" ON "nonConformanceSalesOrder" ("salesOrderId");
+CREATE INDEX "nonConformanceSalesOrderLine_nonConformanceId_idx" ON "nonConformanceSalesOrderLine" ("nonConformanceId");
+CREATE INDEX "nonConformanceSalesOrderLine_salesOrderLineId_idx" ON "nonConformanceSalesOrderLine" ("salesOrderLineId");
+CREATE INDEX "nonConformanceShipment_nonConformanceId_idx" ON "nonConformanceShipment" ("nonConformanceId");
+CREATE INDEX "nonConformanceShipment_shipmentId_idx" ON "nonConformanceShipment" ("shipmentId");
+CREATE INDEX "nonConformanceShipmentLine_nonConformanceId_idx" ON "nonConformanceShipmentLine" ("nonConformanceId");
+CREATE INDEX "nonConformanceShipmentLine_shipmentLineId_idx" ON "nonConformanceShipmentLine" ("shipmentLineId");
 
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('nonConformance', 'Non-Conformance', 'Quality');

@@ -1,11 +1,4 @@
-import {
-  LuCircleGauge,
-  LuDraftingCompass,
-  LuOctagonX,
-  LuSearchCheck,
-  LuShieldX,
-  LuWorkflow,
-} from "react-icons/lu";
+import { LuOctagonX, LuShieldX, LuWorkflow } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -21,39 +14,39 @@ const qualityRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuShieldX />,
         table: "nonConformance",
       },
-      {
-        name: "Inspections",
-        to: "#",
-        icon: <LuSearchCheck />,
-        table: "inspection",
-      },
+      // {
+      //   name: "Inspections",
+      //   to: "#",
+      //   icon: <LuSearchCheck />,
+      //   table: "inspection",
+      // },
     ],
   },
+  // {
+  //   name: "Gauges",
+  //   routes: [
+  //     {
+  //       name: "Gauges",
+  //       to: "#",
+  //       icon: <LuDraftingCompass />,
+  //     },
+  //     {
+  //       name: "Calibrations",
+  //       to: "#",
+  //       icon: <LuCircleGauge />,
+  //     },
+  //   ],
+  // },
   {
-    name: "Gauges",
+    name: "Configure",
     routes: [
       {
-        name: "Gauges",
-        to: "#",
-        icon: <LuDraftingCompass />,
-      },
-      {
-        name: "Calibrations",
-        to: "#",
-        icon: <LuCircleGauge />,
-      },
-    ],
-  },
-  {
-    name: "Configure Issues",
-    routes: [
-      {
-        name: "Types",
+        name: "NCR Types",
         to: path.to.nonConformanceTypes,
         icon: <LuOctagonX />,
       },
       {
-        name: "Workflows",
+        name: "NCR Workflows",
         to: path.to.nonConformanceWorkflows,
         icon: <LuWorkflow />,
       },
