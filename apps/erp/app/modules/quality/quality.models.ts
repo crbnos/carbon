@@ -43,6 +43,37 @@ export const nonConformancePriority = [
   "Critical",
 ] as const;
 
+export const nonConformanceAssociationValidator = z
+  .object({
+    type: z.enum([
+      "customers",
+      "suppliers",
+      "jobOperations",
+      "purchaseOrderLines",
+      "salesOrderLines",
+      "shipmentLines",
+      "receiptLines",
+      "trackedEntities",
+    ]),
+    id: z.string(),
+    lineId: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => {
+      // For types other than customer, supplier, or trackedEntity, lineId is required
+      if (
+        !["customers", "suppliers", "trackedEntities"].includes(data.type) &&
+        !data.lineId
+      ) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Line ID is required",
+    }
+  );
+
 export const nonConformanceValidator = z.object({
   id: zfd.text(z.string().optional()),
   nonConformanceId: zfd.text(z.string().optional()),
