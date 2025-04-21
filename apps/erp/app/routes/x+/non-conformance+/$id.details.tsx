@@ -115,6 +115,7 @@ export default function NonConformanceDetailsRoute() {
         subTitle={routeData.nonConformance?.nonConformanceId ?? ""}
         content={routeData.nonConformance?.content as JSONContent}
       />
+
       {permissions.is("employee") && (
         <>
           <Suspense
