@@ -53,6 +53,7 @@
     "generate:swagger": "tsx scripts/generate-swagger-docs.ts && npx prettier --write ./packages/database/src/swagger-docs-schema.ts ",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "lint": "turbo run lint",
+    "novu:sync": "npx novu@latest sync --bridge-url https://app.carbonos.dev/api/novu --secret-key $NOVU_SECRET_KEY --api-url https://api.novu.co",
     "postdb:build": "run-s generate:types generate:swagger",
     "prepare": "npx husky install",
     "setup": "turbo run setup",

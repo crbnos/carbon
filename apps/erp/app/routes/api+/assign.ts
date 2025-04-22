@@ -15,7 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});
 
   const formData = await request.formData();
-  let id = formData.get("id") as string;
+  let id: string | undefined = formData.get("id") as string;
   const assignee = formData.get("assignee") as string;
   const table = formData.get("table") as string;
 
@@ -43,7 +43,21 @@ export async function action({ request }: ActionFunctionArgs) {
       id = `${jobId}:${id}:${makeMethodId}:${materialId ?? ""}`;
     }
 
-    if (assignee) {
+    if (
+      table === "nonConformanceInvestigationTask" ||
+      table === "nonConformanceActionTask" ||
+      table === "nonConformanceApprovalTask"
+    ) {
+      const task = await client
+        .from(table)
+        .select("nonConformanceId")
+        .eq("id", id)
+        .single();
+
+      id = task.data?.nonConformanceId;
+    }
+
+    if (id && assignee) {
       const notificationEvent = getNotificationEvent(table);
       if (notificationEvent) {
         try {
@@ -87,6 +101,9 @@ function getNotificationEvent(table: string): NotificationEvent | null {
       return NotificationEvent.JobAssignment;
     case "jobOperation":
       return NotificationEvent.JobOperationAssignment;
+    case "nonConformanceInvestigationTask":
+    case "nonConformanceActionTask":
+    case "nonConformanceApprovalTask":
     case "nonConformance":
       return NotificationEvent.NonConformanceAssignment;
     case "procedure":

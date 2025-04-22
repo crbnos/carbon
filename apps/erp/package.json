@@ -111,6 +111,7 @@
     "dev:remix": "remix vite:dev",
     "dev:trigger": "npx --yes trigger.dev@3.3.12 dev",
     "dev:novu": "npx novu@latest dev --port 3000",
+    "sync:novu": "npx novu@latest sync ",
     "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
     "start": "remix-serve ./build/server/index.js",
     "types": "tsc"

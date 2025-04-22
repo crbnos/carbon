@@ -138,13 +138,15 @@ serve(async (req: Request) => {
 
         if (nonConformance.error) throw new Error(nonConformance.error.message);
 
-        const workflow = await client
-          .from("nonConformanceWorkflow")
-          .select("*")
-          .eq("id", nonConformance.data?.nonConformanceWorkflowId)
-          .maybeSingle();
+        const workflow = nonConformance.data?.nonConformanceWorkflowId
+          ? await client
+              .from("nonConformanceWorkflow")
+              .select("*")
+              .eq("id", nonConformance.data?.nonConformanceWorkflowId)
+              .maybeSingle()
+          : null;
 
-        if (workflow.error) throw new Error(workflow.error.message);
+        if (workflow?.error) throw new Error(workflow.error.message);
 
         const currentInvestigationTasks =
           investigationTasks.data?.reduce<Record<string, string>>((acc, d) => {
@@ -299,7 +301,7 @@ serve(async (req: Request) => {
             await trx
               .updateTable("nonConformance")
               .set({
-                content: workflow.data?.content ?? {},
+                content: workflow?.data?.content ?? {},
               })
               .where("id", "=", id)
               .execute();
