@@ -13,7 +13,7 @@ import {
   getNonConformanceAssociations,
   getNonConformanceTypesList,
 } from "~/modules/quality";
-import type { NonConformanceAssociationNode } from "~/modules/quality/ui/NonConformance/NonConformanceAssociations";
+import type { NonConformanceAssociationNode } from "~/modules/quality/types";
 import {
   NonConformanceAssociationsSkeleton,
   NonConformanceAssociationsTree,
@@ -65,7 +65,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function NonConformanceRoute() {
-  const { associations } = useLoaderData<typeof loader>();
+  const { associations, nonConformance } = useLoaderData<typeof loader>();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -143,6 +143,7 @@ export default function NonConformanceRoute() {
                         <NonConformanceAssociationsTree
                           tree={tree}
                           nonConformanceId={id}
+                          itemId={nonConformance.itemId ?? undefined}
                         />
                       );
                     }}

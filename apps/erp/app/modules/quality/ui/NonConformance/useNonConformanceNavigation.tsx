@@ -64,6 +64,7 @@ export function useNonConformanceNavigation() {
       name: "Review",
       to: path.to.nonConformanceReview(id),
       icon: LuClipboardPen,
+      shortcut: "Command+Shift+r",
       isDisabled: !requiresManagementReview,
     },
   ].filter((item) => !item.isDisabled);

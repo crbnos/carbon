@@ -19,6 +19,57 @@ export async function deleteNonConformance(
   return client.from("nonConformance").delete().eq("id", nonConformanceId);
 }
 
+export async function deleteNonConformanceAssociation(
+  client: SupabaseClient<Database>,
+  type: string,
+  associationId: string
+) {
+  switch (type) {
+    case "customers":
+      return await client
+        .from("nonConformanceCustomer")
+        .delete()
+        .eq("id", associationId);
+    case "suppliers":
+      return await client
+        .from("nonConformanceSupplier")
+        .delete()
+        .eq("id", associationId);
+    case "jobOperations":
+      return await client
+        .from("nonConformanceJobOperation")
+        .delete()
+        .eq("id", associationId);
+    case "purchaseOrderLines":
+      return await client
+        .from("nonConformancePurchaseOrderLine")
+        .delete()
+        .eq("id", associationId);
+    case "salesOrderLines":
+      return await client
+        .from("nonConformanceSalesOrderLine")
+        .delete()
+        .eq("id", associationId);
+    case "shipmentLines":
+      return await client
+        .from("nonConformanceShipmentLine")
+        .delete()
+        .eq("id", associationId);
+    case "receiptLines":
+      return await client
+        .from("nonConformanceReceiptLine")
+        .delete()
+        .eq("id", associationId);
+    case "trackedEntities":
+      return await client
+        .from("nonConformanceTrackedEntity")
+        .delete()
+        .eq("id", associationId);
+    default:
+      throw new Error(`Invalid type: ${type}`);
+  }
+}
+
 export async function deleteNonConformanceType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
@@ -517,59 +568,67 @@ export async function getNonConformanceAssociations(
   return {
     jobOperations:
       jobOperations.data?.map((item) => ({
-        type: "jobOperation",
-        id: item.jobId ?? "",
-        lineId: item.jobOperationId,
-        readableId: item.jobReadableId || "",
+        type: "jobOperations",
+        id: item.id,
+        documentId: item.jobId ?? "",
+        documentLineId: item.jobOperationId,
+        documentReadableId: item.jobReadableId || "",
       })) || [],
     purchaseOrderLines:
       purchaseOrderLines.data?.map((item) => ({
-        type: "purchaseOrderLine",
-        id: item.purchaseOrderId ?? "",
-        lineId: item.purchaseOrderLineId,
-        readableId: item.purchaseOrderReadableId || "",
+        id: item.id,
+        type: "purchaseOrderLines",
+        documentId: item.purchaseOrderId ?? "",
+        documentLineId: item.purchaseOrderLineId,
+        documentReadableId: item.purchaseOrderReadableId || "",
       })) || [],
     salesOrderLines:
       salesOrderLines.data?.map((item) => ({
-        type: "salesOrderLine",
-        id: item.salesOrderId ?? "",
-        lineId: item.salesOrderLineId,
-        readableId: item.salesOrderReadableId || "",
+        id: item.id,
+        type: "salesOrderLines",
+        documentId: item.salesOrderId ?? "",
+        documentLineId: item.salesOrderLineId,
+        documentReadableId: item.salesOrderReadableId || "",
       })) || [],
     shipmentLines:
       shipmentLines.data?.map((item) => ({
-        type: "shipmentLine",
-        id: item.shipmentId ?? "",
-        lineId: item.shipmentLineId,
-        readableId: item.shipmentReadableId || "",
+        id: item.id,
+        type: "shipmentLines",
+        documentId: item.shipmentId ?? "",
+        documentLineId: item.shipmentLineId,
+        documentReadableId: item.shipmentReadableId || "",
       })) || [],
     receiptLines:
       receiptLines.data?.map((item) => ({
-        type: "receiptLine",
-        id: item.receiptId ?? "",
-        lineId: item.receiptLineId,
-        readableId: item.receiptReadableId || "",
+        id: item.id,
+        type: "receiptLines",
+        documentId: item.receiptId ?? "",
+        documentLineId: item.receiptLineId,
+        documentReadableId: item.receiptReadableId || "",
       })) || [],
     trackedEntities:
       trackedEntities.data?.map((item) => ({
-        type: "trackedEntity",
-        id: item.trackedEntityId ?? "",
-        lineId: "",
-        readableId: "",
+        id: item.id,
+        type: "trackedEntities",
+        documentId: item.trackedEntityId ?? "",
+        documentLineId: "",
+        documentReadableId: item.trackedEntityId ?? "",
       })) || [],
     customers:
       customers.data?.map((c) => ({
-        type: "customer",
-        id: c.customerId ?? "",
-        lineId: "",
-        readableId: c.customer.name,
+        id: c.id,
+        type: "customers",
+        documentId: c.customerId ?? "",
+        documentLineId: "",
+        documentReadableId: c.customer.name,
       })) || [],
     suppliers:
       suppliers.data?.map((item) => ({
-        type: "supplier",
-        id: item.supplierId ?? "",
-        lineId: "",
-        readableId: item.supplier.name,
+        id: item.id,
+        type: "suppliers",
+        documentId: item.supplierId ?? "",
+        documentLineId: "",
+        documentReadableId: item.supplier.name,
       })) || [],
   };
 }

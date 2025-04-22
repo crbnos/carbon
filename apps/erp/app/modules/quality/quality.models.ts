@@ -43,18 +43,20 @@ export const nonConformancePriority = [
   "Critical",
 ] as const;
 
+export const nonConformanceAssociationType = [
+  "customers",
+  "suppliers",
+  "jobOperations",
+  "purchaseOrderLines",
+  "salesOrderLines",
+  "shipmentLines",
+  "receiptLines",
+  "trackedEntities",
+] as const;
+
 export const nonConformanceAssociationValidator = z
   .object({
-    type: z.enum([
-      "customers",
-      "suppliers",
-      "jobOperations",
-      "purchaseOrderLines",
-      "salesOrderLines",
-      "shipmentLines",
-      "receiptLines",
-      "trackedEntities",
-    ]),
+    type: z.enum(nonConformanceAssociationType),
     id: z.string(),
     lineId: zfd.text(z.string().optional()),
   })

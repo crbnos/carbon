@@ -27,7 +27,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "investigationTypes":
     case "requiredActions":
     case "approvalRequirements":
-      console.log(value);
       const arrayValue = value ? value.split(",") : [];
       const update = await client
         .from("nonConformance")

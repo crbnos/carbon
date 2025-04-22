@@ -4,6 +4,11 @@ import {
   Button,
   cn,
   Count,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Input,
@@ -21,13 +26,14 @@ import {
   useMount,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuChevronRight,
   LuCirclePlus,
   LuContainer,
+  LuEllipsisVertical,
   LuFileText,
   LuHandCoins,
   LuHardHat,
@@ -35,16 +41,21 @@ import {
   LuSearch,
   LuShoppingCart,
   LuSquareUser,
+  LuTrash,
   LuTruck,
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
-import { Hyperlink } from "~/components";
 import { Customer, Supplier } from "~/components/Form";
+import { ConfirmDelete } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { action as associationAction } from "~/routes/x+/non-conformance+/$id.association.new";
 import { path } from "~/utils/path";
 import { nonConformanceAssociationValidator } from "../../quality.models";
+import type {
+  NonConformanceAssociationKey,
+  NonConformanceAssociationNode,
+} from "../../types";
 
 export function NonConformanceAssociationsSkeleton() {
   return (
@@ -57,29 +68,6 @@ export function NonConformanceAssociationsSkeleton() {
   );
 }
 
-export type NonConformanceAssociationKey =
-  | "jobOperations"
-  | "purchaseOrderLines"
-  | "salesOrderLines"
-  | "shipmentLines"
-  | "receiptLines"
-  | "trackedEntities"
-  | "customers"
-  | "suppliers";
-
-export type NonConformanceAssociationNode = {
-  key: NonConformanceAssociationKey;
-  name: string;
-  pluralName: string;
-  module: string;
-  children: {
-    id: string;
-    type: string;
-    readableId: string;
-    lineId: string;
-  }[];
-};
-
 export function NonConformanceAssociationsTree({
   tree,
   nonConformanceId,
@@ -90,42 +78,77 @@ export function NonConformanceAssociationsTree({
   itemId?: string;
 }) {
   const [filterText, setFilterText] = useState("");
+  const deleteDisclosure = useDisclosure();
+  const [selectedChild, setSelectedChild] = useState<
+    NonConformanceAssociationNode["children"][number] | null
+  >(null);
+
+  const onDelete = (
+    child: NonConformanceAssociationNode["children"][number]
+  ) => {
+    flushSync(() => {
+      setSelectedChild(child);
+    });
+    deleteDisclosure.onOpen();
+  };
+
+  const onDeleteCancel = () => {
+    setSelectedChild(null);
+    deleteDisclosure.onClose();
+  };
 
   return (
-    <VStack>
-      <HStack className="w-full py">
-        <InputGroup size="sm" className="flex flex-grow">
-          <InputLeftElement>
-            <LuSearch className="h-4 w-4" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search..."
-            value={filterText}
-            onChange={(e) => setFilterText(e.target.value)}
-          />
-        </InputGroup>
-      </HStack>
-      <VStack spacing={0}>
-        {tree
-          .sort((a, b) => a.name.localeCompare(b.name))
-          .filter((node) => {
-            if (node.key === "trackedEntities" && !itemId) {
-              return false;
-            }
-
-            return true;
-          })
-          .map((node) => (
-            <NonConformanceAssociationItem
-              key={node.key}
-              filterText={filterText}
-              itemId={itemId}
-              node={node}
-              nonConformanceId={nonConformanceId}
+    <>
+      <VStack>
+        <HStack className="w-full py">
+          <InputGroup size="sm" className="flex flex-grow">
+            <InputLeftElement>
+              <LuSearch className="h-4 w-4" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search..."
+              value={filterText}
+              onChange={(e) => setFilterText(e.target.value)}
             />
-          ))}
+          </InputGroup>
+        </HStack>
+        <VStack spacing={0}>
+          {tree
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .filter((node) => {
+              if (node.key === "trackedEntities" && !itemId) {
+                return false;
+              }
+
+              return true;
+            })
+            .map((node) => (
+              <NonConformanceAssociationItem
+                key={node.key}
+                filterText={filterText}
+                itemId={itemId}
+                node={node}
+                nonConformanceId={nonConformanceId}
+                onDelete={onDelete}
+              />
+            ))}
+        </VStack>
       </VStack>
-    </VStack>
+      {deleteDisclosure.isOpen && selectedChild?.id && (
+        <ConfirmDelete
+          action={path.to.deleteNonConformanceAssociation(
+            nonConformanceId,
+            selectedChild.type,
+            selectedChild.id
+          )}
+          name={`${selectedChild?.documentReadableId ?? ""}`}
+          text={`Are you sure you want to deactivate the association with ${selectedChild?.documentReadableId}?`}
+          isOpen={deleteDisclosure.isOpen}
+          onCancel={onDeleteCancel}
+          onSubmit={onDeleteCancel}
+        />
+      )}
+    </>
   );
 }
 
@@ -134,11 +157,13 @@ export function NonConformanceAssociationItem({
   filterText,
   nonConformanceId,
   itemId,
+  onDelete,
 }: {
   node: NonConformanceAssociationNode;
   filterText: string;
   nonConformanceId: string;
   itemId?: string;
+  onDelete: (child: NonConformanceAssociationNode["children"][number]) => void;
 }) {
   const newAssociationModal = useDisclosure();
   const [isExpanded, setIsExpanded] = useState(
@@ -151,12 +176,12 @@ export function NonConformanceAssociationItem({
   }
 
   const filteredChildren = node.children.filter((child) =>
-    child.readableId.toLowerCase().includes(filterText.toLowerCase())
+    child.documentReadableId.toLowerCase().includes(filterText.toLowerCase())
   );
 
   return (
     <>
-      <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full">
+      <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-2 text-sm w-full hover:bg-muted/90">
         <button
           className="flex flex-grow cursor-pointer items-center overflow-hidden font-medium"
           onClick={(e) => {
@@ -191,7 +216,7 @@ export function NonConformanceAssociationItem({
       </div>
 
       {isExpanded && (
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full px-2">
           {node.children.length === 0 ? (
             <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-4">
               <LevelLine isSelected={false} />
@@ -201,15 +226,43 @@ export function NonConformanceAssociationItem({
             </div>
           ) : (
             filteredChildren.map((child, index) => (
-              <Hyperlink
+              <div
                 key={index}
-                to={getAssociationLink(child, node.key)}
-                className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap"
+                className="group/association relative flex w-full"
               >
-                <LevelLine isSelected={false} className="mr-2" />
-                {getAssociationIcon(node.key)}
-                <span className="truncate">{child.readableId}</span>
-              </Hyperlink>
+                <Link
+                  to={getAssociationLink(child, node.key)}
+                  className="flex pr-7 h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-2 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap"
+                >
+                  <LevelLine isSelected={false} />
+                  {getAssociationIcon(node.key)}
+                  <span className="truncate">{child.documentReadableId}</span>
+                </Link>
+                {permissions.can("delete", node.module) && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <IconButton
+                        aria-label="Options"
+                        icon={<LuEllipsisVertical />}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-1 top-1 flex-shrink-0 opacity-0 group-hover/association:opacity-100 data-[state=open]:opacity-100 text-foreground/70 hover:text-foreground"
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                      <DropdownMenuItem
+                        destructive
+                        onSelect={() => {
+                          onDelete(child);
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuTrash />} />
+                        Delete Association
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             ))
           )}
         </div>
@@ -230,23 +283,23 @@ export function NonConformanceAssociationItem({
 function getAssociationIcon(key: NonConformanceAssociationKey) {
   switch (key) {
     case "customers":
-      return <LuSquareUser className="mr-2" />;
+      return <LuSquareUser />;
     case "suppliers":
-      return <LuContainer className="mr-2" />;
+      return <LuContainer />;
     case "jobOperations":
-      return <LuHardHat className="mr-2 text-amber-600" />;
+      return <LuHardHat className="text-amber-600" />;
     case "purchaseOrderLines":
-      return <LuShoppingCart className="mr-2 text-blue-600" />;
+      return <LuShoppingCart className="text-blue-600" />;
     case "salesOrderLines":
-      return <RiProgress8Line className="mr-2 text-green-600" />;
+      return <RiProgress8Line className="text-green-600" />;
     case "shipmentLines":
-      return <LuTruck className="mr-2 text-indigo-600" />;
+      return <LuTruck className="text-indigo-600" />;
     case "receiptLines":
-      return <LuHandCoins className="mr-2 text-red-600" />;
+      return <LuHandCoins className="text-red-600" />;
     case "trackedEntities":
-      return <LuQrCode className="mr-2" />;
+      return <LuQrCode />;
     default:
-      return <LuFileText className="mr-2" />;
+      return <LuFileText />;
   }
 }
 
@@ -390,10 +443,17 @@ function NewPurchaseOrderLineAssociation({ itemId }: { itemId?: string }) {
       setPurchaseOrderLinesAreLoading(false);
       return;
     }
-    const { data, error } = await carbon
+
+    let query = carbon
       .from("purchaseOrderLine")
       .select("id, itemId, item(name)")
       .eq("purchaseOrderId", purchaseOrderId);
+
+    if (itemId) {
+      query = query.eq("itemId", itemId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Failed to load purchase order lines");
@@ -486,10 +546,16 @@ function NewSalesOrderLineAssociation({ itemId }: { itemId?: string }) {
       return;
     }
 
-    const { data, error } = await carbon
+    let query = carbon
       .from("salesOrderLine")
       .select("id, itemId, item(name)")
       .eq("salesOrderId", salesOrderId);
+
+    if (itemId) {
+      query = query.eq("itemId", itemId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Failed to load sales order lines");
@@ -574,10 +640,17 @@ function NewShipmentLineAssociation({ itemId }: { itemId?: string }) {
       toast.error("Failed to load data");
       return;
     }
-    const { data, error } = await carbon
+
+    let query = carbon
       .from("shipmentLine")
-      .select("id, itemReadableId")
+      .select("id, itemId, itemReadableId")
       .eq("shipmentId", shipmentId);
+
+    if (itemId) {
+      query = query.eq("itemId", itemId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Failed to load shipment lines");
@@ -662,10 +735,17 @@ function NewReceiptLineAssociation({ itemId }: { itemId?: string }) {
       toast.error("Failed to load data");
       return;
     }
-    const { data, error } = await carbon
+
+    let query = carbon
       .from("receiptLine")
-      .select("id, itemReadableId")
+      .select("id, itemId, itemReadableId")
       .eq("receiptId", receiptId);
+
+    if (itemId) {
+      query = query.eq("itemId", itemId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       toast.error("Failed to load receipt lines");
@@ -703,12 +783,59 @@ function NewReceiptLineAssociation({ itemId }: { itemId?: string }) {
         }}
       />
       <Combobox
-        name="lineId"
+        name="documentLineId"
         label="Receipt Line"
         options={receiptLines}
         isLoading={receiptLinesAreLoading}
       />
     </>
+  );
+}
+
+function NewTrackedEntityAssociation({ itemId }: { itemId?: string }) {
+  const { carbon } = useCarbon();
+  const [trackedEntities, setTrackedEntities] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [trackedEntitiesAreLoading, setTrackedEntitiesAreLoading] =
+    useState(true);
+
+  useMount(() => {
+    fetchTrackedEntities();
+  });
+
+  async function fetchTrackedEntities() {
+    if (!carbon || !itemId) {
+      toast.error("Failed to load data");
+      return;
+    }
+
+    const { data, error } = await carbon
+      .from("trackedEntity")
+      .select("id")
+      .eq("sourceDocument", "Item")
+      .eq("sourceDocumentId", itemId!);
+
+    if (error) {
+      toast.error("Failed to load tracked entities");
+    }
+
+    setTrackedEntities(
+      data?.map((entity) => ({
+        label: entity.id,
+        value: entity.id,
+      })) ?? []
+    );
+    setTrackedEntitiesAreLoading(false);
+  }
+
+  return (
+    <Combobox
+      name="id"
+      label="Tracked Entity"
+      options={trackedEntities}
+      isLoading={trackedEntitiesAreLoading}
+    />
   );
 }
 
@@ -756,6 +883,8 @@ function NewAssociationModal({
         return <NewShipmentLineAssociation itemId={itemId} />;
       case "receiptLines":
         return <NewReceiptLineAssociation itemId={itemId} />;
+      case "trackedEntities":
+        return <NewTrackedEntityAssociation itemId={itemId} />;
       default:
         return null;
     }
@@ -802,26 +931,25 @@ function getAssociationLink(
 ) {
   switch (key) {
     case "jobOperations":
-      return path.to.jobDetails(child.id);
+      return path.to.jobDetails(child.documentId);
     case "purchaseOrderLines":
-      if (!child.lineId) return "#";
-      return path.to.purchaseOrderLine(child.id, child.lineId);
+      if (!child.documentLineId) return "#";
+      return path.to.purchaseOrderLine(child.documentId, child.documentLineId);
     case "salesOrderLines":
-      if (!child.lineId) return "#";
-      return path.to.salesOrderLine(child.id, child.lineId);
+      if (!child.documentLineId) return "#";
+      return path.to.salesOrderLine(child.documentId, child.documentLineId);
     case "shipmentLines":
-      if (!child.lineId) return "#";
-      return path.to.shipment(child.id);
+      if (!child.documentLineId) return "#";
+      return path.to.shipment(child.documentId);
     case "receiptLines":
-      if (!child.lineId) return "#";
-      return path.to.receipt(child.id);
+      if (!child.documentLineId) return "#";
+      return path.to.receipt(child.documentId);
     case "trackedEntities":
-      if (!child.lineId) return "#";
-      return `${path.to.traceabilityGraph}?trackedEntityId==${child.id}`;
+      return `${path.to.traceabilityGraph}?trackedEntityId=${child.documentId}`;
     case "customers":
-      return path.to.customer(child.id);
+      return path.to.customer(child.documentId);
     case "suppliers":
-      return path.to.supplier(child.id);
+      return path.to.supplier(child.documentId);
     default:
       return "#";
   }
