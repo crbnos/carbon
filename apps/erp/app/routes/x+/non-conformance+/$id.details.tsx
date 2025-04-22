@@ -15,19 +15,17 @@ import {
   type JSONContent,
 } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
-import { Await, useParams } from "@remix-run/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { Suspense, useState } from "react";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { NonConformance } from "~/modules/quality";
 import {
   nonConformanceValidator,
   upsertNonConformance,
 } from "~/modules/quality";
 import type { StorageItem } from "~/types";
 
-import { getLocalTimeZone, now } from "@internationalized/date";
 import { nanoid } from "nanoid";
 import { Documents } from "~/components";
 import { setCustomFields } from "~/utils/form";
@@ -42,7 +40,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  return json({});
+  const nonConformance = await client
+    .from("nonConformance")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (nonConformance.error) {
+    throw new Error(nonConformance.error.message);
+  }
+
+  return json({ nonConformance: nonConformance.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -99,8 +107,9 @@ export default function NonConformanceDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { nonConformance } = useLoaderData<typeof loader>();
+
   const routeData = useRouteData<{
-    nonConformance: NonConformance;
     files: Promise<StorageItem[]>;
   }>(path.to.nonConformance(id));
 
@@ -111,9 +120,9 @@ export default function NonConformanceDetailsRoute() {
     <VStack spacing={2}>
       <NonConformanceContent
         id={id}
-        title={routeData.nonConformance?.name ?? ""}
-        subTitle={routeData.nonConformance?.nonConformanceId ?? ""}
-        content={routeData.nonConformance?.content as JSONContent}
+        title={nonConformance?.name ?? ""}
+        subTitle={nonConformance?.nonConformanceId ?? ""}
+        content={nonConformance?.content as JSONContent}
       />
 
       {permissions.is("employee") && (
@@ -187,7 +196,6 @@ function NonConformanceContent({
         ?.from("nonConformance")
         .update({
           content: content,
-          updatedAt: now(getLocalTimeZone()).toString(),
           updatedBy: userId,
         })
         .eq("id", id!);
