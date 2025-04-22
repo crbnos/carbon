@@ -11723,7 +11723,7 @@ export type Database = {
           name: string
           nonConformanceId: string
           nonConformanceTypeId: string
-          nonConformanceWorkflowId: string
+          nonConformanceWorkflowId: string | null
           openDate: string
           priority: Database["public"]["Enums"]["nonConformancePriority"] | null
           quantity: number
@@ -11758,7 +11758,7 @@ export type Database = {
           name: string
           nonConformanceId: string
           nonConformanceTypeId: string
-          nonConformanceWorkflowId: string
+          nonConformanceWorkflowId?: string | null
           openDate: string
           priority?:
             | Database["public"]["Enums"]["nonConformancePriority"]
@@ -11795,7 +11795,7 @@ export type Database = {
           name?: string
           nonConformanceId?: string
           nonConformanceTypeId?: string
-          nonConformanceWorkflowId?: string
+          nonConformanceWorkflowId?: string | null
           openDate?: string
           priority?:
             | Database["public"]["Enums"]["nonConformancePriority"]

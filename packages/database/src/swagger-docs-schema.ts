@@ -69864,7 +69864,6 @@ export default {
         "name",
         "source",
         "status",
-        "nonConformanceWorkflowId",
         "content",
         "locationId",
         "nonConformanceTypeId",

@@ -142,7 +142,7 @@ serve(async (req: Request) => {
           .from("nonConformanceWorkflow")
           .select("*")
           .eq("id", nonConformance.data?.nonConformanceWorkflowId)
-          .single();
+          .maybeSingle();
 
         if (workflow.error) throw new Error(workflow.error.message);
 
@@ -299,7 +299,7 @@ serve(async (req: Request) => {
             await trx
               .updateTable("nonConformance")
               .set({
-                content: workflow.data?.content,
+                content: workflow.data?.content ?? {},
               })
               .where("id", "=", id)
               .execute();

@@ -204,7 +204,7 @@ CREATE TABLE "nonConformance" (
   "investigationTypes" "nonConformanceInvestigation"[],
   "requiredActions" "nonConformanceAction"[],
   "approvalRequirements" "nonConformanceApproval"[],
-  "nonConformanceWorkflowId" TEXT NOT NULL,
+  "nonConformanceWorkflowId" TEXT,
   "content" JSON NOT NULL DEFAULT '{}',
   "locationId" TEXT NOT NULL,
   "nonConformanceTypeId" TEXT NOT NULL,

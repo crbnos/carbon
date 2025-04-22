@@ -90,9 +90,7 @@ export const nonConformanceValidator = z.object({
     .array(z.enum(nonConformanceApprovalRequirement))
     .optional(),
   locationId: z.string().min(1, { message: "Location is required" }),
-  nonConformanceWorkflowId: z
-    .string()
-    .min(1, { message: "Workflow is required" }),
+  nonConformanceWorkflowId: zfd.text(z.string().optional()),
   nonConformanceTypeId: z.string().min(1, { message: "Type is required" }),
   openDate: z.string().min(1, { message: "Open date is required" }),
   dueDate: zfd.text(z.string().optional()),
