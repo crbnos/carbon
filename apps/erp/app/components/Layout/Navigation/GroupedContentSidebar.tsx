@@ -1,20 +1,18 @@
 import {
   Button,
   cn,
-  IconButton,
-  VStack,
-  useDebounce,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuIcon,
+  IconButton,
+  useDebounce,
+  VStack,
 } from "@carbon/react";
 import { Link, useSubmit } from "@remix-run/react";
-import { useOptimisticLocation } from "~/hooks";
-import type { RouteGroup } from "~/types";
-import { CollapsibleSidebar } from "./CollapsibleSidebar";
 import { Reorder } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -22,9 +20,11 @@ import {
   LuGripVertical,
   LuTrash,
 } from "react-icons/lu";
-import { useEffect, useState } from "react";
-import { path } from "~/utils/path";
 import { ConfirmDelete } from "~/components/Modals";
+import { useOptimisticLocation } from "~/hooks";
+import type { RouteGroup } from "~/types";
+import { path } from "~/utils/path";
+import { CollapsibleSidebar } from "./CollapsibleSidebar";
 
 const GroupedContentSidebar = ({
   groups,
@@ -257,7 +257,7 @@ const ViewsReorderGroup = ({
                 <DropdownMenuContent>
                   <DropdownMenuItem destructive onSelect={() => onDelete(view)}>
                     <DropdownMenuIcon icon={<LuTrash />} />
-                    Delete view
+                    Delete View
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

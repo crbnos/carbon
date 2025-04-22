@@ -229,6 +229,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
       break;
     case "trackedEntities":
+      const { error: trackedEntityError } = await client
+        .from("nonConformanceTrackedEntity")
+        .insert({
+          trackedEntityId: id,
+          nonConformanceId,
+          createdBy: userId,
+          companyId: companyId,
+        });
+
+      if (trackedEntityError) {
+        return json({
+          success: false,
+          message: "Failed to create non-conformance tracked entity",
+        });
+      }
       break;
   }
 

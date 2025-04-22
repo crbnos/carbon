@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { nonConformanceAssociationType } from "./quality.models";
 import type {
   getNonConformance,
   getNonConformanceActionTasks,
@@ -8,6 +9,23 @@ import type {
   getNonConformanceTypes,
   getNonConformanceWorkflow,
 } from "./quality.service";
+
+export type NonConformanceAssociationKey =
+  (typeof nonConformanceAssociationType)[number];
+
+export type NonConformanceAssociationNode = {
+  key: NonConformanceAssociationKey;
+  name: string;
+  pluralName: string;
+  module: string;
+  children: {
+    id: string;
+    documentId: string;
+    documentReadableId: string;
+    documentLineId: string;
+    type: string;
+  }[];
+};
 
 export type NonConformanceStatus =
   Database["public"]["Enums"]["nonConformanceStatus"];

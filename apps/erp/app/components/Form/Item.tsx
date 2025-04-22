@@ -198,7 +198,7 @@ const Item = ({
               }
             }}
           />
-          {canSwitchItemType && (
+          {canSwitchItemType && !props.inline && (
             <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger>
@@ -207,10 +207,7 @@ const Item = ({
                       type="button"
                       aria-label="Change Type"
                       className={cn(
-                        "absolute right-0 top-0",
-                        props.inline === true
-                          ? "ml-1"
-                          : "bg-card dark:bg-card flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border -ml-px shadow-none hover:shadow-button-base"
+                        "absolute right-0 top-0 bg-card dark:bg-card flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border -ml-px shadow-none hover:shadow-button-base"
                       )}
                       disabled={props.isReadOnly}
                       variant="secondary"

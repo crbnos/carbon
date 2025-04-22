@@ -13,6 +13,48 @@ CREATE TABLE "nonConformanceType" (
   CONSTRAINT "nonConformanceType_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+CREATE INDEX "nonConformanceType_companyId_idx" ON "nonConformanceType" ("companyId");
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceType"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceType"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceType"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceType"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 -- Insert non-conformance types for all existing companies
 WITH nc_types AS (
   SELECT unnest(ARRAY[
@@ -110,6 +152,47 @@ CREATE TABLE "nonConformanceWorkflow" (
 );
 
 
+CREATE POLICY "SELECT" ON "public"."nonConformanceWorkflow"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceWorkflow"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceWorkflow"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceWorkflow"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
+
 CREATE TABLE "nonConformance" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -150,7 +233,53 @@ CREATE TABLE "nonConformance" (
   CONSTRAINT "nonConformance_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
--- Create join tables for many-to-one relationships
+CREATE INDEX "nonConformance_companyId_idx" ON "nonConformance" ("companyId");
+CREATE INDEX "nonConformance_nonConformanceWorkflowId_idx" ON "nonConformance" ("nonConformanceWorkflowId");
+CREATE INDEX "nonConformance_nonConformanceTypeId_idx" ON "nonConformance" ("nonConformanceTypeId");
+CREATE INDEX "nonConformance_locationId_idx" ON "nonConformance" ("locationId");
+CREATE INDEX "nonConformance_itemId_idx" ON "nonConformance" ("itemId");
+CREATE INDEX "nonConformance_assignee_idx" ON "nonConformance" ("assignee");
+
+
+CREATE POLICY "SELECT" ON "public"."nonConformance"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformance"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformance"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformance"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
 
 CREATE TABLE "nonConformanceSupplier" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -170,6 +299,47 @@ CREATE TABLE "nonConformanceSupplier" (
   CONSTRAINT "nonConformanceSupplier_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceSupplier"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceSupplier"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceSupplier"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceSupplier"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "nonConformanceCustomer" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -186,6 +356,47 @@ CREATE TABLE "nonConformanceCustomer" (
   CONSTRAINT "nonConformanceCustomer_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceCustomer_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceCustomer_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceCustomer"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceCustomer"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceCustomer"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceCustomer"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
 );
 
 CREATE TABLE "nonConformanceJobOperation" (
@@ -209,6 +420,47 @@ CREATE TABLE "nonConformanceJobOperation" (
   CONSTRAINT "nonConformanceJobOperation_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceJobOperation"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceJobOperation"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceJobOperation"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceJobOperation"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "nonConformancePurchaseOrderLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -228,6 +480,47 @@ CREATE TABLE "nonConformancePurchaseOrderLine" (
   CONSTRAINT "nonConformancePurchaseOrderLine_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformancePurchaseOrderLine_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformancePurchaseOrderLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+
+CREATE POLICY "SELECT" ON "public"."nonConformancePurchaseOrderLine"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformancePurchaseOrderLine"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformancePurchaseOrderLine"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformancePurchaseOrderLine"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
 );
 
 CREATE TABLE "nonConformanceSalesOrderLine" (
@@ -251,6 +544,47 @@ CREATE TABLE "nonConformanceSalesOrderLine" (
   CONSTRAINT "nonConformanceSalesOrderLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceSalesOrderLine"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceSalesOrderLine"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceSalesOrderLine"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceSalesOrderLine"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "nonConformanceReceiptLine" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -272,6 +606,47 @@ CREATE TABLE "nonConformanceReceiptLine" (
   CONSTRAINT "nonConformanceReceiptLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceReceiptLine"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceReceiptLine"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceReceiptLine"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceReceiptLine"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "nonConformanceTrackedEntity" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -288,6 +663,47 @@ CREATE TABLE "nonConformanceTrackedEntity" (
   CONSTRAINT "nonConformanceTrackedEntity_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceTrackedEntity_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "nonConformanceTrackedEntity_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceTrackedEntity"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceTrackedEntity"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceTrackedEntity"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceTrackedEntity"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
 );
 
 CREATE TABLE "nonConformanceShipmentLine" (
@@ -311,11 +727,46 @@ CREATE TABLE "nonConformanceShipmentLine" (
   CONSTRAINT "nonConformanceShipmentLine_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
 );
 
-CREATE INDEX "nonConformance_companyId_idx" ON "nonConformance" ("companyId");
-CREATE INDEX "nonConformance_locationId_idx" ON "nonConformance" ("locationId");
-CREATE INDEX "nonConformance_nonConformanceTypeId_idx" ON "nonConformance" ("nonConformanceTypeId");
-CREATE INDEX "nonConformance_itemId_idx" ON "nonConformance" ("itemId");
-CREATE INDEX "nonConformance_assignee_idx" ON "nonConformance" ("assignee");
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceShipmentLine"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceShipmentLine"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceShipmentLine"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceShipmentLine"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
 
 -- Create indexes for join tables
 CREATE INDEX "nonConformanceSupplier_nonConformanceId_idx" ON "nonConformanceSupplier" ("nonConformanceId");
@@ -367,6 +818,47 @@ CREATE INDEX "nonConformanceInvestigationTask_nonConformanceId_idx" ON "nonConfo
 CREATE INDEX "nonConformanceInvestigationTask_assignee_idx" ON "nonConformanceInvestigationTask" ("assignee");
 CREATE INDEX "nonConformanceInvestigationTask_status_idx" ON "nonConformanceInvestigationTask" ("status");
 
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceInvestigationTask"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceInvestigationTask"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceInvestigationTask"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceInvestigationTask"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "nonConformanceActionTask" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "nonConformanceId" TEXT NOT NULL,
@@ -395,6 +887,46 @@ CREATE TABLE "nonConformanceActionTask" (
 CREATE INDEX "nonConformanceActionTask_nonConformanceId_idx" ON "nonConformanceActionTask" ("nonConformanceId");
 CREATE INDEX "nonConformanceActionTask_assignee_idx" ON "nonConformanceActionTask" ("assignee");
 CREATE INDEX "nonConformanceActionTask_status_idx" ON "nonConformanceActionTask" ("status");
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceActionTask"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceActionTask"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceActionTask"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceActionTask"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
 
 CREATE TABLE "nonConformanceApprovalTask" (
   "id" TEXT NOT NULL DEFAULT xid(),
@@ -426,6 +958,47 @@ CREATE INDEX "nonConformanceApprovalTask_assignee_idx" ON "nonConformanceApprova
 CREATE INDEX "nonConformanceApprovalTask_status_idx" ON "nonConformanceApprovalTask" ("status");
 
 
+CREATE POLICY "SELECT" ON "public"."nonConformanceApprovalTask"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceApprovalTask"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceApprovalTask"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceApprovalTask"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
+
 CREATE TABLE "nonConformanceReviewer" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "title" TEXT NOT NULL,
@@ -450,6 +1023,47 @@ CREATE TABLE "nonConformanceReviewer" (
 CREATE INDEX "nonConformanceReviewer_nonConformanceId_idx" ON "nonConformanceReviewer" ("nonConformanceId");
 CREATE INDEX "nonConformanceReviewer_assignee_idx" ON "nonConformanceReviewer" ("assignee");
 
+
+
+CREATE POLICY "SELECT" ON "public"."nonConformanceReviewer"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."nonConformanceReviewer"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."nonConformanceReviewer"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."nonConformanceReviewer"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
 
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
 SELECT 

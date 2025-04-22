@@ -110,22 +110,31 @@ serve(async (req: Request) => {
           companyId
         );
 
-        const [nonConformance, investigationTasks, actionTasks, approvalTasks] =
-          await Promise.all([
-            client.from("nonConformance").select("*").eq("id", id).single(),
-            client
-              .from("nonConformanceInvestigationTask")
-              .select("*")
-              .eq("nonConformanceId", id),
-            client
-              .from("nonConformanceActionTask")
-              .select("*")
-              .eq("nonConformanceId", id),
-            client
-              .from("nonConformanceApprovalTask")
-              .select("*")
-              .eq("nonConformanceId", id),
-          ]);
+        const [
+          nonConformance,
+          investigationTasks,
+          actionTasks,
+          approvalTasks,
+          existingReviewers,
+        ] = await Promise.all([
+          client.from("nonConformance").select("*").eq("id", id).single(),
+          client
+            .from("nonConformanceInvestigationTask")
+            .select("*")
+            .eq("nonConformanceId", id),
+          client
+            .from("nonConformanceActionTask")
+            .select("*")
+            .eq("nonConformanceId", id),
+          client
+            .from("nonConformanceApprovalTask")
+            .select("*")
+            .eq("nonConformanceId", id),
+          client
+            .from("nonConformanceReviewer")
+            .select("*")
+            .eq("nonConformanceId", id),
+        ]);
 
         if (nonConformance.error) throw new Error(nonConformance.error.message);
 
@@ -164,6 +173,7 @@ serve(async (req: Request) => {
         const investigationTasksToDelete: string[] = [];
         const actionTasksToDelete: string[] = [];
         const approvalTasksToDelete: string[] = [];
+        const reviewersToDelete: string[] = [];
 
         Object.keys(currentInvestigationTasks).forEach((investigationType) => {
           if (
@@ -242,9 +252,27 @@ serve(async (req: Request) => {
           }
         });
 
-        if (
+        // Check if MRB approval is required
+        const hasMRBApproval =
           Array.isArray(nonConformance.data?.approvalRequirements) &&
-          nonConformance.data?.approvalRequirements.includes("MRB")
+          nonConformance.data?.approvalRequirements.includes("MRB");
+
+        const hasExistingMRBTask =
+          Object.keys(currentApprovalTasks).includes("MRB");
+        const hasExistingReviewers = (existingReviewers.data?.length ?? 0) > 0;
+
+        // If MRB is no longer required but we have existing reviewers, delete them
+        if (!hasMRBApproval && hasExistingReviewers) {
+          existingReviewers.data?.forEach((reviewer) => {
+            reviewersToDelete.push(reviewer.id);
+          });
+        }
+        // Only add reviewers if MRB is required and either:
+        // 1. MRB task is newly added (not in currentApprovalTasks)
+        // 2. There are no existing reviewers
+        else if (
+          hasMRBApproval &&
+          (!hasExistingMRBTask || !hasExistingReviewers)
         ) {
           reviewerInserts.push({
             nonConformanceId: id,
@@ -319,6 +347,13 @@ serve(async (req: Request) => {
             await trx
               .insertInto("nonConformanceReviewer")
               .values(reviewerInserts)
+              .execute();
+          }
+
+          if (reviewersToDelete.length > 0) {
+            await trx
+              .deleteFrom("nonConformanceReviewer")
+              .where("id", "in", reviewersToDelete)
               .execute();
           }
         });
