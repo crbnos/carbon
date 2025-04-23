@@ -22,7 +22,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "replenishmentSystem":
     case "unitOfMeasureCode":
       // For other fields, just update the specified field
-      if (field === "replenishmentSystem") {
+      if (field === "replenishmentSystem" && value !== "Buy and Make") {
         return json(
           await client
             .from("item")
