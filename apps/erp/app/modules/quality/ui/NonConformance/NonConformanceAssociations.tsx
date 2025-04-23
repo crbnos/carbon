@@ -99,8 +99,8 @@ export function NonConformanceAssociationsTree({
 
   return (
     <>
-      <VStack>
-        <HStack className="w-full py">
+      <VStack className="px-2">
+        <HStack className="w-full py-2">
           <InputGroup size="sm" className="flex flex-grow">
             <InputLeftElement>
               <LuSearch className="h-4 w-4" />
