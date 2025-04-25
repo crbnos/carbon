@@ -663,6 +663,23 @@ export async function endProductionEvent(
     .select("*");
 }
 
+export async function endProductionEventsForJobOperation(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationId: string;
+    employeeId: string;
+    companyId: string;
+  }
+) {
+  return client
+    .from("productionEvent")
+    .update({ endTime: new Date().toISOString(), updatedBy: args.employeeId })
+    .eq("jobOperationId", args.jobOperationId)
+    .is("endTime", null)
+    .eq("employeeId", args.employeeId)
+    .eq("companyId", args.companyId);
+}
+
 export async function endProductionEvents(
   client: SupabaseClient<Database>,
   args: { companyId: string; employeeId: string; endTime: string }
