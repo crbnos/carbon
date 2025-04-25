@@ -16,6 +16,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!operationId) throw new Error("Operation ID is required");
 
   const url = new URL(request.url);
+  let trackedEntityId = url.searchParams.get("trackedEntityId");
+
   let type = (url.searchParams.get("type") ?? "Labor") as
     | "Setup"
     | "Labor"
@@ -23,7 +25,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!["Setup", "Labor", "Machine"].includes(type)) {
     type = "Labor";
   }
-  let trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
   const [jobOperation, productionEvents] = await Promise.all([
