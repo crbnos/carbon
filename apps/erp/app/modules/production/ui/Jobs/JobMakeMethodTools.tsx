@@ -39,6 +39,7 @@ import {
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuListChecks,
   LuQrCode,
   LuSquareStack,
   LuTriangleAlert,
@@ -119,9 +120,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
 
   const isJobMethod = pathname === path.to.jobMethod(jobId, methodId!);
   const isJobMakeMethod =
-    methodId &&
-    materialId &&
-    pathname === path.to.jobMakeMethod(jobId, methodId);
+    methodId && pathname === path.to.jobMakeMethod(jobId, methodId);
 
   const { carbon } = useCarbon();
 
@@ -186,6 +185,8 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
+  console.log({ makeMethod });
+
   return (
     <>
       {permissions.can("update", "production") &&
@@ -233,6 +234,17 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                     <Link prefetch="intent" to={itemLink}>
                       Item Master
                     </Link>
+                  </MenubarItem>
+                )}
+                {makeMethod?.id && (
+                  <MenubarItem leftIcon={<LuListChecks />} asChild>
+                    <a
+                      href={path.to.file.jobTraveler(makeMethod.id)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Job Traveler
+                    </a>
                   </MenubarItem>
                 )}
                 {makeMethod &&

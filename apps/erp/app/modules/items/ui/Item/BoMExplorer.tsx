@@ -152,14 +152,18 @@ const BoMExplorer = ({
                         getMaterialLink(
                           itemType,
                           itemId,
-                          node.data.makeMethodId
+                          node.data.methodType === "Make"
+                            ? node.data.materialMakeMethodId
+                            : node.data.makeMethodId
                         )
                       ) {
                         navigate(
                           getMaterialLink(
                             itemType,
                             itemId,
-                            node.data.makeMethodId
+                            node.data.methodType === "Make"
+                              ? node.data.materialMakeMethodId
+                              : node.data.makeMethodId
                           )
                         );
                       }

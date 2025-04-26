@@ -2,7 +2,6 @@ import { useParams } from "@remix-run/react";
 
 import {
   LuClipboardPen,
-  LuContainer,
   LuFileText,
   LuListChecks,
   LuSearch,
@@ -30,7 +29,7 @@ export function useNonConformanceNavigation() {
   const requiresManagementReview =
     routeData.nonConformance.approvalRequirements?.includes("MRB");
 
-  const isExternal = routeData.nonConformance.source === "External";
+  // const isExternal = routeData.nonConformance.source === "External";
 
   return [
     {
@@ -53,13 +52,13 @@ export function useNonConformanceNavigation() {
       shortcut: "Command+Shift+a",
       isDisabled: !hasActions,
     },
-    {
-      name: "Supplier",
-      to: path.to.nonConformanceSupplier(id),
-      icon: LuContainer,
-      shortcut: "Command+Shift+s",
-      isDisabled: !isExternal,
-    },
+    // {
+    //   name: "Supplier",
+    //   to: path.to.nonConformanceSupplier(id),
+    //   icon: LuContainer,
+    //   shortcut: "Command+Shift+s",
+    //   isDisabled: !isExternal,
+    // },
     {
       name: "Review",
       to: path.to.nonConformanceReview(id),

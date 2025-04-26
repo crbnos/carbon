@@ -317,6 +317,12 @@ function getNodePath(node: FlatTreeItem<QuoteMethod>) {
         node.data.quoteLineId,
         node.data.quoteMaterialMakeMethodId
       )
+    : node.data.methodType === "Make"
+    ? path.to.quoteLineMakeMethod(
+        node.data.quoteId,
+        node.data.quoteLineId,
+        node.data.quoteMaterialMakeMethodId
+      )
     : path.to.quoteLineMakeMethod(
         node.data.quoteId,
         node.data.quoteLineId,

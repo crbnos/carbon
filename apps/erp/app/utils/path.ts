@@ -111,6 +111,7 @@ export const path = {
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       operationLabelsPdf: (
         id: string,
         {

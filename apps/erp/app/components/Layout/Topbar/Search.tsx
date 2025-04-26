@@ -51,6 +51,7 @@ import useItemsSubmodules from "~/modules/items/ui/useItemsSubmodules";
 import usePeopleSubmodules from "~/modules/people/ui/usePeopleSubmodules";
 import useProductionSubmodules from "~/modules/production/ui/useProductionSubmodules";
 import usePurchasingSubmodules from "~/modules/purchasing/ui/usePurchasingSubmodules";
+import useQualitySubmodules from "~/modules/quality/ui/useQualitySubmodules";
 import useResourcesSubmodules from "~/modules/resources/ui/useResourcesSubmodules";
 import useSalesSubmodules from "~/modules/sales/ui/useSalesSubmodules";
 import useSettingsSubmodules from "~/modules/settings/ui/useSettingsSubmodules";
@@ -334,9 +335,9 @@ function useGroupedSubmodules() {
   const users = useUsersSubmodules();
   const settings = useSettingsSubmodules();
   const people = usePeopleSubmodules();
+  const quality = useQualitySubmodules();
   const resources = useResourcesSubmodules();
   const account = useAccountSubmodules();
-
   const groupedSubmodules: Record<
     string,
     {
@@ -351,6 +352,7 @@ function useGroupedSubmodules() {
     inventory,
     sales,
     purchasing,
+    quality,
     accounting,
     invoicing,
     people,
