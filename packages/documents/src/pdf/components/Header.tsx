@@ -4,6 +4,8 @@ import type { Company } from "../../types";
 type HeaderProps = {
   company: Company;
   title: string;
+  subtitle?: string;
+  tertiaryTitle?: string;
 };
 
 const styles = StyleSheet.create({
@@ -18,15 +20,30 @@ const styles = StyleSheet.create({
   logo: {
     height: 70,
   },
-  title: {
+  titleWithoutSubtitle: {
     height: 70,
     fontSize: 26,
     letterSpacing: -1,
     fontWeight: 700,
   },
+  title: {
+    fontSize: 26,
+    letterSpacing: -1,
+    fontWeight: 700,
+  },
+  subtitle: {
+    fontSize: 18,
+    fontWeight: 500,
+    color: "gray",
+  },
+  tertiaryTitle: {
+    fontSize: 12,
+    fontWeight: 400,
+    color: "gray",
+  },
 });
 
-const Header = ({ title, company }: HeaderProps) => {
+const Header = ({ title, subtitle, tertiaryTitle, company }: HeaderProps) => {
   return (
     <View style={styles.header}>
       <View>
@@ -37,7 +54,13 @@ const Header = ({ title, company }: HeaderProps) => {
         )}
       </View>
       <View>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={subtitle ? styles.title : styles.titleWithoutSubtitle}>
+          {title}
+        </Text>
+        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        {tertiaryTitle && (
+          <Text style={styles.tertiaryTitle}>{tertiaryTitle}</Text>
+        )}
       </View>
     </View>
   );

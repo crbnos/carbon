@@ -32,7 +32,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("receiptFromPurchaseOrder"),
-    locationId: z.string(),
+    locationId: z.string().optional(),
     purchaseOrderId: z.string(),
     receiptId: z.string().optional(),
     companyId: z.string(),
@@ -789,7 +789,7 @@ serve(async (req: Request) => {
               "Fixture",
               "Consumable",
             ])
-            .eq("locationId", locationId),
+            .or(`locationId.eq.${locationId},locationId.is.null`),
           client
             .from("receipt")
             .select("*")

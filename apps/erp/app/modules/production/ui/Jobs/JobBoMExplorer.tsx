@@ -305,5 +305,7 @@ function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
 function getNodePath(node: FlatTreeItem<JobMethod>) {
   return node.data.isRoot
     ? path.to.jobMethod(node.data.jobId, node.data.jobMaterialMakeMethodId)
+    : node.data.methodType === "Make"
+    ? path.to.jobMakeMethod(node.data.jobId, node.data.jobMaterialMakeMethodId)
     : path.to.jobMakeMethod(node.data.jobId, node.data.jobMakeMethodId);
 }

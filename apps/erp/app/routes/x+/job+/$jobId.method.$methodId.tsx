@@ -14,6 +14,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Suspense } from "react";
 import { CadModel } from "~/components";
+import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Job } from "~/modules/production";
 import {
@@ -30,7 +31,6 @@ import {
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { usePanels } from "~/components/Layout";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -42,10 +42,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!jobId) throw new Error("Could not find jobId");
   if (!methodId) throw new Error("Could not find methodId");
 
-  const [materials, operations, tags] = await Promise.all([
+  const [materials, operations, tags, makeMethod] = await Promise.all([
     getJobMaterialsByMethodId(client, methodId),
     getJobOperationsByMethodId(client, methodId),
     getTagsList(client, companyId, "operation"),
+    getJobMakeMethodById(client, methodId),
   ]);
 
   if (materials.error) {
@@ -64,6 +65,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(
         request,
         error(operations.error, "Failed to load job operations")
+      )
+    );
+  }
+
+  if (makeMethod.error) {
+    throw redirect(
+      path.to.job(jobId),
+      await flash(
+        request,
+        error(makeMethod.error, "Failed to load make method")
       )
     );
   }
@@ -87,7 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         jobMakeMethodId: o.jobMakeMethodId ?? methodId,
         workInstruction: o.workInstruction as JSONContent,
       })) ?? [],
-    makeMethod: getJobMakeMethodById(client, methodId),
+    makeMethod: makeMethod.data,
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
