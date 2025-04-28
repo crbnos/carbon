@@ -76,6 +76,7 @@ export async function action({ request }: ActionFunctionArgs) {
           },
         });
         if (!salesOrderShipment.data || salesOrderShipment.error) {
+          console.error(salesOrderShipment.error);
           throw redirect(
             path.to.shipment(id),
             await flash(
@@ -99,6 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
           },
         });
         if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
+          console.error(purchaseOrderShipment.error);
           throw redirect(
             path.to.shipment(id),
             await flash(

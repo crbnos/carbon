@@ -1,4 +1,4 @@
-import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost, getCarbonServiceRole, NODE_ENV } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
@@ -69,6 +69,9 @@ export async function action({ request }: ActionFunctionArgs) {
   let companyId: string | undefined;
 
   const companies = await getCompanies(client, userId);
+  if (companies?.data?.length === 0 && NODE_ENV !== "production") {
+    companyId = "000000000000000000";
+  }
   const company = companies?.data?.[0];
 
   const locations = await getLocationsList(client, company?.id ?? "");
@@ -96,13 +99,28 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to update location");
     }
   } else {
-    const companyInsert = await insertCompany(serviceRole, data);
-    if (companyInsert.error) {
-      console.error(companyInsert.error);
-      throw new Error("Fatal: failed to insert company");
+    if (!companyId) {
+      const companyInsert = await insertCompany(serviceRole, data);
+      if (companyInsert.error) {
+        console.error(companyInsert.error);
+        throw new Error("Fatal: failed to insert company");
+      }
+
+      companyId = companyInsert.data?.id;
+    }
+    if (companyId === "000000000000000000") {
+      const companyInsert = await insertCompany(
+        serviceRole,
+        data,
+        "000000000000000000"
+      );
+      if (companyInsert.error) {
+        console.error(companyInsert.error);
+        throw new Error("Fatal: failed to insert company");
+      }
+      companyId = companyInsert.data?.id;
     }
 
-    companyId = companyInsert.data?.id;
     if (!companyId) {
       throw new Error("Fatal: failed to get company ID");
     }

@@ -41,6 +41,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         },
       });
       if (!salesOrderShipment.data || salesOrderShipment.error) {
+        console.error(salesOrderShipment.error);
         throw redirect(
           path.to.salesOrder(sourceDocumentId),
           await flash(
@@ -65,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         },
       });
       if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
+        console.error(purchaseOrderShipment.error);
         throw redirect(
           path.to.purchaseOrder(sourceDocumentId),
           await flash(
@@ -88,6 +90,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
 
       if (!defaultShipment.data || defaultShipment.error) {
+        console.error(defaultShipment.error);
         throw redirect(
           path.to.shipments,
           await flash(request, error(error, "Failed to create shipment"))

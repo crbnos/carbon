@@ -54,6 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (!salesOrderShipment.data || salesOrderShipment.error) {
+    console.error(salesOrderShipment.error);
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(
