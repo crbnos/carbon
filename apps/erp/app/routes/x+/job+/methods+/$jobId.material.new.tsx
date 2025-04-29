@@ -65,9 +65,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (data.methodType === "Make") {
+    const materialMakeMethod = await serviceRole
+      .from("jobMaterialWithMakeMethodId")
+      .select("*")
+      .eq("id", jobMaterialId)
+      .single();
+    if (materialMakeMethod.error) {
+      return json(
+        {
+          id: null,
+        },
+        await flash(
+          request,
+          error(materialMakeMethod.error, "Failed to get material make method")
+        )
+      );
+    }
     const makeMethod = await upsertJobMaterialMakeMethod(serviceRole, {
       sourceId: data.itemId,
-      targetId: jobMaterialId,
+      targetId: materialMakeMethod.data?.jobMaterialMakeMethodId!,
       companyId,
       userId,
     });
