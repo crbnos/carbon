@@ -63,7 +63,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (makeMethod.error) {
       return json({
         error: makeMethod.error
-          ? "Failed to insert job material make method"
+          ? "Failed to update method from job method"
           : null,
       });
     }
