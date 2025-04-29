@@ -19,6 +19,7 @@ export type BaseOperation = {
   setupTime?: number;
   setupUnit?: Database["public"]["Enums"]["factor"];
   status?: Database["public"]["Enums"]["jobOperationStatus"];
+  order?: number;
   workCenterId?: string | null;
 };
 

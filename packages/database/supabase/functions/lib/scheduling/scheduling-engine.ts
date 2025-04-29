@@ -13,6 +13,10 @@ class SchedulingEngine {
   private jobId: string;
   private operationsToSchedule: BaseOperation[];
   private operationsByJobMakeMethodId: Record<string, BaseOperation[]>;
+  private makeMethodDependencies: {
+    id: string;
+    parentId: string | null;
+  }[];
   private validMaterialIds: string[];
 
   private resourceManager: ResourceManager;
@@ -36,6 +40,7 @@ class SchedulingEngine {
     this.operationsToSchedule = [];
     this.operationsByJobMakeMethodId = {};
     this.validMaterialIds = [];
+    this.makeMethodDependencies = [];
 
     this.materialManager = new MaterialManager(db, companyId);
     this.resourceManager = new ResourceManager(db, companyId);
@@ -61,105 +66,7 @@ class SchedulingEngine {
       operationDependencies[operation.id] = [];
     }
 
-    // Process dependencies within the same level (sequential operations)
-    for (let i = 0; i < this.operationsToSchedule.length; i++) {
-      const currentOp = this.operationsToSchedule[i];
-      if (!currentOp.id) continue;
-
-      // Each operation depends on the previous operation in the sequence
-      if (i > 0) {
-        const prevOp = this.operationsToSchedule[i - 1];
-        // Use type assertion to access jobMakeMethodId
-        const currentOpWithMethod = currentOp as BaseOperation & {
-          jobMakeMethodId?: string;
-        };
-        const prevOpWithMethod = prevOp as BaseOperation & {
-          jobMakeMethodId?: string;
-        };
-
-        if (
-          prevOp.id &&
-          prevOpWithMethod.jobMakeMethodId &&
-          currentOpWithMethod.jobMakeMethodId &&
-          prevOpWithMethod.jobMakeMethodId ===
-            currentOpWithMethod.jobMakeMethodId
-        ) {
-          operationDependencies[currentOp.id].push(prevOp.id);
-        }
-      }
-    }
-
-    // Process subassembly dependencies
-    const queue = [...this.operationsToSchedule];
-    while (queue.length > 0) {
-      const operation = queue.shift();
-      if (!operation?.id) continue;
-
-      // Use type assertion to access jobMakeMethodId
-      const operationWithMethod = operation as BaseOperation & {
-        jobMakeMethodId?: string;
-      };
-      if (!operationWithMethod.jobMakeMethodId) continue;
-
-      // Find all subassemblies associated with this operation
-      const subassemblyMaterials = await this.db
-        .selectFrom("jobMaterialWithMakeMethodId")
-        .select(["id", "jobMakeMethodId", "jobOperationId"])
-        .where("jobMakeMethodId", "=", operationWithMethod.jobMakeMethodId)
-        .where("methodType", "=", "Make")
-        .execute();
-
-      for (const material of subassemblyMaterials) {
-        if (!material.jobMakeMethodId) continue;
-
-        // Get the last operation of the subassembly
-        const subassemblyOperations = await this.db
-          .selectFrom("jobOperation")
-          .select(["id"])
-          .where("jobMakeMethodId", "=", material.jobMakeMethodId)
-          .orderBy("order", "desc")
-          .limit(1)
-          .execute();
-
-        const lastSubassemblyOp = subassemblyOperations[0];
-        if (!lastSubassemblyOp?.id) continue;
-
-        // If the subassembly is associated with a specific operation
-        if (material.jobOperationId) {
-          if (operationDependencies[material.jobOperationId]) {
-            operationDependencies[material.jobOperationId].push(
-              lastSubassemblyOp.id
-            );
-          }
-        } else {
-          // If not associated with a specific operation, the first operation
-          // of the parent depends on the last operation of the subassembly
-          const firstParentOp = this.operationsToSchedule.find(
-            (op) =>
-              (op as BaseOperation & { jobMakeMethodId?: string })
-                .jobMakeMethodId === operationWithMethod.jobMakeMethodId
-          );
-          if (firstParentOp?.id) {
-            operationDependencies[firstParentOp.id].push(lastSubassemblyOp.id);
-          }
-        }
-      }
-    }
-
-    // Store the dependencies on the operations using the dedicated dependencies column
-    for (const operation of this.operationsToSchedule) {
-      if (!operation.id) continue;
-
-      // Update the operation with its dependencies using the text[] column
-      await this.db
-        .updateTable("jobOperation")
-        .set({
-          // @ts-ignore - dependencies column exists in the database but not in the TypeScript types
-          dependencies: operationDependencies[operation.id],
-        })
-        .where("id", "=", operation.id)
-        .execute();
-    }
+    console.log({ makeMethodDependencies: this.makeMethodDependencies });
   }
 
   async assign() {
@@ -293,11 +200,13 @@ class SchedulingEngine {
     const jobMethodTree = jobMethodTrees.data?.[0] as JobMethodTreeItem;
     if (!jobMethodTree) throw new Error("Method tree not found");
 
-    console.log({ jobMethodTree });
-
     const operationsToSchedule: BaseOperation[] = [];
     const queue: JobMethodTreeItem[] = [jobMethodTree];
     const validMaterialIds: string[] = [];
+    const makeMethodDependencies: {
+      id: string;
+      parentId: string | null;
+    }[] = [];
 
     while (queue.length > 0) {
       const currentNode = queue.shift();
@@ -308,6 +217,39 @@ class SchedulingEngine {
         [];
       operationsToSchedule.unshift(...operations);
 
+      // Populate makeMethodDependencies
+      if (
+        currentNode.data.jobMakeMethodId !==
+        currentNode.data.jobMaterialMakeMethodId
+      ) {
+        // Check if this dependency already exists
+        const dependencyExists = makeMethodDependencies.some(
+          (dep) =>
+            dep.id === currentNode.data.jobMaterialMakeMethodId &&
+            dep.parentId === currentNode.data.jobMakeMethodId
+        );
+
+        if (!dependencyExists && currentNode.data.jobMaterialMakeMethodId) {
+          makeMethodDependencies.unshift({
+            id: currentNode.data.jobMaterialMakeMethodId,
+            parentId: currentNode.data.jobMakeMethodId,
+          });
+        }
+      } else {
+        const rootDependencyExists = makeMethodDependencies.some(
+          (dep) =>
+            dep.id === currentNode.data.jobMaterialMakeMethodId &&
+            dep.parentId === null
+        );
+
+        if (!rootDependencyExists && currentNode.data.jobMaterialMakeMethodId) {
+          makeMethodDependencies.unshift({
+            id: currentNode.data.jobMaterialMakeMethodId,
+            parentId: null,
+          });
+        }
+      }
+
       if (!currentNode.data.isRoot && currentNode.data.methodMaterialId) {
         validMaterialIds.push(currentNode.data.methodMaterialId);
       }
@@ -317,6 +259,7 @@ class SchedulingEngine {
 
     this.operationsToSchedule = operationsToSchedule;
     this.validMaterialIds = validMaterialIds;
+    this.makeMethodDependencies = makeMethodDependencies;
   }
 }
 
