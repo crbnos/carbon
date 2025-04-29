@@ -62,14 +62,16 @@ class SchedulingEngine {
     const makeMethodIds = [
       ...new Set(this.makeMethodDependencies.map((m) => m.id)),
     ];
-    const jobMaterial = await this.db
+    const jobMaterials = await this.db
       .selectFrom("jobMaterialWithMakeMethodId")
       .selectAll()
-      .where("id", "in", makeMethodIds)
+      .where("jobMakeMethodId", "in", makeMethodIds)
       .execute();
 
     const jobMakeMethodToOperationId: Record<string, string | null> = {};
-    jobMaterial.forEach((m) => {
+
+    console.log({ jobMaterials });
+    jobMaterials.forEach((m) => {
       if (m.jobMaterialMakeMethodId) {
         jobMakeMethodToOperationId[m.jobMaterialMakeMethodId] =
           m.jobOperationId;
@@ -88,10 +90,11 @@ class SchedulingEngine {
 
       if (!lastOperation) continue;
 
-      if (makeMethod.parentId) {
-        const parentOperation = jobMakeMethodToOperationId[makeMethod.parentId];
+      if (makeMethod.id) {
+        const parentOperation = jobMakeMethodToOperationId[makeMethod.id];
+
         if (parentOperation) {
-          operationDependencies[lastOperation.id!].add(parentOperation);
+          operationDependencies[parentOperation].add(lastOperation.id!);
         }
       }
 
@@ -100,17 +103,35 @@ class SchedulingEngine {
       });
       operations.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
 
-      let currentOrder = operations[0]?.order ?? 0;
-      let accumulatedDependencies = new Set<string>();
+      // Create a map of operations by order
+      const operationsByOrder: Record<number, string[]> = {};
       operations.forEach((op) => {
-        if (op.order === currentOrder && op.id) {
-          accumulatedDependencies.add(op.id);
-        } else {
-          currentOrder = op.order ?? 0;
-          operationDependencies[op.id!] = accumulatedDependencies;
-          accumulatedDependencies = new Set<string>();
+        if (!op.id) return;
+        const order = op.order ?? 0;
+        if (!operationsByOrder[order]) {
+          operationsByOrder[order] = [];
         }
+        operationsByOrder[order].push(op.id);
       });
+
+      // Create dependencies between sequential operations
+      const orderKeys = Object.keys(operationsByOrder)
+        .map(Number)
+        .sort((a, b) => a - b);
+      for (let i = 1; i < orderKeys.length; i++) {
+        const currentOrderOps = operationsByOrder[orderKeys[i]];
+        const previousOrderOps = operationsByOrder[orderKeys[i - 1]];
+
+        // Add all previous order operations as dependencies for current order operations
+        currentOrderOps.forEach((opId) => {
+          if (!operationDependencies[opId]) {
+            operationDependencies[opId] = new Set<string>();
+          }
+          previousOrderOps.forEach((prevOpId) => {
+            operationDependencies[opId].add(prevOpId);
+          });
+        });
+      }
     }
 
     if (Object.keys(operationDependencies).length > 0) {
