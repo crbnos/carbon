@@ -10,12 +10,20 @@ import { getSupabaseServiceRole } from "../lib/supabase.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 
-const payloadValidator = z.object({
-  jobId: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
-});
-
+const payloadValidator = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("schedule"),
+    jobId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("dependencies"),
+    jobId: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+]);
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -23,14 +31,8 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   try {
-    const { jobId, companyId, userId } = payloadValidator.parse(payload);
-
-    console.log({
-      function: "scheduler",
-      jobId,
-      companyId,
-      userId,
-    });
+    const validatedPayload = payloadValidator.parse(payload);
+    const { type, companyId, userId, jobId } = validatedPayload;
 
     const client = await getSupabaseServiceRole(
       req.headers.get("Authorization"),
@@ -38,23 +40,55 @@ serve(async (req: Request) => {
       companyId
     );
 
-    const engine = new SchedulingEngine({ client, db, jobId, companyId });
+    switch (validatedPayload.type) {
+      case "schedule": {
+        console.log({
+          function: "scheduler",
+          type,
+          jobId,
+          companyId,
+          userId,
+        });
+        const engine = new SchedulingEngine({ client, db, jobId, companyId });
 
-    await engine.initialize();
-    await Promise.all([
-      engine.prioritize(SchedulingStrategy.LeastTime),
-      engine.assign(),
-    ]);
+        await engine.addDependencies(); // TODO: Remove this
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+        await engine.initialize();
+        await Promise.all([
+          engine.prioritize(SchedulingStrategy.LeastTime),
+          engine.assign(),
+        ]);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
       }
-    );
+      case "dependencies": {
+        const engine = new SchedulingEngine({ client, db, jobId, companyId });
+
+        await engine.initialize();
+        await engine.addDependencies();
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+      default: {
+        throw new Error(`Unsupported operation type: ${type}`);
+      }
+    }
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify(err), {

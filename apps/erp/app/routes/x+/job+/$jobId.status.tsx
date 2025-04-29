@@ -61,6 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const [scheduler] = await Promise.all([
         serviceRole.functions.invoke("scheduler", {
           body: {
+            type: "schedule",
             jobId: id,
             companyId,
             userId,

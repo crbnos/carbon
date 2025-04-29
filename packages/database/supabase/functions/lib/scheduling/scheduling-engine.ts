@@ -52,6 +52,13 @@ class SchedulingEngine {
     ]);
   }
 
+  async addDependencies() {
+    console.log({
+      operationsToSchedule: this.operationsToSchedule,
+      operationsByJobMakeMethodId: this.operationsByJobMakeMethodId,
+    });
+  }
+
   async assign() {
     await this.materialManager.assignOperationsToMaterials(
       this.validMaterialIds,
