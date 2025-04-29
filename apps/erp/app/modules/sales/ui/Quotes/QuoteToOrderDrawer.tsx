@@ -483,6 +483,9 @@ const LinePricingOptions = ({
     return acc;
   }, {});
 
+  // Sort options by quantity from least to greatest
+  const sortedOptions = [...options].sort((a, b) => a.quantity - b.quantity);
+
   return (
     <VStack spacing={2}>
       <RadioGroup
@@ -538,7 +541,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
             ) : (
-              options.map(
+              sortedOptions.map(
                 (option, index) =>
                   line?.quantity?.includes(option.quantity) && (
                     <Tr key={index}>
