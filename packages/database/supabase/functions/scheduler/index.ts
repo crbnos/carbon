@@ -51,13 +51,13 @@ serve(async (req: Request) => {
         });
         const engine = new SchedulingEngine({ client, db, jobId, companyId });
 
-        await engine.addDependencies(); // TODO: Remove this
-
         await engine.initialize();
         await Promise.all([
           engine.prioritize(SchedulingStrategy.LeastTime),
           engine.assign(),
         ]);
+
+        await engine.addDependencies();
 
         return new Response(
           JSON.stringify({
