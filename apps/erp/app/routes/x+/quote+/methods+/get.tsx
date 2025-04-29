@@ -64,14 +64,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const quoteMaterialId = validation.data.targetId;
-    const itemId = validation.data.sourceId;
-
     const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
-      itemId,
-      quoteMaterialId,
+      ...validation.data,
       companyId,
-      createdBy: userId,
+      userId,
     });
 
     if (makeMethod.error) {

@@ -1860,29 +1860,20 @@ export async function upsertMakeMethodFromQuoteLine(
 
 export async function upsertMakeMethodFromQuoteMethod(
   client: SupabaseClient<Database>,
-  quoteMaterial: {
-    quoteMaterialId: string;
-    itemId: string;
+  quoteMethod: {
+    sourceId: string;
+    targetId: string;
     companyId: string;
-    createdBy: string;
+    userId: string;
   }
 ) {
-  const makeMethod = await client
-    .from("quoteMakeMethod")
-    .select("id")
-    .eq("parentMaterialId", quoteMaterial.quoteMaterialId)
-    .single();
-  if (makeMethod.error) {
-    return makeMethod;
-  }
-
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "quoteMakeMethodToItem",
-      sourceId: makeMethod.data.id,
-      targetId: quoteMaterial.itemId,
-      companyId: quoteMaterial.companyId,
-      userId: quoteMaterial.createdBy,
+      sourceId: quoteMethod.sourceId,
+      targetId: quoteMethod.targetId,
+      companyId: quoteMethod.companyId,
+      userId: quoteMethod.userId,
     },
   });
 
@@ -2235,29 +2226,20 @@ export async function upsertQuoteMaterial(
 
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
-  quoteMaterial: {
-    quoteMaterialId: string;
-    itemId: string;
+  quoteMethod: {
+    sourceId: string;
+    targetId: string;
     companyId: string;
-    createdBy: string;
+    userId: string;
   }
 ) {
-  const makeMethod = await client
-    .from("quoteMakeMethod")
-    .select("id")
-    .eq("parentMaterialId", quoteMaterial.quoteMaterialId)
-    .single();
-  if (makeMethod.error) {
-    return makeMethod;
-  }
-
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "itemToQuoteMakeMethod",
-      sourceId: quoteMaterial.itemId,
-      targetId: makeMethod.data.id,
-      companyId: quoteMaterial.companyId,
-      userId: quoteMaterial.createdBy,
+      sourceId: quoteMethod.sourceId,
+      targetId: quoteMethod.targetId,
+      companyId: quoteMethod.companyId,
+      userId: quoteMethod.userId,
     },
   });
 

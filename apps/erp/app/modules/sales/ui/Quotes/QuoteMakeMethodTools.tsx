@@ -30,7 +30,6 @@ import {
   useFetcher,
   useLocation,
   useParams,
-  useSearchParams,
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
@@ -62,9 +61,6 @@ const QuoteMakeMethodTools = () => {
   const { quoteId, lineId, methodId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
 
-  const [searchParams] = useSearchParams();
-  const materialId = searchParams.get("materialId");
-
   const fetcher = useFetcher<{ error: string | null }>();
   const routeData = useRouteData<{
     quote: Quotation;
@@ -74,14 +70,7 @@ const QuoteMakeMethodTools = () => {
 
   const materialRouteData = useRouteData<{
     makeMethod: { itemId: string; itemType: MethodItemType | null };
-  }>(
-    path.to.quoteLineMakeMethod(
-      quoteId,
-      lineId!,
-      methodId!,
-      materialId ?? undefined
-    )
-  );
+  }>(path.to.quoteLineMakeMethod(quoteId, lineId!, methodId!));
 
   const itemId =
     materialRouteData?.makeMethod?.itemId ??
@@ -298,7 +287,7 @@ const QuoteMakeMethodTools = () => {
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="targetId" value={materialId!} />
+                    <Hidden name="targetId" value={methodId!} />
                     <VStack spacing={4}>
                       <Item
                         name="sourceId"
@@ -386,7 +375,7 @@ const QuoteMakeMethodTools = () => {
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="sourceId" value={materialId!} />
+                    <Hidden name="sourceId" value={methodId!} />
                   </>
                 )}
 

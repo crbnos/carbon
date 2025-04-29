@@ -32,7 +32,6 @@ import {
   useFetcher,
   useLocation,
   useParams,
-  useSearchParams,
 } from "@remix-run/react";
 import { Suspense, useEffect, useState } from "react";
 import {
@@ -64,8 +63,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
   const permissions = usePermissions();
   const { jobId, methodId } = useParams();
   if (!jobId) throw new Error("jobId not found");
-  const [searchParams] = useSearchParams();
-  const materialId = searchParams.get("materialId");
 
   const fetcher = useFetcher<{ error: string | null }>();
   const routeData = useRouteData<{
@@ -79,7 +76,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
 
   const materialRouteData = useRouteData<{
     makeMethod: JobMakeMethod;
-  }>(path.to.jobMakeMethod(jobId, methodId!, materialId!));
+  }>(path.to.jobMakeMethod(jobId, methodId!, methodId!));
 
   const itemId =
     materialRouteData?.makeMethod?.itemId ?? routeData?.job?.itemId;
@@ -184,8 +181,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
       );
     }
   };
-
-  console.log({ makeMethod });
 
   return (
     <>
@@ -316,7 +311,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                     ) : (
                       <>
                         <Hidden name="type" value="method" />
-                        <Hidden name="targetId" value={materialId!} />
+                        <Hidden name="targetId" value={methodId!} />
                       </>
                     )}
 
@@ -408,7 +403,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 ) : (
                   <>
                     <Hidden name="type" value="method" />
-                    <Hidden name="sourceId" value={materialId!} />
+                    <Hidden name="sourceId" value={methodId!} />
                   </>
                 )}
 

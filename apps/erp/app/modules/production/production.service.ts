@@ -1179,20 +1179,11 @@ export async function upsertJobMaterialMakeMethod(
     userId: string;
   }
 ) {
-  const makeMethod = await client
-    .from("jobMakeMethod")
-    .select("id")
-    .eq("parentMaterialId", jobMaterial.targetId)
-    .single();
-  if (makeMethod.error) {
-    return makeMethod;
-  }
-
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "itemToJobMakeMethod",
       sourceId: jobMaterial.sourceId,
-      targetId: makeMethod.data.id,
+      targetId: jobMaterial.targetId,
       companyId: jobMaterial.companyId,
       userId: jobMaterial.userId,
     },
@@ -1237,19 +1228,10 @@ export async function upsertMakeMethodFromJobMethod(
     userId: string;
   }
 ) {
-  const makeMethod = await client
-    .from("jobMakeMethod")
-    .select("id")
-    .eq("parentMaterialId", jobMethod.sourceId)
-    .single();
-  if (makeMethod.error) {
-    return makeMethod;
-  }
-
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "jobMakeMethodToItem",
-      sourceId: makeMethod.data.id,
+      sourceId: jobMethod.sourceId,
       targetId: jobMethod.targetId,
       companyId: jobMethod.companyId,
       userId: jobMethod.userId,
