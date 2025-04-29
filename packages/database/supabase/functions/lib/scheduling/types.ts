@@ -12,6 +12,7 @@ export type BaseOperation = {
   laborUnit?: Database["public"]["Enums"]["factor"];
   machineTime?: number;
   machineUnit?: Database["public"]["Enums"]["factor"];
+  operationOrder?: Database["public"]["Enums"]["methodOperationOrder"];
   operationQuantity?: number | null;
   operationType?: Database["public"]["Enums"]["operationType"];
   priority?: number;

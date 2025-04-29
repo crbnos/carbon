@@ -8650,6 +8650,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
+          dependencies: string[] | null
           description: string | null
           id: string
           jobId: string
@@ -8690,6 +8691,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
+          dependencies?: string[] | null
           description?: string | null
           id?: string
           jobId: string
@@ -8730,6 +8732,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
+          dependencies?: string[] | null
           description?: string | null
           id?: string
           jobId?: string
@@ -33472,14 +33475,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -34807,14 +34810,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -36902,14 +36905,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

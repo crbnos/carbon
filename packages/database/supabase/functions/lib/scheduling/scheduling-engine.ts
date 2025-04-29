@@ -58,15 +58,72 @@ class SchedulingEngine {
   }
 
   async addDependencies(): Promise<void> {
-    const operationDependencies: Record<string, string[]> = {};
+    const operationDependencies: Record<string, Set<string>> = {};
+    const makeMethodIds = [
+      ...new Set(this.makeMethodDependencies.map((m) => m.id)),
+    ];
+    const jobMaterial = await this.db
+      .selectFrom("jobMaterialWithMakeMethodId")
+      .selectAll()
+      .where("id", "in", makeMethodIds)
+      .execute();
+
+    const jobMakeMethodToOperationId: Record<string, string | null> = {};
+    jobMaterial.forEach((m) => {
+      if (m.jobMaterialMakeMethodId) {
+        jobMakeMethodToOperationId[m.jobMaterialMakeMethodId] =
+          m.jobOperationId;
+      }
+    });
 
     // Initialize dependencies for all operations
     for (const operation of this.operationsToSchedule) {
       if (!operation.id) continue;
-      operationDependencies[operation.id] = [];
+      operationDependencies[operation.id] = new Set<string>();
     }
 
-    console.log({ makeMethodDependencies: this.makeMethodDependencies });
+    for await (const makeMethod of this.makeMethodDependencies) {
+      const operations = this.operationsByJobMakeMethodId[makeMethod.id] ?? [];
+      const lastOperation = operations[operations.length - 1];
+
+      if (!lastOperation) continue;
+
+      if (makeMethod.parentId) {
+        const parentOperation = jobMakeMethodToOperationId[makeMethod.parentId];
+        if (parentOperation) {
+          operationDependencies[lastOperation.id!].add(parentOperation);
+        }
+      }
+
+      operations.forEach((op, index) => {
+        op.order = this.getParallelizedOrder(index, op, operations);
+      });
+      operations.sort((a, b) => (a?.order ?? 0) - (b?.order ?? 0));
+
+      let currentOrder = operations[0]?.order ?? 0;
+      let accumulatedDependencies = new Set<string>();
+      operations.forEach((op) => {
+        if (op.order === currentOrder && op.id) {
+          accumulatedDependencies.add(op.id);
+        } else {
+          currentOrder = op.order ?? 0;
+          operationDependencies[op.id!] = accumulatedDependencies;
+          accumulatedDependencies = new Set<string>();
+        }
+      });
+    }
+
+    if (Object.keys(operationDependencies).length > 0) {
+      for await (const [operationId, dependencies] of Object.entries(
+        operationDependencies
+      )) {
+        await this.db
+          .updateTable("jobOperation")
+          .set({ dependencies: Array.from(dependencies) })
+          .where("id", "=", operationId)
+          .execute();
+      }
+    }
   }
 
   async assign() {
@@ -74,6 +131,18 @@ class SchedulingEngine {
       this.validMaterialIds,
       this.operationsByJobMakeMethodId
     );
+  }
+
+  getParallelizedOrder(index: number, op: BaseOperation, ops: BaseOperation[]) {
+    if (op?.operationOrder !== "With Previous") return index + 1;
+    // traverse backwards through the list of ops to find the first op that is not "With Previous" and return its index + 1
+    for (let i = index - 1; i >= 0; i--) {
+      if (ops[i].operationOrder !== "With Previous") {
+        return i + 1;
+      }
+    }
+
+    return 1;
   }
 
   async prioritize(
