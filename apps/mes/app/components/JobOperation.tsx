@@ -175,6 +175,7 @@ import {
   LuPrinter,
   LuQrCode,
   LuSend,
+  LuSquareUser,
   LuTimer,
   LuTrash,
   LuTriangleAlert,
@@ -227,6 +228,7 @@ export const JobOperation = ({
   trackedEntities,
   workCenter,
 }: JobOperationProps) => {
+  console.log({ job });
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");
@@ -411,6 +413,12 @@ export const JobOperation = ({
           <Heading size="h4">{operation.jobReadableId}</Heading>
 
           <HStack className="justify-end items-center gap-2">
+            {job.customer?.name && (
+              <HStack className="justify-start space-x-2">
+                <LuSquareUser className="text-muted-foreground" />
+                <span className="text-sm truncate">{job.customer.name}</span>
+              </HStack>
+            )}
             {operation.description && (
               <HStack className="justify-start space-x-2">
                 <LuClipboardCheck className="text-muted-foreground" />
@@ -1495,6 +1503,20 @@ export const JobOperation = ({
                     </span>
                   </HStack>
                 </VStack>
+                {job.customer?.name && (
+                  <VStack spacing={1}>
+                    <span className="text-muted-foreground text-xs">
+                      Customer
+                    </span>
+                    <HStack className="justify-start space-x-2">
+                      <LuSquareUser className="text-muted-foreground" />
+                      <span className="text-sm truncate">
+                        {job.customer.name}
+                      </span>
+                    </HStack>
+                  </VStack>
+                )}
+
                 {operation.description && (
                   <VStack spacing={1}>
                     <span className="text-muted-foreground text-xs">

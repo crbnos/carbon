@@ -187,7 +187,7 @@ export async function getJobByOperationId(
   if (operation.error) return operation;
   return client
     .from("jobs")
-    .select("*")
+    .select("*, customer(name)")
     .eq("id", operation.data.jobId)
     .single();
 }
