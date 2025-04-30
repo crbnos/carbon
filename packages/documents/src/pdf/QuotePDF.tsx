@@ -320,10 +320,13 @@ const QuotePDF = ({
                           (price?.convertedShippingCost ?? 0);
 
                         const taxPercent = line.taxPercent ?? 0;
+                        const totalBeforeTax =
+                          netExtendedPrice + additionalChargePlusShipping;
+                        const taxAmount = totalBeforeTax * taxPercent;
+                        const totalTaxAndFees =
+                          additionalChargePlusShipping + taxAmount;
 
-                        const totalPrice =
-                          (netExtendedPrice + additionalChargePlusShipping) *
-                          (1 + taxPercent);
+                        const totalPrice = netExtendedPrice + totalTaxAndFees;
 
                         return (
                           <View key={quantity} style={tw("flex flex-row")}>
@@ -336,8 +339,8 @@ const QuotePDF = ({
                                 : "-"}
                             </Text>
                             <Text style={tw("w-1/5 text-right")}>
-                              {additionalChargePlusShipping
-                                ? formatter.format(additionalChargePlusShipping)
+                              {totalTaxAndFees > 0
+                                ? formatter.format(totalTaxAndFees)
                                 : "-"}
                             </Text>
                             <Text style={tw("w-1/5 text-right")}>
