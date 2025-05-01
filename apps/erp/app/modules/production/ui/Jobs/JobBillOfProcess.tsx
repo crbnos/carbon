@@ -462,7 +462,7 @@ const JobBillOfProcess = ({
         { id },
         {
           method: "post",
-          action: path.to.jobOperationsDelete,
+          action: path.to.jobOperationsDelete(jobId),
         }
       );
     }
@@ -503,7 +503,7 @@ const JobBillOfProcess = ({
       formData.append("updates", JSON.stringify(updates));
       sortOrderFetcher.submit(formData, {
         method: "post",
-        action: path.to.jobOperationsOrder,
+        action: path.to.jobOperationsOrder(jobId),
       });
     },
     1000,

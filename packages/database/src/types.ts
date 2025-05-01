@@ -8650,7 +8650,6 @@ export type Database = {
           createdAt: string
           createdBy: string
           customFields: Json | null
-          dependencies: string[] | null
           description: string | null
           id: string
           jobId: string
@@ -8691,7 +8690,6 @@ export type Database = {
           createdAt?: string
           createdBy: string
           customFields?: Json | null
-          dependencies?: string[] | null
           description?: string | null
           id?: string
           jobId: string
@@ -8732,7 +8730,6 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           customFields?: Json | null
-          dependencies?: string[] | null
           description?: string | null
           id?: string
           jobId?: string
@@ -9295,6 +9292,101 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      jobOperationDependency: {
+        Row: {
+          companyId: string
+          createdAt: string
+          dependsOnId: string
+          jobId: string
+          operationId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          dependsOnId: string
+          jobId: string
+          operationId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          dependsOnId?: string
+          jobId?: string
+          operationId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobOperationDependency_companyId_fk"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_companyId_fk"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_companyId_fk"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_companyId_fk"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_dependsOnId_fk"
+            columns: ["dependsOnId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_dependsOnId_fk"
+            columns: ["dependsOnId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_jobId_fk"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_jobId_fk"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_operationId_fk"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationDependency_operationId_fk"
+            columns: ["operationId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -33475,14 +33567,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -34810,14 +34902,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -36905,14 +36997,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

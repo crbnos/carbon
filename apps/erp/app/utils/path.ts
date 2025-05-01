@@ -609,8 +609,10 @@ export const path = {
     jobOperation: (jobId: string, id: string) =>
       generatePath(`${x}/job/methods/${jobId}/operation/${id}`),
     jobOperations: (id: string) => generatePath(`${x}/job/${id}/operations`),
-    jobOperationsOrder: `${x}/job/methods/operation/order`,
-    jobOperationsDelete: `${x}/job/methods/operation/delete`,
+    jobOperationsOrder: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/operation/order`),
+    jobOperationsDelete: (jobId: string) =>
+      generatePath(`${x}/job/methods/${jobId}/operation/delete`),
     jobOperationAttribute: (id: string) =>
       generatePath(`${x}/job/methods/operation/attribute/${id}`),
     jobOperationParameter: (id: string) =>

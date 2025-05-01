@@ -6,6 +6,7 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import {
   jobMaterialValidator,
   recalculateJobMakeMethodRequirements,
+  recalculateJobOperationDependencies,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
 } from "~/modules/production";
@@ -99,28 +100,54 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-  }
 
-  const recalculateResult = await recalculateJobMakeMethodRequirements(
-    serviceRole,
-    {
-      id: validation.data.jobMakeMethodId,
-      companyId,
-      userId,
+    const promises = [
+      recalculateJobMakeMethodRequirements(serviceRole, {
+        id: validation.data.jobMakeMethodId,
+        companyId,
+        userId,
+      }),
+    ];
+
+    if (validation.data.jobOperationId) {
+      promises.push(
+        recalculateJobOperationDependencies(serviceRole, {
+          jobId,
+          companyId,
+          userId,
+        })
+      );
     }
-  );
 
-  if (recalculateResult.error) {
-    return json(
-      { id: jobMaterialId },
-      await flash(
-        request,
-        error(
-          recalculateResult.error,
-          "Failed to recalculate job make method requirements"
-        )
-      )
+    const [recalculateResult, recalculateDependencies] = await Promise.all(
+      promises
     );
+
+    if (recalculateResult.error) {
+      return json(
+        { id: jobMaterialId },
+        await flash(
+          request,
+          error(
+            recalculateResult.error,
+            "Failed to recalculate job make method requirements"
+          )
+        )
+      );
+    }
+
+    if (recalculateDependencies?.error) {
+      return json(
+        { id: jobMaterialId },
+        await flash(
+          request,
+          error(
+            recalculateDependencies.error,
+            "Failed to recalculate job operation dependencies"
+          )
+        )
+      );
+    }
   }
 
   return json({ id: jobMaterialId });

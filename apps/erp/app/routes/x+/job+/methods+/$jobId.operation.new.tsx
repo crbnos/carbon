@@ -6,6 +6,7 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import {
   jobOperationValidator,
   recalculateJobMakeMethodRequirements,
+  recalculateJobOperationDependencies,
   upsertJobOperation,
 } from "~/modules/production";
 import { setCustomFields } from "~/utils/form";
@@ -63,14 +64,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const recalculateResult = await recalculateJobMakeMethodRequirements(
-    serviceRole,
-    {
+  const [recalculateResult, recalculateDependencies] = await Promise.all([
+    recalculateJobMakeMethodRequirements(serviceRole, {
       id: validation.data.jobMakeMethodId,
       companyId,
       userId,
-    }
-  );
+    }),
+    recalculateJobOperationDependencies(serviceRole, {
+      jobId,
+      companyId,
+      userId,
+    }),
+  ]);
 
   if (recalculateResult.error) {
     return json(
@@ -80,6 +85,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(
           recalculateResult.error,
           "Failed to recalculate job make method requirements"
+        )
+      )
+    );
+  }
+
+  if (recalculateDependencies?.error) {
+    return json(
+      { id: jobOperationId },
+      await flash(
+        request,
+        error(
+          recalculateDependencies.error,
+          "Failed to recalculate job operation dependencies"
         )
       )
     );

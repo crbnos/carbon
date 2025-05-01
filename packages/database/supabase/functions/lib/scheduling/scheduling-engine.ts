@@ -11,6 +11,7 @@ class SchedulingEngine {
   private client: SupabaseClient<Database>;
   private db: Kysely<DB>;
   private jobId: string;
+  private companyId: string;
   private operationsToSchedule: BaseOperation[];
   private operationsByJobMakeMethodId: Record<string, BaseOperation[]>;
   private makeMethodDependencies: {
@@ -35,7 +36,7 @@ class SchedulingEngine {
   }) {
     this.db = db;
     this.client = client;
-
+    this.companyId = companyId;
     this.jobId = jobId;
     this.operationsToSchedule = [];
     this.operationsByJobMakeMethodId = {};
@@ -70,7 +71,6 @@ class SchedulingEngine {
 
     const jobMakeMethodToOperationId: Record<string, string | null> = {};
 
-    console.log({ jobMaterials });
     jobMaterials.forEach((m) => {
       if (m.jobMaterialMakeMethodId) {
         jobMakeMethodToOperationId[m.jobMaterialMakeMethodId] =
@@ -134,15 +134,30 @@ class SchedulingEngine {
       }
     }
 
+    console.log({ operationDependencies });
+
+    await this.db
+      .deleteFrom("jobOperationDependency")
+      .where("jobId", "=", this.jobId)
+      .execute();
+
     if (Object.keys(operationDependencies).length > 0) {
       for await (const [operationId, dependencies] of Object.entries(
         operationDependencies
       )) {
-        await this.db
-          .updateTable("jobOperation")
-          .set({ dependencies: Array.from(dependencies) })
-          .where("id", "=", operationId)
-          .execute();
+        if (dependencies.size > 0) {
+          await this.db
+            .insertInto("jobOperationDependency")
+            .values(
+              Array.from(dependencies).map((dependency) => ({
+                jobId: this.jobId,
+                operationId,
+                dependsOnId: dependency,
+                companyId: this.companyId,
+              }))
+            )
+            .execute();
+        }
       }
     }
   }

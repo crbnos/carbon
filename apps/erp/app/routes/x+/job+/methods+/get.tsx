@@ -4,6 +4,7 @@ import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import {
   getJobMethodValidator,
+  recalculateJobOperationDependencies,
   recalculateJobRequirements,
   upsertJobMaterialMakeMethod,
   upsertJobMethod,
@@ -36,15 +37,28 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     );
 
-    const calculateQuantities = await recalculateJobRequirements(serviceRole, {
-      id: validation.data.targetId,
-      companyId: companyId,
-      userId: userId,
-    });
+    const [calculateQuantities, calculateDependencies] = await Promise.all([
+      recalculateJobRequirements(serviceRole, {
+        id: validation.data.targetId,
+        companyId: companyId,
+        userId: userId,
+      }),
+      recalculateJobOperationDependencies(serviceRole, {
+        jobId: validation.data.targetId,
+        companyId: companyId,
+        userId: userId,
+      }),
+    ]);
 
     if (calculateQuantities.error) {
       return json({
         error: "Failed to calculate job quantities",
+      });
+    }
+
+    if (calculateDependencies.error) {
+      return json({
+        error: "Failed to calculate job dependencies",
       });
     }
 
