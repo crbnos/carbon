@@ -1247,7 +1247,6 @@ serve(async (req: Request) => {
 
           // Process each sales order line
           for await (const purchaseOrderLine of purchaseOrderLines.data) {
-            console.log({ purchaseOrderLine });
             if (
               !purchaseOrderLine.itemId ||
               !purchaseOrderLine.purchaseQuantity ||
@@ -1475,7 +1474,6 @@ serve(async (req: Request) => {
 
           // Process each sales order line
           for await (const salesOrderLine of salesOrderLines.data) {
-            console.log({ salesOrderLine });
             if (
               !salesOrderLine.itemId ||
               !salesOrderLine.saleQuantity ||
