@@ -765,6 +765,21 @@ export async function getScrapReasons(
   return query;
 }
 
+export async function recalculateJobOperationDependencies(
+  client: SupabaseClient<Database>,
+  params: {
+    jobId: string; // job operation id
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("scheduler", {
+    body: {
+      type: "dependencies",
+      ...params,
+    },
+  });
+}
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
   params: {

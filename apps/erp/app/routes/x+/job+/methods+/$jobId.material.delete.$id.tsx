@@ -1,18 +1,25 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { deleteJobMaterial } from "~/modules/production";
+import {
+  deleteJobMaterial,
+  recalculateJobOperationDependencies,
+} from "~/modules/production";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "production",
   });
 
-  const { id } = params;
+  const { id, jobId } = params;
   if (!id) {
     throw new Error("id not found");
+  }
+
+  if (!jobId) {
+    throw new Error("jobId not found");
   }
 
   const deleteMaterial = await deleteJobMaterial(client, id);
@@ -25,6 +32,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(deleteMaterial.error, "Failed to delete job material")
       )
+    );
+  }
+
+  const recalculateResult = await recalculateJobOperationDependencies(
+    getCarbonServiceRole(),
+    {
+      jobId,
+      companyId,
+      userId,
+    }
+  );
+
+  if (recalculateResult?.error) {
+    return json(
+      {
+        success: false,
+        error: "Failed to recalculate job operation dependencies",
+      },
+      { status: 400 }
     );
   }
 

@@ -17109,6 +17109,141 @@ export default {
         tags: ["shifts"],
       },
     },
+    "/jobOperationDependency": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.dependsOnId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationDependency",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationDependency"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationDependency",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationDependency"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.dependsOnId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationDependency"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.operationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.dependsOnId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationDependency.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationDependency",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationDependency"],
+      },
+    },
     "/purchaseOrderStatusHistory": {
       get: {
         parameters: [
@@ -59478,6 +59613,47 @@ export default {
       },
       type: "object",
     },
+    jobOperationDependency: {
+      required: [
+        "operationId",
+        "dependsOnId",
+        "jobId",
+        "companyId",
+        "createdAt",
+      ],
+      properties: {
+        operationId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        dependsOnId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseOrderStatusHistory: {
       required: ["id", "purchaseOrderId", "status", "createdAt", "createdBy"],
       properties: {
@@ -82506,6 +82682,45 @@ export default {
     },
     "rowFilter.shifts.locationName": {
       name: "locationName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.jobOperationDependency": {
+      name: "jobOperationDependency",
+      description: "jobOperationDependency",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationDependency",
+      },
+    },
+    "rowFilter.jobOperationDependency.operationId": {
+      name: "operationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationDependency.dependsOnId": {
+      name: "dependsOnId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationDependency.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationDependency.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationDependency.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string",
