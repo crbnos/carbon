@@ -134,8 +134,6 @@ class SchedulingEngine {
       }
     }
 
-    console.log({ operationDependencies });
-
     await this.db
       .deleteFrom("jobOperationDependency")
       .where("jobId", "=", this.jobId)
