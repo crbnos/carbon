@@ -38,9 +38,11 @@ export default function AppIndexRoute() {
             }}
           />
         )} */}
-        {modules.map((module) => (
-          <ModuleCard key={module.name} module={module} />
-        ))}
+        {modules
+          .filter((mod) => mod.name !== "Settings")
+          .map((module) => (
+            <ModuleCard key={module.name} module={module} />
+          ))}
         <ModuleCard
           module={{
             name: "MES",

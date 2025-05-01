@@ -50,12 +50,12 @@ import { FaTasks } from "react-icons/fa";
 import { z } from "zod";
 import { Tags } from "~/components/Form";
 import { useTags } from "~/hooks/useTags";
-import { getPrivateUrl, path } from "~/utils/path";
 import {
   getDeadlineIcon,
   getDeadlineText,
 } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
+import { getPrivateUrl, path } from "~/utils/path";
 import { useKanban } from "../context/KanbanContext";
 import type { Item } from "../types";
 
@@ -84,7 +84,7 @@ const cardVariants = cva(
         Done: "",
         Paused: "",
         Canceled: "border-red-500/30",
-        Waiting: "",
+        Waiting: "opacity-50",
         Todo: "border-border",
       },
     },
