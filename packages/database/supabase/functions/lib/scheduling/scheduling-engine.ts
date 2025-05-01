@@ -157,6 +157,16 @@ class SchedulingEngine {
               }))
             )
             .execute();
+        } else {
+          // these don't get handled by the trigger because the trigger
+          // is only fired when a dependency is added
+          await this.db
+            .updateTable("jobOperation")
+            .set({
+              status: "Ready",
+            })
+            .where("id", "=", operationId)
+            .execute();
         }
       }
     }

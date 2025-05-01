@@ -3420,6 +3420,447 @@ export default {
         tags: ["scrapReason"],
       },
     },
+    "/jobOperationsWithDependencies": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.order",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationUnitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationSupplierProcessId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityReworked",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/jobOperationsWithDependencies",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["jobOperationsWithDependencies"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.jobOperationsWithDependencies",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["jobOperationsWithDependencies"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.order",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationUnitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationSupplierProcessId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityReworked",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationsWithDependencies"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.jobMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.order",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.processId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workCenterId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.setupUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineUnit",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationOrder",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.laborRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.overheadRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.machineRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationMinimumCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationLeadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationUnitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationSupplierProcessId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.workInstruction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.operationQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityScrapped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.quantityReworked",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.priority",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.dependencies",
+          },
+          {
+            $ref: "#/parameters/body.jobOperationsWithDependencies",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["jobOperationsWithDependencies"],
+      },
+    },
     "/purchaseInvoicePriceChange": {
       get: {
         parameters: [
@@ -47804,6 +48245,63 @@ export default {
         tags: ["(rpc) create_rfq_from_models_v2"],
       },
     },
+    "/rpc/check_operation_dependencies": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "operation_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) check_operation_dependencies"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                operation_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["operation_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) check_operation_dependencies"],
+      },
+    },
     "/rpc/get_companies_with_employee_permission": {
       get: {
         parameters: [
@@ -53254,6 +53752,240 @@ export default {
         },
         customFields: {
           format: "jsonb",
+        },
+      },
+      type: "object",
+    },
+    jobOperationsWithDependencies: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobMakeMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMakeMethod.id`.<fk table='jobMakeMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        order: {
+          format: "double precision",
+          type: "number",
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        setupTime: {
+          format: "numeric",
+          type: "number",
+        },
+        setupUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        laborTime: {
+          format: "numeric",
+          type: "number",
+        },
+        laborUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        machineTime: {
+          format: "numeric",
+          type: "number",
+        },
+        machineUnit: {
+          enum: [
+            "Hours/Piece",
+            "Hours/100 Pieces",
+            "Hours/1000 Pieces",
+            "Minutes/Piece",
+            "Minutes/100 Pieces",
+            "Minutes/1000 Pieces",
+            "Pieces/Hour",
+            "Pieces/Minute",
+            "Seconds/Piece",
+            "Total Hours",
+            "Total Minutes",
+          ],
+          format: "public.factor",
+          type: "string",
+        },
+        operationOrder: {
+          enum: ["After Previous", "With Previous"],
+          format: 'public."methodOperationOrder"',
+          type: "string",
+        },
+        laborRate: {
+          format: "numeric",
+          type: "number",
+        },
+        overheadRate: {
+          format: "numeric",
+          type: "number",
+        },
+        machineRate: {
+          format: "numeric",
+          type: "number",
+        },
+        operationType: {
+          enum: ["Inside", "Outside"],
+          format: 'public."operationType"',
+          type: "string",
+        },
+        operationMinimumCost: {
+          format: "numeric",
+          type: "number",
+        },
+        operationLeadTime: {
+          format: "numeric",
+          type: "number",
+        },
+        operationUnitCost: {
+          format: "numeric",
+          type: "number",
+        },
+        operationSupplierProcessId: {
+          format: "text",
+          type: "string",
+        },
+        workInstruction: {
+          format: "json",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        operationQuantity: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityComplete: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityScrapped: {
+          format: "numeric",
+          type: "number",
+        },
+        quantityReworked: {
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          enum: [
+            "Canceled",
+            "Done",
+            "In Progress",
+            "Paused",
+            "Ready",
+            "Todo",
+            "Waiting",
+          ],
+          format: 'public."jobOperationStatus"',
+          type: "string",
+        },
+        priority: {
+          format: "double precision",
+          type: "number",
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        procedureId: {
+          description:
+            "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        dependencies: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -75539,6 +76271,249 @@ export default {
     },
     "rowFilter.scrapReason.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.jobOperationsWithDependencies": {
+      name: "jobOperationsWithDependencies",
+      description: "jobOperationsWithDependencies",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/jobOperationsWithDependencies",
+      },
+    },
+    "rowFilter.jobOperationsWithDependencies.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.jobMakeMethodId": {
+      name: "jobMakeMethodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.order": {
+      name: "order",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.setupTime": {
+      name: "setupTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.setupUnit": {
+      name: "setupUnit",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.laborTime": {
+      name: "laborTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.laborUnit": {
+      name: "laborUnit",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.machineTime": {
+      name: "machineTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.machineUnit": {
+      name: "machineUnit",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationOrder": {
+      name: "operationOrder",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.laborRate": {
+      name: "laborRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.overheadRate": {
+      name: "overheadRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.machineRate": {
+      name: "machineRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationType": {
+      name: "operationType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationMinimumCost": {
+      name: "operationMinimumCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationLeadTime": {
+      name: "operationLeadTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationUnitCost": {
+      name: "operationUnitCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationSupplierProcessId": {
+      name: "operationSupplierProcessId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.workInstruction": {
+      name: "workInstruction",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.operationQuantity": {
+      name: "operationQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.quantityComplete": {
+      name: "quantityComplete",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.quantityScrapped": {
+      name: "quantityScrapped",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.quantityReworked": {
+      name: "quantityReworked",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.priority": {
+      name: "priority",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.procedureId": {
+      name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperationsWithDependencies.dependencies": {
+      name: "dependencies",
       required: false,
       in: "query",
       type: "string",
