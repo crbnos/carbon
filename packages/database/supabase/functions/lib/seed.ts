@@ -1529,6 +1529,29 @@ export const fiscalYearSettings: Omit<
   updatedBy: "system",
 };
 
+export const gaugeTypes = [
+  "Gauge Block",
+  "Caliper - Inside",
+  "Caliper - Outside",
+  "Caliper - Depth",
+  "Micrometer - Outside",
+  "Micrometer - Inside",
+  "Micrometer - Depth",
+  "Dial Indicator",
+  "Height Gauge",
+  "Thread Gauge",
+  "Pin Gauge",
+  "Ring Gauge",
+  "Plug Gauge",
+  "Bore Gauge",
+  "Feeler Gauge",
+  "Surface Plate",
+  "Go/No-Go Gauge",
+  "Profile Gauge",
+  "Coordinate Measuring Machine (CMM)",
+  "Optical Comparator",
+];
+
 function getDefaultAccount(key: string) {
   if (!(key in accountDefaults))
     throw new Error(`Account default not found for ${key}`);

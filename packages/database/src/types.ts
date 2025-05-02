@@ -5699,21 +5699,21 @@ export type Database = {
           feedback: string
           id: string
           location: string
-          userId: string
+          userId: string | null
         }
         Insert: {
           attachmentPath?: string | null
           feedback: string
           id?: string
           location: string
-          userId: string
+          userId?: string | null
         }
         Update: {
           attachmentPath?: string | null
           feedback?: string
           id?: string
           location?: string
-          userId?: string
+          userId?: string | null
         }
         Relationships: [
           {
@@ -6170,6 +6170,138 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "salesOrderLines"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      gaugeType: {
+        Row: {
+          companyId: string | null
+          createdAt: string
+          createdBy: string
+          customFields: Json
+          id: string
+          name: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId?: string | null
+          createdAt?: string
+          createdBy: string
+          customFields?: Json
+          id?: string
+          name: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string | null
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json
+          id?: string
+          name?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gaugeType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gaugeType_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gaugeType_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "gaugeType_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeType_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
@@ -14252,6 +14384,7 @@ export type Database = {
           companyId: string | null
           createdAt: string
           createdBy: string
+          customFields: Json
           id: string
           name: string
           updatedAt: string | null
@@ -14261,6 +14394,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy: string
+          customFields?: Json
           id?: string
           name: string
           updatedAt?: string | null
@@ -14270,6 +14404,7 @@ export type Database = {
           companyId?: string | null
           createdAt?: string
           createdBy?: string
+          customFields?: Json
           id?: string
           name?: string
           updatedAt?: string | null

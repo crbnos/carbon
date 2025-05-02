@@ -282,6 +282,7 @@ export const path = {
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
     bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
     bulkUpdateSupplierQuote: `${x}/supplier-quote/update`,
+    calibrations: `${x}/quality/calibrations`,
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -419,6 +420,8 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/delete/${id}`),
     deleteEmployeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/delete/${id}`),
+    deleteGaugeType: (id: string) =>
+      generatePath(`${x}/quality/gauge-types/delete/${id}`),
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
@@ -563,6 +566,9 @@ export const path = {
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
     forgotPassword: "/forgot-password",
+    gauges: `${x}/quality/gauges`,
+    gaugeTypes: `${x}/quality/gauge-types`,
+    gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
     groups: `${x}/users/groups`,
     holiday: (id: string) => generatePath(`${x}/people/holidays/${id}`),
@@ -719,6 +725,7 @@ export const path = {
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
       generatePath(`${x}/fixture/${id}/purchasing/new`),
+    newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
     newJob: `${x}/job/new`,

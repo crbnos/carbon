@@ -9,6 +9,7 @@ import {
   currencies,
   customerStatuses,
   fiscalYearSettings,
+  gaugeTypes,
   groupCompanyTemplate,
   groups,
   nonConformanceTypes,
@@ -177,6 +178,13 @@ serve(async (req: Request) => {
         .execute();
 
       await trx
+        .insertInto("gaugeType")
+        .values(
+          gaugeTypes.map((gt) => ({ name: gt, companyId, createdBy: "system" }))
+        )
+        .execute();
+
+      await trx
         .insertInto("nonConformanceType")
         .values(nonConformanceTypes.map((nc) => ({ ...nc, companyId })))
         .execute();
@@ -251,7 +259,6 @@ serve(async (req: Request) => {
         .insertInto("fiscalYearSettings")
         .values([{ ...fiscalYearSettings, companyId }])
         .execute();
-
 
       const user = await client
         .from("userPermission")
