@@ -54,6 +54,11 @@ export const nonConformanceAssociationType = [
   "trackedEntities",
 ] as const;
 
+export const gaugeTypeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+});
+
 export const nonConformanceAssociationValidator = z
   .object({
     type: z.enum(nonConformanceAssociationType),

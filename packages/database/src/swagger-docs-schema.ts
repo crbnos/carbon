@@ -27210,6 +27210,168 @@ export default {
         tags: ["jobOperationAttributeRecord"],
       },
     },
+    "/gaugeType": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/gaugeType",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["gaugeType"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.gaugeType",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["gaugeType"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gaugeType"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.name",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeType.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.gaugeType",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gaugeType"],
+      },
+    },
     "/receiptLine": {
       get: {
         parameters: [
@@ -33193,6 +33355,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceType.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceType.customFields",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33273,6 +33438,9 @@ export default {
             $ref: "#/parameters/rowFilter.nonConformanceType.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.nonConformanceType.customFields",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33305,6 +33473,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.nonConformanceType.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.nonConformanceType.customFields",
           },
           {
             $ref: "#/parameters/body.nonConformanceType",
@@ -63927,7 +64098,7 @@ export default {
       type: "object",
     },
     feedback: {
-      required: ["id", "location", "userId", "feedback"],
+      required: ["id", "location", "feedback"],
       properties: {
         id: {
           default: "public.xid()",
@@ -64655,6 +64826,52 @@ export default {
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    gaugeType: {
+      required: ["id", "name", "customFields", "createdAt", "createdBy"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        name: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "json",
         },
         createdAt: {
           default: "now()",
@@ -67510,7 +67727,7 @@ export default {
       type: "object",
     },
     nonConformanceType: {
-      required: ["id", "name", "createdAt", "createdBy"],
+      required: ["id", "name", "createdAt", "createdBy", "customFields"],
       properties: {
         id: {
           default: "public.xid()",
@@ -67548,6 +67765,9 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
+        },
+        customFields: {
+          format: "json",
         },
       },
       type: "object",
@@ -88533,6 +88753,63 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.gaugeType": {
+      name: "gaugeType",
+      description: "gaugeType",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/gaugeType",
+      },
+    },
+    "rowFilter.gaugeType.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeType.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.receiptLine": {
       name: "receiptLine",
       description: "receiptLine",
@@ -91823,6 +92100,12 @@ export default {
     },
     "rowFilter.nonConformanceType.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.nonConformanceType.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string",

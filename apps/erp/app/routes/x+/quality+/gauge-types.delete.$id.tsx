@@ -5,10 +5,7 @@ import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteNonConformanceType,
-  getNonConformanceType,
-} from "~/modules/quality";
+import { deleteGaugeType, getGaugeType } from "~/modules/quality";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -19,18 +16,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getNonConformanceType(client, id);
-  if (nonConformanceType.error) {
+  const gaugeType = await getGaugeType(client, id);
+  if (gaugeType.error) {
     throw redirect(
-      `${path.to.nonConformanceTypes}?${getParams(request)}`,
-      await flash(
-        request,
-        error(nonConformanceType.error, "Failed to get non-conformance type")
-      )
+      `${path.to.gaugeTypes}?${getParams(request)}`,
+      await flash(request, error(gaugeType.error, "Failed to get gauge type"))
     );
   }
 
-  return json({ nonConformanceType: nonConformanceType.data });
+  return json({ gaugeType: gaugeType.data });
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -42,24 +36,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) {
     throw redirect(
       `${path.to.nonConformanceTypes}?${getParams(request)}`,
-      await flash(
-        request,
-        error(params, "Failed to get an non-conformance type id")
-      )
+      await flash(request, error(params, "Failed to get an gauge id"))
     );
   }
 
-  const { error: deleteNonConformanceTypeError } =
-    await deleteNonConformanceType(client, id);
-  if (deleteNonConformanceTypeError) {
+  const { error: deleteGaugeTypeError } = await deleteGaugeType(client, id);
+  if (deleteGaugeTypeError) {
     const errorMessage =
-      deleteNonConformanceTypeError.code === "23503"
-        ? "Non-conformance type is used elsewhere, cannot delete"
-        : "Failed to delete non-conformance type";
+      deleteGaugeTypeError.code === "23503"
+        ? "Gauge type is used elsewhere, cannot delete"
+        : "Failed to delete gauge type";
 
     throw redirect(
       `${path.to.nonConformanceTypes}?${getParams(request)}`,
-      await flash(request, error(deleteNonConformanceTypeError, errorMessage))
+      await flash(request, error(deleteGaugeTypeError, errorMessage))
     );
   }
 
@@ -69,20 +59,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export default function DeleteNonConformanceTypesRoute() {
+export default function DeleteGaugeTypesRoute() {
   const { id } = useParams();
-  const { nonConformanceType } = useLoaderData<typeof loader>();
+  const { gaugeType } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  if (!nonConformanceType) return null;
+  if (!gaugeType) return null;
   if (!id) throw notFound("id not found");
 
-  const onCancel = () => navigate(path.to.nonConformanceTypes);
+  const onCancel = () => navigate(path.to.gaugeTypes);
   return (
     <ConfirmDelete
-      action={path.to.deleteNonConformanceType(id)}
-      name={nonConformanceType.name}
-      text={`Are you sure you want to delete the non-conformance type: ${nonConformanceType.name}? This cannot be undone.`}
+      action={path.to.deleteGaugeType(id)}
+      name={gaugeType.name}
+      text={`Are you sure you want to delete the gauge type: ${gaugeType.name}? This cannot be undone.`}
       onCancel={onCancel}
     />
   );

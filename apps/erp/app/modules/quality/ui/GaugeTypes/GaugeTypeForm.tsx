@@ -19,21 +19,21 @@ import type { z } from "zod";
 import { CustomFormFields, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { nonConformanceTypeValidator } from "../../quality.models";
+import { gaugeTypeValidator } from "../../quality.models";
 
-type NonConformanceTypeFormProps = {
-  initialValues: z.infer<typeof nonConformanceTypeValidator>;
+type GaugeTypeFormProps = {
+  initialValues: z.infer<typeof gaugeTypeValidator>;
   type?: "modal" | "drawer";
   open?: boolean;
   onClose: () => void;
 };
 
-const NonConformanceTypeForm = ({
+const GaugeTypeForm = ({
   initialValues,
   open = true,
   type = "drawer",
   onClose,
-}: NonConformanceTypeFormProps) => {
+}: GaugeTypeFormProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<PostgrestResponse<{ id: string }>>();
 
@@ -42,11 +42,9 @@ const NonConformanceTypeForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      toast.success(`Created non conformance type`);
+      toast.success(`Created gauge type`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
-      toast.error(
-        `Failed to create non conformance type: ${fetcher.data.error.message}`
-      );
+      toast.error(`Failed to create gauge type: ${fetcher.data.error.message}`);
     }
   }, [fetcher.data, fetcher.state, onClose, type]);
 
@@ -65,12 +63,12 @@ const NonConformanceTypeForm = ({
       >
         <ModalDrawerContent>
           <ValidatedForm
-            validator={nonConformanceTypeValidator}
+            validator={gaugeTypeValidator}
             method="post"
             action={
               isEditing
-                ? path.to.nonConformanceType(initialValues.id!)
-                : path.to.newNonConformanceType
+                ? path.to.gaugeType(initialValues.id!)
+                : path.to.newGaugeType
             }
             defaultValues={initialValues}
             fetcher={fetcher}
@@ -78,15 +76,15 @@ const NonConformanceTypeForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? "Edit" : "New"} Non Conformance Type
+                {isEditing ? "Edit" : "New"} Gauge Type
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="type" value={type} />
               <VStack spacing={4}>
-                <Input name="name" label="Non Conformance Type" />
-                <CustomFormFields table="nonConformanceType" />
+                <Input name="name" label="Gauge Type" />
+                <CustomFormFields table="gaugeType" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -104,4 +102,4 @@ const NonConformanceTypeForm = ({
   );
 };
 
-export default NonConformanceTypeForm;
+export default GaugeTypeForm;

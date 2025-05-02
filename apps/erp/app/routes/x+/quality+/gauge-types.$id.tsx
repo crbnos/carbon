@@ -6,11 +6,11 @@ import { useLoaderData, useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import {
-  getNonConformanceType,
-  nonConformanceTypeValidator,
-  upsertNonConformanceType,
+  gaugeTypeValidator,
+  getGaugeType,
+  upsertGaugeType,
 } from "~/modules/quality";
-import NonConformanceTypeForm from "~/modules/quality/ui/NonConformanceTypes/NonConformanceTypeForm";
+import GaugeTypeForm from "~/modules/quality/ui/GaugeTypes/GaugeTypeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -23,20 +23,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const nonConformanceType = await getNonConformanceType(client, id);
+  const gaugeType = await getGaugeType(client, id);
 
-  if (nonConformanceType.error) {
+  if (gaugeType.error) {
     throw redirect(
-      path.to.nonConformanceTypes,
-      await flash(
-        request,
-        error(nonConformanceType.error, "Failed to get non-conformance type")
-      )
+      path.to.gaugeTypes,
+      await flash(request, error(gaugeType.error, "Failed to get gauge type"))
     );
   }
 
   return json({
-    nonConformanceType: nonConformanceType.data,
+    gaugeType: gaugeType.data,
   });
 }
 
@@ -47,9 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(nonConformanceTypeValidator).validate(
-    formData
-  );
+  const validation = await validator(gaugeTypeValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -58,44 +53,41 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...data } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateNonConformanceType = await upsertNonConformanceType(client, {
+  const updateGaugeType = await upsertGaugeType(client, {
     id,
     ...data,
-    customFields: setCustomFields(formData),
     updatedBy: userId,
+    customFields: setCustomFields(formData),
   });
 
-  if (updateNonConformanceType.error) {
+  if (updateGaugeType.error) {
     return json(
       {},
       await flash(
         request,
-        error(
-          updateNonConformanceType.error,
-          "Failed to update non-conformance type"
-        )
+        error(updateGaugeType.error, "Failed to update gauge type")
       )
     );
   }
 
   throw redirect(
-    path.to.nonConformanceTypes,
-    await flash(request, success("Updated non-conformance type"))
+    path.to.gaugeTypes,
+    await flash(request, success("Updated gauge type"))
   );
 }
 
-export default function EditNonConformanceTypeRoute() {
-  const { nonConformanceType } = useLoaderData<typeof loader>();
+export default function EditGaugeTypeRoute() {
+  const { gaugeType } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   const initialValues = {
-    id: nonConformanceType.id ?? undefined,
-    name: nonConformanceType.name ?? "",
-    ...getCustomFields(nonConformanceType.customFields),
+    id: gaugeType.id ?? undefined,
+    name: gaugeType.name ?? "",
+    ...getCustomFields(gaugeType.customFields),
   };
 
   return (
-    <NonConformanceTypeForm
+    <GaugeTypeForm
       key={initialValues.id}
       initialValues={initialValues}
       onClose={() => navigate(-1)}

@@ -5,11 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import {
-  nonConformanceTypeValidator,
-  upsertNonConformanceType,
-} from "~/modules/quality";
-import NonConformanceTypeForm from "~/modules/quality/ui/NonConformanceTypes/NonConformanceTypeForm";
+import { gaugeTypeValidator, upsertGaugeType } from "~/modules/quality";
+import GaugeTypeForm from "~/modules/quality/ui/GaugeTypes/GaugeTypeForm";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -30,9 +27,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const modal = formData.get("type") === "modal";
 
-  const validation = await validator(nonConformanceTypeValidator).validate(
-    formData
-  );
+  const validation = await validator(gaugeTypeValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -40,32 +35,29 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const insertNonConformanceType = await upsertNonConformanceType(client, {
+  const insertGaugeType = await upsertGaugeType(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (insertNonConformanceType.error) {
+  if (insertGaugeType.error) {
     return modal
-      ? json(insertNonConformanceType)
+      ? json(insertGaugeType)
       : redirect(
           requestReferrer(request) ??
-            `${path.to.nonConformanceTypes}?${getParams(request)}`,
+            `${path.to.gaugeTypes}?${getParams(request)}`,
           await flash(
             request,
-            error(
-              insertNonConformanceType.error,
-              "Failed to insert non-conformance type"
-            )
+            error(insertGaugeType.error, "Failed to insert gauge type")
           )
         );
   }
 
   return modal
-    ? json(insertNonConformanceType)
+    ? json(insertGaugeType)
     : redirect(
-        `${path.to.nonConformanceTypes}?${getParams(request)}`,
+        `${path.to.gaugeTypes}?${getParams(request)}`,
         await flash(request, success("Non-conformance type created"))
       );
 }
@@ -77,9 +69,6 @@ export default function NewCustomerStatusesRoute() {
   };
 
   return (
-    <NonConformanceTypeForm
-      initialValues={initialValues}
-      onClose={() => navigate(-1)}
-    />
+    <GaugeTypeForm initialValues={initialValues} onClose={() => navigate(-1)} />
   );
 }

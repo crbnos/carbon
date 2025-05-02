@@ -6,6 +6,7 @@ import { LuOctagonX, LuPencil, LuTrash } from "react-icons/lu";
 import { Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { NonConformanceType } from "../../types";
 
@@ -19,6 +20,9 @@ const NonConformanceTypesTable = memo(
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
+
+    const customColumns =
+      useCustomColumns<NonConformanceType>("nonConformanceType");
 
     const columns = useMemo<ColumnDef<NonConformanceType>[]>(() => {
       const defaultColumns: ColumnDef<NonConformanceType>[] = [
@@ -35,8 +39,8 @@ const NonConformanceTypesTable = memo(
           },
         },
       ];
-      return [...defaultColumns];
-    }, []);
+      return [...defaultColumns, ...customColumns];
+    }, [customColumns]);
 
     const renderContextMenu = useCallback(
       (row: NonConformanceType) => {
@@ -78,7 +82,7 @@ const NonConformanceTypesTable = memo(
         columns={columns}
         count={count}
         primaryAction={
-          permissions.can("create", "sales") && (
+          permissions.can("create", "quality") && (
             <New
               label="Non-Conformance Type"
               to={`${path.to.newNonConformanceType}?${params.toString()}`}
