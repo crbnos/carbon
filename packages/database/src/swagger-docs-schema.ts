@@ -7449,6 +7449,294 @@ export default {
         tags: ["jobMaterialWithMakeMethodId"],
       },
     },
+    "/gauges": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauges.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/gauges",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["gauges"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.gauges",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["gauges"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauges.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gauges"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauges.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.gaugeCalibrationStatusWithDueDate",
+          },
+          {
+            $ref: "#/parameters/body.gauges",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gauges"],
+      },
+    },
     "/currencyCode": {
       get: {
         parameters: [
@@ -45693,6 +45981,285 @@ export default {
         tags: ["workCenter"],
       },
     },
+    "/gauge": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauge.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/gauge",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["gauge"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.gauge",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["gauge"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauge.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gauge"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gauge.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.supplierId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.modelNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.serialNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.description",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.dateAcquired",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeCalibrationStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.nextCalibrationDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.gauge",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gauge"],
+      },
+    },
     "/supplierProcess": {
       get: {
         parameters: [
@@ -55655,7 +56222,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55704,7 +56271,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -55866,6 +56433,117 @@ export default {
         jobMaterialMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    gauges: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeId: {
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelNumber: {
+          format: "text",
+          type: "string",
+        },
+        serialNumber: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        dateAcquired: {
+          format: "date",
+          type: "string",
+        },
+        gaugeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeCalibrationStatus: {
+          enum: ["Pending", "In-Calibration", "Out-of-Calibration"],
+          format: 'public."gaugeCalibrationStatus"',
+          type: "string",
+        },
+        gaugeStatus: {
+          enum: ["Active", "Inactive"],
+          format: 'public."gaugeStatus"',
+          type: "string",
+        },
+        gaugeRole: {
+          enum: ["Master", "Standard"],
+          format: 'public."gaugeRole"',
+          type: "string",
+        },
+        lastCalibrationDate: {
+          format: "date",
+          type: "string",
+        },
+        nextCalibrationDate: {
+          format: "date",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "json",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeCalibrationStatusWithDueDate: {
+          enum: ["Pending", "In-Calibration", "Out-of-Calibration"],
+          format: 'public."gaugeCalibrationStatus"',
           type: "string",
         },
       },
@@ -73844,6 +74522,128 @@ export default {
       },
       type: "object",
     },
+    gauge: {
+      required: [
+        "id",
+        "gaugeId",
+        "gaugeTypeId",
+        "gaugeCalibrationStatus",
+        "gaugeStatus",
+        "gaugeRole",
+        "customFields",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeId: {
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelNumber: {
+          format: "text",
+          type: "string",
+        },
+        serialNumber: {
+          format: "text",
+          type: "string",
+        },
+        description: {
+          format: "text",
+          type: "string",
+        },
+        dateAcquired: {
+          format: "date",
+          type: "string",
+        },
+        gaugeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeCalibrationStatus: {
+          default: "Pending",
+          enum: ["Pending", "In-Calibration", "Out-of-Calibration"],
+          format: 'public."gaugeCalibrationStatus"',
+          type: "string",
+        },
+        gaugeStatus: {
+          default: "Active",
+          enum: ["Active", "Inactive"],
+          format: 'public."gaugeStatus"',
+          type: "string",
+        },
+        gaugeRole: {
+          default: "Standard",
+          enum: ["Master", "Standard"],
+          format: 'public."gaugeRole"',
+          type: "string",
+        },
+        lastCalibrationDate: {
+          format: "date",
+          type: "string",
+        },
+        nextCalibrationDate: {
+          format: "date",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "json",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     supplierProcess: {
       required: [
         "id",
@@ -78642,6 +79442,147 @@ export default {
     },
     "rowFilter.jobMaterialWithMakeMethodId.jobMaterialMakeMethodId": {
       name: "jobMaterialMakeMethodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.gauges": {
+      name: "gauges",
+      description: "gauges",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/gauges",
+      },
+    },
+    "rowFilter.gauges.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.modelNumber": {
+      name: "modelNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.serialNumber": {
+      name: "serialNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.dateAcquired": {
+      name: "dateAcquired",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeTypeId": {
+      name: "gaugeTypeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeCalibrationStatus": {
+      name: "gaugeCalibrationStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeStatus": {
+      name: "gaugeStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeRole": {
+      name: "gaugeRole",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.lastCalibrationDate": {
+      name: "lastCalibrationDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.nextCalibrationDate": {
+      name: "nextCalibrationDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.gaugeCalibrationStatusWithDueDate": {
+      name: "gaugeCalibrationStatusWithDueDate",
       required: false,
       in: "query",
       type: "string",
@@ -98898,6 +99839,141 @@ export default {
     },
     "rowFilter.workCenter.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.gauge": {
+      name: "gauge",
+      description: "gauge",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/gauge",
+      },
+    },
+    "rowFilter.gauge.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.modelNumber": {
+      name: "modelNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.serialNumber": {
+      name: "serialNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.dateAcquired": {
+      name: "dateAcquired",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.gaugeTypeId": {
+      name: "gaugeTypeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.gaugeCalibrationStatus": {
+      name: "gaugeCalibrationStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.gaugeStatus": {
+      name: "gaugeStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.gaugeRole": {
+      name: "gaugeRole",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.lastCalibrationDate": {
+      name: "lastCalibrationDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.nextCalibrationDate": {
+      name: "nextCalibrationDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",

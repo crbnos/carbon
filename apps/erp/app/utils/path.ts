@@ -420,6 +420,7 @@ export const path = {
       generatePath(`${x}/resources/ability/${abilityId}/employee/delete/${id}`),
     deleteEmployeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/delete/${id}`),
+    deleteGauge: (id: string) => generatePath(`${x}/gauge/delete/${id}`),
     deleteGaugeType: (id: string) =>
       generatePath(`${x}/quality/gauge-types/delete/${id}`),
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
@@ -566,6 +567,7 @@ export const path = {
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
     forgotPassword: "/forgot-password",
+    gauge: (id: string) => generatePath(`${x}/gauge/${id}`),
     gauges: `${x}/quality/gauges`,
     gaugeTypes: `${x}/quality/gauge-types`,
     gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),
@@ -725,6 +727,7 @@ export const path = {
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
       generatePath(`${x}/fixture/${id}/purchasing/new`),
+    newGauge: `${x}/gauge/new`,
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,

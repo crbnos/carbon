@@ -1759,6 +1759,13 @@ export const sequences = [
     step: 1,
   },
   {
+    table: "gauge",
+    name: "Gauge",
+    prefix: "G",
+    suffix: null,
+    next: 0,
+  },
+  {
     table: "nonConformance",
     name: "Non-Conformance",
     prefix: "NCR",
