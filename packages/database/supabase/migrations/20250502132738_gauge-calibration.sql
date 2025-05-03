@@ -98,3 +98,84 @@ SELECT
 FROM 
   "company" c,
   nc_types;
+
+
+CREATE TYPE "gaugeStatus" AS ENUM (
+  'Active',
+  'Inactive'
+);
+
+
+CREATE TYPE "gaugeRole" AS ENUM (
+  'Master',
+  'Standard'
+);
+
+CREATE TYPE "gaugeCalibrationStatus" AS ENUM (
+  'Pending',
+  'In-Calibration',
+  'Out-of-Calibration'
+);
+
+
+CREATE TABLE "gauge" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "gaugeId" TEXT NOT NULL,
+  "supplierId" TEXT,
+  "modelNumber" TEXT,
+  "serialNumber" TEXT,
+  "description" TEXT,
+  "dateAcquired" DATE,
+  "gaugeTypeId" TEXT NOT NULL,
+  "gaugeCalibrationStatus" "gaugeCalibrationStatus" NOT NULL DEFAULT 'Pending',
+  "gaugeStatus" "gaugeStatus" NOT NULL DEFAULT 'Active',
+  "gaugeRole" "gaugeRole" NOT NULL DEFAULT 'Standard',
+  "lastCalibrationDate" DATE,
+  "nextCalibrationDate" DATE,
+  "locationId" TEXT,
+  "shelfId" TEXT,
+  "companyId" TEXT,
+  "customFields" JSON NOT NULL DEFAULT '{}',
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "gauge_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "gauge_gaugeId_unique" UNIQUE ("gaugeId", "companyId"),
+  CONSTRAINT "gauge_supplierId_fkey" FOREIGN KEY ("supplierId") REFERENCES "supplier"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gauge_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gauge_gaugeTypeId_fkey" FOREIGN KEY ("gaugeTypeId") REFERENCES "gaugeType"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gauge_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gauge_shelfId_fkey" FOREIGN KEY ("shelfId") REFERENCES "shelf"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gauge_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "gauge_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "gauge_companyId_idx" ON "gauge" ("companyId");
+CREATE INDEX "gauge_gaugeTypeId_idx" ON "gauge" ("gaugeTypeId");
+CREATE INDEX "gauge_locationId_idx" ON "gauge" ("locationId");
+CREATE INDEX "gauge_shelfId_idx" ON "gauge" ("shelfId");
+
+CREATE OR REPLACE VIEW "gauges" WITH(SECURITY_INVOKER=true) AS
+ SELECT
+  g.*,
+   CASE 
+    WHEN g."gaugeStatus" = 'Inactive' THEN 'Out-of-Calibration'
+    WHEN g."nextCalibrationDate" IS NOT NULL AND g."nextCalibrationDate" < CURRENT_DATE THEN 'Out-of-Calibration'
+    ELSE g."gaugeCalibrationStatus"
+  END as "gaugeCalibrationStatusWithDueDate"
+FROM "gauge" g;
+
+
+INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")
+SELECT 
+  'gauge',
+  'Gauge',
+  'G',
+  NULL,
+  0,
+  6,
+  1,
+  "id"
+FROM "company";

@@ -6,12 +6,20 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   gaugeTypeValidator,
+  gaugeValidator,
   nonConformanceReviewerValidator,
   nonConformanceStatus,
   nonConformanceTypeValidator,
   nonConformanceValidator,
   nonConformanceWorkflowValidator,
 } from "./quality.models";
+
+export async function deleteGauge(
+  client: SupabaseClient<Database>,
+  gaugeId: string
+) {
+  return client.from("gauges").delete().eq("id", gaugeId);
+}
 
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
@@ -96,6 +104,38 @@ export async function deleteNonConformanceWorkflow(
     .from("nonConformanceWorkflow")
     .update({ active: false })
     .eq("id", nonConformanceWorkflowId);
+}
+
+export async function getGauge(
+  client: SupabaseClient<Database>,
+  gaugeId: string
+) {
+  return client.from("gauges").select("*").eq("id", gaugeId).single();
+}
+
+export async function getGauges(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("gauges")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search},modelNumber.ilike.%${args.search},serialNumber.ilike.%${args.search}`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "gaugeId", ascending: false },
+    ]);
+  }
+
+  return query;
 }
 
 export async function getGaugeTypesList(
@@ -592,6 +632,29 @@ export async function updateNonConformanceTaskStatus(
     .from(table)
     .update({ status, updatedBy: userId, assignee: finalAssignee })
     .eq("id", id);
+}
+
+export async function upsertGauge(
+  client: SupabaseClient<Database>,
+  gauge:
+    | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
+        gaugeId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
+        id: string;
+        gaugeId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in gauge) {
+    return client.from("gauges").insert([gauge]).select("id").single();
+  } else {
+    return client.from("gauges").update(sanitize(gauge)).eq("id", gauge.id);
+  }
 }
 
 export async function upsertGaugeType(

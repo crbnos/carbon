@@ -6173,6 +6173,233 @@ export type Database = {
           },
         ]
       }
+      gauge: {
+        Row: {
+          companyId: string | null
+          createdAt: string
+          createdBy: string
+          customFields: Json
+          dateAcquired: string | null
+          description: string | null
+          gaugeCalibrationStatus: Database["public"]["Enums"]["gaugeCalibrationStatus"]
+          gaugeId: string
+          gaugeRole: Database["public"]["Enums"]["gaugeRole"]
+          gaugeStatus: Database["public"]["Enums"]["gaugeStatus"]
+          gaugeTypeId: string
+          id: string
+          lastCalibrationDate: string | null
+          locationId: string | null
+          modelNumber: string | null
+          nextCalibrationDate: string | null
+          serialNumber: string | null
+          shelfId: string | null
+          supplierId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId?: string | null
+          createdAt?: string
+          createdBy: string
+          customFields?: Json
+          dateAcquired?: string | null
+          description?: string | null
+          gaugeCalibrationStatus?: Database["public"]["Enums"]["gaugeCalibrationStatus"]
+          gaugeId: string
+          gaugeRole?: Database["public"]["Enums"]["gaugeRole"]
+          gaugeStatus?: Database["public"]["Enums"]["gaugeStatus"]
+          gaugeTypeId: string
+          id?: string
+          lastCalibrationDate?: string | null
+          locationId?: string | null
+          modelNumber?: string | null
+          nextCalibrationDate?: string | null
+          serialNumber?: string | null
+          shelfId?: string | null
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string | null
+          createdAt?: string
+          createdBy?: string
+          customFields?: Json
+          dateAcquired?: string | null
+          description?: string | null
+          gaugeCalibrationStatus?: Database["public"]["Enums"]["gaugeCalibrationStatus"]
+          gaugeId?: string
+          gaugeRole?: Database["public"]["Enums"]["gaugeRole"]
+          gaugeStatus?: Database["public"]["Enums"]["gaugeStatus"]
+          gaugeTypeId?: string
+          id?: string
+          lastCalibrationDate?: string | null
+          locationId?: string | null
+          modelNumber?: string | null
+          nextCalibrationDate?: string | null
+          serialNumber?: string | null
+          shelfId?: string | null
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "gauge_gaugeTypeId_fkey"
+            columns: ["gaugeTypeId"]
+            isOneToOne: false
+            referencedRelation: "gaugeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       gaugeType: {
         Row: {
           companyId: string | null
@@ -32533,6 +32760,244 @@ export type Database = {
           },
         ]
       }
+      gauges: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          dateAcquired: string | null
+          description: string | null
+          gaugeCalibrationStatus:
+            | Database["public"]["Enums"]["gaugeCalibrationStatus"]
+            | null
+          gaugeCalibrationStatusWithDueDate:
+            | Database["public"]["Enums"]["gaugeCalibrationStatus"]
+            | null
+          gaugeId: string | null
+          gaugeRole: Database["public"]["Enums"]["gaugeRole"] | null
+          gaugeStatus: Database["public"]["Enums"]["gaugeStatus"] | null
+          gaugeTypeId: string | null
+          id: string | null
+          lastCalibrationDate: string | null
+          locationId: string | null
+          modelNumber: string | null
+          nextCalibrationDate: string | null
+          serialNumber: string | null
+          shelfId: string | null
+          supplierId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId?: string | null
+          createdAt?: string | null
+          createdBy?: string | null
+          customFields?: Json | null
+          dateAcquired?: string | null
+          description?: string | null
+          gaugeCalibrationStatus?:
+            | Database["public"]["Enums"]["gaugeCalibrationStatus"]
+            | null
+          gaugeCalibrationStatusWithDueDate?: never
+          gaugeId?: string | null
+          gaugeRole?: Database["public"]["Enums"]["gaugeRole"] | null
+          gaugeStatus?: Database["public"]["Enums"]["gaugeStatus"] | null
+          gaugeTypeId?: string | null
+          id?: string | null
+          lastCalibrationDate?: string | null
+          locationId?: string | null
+          modelNumber?: string | null
+          nextCalibrationDate?: string | null
+          serialNumber?: string | null
+          shelfId?: string | null
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string | null
+          createdAt?: string | null
+          createdBy?: string | null
+          customFields?: Json | null
+          dateAcquired?: string | null
+          description?: string | null
+          gaugeCalibrationStatus?:
+            | Database["public"]["Enums"]["gaugeCalibrationStatus"]
+            | null
+          gaugeCalibrationStatusWithDueDate?: never
+          gaugeId?: string | null
+          gaugeRole?: Database["public"]["Enums"]["gaugeRole"] | null
+          gaugeStatus?: Database["public"]["Enums"]["gaugeStatus"] | null
+          gaugeTypeId?: string | null
+          id?: string | null
+          lastCalibrationDate?: string | null
+          locationId?: string | null
+          modelNumber?: string | null
+          nextCalibrationDate?: string | null
+          serialNumber?: string | null
+          shelfId?: string | null
+          supplierId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gauge_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "gauge_gaugeTypeId_fkey"
+            columns: ["gaugeTypeId"]
+            isOneToOne: false
+            referencedRelation: "gaugeType"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_shelfId_fkey"
+            columns: ["shelfId"]
+            isOneToOne: false
+            referencedRelation: "shelf"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gauge_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       groupMembers: {
         Row: {
           companyId: string | null
@@ -35457,14 +35922,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -37552,14 +38017,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -40652,6 +41117,12 @@ export type Database = {
         | "Total Hours"
         | "Total Minutes"
       fulfillmentType: "Inventory" | "Job"
+      gaugeCalibrationStatus:
+        | "Pending"
+        | "In-Calibration"
+        | "Out-of-Calibration"
+      gaugeRole: "Master" | "Standard"
+      gaugeStatus: "Active" | "Inactive"
       glAccountCategory:
         | "Bank"
         | "Accounts Receivable"

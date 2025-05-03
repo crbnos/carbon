@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
+  getGauges,
   getGaugeTypes,
   getNonConformance,
   getNonConformanceActionTasks,
@@ -10,6 +11,10 @@ import type {
   getNonConformanceTypes,
   getNonConformanceWorkflow,
 } from "./quality.service";
+
+export type Gauge = NonNullable<
+  Awaited<ReturnType<typeof getGauges>>["data"]
+>[number];
 
 export type GaugeType = NonNullable<
   Awaited<ReturnType<typeof getGaugeTypes>>["data"]

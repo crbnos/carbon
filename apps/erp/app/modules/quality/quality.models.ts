@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
+export const gaugeStatus = ["Active", "Inactive"] as const;
+export const gaugeCalibrationStatus = [
+  "Pending",
+  "In-Calibration",
+  "Out-of-Calibration",
+] as const;
+export const gaugeRole = ["Master", "Standard"] as const;
+
 export const nonConformanceInvestigationType = [
   "Root Cause Analysis",
   "Inventory",
@@ -53,6 +61,24 @@ export const nonConformanceAssociationType = [
   "receiptLines",
   "trackedEntities",
 ] as const;
+
+export const gaugeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  gaugeId: zfd.text(z.string().optional()),
+  supplierId: zfd.text(z.string().optional()),
+  modelNumber: zfd.text(z.string().optional()),
+  serialNumber: zfd.text(z.string().optional()),
+  description: zfd.text(z.string().optional()),
+  dateAcquired: zfd.text(z.string().optional()),
+  gaugeTypeId: z.string().min(1, { message: "Type is required" }),
+  // gaugeCalibrationStatus: z.enum(gaugeCalibrationStatus),
+  // gaugeStatus: z.enum(gaugeStatus),
+  gaugeRole: z.enum(gaugeRole),
+  lastCalibrationDate: zfd.text(z.string().optional()),
+  nextCalibrationDate: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  shelfId: zfd.text(z.string().optional()),
+});
 
 export const gaugeTypeValidator = z.object({
   id: zfd.text(z.string().optional()),
