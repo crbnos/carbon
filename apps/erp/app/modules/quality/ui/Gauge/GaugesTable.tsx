@@ -17,7 +17,7 @@ import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 
 import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import type { Gauge } from "../../types";
@@ -28,7 +28,7 @@ import { useLocations } from "~/components/Form/Location";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores/suppliers";
 import { gaugeRole, gaugeStatus } from "../../quality.models";
-import { GaugeStatus } from "./GaugeStatus";
+import { GaugeRole, GaugeStatus } from "./GaugeStatus";
 
 type GaugesTableProps = {
   data: Gauge[];
@@ -37,6 +37,7 @@ type GaugesTableProps = {
 };
 
 const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
+  const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
@@ -50,7 +51,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
     const defaultColumns: ColumnDef<Gauge>[] = [
       {
         accessorKey: "gaugeId",
-        header: "Name",
+        header: "ID",
         cell: ({ row }) => (
           <Hyperlink to={path.to.gauge(row.original.id!)}>
             <div className="flex flex-col gap-0">
@@ -125,13 +126,13 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
       {
         accessorKey: "gaugeRole",
         header: "Role",
-        cell: ({ row }) => row.original.gaugeRole,
+        cell: ({ row }) => <GaugeRole role={row.original.gaugeRole} />,
         meta: {
           icon: <LuHash />,
           filter: {
             type: "static",
             options: gaugeRole.map((role) => ({
-              label: role,
+              label: <GaugeRole role={role} />,
               value: role,
             })),
           },
@@ -203,7 +204,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           <MenuItem
             disabled={!permissions.can("update", "quality")}
             onClick={() => {
-              navigate(`${path.to.gauge(row.id!)}`);
+              navigate(`${path.to.gauge(row.id!)}?${params?.toString()}`);
             }}
           >
             <MenuIcon icon={<LuPencil />} />
@@ -225,7 +226,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         </>
       );
     },
-    [navigate, permissions, deleteDisclosure]
+    [navigate, permissions, deleteDisclosure, params]
   );
 
   return (
@@ -236,7 +237,10 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         count={count}
         primaryAction={
           permissions.can("create", "quality") && (
-            <New label="Gauge" to={path.to.newGauge} />
+            <New
+              label="Gauge"
+              to={`${path.to.newGauge}?${params?.toString()}`}
+            />
           )
         }
         renderContextMenu={renderContextMenu}

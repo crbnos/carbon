@@ -40,16 +40,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({
     gauges: gauges.data ?? [],
     count: gauges.count ?? 0,
-    types: gaugeTypes.data ?? [],
+    gaugeTypes: gaugeTypes.data ?? [],
   });
 }
 
 export default function GaugesRoute() {
-  const { gauges, count, types } = useLoaderData<typeof loader>();
+  const { gauges, count, gaugeTypes } = useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full">
-      <GaugesTable data={gauges} count={count} types={types} />
+      <GaugesTable data={gauges} count={count} types={gaugeTypes} />
       <Outlet />
     </VStack>
   );

@@ -1,17 +1,19 @@
-import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { useLoaderData } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
-import { useUser } from "~/hooks";
-import {
-  gaugeValidator,
-  getGaugeTypesList,
-  upsertGauge,
-} from "~/modules/quality";
+import { redirect } from "@vercel/remix";
+import { useRouteData, useUser } from "~/hooks";
+import type { GaugeType } from "~/modules/quality";
+import { gaugeValidator, upsertGauge } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 
 import { getNextSequence } from "~/modules/settings";
@@ -25,15 +27,11 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "quality",
+  await requirePermissions(request, {
+    create: "quality",
   });
 
-  const [types] = await Promise.all([getGaugeTypesList(client, companyId)]);
-
-  return json({
-    types: types.data ?? [],
-  });
+  return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -87,21 +85,27 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const id = createGauge.data?.id;
-  if (!id) {
+  const readableId = createGauge.data?.gaugeId;
+  if (!readableId) {
     throw redirect(
       path.to.gauges,
       await flash(request, error("Failed to insert gauge"))
     );
   }
 
-  throw redirect(path.to.gauge(id!));
+  throw redirect(
+    path.to.gauges,
+    await flash(request, success(`Gauge ${readableId} created`))
+  );
 }
 
 export default function GaugeNewRoute() {
-  const { types } = useLoaderData<typeof loader>();
-
   const { defaults } = useUser();
+  const navigate = useNavigate();
+
+  const routeData = useRouteData<{
+    gaugeTypes: GaugeType[];
+  }>(path.to.gauges);
 
   const initialValues = {
     id: undefined,
@@ -122,8 +126,10 @@ export default function GaugeNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <GaugeForm initialValues={initialValues} gaugeTypes={types} />
-    </div>
+    <GaugeForm
+      initialValues={initialValues}
+      gaugeTypes={routeData?.gaugeTypes ?? []}
+      onClose={() => navigate(-1)}
+    />
   );
 }
