@@ -501,6 +501,7 @@ export async function getMaterialUsedIn(
     quoteMaterials,
     salesOrderLines,
     shipmentLines,
+    supplierQuotes,
   ] = await Promise.all([
     client
       .from("jobMaterial")
@@ -545,6 +546,13 @@ export async function getMaterialUsedIn(
       .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
       .eq("itemId", itemId)
       .eq("companyId", companyId),
+    client
+      .from("supplierQuoteLine")
+      .select(
+        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
   ]);
 
   return {
@@ -555,6 +563,7 @@ export async function getMaterialUsedIn(
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
+    supplierQuotes: supplierQuotes.data ?? [],
   };
 }
 
@@ -573,6 +582,7 @@ export async function getPartUsedIn(
     quoteMaterials,
     salesOrderLines,
     shipmentLines,
+    supplierQuotes,
   ] = await Promise.all([
     client
       .from("jobMaterial")
@@ -629,6 +639,13 @@ export async function getPartUsedIn(
       .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
       .eq("itemId", itemId)
       .eq("companyId", companyId),
+    client
+      .from("supplierQuoteLine")
+      .select(
+        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
   ]);
 
   return {
@@ -641,6 +658,7 @@ export async function getPartUsedIn(
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
+    supplierQuotes: supplierQuotes.data ?? [],
   };
 }
 
