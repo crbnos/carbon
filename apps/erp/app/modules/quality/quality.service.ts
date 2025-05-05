@@ -125,7 +125,7 @@ export async function getGauges(
 
   if (args?.search) {
     query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search},modelNumber.ilike.%${args.search},serialNumber.ilike.%${args.search}`
+      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
     );
   }
 
@@ -651,7 +651,7 @@ export async function upsertGauge(
       })
 ) {
   if ("createdBy" in gauge) {
-    return client.from("gauges").insert([gauge]).select("id").single();
+    return client.from("gauges").insert([gauge]).select("id, gaugeId").single();
   } else {
     return client.from("gauges").update(sanitize(gauge)).eq("id", gauge.id);
   }
