@@ -123,6 +123,7 @@ export default function GaugeNewRoute() {
     nextCalibrationDate: "",
     locationId: defaults.locationId ?? "",
     shelfId: "",
+    calibrationIntervalInMonths: 6,
   };
 
   return (

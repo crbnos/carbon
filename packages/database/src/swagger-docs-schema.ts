@@ -7486,6 +7486,9 @@ export default {
             $ref: "#/parameters/rowFilter.gauges.gaugeRole",
           },
           {
+            $ref: "#/parameters/rowFilter.gauges.calibrationIntervalInMonths",
+          },
+          {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
           },
           {
@@ -7611,6 +7614,9 @@ export default {
             $ref: "#/parameters/rowFilter.gauges.gaugeRole",
           },
           {
+            $ref: "#/parameters/rowFilter.gauges.calibrationIntervalInMonths",
+          },
+          {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
           },
           {
@@ -7688,6 +7694,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauges.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauges.calibrationIntervalInMonths",
           },
           {
             $ref: "#/parameters/rowFilter.gauges.lastCalibrationDate",
@@ -46018,6 +46027,9 @@ export default {
             $ref: "#/parameters/rowFilter.gauge.gaugeRole",
           },
           {
+            $ref: "#/parameters/rowFilter.gauge.calibrationIntervalInMonths",
+          },
+          {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
           },
           {
@@ -46140,6 +46152,9 @@ export default {
             $ref: "#/parameters/rowFilter.gauge.gaugeRole",
           },
           {
+            $ref: "#/parameters/rowFilter.gauge.calibrationIntervalInMonths",
+          },
+          {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
           },
           {
@@ -46214,6 +46229,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.gauge.gaugeRole",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gauge.calibrationIntervalInMonths",
           },
           {
             $ref: "#/parameters/rowFilter.gauge.lastCalibrationDate",
@@ -56222,7 +56240,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56271,7 +56289,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56491,6 +56509,10 @@ export default {
           enum: ["Master", "Standard"],
           format: 'public."gaugeRole"',
           type: "string",
+        },
+        calibrationIntervalInMonths: {
+          format: "integer",
+          type: "integer",
         },
         lastCalibrationDate: {
           format: "date",
@@ -74530,6 +74552,7 @@ export default {
         "gaugeCalibrationStatus",
         "gaugeStatus",
         "gaugeRole",
+        "calibrationIntervalInMonths",
         "customFields",
         "createdAt",
         "createdBy",
@@ -74590,6 +74613,11 @@ export default {
           enum: ["Master", "Standard"],
           format: 'public."gaugeRole"',
           type: "string",
+        },
+        calibrationIntervalInMonths: {
+          default: 6,
+          format: "integer",
+          type: "integer",
         },
         lastCalibrationDate: {
           format: "date",
@@ -79517,6 +79545,12 @@ export default {
     },
     "rowFilter.gauges.gaugeRole": {
       name: "gaugeRole",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauges.calibrationIntervalInMonths": {
+      name: "calibrationIntervalInMonths",
       required: false,
       in: "query",
       type: "string",
@@ -99914,6 +99948,12 @@ export default {
     },
     "rowFilter.gauge.gaugeRole": {
       name: "gaugeRole",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gauge.calibrationIntervalInMonths": {
+      name: "calibrationIntervalInMonths",
       required: false,
       in: "query",
       type: "string",

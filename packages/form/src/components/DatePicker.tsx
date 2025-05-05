@@ -8,7 +8,7 @@ import {
 import { formatDate } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { parseDate } from "@internationalized/date";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { useField } from "../hooks";
 
@@ -19,6 +19,7 @@ type DatePickerProps = {
   minValue?: CalendarDate;
   maxValue?: CalendarDate;
   inline?: boolean;
+  value?: string;
   onChange?: (date: string | null) => void;
 };
 
@@ -29,13 +30,24 @@ const DatePicker = ({
   minValue,
   maxValue,
   inline = false,
+  value,
   onChange,
 }: DatePickerProps) => {
   const { validate } = useFormContext();
   const { error, defaultValue, validate: validateField } = useField(name);
   const [date, setDate] = useState<CalendarDate | undefined>(
-    defaultValue ? parseDate(defaultValue) : undefined
+    value
+      ? parseDate(value)
+      : defaultValue
+      ? parseDate(defaultValue)
+      : undefined
   );
+
+  useEffect(() => {
+    if (value) {
+      setDate(parseDate(value));
+    }
+  }, [value]);
 
   const handleChange = async (newDate: CalendarDate) => {
     const formattedDate = newDate ? newDate.toString() : null;
