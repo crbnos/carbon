@@ -11,7 +11,10 @@ import {
   ModalDrawerTitle,
   VStack,
 } from "@carbon/react";
+import { parseDate } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
+import { useState } from "react";
+import { LuCalendar } from "react-icons/lu";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
 import {
@@ -19,6 +22,7 @@ import {
   Hidden,
   Input,
   Location,
+  NumberControlled,
   SequenceOrCustomId,
   Shelf,
   Submit,
@@ -53,6 +57,12 @@ const GaugeForm = ({
   const isDisabled = isEditing
     ? !permissions.can("update", "quality")
     : !permissions.can("create", "quality");
+
+  const [calibrationInterval, setCalibrationInterval] = useState({
+    lastCalibrationDate: initialValues.lastCalibrationDate,
+    nextCalibrationDate: initialValues.nextCalibrationDate,
+    calibrationIntervalInMonths: initialValues.calibrationIntervalInMonths ?? 6,
+  });
 
   return (
     <ModalDrawerProvider type={type}>
@@ -133,10 +143,32 @@ const GaugeForm = ({
                   <DatePicker
                     name="lastCalibrationDate"
                     label="Last Calibration Date"
+                    value={calibrationInterval.lastCalibrationDate}
+                    onChange={(value) => {
+                      setCalibrationInterval({
+                        ...calibrationInterval,
+                        lastCalibrationDate: value?.toString(),
+                        nextCalibrationDate: value
+                          ? parseDate(value?.toString())
+                              .add({
+                                months:
+                                  calibrationInterval.calibrationIntervalInMonths,
+                              })
+                              .toString()
+                          : undefined,
+                      });
+                    }}
                   />
                   <DatePicker
                     name="nextCalibrationDate"
                     label="Next Calibration Date"
+                    value={calibrationInterval.nextCalibrationDate}
+                    onChange={(value) => {
+                      setCalibrationInterval({
+                        ...calibrationInterval,
+                        nextCalibrationDate: value?.toString(),
+                      });
+                    }}
                   />
                   <Location name="locationId" label="Location" />
                   <Shelf
@@ -145,6 +177,28 @@ const GaugeForm = ({
                     locationId={initialValues.locationId}
                   />
                   <CustomFormFields table="gauge" />
+                </div>
+                <div className="border bg-muted/30 rounded-lg p-4 relative w-full">
+                  <LuCalendar className="absolute top-2 right-4 text-muted-foreground" />
+                  <NumberControlled
+                    name="calibrationIntervalInMonths"
+                    label="Calibration Interval (Months)"
+                    value={calibrationInterval.calibrationIntervalInMonths}
+                    onChange={(value) => {
+                      setCalibrationInterval({
+                        ...calibrationInterval,
+                        calibrationIntervalInMonths: value,
+                        nextCalibrationDate:
+                          calibrationInterval.lastCalibrationDate
+                            ? parseDate(calibrationInterval.lastCalibrationDate)
+                                .add({
+                                  months: value,
+                                })
+                                .toString()
+                            : undefined,
+                      });
+                    }}
+                  />
                 </div>
               </VStack>
             </ModalDrawerBody>

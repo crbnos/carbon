@@ -130,6 +130,7 @@ CREATE TABLE "gauge" (
   "gaugeCalibrationStatus" "gaugeCalibrationStatus" NOT NULL DEFAULT 'Pending',
   "gaugeStatus" "gaugeStatus" NOT NULL DEFAULT 'Active',
   "gaugeRole" "gaugeRole" NOT NULL DEFAULT 'Standard',
+  "calibrationIntervalInMonths" INTEGER NOT NULL DEFAULT 6,
   "lastCalibrationDate" DATE,
   "nextCalibrationDate" DATE,
   "locationId" TEXT,

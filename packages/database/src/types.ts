@@ -6175,6 +6175,7 @@ export type Database = {
       }
       gauge: {
         Row: {
+          calibrationIntervalInMonths: number
           companyId: string | null
           createdAt: string
           createdBy: string
@@ -6198,6 +6199,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          calibrationIntervalInMonths?: number
           companyId?: string | null
           createdAt?: string
           createdBy: string
@@ -6221,6 +6223,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          calibrationIntervalInMonths?: number
           companyId?: string | null
           createdAt?: string
           createdBy?: string
@@ -32762,6 +32765,7 @@ export type Database = {
       }
       gauges: {
         Row: {
+          calibrationIntervalInMonths: number | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
@@ -32790,6 +32794,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          calibrationIntervalInMonths?: number | null
           companyId?: string | null
           createdAt?: string | null
           createdBy?: string | null
@@ -32816,6 +32821,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          calibrationIntervalInMonths?: number | null
           companyId?: string | null
           createdAt?: string | null
           createdBy?: string | null

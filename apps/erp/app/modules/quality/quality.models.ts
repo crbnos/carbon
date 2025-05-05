@@ -78,6 +78,11 @@ export const gaugeValidator = z.object({
   nextCalibrationDate: zfd.text(z.string().optional()),
   locationId: zfd.text(z.string().optional()),
   shelfId: zfd.text(z.string().optional()),
+  calibrationIntervalInMonths: zfd.numeric(
+    z.number().min(1, {
+      message: "Calibration interval is required",
+    })
+  ),
 });
 
 export const gaugeTypeValidator = z.object({
