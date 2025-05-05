@@ -4,22 +4,22 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
-  Spinner,
-  VStack,
-  ScrollArea,
+  ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  ResizableHandle,
+  ScrollArea,
+  Spinner,
+  VStack,
 } from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { redirect, defer } from "@vercel/remix";
+import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Consumable, ItemFile } from "~/modules/items";
 import {
-  getMaterialUsedIn,
   consumableValidator,
+  getMaterialUsedIn,
   upsertConsumable,
 } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
@@ -114,6 +114,7 @@ export default function ConsumableDetailsRoute() {
                       quoteMaterials,
                       salesOrderLines,
                       shipmentLines,
+                      supplierQuotes,
                     } = resolvedUsedIn;
 
                     const tree: UsedInNode[] = [
@@ -171,6 +172,12 @@ export default function ConsumableDetailsRoute() {
                           ...shipment,
                           methodType: "Shipment",
                         })),
+                      },
+                      {
+                        key: "supplierQuotes",
+                        name: "Supplier Quotes",
+                        module: "purchasing",
+                        children: supplierQuotes,
                       },
                     ];
 

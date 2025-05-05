@@ -19,10 +19,10 @@ import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, ToolSummary } from "~/modules/items";
 import { getPartUsedIn, toolValidator, upsertTool } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
-import { setCustomFields } from "~/utils/form";
-import { path } from "~/utils/path";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
+import { setCustomFields } from "~/utils/form";
+import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -107,6 +107,7 @@ export default function ToolDetailsRoute() {
                       quoteMaterials,
                       salesOrderLines,
                       shipmentLines,
+                      supplierQuotes,
                     } = resolvedUsedIn;
 
                     const tree: UsedInNode[] = [
@@ -173,6 +174,12 @@ export default function ToolDetailsRoute() {
                           ...shipment,
                           methodType: "Shipment",
                         })),
+                      },
+                      {
+                        key: "supplierQuotes",
+                        name: "Supplier Quotes",
+                        module: "purchasing",
+                        children: supplierQuotes,
                       },
                     ];
 

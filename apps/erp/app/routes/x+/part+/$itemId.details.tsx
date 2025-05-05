@@ -21,10 +21,10 @@ import type { ItemFile, PartSummary } from "~/modules/items";
 import { getPartUsedIn, partValidator, upsertPart } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
 
-import { setCustomFields } from "~/utils/form";
-import { path } from "~/utils/path";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
+import { setCustomFields } from "~/utils/form";
+import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -111,6 +111,7 @@ export default function PartDetailsRoute() {
                       quoteMaterials,
                       salesOrderLines,
                       shipmentLines,
+                      supplierQuotes,
                     } = resolvedUsedIn;
 
                     const tree: UsedInNode[] = [
@@ -183,6 +184,12 @@ export default function PartDetailsRoute() {
                           ...shipment,
                           methodType: "Shipment",
                         })),
+                      },
+                      {
+                        key: "supplierQuotes",
+                        name: "Supplier Quotes",
+                        module: "purchasing",
+                        children: supplierQuotes,
                       },
                     ];
 

@@ -568,6 +568,7 @@ export const path = {
     fiscalYears: `${x}/accounting/years`,
     forgotPassword: "/forgot-password",
     gauge: (id: string) => generatePath(`${x}/gauge/${id}`),
+    gaugeDetails: (id: string) => generatePath(`${x}/gauge/${id}/details`),
     gauges: `${x}/quality/gauges`,
     gaugeTypes: `${x}/quality/gauge-types`,
     gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),

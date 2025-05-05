@@ -1,16 +1,16 @@
 import {
-  Skeleton,
-  VStack,
+  cn,
+  Count,
   HStack,
   Input,
   InputGroup,
   InputLeftElement,
-  cn,
-  Count,
+  Skeleton,
+  VStack,
 } from "@carbon/react";
 import { useState } from "react";
-import { LuSearch, LuChevronRight, LuTruck } from "react-icons/lu";
-import { MethodIcon, Hyperlink } from "~/components";
+import { LuChevronRight, LuSearch, LuTruck } from "react-icons/lu";
+import { Hyperlink, MethodIcon } from "~/components";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
@@ -37,7 +37,8 @@ export type UsedInKey =
   | "quoteLines"
   | "quoteMaterials"
   | "salesOrderLines"
-  | "shipmentLines";
+  | "shipmentLines"
+  | "supplierQuotes";
 
 export type UsedInNode = {
   key: UsedInKey;
@@ -200,6 +201,9 @@ function getUseInLink(
     case "shipmentLines":
       if (!child.documentId) return "#";
       return path.to.shipment(child.documentId);
+    case "supplierQuotes":
+      if (!child.documentId) return "#";
+      return path.to.supplierQuote(child.documentId);
     default:
       return "#";
   }
