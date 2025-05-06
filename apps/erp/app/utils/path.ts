@@ -35,6 +35,7 @@ export const path = {
       docs: `${api}/docs`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
+      gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
         generatePath(`${api}/ai/csv/${table}/columns`),
       groupsByType: (type?: string) =>
@@ -422,6 +423,8 @@ export const path = {
       generatePath(`${x}/users/employee-types/delete/${id}`),
     deleteGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/delete/${id}`),
+    deleteGaugeCalibrationRecord: (id: string) =>
+      generatePath(`${x}/quality/calibrations/delete/${id}`),
     deleteGaugeType: (id: string) =>
       generatePath(`${x}/quality/gauge-types/delete/${id}`),
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
@@ -569,8 +572,10 @@ export const path = {
     fiscalYears: `${x}/accounting/years`,
     forgotPassword: "/forgot-password",
     gauge: (id: string) => generatePath(`${x}/quality/gauges/${id}`),
-
     gauges: `${x}/quality/gauges`,
+    gaugeCalibrationRecord: (id: string) =>
+      generatePath(`${x}/quality/calibrations/${id}`),
+    gaugeCalibrationRecords: `${x}/quality/calibrations`,
     gaugeTypes: `${x}/quality/gauge-types`,
     gaugeType: (id: string) => generatePath(`${x}/quality/gauge-types/${id}`),
     group: (id: string) => generatePath(`${x}/users/groups/${id}`),
@@ -730,6 +735,7 @@ export const path = {
     newFixtureSupplier: (id: string) =>
       generatePath(`${x}/fixture/${id}/purchasing/new`),
     newGauge: `${x}/quality/gauges/new`,
+    newGaugeCalibrationRecord: `${x}/quality/calibrations/new`,
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,

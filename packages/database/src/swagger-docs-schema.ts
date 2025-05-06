@@ -7854,6 +7854,96 @@ export default {
         tags: ["currencyCode"],
       },
     },
+    "/gaugeCalibrationRecords": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.dateCalibrated",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.inspectionStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.requiresAction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.requiresAdjustment",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.requiresRepair",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeTypeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.description",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/gaugeCalibrationRecords",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["gaugeCalibrationRecords"],
+      },
+    },
     "/methodMaterial": {
       get: {
         parameters: [
@@ -41307,6 +41397,222 @@ export default {
         tags: ["nonConformance"],
       },
     },
+    "/gaugeCalibrationRecord": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.dateCalibrated",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.inspectionStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAdjustment",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresRepair",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/gaugeCalibrationRecord",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["gaugeCalibrationRecord"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.gaugeCalibrationRecord",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["gaugeCalibrationRecord"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.dateCalibrated",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.inspectionStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAdjustment",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresRepair",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gaugeCalibrationRecord"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.gaugeId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.dateCalibrated",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.inspectionStatus",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAction",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresAdjustment",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.requiresRepair",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecord.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.gaugeCalibrationRecord",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["gaugeCalibrationRecord"],
+      },
+    },
     "/purchaseInvoicePaymentRelation": {
       get: {
         parameters: [
@@ -56240,7 +56546,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56289,7 +56595,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -56580,6 +56886,83 @@ export default {
           type: "string",
         },
         name: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    gaugeCalibrationRecords: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        dateCalibrated: {
+          format: "date",
+          type: "string",
+        },
+        inspectionStatus: {
+          enum: ["Pass", "Fail"],
+          format: 'public."inspectionStatus"',
+          type: "string",
+        },
+        requiresAction: {
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresAdjustment: {
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresRepair: {
+          format: "boolean",
+          type: "boolean",
+        },
+        notes: {
+          format: "json",
+        },
+        customFields: {
+          format: "json",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeId: {
+          format: "text",
+          type: "string",
+        },
+        gaugeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        description: {
           format: "text",
           type: "string",
         },
@@ -72056,6 +72439,93 @@ export default {
       },
       type: "object",
     },
+    gaugeCalibrationRecord: {
+      required: [
+        "id",
+        "gaugeId",
+        "dateCalibrated",
+        "inspectionStatus",
+        "requiresAction",
+        "requiresAdjustment",
+        "requiresRepair",
+        "notes",
+        "customFields",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        gaugeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gauge.id`.<fk table='gauge' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        dateCalibrated: {
+          format: "date",
+          type: "string",
+        },
+        inspectionStatus: {
+          enum: ["Pass", "Fail"],
+          format: 'public."inspectionStatus"',
+          type: "string",
+        },
+        requiresAction: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresAdjustment: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        requiresRepair: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        notes: {
+          format: "json",
+        },
+        customFields: {
+          format: "json",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseInvoicePaymentRelation: {
       required: ["id", "invoiceId", "paymentId"],
       properties: {
@@ -79638,6 +80108,111 @@ export default {
     },
     "rowFilter.currencyCode.name": {
       name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.gaugeCalibrationRecords": {
+      name: "gaugeCalibrationRecords",
+      description: "gaugeCalibrationRecords",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/gaugeCalibrationRecords",
+      },
+    },
+    "rowFilter.gaugeCalibrationRecords.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.dateCalibrated": {
+      name: "dateCalibrated",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.inspectionStatus": {
+      name: "inspectionStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.requiresAction": {
+      name: "requiresAction",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.requiresAdjustment": {
+      name: "requiresAdjustment",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.requiresRepair": {
+      name: "requiresRepair",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.gaugeTypeId": {
+      name: "gaugeTypeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecords.description": {
+      name: "description",
       required: false,
       in: "query",
       type: "string",
@@ -97025,6 +97600,99 @@ export default {
       type: "string",
     },
     "rowFilter.nonConformance.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.gaugeCalibrationRecord": {
+      name: "gaugeCalibrationRecord",
+      description: "gaugeCalibrationRecord",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/gaugeCalibrationRecord",
+      },
+    },
+    "rowFilter.gaugeCalibrationRecord.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.dateCalibrated": {
+      name: "dateCalibrated",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.inspectionStatus": {
+      name: "inspectionStatus",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.requiresAction": {
+      name: "requiresAction",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.requiresAdjustment": {
+      name: "requiresAdjustment",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.requiresRepair": {
+      name: "requiresRepair",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.gaugeCalibrationRecord.updatedBy": {
       name: "updatedBy",
       required: false,
       in: "query",

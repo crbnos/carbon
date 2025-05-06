@@ -7,13 +7,23 @@ import {
   LuCalendar,
   LuCircleGauge,
   LuContainer,
+  LuFileText,
   LuHash,
   LuMap,
   LuPencil,
   LuShapes,
+  LuShield,
   LuTrash,
+  LuUser,
+  LuUsers,
 } from "react-icons/lu";
-import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
+import {
+  EmployeeAvatar,
+  Hyperlink,
+  New,
+  SupplierAvatar,
+  Table,
+} from "~/components";
 
 import { flushSync } from "react-dom";
 import { ConfirmDelete } from "~/components/Modals";
@@ -26,14 +36,28 @@ import { formatDate } from "@carbon/utils";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import { usePeople } from "~/stores/people";
 import { useSuppliers } from "~/stores/suppliers";
-import { gaugeRole, gaugeStatus } from "../../quality.models";
-import { GaugeRole, GaugeStatus } from "./GaugeStatus";
+import {
+  gaugeCalibrationStatus,
+  gaugeRole,
+  gaugeStatus,
+} from "../../quality.models";
+import { GaugeCalibrationStatus, GaugeRole, GaugeStatus } from "./GaugeStatus";
 
 type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
+};
+
+const defaultColumnVisibility = {
+  type: false,
+  extension: false,
+  createdAt: false,
+  updatedAt: false,
+  updatedBy: false,
+  description: false,
 };
 
 const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
@@ -42,6 +66,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const permissions = usePermissions();
   const deleteDisclosure = useDisclosure();
   const [selectedGauge, setSelectedGauge] = useState<Gauge | null>(null);
+  const [people] = usePeople();
 
   const customColumns = useCustomColumns<Gauge>("gauge");
   const [suppliers] = useSuppliers();
@@ -124,11 +149,30 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         },
       },
       {
+        accessorKey: "gaugeCalibrationStatus",
+        header: "Calibration Status",
+        cell: ({ row }) => (
+          <GaugeCalibrationStatus
+            status={row.original.gaugeCalibrationStatus}
+          />
+        ),
+        meta: {
+          icon: <LuCircleGauge />,
+          filter: {
+            type: "static",
+            options: gaugeCalibrationStatus.map((status) => ({
+              label: <GaugeCalibrationStatus status={status} />,
+              value: status,
+            })),
+          },
+        },
+      },
+      {
         accessorKey: "gaugeRole",
         header: "Role",
         cell: ({ row }) => <GaugeRole role={row.original.gaugeRole} />,
         meta: {
-          icon: <LuHash />,
+          icon: <LuShield />,
           filter: {
             type: "static",
             options: gaugeRole.map((role) => ({
@@ -193,9 +237,59 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           },
         },
       },
+      {
+        id: "createdBy",
+        header: "Created By",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.createdBy} />
+        ),
+        meta: {
+          icon: <LuUser />,
+          filter: {
+            type: "static",
+            options: people.map((employee) => ({
+              value: employee.id,
+              label: employee.name,
+            })),
+          },
+        },
+      },
+      {
+        accessorKey: "createdAt",
+        header: "Created At",
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuFileText />,
+        },
+      },
+      {
+        id: "updatedBy",
+        header: "Updated By",
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.updatedBy} />
+        ),
+        meta: {
+          icon: <LuUsers />,
+          filter: {
+            type: "static",
+            options: people.map((employee) => ({
+              value: employee.id,
+              label: employee.name,
+            })),
+          },
+        },
+      },
+      {
+        accessorKey: "updatedAt",
+        header: "Updated At",
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuFileText />,
+        },
+      },
     ];
     return [...defaultColumns, ...customColumns];
-  }, [customColumns, locations, suppliers, types]);
+  }, [customColumns, locations, people, suppliers, types]);
 
   const renderContextMenu = useCallback(
     (row: Gauge) => {
@@ -235,6 +329,7 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        defaultColumnVisibility={defaultColumnVisibility}
         primaryAction={
           permissions.can("create", "quality") && (
             <New

@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
+  getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
   getNonConformance,
@@ -14,6 +15,10 @@ import type {
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]
+>[number];
+
+export type GaugeCalibrationRecord = NonNullable<
+  Awaited<ReturnType<typeof getGaugeCalibrationRecords>>["data"]
 >[number];
 
 export type GaugeType = NonNullable<
