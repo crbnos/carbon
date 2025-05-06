@@ -92,7 +92,16 @@ export const gaugeCalibrationRecordValidator = z.object({
   requiresAction: zfd.checkbox(),
   requiresAdjustment: zfd.checkbox(),
   requiresRepair: zfd.checkbox(),
-  notes: zfd.text(z.string().optional()),
+  notes: z
+    .string()
+    .optional()
+    .transform((val) => {
+      try {
+        return val ? JSON.parse(val) : {};
+      } catch (e) {
+        return {};
+      }
+    }),
 });
 
 export const gaugeTypeValidator = z.object({
