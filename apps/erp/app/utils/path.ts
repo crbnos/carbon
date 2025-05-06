@@ -253,6 +253,8 @@ export const path = {
     accountingRoot: `${x}/accounting`,
     accountingSubcategory: (id: string) =>
       generatePath(`${x}/accounting/subcategory/${id}`),
+    activateGauge: (id: string) =>
+      generatePath(`${x}/quality/gauges/activate/${id}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
     attributes: `${x}/people/attributes`,
     apiIntroduction: `${x}/api/js/intro`,
@@ -368,6 +370,8 @@ export const path = {
       generatePath(`${x}/settings/custom-fields/${table}`),
     customFieldList: (id: string) =>
       generatePath(`${x}/settings/custom-fields/${id}`),
+    deactivateGauge: (id: string) =>
+      generatePath(`${x}/quality/gauges/deactivate/${id}`),
     deactivateUsers: `${x}/users/deactivate`,
     deleteAbility: (id: string) =>
       generatePath(`${x}/resources/abilities/delete/${id}`),

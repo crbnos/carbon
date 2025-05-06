@@ -7,6 +7,9 @@ VALUES ('gaugeType', 'Gauge Type', 'Quality');
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('gaugeCalibrationRecord', 'Gauge Calibration Record', 'Quality');
 
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('gauge', 'Gauge', 'Quality');
+
 ALTER TABLE "nonConformanceType"
 ADD COLUMN "customFields" JSON NOT NULL DEFAULT '{}';
 

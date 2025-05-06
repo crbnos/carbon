@@ -36,7 +36,7 @@ import { flushSync } from "react-dom";
 import { LuDraftingCompass, LuHash, LuShapes, LuShield } from "react-icons/lu";
 import type { z } from "zod";
 import { Enumerable } from "~/components/Enumerable";
-import { Hidden, Submit } from "~/components/Form";
+import { CustomFormFields, Hidden, Submit } from "~/components/Form";
 import { useGauges } from "~/components/Form/Gauge";
 import { usePermissions, useUser } from "~/hooks";
 
@@ -266,6 +266,7 @@ const GaugeCalibrationRecordForm = ({
                     className="[&_.is-empty]:text-muted-foreground min-h-[120px] py-3 px-4 border rounded-md w-full"
                   />
                 </div>
+                <CustomFormFields table="gaugeCalibrationRecord" />
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
