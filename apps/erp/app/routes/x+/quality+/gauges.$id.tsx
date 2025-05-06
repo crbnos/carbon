@@ -16,7 +16,7 @@ import type { GaugeType } from "~/modules/quality";
 import {
   gaugeValidator,
   getGauge,
-  getGaugeTypes,
+  getGaugeCalibrationRecordsByGaugeId,
   upsertGauge,
 } from "~/modules/quality";
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
@@ -38,10 +38,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [gauge, gaugeTypes] = await Promise.all([
-    getGauge(serviceRole, id),
-    getGaugeTypes(serviceRole, companyId),
-  ]);
+  const [gauge] = await Promise.all([getGauge(serviceRole, id)]);
 
   if (gauge.error) {
     throw redirect(
@@ -56,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     gauge: gauge.data,
-    gaugeTypes: gaugeTypes.data ?? [],
+    records: getGaugeCalibrationRecordsByGaugeId(serviceRole, id),
   });
 }
 
@@ -112,7 +109,7 @@ export default function GaugeRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
-  const { gauge } = useLoaderData<typeof loader>();
+  const { gauge, records } = useLoaderData<typeof loader>();
 
   const routeData = useRouteData<{
     gaugeTypes: GaugeType[];
@@ -145,6 +142,7 @@ export default function GaugeRoute() {
       key={id}
       // @ts-ignore
       initialValues={initialValues}
+      records={records}
       gaugeTypes={routeData?.gaugeTypes ?? []}
       onClose={() => navigate(-1)}
     />

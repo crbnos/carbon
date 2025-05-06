@@ -199,6 +199,16 @@ export async function getGaugeCalibrationRecords(
   return query;
 }
 
+export async function getGaugeCalibrationRecordsByGaugeId(
+  client: SupabaseClient<Database>,
+  gaugeId: string
+) {
+  return client
+    .from("gaugeCalibrationRecords")
+    .select("*")
+    .eq("gaugeId", gaugeId);
+}
+
 export async function getGaugeTypesList(
   client: SupabaseClient<Database>,
   companyId: string

@@ -1,4 +1,6 @@
+import { useCarbon } from "@carbon/auth";
 import { MultiSelect, Select, ValidatedForm } from "@carbon/form";
+import type { JSONContent } from "@carbon/react";
 import {
   Button,
   Card,
@@ -8,11 +10,13 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
-import type { JSONContent } from "@carbon/react";
 import { Editor, generateHTML } from "@carbon/react/Editor";
+import { nanoid } from "nanoid";
+import { useState } from "react";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
+import { getPrivateUrl, path } from "~/utils/path";
 import {
   nonConformanceApprovalRequirement,
   nonConformanceInvestigationType,
@@ -21,18 +25,10 @@ import {
   nonConformanceSource,
   nonConformanceWorkflowValidator,
 } from "../../quality.models";
-import { useState } from "react";
-import { useCarbon } from "@carbon/auth";
-import { nanoid } from "nanoid";
-import { getPrivateUrl, path } from "~/utils/path";
 import { getPriorityIcon } from "../NonConformance/NonConformanceIcons";
-import type { ListItem } from "~/types";
-import type { NonConformanceWorkflow } from "../../types";
 
 type NonConformanceWorkflowFormProps = {
   initialValues: z.infer<typeof nonConformanceWorkflowValidator>;
-  nonConformanceWorkflows: NonConformanceWorkflow[];
-  nonConformanceTypes: ListItem[];
   onClose: () => void;
 };
 

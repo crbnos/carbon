@@ -12,7 +12,8 @@ export default function useKeyboardShortcuts(keyMap: {
   const handleKeydown = (event: any) => {
     if (
       !keyMap ||
-      includes(["INPUT", "TEXTAREA", "SELECT"], event.target.nodeName)
+      includes(["INPUT", "TEXTAREA", "SELECT"], event.target.nodeName) ||
+      event.target.classList.contains("ProseMirror")
     ) {
       return;
     }
