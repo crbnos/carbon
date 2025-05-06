@@ -56,7 +56,10 @@ export async function action({ request }: ActionFunctionArgs) {
   if (createGauge.error || !createGauge.data) {
     throw redirect(
       path.to.gauges,
-      await flash(request, error(createGauge.error, "Failed to insert gauge"))
+      await flash(
+        request,
+        error(createGauge.error, "Failed to insert gauge calibration record")
+      )
     );
   }
 

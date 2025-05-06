@@ -7861,6 +7861,9 @@ export default {
             $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.id",
           },
           {
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeId",
+          },
+          {
             $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.dateCalibrated",
           },
           {
@@ -7897,7 +7900,7 @@ export default {
             $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.updatedBy",
           },
           {
-            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeId",
+            $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeReadableId",
           },
           {
             $ref: "#/parameters/rowFilter.gaugeCalibrationRecords.gaugeTypeId",
@@ -56899,6 +56902,12 @@ export default {
           format: "text",
           type: "string",
         },
+        gaugeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gauge.id`.<fk table='gauge' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         dateCalibrated: {
           format: "date",
           type: "string",
@@ -56952,7 +56961,7 @@ export default {
           format: "text",
           type: "string",
         },
-        gaugeId: {
+        gaugeReadableId: {
           format: "text",
           type: "string",
         },
@@ -80127,6 +80136,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.gaugeCalibrationRecords.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.gaugeCalibrationRecords.dateCalibrated": {
       name: "dateCalibrated",
       required: false,
@@ -80199,8 +80214,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.gaugeCalibrationRecords.gaugeId": {
-      name: "gaugeId",
+    "rowFilter.gaugeCalibrationRecords.gaugeReadableId": {
+      name: "gaugeReadableId",
       required: false,
       in: "query",
       type: "string",

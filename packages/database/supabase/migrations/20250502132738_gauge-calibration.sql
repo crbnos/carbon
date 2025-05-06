@@ -184,6 +184,47 @@ SELECT
 FROM "company";
 
 
+CREATE POLICY "SELECT" ON "public"."gauge"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_role()
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."gauge"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."gauge"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."gauge"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
+
+
 CREATE TYPE "inspectionStatus" AS ENUM (
   'Pass',
   'Fail'
@@ -236,3 +277,45 @@ SELECT
   g."description"
 FROM "gaugeCalibrationRecord" gcr
 JOIN "gauge" g ON gcr."gaugeId" = g."id";
+
+
+
+CREATE POLICY "SELECT" ON "public"."gaugeCalibrationRecord"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."gaugeCalibrationRecord"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."gaugeCalibrationRecord"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."gaugeCalibrationRecord"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('quality_delete')
+    )::text[]
+  )
+);
