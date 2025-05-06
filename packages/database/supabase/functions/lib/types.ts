@@ -32936,6 +32936,7 @@ export type Database = {
           dateCalibrated: string | null
           description: string | null
           gaugeId: string | null
+          gaugeReadableId: string | null
           gaugeTypeId: string | null
           id: string | null
           inspectionStatus:
@@ -33018,6 +33019,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "gaugeCalibrationRecord_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gaugeCalibrationRecord_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauges"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "gaugeCalibrationRecord_updatedBy_fkey"

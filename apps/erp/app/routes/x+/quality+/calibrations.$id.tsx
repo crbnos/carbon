@@ -68,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ? "Fail"
       : "Pass";
 
-  const updateGuage = await upsertGaugeCalibrationRecord(client, {
+  const updateGauge = await upsertGaugeCalibrationRecord(client, {
     id,
     ...data,
     inspectionStatus,
@@ -77,10 +77,13 @@ export async function action({ request }: ActionFunctionArgs) {
     customFields: setCustomFields(formData),
   });
 
-  if (updateGuage.error || !updateGuage.data) {
+  if (updateGauge.error) {
     throw redirect(
       `${path.to.calibrations}?${getParams(request)}`,
-      await flash(request, error(updateGuage.error, "Failed to insert gauge"))
+      await flash(
+        request,
+        error(updateGauge.error, "Failed to update gauge calibration record")
+      )
     );
   }
 

@@ -756,7 +756,7 @@ export async function upsertGaugeCalibrationRecord(
 
   if (
     !gauge.data?.lastCalibrationDate ||
-    parseDate(gauge.data.lastCalibrationDate) <
+    parseDate(gauge.data.lastCalibrationDate) <=
       parseDate(gaugeCalibrationRecord.dateCalibrated)
   ) {
     const nextCalibrationDate = parseDate(gaugeCalibrationRecord.dateCalibrated)
