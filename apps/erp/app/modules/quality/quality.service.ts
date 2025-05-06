@@ -1,10 +1,14 @@
 import type { Database, Json } from "@carbon/database";
+import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { inspectionStatus } from "../shared";
 import type {
+  gaugeCalibrationRecordValidator,
+  gaugeCalibrationStatus,
   gaugeTypeValidator,
   gaugeValidator,
   nonConformanceReviewerValidator,
@@ -19,6 +23,16 @@ export async function deleteGauge(
   gaugeId: string
 ) {
   return client.from("gauges").delete().eq("id", gaugeId);
+}
+
+export async function deleteGaugeCalibrationRecord(
+  client: SupabaseClient<Database>,
+  gaugeCalibrationRecordId: string
+) {
+  return client
+    .from("gaugeCalibrationRecord")
+    .delete()
+    .eq("id", gaugeCalibrationRecordId);
 }
 
 export async function deleteGaugeType(
@@ -132,6 +146,53 @@ export async function getGauges(
   if (args) {
     query = setGenericQueryFilters(query, args, [
       { column: "gaugeId", ascending: false },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getGaugesList(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("gauge")
+    .select("id, name:gaugeId, description")
+    .eq("companyId", companyId);
+}
+
+export async function getGaugeCalibrationRecord(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("gaugeCalibrationRecords")
+    .select("*")
+    .eq("id", id)
+    .single();
+}
+
+export async function getGaugeCalibrationRecords(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("gaugeCalibrationRecords")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false },
+      { column: "dateCalibrated", ascending: false },
     ]);
   }
 
@@ -640,12 +701,14 @@ export async function upsertGauge(
     | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
         gaugeId: string;
         companyId: string;
+        gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
         createdBy: string;
         customFields?: Json;
       })
     | (Omit<z.infer<typeof gaugeValidator>, "id" | "gaugeId"> & {
         id: string;
         gaugeId: string;
+        gaugeCalibrationStatus: (typeof gaugeCalibrationStatus)[number];
         updatedBy: string;
         customFields?: Json;
       })
@@ -655,6 +718,69 @@ export async function upsertGauge(
   } else {
     return client.from("gauges").update(sanitize(gauge)).eq("id", gauge.id);
   }
+}
+
+export async function upsertGaugeCalibrationRecord(
+  client: SupabaseClient<Database>,
+  gaugeCalibrationRecord:
+    | (Omit<z.infer<typeof gaugeCalibrationRecordValidator>, "id"> & {
+        companyId: string;
+        inspectionStatus: (typeof inspectionStatus)[number];
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof gaugeCalibrationRecordValidator>, "id"> & {
+        id: string;
+        inspectionStatus: (typeof inspectionStatus)[number];
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const gauge = await client
+    .from("gauge")
+    .select("*")
+    .eq("id", gaugeCalibrationRecord.gaugeId)
+    .single();
+
+  if (gauge.error) return gauge;
+
+  if (
+    !gauge.data?.lastCalibrationDate ||
+    parseDate(gauge.data.lastCalibrationDate) <
+      parseDate(gaugeCalibrationRecord.dateCalibrated)
+  ) {
+    const nextCalibrationDate = parseDate(gaugeCalibrationRecord.dateCalibrated)
+      .add({
+        months: gauge.data.calibrationIntervalInMonths,
+      })
+      .toString();
+
+    const update = await client
+      .from("gauge")
+      .update({
+        gaugeCalibrationStatus:
+          gaugeCalibrationRecord.inspectionStatus === "Pass"
+            ? "In-Calibration"
+            : "Out-of-Calibration",
+        lastCalibrationDate: gaugeCalibrationRecord.dateCalibrated,
+        nextCalibrationDate: nextCalibrationDate,
+      })
+      .eq("id", gaugeCalibrationRecord.gaugeId);
+
+    if (update.error) return update;
+  }
+
+  if ("createdBy" in gaugeCalibrationRecord) {
+    return client
+      .from("gaugeCalibrationRecord")
+      .insert([gaugeCalibrationRecord])
+      .select("id")
+      .single();
+  }
+  return client
+    .from("gaugeCalibrationRecord")
+    .update(sanitize(gaugeCalibrationRecord))
+    .eq("id", gaugeCalibrationRecord.id);
 }
 
 export async function upsertGaugeType(

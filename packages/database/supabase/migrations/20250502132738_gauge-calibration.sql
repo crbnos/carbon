@@ -4,6 +4,9 @@ VALUES ('nonConformanceType', 'Non-Conformance Type', 'Quality');
 INSERT INTO "customFieldTable" ("table", "name", "module") 
 VALUES ('gaugeType', 'Gauge Type', 'Quality');
 
+INSERT INTO "customFieldTable" ("table", "name", "module") 
+VALUES ('gaugeCalibrationRecord', 'Gauge Calibration Record', 'Quality');
+
 ALTER TABLE "nonConformanceType"
 ADD COLUMN "customFields" JSON NOT NULL DEFAULT '{}';
 
@@ -117,7 +120,6 @@ CREATE TYPE "gaugeCalibrationStatus" AS ENUM (
   'Out-of-Calibration'
 );
 
-
 CREATE TABLE "gauge" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "gaugeId" TEXT NOT NULL,
@@ -180,3 +182,57 @@ SELECT
   1,
   "id"
 FROM "company";
+
+
+CREATE TYPE "inspectionStatus" AS ENUM (
+  'Pass',
+  'Fail'
+);
+
+CREATE TABLE "gaugeCalibrationRecord" (
+  "id" TEXT NOT NULL DEFAULT xid(),
+  "gaugeId" TEXT NOT NULL,
+  "dateCalibrated" DATE NOT NULL,
+  "inspectionStatus" "inspectionStatus" NOT NULL,
+  "requiresAction" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresAdjustment" BOOLEAN NOT NULL DEFAULT FALSE,
+  "requiresRepair" BOOLEAN NOT NULL DEFAULT FALSE,
+  "notes" JSON NOT NULL DEFAULT '{}',
+  "customFields" JSON NOT NULL DEFAULT '{}',
+  "companyId" TEXT,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "gaugeCalibrationRecord_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "gaugeCalibrationRecord_gaugeId_fkey" FOREIGN KEY ("gaugeId") REFERENCES "gauge"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gaugeCalibrationRecord_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "gaugeCalibrationRecord_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "gaugeCalibrationRecord_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "gaugeCalibrationRecord_companyId_idx" ON "gaugeCalibrationRecord" ("companyId");
+CREATE INDEX "gaugeCalibrationRecord_gaugeId_idx" ON "gaugeCalibrationRecord" ("gaugeId");
+
+CREATE OR REPLACE VIEW "gaugeCalibrationRecords" WITH(SECURITY_INVOKER=true) AS
+SELECT
+  gcr.id,
+  gcr."gaugeId",
+  gcr."dateCalibrated",
+  gcr."inspectionStatus",
+  gcr."requiresAction",
+  gcr."requiresAdjustment",
+  gcr."requiresRepair",
+  gcr."notes",
+  gcr."customFields",
+  gcr."companyId",
+  gcr."createdAt",
+  gcr."createdBy",
+  gcr."updatedAt",
+  gcr."updatedBy",
+  g."gaugeId" as "gaugeReadableId",
+  g."gaugeTypeId",
+  g."description"
+FROM "gaugeCalibrationRecord" gcr
+JOIN "gauge" g ON gcr."gaugeId" = g."id";

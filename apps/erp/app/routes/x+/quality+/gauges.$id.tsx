@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
@@ -21,7 +22,7 @@ import {
 import GaugeForm from "~/modules/quality/ui/Gauge/GaugeForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { getParams, path } from "~/utils/path";
 export const handle: Handle = {
   breadcrumb: "Gauges",
   to: path.to.gauges,
@@ -65,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "quality",
   });
 
-  const { orderId: id } = params;
+  const { id } = params;
   if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
@@ -78,9 +79,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { gaugeId, ...data } = validation.data;
   if (!gaugeId) throw new Error("Could not find gaugeId");
 
+  const gaugeCalibrationStatus = data.nextCalibrationDate
+    ? parseDate(data.nextCalibrationDate) < today(getLocalTimeZone())
+      ? "Out-of-Calibration"
+      : data.lastCalibrationDate
+      ? "In-Calibration"
+      : "Pending"
+    : "Pending";
+
   const update = await upsertGauge(client, {
     id,
     gaugeId,
+    gaugeCalibrationStatus,
     ...data,
     customFields: setCustomFields(formData),
     updatedBy: userId,
@@ -93,7 +103,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.gauge(id),
+    `${path.to.gauges}?${getParams(request)}`,
     await flash(request, success("Updated gauge"))
   );
 }

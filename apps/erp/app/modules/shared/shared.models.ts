@@ -23,6 +23,8 @@ export const documentTypes = [
   "Other",
 ] as const;
 
+export const inspectionStatus = ["Pass", "Fail"] as const;
+
 export const tablesWithTags = [
   "consumable",
   "fixture",
