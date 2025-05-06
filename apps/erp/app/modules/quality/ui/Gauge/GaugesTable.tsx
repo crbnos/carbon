@@ -5,7 +5,9 @@ import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
+  LuCircleCheck,
   LuCircleGauge,
+  LuCircleX,
   LuContainer,
   LuFileText,
   LuHash,
@@ -26,7 +28,7 @@ import {
 } from "~/components";
 
 import { flushSync } from "react-dom";
-import { ConfirmDelete } from "~/components/Modals";
+import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -64,7 +66,11 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const permissions = usePermissions();
+
   const deleteDisclosure = useDisclosure();
+  const activateDisclosure = useDisclosure();
+  const deactivateDisclosure = useDisclosure();
+
   const [selectedGauge, setSelectedGauge] = useState<Gauge | null>(null);
   const [people] = usePeople();
 
@@ -304,6 +310,34 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
             <MenuIcon icon={<LuPencil />} />
             Edit Gauge
           </MenuItem>
+          {row.gaugeStatus === "Active" ? (
+            <MenuItem
+              destructive
+              disabled={!permissions.can("update", "quality")}
+              onClick={() => {
+                flushSync(() => {
+                  setSelectedGauge(row);
+                });
+                deactivateDisclosure.onOpen();
+              }}
+            >
+              <MenuIcon icon={<LuCircleX />} />
+              Deactivate Gauge
+            </MenuItem>
+          ) : (
+            <MenuItem
+              disabled={!permissions.can("update", "quality")}
+              onClick={() => {
+                flushSync(() => {
+                  setSelectedGauge(row);
+                });
+                activateDisclosure.onOpen();
+              }}
+            >
+              <MenuIcon icon={<LuCircleCheck />} />
+              Activate Gauge
+            </MenuItem>
+          )}
           <MenuItem
             destructive
             disabled={!permissions.can("delete", "quality")}
@@ -320,7 +354,14 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
         </>
       );
     },
-    [navigate, permissions, deleteDisclosure, params]
+    [
+      permissions,
+      navigate,
+      params,
+      deactivateDisclosure,
+      activateDisclosure,
+      deleteDisclosure,
+    ]
   );
 
   return (
@@ -357,6 +398,56 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
           }}
           name={selectedGauge.gaugeId ?? "gauge"}
           text="Are you sure you want to delete this gauge?"
+        />
+      )}
+      {deleteDisclosure.isOpen && selectedGauge && (
+        <ConfirmDelete
+          action={path.to.deleteGauge(selectedGauge.id!)}
+          isOpen
+          onCancel={() => {
+            setSelectedGauge(null);
+            deleteDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            setSelectedGauge(null);
+            deleteDisclosure.onClose();
+          }}
+          name={selectedGauge.gaugeId ?? "gauge"}
+          text="Are you sure you want to delete this gauge?"
+        />
+      )}
+      {activateDisclosure.isOpen && selectedGauge && (
+        <Confirm
+          action={path.to.activateGauge(selectedGauge.id!)}
+          isOpen
+          onCancel={() => {
+            setSelectedGauge(null);
+            activateDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            setSelectedGauge(null);
+            activateDisclosure.onClose();
+          }}
+          text="Are you sure you want to activate this gauge?."
+          title={`Activate ${selectedGauge.gaugeId}`}
+          confirmText={"Activate"}
+        />
+      )}
+      {deactivateDisclosure.isOpen && selectedGauge && (
+        <Confirm
+          action={path.to.deactivateGauge(selectedGauge.id!)}
+          isOpen
+          onCancel={() => {
+            setSelectedGauge(null);
+            deactivateDisclosure.onClose();
+          }}
+          onSubmit={() => {
+            setSelectedGauge(null);
+            deactivateDisclosure.onClose();
+          }}
+          text="Are you sure you want to deactivate this gauge?."
+          title={`Deactivate ${selectedGauge.gaugeId}`}
+          confirmText={"Deactivate"}
         />
       )}
     </>

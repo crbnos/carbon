@@ -18,6 +18,26 @@ import type {
   nonConformanceWorkflowValidator,
 } from "./quality.models";
 
+export async function activateGauge(
+  client: SupabaseClient<Database>,
+  gaugeId: string
+) {
+  return client
+    .from("gauges")
+    .update({ gaugeStatus: "Active" })
+    .eq("id", gaugeId);
+}
+
+export async function deactivateGauge(
+  client: SupabaseClient<Database>,
+  gaugeId: string
+) {
+  return client
+    .from("gauges")
+    .update({ gaugeStatus: "Inactive" })
+    .eq("id", gaugeId);
+}
+
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
