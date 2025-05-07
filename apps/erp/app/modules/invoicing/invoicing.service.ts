@@ -109,6 +109,77 @@ export async function getPurchaseInvoiceLine(
     .single();
 }
 
+export async function getSalesInvoice(
+  client: SupabaseClient<Database>,
+  salesInvoiceId: string
+) {
+  return client
+    .from("salesInvoices")
+    .select("*")
+    .eq("id", salesInvoiceId)
+    .single();
+}
+
+export async function getSalesInvoices(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    customerId: string | null;
+  }
+) {
+  let query = client
+    .from("salesInvoices")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("invoiceId", `%${args.search}%`);
+  }
+
+  if (args.customerId) {
+    query = query.eq("customerId", args.customerId);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "invoiceId", ascending: false },
+  ]);
+  return query;
+}
+
+export async function getSalesInvoiceDelivery(
+  client: SupabaseClient<Database>,
+  salesInvoiceId: string
+) {
+  return client
+    .from("salesInvoiceDelivery")
+    .select("*")
+    .eq("id", salesInvoiceId)
+    .single();
+}
+
+export async function getSalesInvoiceLines(
+  client: SupabaseClient<Database>,
+  salesInvoiceId: string
+) {
+  return client
+    .from("salesInvoiceLines")
+    .select("*")
+    .eq("invoiceId", salesInvoiceId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function getSalesInvoiceLine(
+  client: SupabaseClient<Database>,
+  salesInvoiceLineId: string
+) {
+  return client
+    .from("salesInvoiceLine")
+    .select("*")
+    .eq("id", salesInvoiceLineId)
+    .single();
+}
+
 export async function upsertPurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoice:

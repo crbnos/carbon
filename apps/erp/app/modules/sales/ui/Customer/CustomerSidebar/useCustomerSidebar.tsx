@@ -79,6 +79,11 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <RiProgress8Line />,
     },
+    {
+      name: "Invoices",
+      to: `${path.to.salesInvoices}?filter=customerId:eq:${customerId}`,
+      icon: <LuCreditCard />,
+    },
     // {
     //   name: "Accounting",
     //   to: path.to.customerAccounting(customerId),

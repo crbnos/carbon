@@ -1,4 +1,10 @@
-import { LuBan, LuShapes, LuSquareUser, LuStar } from "react-icons/lu";
+import {
+  LuBan,
+  LuCreditCard,
+  LuShapes,
+  LuSquareUser,
+  LuStar,
+} from "react-icons/lu";
 import {
   RiProgress2Line,
   RiProgress4Line,
@@ -36,6 +42,13 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.salesOrders,
         icon: <RiProgress8Line />,
         table: "salesOrder",
+      },
+      {
+        name: "Invoices",
+        to: path.to.salesInvoices,
+        icon: <LuCreditCard />,
+        permission: "invoicing",
+        table: "salesInvoice",
       },
     ],
   },
@@ -87,6 +100,8 @@ export default function useSalesSubmodules() {
           .filter((route) => {
             if (route.role) {
               return permissions.is(route.role);
+            } else if (route.permission) {
+              return permissions.can("view", route.permission);
             } else {
               return true;
             }

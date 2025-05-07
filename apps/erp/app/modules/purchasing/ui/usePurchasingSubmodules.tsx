@@ -25,22 +25,20 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
         name: "Quotes",
         to: path.to.supplierQuotes,
         icon: <LuPackageSearch />,
-        internal: true,
         table: "supplierQuote",
       },
       {
         name: "Orders",
         to: path.to.purchaseOrders,
         icon: <LuLayoutList />,
-        internal: true,
         table: "purchaseOrder",
       },
       {
         name: "Invoices",
         to: path.to.purchaseInvoices,
         icon: <LuCreditCard />,
-        internal: true,
         table: "purchaseInvoice",
+        permission: "invoicing",
       },
     ],
   },
@@ -73,6 +71,8 @@ export default function usePurchasingSubmodules() {
         const filteredRoutes = group.routes.filter((route) => {
           if (route.role) {
             return permissions.is(route.role);
+          } else if (route.permission) {
+            return permissions.can("view", route.permission);
           } else {
             return true;
           }
@@ -86,6 +86,8 @@ export default function usePurchasingSubmodules() {
           .filter((route) => {
             if (route.role) {
               return permissions.is(route.role);
+            } else if (route.permission) {
+              return permissions.can("view", route.permission);
             } else {
               return true;
             }
