@@ -63,10 +63,10 @@ Make sure that you have [Docker installed](https://docs.docker.com/desktop/insta
 After installation you should be able to access the following apps/containers locally:
 
 | Application     | URL                                                                                                                |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ | --- |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
 | ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
 | MES             | [http://localhost:3001](http://localhost:3001)                                                                     |
-| Starter         | [http://localhost:3002](http://localhost:3002)                                                                     |     |
+| Starter         | [http://localhost:3002](http://localhost:3002)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
 | Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
