@@ -1,9 +1,4 @@
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-  Toaster,
-} from "@carbon/react";
+import { Toaster } from "@carbon/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -21,9 +16,6 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-
-import { AppSidebar } from "~/components/AppSidebar";
-import Breadcrumbs from "~/components/Breadcrumbs";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -78,23 +70,8 @@ export default function AuthenticatedRoute() {
 
   return (
     <CarbonProvider session={session}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Breadcrumbs />
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col">
-            <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min">
-              <Outlet />
-            </div>
-          </div>
-        </SidebarInset>
-        <Toaster position="bottom-right" />
-      </SidebarProvider>
+      <Outlet />
+      <Toaster position="bottom-right" />
     </CarbonProvider>
   );
 }

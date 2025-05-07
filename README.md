@@ -1,18 +1,17 @@
 ![CarbonOS](https://github.com/user-attachments/assets/664eb49a-f873-49f8-bb6f-95a94ba89f97)
 
-Carbon is the operating system for manufacturing. It allows customers, suppliers, and employees to share a common platform that's easy to integrate with.
+Carbon is the open-source operating system for manufacturing.
 
 Technical highlights/roadmap:
 
+- [x] Unified auth and permissions across apps
 - [x] Full-stack type safety (Database → UI)
 - [x] Realtime database subscriptions
 - [x] Attribute-based access control (ABAC)
+- [x] Role-based access control (Customer, Supplier, Employee)
 - [x] Row-level security (RLS)
 - [x] Composable user groups
-- [x] Magic link authentication
-- [x] File-based routing
-- [ ] Third-party integrations for data
-- [ ] Easy-to-use plugin system
+- [x] Third-party integrations
 
 ## Techstack
 
@@ -64,11 +63,10 @@ Make sure that you have [Docker installed](https://docs.docker.com/desktop/insta
 After installation you should be able to access the following apps/containers locally:
 
 | Application     | URL                                                                                                                |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ | --- |
 | ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
-| Developers      | [http://localhost:3001](http://localhost:3001)                                                                     |
-| MES             | [http://localhost:3002](http://localhost:3002)                                                                     |
-| Website         | [http://localhost:3003](http://localhost:3003)                                                                     |
+| MES             | [http://localhost:3001](http://localhost:3001)                                                                     |
+| Starter         | [http://localhost:3002](http://localhost:3002)                                                                     |     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
 | Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
@@ -102,23 +100,23 @@ $ cp ./.env.example ./.env
 
 1. Use the output of `npm run db:start` to set the supabase entries:
 
-- SUPABASE_SERVICE_ROLE_KEY=[service_role key]
-- SUPABASE_ANON_KEY=[anon key]
+- `SUPABASE_SERVICE_ROLE_KEY=[service_role key]`
+- `SUPABASE_ANON_KEY=[anon key]`
 
 2. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
 
-- UPSTASH_REDIS_REST_URL=[UPSTASH_REDIS_REST_URL]
-- UPSTASH_REDIS_REST_TOKEN=[UPSTASH_REDIS_REST_TOKEN]]
+- `UPSTASH_REDIS_REST_URL=[UPSTASH_REDIS_REST_URL]`
+- `UPSTASH_REDIS_REST_TOKEN=[UPSTASH_REDIS_REST_TOKEN]`
 
 3. Navigate to the project you created in [https://cloud.trigger.dev/](Trigger.dev) and copy the following from the `Environments & API Keys` section:
 
-- TRIGGER*PUBLIC_API_KEY=[Public 'dev' API Key, starting 'pk_dev*']
-- TRIGGER*API_KEY=[Server 'dev' API Key, starting 'tr_dev*']
+- `TRIGGER_PUBLIC_API_KEY=[Public 'dev' API Key, starting 'pk_dev*']`
+- `TRIGGER_API_KEY=[Server 'dev' API Key, starting 'tr_dev*']`
 
 4. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
 
-- POSTHOG_API_HOST=[https://[region].posthog.com]
-- POSTHOG*PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']
+- `POSTHOG_API_HOST=[https://[region].posthog.com]`
+- `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
 
 Then you can run the following:
 
