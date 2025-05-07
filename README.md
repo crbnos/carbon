@@ -60,18 +60,6 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 Make sure that you have [Docker installed](https://docs.docker.com/desktop/install/mac-install/) on your system since this monorepo uses the Docker for local development.
 
-After installation you should be able to access the following apps/containers locally:
-
-| Application     | URL                                                                                                                |
-| --------------- | ------------------------------------------------------------------------------------------------------------------ |
-| ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
-| MES             | [http://localhost:3001](http://localhost:3001)                                                                     |
-| Starter         | [http://localhost:3002](http://localhost:3002)                                                                     |
-| Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
-| Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
-| Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
-| Edge Functions  | [http://localhost:54321/functions/v1/<function-name>](http://localhost:54321/functions/v1/<function-name>)         |
-
 In addition you must configure the following external services:
 
 | Service     | Purpose                    | URL                                                                    |
@@ -128,7 +116,8 @@ $ npm run build        # build the packages
 Finally, start the apps and packages:
 
 ```bash
-$ npm run dev         # npm run dev in all apps & packages
+$ npm run dev
+$ npm run dev:mes        # npm run dev in all apps & packages
 ```
 
 You can now sign in with:
@@ -136,7 +125,17 @@ You can now sign in with:
 username: admin@carbon.us.org
 password: carbon
 
-Go ahead and create your own user account
+After installation you should be able run the apps locally.
+
+| Application     | URL                                                                                                                |
+| --------------- | ------------------------------------------------------------------------------------------------------------------ |
+| ERP             | [http://localhost:3000](http://localhost:3000)                                                                     |
+| MES             | [http://localhost:3001](http://localhost:3001)                                                                     |
+| Starter         | [http://localhost:3002](http://localhost:3002)                                                                     |
+| Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
+| Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
+| Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
+| Edge Functions  | [http://localhost:54321/functions/v1/<function-name>](http://localhost:54321/functions/v1/<function-name>)         |
 
 ### Notes
 
