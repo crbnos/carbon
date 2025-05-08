@@ -87,29 +87,29 @@ import type {
 } from "~/modules/shared";
 import {
   methodOperationOrders,
+  operationAttributeValidator,
   operationParameterValidator,
   operationToolValidator,
   operationTypes,
-  operationAttributeValidator,
   procedureAttributeType,
 } from "~/modules/shared";
 
 import type { action as editQuoteOperationAttributeAction } from "~/routes/x+/quote+/methods+/operation.attribute.$id";
-import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
 import type { action as editQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.$id";
-import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
 import type { action as newQuoteOperationParameterAction } from "~/routes/x+/quote+/methods+/operation.parameter.new";
+import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
+import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
 
-import { useTools } from "~/stores";
-import { getPrivateUrl, path } from "~/utils/path";
-import { quoteOperationValidator } from "../../sales.models";
-import type { Quotation } from "../../types";
+import Procedure from "~/components/Form/Procedure";
+import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import UnitOfMeasure, {
   useUnitOfMeasure,
 } from "~/components/Form/UnitOfMeasure";
 import { ProcedureAttributeTypeIcon } from "~/components/Icons";
-import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
+import { useTools } from "~/stores";
+import { getPrivateUrl, path } from "~/utils/path";
+import { quoteOperationValidator } from "../../sales.models";
+import type { Quotation } from "../../types";
 
 export type Operation = z.infer<typeof quoteOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -1240,21 +1240,22 @@ function AttributesListItem({
                   <p className="text-foreground text-sm font-medium">
                     {attribute.name}
                   </p>
-                  {attribute.description && (
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuInfo className="text-muted-foreground size-3" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <p
-                          className="prose prose-sm dark:prose-invert text-foreground text-sm"
-                          dangerouslySetInnerHTML={{
-                            __html: generateHTML(attribute.description),
-                          }}
-                        />
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+                  {attribute.description &&
+                    Object.keys(attribute.description).length > 0 && (
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <LuInfo className="text-muted-foreground size-3" />
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          <p
+                            className="prose prose-sm dark:prose-invert text-foreground text-sm"
+                            dangerouslySetInnerHTML={{
+                              __html: generateHTML(attribute.description),
+                            }}
+                          />
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">

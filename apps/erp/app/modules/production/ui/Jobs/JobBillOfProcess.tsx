@@ -1403,18 +1403,22 @@ function AttributesListItem({
                   <p className="text-foreground text-sm font-medium">
                     {attribute.name}
                   </p>
-                  {attribute.description && (
+                  {attribute.description &&
+                  Object.keys(attribute.description).length > 0 ? (
                     <Tooltip>
                       <TooltipTrigger>
                         <LuInfo className="text-muted-foreground size-3" />
                       </TooltipTrigger>
                       <TooltipContent side="right">
-                        <p className="text-foreground text-sm">
-                          {attribute.description}
-                        </p>
+                        <p
+                          className="prose prose-sm dark:prose-invert text-foreground text-sm"
+                          dangerouslySetInnerHTML={{
+                            __html: generateHTML(attribute.description),
+                          }}
+                        />
                       </TooltipContent>
                     </Tooltip>
-                  )}
+                  ) : null}
                 </HStack>
                 {attribute.type === "Measurement" && (
                   <span className="text-xs text-muted-foreground">
