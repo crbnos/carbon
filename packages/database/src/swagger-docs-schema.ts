@@ -11730,6 +11730,393 @@ export default {
         tags: ["salesOrderPayment"],
       },
     },
+    "/salesInvoice": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerReference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.postingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateDue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.datePaid",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.subtotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalDiscount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalTax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.balance",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoice",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoice"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesInvoice",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["salesInvoice"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerReference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.postingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateDue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.datePaid",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.subtotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalDiscount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalTax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.balance",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoice"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customerReference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.postingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.dateDue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.datePaid",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.subtotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalDiscount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.totalTax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.balance",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.salesInvoice",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoice"],
+      },
+    },
     "/customFieldTable": {
       get: {
         parameters: [
@@ -25641,6 +26028,153 @@ export default {
         tags: ["supplierQuotes"],
       },
     },
+    "/salesInvoiceLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.invoiceLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.accountNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.assetId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.setupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.convertedSetupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.itemDescription",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.unitCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.customerPartId",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoiceLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoiceLines"],
+      },
+    },
     "/supplierContact": {
       get: {
         parameters: [
@@ -34716,6 +35250,159 @@ export default {
         tags: ["quoteLines"],
       },
     },
+    "/salesInvoices": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.customerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.customerReference",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.invoiceCustomerId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.invoiceCustomerLocationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.invoiceCustomerContactId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.paymentTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.postingDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.dateIssued",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.dateDue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.datePaid",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.currencyCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.subtotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.totalDiscount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.totalAmount",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.totalTax",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.balance",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.exchangeRateUpdatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.assignee",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.thumbnailPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.itemType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.invoiceTotal",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.lines",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoices",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoices"],
+      },
+    },
     "/country": {
       get: {
         parameters: [
@@ -42120,6 +42807,195 @@ export default {
         tags: ["nonConformanceJobOperation"],
       },
     },
+    "/salesInvoiceShipment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoiceShipment",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoiceShipment"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesInvoiceShipment",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["salesInvoiceShipment"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoiceShipment"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.shippingTermId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceShipment.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.salesInvoiceShipment",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoiceShipment"],
+      },
+    },
     "/procedureAttribute": {
       get: {
         parameters: [
@@ -48070,6 +48946,366 @@ export default {
           },
         },
         tags: ["quote"],
+      },
+    },
+    "/salesInvoiceLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.assetId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.setupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedSetupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoiceLine",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoiceLine"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.salesInvoiceLine",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["salesInvoiceLine"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.assetId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.setupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedSetupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoiceLine"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.accountNumber",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.assetId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.quantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shelfId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.exchangeRate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.unitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.setupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.addOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.shippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedUnitPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedAddOnCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedShippingCost",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.convertedSetupPrice",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.externalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.internalNotes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.salesInvoiceLine",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["salesInvoiceLine"],
       },
     },
     "/jobOperationAttribute": {
@@ -58816,6 +60052,205 @@ export default {
       },
       type: "object",
     },
+    salesInvoice: {
+      required: [
+        "id",
+        "invoiceId",
+        "status",
+        "customerId",
+        "currencyCode",
+        "subtotal",
+        "totalDiscount",
+        "totalAmount",
+        "totalTax",
+        "balance",
+        "exchangeRate",
+        "companyId",
+        "customFields",
+        "internalNotes",
+        "externalNotes",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceId: {
+          format: "text",
+          type: "string",
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "Pending",
+            "Submitted",
+            "Return",
+            "Credit Note Issued",
+            "Paid",
+            "Partially Paid",
+            "Overdue",
+            "Voided",
+          ],
+          format: 'public."salesInvoiceStatus"',
+          type: "string",
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customerReference: {
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `contact.id`.<fk table='contact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        paymentTermId: {
+          description:
+            "Note:\nThis is a Foreign Key to `paymentTerm.id`.<fk table='paymentTerm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        postingDate: {
+          format: "date",
+          type: "string",
+        },
+        dateIssued: {
+          format: "date",
+          type: "string",
+        },
+        dateDue: {
+          format: "date",
+          type: "string",
+        },
+        datePaid: {
+          format: "date",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        subtotal: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        totalDiscount: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        totalAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        totalTax: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        balance: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        assignee: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        externalNotes: {
+          format: "json",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     customFieldTable: {
       required: ["table", "module", "name"],
       properties: {
@@ -65043,6 +66478,175 @@ export default {
       },
       type: "object",
     },
+    salesInvoiceLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesInvoice.id`.<fk table='salesInvoice' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceLineType: {
+          enum: [
+            "Comment",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+            "Fixed Asset",
+          ],
+          format: 'public."salesInvoiceLineType"',
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        accountNumber: {
+          format: "text",
+          type: "string",
+        },
+        assetId: {
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          format: "numeric",
+          type: "number",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        unitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        setupPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        addOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        shippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        taxPercent: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedShippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedSetupPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        externalNotes: {
+          format: "json",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemName: {
+          format: "text",
+          type: "string",
+        },
+        itemDescription: {
+          format: "text",
+          type: "string",
+        },
+        unitCost: {
+          format: "numeric",
+          type: "number",
+        },
+        customerPartId: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     supplierContact: {
       required: ["id", "supplierId", "contactId"],
       properties: {
@@ -69274,6 +70878,202 @@ export default {
       },
       type: "object",
     },
+    salesInvoices: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceId: {
+          format: "text",
+          type: "string",
+        },
+        status: {
+          enum: [
+            "Draft",
+            "Pending",
+            "Submitted",
+            "Return",
+            "Credit Note Issued",
+            "Paid",
+            "Partially Paid",
+            "Overdue",
+            "Voided",
+          ],
+          format: 'public."salesInvoiceStatus"',
+          type: "string",
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customerReference: {
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `contact.id`.<fk table='contact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        paymentTermId: {
+          description:
+            "Note:\nThis is a Foreign Key to `paymentTerm.id`.<fk table='paymentTerm' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        postingDate: {
+          format: "date",
+          type: "string",
+        },
+        dateIssued: {
+          format: "date",
+          type: "string",
+        },
+        dateDue: {
+          format: "date",
+          type: "string",
+        },
+        datePaid: {
+          format: "date",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string",
+        },
+        subtotal: {
+          format: "numeric",
+          type: "number",
+        },
+        totalDiscount: {
+          format: "numeric",
+          type: "number",
+        },
+        totalAmount: {
+          format: "numeric",
+          type: "number",
+        },
+        totalTax: {
+          format: "numeric",
+          type: "number",
+        },
+        balance: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRate: {
+          format: "numeric",
+          type: "number",
+        },
+        exchangeRateUpdatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        assignee: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        externalNotes: {
+          format: "json",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
+        itemType: {
+          enum: [
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."itemType"',
+          type: "string",
+        },
+        invoiceTotal: {
+          format: "numeric",
+          type: "number",
+        },
+        lines: {
+          format: "json[]",
+          items: {},
+          type: "array",
+        },
+      },
+      type: "object",
+    },
     country: {
       required: ["name", "alpha2", "alpha3"],
       properties: {
@@ -72880,6 +74680,71 @@ export default {
       },
       type: "object",
     },
+    salesInvoiceShipment: {
+      required: [
+        "id",
+        "shippingCost",
+        "customFields",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `salesInvoice.id`.<fk table='salesInvoice' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shippingCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        locationId: {
+          format: "text",
+          type: "string",
+        },
+        shippingMethodId: {
+          format: "text",
+          type: "string",
+        },
+        shippingTermId: {
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     procedureAttribute: {
       required: [
         "id",
@@ -75726,6 +77591,183 @@ export default {
         },
         completedDate: {
           format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    salesInvoiceLine: {
+      required: [
+        "id",
+        "invoiceId",
+        "invoiceLineType",
+        "quantity",
+        "unitOfMeasureCode",
+        "exchangeRate",
+        "unitPrice",
+        "setupPrice",
+        "addOnCost",
+        "shippingCost",
+        "taxPercent",
+        "externalNotes",
+        "internalNotes",
+        "customFields",
+        "companyId",
+        "createdAt",
+        "createdBy",
+      ],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesInvoice.id`.<fk table='salesInvoice' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceLineType: {
+          enum: [
+            "Comment",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+            "Fixed Asset",
+          ],
+          format: 'public."salesInvoiceLineType"',
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemReadableId: {
+          format: "text",
+          type: "string",
+        },
+        accountNumber: {
+          format: "text",
+          type: "string",
+        },
+        assetId: {
+          format: "text",
+          type: "string",
+        },
+        quantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shelfId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shelf.id`.<fk table='shelf' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        unitPrice: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        setupPrice: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        addOnCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        shippingCost: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        taxPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        convertedUnitPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedAddOnCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedShippingCost: {
+          format: "numeric",
+          type: "number",
+        },
+        convertedSetupPrice: {
+          format: "numeric",
+          type: "number",
+        },
+        externalNotes: {
+          format: "json",
+        },
+        internalNotes: {
+          format: "json",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -82259,6 +84301,213 @@ export default {
     },
     "rowFilter.salesOrderPayment.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.salesInvoice": {
+      name: "salesInvoice",
+      description: "salesInvoice",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoice",
+      },
+    },
+    "rowFilter.salesInvoice.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.customerReference": {
+      name: "customerReference",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.invoiceCustomerId": {
+      name: "invoiceCustomerId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.invoiceCustomerLocationId": {
+      name: "invoiceCustomerLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.invoiceCustomerContactId": {
+      name: "invoiceCustomerContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.paymentTermId": {
+      name: "paymentTermId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.dateIssued": {
+      name: "dateIssued",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.dateDue": {
+      name: "dateDue",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.datePaid": {
+      name: "datePaid",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.subtotal": {
+      name: "subtotal",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.totalDiscount": {
+      name: "totalDiscount",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.totalAmount": {
+      name: "totalAmount",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.totalTax": {
+      name: "totalTax",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.balance": {
+      name: "balance",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",
@@ -89247,6 +91496,225 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.salesInvoiceLines": {
+      name: "salesInvoiceLines",
+      description: "salesInvoiceLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoiceLines",
+      },
+    },
+    "rowFilter.salesInvoiceLines.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.invoiceLineType": {
+      name: "invoiceLineType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.accountNumber": {
+      name: "accountNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.assetId": {
+      name: "assetId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.setupPrice": {
+      name: "setupPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.addOnCost": {
+      name: "addOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.convertedAddOnCost": {
+      name: "convertedAddOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.convertedShippingCost": {
+      name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.convertedSetupPrice": {
+      name: "convertedSetupPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemName": {
+      name: "itemName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.itemDescription": {
+      name: "itemDescription",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.unitCost": {
+      name: "unitCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.customerPartId": {
+      name: "customerPartId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.supplierContact": {
       name: "supplierContact",
       description: "supplierContact",
@@ -94152,6 +96620,237 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.salesInvoices": {
+      name: "salesInvoices",
+      description: "salesInvoices",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoices",
+      },
+    },
+    "rowFilter.salesInvoices.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.customerReference": {
+      name: "customerReference",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.invoiceCustomerId": {
+      name: "invoiceCustomerId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.invoiceCustomerLocationId": {
+      name: "invoiceCustomerLocationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.invoiceCustomerContactId": {
+      name: "invoiceCustomerContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.paymentTermId": {
+      name: "paymentTermId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.dateIssued": {
+      name: "dateIssued",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.dateDue": {
+      name: "dateDue",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.datePaid": {
+      name: "datePaid",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.subtotal": {
+      name: "subtotal",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.totalDiscount": {
+      name: "totalDiscount",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.totalAmount": {
+      name: "totalAmount",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.totalTax": {
+      name: "totalTax",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.balance": {
+      name: "balance",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.exchangeRateUpdatedAt": {
+      name: "exchangeRateUpdatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.itemType": {
+      name: "itemType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.invoiceTotal": {
+      name: "invoiceTotal",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.lines": {
+      name: "lines",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.country": {
       name: "country",
       description: "country",
@@ -98148,6 +100847,81 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.salesInvoiceShipment": {
+      name: "salesInvoiceShipment",
+      description: "salesInvoiceShipment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoiceShipment",
+      },
+    },
+    "rowFilter.salesInvoiceShipment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.shippingMethodId": {
+      name: "shippingMethodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.shippingTermId": {
+      name: "shippingTermId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceShipment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.procedureAttribute": {
       name: "procedureAttribute",
       description: "procedureAttribute",
@@ -101330,6 +104104,195 @@ export default {
     },
     "rowFilter.quote.completedDate": {
       name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.salesInvoiceLine": {
+      name: "salesInvoiceLine",
+      description: "salesInvoiceLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoiceLine",
+      },
+    },
+    "rowFilter.salesInvoiceLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.invoiceLineType": {
+      name: "invoiceLineType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.itemReadableId": {
+      name: "itemReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.accountNumber": {
+      name: "accountNumber",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.assetId": {
+      name: "assetId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.quantity": {
+      name: "quantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.shelfId": {
+      name: "shelfId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.unitPrice": {
+      name: "unitPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.setupPrice": {
+      name: "setupPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.addOnCost": {
+      name: "addOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.shippingCost": {
+      name: "shippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.taxPercent": {
+      name: "taxPercent",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.convertedUnitPrice": {
+      name: "convertedUnitPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.convertedAddOnCost": {
+      name: "convertedAddOnCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.convertedShippingCost": {
+      name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.convertedSetupPrice": {
+      name: "convertedSetupPrice",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.externalNotes": {
+      name: "externalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.internalNotes": {
+      name: "internalNotes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",

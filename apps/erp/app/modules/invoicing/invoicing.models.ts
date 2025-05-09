@@ -25,6 +25,29 @@ export const purchaseInvoiceStatusType = [
   "Overdue",
 ] as const;
 
+export const salesInvoiceLineType = [
+  "Part",
+  // "Service",
+  "Material",
+  "Tool",
+  "Consumable",
+  // "Fixed Asset",
+  // "G/L Account",
+  "Comment",
+] as const;
+
+export const salesInvoiceStatusType = [
+  "Draft",
+  "Return",
+  "Pending",
+  "Partially Paid",
+  "Submitted",
+  "Credit Note Issued",
+  "Paid",
+  "Voided",
+  "Overdue",
+] as const;
+
 export const purchaseInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),

@@ -5,7 +5,8 @@ import { VStack } from "@carbon/react";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { SalesInvoicesTable, getSalesInvoices } from "~/modules/invoicing";
+import { getSalesInvoices } from "~/modules/invoicing";
+import SalesInvoicesTable from "~/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -55,7 +56,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 }
 
-export default function PurchaseInvoicesSearchRoute() {
+export default function SalesInvoicesSearchRoute() {
   const { count, salesInvoices } = useLoaderData<typeof loader>();
 
   return (

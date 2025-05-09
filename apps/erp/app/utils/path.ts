@@ -517,6 +517,10 @@ export const path = {
     deleteQuoteOperationTool: (id: string) =>
       generatePath(`${x}/quote/methods/operation/tool/delete/${id}`),
     deleteReceipt: (id: string) => generatePath(`${x}/receipt/${id}/delete`),
+    deleteSalesInvoice: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/delete`),
+    deleteSalesInvoiceLine: (invoiceId: string, lineId: string) =>
+      generatePath(`${x}/sales-invoice/${invoiceId}/${lineId}/delete`),
     deleteSalesOrder: (id: string) =>
       generatePath(`${x}/sales-order/${id}/delete`),
     deleteSalesOrderLine: (orderId: string, lineId: string) =>
@@ -1015,7 +1019,11 @@ export const path = {
     routings: `${x}/items/routing`,
     sales: `${x}/sales`,
     salesInvoice: (id: string) => generatePath(`${x}/sales-invoice/${id}`),
-    salesInvoices: `${x}/invoicing/sales`,
+    salesInvoiceDetails: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/details`),
+    salesInvoiceLine: (id: string, lineId: string) =>
+      generatePath(`${x}/sales-invoice/${id}/${lineId}/details`),
+    salesInvoices: `${x}/sales/invoices`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderShipment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/shipment`),

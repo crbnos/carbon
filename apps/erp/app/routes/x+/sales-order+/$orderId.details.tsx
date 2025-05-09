@@ -1,7 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
 import { Spinner } from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
@@ -32,13 +31,6 @@ import {
 import type { SalesOrderShipmentFormRef } from "~/modules/sales/ui/SalesOrder/SalesOrderShipmentForm";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-type LoaderData = {
-  internalNotes: JSONContent;
-  externalNotes: JSONContent;
-  payment: Database["public"]["Tables"]["salesOrderPayment"]["Row"];
-  shipment: Database["public"]["Tables"]["salesOrderShipment"]["Row"];
-};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -78,7 +70,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json<LoaderData>({
+  return json({
     internalNotes: (order.data?.internalNotes ?? {}) as JSONContent,
     externalNotes: (order.data?.externalNotes ?? {}) as JSONContent,
     payment: payment.data || null,

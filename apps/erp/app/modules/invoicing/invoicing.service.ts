@@ -147,12 +147,12 @@ export async function getSalesInvoices(
   return query;
 }
 
-export async function getSalesInvoiceDelivery(
+export async function getSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceId: string
 ) {
   return client
-    .from("salesInvoiceDelivery")
+    .from("salesInvoiceShipment")
     .select("*")
     .eq("id", salesInvoiceId)
     .single();

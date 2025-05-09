@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import type {
   purchaseInvoiceLineType,
   purchaseInvoiceStatusType,
@@ -6,6 +7,9 @@ import type {
   getPurchaseInvoiceDelivery,
   getPurchaseInvoiceLines,
   getPurchaseInvoices,
+  getSalesInvoiceLines,
+  getSalesInvoices,
+  getSalesInvoiceShipment,
 } from "./invoicing.service";
 
 export type PurchaseInvoice = NonNullable<
@@ -23,3 +27,21 @@ export type PurchaseInvoiceLine = NonNullable<
 export type PurchaseInvoiceLineType = (typeof purchaseInvoiceLineType)[number];
 
 export type PurchaseInvoiceStatus = (typeof purchaseInvoiceStatusType)[number];
+
+export type SalesInvoice = NonNullable<
+  Awaited<ReturnType<typeof getSalesInvoices>>["data"]
+>[number];
+
+export type SalesInvoiceShipment = NonNullable<
+  Awaited<ReturnType<typeof getSalesInvoiceShipment>>["data"]
+>;
+
+export type SalesInvoiceLine = NonNullable<
+  Awaited<ReturnType<typeof getSalesInvoiceLines>>["data"]
+>[number];
+
+export type SalesInvoiceLineType =
+  Database["public"]["Enums"]["salesInvoiceLineType"];
+
+export type SalesInvoiceStatus =
+  Database["public"]["Enums"]["salesInvoiceStatus"];
