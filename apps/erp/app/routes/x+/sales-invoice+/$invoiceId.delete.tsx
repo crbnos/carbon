@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { deletePurchaseInvoice } from "~/modules/invoicing";
+import { deleteSalesInvoice } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,17 +15,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw notFound("invoiceId not found");
 
-  const remove = await deletePurchaseInvoice(client, invoiceId);
+  const remove = await deleteSalesInvoice(client, invoiceId);
 
   if (remove.error) {
     throw redirect(
-      path.to.purchaseInvoices,
+      path.to.salesInvoices,
       await flash(
         request,
-        error(remove.error, "Failed to delete purchase invoice")
+        error(remove.error, "Failed to delete sales invoice")
       )
     );
   }
 
-  throw redirect(path.to.purchaseInvoices);
+  throw redirect(path.to.salesInvoices);
 }

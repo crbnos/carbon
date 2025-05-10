@@ -10,33 +10,33 @@ import { defer, redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { Fragment } from "react/jsx-runtime";
 import {
-  PurchaseInvoiceLineForm,
-  getPurchaseInvoiceLine,
-  purchaseInvoiceLineValidator,
-  upsertPurchaseInvoiceLine,
+  getSalesInvoiceLine,
+  salesInvoiceLineValidator,
+  upsertSalesInvoiceLine,
 } from "~/modules/invoicing";
-import { getSupplierInteractionLineDocuments } from "~/modules/purchasing";
+import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
+import { getOpportunityLineDocuments } from "~/modules/sales";
 import {
-  SupplierInteractionLineDocuments,
-  SupplierInteractionLineNotes,
-} from "~/modules/purchasing/ui/SupplierInteraction";
+  OpportunityLineDocuments,
+  OpportunityLineNotes,
+} from "~/modules/sales/ui/Opportunity";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "invoicing",
     role: "employee",
   });
 
   const { lineId } = params;
   if (!lineId) throw notFound("lineId not found");
 
-  const purchaseInvoiceLine = await getPurchaseInvoiceLine(client, lineId);
+  const salesInvoiceLine = await getSalesInvoiceLine(client, lineId);
 
   return defer({
-    purchaseInvoiceLine: purchaseInvoiceLine?.data ?? null,
-    files: getSupplierInteractionLineDocuments(client, companyId, lineId),
+    salesInvoiceLine: salesInvoiceLine?.data ?? null,
+    files: getOpportunityLineDocuments(client, companyId, lineId),
   });
 }
 
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!lineId) throw new Error("Could not find lineId");
 
   const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceLineValidator).validate(
+  const validation = await validator(salesInvoiceLineValidator).validate(
     formData
   );
 
@@ -77,72 +77,67 @@ export async function action({ request, params }: ActionFunctionArgs) {
   //   data.assetId = undefined;
   // }
 
-  const updatePurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const updateSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     id: lineId,
     ...data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (updatePurchaseInvoiceLine.error) {
+  if (updateSalesInvoiceLine.error) {
     throw redirect(
-      path.to.purchaseInvoiceLine(invoiceId, lineId),
+      path.to.salesInvoiceLine(invoiceId, lineId),
       await flash(
         request,
         error(
-          updatePurchaseInvoiceLine.error,
-          "Failed to update purchase invoice line"
+          updateSalesInvoiceLine.error,
+          "Failed to update sales invoice line"
         )
       )
     );
   }
 
-  throw redirect(path.to.purchaseInvoiceLine(invoiceId, lineId));
+  throw redirect(path.to.salesInvoiceLine(invoiceId, lineId));
 }
 
-export default function EditPurchaseInvoiceLineRoute() {
+export default function EditSalesInvoiceLineRoute() {
   const { invoiceId, lineId } = useParams();
   if (!invoiceId) throw notFound("invoiceId not found");
   if (!lineId) throw notFound("lineId not found");
 
-  const { purchaseInvoiceLine, files } = useLoaderData<typeof loader>();
+  const { salesInvoiceLine, files } = useLoaderData<typeof loader>();
 
   const initialValues = {
-    id: purchaseInvoiceLine?.id ?? undefined,
-    invoiceId: purchaseInvoiceLine?.invoiceId ?? "",
-    invoiceLineType: (purchaseInvoiceLine?.invoiceLineType ?? "Part") as "Part",
-    itemId: purchaseInvoiceLine?.itemId ?? "",
-    itemReadableId: purchaseInvoiceLine?.itemReadableId ?? "",
-    accountNumber: purchaseInvoiceLine?.accountNumber ?? "",
-    assetId: purchaseInvoiceLine?.assetId ?? "",
-    description: purchaseInvoiceLine?.description ?? "",
-    quantity: purchaseInvoiceLine?.quantity ?? 1,
-    supplierUnitPrice: purchaseInvoiceLine?.supplierUnitPrice ?? 0,
-    supplierShippingCost: purchaseInvoiceLine?.supplierShippingCost ?? 0,
-    supplierTaxAmount: purchaseInvoiceLine?.supplierTaxAmount ?? 0,
-    exchangeRate: purchaseInvoiceLine?.exchangeRate ?? 1,
-    purchaseUnitOfMeasureCode:
-      purchaseInvoiceLine?.purchaseUnitOfMeasureCode ?? "",
-    inventoryUnitOfMeasureCode:
-      purchaseInvoiceLine?.inventoryUnitOfMeasureCode ?? "",
-    conversionFactor: purchaseInvoiceLine?.conversionFactor ?? 1,
-    shelfId: purchaseInvoiceLine?.shelfId ?? "",
-    taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
-    ...getCustomFields(purchaseInvoiceLine?.customFields),
+    id: salesInvoiceLine?.id ?? undefined,
+    invoiceId: salesInvoiceLine?.invoiceId ?? "",
+    invoiceLineType: (salesInvoiceLine?.invoiceLineType ?? "Part") as "Part",
+    itemId: salesInvoiceLine?.itemId ?? "",
+    itemReadableId: salesInvoiceLine?.itemReadableId ?? "",
+    accountNumber: salesInvoiceLine?.accountNumber ?? "",
+    assetId: salesInvoiceLine?.assetId ?? "",
+    description: salesInvoiceLine?.description ?? "",
+    quantity: salesInvoiceLine?.quantity ?? 1,
+    unitPrice: salesInvoiceLine?.unitPrice ?? 0,
+    shippingCost: salesInvoiceLine?.shippingCost ?? 0,
+    taxPercent: salesInvoiceLine?.taxPercent ?? 0,
+    exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
+    unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
+    shelfId: salesInvoiceLine?.shelfId ?? "",
+    ...getCustomFields(salesInvoiceLine?.customFields),
   };
 
   return (
-    <Fragment key={purchaseInvoiceLine?.id}>
-      <PurchaseInvoiceLineForm
+    <Fragment key={salesInvoiceLine?.id}>
+      <SalesInvoiceLineForm
         key={initialValues.id}
         initialValues={initialValues}
       />
-      <SupplierInteractionLineNotes
-        id={purchaseInvoiceLine?.id ?? ""}
-        table="purchaseInvoiceLine"
+      <OpportunityLineNotes
+        id={salesInvoiceLine?.id ?? ""}
+        table="salesInvoiceLine"
         title="Notes"
-        subTitle={purchaseInvoiceLine?.itemReadableId ?? ""}
-        internalNotes={purchaseInvoiceLine?.internalNotes as JSONContent}
+        subTitle={salesInvoiceLine?.itemReadableId ?? ""}
+        internalNotes={salesInvoiceLine?.internalNotes as JSONContent}
       />
 
       <Suspense
@@ -154,11 +149,11 @@ export default function EditPurchaseInvoiceLineRoute() {
       >
         <Await resolve={files}>
           {(resolvedFiles) => (
-            <SupplierInteractionLineDocuments
+            <OpportunityLineDocuments
               files={resolvedFiles ?? []}
               id={invoiceId}
               lineId={lineId}
-              type="Purchase Invoice"
+              type="Sales Invoice"
             />
           )}
         </Await>

@@ -622,6 +622,10 @@ function getDocumentLocation(
       return path.to.quote(sourceDocumentId);
     case "Request for Quote":
       return path.to.salesRfq(sourceDocumentId);
+    case "Sales Order":
+      return path.to.salesOrder(sourceDocumentId);
+    case "Sales Invoice":
+      return path.to.salesInvoice(sourceDocumentId);
     case "Supplier Quote":
       return path.to.supplierQuote(sourceDocumentId);
     case "Job":

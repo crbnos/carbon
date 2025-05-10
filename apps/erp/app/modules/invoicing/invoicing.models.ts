@@ -146,3 +146,80 @@ export const purchaseInvoiceLineValidator = z
 //     path: ["description"], // path of error
 //   }
 // );
+
+export const salesInvoiceValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  invoiceId: zfd.text(z.string().optional()),
+  customerId: z.string().min(36, { message: "Customer is required" }),
+  customerReference: zfd.text(z.string().optional()),
+  paymentTermId: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  invoiceCustomerId: zfd.text(z.string().optional()),
+  invoiceCustomerContactId: zfd.text(z.string().optional()),
+  invoiceCustomerLocationId: zfd.text(z.string().optional()),
+  dateIssued: zfd.text(z.string().optional()),
+  dateDue: zfd.text(z.string().optional()),
+  supplierShippingCost: zfd.numeric(z.number().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional()),
+});
+
+export const salesInvoiceShipmentValidator = z.object({
+  id: z.string(),
+  locationId: zfd.text(z.string().optional()),
+  shippingMethodId: zfd.text(z.string().optional()),
+  shippingTermId: zfd.text(z.string().optional()),
+  shippingCost: zfd.numeric(z.number().optional().default(0)),
+  customFields: z.any().optional(),
+});
+
+export const salesInvoiceLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    invoiceId: z.string().min(20, { message: "Invoice is required" }),
+    invoiceLineType: z.enum(methodItemType, {
+      errorMap: (issue, ctx) => ({
+        message: "Type is required",
+      }),
+    }),
+    purchaseOrderId: zfd.text(z.string().optional()),
+    purchaseOrderLineId: zfd.text(z.string().optional()),
+    itemId: zfd.text(z.string().optional()),
+    itemReadableId: zfd.text(z.string().optional()),
+    accountNumber: zfd.text(z.string().optional()),
+    assetId: zfd.text(z.string().optional()),
+    description: zfd.text(z.string().optional()),
+    quantity: zfd.numeric(z.number().optional()),
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of measure is required" }),
+    unitPrice: zfd.numeric(z.number().optional()),
+    shippingCost: zfd.numeric(z.number().optional().default(0)),
+    taxPercent: zfd.numeric(z.number().optional().default(0)),
+    locationId: zfd.text(z.string().optional()),
+    shelfId: zfd.text(z.string().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
+  })
+  .refine(
+    (data) =>
+      ["Part", "Service", "Material", "Tool", "Consumable"].includes(
+        data.invoiceLineType
+      )
+        ? data.itemId
+        : true,
+    {
+      message: "Item is required",
+      path: ["itemId"], // path of error
+    }
+  )
+  .refine(
+    (data) =>
+      ["Part", "Material", "Tool", "Consumable"].includes(data.invoiceLineType)
+        ? data.locationId
+        : true,
+    {
+      message: "Location is required",
+      path: ["locationId"], // path of error
+    }
+  );

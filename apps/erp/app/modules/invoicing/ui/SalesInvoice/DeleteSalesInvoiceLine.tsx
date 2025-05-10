@@ -1,13 +1,13 @@
 import { useParams } from "@remix-run/react";
 import { ConfirmDelete } from "~/components/Modals";
 import { path } from "~/utils/path";
-import type { PurchaseInvoiceLine } from "../../types";
+import type { SalesInvoiceLine } from "../../types";
 
-export default function DeletePurchaseInvoiceLine({
+export default function DeleteSalesInvoiceLine({
   line,
   onCancel,
 }: {
-  line: PurchaseInvoiceLine;
+  line: SalesInvoiceLine;
   onCancel: () => void;
 }) {
   const { invoiceId } = useParams();
@@ -16,7 +16,7 @@ export default function DeletePurchaseInvoiceLine({
 
   return (
     <ConfirmDelete
-      action={path.to.deletePurchaseInvoiceLine(invoiceId, line.id)}
+      action={path.to.deleteSalesInvoiceLine(invoiceId, line.id)}
       name={line.itemReadableId ?? "this line"}
       text={`Are you sure you want to delete the line: ${line.itemReadableId}? This cannot be undone.`}
       onCancel={onCancel}

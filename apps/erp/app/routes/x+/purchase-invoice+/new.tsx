@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -8,11 +8,11 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import {
+  createPurchaseInvoiceFromPurchaseOrder,
   PurchaseInvoiceForm,
   purchaseInvoiceValidator,
   upsertPurchaseInvoice,
 } from "~/modules/invoicing";
-import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invoicing.server";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -40,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     case "Purchase Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createPurchaseInvoiceFromPurchaseOrder(
+        getCarbonServiceRole(),
         sourceDocumentId,
         companyId,
         userId

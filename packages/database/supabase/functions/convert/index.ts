@@ -52,6 +52,12 @@ const payloadValidator = z.discriminatedUnion("type", [
     digitalQuoteAcceptedByEmail: z.string().optional(),
   }),
   z.object({
+    type: z.literal("salesOrderToSalesInvoice"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("supplierQuoteToPurchaseOrder"),
     id: z.string(),
     companyId: z.string(),
@@ -483,6 +489,9 @@ serve(async (req: Request) => {
 
         convertedId = insertedSalesOrderId;
         break;
+      }
+      case "salesOrderToSalesInvoice": {
+        throw new Error("Not implemented");
       }
       case "salesRfqToQuote": {
         const [salesRfq, salesRfqLines] = await Promise.all([

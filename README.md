@@ -2,7 +2,21 @@
 
 Carbon is the open-source operating system for manufacturing.
 
-Technical highlights/roadmap:
+Features:
+
+- [x] ERP
+- [x] MES
+- [x] Custom Fields
+- [x] Nested BoM
+- [x] Traceability
+- [x] Configurator
+- [x] MCP Client/Server
+- [x] API
+- [x] Webhooks
+- [ ] Purchase Planning
+- [ ] Accounting
+
+Technical highlights:
 
 - [x] Unified auth and permissions across apps
 - [x] Full-stack type safety (Database → UI)
@@ -11,6 +25,7 @@ Technical highlights/roadmap:
 - [x] Role-based access control (Customer, Supplier, Employee)
 - [x] Row-level security (RLS)
 - [x] Composable user groups
+- [x] Dependency graph for operations
 - [x] Third-party integrations
 
 ## Techstack
@@ -172,9 +187,3 @@ $ npm run dev
 ```
 
 4. Rename the `_migrations` folder back to `migrations`
-
-## Connecting to the MCP Server
-
-```bash
-$ npx opencontrol http://localhost:54321/functions/v1/mcp
-```

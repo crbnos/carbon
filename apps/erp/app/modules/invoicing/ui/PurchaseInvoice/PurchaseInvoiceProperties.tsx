@@ -107,7 +107,7 @@ const PurchaseInvoiceProperties = () => {
       : routeData?.purchaseInvoice?.assignee;
 
   const isDisabled =
-    !permissions.can("update", "purchasing") ||
+    !permissions.can("update", "invoicing") ||
     !["Draft", "To Review", "Overdue"].includes(
       routeData?.purchaseInvoice?.status ?? ""
     );
@@ -170,7 +170,7 @@ const PurchaseInvoiceProperties = () => {
         table="purchaseInvoice"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "purchasing")}
+        isReadOnly={!permissions.can("update", "invoicing")}
       />
 
       <ValidatedForm

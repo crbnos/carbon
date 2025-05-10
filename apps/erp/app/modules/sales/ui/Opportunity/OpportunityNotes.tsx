@@ -30,7 +30,7 @@ const OpportunityNotes = ({
   externalNotes: initialExternalNotes,
 }: {
   id: string | null;
-  table: "salesRfq" | "quote" | "salesOrder";
+  table: "salesRfq" | "quote" | "salesOrder" | "salesInvoice";
   title: string;
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;

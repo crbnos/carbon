@@ -17,14 +17,14 @@ import {
 } from "@carbon/react";
 
 import { useFetcher } from "@remix-run/react";
-import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.post";
+import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import { path } from "~/utils/path";
 
-type PurchaseInvoicePostModalProps = {
+type SalesInvoicePostModalProps = {
   isOpen: boolean;
   onClose: () => void;
   invoiceId: string;
-  linesToReceive: {
+  linesToShip: {
     itemId: string | null;
     itemReadableId: string | null;
     description: string | null;
@@ -32,13 +32,13 @@ type PurchaseInvoicePostModalProps = {
   }[];
 };
 
-const PurchaseInvoicePostModal = ({
+const SalesInvoicePostModal = ({
   isOpen,
   onClose,
   invoiceId,
-  linesToReceive,
-}: PurchaseInvoicePostModalProps) => {
-  const hasLinesToReceive = linesToReceive.length > 0;
+  linesToShip,
+}: SalesInvoicePostModalProps) => {
+  const hasLinesToShip = linesToShip.length > 0;
 
   const fetcher = useFetcher<typeof action>();
   return (
@@ -53,10 +53,10 @@ const PurchaseInvoicePostModal = ({
           <ModalTitle>Post Invoice</ModalTitle>
         </ModalHeader>
         <ModalBody>
-          {hasLinesToReceive ? (
+          {hasLinesToShip ? (
             <div className="gap-4 w-full flex flex-col">
               <p>
-                Are you sure you want to post this invoice? A receipt will be
+                Are you sure you want to post this invoice? A shipment will be
                 automatically created and posted for:
               </p>
               <Table>
@@ -67,7 +67,7 @@ const PurchaseInvoicePostModal = ({
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {linesToReceive.map((line) => (
+                  {linesToShip.map((line) => (
                     <Tr key={line.itemId} className="text-sm">
                       <Td>
                         <VStack spacing={0}>
@@ -91,7 +91,7 @@ const PurchaseInvoicePostModal = ({
         </ModalBody>
         <ModalFooter>
           <HStack>
-            <Button variant="solid" onClick={onClose}>
+            <Button variant="secondary" onClick={onClose}>
               Cancel
             </Button>
             <fetcher.Form
@@ -103,9 +103,7 @@ const PurchaseInvoicePostModal = ({
                 isLoading={fetcher.state !== "idle"}
                 type="submit"
               >
-                {hasLinesToReceive
-                  ? "Post and Receive Invoice"
-                  : "Post Invoice"}
+                {hasLinesToShip ? "Post and Ship Invoice" : "Post Invoice"}
               </Button>
             </fetcher.Form>
           </HStack>
@@ -115,4 +113,4 @@ const PurchaseInvoicePostModal = ({
   );
 };
 
-export default PurchaseInvoicePostModal;
+export default SalesInvoicePostModal;

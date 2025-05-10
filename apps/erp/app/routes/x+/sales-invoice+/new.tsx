@@ -1,4 +1,4 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
@@ -8,20 +8,20 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import {
-  PurchaseInvoiceForm,
-  purchaseInvoiceValidator,
-  upsertPurchaseInvoice,
+  createSalesInvoiceFromSalesOrder,
+  salesInvoiceValidator,
+  upsertSalesInvoice,
 } from "~/modules/invoicing";
-import { createPurchaseInvoiceFromPurchaseOrder } from "~/modules/invoicing/invoicing.server";
+import SalesInvoiceForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceForm";
 import { getNextSequence } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Purchasing",
-  to: path.to.purchasing,
-  module: "purchasing",
+  breadcrumb: "Sales",
+  to: path.to.sales,
+  module: "sales",
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -37,9 +37,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let result: FunctionsResponse<{ id: string }>;
 
   switch (sourceDocument) {
-    case "Purchase Order":
+    case "Sales Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
-      result = await createPurchaseInvoiceFromPurchaseOrder(
+      result = await createSalesInvoiceFromSalesOrder(
+        getCarbonServiceRole(),
         sourceDocumentId,
         companyId,
         userId
@@ -47,15 +48,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (result.error || !result?.data) {
         throw redirect(
-          request.headers.get("Referer") ?? path.to.purchaseOrders,
+          request.headers.get("Referer") ?? path.to.salesOrders,
           await flash(
             request,
-            error(result.error, "Failed to create purchase invoice")
+            error(result.error, "Failed to create sales invoice")
           )
         );
       }
 
-      throw redirect(path.to.purchaseInvoice(result.data?.id!));
+      throw redirect(path.to.salesInvoice(result.data?.id!));
 
     default:
       return null;
@@ -69,22 +70,16 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceValidator).validate(
-    formData
-  );
+  const validation = await validator(salesInvoiceValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "purchaseInvoice",
-    companyId
-  );
+  const nextSequence = await getNextSequence(client, "salesInvoice", companyId);
   if (nextSequence.error) {
     throw redirect(
-      path.to.newPurchaseInvoice,
+      path.to.newSalesInvoice,
       await flash(
         request,
         error(nextSequence.error, "Failed to get next sequence")
@@ -94,7 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createPurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const createSalesInvoice = await upsertSalesInvoice(client, {
     ...data,
     invoiceId: nextSequence.data,
     companyId,
@@ -102,37 +97,38 @@ export async function action({ request }: ActionFunctionArgs) {
     customFields: setCustomFields(formData),
   });
 
-  if (createPurchaseInvoice.error || !createPurchaseInvoice.data?.[0]) {
+  if (createSalesInvoice.error || !createSalesInvoice.data?.[0]) {
+    console.error(createSalesInvoice.error);
     throw redirect(
-      path.to.purchaseInvoices,
+      path.to.salesInvoices,
       await flash(
         request,
-        error(createPurchaseInvoice.error, "Failed to insert purchase invoice")
+        error(createSalesInvoice.error, "Failed to insert sales invoice")
       )
     );
   }
 
-  const invoice = createPurchaseInvoice.data?.[0];
+  const invoice = createSalesInvoice.data?.[0];
 
-  throw redirect(path.to.purchaseInvoice(invoice?.id!));
+  throw redirect(path.to.salesInvoice(invoice?.id!));
 }
 
-export default function PurchaseInvoiceNewRoute() {
+export default function SalesInvoiceNewRoute() {
   const [params] = useUrlParams();
-  const supplierId = params.get("supplierId");
+  const customerId = params.get("customerId");
   const { defaults } = useUser();
 
   const initialValues = {
     id: undefined,
     invoiceId: undefined,
-    supplierId: supplierId ?? "",
+    customerId: customerId ?? "",
     locationId: defaults?.locationId ?? "",
     dateIssued: today(getLocalTimeZone()).toString(),
   };
 
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <PurchaseInvoiceForm initialValues={initialValues} />
+      <SalesInvoiceForm initialValues={initialValues} />
     </div>
   );
 }

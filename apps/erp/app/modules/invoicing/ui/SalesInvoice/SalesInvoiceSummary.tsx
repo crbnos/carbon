@@ -19,7 +19,7 @@ import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { LuChevronRight, LuImage } from "react-icons/lu";
-import { SupplierAvatar } from "~/components";
+import { CustomerAvatar } from "~/components";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import {
   useCurrencyFormatter,
@@ -29,9 +29,9 @@ import {
 } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
-  PurchaseInvoice,
-  PurchaseInvoiceDelivery,
-  PurchaseInvoiceLine,
+  SalesInvoice,
+  SalesInvoiceLine,
+  SalesInvoiceShipment,
 } from "../../types";
 
 const LineItems = ({
@@ -39,14 +39,14 @@ const LineItems = ({
   presentationCurrencyFormatter,
   formatter,
   locale,
-  purchaseInvoiceLines,
+  salesInvoiceLines,
   shouldConvertCurrency,
 }: {
   currencyCode: string;
   presentationCurrencyFormatter: Intl.NumberFormat;
   formatter: Intl.NumberFormat;
   locale: string;
-  purchaseInvoiceLines: PurchaseInvoiceLine[];
+  salesInvoiceLines: SalesInvoiceLine[];
   shouldConvertCurrency: boolean;
 }) => {
   const { invoiceId } = useParams();
@@ -64,18 +64,30 @@ const LineItems = ({
 
   return (
     <VStack spacing={8} className="w-full overflow-hidden">
-      {purchaseInvoiceLines.map((line) => {
+      {salesInvoiceLines.map((line) => {
         if (!line.id) return null;
 
-        const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
-        const supplierLineTotal =
-          (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0);
+        const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
+        const customerSubtotal =
+          (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
         const total =
-          lineTotal + (line.taxAmount ?? 0) + (line.shippingCost ?? 0);
-        const supplierTotal =
-          supplierLineTotal +
-          (line.supplierTaxAmount ?? 0) +
-          (line.supplierShippingCost ?? 0);
+          (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0)) *
+          (1 + (line.taxPercent ?? 0));
+        const customerTotal =
+          (customerSubtotal +
+            (line.convertedAddOnCost ?? 0) +
+            (line.convertedShippingCost ?? 0)) *
+          (1 + (line.taxPercent ?? 0));
+
+        const lineTaxAmount =
+          (line.taxPercent ?? 0) *
+          (lineSubtotal + (line.addOnCost ?? 0) + (line.shippingCost ?? 0));
+
+        const customerLineTaxAmount =
+          (line.taxPercent ?? 0) *
+          (customerSubtotal +
+            (line.convertedAddOnCost ?? 0) +
+            (line.convertedShippingCost ?? 0));
 
         return (
           <motion.div
@@ -116,7 +128,7 @@ const LineItems = ({
                         className="text-muted-foreground flex-shrink-0"
                       >
                         <Link
-                          to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+                          to={path.to.salesInvoiceLine(invoiceId, line.id!)}
                         >
                           Edit
                         </Link>
@@ -130,7 +142,7 @@ const LineItems = ({
                         {shouldConvertCurrency && (
                           <span className="text-muted-foreground text-sm">
                             {presentationCurrencyFormatter.format(
-                              supplierTotal
+                              customerTotal
                             )}
                           </span>
                         )}
@@ -173,24 +185,10 @@ const LineItems = ({
                             {line.quantity}{" "}
                             {
                               unitOfMeasures.find(
-                                (uom) =>
-                                  uom.value === line.purchaseUnitOfMeasureCode
+                                (uom) => uom.value === line.unitOfMeasureCode
                               )?.label
                             }
                           </span>
-                          {line.conversionFactor !== 1 && (
-                            <span className="text-muted-foreground text-xs">
-                              {(line.quantity ?? 0) *
-                                (line.conversionFactor ?? 1)}{" "}
-                              {
-                                unitOfMeasures.find(
-                                  (uom) =>
-                                    uom.value ===
-                                    line.inventoryUnitOfMeasureCode
-                                )?.label
-                              }
-                            </span>
-                          )}
                         </VStack>
                       </Td>
                     </Tr>
@@ -202,7 +200,7 @@ const LineItems = ({
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
                               {presentationCurrencyFormatter.format(
-                                line.supplierUnitPrice ?? 0
+                                line.convertedUnitPrice ?? 0
                               )}
                             </span>
                           )}
@@ -219,7 +217,7 @@ const LineItems = ({
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
                               {presentationCurrencyFormatter.format(
-                                line.supplierShippingCost ?? 0
+                                line.convertedShippingCost ?? 0
                               )}
                             </span>
                           )}
@@ -230,11 +228,11 @@ const LineItems = ({
                       <Td>Extended Price</Td>
                       <Td className="text-right">
                         <VStack spacing={0}>
-                          <span>{formatter.format(lineTotal)}</span>
+                          <span>{formatter.format(lineSubtotal)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
                               {presentationCurrencyFormatter.format(
-                                supplierLineTotal
+                                customerSubtotal
                               )}
                             </span>
                           )}
@@ -248,11 +246,11 @@ const LineItems = ({
                       </Td>
                       <Td className="text-right">
                         <VStack spacing={0}>
-                          <span>{formatter.format(line.taxAmount ?? 0)}</span>
+                          <span>{formatter.format(lineTaxAmount)}</span>
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
                               {presentationCurrencyFormatter.format(
-                                line.supplierTaxAmount ?? 0
+                                customerLineTaxAmount
                               )}
                             </span>
                           )}
@@ -268,7 +266,7 @@ const LineItems = ({
                           {shouldConvertCurrency && (
                             <span className="text-muted-foreground text-xs">
                               {presentationCurrencyFormatter.format(
-                                supplierTotal
+                                customerTotal
                               )}
                             </span>
                           )}
@@ -285,90 +283,105 @@ const LineItems = ({
     </VStack>
   );
 };
-type PurchaseInvoiceSummaryProps = {
+type SalesInvoiceSummaryProps = {
   onEditShippingCost: () => void;
 };
 
-const PurchaseInvoiceSummary = ({
+const SalesInvoiceSummary = ({
   onEditShippingCost,
-}: PurchaseInvoiceSummaryProps) => {
+}: SalesInvoiceSummaryProps) => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
-    purchaseInvoiceDelivery: PurchaseInvoiceDelivery;
-  }>(path.to.purchaseInvoice(invoiceId));
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
+    salesInvoiceShipment: SalesInvoiceShipment;
+  }>(path.to.salesInvoice(invoiceId));
 
   const { locale } = useLocale();
   const { company } = useUser();
 
   const shouldConvertCurrency =
-    routeData?.purchaseInvoice?.currencyCode !== company?.baseCurrencyCode;
+    routeData?.salesInvoice?.currencyCode !== company?.baseCurrencyCode;
 
   const formatter = useCurrencyFormatter({
     currency: company?.baseCurrencyCode ?? "USD",
   });
   const presentationCurrencyFormatter = useCurrencyFormatter({
-    currency: routeData?.purchaseInvoice?.currencyCode ?? "USD",
+    currency: routeData?.salesInvoice?.currencyCode ?? "USD",
   });
 
   const isEditable = ["Draft", "To Review"].includes(
-    routeData?.purchaseInvoice?.status ?? ""
+    routeData?.salesInvoice?.status ?? ""
   );
 
   // Calculate totals
   const subtotal =
-    routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      const lineTotal =
-        (line.unitPrice ?? 0) * (line.quantity ?? 0) + (line.shippingCost ?? 0);
-      return acc + lineTotal;
+    routeData?.salesInvoiceLines?.reduce((acc, line) => {
+      const lineSubtotal =
+        (line.unitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.shippingCost ?? 0) +
+        (line.addOnCost ?? 0);
+      return acc + lineSubtotal;
     }, 0) ?? 0;
 
-  const supplierSubtotal =
-    routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      const lineTotal =
-        (line.supplierUnitPrice ?? 0) * (line.quantity ?? 0) +
-        (line.supplierShippingCost ?? 0);
-      return acc + lineTotal;
+  const customerSubtotal =
+    routeData?.salesInvoiceLines?.reduce((acc, line) => {
+      const lineSubtotal =
+        (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+        (line.convertedShippingCost ?? 0) +
+        (line.convertedAddOnCost ?? 0);
+
+      return acc + lineSubtotal;
     }, 0) ?? 0;
 
   const tax =
-    routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      return acc + (line.taxAmount ?? 0);
+    routeData?.salesInvoiceLines?.reduce((acc, line) => {
+      const lineTaxAmount =
+        (line.taxPercent ?? 0) *
+        ((line.unitPrice ?? 0) * (line.quantity ?? 0) +
+          (line.shippingCost ?? 0) +
+          (line.addOnCost ?? 0));
+      return acc + lineTaxAmount;
     }, 0) ?? 0;
 
-  const supplierTax =
-    routeData?.purchaseInvoiceLines?.reduce((acc, line) => {
-      return acc + (line.supplierTaxAmount ?? 0);
+  const customerTax =
+    routeData?.salesInvoiceLines?.reduce((acc, line) => {
+      const lineTaxAmount =
+        (line.taxPercent ?? 0) *
+        ((line.convertedUnitPrice ?? 0) * (line.quantity ?? 0) +
+          (line.convertedShippingCost ?? 0) +
+          (line.convertedAddOnCost ?? 0));
+      return acc + lineTaxAmount;
     }, 0) ?? 0;
 
   const shippingCost =
-    (routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0) *
-    (routeData?.purchaseInvoice?.exchangeRate ?? 1);
+    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
+    (routeData?.salesInvoice?.exchangeRate ?? 1);
 
-  const supplierShippingCost =
-    routeData?.purchaseInvoiceDelivery?.supplierShippingCost ?? 0;
+  const customerShippingCost =
+    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
+    (routeData?.salesInvoice?.exchangeRate ?? 1);
 
   const total = subtotal + tax + shippingCost;
-  const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
+  const customerTotal = customerSubtotal + customerTax + customerShippingCost;
 
   return (
     <Card>
       <CardHeader>
         <HStack className="justify-between items-center">
           <div className="flex flex-col gap-1">
-            <CardTitle>{routeData?.purchaseInvoice.invoiceId}</CardTitle>
-            <CardDescription>Purchase Invoice</CardDescription>
+            <CardTitle>{routeData?.salesInvoice.invoiceId}</CardTitle>
+            <CardDescription>Sales Invoice</CardDescription>
           </div>
           <div className="flex flex-col gap-1 items-end">
-            <SupplierAvatar
-              supplierId={routeData?.purchaseInvoice.supplierId ?? null}
+            <CustomerAvatar
+              customerId={routeData?.salesInvoice.customerId ?? null}
             />
-            {routeData?.purchaseInvoice?.dateDue && (
+            {routeData?.salesInvoice?.dateDue && (
               <span className="text-muted-foreground text-sm">
-                Due {formatDate(routeData?.purchaseInvoice.dateDue)}
+                Due {formatDate(routeData?.salesInvoice.dateDue)}
               </span>
             )}
           </div>
@@ -380,7 +393,7 @@ const PurchaseInvoiceSummary = ({
           presentationCurrencyFormatter={presentationCurrencyFormatter}
           formatter={formatter}
           locale={locale}
-          purchaseInvoiceLines={routeData?.purchaseInvoiceLines ?? []}
+          salesInvoiceLines={routeData?.salesInvoiceLines ?? []}
           shouldConvertCurrency={shouldConvertCurrency}
         />
 
@@ -391,7 +404,7 @@ const PurchaseInvoiceSummary = ({
               <span>{formatter.format(subtotal)}</span>
               {shouldConvertCurrency && (
                 <span className="text-sm">
-                  {presentationCurrencyFormatter.format(supplierSubtotal)}
+                  {presentationCurrencyFormatter.format(customerSubtotal)}
                 </span>
               )}
             </VStack>
@@ -403,7 +416,7 @@ const PurchaseInvoiceSummary = ({
               <span>{formatter.format(tax)}</span>
               {shouldConvertCurrency && (
                 <span className="text-sm">
-                  {presentationCurrencyFormatter.format(supplierTax)}
+                  {presentationCurrencyFormatter.format(customerTax)}
                 </span>
               )}
             </VStack>
@@ -430,7 +443,7 @@ const PurchaseInvoiceSummary = ({
                   {shouldConvertCurrency && (
                     <span className="text-sm">
                       {presentationCurrencyFormatter.format(
-                        supplierShippingCost
+                        customerShippingCost
                       )}
                     </span>
                   )}
@@ -454,7 +467,7 @@ const PurchaseInvoiceSummary = ({
               <span>{formatter.format(total)}</span>
               {shouldConvertCurrency && (
                 <span className="text-sm">
-                  {presentationCurrencyFormatter.format(supplierTotal)}
+                  {presentationCurrencyFormatter.format(customerTotal)}
                 </span>
               )}
             </VStack>
@@ -465,4 +478,4 @@ const PurchaseInvoiceSummary = ({
   );
 };
 
-export default PurchaseInvoiceSummary;
+export default SalesInvoiceSummary;

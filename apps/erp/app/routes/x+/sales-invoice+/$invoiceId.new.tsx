@@ -7,12 +7,12 @@ import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUser } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
+import type { SalesInvoice } from "~/modules/invoicing";
 import {
-  PurchaseInvoiceLineForm,
-  purchaseInvoiceLineValidator,
-  upsertPurchaseInvoiceLine,
+  salesInvoiceLineValidator,
+  upsertSalesInvoiceLine,
 } from "~/modules/invoicing";
+import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import type { MethodItemType } from "~/modules/shared";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -27,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceLineValidator).validate(
+  const validation = await validator(salesInvoiceLineValidator).validate(
     formData
   );
 
@@ -37,52 +37,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id, ...data } = validation.data;
 
-  const createPurchaseInvoiceLine = await upsertPurchaseInvoiceLine(client, {
+  const createSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     ...data,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
   });
 
-  if (createPurchaseInvoiceLine.error) {
+  if (createSalesInvoiceLine.error) {
     throw redirect(
-      path.to.purchaseInvoiceDetails(invoiceId),
+      path.to.salesInvoiceDetails(invoiceId),
       await flash(
         request,
         error(
-          createPurchaseInvoiceLine.error,
-          "Failed to create purchase invoice line."
+          createSalesInvoiceLine.error,
+          "Failed to create sales invoice line."
         )
       )
     );
   }
 
-  throw redirect(path.to.purchaseInvoiceDetails(invoiceId));
+  throw redirect(path.to.salesInvoiceDetails(invoiceId));
 }
 
-export default function NewPurchaseInvoiceLineRoute() {
+export default function NewSalesInvoiceLineRoute() {
   const { defaults } = useUser();
   const { invoiceId } = useParams();
-  if (!invoiceId) throw new Error("Could not find purchase invoice id");
-  const purchaseInvoiceData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-  }>(path.to.purchaseInvoice(invoiceId));
+  if (!invoiceId) throw new Error("Could not find sales invoice id");
+  const salesInvoiceData = useRouteData<{
+    salesInvoice: SalesInvoice;
+  }>(path.to.salesInvoice(invoiceId));
 
-  if (!invoiceId) throw new Error("Could not find purchase invoice id");
+  if (!invoiceId) throw new Error("Could not find sales invoice id");
 
   const initialValues = {
     invoiceId: invoiceId,
     invoiceLineType: "Item" as MethodItemType,
-    purchaseQuantity: 1,
+    quantity: 1,
+    unitOfMeasureCode: "EA",
     locationId:
-      purchaseInvoiceData?.purchaseInvoice?.locationId ??
-      defaults.locationId ??
-      "",
-    supplierUnitPrice: 0,
-    supplierShippingCost: 0,
-    supplierTaxAmount: 0,
-    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
+      salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
+    unitPrice: 0,
+    shippingCost: 0,
+    addOnCost: 0,
+    taxPercent: 0,
+    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
   };
 
-  return <PurchaseInvoiceLineForm initialValues={initialValues} />;
+  return <SalesInvoiceLineForm initialValues={initialValues} />;
 }

@@ -20,35 +20,34 @@ import { useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
-  ConversionFactor,
   CustomFormFields,
   Hidden,
   Item,
   Location,
+  Number,
   NumberControlled,
   Shelf,
   Submit,
-  UnitOfMeasure,
 } from "~/components/Form";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import { purchaseInvoiceLineValidator } from "~/modules/invoicing";
+import type { SalesInvoice } from "~/modules/invoicing";
+import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-type PurchaseInvoiceLineFormProps = {
-  initialValues: z.infer<typeof purchaseInvoiceLineValidator> & {
+type SalesInvoiceLineFormProps = {
+  initialValues: z.infer<typeof salesInvoiceLineValidator> & {
     taxPercent?: number;
   };
   type?: "card" | "modal";
   onClose?: () => void;
 };
 
-const PurchaseInvoiceLineForm = ({
+const SalesInvoiceLineForm = ({
   initialValues,
   type,
   onClose,
-}: PurchaseInvoiceLineFormProps) => {
+}: SalesInvoiceLineFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
 
@@ -58,12 +57,10 @@ const PurchaseInvoiceLineForm = ({
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-  }>(path.to.purchaseInvoice(invoiceId));
+    salesInvoice: SalesInvoice;
+  }>(path.to.salesInvoice(invoiceId));
 
-  const isEditable = ["Draft"].includes(
-    routeData?.purchaseInvoice?.status ?? ""
-  );
+  const isEditable = ["Draft"].includes(routeData?.salesInvoice?.status ?? "");
 
   const [itemType, setItemType] = useState<MethodItemType>(
     initialValues.invoiceLineType as MethodItemType
@@ -74,13 +71,10 @@ const PurchaseInvoiceLineForm = ({
     itemReadableId: string;
     description: string;
     quantity: number;
-    supplierUnitPrice: number;
-    supplierShippingCost: number;
-    purchaseUom: string;
-    inventoryUom: string;
-    conversionFactor: number;
+    unitPrice: number;
+    shippingCost: number;
+    unitOfMeasureCode: string;
     shelfId: string | null;
-    minimumOrderQuantity?: number;
     taxAmount: number;
     taxPercent: number;
   }>({
@@ -88,22 +82,21 @@ const PurchaseInvoiceLineForm = ({
     itemReadableId: initialValues.itemReadableId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
-    supplierUnitPrice: initialValues.supplierUnitPrice ?? 0,
-    supplierShippingCost: initialValues.supplierShippingCost ?? 0,
-    purchaseUom: initialValues.purchaseUnitOfMeasureCode ?? "",
-    inventoryUom: initialValues.inventoryUnitOfMeasureCode ?? "",
-    conversionFactor: initialValues.conversionFactor ?? 1,
+    unitPrice: initialValues.unitPrice ?? 0,
+    shippingCost: initialValues.shippingCost ?? 0,
+    unitOfMeasureCode: initialValues.unitOfMeasureCode ?? "",
     shelfId: initialValues.shelfId ?? "",
-    minimumOrderQuantity: undefined,
-    taxAmount: initialValues.supplierTaxAmount ?? 0,
+    taxAmount:
+      ((initialValues.unitPrice ?? 0) * (initialValues.quantity ?? 1) +
+        (initialValues.shippingCost ?? 0)) *
+      (initialValues.taxPercent ?? 0),
     taxPercent: initialValues.taxPercent ?? 0,
   });
 
   // update tax amount when quantity or unit price changes
   useEffect(() => {
     const subtotal =
-      itemData.supplierUnitPrice * itemData.quantity +
-      itemData.supplierShippingCost;
+      itemData.unitPrice * itemData.quantity + itemData.shippingCost;
     if (itemData.taxPercent !== 0) {
       setItemData((d) => ({
         ...d,
@@ -111,9 +104,9 @@ const PurchaseInvoiceLineForm = ({
       }));
     }
   }, [
-    itemData.supplierUnitPrice,
+    itemData.unitPrice,
     itemData.quantity,
-    itemData.supplierShippingCost,
+    itemData.shippingCost,
     itemData.taxPercent,
   ]);
 
@@ -132,13 +125,10 @@ const PurchaseInvoiceLineForm = ({
       itemReadableId: "",
       description: "",
       quantity: 1,
-      supplierUnitPrice: 0,
-      supplierShippingCost: 0,
-      inventoryUom: "",
-      purchaseUom: "",
-      conversionFactor: 1,
+      unitPrice: 0,
+      shippingCost: 0,
+      unitOfMeasureCode: "",
       shelfId: "",
-      minimumOrderQuantity: undefined,
       taxAmount: 0,
       taxPercent: 0,
     });
@@ -153,22 +143,15 @@ const PurchaseInvoiceLineForm = ({
       case "Material":
       case "Part":
       case "Tool":
-        const [item, supplierPart, inventory] = await Promise.all([
+        const [item, inventory] = await Promise.all([
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
             .single(),
-          carbon
-            .from("supplierPart")
-            .select("*")
-            .eq("itemId", itemId)
-            .eq("companyId", company.id)
-            .eq("supplierId", routeData?.purchaseInvoice.supplierId!)
-            .maybeSingle(),
           carbon
             .from("pickMethod")
             .select("defaultShelfId")
@@ -179,31 +162,21 @@ const PurchaseInvoiceLineForm = ({
         ]);
 
         const itemCost = item?.data?.itemCost?.[0];
-        const itemReplenishment = item?.data?.itemReplenishment;
 
-        setItemData({
+        setItemData((prev) => ({
+          ...prev,
           itemId: itemId,
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
-          quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
-          supplierUnitPrice:
-            (supplierPart?.data?.unitPrice ?? itemCost?.unitCost ?? 0) /
-            (routeData?.purchaseInvoice?.exchangeRate ?? 1),
-          supplierShippingCost: 0,
-          purchaseUom:
-            supplierPart?.data?.supplierUnitOfMeasureCode ??
-            itemReplenishment?.purchasingUnitOfMeasureCode ??
-            item.data?.unitOfMeasureCode ??
-            "EA",
-          inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
-          conversionFactor:
-            supplierPart?.data?.conversionFactor ??
-            itemReplenishment?.conversionFactor ??
-            1,
+          unitPrice:
+            (itemCost?.unitCost ?? 0) /
+            (routeData?.salesInvoice?.exchangeRate ?? 1),
+          shippingCost: 0,
+          unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
           shelfId: inventory.data?.defaultShelfId ?? null,
           taxAmount: 0,
           taxPercent: 0,
-        });
+        }));
 
         if (item.data?.type) {
           setItemType(item.data.type as MethodItemType);
@@ -244,12 +217,12 @@ const PurchaseInvoiceLineForm = ({
         <ModalCardContent size="xxlarge">
           <ValidatedForm
             defaultValues={initialValues}
-            validator={purchaseInvoiceLineValidator}
+            validator={salesInvoiceLineValidator}
             method="post"
             action={
               isEditing
-                ? path.to.purchaseInvoiceLine(invoiceId, initialValues.id!)
-                : path.to.newPurchaseInvoiceLine(invoiceId)
+                ? path.to.salesInvoiceLine(invoiceId, initialValues.id!)
+                : path.to.newSalesInvoiceLine(invoiceId)
             }
             className="w-full"
             onSubmit={() => {
@@ -266,12 +239,12 @@ const PurchaseInvoiceLineForm = ({
               >
                 {isEditing
                   ? itemData?.itemReadableId || "..."
-                  : "New Purchase Invoice Line"}
+                  : "New Sales Invoice Line"}
               </ModalCardTitle>
               <ModalCardDescription>
                 {isEditing
                   ? itemData?.description || itemType
-                  : "A purchase invoice line contains invoice details for a particular item"}
+                  : "A sales invoice line contains invoice details for a particular item"}
               </ModalCardDescription>
             </ModalCardHeader>
             <ModalCardBody>
@@ -282,11 +255,11 @@ const PurchaseInvoiceLineForm = ({
               <Hidden name="description" value={itemData.description} />
               <Hidden
                 name="exchangeRate"
-                value={routeData?.purchaseInvoice?.exchangeRate ?? 1}
+                value={routeData?.salesInvoice?.exchangeRate ?? 1}
               />
               <Hidden
-                name="inventoryUnitOfMeasureCode"
-                value={itemData?.inventoryUom}
+                name="unitOfMeasureCode"
+                value={itemData?.unitOfMeasureCode}
               />
 
               <VStack>
@@ -296,7 +269,6 @@ const PurchaseInvoiceLineForm = ({
                     label={itemType}
                     // @ts-ignore
                     type={itemType}
-                    replenishmentSystem="Buy"
                     onChange={(value) => {
                       onItemChange(value?.value as string);
                     }}
@@ -321,7 +293,7 @@ const PurchaseInvoiceLineForm = ({
                   ) && (
                     <>
                       <NumberControlled
-                        minValue={itemData.minimumOrderQuantity}
+                        minValue={itemData.quantity}
                         name="quantity"
                         label="Quantity"
                         value={itemData.quantity}
@@ -333,82 +305,58 @@ const PurchaseInvoiceLineForm = ({
                         }}
                       />
 
-                      <UnitOfMeasure
-                        name="purchaseUnitOfMeasureCode"
-                        label="Unit of Measure"
-                        value={itemData.purchaseUom}
-                        onChange={(newValue) => {
-                          if (newValue) {
-                            setItemData((d) => ({
-                              ...d,
-                              purchaseUom: newValue?.value as string,
-                            }));
-                          }
-                        }}
-                      />
-                      <ConversionFactor
-                        name="conversionFactor"
-                        purchasingCode={itemData.purchaseUom}
-                        inventoryCode={itemData.inventoryUom}
-                        value={itemData.conversionFactor}
-                        onChange={(value) => {
-                          setItemData((d) => ({
-                            ...d,
-                            conversionFactor: value,
-                          }));
-                        }}
-                      />
-
                       <NumberControlled
-                        name="supplierUnitPrice"
-                        label="Supplier Unit Price"
-                        value={itemData.supplierUnitPrice}
+                        name="unitPrice"
+                        label="Unit Price"
+                        value={itemData.unitPrice}
                         formatOptions={{
                           style: "currency",
                           currency:
-                            routeData?.purchaseInvoice?.currencyCode ??
+                            routeData?.salesInvoice?.currencyCode ??
                             company.baseCurrencyCode,
                         }}
                         onChange={(value) =>
                           setItemData((d) => ({
                             ...d,
-                            supplierUnitPrice: value,
+                            unitPrice: value,
                           }))
                         }
                       />
                       <NumberControlled
-                        name="supplierShippingCost"
+                        name="shippingCost"
                         label="Shipping"
-                        value={itemData.supplierShippingCost}
+                        value={itemData.shippingCost}
                         minValue={0}
                         formatOptions={{
                           style: "currency",
                           currency:
-                            routeData?.purchaseInvoice?.currencyCode ??
+                            routeData?.salesInvoice?.currencyCode ??
                             company.baseCurrencyCode,
                         }}
                         onChange={(value) =>
                           setItemData((d) => ({
                             ...d,
-                            supplierShippingCost: value,
+                            shippingCost: value,
                           }))
                         }
                       />
 
+                      <Number name="addOnCost" label="Add On Cost" />
+
                       <NumberControlled
-                        name="supplierTaxAmount"
+                        name="taxAmount"
                         label="Tax"
                         value={itemData.taxAmount}
                         formatOptions={{
                           style: "currency",
                           currency:
-                            routeData?.purchaseInvoice?.currencyCode ??
+                            routeData?.salesInvoice?.currencyCode ??
                             company.baseCurrencyCode,
                         }}
                         onChange={(value) => {
                           const subtotal =
-                            itemData.supplierUnitPrice * itemData.quantity +
-                            itemData.supplierShippingCost;
+                            itemData.unitPrice * itemData.quantity +
+                            itemData.shippingCost;
                           setItemData((d) => ({
                             ...d,
                             taxAmount: value,
@@ -453,8 +401,8 @@ const PurchaseInvoiceLineForm = ({
                     }}
                     onChange={(value) => {
                       const subtotal =
-                        itemData.supplierUnitPrice * itemData.quantity +
-                        itemData.supplierShippingCost;
+                        itemData.unitPrice * itemData.quantity +
+                        itemData.shippingCost;
                       setItemData((d) => ({
                         ...d,
                         taxPercent: value,
@@ -462,7 +410,7 @@ const PurchaseInvoiceLineForm = ({
                       }));
                     }}
                   />
-                  <CustomFormFields table="purchaseInvoiceLine" />
+                  <CustomFormFields table="salesInvoiceLine" />
                 </div>
               </VStack>
             </ModalCardBody>
@@ -478,4 +426,4 @@ const PurchaseInvoiceLineForm = ({
   );
 };
 
-export default PurchaseInvoiceLineForm;
+export default SalesInvoiceLineForm;

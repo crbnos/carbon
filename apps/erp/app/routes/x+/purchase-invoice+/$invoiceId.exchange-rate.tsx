@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { getCurrencyByCode } from "~/modules/accounting";
-import { updatePurchaseOrderExchangeRate } from "~/modules/purchasing";
-import { path } from "~/utils/path";
+import { updatePurchaseInvoiceExchangeRate } from "~/modules/invoicing";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (currency.error || !currency.data.exchangeRate)
     throw new Error("Could not find currency");
 
-  const update = await updatePurchaseOrderExchangeRate(client, {
+  const update = await updatePurchaseInvoiceExchangeRate(client, {
     id: invoiceId,
     exchangeRate: currency.data.exchangeRate,
   });
@@ -33,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   return redirect(
-    path.to.purchaseInvoiceDetails(invoiceId),
+    requestReferrer(request) ?? path.to.purchaseInvoiceDetails(invoiceId),
     await flash(request, success("Successfully updated exchange rate"))
   );
 }

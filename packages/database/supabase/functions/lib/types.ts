@@ -23628,6 +23628,7 @@ export type Database = {
           createdAt: string;
           createdBy: string;
           customFields: Json;
+          description: string | null;
           exchangeRate: number;
           externalNotes: Json;
           id: string;
@@ -23638,7 +23639,10 @@ export type Database = {
           itemReadableId: string | null;
           locationId: string | null;
           modelUploadId: string | null;
+          opportunityId: string | null;
           quantity: number;
+          salesOrderId: string | null;
+          salesOrderLineId: string | null;
           setupPrice: number;
           shelfId: string | null;
           shippingCost: number;
@@ -23660,6 +23664,7 @@ export type Database = {
           createdAt?: string;
           createdBy: string;
           customFields?: Json;
+          description?: string | null;
           exchangeRate?: number;
           externalNotes?: Json;
           id?: string;
@@ -23670,7 +23675,10 @@ export type Database = {
           itemReadableId?: string | null;
           locationId?: string | null;
           modelUploadId?: string | null;
+          opportunityId?: string | null;
           quantity?: number;
+          salesOrderId?: string | null;
+          salesOrderLineId?: string | null;
           setupPrice?: number;
           shelfId?: string | null;
           shippingCost?: number;
@@ -23692,6 +23700,7 @@ export type Database = {
           createdAt?: string;
           createdBy?: string;
           customFields?: Json;
+          description?: string | null;
           exchangeRate?: number;
           externalNotes?: Json;
           id?: string;
@@ -23702,7 +23711,10 @@ export type Database = {
           itemReadableId?: string | null;
           locationId?: string | null;
           modelUploadId?: string | null;
+          opportunityId?: string | null;
           quantity?: number;
+          salesOrderId?: string | null;
+          salesOrderLineId?: string | null;
           setupPrice?: number;
           shelfId?: string | null;
           shippingCost?: number;
@@ -23852,6 +23864,48 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "tools";
             referencedColumns: ["modelId"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_opportunityId_fkey";
+            columns: ["opportunityId"];
+            isOneToOne: false;
+            referencedRelation: "opportunity";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrder";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLocations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLine";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLines";
+            referencedColumns: ["id"];
           },
           {
             foreignKeyName: "salesInvoiceLine_shelfId_fkey";
@@ -38859,6 +38913,7 @@ export type Database = {
           createdBy: string | null;
           customerPartId: string | null;
           customFields: Json | null;
+          description: string | null;
           exchangeRate: number | null;
           externalNotes: Json | null;
           id: string | null;
@@ -38873,7 +38928,10 @@ export type Database = {
           itemReadableId: string | null;
           locationId: string | null;
           modelUploadId: string | null;
+          opportunityId: string | null;
           quantity: number | null;
+          salesOrderId: string | null;
+          salesOrderLineId: string | null;
           setupPrice: number | null;
           shelfId: string | null;
           shippingCost: number | null;
@@ -39025,6 +39083,48 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "tools";
             referencedColumns: ["modelId"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_opportunityId_fkey";
+            columns: ["opportunityId"];
+            isOneToOne: false;
+            referencedRelation: "opportunity";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrder";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLocations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderId_fkey";
+            columns: ["salesOrderId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLine";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_salesOrderLineId_fkey";
+            columns: ["salesOrderLineId"];
+            isOneToOne: false;
+            referencedRelation: "salesOrderLines";
+            referencedColumns: ["id"];
           },
           {
             foreignKeyName: "salesInvoiceLine_shelfId_fkey";

@@ -17,63 +17,63 @@ import type { z } from "zod";
 import {
   Currency,
   CustomFormFields,
+  Customer,
+  CustomerContact,
+  CustomerLocation,
   DatePicker,
   Hidden,
   Input,
   Location,
   Submit,
-  Supplier,
-  SupplierContact,
-  SupplierLocation,
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { usePermissions } from "~/hooks";
-import { purchaseInvoiceValidator } from "~/modules/invoicing";
+import { salesInvoiceValidator } from "~/modules/invoicing";
 
-type PurchaseInvoiceFormValues = z.infer<typeof purchaseInvoiceValidator>;
+type SalesInvoiceFormValues = z.infer<typeof salesInvoiceValidator>;
 
-type PurchaseInvoiceFormProps = {
-  initialValues: PurchaseInvoiceFormValues;
+type SalesInvoiceFormProps = {
+  initialValues: SalesInvoiceFormValues;
 };
 
-const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
+const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
   const permissions = usePermissions();
   const { carbon } = useCarbon();
   const isEditing = initialValues.id !== undefined;
 
-  const [invoiceSupplier, setInvoiceSupplier] = useState<{
+  const [invoiceCustomer, setInvoiceCustomer] = useState<{
     id: string | undefined;
-    invoiceSupplierContactId: string | undefined;
-    invoiceSupplierLocationId: string | undefined;
+    invoiceCustomerContactId: string | undefined;
+    invoiceCustomerLocationId: string | undefined;
     currencyCode: string | undefined;
     paymentTermId: string | undefined;
   }>({
-    id: initialValues.invoiceSupplierId,
-    invoiceSupplierContactId: initialValues.invoiceSupplierContactId,
-    invoiceSupplierLocationId: initialValues.invoiceSupplierLocationId,
+    id: initialValues.invoiceCustomerId,
+    invoiceCustomerContactId: initialValues.invoiceCustomerContactId,
+    invoiceCustomerLocationId: initialValues.invoiceCustomerLocationId,
     currencyCode: initialValues.currencyCode,
     paymentTermId: initialValues.paymentTermId,
   });
 
-  const [supplier, setSupplier] = useState<{
+  const [customer, setCustomer] = useState<{
     id: string | undefined;
   }>({
-    id: initialValues.supplierId,
+    id: initialValues.customerId,
   });
 
-  const onSupplierChange = async (
+  const onCustomerChange = async (
     newValue: {
       value: string | undefined;
       label: string;
     } | null
   ) => {
-    setSupplier({ id: newValue?.value });
-    if (newValue?.value !== invoiceSupplier.id) {
-      onInvoiceSupplierChange(newValue);
+    setCustomer({ id: newValue?.value });
+    if (newValue?.value !== invoiceCustomer.id) {
+      onInvoiceCustomerChange(newValue);
     }
   };
 
-  const onInvoiceSupplierChange = async (
+  const onInvoiceCustomerChange = async (
     newValue: {
       value: string | undefined;
       label: string;
@@ -86,50 +86,50 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
 
     if (newValue?.value) {
       flushSync(() => {
-        // update the supplier immediately
-        setInvoiceSupplier({
+        // update the customer immediately
+        setInvoiceCustomer({
           id: newValue?.value,
           currencyCode: undefined,
           paymentTermId: undefined,
-          invoiceSupplierContactId: undefined,
-          invoiceSupplierLocationId: undefined,
+          invoiceCustomerContactId: undefined,
+          invoiceCustomerLocationId: undefined,
         });
       });
 
-      const [supplierData, paymentTermData] = await Promise.all([
+      const [customerData, paymentTermData] = await Promise.all([
         carbon
-          ?.from("supplier")
+          ?.from("customer")
           .select("currencyCode")
           .eq("id", newValue.value)
           .single(),
         carbon
-          ?.from("supplierPayment")
+          ?.from("customerPayment")
           .select("*")
-          .eq("supplierId", newValue.value)
+          .eq("customerId", newValue.value)
           .single(),
       ]);
 
-      if (supplierData.error || paymentTermData.error) {
-        toast.error("Error fetching supplier data");
+      if (customerData.error || paymentTermData.error) {
+        toast.error("Error fetching customer data");
       } else {
-        setInvoiceSupplier((prev) => ({
+        setInvoiceCustomer((prev) => ({
           ...prev,
           id: newValue.value,
-          invoiceSupplierContactId:
-            paymentTermData.data.invoiceSupplierContactId ?? undefined,
-          invoiceSupplierLocationId:
-            paymentTermData.data.invoiceSupplierLocationId ?? undefined,
-          currencyCode: supplierData.data.currencyCode ?? undefined,
+          invoiceCustomerContactId:
+            paymentTermData.data.invoiceCustomerContactId ?? undefined,
+          invoiceCustomerLocationId:
+            paymentTermData.data.invoiceCustomerLocationId ?? undefined,
+          currencyCode: customerData.data.currencyCode ?? undefined,
           paymentTermId: paymentTermData.data.paymentTermId ?? undefined,
         }));
       }
     } else {
-      setInvoiceSupplier({
+      setInvoiceCustomer({
         id: undefined,
         currencyCode: undefined,
         paymentTermId: undefined,
-        invoiceSupplierContactId: undefined,
-        invoiceSupplierLocationId: undefined,
+        invoiceCustomerContactId: undefined,
+        invoiceCustomerLocationId: undefined,
       });
     }
   };
@@ -137,18 +137,18 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   return (
     <ValidatedForm
       method="post"
-      validator={purchaseInvoiceValidator}
+      validator={salesInvoiceValidator}
       defaultValues={initialValues}
     >
       <Card>
         <CardHeader>
           <CardTitle>
-            {isEditing ? "Purchase Invoice" : "New Purchase Invoice"}
+            {isEditing ? "Sales Invoice" : "New Sales Invoice"}
           </CardTitle>
           {!isEditing && (
             <CardDescription>
-              A purchase invoice is a document that specifies the products or
-              services purchased by a customer and the corresponding cost.
+              A sales invoice is a document that specifies the products or
+              services sold to a customer and the corresponding cost.
             </CardDescription>
           )}
         </CardHeader>
@@ -164,43 +164,43 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
-              <Supplier
-                name="supplierId"
-                label="Supplier"
-                onChange={onSupplierChange}
+              <Customer
+                name="customerId"
+                label="Customer"
+                onChange={onCustomerChange}
               />
-              <Input name="supplierReference" label="Supplier Invoice Number" />
+              <Input name="customerReference" label="Customer Invoice Number" />
 
-              <Supplier
-                name="invoiceSupplierId"
-                label="Invoice Supplier"
-                value={invoiceSupplier.id}
-                onChange={onInvoiceSupplierChange}
+              <Customer
+                name="invoiceCustomerId"
+                label="Invoice Customer"
+                value={invoiceCustomer.id}
+                onChange={onInvoiceCustomerChange}
               />
-              <SupplierLocation
-                name="invoiceSupplierLocationId"
-                label="Invoice Supplier Location"
-                supplier={supplier.id}
-                value={invoiceSupplier.invoiceSupplierLocationId}
+              <CustomerLocation
+                name="invoiceCustomerLocationId"
+                label="Invoice Customer Location"
+                customer={customer.id}
+                value={invoiceCustomer.invoiceCustomerLocationId}
                 onChange={(newValue) => {
                   if (newValue?.id) {
-                    setInvoiceSupplier((prevSupplier) => ({
-                      ...prevSupplier,
-                      invoiceSupplierLocationId: newValue.id,
+                    setInvoiceCustomer((prevCustomer) => ({
+                      ...prevCustomer,
+                      invoiceCustomerLocationId: newValue.id,
                     }));
                   }
                 }}
               />
-              <SupplierContact
-                name="invoiceSupplierContactId"
-                label="Invoice Supplier Contact"
-                supplier={supplier.id}
-                value={invoiceSupplier.invoiceSupplierContactId}
+              <CustomerContact
+                name="invoiceCustomerContactId"
+                label="Invoice Customer Contact"
+                customer={customer.id}
+                value={invoiceCustomer.invoiceCustomerContactId}
                 onChange={(newValue) => {
                   if (newValue?.id) {
-                    setInvoiceSupplier((prevSupplier) => ({
-                      ...prevSupplier,
-                      invoiceSupplierContactId: newValue.id,
+                    setInvoiceCustomer((prevCustomer) => ({
+                      ...prevCustomer,
+                      invoiceCustomerContactId: newValue.id,
                     }));
                   }
                 }}
@@ -212,11 +212,11 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
               <PaymentTerm
                 name="paymentTermId"
                 label="Payment Terms"
-                value={invoiceSupplier?.paymentTermId}
+                value={invoiceCustomer?.paymentTermId}
                 onChange={(newValue) => {
                   if (newValue?.value) {
-                    setInvoiceSupplier((prevSupplier) => ({
-                      ...prevSupplier,
+                    setInvoiceCustomer((prevCustomer) => ({
+                      ...prevCustomer,
                       paymentTermId: newValue.value,
                     }));
                   }
@@ -225,18 +225,18 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
               <Currency
                 name="currencyCode"
                 label="Currency"
-                value={invoiceSupplier?.currencyCode}
+                value={invoiceCustomer?.currencyCode}
                 onChange={(newValue) => {
                   if (newValue?.value) {
-                    setInvoiceSupplier((prevSupplier) => ({
-                      ...prevSupplier,
+                    setInvoiceCustomer((prevCustomer) => ({
+                      ...prevCustomer,
                       currencyCode: newValue.value,
                     }));
                   }
                 }}
               />
               <Location name="locationId" label="Location" />
-              <CustomFormFields table="purchaseInvoice" />
+              <CustomFormFields table="salesInvoice" />
             </div>
           </VStack>
         </CardContent>
@@ -256,4 +256,4 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   );
 };
 
-export default PurchaseInvoiceForm;
+export default SalesInvoiceForm;

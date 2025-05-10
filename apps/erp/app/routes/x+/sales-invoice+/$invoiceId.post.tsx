@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };
 
@@ -16,7 +16,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const setPendingState = await client
-    .from("purchaseInvoice")
+    .from("salesInvoice")
     .update({
       status: "Pending",
     })
@@ -24,18 +24,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (setPendingState.error) {
     throw redirect(
-      path.to.purchaseInvoices,
+      requestReferrer(request) ?? path.to.salesInvoices,
       await flash(
         request,
-        error(setPendingState.error, "Failed to post purchase invoice")
+        error(setPendingState.error, "Failed to post sales invoice")
       )
     );
   }
 
   try {
     const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await serviceRole.functions.invoke(
-      "post-purchase-invoice",
+    const postSalesInvoice = await serviceRole.functions.invoke(
+      "post-sales-invoice",
       {
         body: {
           invoiceId: invoiceId,
@@ -45,25 +45,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     );
 
-    if (postPurchaseInvoice.error) {
+    if (postSalesInvoice.error) {
       await client
-        .from("purchaseInvoice")
+        .from("salesInvoice")
         .update({
           status: "Draft",
         })
         .eq("id", invoiceId);
 
       throw redirect(
-        path.to.purchaseInvoices,
+        path.to.salesInvoices,
         await flash(
           request,
-          error(postPurchaseInvoice.error, "Failed to post purchase invoice")
+          error(postSalesInvoice.error, "Failed to post sales invoice")
         )
       );
     }
 
     const priceUpdate = await serviceRole.functions.invoke(
-      "update-purchased-prices",
+      "update-sales-prices",
       {
         body: {
           invoiceId: invoiceId,
@@ -74,14 +74,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (priceUpdate.error) {
       await client
-        .from("purchaseInvoice")
+        .from("salesInvoice")
         .update({
           status: "Draft",
         })
         .eq("id", invoiceId);
 
       throw redirect(
-        path.to.purchaseInvoices,
+        path.to.salesInvoices,
         await flash(
           request,
           error(priceUpdate.error, "Failed to update prices")
@@ -90,12 +90,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (error) {
     await client
-      .from("purchaseInvoice")
+      .from("salesInvoice")
       .update({
         status: "Draft",
       })
       .eq("id", invoiceId);
   }
 
-  throw redirect(path.to.purchaseInvoices);
+  throw redirect(requestReferrer(request) ?? path.to.salesInvoice(invoiceId));
 }

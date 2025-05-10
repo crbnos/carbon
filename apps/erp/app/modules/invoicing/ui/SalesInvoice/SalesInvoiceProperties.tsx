@@ -19,27 +19,27 @@ import { zfd } from "zod-form-data";
 import { Assignee, useOptimisticAssignment } from "~/components";
 import {
   Currency,
+  Customer,
+  CustomerContact,
+  CustomerLocation,
   Location,
   PaymentTerm,
-  Supplier,
-  SupplierContact,
-  SupplierLocation,
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
-import type { action as exchangeRateAction } from "~/routes/x+/purchase-invoice+/$invoiceId.exchange-rate";
-import type { action } from "~/routes/x+/purchase-invoice+/update";
+import type { action as exchangeRateAction } from "~/routes/x+/sales-invoice+/$invoiceId.exchange-rate";
+import type { action } from "~/routes/x+/sales-invoice+/update";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
-import type { PurchaseInvoice } from "../../types";
+import type { SalesInvoice } from "../../types";
 
-const PurchaseInvoiceProperties = () => {
+const SalesInvoiceProperties = () => {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-  }>(path.to.purchaseInvoice(invoiceId));
+    salesInvoice: SalesInvoice;
+  }>(path.to.salesInvoice(invoiceId));
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {
@@ -61,8 +61,8 @@ const PurchaseInvoiceProperties = () => {
   );
 
   const onUpdate = useCallback(
-    (field: keyof PurchaseInvoice, value: string | null) => {
-      if (value === routeData?.purchaseInvoice[field]) {
+    (field: keyof SalesInvoice, value: string | null) => {
+      if (value === routeData?.salesInvoice[field]) {
         return;
       }
       const formData = new FormData();
@@ -72,11 +72,11 @@ const PurchaseInvoiceProperties = () => {
       formData.append("value", value ?? "");
       fetcher.submit(formData, {
         method: "post",
-        action: path.to.bulkUpdatePurchaseInvoice,
+        action: path.to.bulkUpdateSalesInvoice,
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [invoiceId, routeData?.purchaseInvoice]
+    [invoiceId, routeData?.salesInvoice]
   );
 
   const onUpdateCustomFields = useCallback(
@@ -84,7 +84,7 @@ const PurchaseInvoiceProperties = () => {
       const formData = new FormData();
 
       formData.append("ids", invoiceId);
-      formData.append("table", "purchaseInvoice");
+      formData.append("table", "salesInvoice");
       formData.append("value", value);
 
       fetcher.submit(formData, {
@@ -99,17 +99,17 @@ const PurchaseInvoiceProperties = () => {
   const permissions = usePermissions();
   const optimisticAssignment = useOptimisticAssignment({
     id: invoiceId,
-    table: "purchaseInvoice",
+    table: "salesInvoice",
   });
   const assignee =
     optimisticAssignment !== undefined
       ? optimisticAssignment
-      : routeData?.purchaseInvoice?.assignee;
+      : routeData?.salesInvoice?.assignee;
 
   const isDisabled =
-    !permissions.can("update", "purchasing") ||
+    !permissions.can("update", "invoicing") ||
     !["Draft", "To Review", "Overdue"].includes(
-      routeData?.purchaseInvoice?.status ?? ""
+      routeData?.salesInvoice?.status ?? ""
     );
 
   return (
@@ -131,7 +131,7 @@ const PurchaseInvoiceProperties = () => {
                   onClick={() =>
                     copyToClipboard(
                       window.location.origin +
-                        path.to.purchaseInvoiceDetails(invoiceId)
+                        path.to.salesInvoiceDetails(invoiceId)
                     )
                   }
                 >
@@ -139,7 +139,7 @@ const PurchaseInvoiceProperties = () => {
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>Copy link to Purchase Invoice</span>
+                <span>Copy link to Sales Invoice</span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -150,43 +150,43 @@ const PurchaseInvoiceProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.purchaseInvoice?.invoiceId ?? "")
+                    copyToClipboard(routeData?.salesInvoice?.invoiceId ?? "")
                   }
                 >
                   <LuCopy className="w-3 h-3" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>Copy Purchase Invoice number</span>
+                <span>Copy Sales Invoice number</span>
               </TooltipContent>
             </Tooltip>
           </HStack>
         </HStack>
-        <span className="text-sm">{routeData?.purchaseInvoice?.invoiceId}</span>
+        <span className="text-sm">{routeData?.salesInvoice?.invoiceId}</span>
       </VStack>
 
       <Assignee
         id={invoiceId}
-        table="purchaseInvoice"
+        table="salesInvoice"
         value={assignee ?? ""}
         variant="inline"
-        isReadOnly={!permissions.can("update", "purchasing")}
+        isReadOnly={!permissions.can("update", "invoicing")}
       />
 
       <ValidatedForm
-        defaultValues={{ supplierId: routeData?.purchaseInvoice?.supplierId }}
+        defaultValues={{ customerId: routeData?.salesInvoice?.customerId }}
         validator={z.object({
-          supplierId: z.string().min(1, { message: "Supplier is required" }),
+          customerId: z.string().min(1, { message: "Customer is required" }),
         })}
         className="w-full"
       >
-        <Supplier
-          name="supplierId"
+        <Customer
+          name="customerId"
           inline
           isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
-              onUpdate("supplierId", value.value);
+              onUpdate("customerId", value.value);
             }
           }}
         />
@@ -194,68 +194,68 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          supplierReference:
-            routeData?.purchaseInvoice?.supplierReference ?? undefined,
+          customerReference:
+            routeData?.salesInvoice?.customerReference ?? undefined,
         }}
         validator={z.object({
-          supplierReference: zfd.text(z.string().optional()),
+          customerReference: zfd.text(z.string().optional()),
         })}
         className="w-full"
       >
         <InputControlled
-          name="supplierReference"
-          label="Supplier Ref. Number"
-          value={routeData?.purchaseInvoice?.supplierReference ?? ""}
+          name="customerReference"
+          label="Customer Ref. Number"
+          value={routeData?.salesInvoice?.customerReference ?? ""}
           size="sm"
           inline
           isReadOnly={isDisabled}
           onBlur={(e) => {
-            onUpdate("supplierReference", e.target.value);
+            onUpdate("customerReference", e.target.value);
           }}
         />
       </ValidatedForm>
       <ValidatedForm
         defaultValues={{
-          invoiceSupplierId: routeData?.purchaseInvoice?.invoiceSupplierId,
+          invoiceCustomerId: routeData?.salesInvoice?.invoiceCustomerId,
         }}
         validator={z.object({
-          invoiceSupplierId: z
+          invoiceCustomerId: z
             .string()
-            .min(1, { message: "Supplier is required" }),
+            .min(1, { message: "Customer is required" }),
         })}
         className="w-full"
       >
-        <Supplier
-          name="invoiceSupplierId"
-          label="Invoice Supplier"
+        <Customer
+          name="invoiceCustomerId"
+          label="Invoice Customer"
           inline
           isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
-              onUpdate("invoiceSupplierId", value.value);
+              onUpdate("invoiceCustomerId", value.value);
             }
           }}
         />
       </ValidatedForm>
       <ValidatedForm
         defaultValues={{
-          invoiceSupplierLocationId:
-            routeData?.purchaseInvoice?.invoiceSupplierLocationId ?? "",
+          invoiceCustomerLocationId:
+            routeData?.salesInvoice?.invoiceCustomerLocationId ?? "",
         }}
         validator={z.object({
-          invoiceSupplierLocationId: zfd.text(z.string().optional()),
+          invoiceCustomerLocationId: zfd.text(z.string().optional()),
         })}
         className="w-full"
       >
-        <SupplierLocation
-          name="invoiceSupplierLocationId"
-          label="Invoice Supplier Location"
-          supplier={routeData?.purchaseInvoice?.invoiceSupplierId ?? ""}
+        <CustomerLocation
+          name="invoiceCustomerLocationId"
+          label="Invoice Customer Location"
+          customer={routeData?.salesInvoice?.invoiceCustomerId ?? ""}
           inline
           isReadOnly={isDisabled}
-          onChange={(supplierLocation) => {
-            if (supplierLocation?.id) {
-              onUpdate("invoiceSupplierLocationId", supplierLocation.id);
+          onChange={(customerLocation) => {
+            if (customerLocation?.id) {
+              onUpdate("invoiceCustomerLocationId", customerLocation.id);
             }
           }}
         />
@@ -263,23 +263,23 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          invoiceSupplierContactId:
-            routeData?.purchaseInvoice?.invoiceSupplierContactId ?? "",
+          invoiceCustomerContactId:
+            routeData?.salesInvoice?.invoiceCustomerContactId ?? "",
         }}
         validator={z.object({
-          invoiceSupplierContactId: zfd.text(z.string().optional()),
+          invoiceCustomerContactId: zfd.text(z.string().optional()),
         })}
         className="w-full"
       >
-        <SupplierContact
-          name="invoiceSupplierContactId"
-          label="Invoice Supplier Contact"
-          supplier={routeData?.purchaseInvoice?.invoiceSupplierId ?? ""}
+        <CustomerContact
+          name="invoiceCustomerContactId"
+          label="Invoice Customer Contact"
+          customer={routeData?.salesInvoice?.invoiceCustomerId ?? ""}
           inline
           isReadOnly={isDisabled}
-          onChange={(supplierContact) => {
-            if (supplierContact?.id) {
-              onUpdate("invoiceSupplierContactId", supplierContact.id);
+          onChange={(customerContact) => {
+            if (customerContact?.id) {
+              onUpdate("invoiceCustomerContactId", customerContact.id);
             }
           }}
         />
@@ -287,7 +287,7 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          dateIssued: routeData?.purchaseInvoice?.dateIssued ?? "",
+          dateIssued: routeData?.salesInvoice?.dateIssued ?? "",
         }}
         validator={z.object({
           dateIssued: z
@@ -309,7 +309,7 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          dateDue: routeData?.purchaseInvoice?.dateDue ?? "",
+          dateDue: routeData?.salesInvoice?.dateDue ?? "",
         }}
         validator={z.object({
           dateDue: zfd.text(z.string().optional()),
@@ -329,7 +329,7 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          datePaid: routeData?.purchaseInvoice?.datePaid ?? "",
+          datePaid: routeData?.salesInvoice?.datePaid ?? "",
         }}
         validator={z.object({
           datePaid: zfd.text(z.string().optional()),
@@ -347,7 +347,7 @@ const PurchaseInvoiceProperties = () => {
       </ValidatedForm>
 
       <ValidatedForm
-        defaultValues={{ locationId: routeData?.purchaseInvoice?.locationId }}
+        defaultValues={{ locationId: routeData?.salesInvoice?.locationId }}
         validator={z.object({
           locationId: z.string().min(1, { message: "Location is required" }),
         })}
@@ -368,7 +368,7 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          paymentTermId: routeData?.purchaseInvoice?.paymentTermId,
+          paymentTermId: routeData?.salesInvoice?.paymentTermId,
         }}
         validator={z.object({
           paymentTermId: z
@@ -392,7 +392,7 @@ const PurchaseInvoiceProperties = () => {
 
       <ValidatedForm
         defaultValues={{
-          currencyCode: routeData?.purchaseInvoice?.currencyCode ?? undefined,
+          currencyCode: routeData?.salesInvoice?.currencyCode ?? undefined,
         }}
         validator={z.object({
           currencyCode: zfd.text(z.string().optional()),
@@ -403,7 +403,7 @@ const PurchaseInvoiceProperties = () => {
           name="currencyCode"
           label="Currency"
           inline
-          value={routeData?.purchaseInvoice?.currencyCode ?? ""}
+          value={routeData?.salesInvoice?.currencyCode ?? ""}
           isReadOnly={isDisabled}
           onChange={(value) => {
             if (value?.value) {
@@ -413,15 +413,14 @@ const PurchaseInvoiceProperties = () => {
         />
       </ValidatedForm>
 
-      {routeData?.purchaseInvoice?.currencyCode &&
-        routeData?.purchaseInvoice?.currencyCode !==
-          company.baseCurrencyCode && (
+      {routeData?.salesInvoice?.currencyCode &&
+        routeData?.salesInvoice?.currencyCode !== company.baseCurrencyCode && (
           <VStack spacing={2}>
             <HStack spacing={1}>
               <span className="text-xs text-muted-foreground">
                 Exchange Rate
               </span>
-              {routeData?.purchaseInvoice?.exchangeRateUpdatedAt && (
+              {routeData?.salesInvoice?.exchangeRateUpdatedAt && (
                 <Tooltip>
                   <TooltipTrigger tabIndex={-1}>
                     <LuInfo className="w-4 h-4" />
@@ -430,7 +429,7 @@ const PurchaseInvoiceProperties = () => {
                     Last updated:{" "}
                     {formatter.format(
                       new Date(
-                        routeData?.purchaseInvoice?.exchangeRateUpdatedAt ?? ""
+                        routeData?.salesInvoice?.exchangeRateUpdatedAt ?? ""
                       )
                     )}
                   </TooltipContent>
@@ -438,7 +437,7 @@ const PurchaseInvoiceProperties = () => {
               )}
             </HStack>
             <HStack className="w-full justify-between">
-              <span>{routeData?.purchaseInvoice?.exchangeRate}</span>
+              <span>{routeData?.salesInvoice?.exchangeRate}</span>
               <IconButton
                 size="sm"
                 variant="secondary"
@@ -449,11 +448,11 @@ const PurchaseInvoiceProperties = () => {
                   const formData = new FormData();
                   formData.append(
                     "currencyCode",
-                    routeData?.purchaseInvoice?.currencyCode ?? ""
+                    routeData?.salesInvoice?.currencyCode ?? ""
                   );
                   exchangeRateFetcher.submit(formData, {
                     method: "post",
-                    action: path.to.purchaseInvoiceExchangeRate(invoiceId),
+                    action: path.to.salesInvoiceExchangeRate(invoiceId),
                   });
                 }}
               />
@@ -462,12 +461,9 @@ const PurchaseInvoiceProperties = () => {
         )}
       <CustomFormInlineFields
         customFields={
-          (routeData?.purchaseInvoice?.customFields ?? {}) as Record<
-            string,
-            Json
-          >
+          (routeData?.salesInvoice?.customFields ?? {}) as Record<string, Json>
         }
-        table="purchaseInvoice"
+        table="salesInvoice"
         tags={[]}
         onUpdate={onUpdateCustomFields}
         isDisabled={isDisabled}
@@ -476,4 +472,4 @@ const PurchaseInvoiceProperties = () => {
   );
 };
 
-export default PurchaseInvoiceProperties;
+export default SalesInvoiceProperties;

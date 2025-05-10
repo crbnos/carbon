@@ -45,7 +45,7 @@ const useOpportunityLineDocuments = ({
 }: {
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
+  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
 }) => {
   const permissions = usePermissions();
   const revalidator = useRevalidator();
@@ -86,21 +86,29 @@ const useOpportunityLineDocuments = ({
     async (lineId: string) => {
       if (!lineId || !carbon) return;
 
-      const [salesRfqLineResult, quoteLineResult, salesOrderLineResult] =
-        await Promise.all([
-          carbon
-            .from("salesRfqLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-          carbon
-            .from("quoteLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-          carbon
-            .from("salesOrderLine")
-            .update({ modelUploadId: null })
-            .eq("id", lineId),
-        ]);
+      const [
+        salesRfqLineResult,
+        quoteLineResult,
+        salesOrderLineResult,
+        salesInvoiceLineResult,
+      ] = await Promise.all([
+        carbon
+          .from("salesRfqLine")
+          .update({ modelUploadId: null })
+          .eq("id", lineId),
+        carbon
+          .from("quoteLine")
+          .update({ modelUploadId: null })
+          .eq("id", lineId),
+        carbon
+          .from("salesOrderLine")
+          .update({ modelUploadId: null })
+          .eq("id", lineId),
+        carbon
+          .from("salesInvoiceLine")
+          .update({ modelUploadId: null })
+          .eq("id", lineId),
+      ]);
 
       if (salesRfqLineResult.error) {
         toast.error("Error removing model from RFQ line");
@@ -116,6 +124,12 @@ const useOpportunityLineDocuments = ({
         toast.error("Error removing model from sales order line");
         return;
       }
+
+      if (salesInvoiceLineResult.error) {
+        toast.error("Error removing model from sales invoice line");
+        return;
+      }
+
       toast.success("Model removed from line");
       revalidator.revalidate();
     },
@@ -256,7 +270,7 @@ type OpportunityLineDocumentsProps = {
   files: FileObject[];
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
+  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
   modelUpload?: ModelUpload;
 };
 
@@ -473,7 +487,7 @@ export default OpportunityLineDocuments;
 type OpportunityLineDocumentFormProps = {
   id: string;
   lineId: string;
-  type: "Request for Quote" | "Sales Order" | "Quote";
+  type: "Request for Quote" | "Sales Order" | "Quote" | "Sales Invoice";
 };
 
 const OpportunityLineDocumentForm = ({

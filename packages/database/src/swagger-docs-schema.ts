@@ -26041,6 +26041,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.invoiceLineType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.description",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemId",
           },
           {
@@ -26102,6 +26105,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.customFields",
@@ -48961,6 +48973,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.description",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
           },
           {
@@ -49022,6 +49037,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
@@ -49110,6 +49134,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.description",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
           },
           {
@@ -49171,6 +49198,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
@@ -49213,6 +49249,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.invoiceLineType",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.description",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
           },
           {
@@ -49274,6 +49313,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.salesOrderLineId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.customFields",
@@ -66505,6 +66553,10 @@ export default {
           format: 'public."salesInvoiceLineType"',
           type: "string",
         },
+        description: {
+          format: "text",
+          type: "string",
+        },
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
@@ -66592,6 +66644,24 @@ export default {
         modelUploadId: {
           description:
             "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -77643,6 +77713,10 @@ export default {
           format: 'public."salesInvoiceLineType"',
           type: "string",
         },
+        description: {
+          format: "text",
+          type: "string",
+        },
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
@@ -77737,6 +77811,24 @@ export default {
         modelUploadId: {
           description:
             "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        opportunityId: {
+          description:
+            "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderLineId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrderLine.id`.<fk table='salesOrderLine' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -91523,6 +91615,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesInvoiceLines.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesInvoiceLines.itemId": {
       name: "itemId",
       required: false,
@@ -91645,6 +91743,24 @@ export default {
     },
     "rowFilter.salesInvoiceLines.modelUploadId": {
       name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLines.salesOrderLineId": {
+      name: "salesOrderLineId",
       required: false,
       in: "query",
       type: "string",
@@ -104135,6 +104251,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesInvoiceLine.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesInvoiceLine.itemId": {
       name: "itemId",
       required: false,
@@ -104257,6 +104379,24 @@ export default {
     },
     "rowFilter.salesInvoiceLine.modelUploadId": {
       name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.opportunityId": {
+      name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.salesOrderLineId": {
+      name: "salesOrderLineId",
       required: false,
       in: "query",
       type: "string",

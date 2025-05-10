@@ -29,7 +29,7 @@ export const handle: Handle = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "invoicing",
   });
 
   const { invoiceId } = params;

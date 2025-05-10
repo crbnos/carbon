@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import {
-  purchaseInvoiceDeliveryValidator,
-  upsertPurchaseInvoiceDelivery,
+  salesInvoiceShipmentValidator,
+  upsertSalesInvoiceShipment,
 } from "~/modules/invoicing";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -21,7 +21,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
   const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceDeliveryValidator).validate(
+  const validation = await validator(salesInvoiceShipmentValidator).validate(
     formData
   );
 
@@ -29,31 +29,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // Note: Need to add upsertPurchaseInvoiceDelivery to invoicing.service.ts
-  const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery(
-    client,
-    {
-      ...validation.data,
-      id: invoiceId,
-      updatedBy: userId,
-      customFields: setCustomFields(formData),
-    }
-  );
-  if (updatePurchaseInvoiceDelivery.error) {
+  const updateSalesInvoiceShipment = await upsertSalesInvoiceShipment(client, {
+    ...validation.data,
+    id: invoiceId,
+    updatedBy: userId,
+    customFields: setCustomFields(formData),
+  });
+  if (updateSalesInvoiceShipment.error) {
     throw redirect(
-      path.to.purchaseInvoice(invoiceId),
+      path.to.salesInvoice(invoiceId),
       await flash(
         request,
         error(
-          updatePurchaseInvoiceDelivery.error,
-          "Failed to update purchase invoice delivery"
+          updateSalesInvoiceShipment.error,
+          "Failed to update sales invoice shipping"
         )
       )
     );
   }
 
   throw redirect(
-    path.to.purchaseInvoice(invoiceId),
-    await flash(request, success("Updated purchase invoice delivery"))
+    path.to.salesInvoice(invoiceId),
+    await flash(request, success("Updated sales invoice shipping"))
   );
 }

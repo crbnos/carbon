@@ -12,23 +12,23 @@ import { Suspense, useRef } from "react";
 import { Fragment } from "react/jsx-runtime";
 import { useRouteData, useUser } from "~/hooks";
 import type {
-  PurchaseInvoice,
-  PurchaseInvoiceDelivery,
-  PurchaseInvoiceLine,
+  SalesInvoice,
+  SalesInvoiceLine,
+  SalesInvoiceShipment,
 } from "~/modules/invoicing";
 import {
-  getPurchaseInvoice,
-  PurchaseInvoiceSummary,
-  purchaseInvoiceValidator,
-  upsertPurchaseInvoice,
+  getSalesInvoice,
+  salesInvoiceValidator,
+  upsertSalesInvoice,
 } from "~/modules/invoicing";
-import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
-import type { PurchaseInvoiceDeliveryFormRef } from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceDeliveryForm";
-import type { SupplierInteraction } from "~/modules/purchasing";
+import type { SalesInvoiceShipmentFormRef } from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
+import SalesInvoiceShipmentForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
+import SalesInvoiceSummary from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceSummary";
+import type { Opportunity } from "~/modules/sales";
 import {
-  SupplierInteractionDocuments,
-  SupplierInteractionNotes,
-} from "~/modules/purchasing/ui/SupplierInteraction";
+  OpportunityDocuments,
+  OpportunityNotes,
+} from "~/modules/sales/ui/Opportunity";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -40,14 +40,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const invoice = await getPurchaseInvoice(client, invoiceId);
+  const invoice = await getSalesInvoice(client, invoiceId);
   if (invoice.error) {
     throw redirect(
-      path.to.purchaseInvoices,
-      await flash(
-        request,
-        error(invoice.error, "Failed to load purchase invoice")
-      )
+      path.to.salesInvoices,
+      await flash(request, error(invoice.error, "Failed to load sales invoice"))
     );
   }
 
@@ -66,9 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find invoiceId");
 
   const formData = await request.formData();
-  const validation = await validator(purchaseInvoiceValidator).validate(
-    formData
-  );
+  const validation = await validator(salesInvoiceValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -77,87 +72,86 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { invoiceId, ...data } = validation.data;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const updatePurchaseInvoice = await upsertPurchaseInvoice(client, {
+  const updateSalesInvoice = await upsertSalesInvoice(client, {
     id,
     invoiceId,
     ...data,
     updatedBy: userId,
     customFields: setCustomFields(formData),
   });
-  if (updatePurchaseInvoice.error) {
+  if (updateSalesInvoice.error) {
     throw redirect(
-      path.to.purchaseInvoice(id),
+      path.to.salesInvoice(id),
       await flash(
         request,
-        error(updatePurchaseInvoice.error, "Failed to update purchase invoice")
+        error(updateSalesInvoice.error, "Failed to update sales invoice")
       )
     );
   }
 
   throw redirect(
-    path.to.purchaseInvoice(id),
-    await flash(request, success("Updated purchase invoice"))
+    path.to.salesInvoice(id),
+    await flash(request, success("Updated sales invoice"))
   );
 }
 
-export default function PurchaseInvoiceBasicRoute() {
+export default function SalesInvoiceBasicRoute() {
   const { internalNotes } = useLoaderData<typeof loader>();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const invoiceData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
-    purchaseInvoiceDelivery: PurchaseInvoiceDelivery;
-    interaction: SupplierInteraction;
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
+    salesInvoiceShipment: SalesInvoiceShipment;
+    opportunity: Opportunity;
     files: Promise<FileObject[]>;
-  }>(path.to.purchaseInvoice(invoiceId));
+  }>(path.to.salesInvoice(invoiceId));
 
-  if (!invoiceData?.purchaseInvoice)
-    throw new Error("purchaseInvoice not found");
-  const { purchaseInvoice, purchaseInvoiceDelivery } = invoiceData;
+  if (!invoiceData?.salesInvoice) throw new Error("salesInvoice not found");
+  const { salesInvoice, salesInvoiceShipment } = invoiceData;
 
   if (!invoiceData) throw new Error("Could not find invoice data");
 
-  const deliveryFormRef = useRef<PurchaseInvoiceDeliveryFormRef>(null);
+  const shipmentFormRef = useRef<SalesInvoiceShipmentFormRef>(null);
 
   const handleEditShippingCost = () => {
-    deliveryFormRef.current?.focusShippingCost();
+    shipmentFormRef.current?.focusShippingCost();
   };
 
   const initialValues = {
-    id: purchaseInvoice.id ?? "",
-    invoiceId: purchaseInvoice.invoiceId ?? "",
-    supplierId: purchaseInvoice.supplierId ?? "",
-    supplierReference: purchaseInvoice.supplierReference ?? "",
-    invoiceSupplierId: purchaseInvoice.invoiceSupplierId ?? "",
-    paymentTermId: purchaseInvoice.paymentTermId ?? "",
-    currencyCode: purchaseInvoice.currencyCode ?? "",
-    dateIssued: purchaseInvoice.dateIssued ?? "",
-    dateDue: purchaseInvoice.dateDue ?? "",
-    status: purchaseInvoice.status ?? ("Draft" as "Draft"),
-    ...getCustomFields(purchaseInvoice.customFields),
+    id: salesInvoice.id ?? "",
+    invoiceId: salesInvoice.invoiceId ?? "",
+    customerId: salesInvoice.customerId ?? "",
+    customerReference: salesInvoice.customerReference ?? "",
+    invoiceCustomerId: salesInvoice.invoiceCustomerId ?? "",
+    paymentTermId: salesInvoice.paymentTermId ?? "",
+    currencyCode: salesInvoice.currencyCode ?? "",
+    dateIssued: salesInvoice.dateIssued ?? "",
+    dateDue: salesInvoice.dateDue ?? "",
+    status: salesInvoice.status ?? ("Draft" as "Draft"),
+    ...getCustomFields(salesInvoice.customFields),
   };
 
-  const deliveryInitialValues = {
-    id: purchaseInvoiceDelivery.id,
-    locationId: purchaseInvoiceDelivery.locationId ?? "",
-    supplierShippingCost: purchaseInvoiceDelivery.supplierShippingCost ?? 0,
-    shippingMethodId: purchaseInvoiceDelivery.shippingMethodId ?? "",
-    shippingTermId: purchaseInvoiceDelivery.shippingTermId ?? "",
-    ...getCustomFields(purchaseInvoiceDelivery.customFields),
+  const shipmentInitialValues = {
+    id: salesInvoiceShipment.id,
+    locationId: salesInvoiceShipment.locationId ?? "",
+    shippingCost: salesInvoiceShipment.shippingCost ?? 0,
+    shippingMethodId: salesInvoiceShipment.shippingMethodId ?? "",
+    shippingTermId: salesInvoiceShipment.shippingTermId ?? "",
+    ...getCustomFields(salesInvoiceShipment.customFields),
   };
 
   const { company } = useUser();
 
   return (
     <Fragment key={invoiceId}>
-      <PurchaseInvoiceSummary onEditShippingCost={handleEditShippingCost} />
-      <SupplierInteractionNotes
+      <SalesInvoiceSummary onEditShippingCost={handleEditShippingCost} />
+      <OpportunityNotes
         key={`notes-${initialValues.id}`}
         id={invoiceId}
         title="Notes"
-        table="purchaseInvoice"
+        table="salesInvoice"
         internalNotes={internalNotes}
       />
       <Suspense
@@ -170,19 +164,19 @@ export default function PurchaseInvoiceBasicRoute() {
       >
         <Await resolve={invoiceData.files}>
           {(resolvedFiles) => (
-            <SupplierInteractionDocuments
-              interactionId={invoiceData.interaction.id}
+            <OpportunityDocuments
+              opportunity={invoiceData.opportunity}
               attachments={resolvedFiles}
               id={invoiceId}
-              type="Purchase Invoice"
+              type="Sales Invoice"
             />
           )}
         </Await>
       </Suspense>
-      <PurchaseInvoiceDeliveryForm
-        key={`delivery-${invoiceId}`}
-        ref={deliveryFormRef}
-        initialValues={deliveryInitialValues}
+      <SalesInvoiceShipmentForm
+        key={`shipment-${invoiceId}`}
+        ref={shipmentFormRef}
+        initialValues={shipmentInitialValues}
         currencyCode={initialValues.currencyCode || company.baseCurrencyCode}
         defaultCollapsed={true}
       />

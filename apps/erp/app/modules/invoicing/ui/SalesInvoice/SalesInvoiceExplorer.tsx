@@ -32,43 +32,42 @@ import type { Supplier } from "~/modules/purchasing/types";
 import type { MethodItemType } from "~/modules/shared";
 import { methodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "../../types";
-import DeletePurchaseInvoiceLine from "./DeletePurchaseInvoiceLine";
-import PurchaseInvoiceLineForm from "./PurchaseInvoiceLineForm";
+import type { SalesInvoice, SalesInvoiceLine } from "../../types";
+import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
+import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
 
-export default function PurchaseInvoiceExplorer() {
+export default function SalesInvoiceExplorer() {
   const { defaults } = useUser();
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
-  const purchaseInvoiceData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
+  const salesInvoiceData = useRouteData<{
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
     supplier: Supplier;
-  }>(path.to.purchaseInvoice(invoiceId));
+  }>(path.to.salesInvoice(invoiceId));
   const permissions = usePermissions();
 
-  const purchaseInvoiceLineInitialValues = {
+  const salesInvoiceLineInitialValues = {
     invoiceId: invoiceId,
     invoiceLineType: "Item" as MethodItemType,
-    purchaseQuantity: 1,
+    quantity: 1,
     locationId:
-      purchaseInvoiceData?.purchaseInvoice?.locationId ??
-      defaults.locationId ??
-      "",
-    supplierUnitPrice: 0,
-    supplierShippingCost: 0,
-    supplierTaxAmount: 0,
-    exchangeRate: purchaseInvoiceData?.purchaseInvoice?.exchangeRate ?? 1,
+      salesInvoiceData?.salesInvoice?.locationId ?? defaults.locationId ?? "",
+    unitOfMeasureCode: "",
+    taxPercent: 0,
+    unitPrice: 0,
+    shippingCost: 0,
+    addOnCost: 0,
+    taxAmount: 0,
+    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
   };
 
-  const newPurchaseInvoiceLineDisclosure = useDisclosure();
+  const newSalesInvoiceLineDisclosure = useDisclosure();
   const deleteLineDisclosure = useDisclosure();
-  const [deleteLine, setDeleteLine] = useState<PurchaseInvoiceLine | null>(
-    null
-  );
-  const isDisabled = purchaseInvoiceData?.purchaseInvoice?.status !== "Draft";
+  const [deleteLine, setDeleteLine] = useState<SalesInvoiceLine | null>(null);
+  const isDisabled = salesInvoiceData?.salesInvoice?.status !== "Draft";
 
-  const onDeleteLine = (line: PurchaseInvoiceLine) => {
+  const onDeleteLine = (line: SalesInvoiceLine) => {
     setDeleteLine(line);
     deleteLineDisclosure.onOpen();
   };
@@ -93,9 +92,9 @@ export default function PurchaseInvoiceExplorer() {
           className="flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
           spacing={0}
         >
-          {purchaseInvoiceData?.purchaseInvoiceLines?.length ? (
-            purchaseInvoiceData.purchaseInvoiceLines.map((line) => (
-              <PurchaseInvoiceLineItem
+          {salesInvoiceData?.salesInvoiceLines?.length ? (
+            salesInvoiceData.salesInvoiceLines.map((line) => (
+              <SalesInvoiceLineItem
                 key={line.id}
                 isDisabled={isDisabled}
                 line={line}
@@ -109,7 +108,7 @@ export default function PurchaseInvoiceExplorer() {
                   isDisabled={isDisabled}
                   leftIcon={<LuCirclePlus />}
                   variant="secondary"
-                  onClick={newPurchaseInvoiceLineDisclosure.onOpen}
+                  onClick={newSalesInvoiceLineDisclosure.onOpen}
                 >
                   Add Line Item
                 </Button>
@@ -126,7 +125,7 @@ export default function PurchaseInvoiceExplorer() {
                 isDisabled={isDisabled || !permissions.can("update", "sales")}
                 leftIcon={<LuCirclePlus />}
                 variant="secondary"
-                onClick={newPurchaseInvoiceLineDisclosure.onOpen}
+                onClick={newSalesInvoiceLineDisclosure.onOpen}
               >
                 Add Line Item
               </Button>
@@ -140,46 +139,43 @@ export default function PurchaseInvoiceExplorer() {
           </Tooltip>
         </div>
       </VStack>
-      {newPurchaseInvoiceLineDisclosure.isOpen && (
-        <PurchaseInvoiceLineForm
-          initialValues={purchaseInvoiceLineInitialValues}
+      {newSalesInvoiceLineDisclosure.isOpen && (
+        <SalesInvoiceLineForm
+          initialValues={salesInvoiceLineInitialValues}
           type="modal"
-          onClose={newPurchaseInvoiceLineDisclosure.onClose}
+          onClose={newSalesInvoiceLineDisclosure.onClose}
         />
       )}
       {deleteLineDisclosure.isOpen && (
-        <DeletePurchaseInvoiceLine
-          line={deleteLine!}
-          onCancel={onDeleteCancel}
-        />
+        <DeleteSalesInvoiceLine line={deleteLine!} onCancel={onDeleteCancel} />
       )}
     </>
   );
 }
 
-type PurchaseInvoiceLineItemProps = {
-  line: PurchaseInvoiceLine;
+type SalesInvoiceLineItemProps = {
+  line: SalesInvoiceLine;
   isDisabled: boolean;
-  onDelete: (line: PurchaseInvoiceLine) => void;
+  onDelete: (line: SalesInvoiceLine) => void;
 };
 
-function PurchaseInvoiceLineItem({
+function SalesInvoiceLineItem({
   line,
   isDisabled,
   onDelete,
-}: PurchaseInvoiceLineItemProps) {
+}: SalesInvoiceLineItemProps) {
   const { invoiceId } = useParams();
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
 
   const isSelected =
-    location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
+    location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
 
   return (
     <VStack spacing={0} className="border-b">
       <Link
-        to={path.to.purchaseInvoiceLine(invoiceId, line.id!)}
+        to={path.to.salesInvoiceLine(invoiceId, line.id!)}
         prefetch="intent"
         className="w-full"
       >

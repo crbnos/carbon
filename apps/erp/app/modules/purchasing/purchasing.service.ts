@@ -848,7 +848,7 @@ export async function updatePurchaseOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString(),
   };
 
-  return client.from("salesOrder").update(update).eq("id", update.id);
+  return client.from("purchaseOrder").update(update).eq("id", update.id);
 }
 
 export async function updatePurchaseOrderFavorite(

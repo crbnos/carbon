@@ -34,8 +34,8 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import {
-  LuGripVertical,
   LuEllipsisVertical,
+  LuGripVertical,
   LuRadioTower,
   LuShoppingCart,
   LuUpload,
@@ -53,7 +53,7 @@ type OpportunityDocumentsProps = {
   attachments: FileObject[];
   opportunity: Opportunity;
   id: string;
-  type: "Sales Order" | "Request for Quote" | "Quote";
+  type: "Sales Order" | "Request for Quote" | "Quote" | "Sales Invoice";
 };
 
 const OpportunityDocuments = ({
@@ -265,7 +265,7 @@ const DraggableCell = ({
 type OpportunityDocumentFormProps = {
   opportunityId: string;
   id: string;
-  type: "Sales Order" | "Request for Quote" | "Quote";
+  type: "Sales Order" | "Request for Quote" | "Quote" | "Sales Invoice";
 };
 
 export const useOpportunityDocuments = ({

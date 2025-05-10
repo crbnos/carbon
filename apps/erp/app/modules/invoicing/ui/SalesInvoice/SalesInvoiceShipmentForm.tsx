@@ -18,24 +18,24 @@ import {
   Submit,
 } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseInvoice } from "~/modules/invoicing";
-import { purchaseInvoiceDeliveryValidator } from "~/modules/invoicing";
-import type { action } from "~/routes/x+/purchase-invoice+/$invoiceId.delivery";
+import type { SalesInvoice } from "~/modules/invoicing";
+import { salesInvoiceShipmentValidator } from "~/modules/invoicing";
+import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.shipment";
 import { path } from "~/utils/path";
 
-type PurchaseInvoiceDeliveryFormProps = {
-  initialValues: z.infer<typeof purchaseInvoiceDeliveryValidator>;
+type SalesInvoiceShipmentFormProps = {
+  initialValues: z.infer<typeof salesInvoiceShipmentValidator>;
   currencyCode: string;
   defaultCollapsed?: boolean;
 };
 
-export type PurchaseInvoiceDeliveryFormRef = {
+export type SalesInvoiceShipmentFormRef = {
   focusShippingCost: () => void;
 };
 
-const PurchaseInvoiceDeliveryForm = forwardRef<
-  PurchaseInvoiceDeliveryFormRef,
-  PurchaseInvoiceDeliveryFormProps
+const SalesInvoiceShipmentForm = forwardRef<
+  SalesInvoiceShipmentFormRef,
+  SalesInvoiceShipmentFormProps
 >(({ initialValues, currencyCode, defaultCollapsed = true }, ref) => {
   const { invoiceId } = useParams();
   if (!invoiceId) {
@@ -43,11 +43,11 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
   }
 
   const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-  }>(path.to.purchaseInvoice(invoiceId));
+    salesInvoice: SalesInvoice;
+  }>(path.to.salesInvoice(invoiceId));
 
   const isEditable = ["Draft", "To Review"].includes(
-    routeData?.purchaseInvoice?.status ?? ""
+    routeData?.salesInvoice?.status ?? ""
   );
 
   const permissions = usePermissions();
@@ -67,7 +67,7 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
     },
   }));
 
-  const isSupplier = permissions.is("supplier");
+  const isCustomer = permissions.is("customer");
 
   return (
     <Card
@@ -79,8 +79,8 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
     >
       <ValidatedForm
         method="post"
-        action={path.to.purchaseInvoiceDelivery(invoiceId)}
-        validator={purchaseInvoiceDeliveryValidator}
+        action={path.to.salesInvoiceShipment(invoiceId)}
+        validator={salesInvoiceShipmentValidator}
         defaultValues={initialValues}
         fetcher={fetcher}
       >
@@ -102,12 +102,12 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
             />
             <Location
               name="locationId"
-              label="Delivery Location"
-              isReadOnly={isSupplier}
+              label="Shipment Location"
+              isReadOnly={isCustomer}
               isClearable
             />
             <ShippingMethod name="shippingMethodId" label="Shipping Method" />
-            <CustomFormFields table="purchaseInvoiceDelivery" />
+            <CustomFormFields table="salesInvoiceShipment" />
           </div>
         </CardContent>
         <CardFooter>
@@ -122,6 +122,6 @@ const PurchaseInvoiceDeliveryForm = forwardRef<
   );
 });
 
-PurchaseInvoiceDeliveryForm.displayName = "PurchaseInvoiceDeliveryForm";
+SalesInvoiceShipmentForm.displayName = "SalesInvoiceShipmentForm";
 
-export default PurchaseInvoiceDeliveryForm;
+export default SalesInvoiceShipmentForm;

@@ -12,11 +12,50 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
+import {
+  getCustomerPayment,
+  getCustomerShipping,
+} from "../sales/sales.service";
 import type {
   purchaseInvoiceDeliveryValidator,
   purchaseInvoiceLineValidator,
   purchaseInvoiceValidator,
+  salesInvoiceLineValidator,
+  salesInvoiceShipmentValidator,
+  salesInvoiceValidator,
 } from "./invoicing.models";
+
+export async function createPurchaseInvoiceFromPurchaseOrder(
+  client: SupabaseClient<Database>,
+  purchaseOrderId: string,
+  companyId: string,
+  userId: string
+) {
+  return client.functions.invoke<{ id: string }>("convert", {
+    body: {
+      type: "purchaseOrderToPurchaseInvoice",
+      id: purchaseOrderId,
+      companyId,
+      userId,
+    },
+  });
+}
+
+export async function createSalesInvoiceFromSalesOrder(
+  client: SupabaseClient<Database>,
+  salesOrderId: string,
+  companyId: string,
+  userId: string
+) {
+  return client.functions.invoke<{ id: string }>("convert", {
+    body: {
+      type: "salesOrderToSalesInvoice",
+      id: salesOrderId,
+      companyId,
+      userId,
+    },
+  });
+}
 
 export async function deletePurchaseInvoice(
   client: SupabaseClient<Database>,
@@ -36,6 +75,23 @@ export async function deletePurchaseInvoiceLine(
     .from("purchaseInvoiceLine")
     .delete()
     .eq("id", purchaseInvoiceLineId);
+}
+
+export async function deleteSalesInvoice(
+  client: SupabaseClient<Database>,
+  salesInvoiceId: string
+) {
+  // TODO: this should be a transaction that checks whether it is posted
+  // and then sets the status of the purchase order back to
+  // "To Receive and Invoice" | "To Invoice"
+  return client.from("salesInvoice").delete().eq("id", salesInvoiceId);
+}
+
+export async function deleteSalesInvoiceLine(
+  client: SupabaseClient<Database>,
+  salesInvoiceLineId: string
+) {
+  return client.from("salesInvoiceLine").delete().eq("id", salesInvoiceLineId);
 }
 
 export async function getPurchaseInvoice(
@@ -178,6 +234,38 @@ export async function getSalesInvoiceLine(
     .select("*")
     .eq("id", salesInvoiceLineId)
     .single();
+}
+
+export async function updatePurchaseInvoiceExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("purchaseInvoice").update(update).eq("id", update.id);
+}
+
+export async function updateSalesInvoiceExchangeRate(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    exchangeRate: number;
+  }
+) {
+  const update = {
+    id: data.id,
+    exchangeRate: data.exchangeRate,
+    exchangeRateUpdatedAt: new Date().toISOString(),
+  };
+
+  return client.from("salesInvoice").update(update).eq("id", update.id);
 }
 
 export async function upsertPurchaseInvoice(
@@ -335,6 +423,165 @@ export async function upsertPurchaseInvoiceLine(
   return client
     .from("purchaseInvoiceLine")
     .insert([purchaseInvoiceLine])
+    .select("id")
+    .single();
+}
+
+export async function upsertSalesInvoice(
+  client: SupabaseClient<Database>,
+  salesInvoice:
+    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+        invoiceId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+        id: string;
+        invoiceId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in salesInvoice) {
+    return client
+      .from("salesInvoice")
+      .update({
+        ...sanitize(salesInvoice),
+        updatedAt: today(getLocalTimeZone()).toString(),
+      })
+      .eq("id", salesInvoice.id)
+      .select("id, invoiceId");
+  }
+
+  const [opportunity, customerPayment, customerShipping, salesPerson] =
+    await Promise.all([
+      client
+        .from("opportunity")
+        .insert([{ companyId: salesInvoice.companyId }])
+        .select("id")
+        .single(),
+      getCustomerPayment(client, salesInvoice.customerId),
+      getCustomerShipping(client, salesInvoice.customerId),
+      getEmployeeJob(client, salesInvoice.createdBy, salesInvoice.companyId),
+    ]);
+
+  if (opportunity.error) return opportunity;
+  if (customerPayment.error) return customerPayment;
+  if (customerShipping.error) return customerShipping;
+
+  const { paymentTermId, invoiceCustomerId } = customerPayment.data;
+  const { shippingMethodId, shippingTermId } = customerShipping.data;
+
+  if (salesInvoice.currencyCode) {
+    const currency = await getCurrencyByCode(
+      client,
+      salesInvoice.companyId,
+      salesInvoice.currencyCode
+    );
+    if (currency.data) {
+      salesInvoice.exchangeRate = currency.data.exchangeRate ?? undefined;
+      salesInvoice.exchangeRateUpdatedAt = new Date().toISOString();
+    }
+  } else {
+    salesInvoice.exchangeRate = 1;
+    salesInvoice.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
+  const locationId =
+    salesInvoice.locationId ?? salesPerson?.data?.locationId ?? null;
+
+  const invoice = await client
+    .from("salesInvoice")
+    .insert([
+      {
+        ...salesInvoice,
+        invoiceCustomerId: invoiceCustomerId ?? salesInvoice.customerId,
+        opportunityId: opportunity.data?.id,
+        currencyCode: salesInvoice.currencyCode ?? "USD",
+        paymentTermId: salesInvoice.paymentTermId ?? paymentTermId,
+      },
+    ])
+    .select("id, invoiceId");
+
+  if (invoice.error) return invoice;
+
+  const invoiceId = invoice.data[0].id;
+
+  const delivery = await client.from("salesInvoiceShipment").insert([
+    {
+      id: invoiceId,
+      locationId: locationId,
+      shippingMethodId: shippingMethodId,
+      shippingTermId: shippingTermId,
+      companyId: salesInvoice.companyId,
+      createdBy: salesInvoice.createdBy,
+    },
+  ]);
+
+  if (delivery.error) {
+    await client.from("salesInvoice").delete().eq("id", invoiceId);
+    return delivery;
+  }
+
+  return invoice;
+}
+
+export async function upsertSalesInvoiceShipment(
+  client: SupabaseClient<Database>,
+  salesInvoiceShipment:
+    | (z.infer<typeof salesInvoiceShipmentValidator> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof salesInvoiceShipmentValidator> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in salesInvoiceShipment) {
+    return client
+      .from("salesInvoiceShipment")
+      .update(sanitize(salesInvoiceShipment))
+      .eq("id", salesInvoiceShipment.id)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("salesInvoiceShipment")
+    .insert([salesInvoiceShipment])
+    .select("id")
+    .single();
+}
+
+export async function upsertSalesInvoiceLine(
+  client: SupabaseClient<Database>,
+  salesInvoiceLine:
+    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("id" in salesInvoiceLine) {
+    return client
+      .from("salesInvoiceLine")
+      .update(sanitize(salesInvoiceLine))
+      .eq("id", salesInvoiceLine.id)
+      .select("id")
+      .single();
+  }
+
+  return client
+    .from("salesInvoiceLine")
+    .insert([salesInvoiceLine])
     .select("id")
     .single();
 }

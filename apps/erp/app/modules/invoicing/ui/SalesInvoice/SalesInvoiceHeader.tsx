@@ -22,18 +22,18 @@ import {
 } from "react-icons/lu";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
-import { PurchaseInvoicingStatus } from "~/modules/invoicing";
+import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
 import { path } from "~/utils/path";
-import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
+import SalesInvoicePostModal from "./SalesInvoicePostModal";
+import SalesInvoiceStatus from "./SalesInvoiceStatus";
 
-const PurchaseInvoiceHeader = () => {
+const SalesInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
 
   const { carbon } = useCarbon();
-  const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
+  const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
     {
       itemId: string | null;
       itemReadableId: string | null;
@@ -45,77 +45,77 @@ const PurchaseInvoiceHeader = () => {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   const routeData = useRouteData<{
-    purchaseInvoice: PurchaseInvoice;
-    purchaseInvoiceLines: PurchaseInvoiceLine[];
-  }>(path.to.purchaseInvoice(invoiceId));
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
+  }>(path.to.salesInvoice(invoiceId));
 
-  if (!routeData?.purchaseInvoice) throw new Error("purchaseInvoice not found");
-  const { purchaseInvoice } = routeData;
+  if (!routeData?.salesInvoice) throw new Error("salesInvoice not found");
+  const { salesInvoice } = routeData;
   const { toggleExplorer, toggleProperties } = usePanels();
-  const isPosted = purchaseInvoice.postingDate !== null;
+  const isPosted = salesInvoice.postingDate !== null;
 
   const [relatedDocs, setRelatedDocs] = useState<{
-    purchaseOrders: { id: string; readableId: string }[];
-    receipts: { id: string; readableId: string }[];
-  }>({ purchaseOrders: [], receipts: [] });
+    salesOrders: { id: string; readableId: string }[];
+    shipments: { id: string; readableId: string }[];
+  }>({ salesOrders: [], shipments: [] });
 
   // Load related documents on mount
   useEffect(() => {
     async function loadRelatedDocs() {
-      if (!carbon || !purchaseInvoice.supplierInteractionId) return;
+      if (!carbon || !salesInvoice.opportunityId) return;
 
-      const [purchaseOrdersResult, receiptsResult] = await Promise.all([
+      const [salesOrdersResult, shipmentsResult] = await Promise.all([
         carbon
-          .from("purchaseOrder")
-          .select("id, purchaseOrderId")
-          .eq("supplierInteractionId", purchaseInvoice.supplierInteractionId),
+          .from("salesOrder")
+          .select("id, salesOrderId")
+          .eq("opportunityId", salesInvoice.opportunityId),
         carbon
-          .from("receipt")
-          .select("id, receiptId")
-          .eq("supplierInteractionId", purchaseInvoice.supplierInteractionId),
+          .from("shipment")
+          .select("id, shipmentId")
+          .eq("opportunityId", salesInvoice.opportunityId),
       ]);
 
-      if (purchaseOrdersResult.error)
-        throw new Error(purchaseOrdersResult.error.message);
-      if (receiptsResult.error) throw new Error(receiptsResult.error.message);
+      if (salesOrdersResult.error)
+        throw new Error(salesOrdersResult.error.message);
+      if (shipmentsResult.error) throw new Error(shipmentsResult.error.message);
 
       setRelatedDocs({
-        purchaseOrders:
-          purchaseOrdersResult.data?.map((po) => ({
+        salesOrders:
+          salesOrdersResult.data?.map((po) => ({
             id: po.id,
-            readableId: po.purchaseOrderId,
+            readableId: po.salesOrderId,
           })) ?? [],
-        receipts:
-          receiptsResult.data?.map((r) => ({
+        shipments:
+          shipmentsResult.data?.map((r) => ({
             id: r.id,
-            readableId: r.receiptId,
+            readableId: r.shipmentId,
           })) ?? [],
       });
     }
 
     loadRelatedDocs();
-  }, [carbon, purchaseInvoice.supplierInteractionId]);
+  }, [carbon, salesInvoice.opportunityId]);
 
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
     if (!carbon) throw new Error("carbon not found");
     const { data, error } = await carbon
-      .from("purchaseInvoiceLine")
-      .select("itemId, itemReadableId, description, quantity, conversionFactor")
+      .from("salesInvoiceLine")
+      .select("itemId, itemReadableId, description, quantity")
       .eq("invoiceId", invoiceId)
       .in("invoiceLineType", ["Part", "Material", "Tool", "Consumable"])
-      .is("purchaseOrderLineId", null);
+      .is("salesOrderLineId", null);
 
     if (error) throw new Error(error.message);
     if (!data) return;
 
     // so that we can ask the user if they want to receive those lines
     flushSync(() =>
-      setLinesNotAssociatedWithPO(
+      setLinesNotAssociatedWithSO(
         data?.map((d) => ({
           ...d,
           description: d.description ?? "",
-          quantity: d.quantity * (d.conversionFactor ?? 1),
+          quantity: d.quantity,
         })) ?? []
       )
     );
@@ -133,47 +133,43 @@ const PurchaseInvoiceHeader = () => {
               onClick={toggleExplorer}
               variant="ghost"
             />
-            <Link to={path.to.purchaseInvoiceDetails(invoiceId)}>
+            <Link to={path.to.salesInvoiceDetails(invoiceId)}>
               <Heading size="h4" className="flex items-center gap-2">
-                <span>{routeData?.purchaseInvoice?.invoiceId}</span>
+                <span>{routeData?.salesInvoice?.invoiceId}</span>
               </Heading>
             </Link>
-            <PurchaseInvoicingStatus
-              status={routeData?.purchaseInvoice?.status}
-            />
+            <SalesInvoiceStatus status={routeData?.salesInvoice?.status} />
           </HStack>
           <HStack>
-            {relatedDocs.purchaseOrders.length === 1 && (
+            {relatedDocs.salesOrders.length === 1 && (
               <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
                 <Link
-                  to={path.to.purchaseOrderDetails(
-                    relatedDocs.purchaseOrders[0].id
-                  )}
+                  to={path.to.salesOrderDetails(relatedDocs.salesOrders[0].id)}
                 >
-                  Purchase Order
+                  Sales Order
                 </Link>
               </Button>
             )}
 
-            {relatedDocs.receipts.length === 1 && (
+            {relatedDocs.shipments.length === 1 && (
               <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
-                <Link to={path.to.receipt(relatedDocs.receipts[0].id)}>
-                  Receipt
+                <Link to={path.to.shipment(relatedDocs.shipments[0].id)}>
+                  Shipment
                 </Link>
               </Button>
             )}
 
-            {relatedDocs.purchaseOrders.length > 1 && (
+            {relatedDocs.salesOrders.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" leftIcon={<LuShoppingCart />}>
-                    Purchase Orders
+                    Sales Orders
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {relatedDocs.purchaseOrders.map((po) => (
+                  {relatedDocs.salesOrders.map((po) => (
                     <DropdownMenuItem key={po.id} asChild>
-                      <Link to={path.to.purchaseOrderDetails(po.id)}>
+                      <Link to={path.to.salesOrderDetails(po.id)}>
                         {po.readableId}
                       </Link>
                     </DropdownMenuItem>
@@ -182,18 +178,18 @@ const PurchaseInvoiceHeader = () => {
               </DropdownMenu>
             )}
 
-            {relatedDocs.receipts.length > 1 && (
+            {relatedDocs.shipments.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" leftIcon={<LuHandCoins />}>
-                    Receipts
+                    Shipments
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  {relatedDocs.receipts.map((receipt) => (
-                    <DropdownMenuItem key={receipt.id} asChild>
-                      <Link to={path.to.receipt(receipt.id)}>
-                        {receipt.readableId}
+                  {relatedDocs.shipments.map((shipment) => (
+                    <DropdownMenuItem key={shipment.id} asChild>
+                      <Link to={path.to.shipment(shipment.id)}>
+                        {shipment.readableId}
                       </Link>
                     </DropdownMenuItem>
                   ))}
@@ -203,14 +199,14 @@ const PurchaseInvoiceHeader = () => {
             <Button
               leftIcon={<LuCheckCheck />}
               variant={
-                routeData?.purchaseInvoice?.status === "Draft"
+                routeData?.salesInvoice?.status === "Draft"
                   ? "primary"
                   : "secondary"
               }
               onClick={showPostModal}
               isDisabled={
                 isPosted ||
-                routeData?.purchaseInvoiceLines?.length === 0 ||
+                routeData?.salesInvoiceLines?.length === 0 ||
                 !permissions.can("update", "invoicing")
               }
             >
@@ -228,15 +224,15 @@ const PurchaseInvoiceHeader = () => {
       </div>
 
       {postingModal.isOpen && (
-        <PurchaseInvoicePostModal
+        <SalesInvoicePostModal
           invoiceId={invoiceId}
           isOpen={postingModal.isOpen}
           onClose={postingModal.onClose}
-          linesToReceive={linesNotAssociatedWithPO}
+          linesToShip={linesNotAssociatedWithSO}
         />
       )}
     </>
   );
 };
 
-export default PurchaseInvoiceHeader;
+export default SalesInvoiceHeader;

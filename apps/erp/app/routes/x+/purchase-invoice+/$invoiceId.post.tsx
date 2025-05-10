@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };
 
@@ -24,7 +24,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (setPendingState.error) {
     throw redirect(
-      path.to.purchaseInvoices,
+      requestReferrer(request) ?? path.to.purchaseInvoice(invoiceId),
       await flash(
         request,
         error(setPendingState.error, "Failed to post purchase invoice")
@@ -97,5 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", invoiceId);
   }
 
-  throw redirect(path.to.purchaseInvoices);
+  throw redirect(
+    requestReferrer(request) ?? path.to.purchaseInvoice(invoiceId)
+  );
 }

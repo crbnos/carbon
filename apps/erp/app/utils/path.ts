@@ -281,6 +281,7 @@ export const path = {
     bulkUpdatePurchaseInvoice: `${x}/purchase-invoice/update`,
     bulkUpdateQuote: `${x}/quote/update`,
     bulkUpdateReceiptLine: `${x}/receipt/lines/update`,
+    bulkUpdateSalesInvoice: `${x}/sales-invoice/update`,
     bulkUpdateSalesOrder: `${x}/sales-order/update`,
     bulkUpdateSalesRfq: `${x}/sales-rfq/update`,
     bulkUpdateShipmentLine: `${x}/shipment/lines/update`,
@@ -804,6 +805,8 @@ export const path = {
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
     newSalesInvoice: `${x}/sales-invoice/new`,
+    newSalesInvoiceLine: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/new`),
     newSalesOrder: `${x}/sales-order/new`,
     newSalesOrderLine: (id: string) =>
       generatePath(`${x}/sales-order/${id}/new`),
@@ -1021,8 +1024,12 @@ export const path = {
     salesInvoice: (id: string) => generatePath(`${x}/sales-invoice/${id}`),
     salesInvoiceDetails: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/details`),
+    salesInvoiceExchangeRate: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/exchange-rate`),
     salesInvoiceLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-invoice/${id}/${lineId}/details`),
+    salesInvoiceShipment: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/shipment`),
     salesInvoices: `${x}/sales/invoices`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
     salesOrderShipment: (id: string) =>

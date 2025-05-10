@@ -7,69 +7,72 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
-  PurchaseInvoiceHeader,
-  getPurchaseInvoice,
-  getPurchaseInvoiceDelivery,
-  getPurchaseInvoiceLines,
+  getSalesInvoice,
+  getSalesInvoiceLines,
+  getSalesInvoiceShipment,
 } from "~/modules/invoicing";
-import PurchaseInvoiceExplorer from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceExplorer";
-import PurchaseInvoiceProperties from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoiceProperties";
+import SalesInvoiceExplorer from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceExplorer";
+import SalesInvoiceHeader from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceHeader";
+import SalesInvoiceProperties from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceProperties";
+
 import {
-  getSupplier,
-  getSupplierInteraction,
-  getSupplierInteractionDocuments,
-} from "~/modules/purchasing/purchasing.service";
+  getCustomer,
+  getOpportunity,
+  getOpportunityDocuments,
+} from "~/modules/sales/sales.service";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Purchase Invoices",
-  to: path.to.purchaseInvoices,
+  breadcrumb: "Sales Invoices",
+  to: path.to.salesInvoices,
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "invoicing",
   });
 
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
 
-  const [purchaseInvoice, purchaseInvoiceLines, purchaseInvoiceDelivery] =
+  const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
     await Promise.all([
-      getPurchaseInvoice(client, invoiceId),
-      getPurchaseInvoiceLines(client, invoiceId),
-      getPurchaseInvoiceDelivery(client, invoiceId),
+      getSalesInvoice(client, invoiceId),
+      getSalesInvoiceLines(client, invoiceId),
+      getSalesInvoiceShipment(client, invoiceId),
     ]);
 
-  if (purchaseInvoice.error) {
+  if (salesInvoice.error) {
     throw redirect(
-      path.to.purchaseInvoices,
+      path.to.salesInvoices,
       await flash(
         request,
-        error(purchaseInvoice.error, "Failed to load purchase invoice")
+        error(salesInvoice.error, "Failed to load sales invoice")
       )
     );
   }
 
-  const [supplier, interaction] = await Promise.all([
-    purchaseInvoice.data?.supplierId
-      ? getSupplier(client, purchaseInvoice.data.supplierId)
+  const [customer, opportunity] = await Promise.all([
+    salesInvoice.data?.customerId
+      ? getCustomer(client, salesInvoice.data.customerId)
       : null,
-    getSupplierInteraction(client, purchaseInvoice.data.supplierInteractionId!),
+    salesInvoice.data?.opportunityId
+      ? getOpportunity(client, salesInvoice.data.opportunityId)
+      : null,
   ]);
 
   return defer({
-    purchaseInvoice: purchaseInvoice.data,
-    purchaseInvoiceLines: purchaseInvoiceLines.data ?? [],
-    purchaseInvoiceDelivery: purchaseInvoiceDelivery.data,
-    files: getSupplierInteractionDocuments(
+    salesInvoice: salesInvoice.data,
+    salesInvoiceLines: salesInvoiceLines.data ?? [],
+    salesInvoiceShipment: salesInvoiceShipment.data,
+    files: getOpportunityDocuments(
       client,
       companyId,
-      purchaseInvoice.data.supplierInteractionId!
+      salesInvoice.data?.opportunityId!
     ),
-    interaction: interaction.data,
-    supplier: supplier?.data ?? null,
+    opportunity: opportunity?.data ?? null,
+    customer: customer?.data ?? null,
   });
 }
 
@@ -77,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
   throw redirect(request.headers.get("Referer") ?? request.url);
 }
 
-export default function PurchaseInvoiceRoute() {
+export default function SalesInvoiceRoute() {
   const params = useParams();
   const { invoiceId } = params;
   if (!invoiceId) throw new Error("Could not find invoiceId");
@@ -85,11 +88,11 @@ export default function PurchaseInvoiceRoute() {
   return (
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
-        <PurchaseInvoiceHeader />
+        <SalesInvoiceHeader />
         <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
-              explorer={<PurchaseInvoiceExplorer />}
+              explorer={<SalesInvoiceExplorer />}
               content={
                 <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={2} className="p-2">
@@ -97,7 +100,7 @@ export default function PurchaseInvoiceRoute() {
                   </VStack>
                 </div>
               }
-              properties={<PurchaseInvoiceProperties />}
+              properties={<SalesInvoiceProperties />}
             />
           </div>
         </div>
