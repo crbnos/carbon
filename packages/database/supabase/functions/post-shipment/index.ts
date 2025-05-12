@@ -480,11 +480,11 @@ serve(async (req: Request) => {
           );
 
           let status: Database["public"]["Tables"]["salesOrder"]["Row"]["status"] =
-            "To Ship";
+            "To Ship and Invoice";
           if (areAllLinesInvoiced && areAllLinesShipped) {
             status = "Completed";
           } else if (areAllLinesShipped) {
-            status = "Completed"; // TODO: To Invoice
+            status = "To Invoice";
           } else if (areAllLinesInvoiced) {
             status = "To Ship";
           }

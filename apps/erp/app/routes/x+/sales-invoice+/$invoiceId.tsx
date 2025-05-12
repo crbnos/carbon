@@ -24,7 +24,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Sales Invoices",
+  breadcrumb: "Invoices",
   to: path.to.salesInvoices,
 };
 

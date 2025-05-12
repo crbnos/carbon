@@ -91,7 +91,7 @@ const SalesInvoiceShipmentForm = forwardRef<
           <Hidden name="id" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-4 w-full">
             <Number
-              name="supplierShippingCost"
+              name="shippingCost"
               label="Shipping Cost"
               minValue={0}
               formatOptions={{

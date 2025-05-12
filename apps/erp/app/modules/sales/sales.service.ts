@@ -1116,19 +1116,25 @@ export async function getSalesOrderFavorites(
 
 export async function getSalesOrderRelatedItems(
   client: SupabaseClient<Database>,
-  salesOrderId: string
+  salesOrderId: string,
+  opportunityId: string
 ) {
-  const [jobs, shipments] = await Promise.all([
+  const [jobs, shipments, invoices] = await Promise.all([
     client.from("job").select("*").eq("salesOrderId", salesOrderId),
     client
       .from("shipment")
       .select("*, shipmentLine(*)")
-      .eq("sourceDocumentId", salesOrderId),
+      .eq("opportunityId", opportunityId),
+    client
+      .from("salesInvoice")
+      .select("id, invoiceId, status")
+      .eq("opportunityId", opportunityId),
   ]);
 
   return {
     jobs: jobs.data ?? [],
     shipments: shipments.data ?? [],
+    invoices: invoices.data ?? [],
   };
 }
 

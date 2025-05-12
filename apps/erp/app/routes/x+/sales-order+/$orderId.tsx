@@ -75,7 +75,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     salesOrder: salesOrder.data,
     lines: lines.data ?? [],
     files: getOpportunityDocuments(client, companyId, opportunity.data.id),
-    relatedItems: getSalesOrderRelatedItems(client, orderId),
+    relatedItems: getSalesOrderRelatedItems(
+      client,
+      orderId,
+      opportunity.data.id
+    ),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,

@@ -313,7 +313,7 @@ serve(async (req: Request) => {
             digitalQuoteAcceptedBy && digitalQuoteAcceptedByEmail;
           const salesOrderStatus = originatedFromDigitalQuote
             ? "Needs Approval"
-            : "To Ship";
+            : "To Ship and Invoice";
 
           const salesOrder = await trx
             .insertInto("salesOrder")
@@ -491,7 +491,167 @@ serve(async (req: Request) => {
         break;
       }
       case "salesOrderToSalesInvoice": {
-        throw new Error("Not implemented");
+        const salesOrderId = id;
+        const [
+          salesOrder,
+          salesOrderLines,
+          salesOrderPayment,
+          salesOrderShipment,
+        ] = await Promise.all([
+          client.from("salesOrder").select("*").eq("id", salesOrderId).single(),
+          client
+            .from("salesOrderLine")
+            .select("*")
+            .eq("salesOrderId", salesOrderId),
+          client
+            .from("salesOrderPayment")
+            .select("*")
+            .eq("id", salesOrderId)
+            .single(),
+          client
+            .from("salesOrderShipment")
+            .select("*")
+            .eq("id", salesOrderId)
+            .single(),
+        ]);
+
+        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrderLines.error)
+          throw new Error(salesOrderLines.error.message);
+        if (!salesOrderPayment.data)
+          throw new Error("Purchase order payment not found");
+        if (!salesOrderShipment.data)
+          throw new Error("Purchase order delivery not found");
+
+        const uninvoicedLines = salesOrderLines?.data?.reduce<
+          (typeof salesOrderLines)["data"]
+        >((acc, line) => {
+          if (line?.quantityToInvoice && line.quantityToInvoice > 0) {
+            acc.push(line);
+          }
+
+          return acc;
+        }, []);
+
+        const uninvoicedSubtotal = uninvoicedLines?.reduce((acc, line) => {
+          if (
+            line?.quantityToInvoice &&
+            line.unitPrice &&
+            line.quantityToInvoice > 0
+          ) {
+            acc += line.quantityToInvoice * line.unitPrice;
+          }
+
+          return acc;
+        }, 0);
+
+        let salesInvoiceId = "";
+
+        await db.transaction().execute(async (trx) => {
+          salesInvoiceId = await getNextSequence(
+            trx,
+            "salesInvoice",
+            companyId
+          );
+
+          const salesInvoice = await trx
+            .insertInto("salesInvoice")
+            .values({
+              invoiceId: salesInvoiceId!,
+              status: "Draft",
+              customerId: salesOrder.data.customerId,
+              customerReference: salesOrder.data.customerReference ?? "",
+              invoiceCustomerId: salesOrderPayment.data.invoiceCustomerId,
+              invoiceCustomerContactId:
+                salesOrderPayment.data.invoiceCustomerContactId,
+              invoiceCustomerLocationId:
+                salesOrderPayment.data.invoiceCustomerLocationId,
+              locationId: salesOrderShipment.data.locationId,
+              paymentTermId: salesOrderPayment.data.paymentTermId,
+              currencyCode: salesOrder.data.currencyCode ?? "USD",
+              dateIssued: new Date().toISOString().split("T")[0],
+              exchangeRate: salesOrder.data.exchangeRate ?? 1,
+              subtotal: uninvoicedSubtotal ?? 0,
+              opportunityId: salesOrder.data.opportunityId,
+              totalDiscount: 0,
+              totalAmount: uninvoicedSubtotal ?? 0,
+              totalTax: 0,
+              balance: uninvoicedSubtotal ?? 0,
+              companyId,
+              createdBy: userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          salesInvoiceId = salesInvoice.id;
+
+          console.log({
+            salesOrderShipment: salesOrderShipment.data,
+          });
+
+          await trx
+            .insertInto("salesInvoiceShipment")
+            .values({
+              id: salesInvoiceId,
+              locationId: salesOrderShipment.data.locationId,
+              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
+              shippingMethodId: salesOrderShipment.data.shippingMethodId,
+              shippingTermId: salesOrderShipment.data.shippingTermId,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const salesInvoiceLines = uninvoicedLines?.reduce<
+            Database["public"]["Tables"]["salesInvoiceLine"]["Insert"][]
+          >((acc, line) => {
+            if (
+              line?.quantityToInvoice &&
+              line.quantityToInvoice > 0 &&
+              !line.invoicedComplete
+            ) {
+              acc.push({
+                invoiceId: salesInvoiceId,
+                invoiceLineType: line.salesOrderLineType,
+                salesOrderId: line.salesOrderId,
+                salesOrderLineId: line.id,
+                itemId: line.itemId,
+                itemReadableId: line.itemReadableId,
+                locationId: line.locationId,
+                shelfId: line.shelfId,
+                accountNumber: line.accountNumber,
+                assetId: line.assetId,
+                description: line.description,
+                quantity: line.quantityToInvoice,
+                unitPrice: line.unitPrice ?? 0,
+                addOnCost: line.addOnCost ?? 0,
+                shippingCost: line.shippingCost ?? 0,
+                taxPercent: line.taxPercent ?? 0,
+                unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
+                exchangeRate: line.exchangeRate ?? 1,
+                companyId,
+                createdBy: userId,
+              });
+            }
+            return acc;
+          }, []);
+
+          await trx
+            .insertInto("salesInvoiceLine")
+            .values(salesInvoiceLines)
+            .execute();
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: salesInvoiceId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
       }
       case "salesRfqToQuote": {
         const [salesRfq, salesRfqLines] = await Promise.all([

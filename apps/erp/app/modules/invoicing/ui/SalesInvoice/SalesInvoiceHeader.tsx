@@ -15,11 +15,13 @@ import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
+  LuChevronDown,
   LuHandCoins,
   LuPanelLeft,
   LuPanelRight,
-  LuShoppingCart,
+  LuTruck,
 } from "react-icons/lu";
+import { RiProgress8Line } from "react-icons/ri";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
@@ -142,7 +144,11 @@ const SalesInvoiceHeader = () => {
           </HStack>
           <HStack>
             {relatedDocs.salesOrders.length === 1 && (
-              <Button variant="secondary" leftIcon={<LuShoppingCart />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<RiProgress8Line />}
+                asChild
+              >
                 <Link
                   to={path.to.salesOrderDetails(relatedDocs.salesOrders[0].id)}
                 >
@@ -152,7 +158,7 @@ const SalesInvoiceHeader = () => {
             )}
 
             {relatedDocs.shipments.length === 1 && (
-              <Button variant="secondary" leftIcon={<LuHandCoins />} asChild>
+              <Button variant="secondary" leftIcon={<LuTruck />} asChild>
                 <Link to={path.to.shipment(relatedDocs.shipments[0].id)}>
                   Shipment
                 </Link>
@@ -162,7 +168,7 @@ const SalesInvoiceHeader = () => {
             {relatedDocs.salesOrders.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<LuShoppingCart />}>
+                  <Button variant="secondary" leftIcon={<RiProgress8Line />}>
                     Sales Orders
                   </Button>
                 </DropdownMenuTrigger>
@@ -181,7 +187,11 @@ const SalesInvoiceHeader = () => {
             {relatedDocs.shipments.length > 1 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" leftIcon={<LuHandCoins />}>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuHandCoins />}
+                    rightIcon={<LuChevronDown />}
+                  >
                     Shipments
                   </Button>
                 </DropdownMenuTrigger>

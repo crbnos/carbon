@@ -138,8 +138,8 @@ const SalesInvoicesTable = memo(({ data, count }: SalesInvoicesTableProps) => {
         },
       },
       {
-        accessorKey: "orderTotal",
-        header: "Order Total",
+        accessorKey: "invoiceTotal",
+        header: "Invoice Total",
         cell: (item) => currencyFormatter.format(item.getValue<number>()),
         meta: {
           icon: <LuDollarSign />,

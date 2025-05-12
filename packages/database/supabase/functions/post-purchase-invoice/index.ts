@@ -259,6 +259,12 @@ serve(async (req: Request) => {
       Database["public"]["Tables"]["postingGroupInventory"]["Row"] | null
     > = {};
 
+    // purchasing posting group
+    const purchasingPostingGroups: Record<
+      string,
+      Database["public"]["Tables"]["postingGroupPurchasing"]["Row"] | null
+    > = {};
+
     for await (const invoiceLine of purchaseInvoiceLines.data) {
       const invoiceLineQuantityInInventoryUnit =
         invoiceLine.quantity * (invoiceLine.conversionFactor ?? 1);
@@ -286,12 +292,6 @@ serve(async (req: Request) => {
         | null = null;
 
       let itemPostingGroupId: string | null = null;
-
-      // purchasing posting group
-      const purchasingPostingGroups: Record<
-        string,
-        Database["public"]["Tables"]["postingGroupPurchasing"]["Row"] | null
-      > = {};
 
       let postingGroupPurchasing:
         | Database["public"]["Tables"]["postingGroupPurchasing"]["Row"]

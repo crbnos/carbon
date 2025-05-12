@@ -60165,7 +60165,7 @@ export default {
         },
         invoiceCustomerLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -70992,7 +70992,7 @@ export default {
         },
         invoiceCustomerLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+            "Note:\nThis is a Foreign Key to `customerLocation.id`.<fk table='customerLocation' column='id'/>",
           format: "text",
           type: "string",
         },

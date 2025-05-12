@@ -1,7 +1,7 @@
 import { useNavigate } from "@remix-run/react";
 import { useCallback } from "react";
 import { path } from "~/utils/path";
-import { SalesOrder } from "../../types";
+import type { SalesOrder } from "../../types";
 
 export const useSalesOrder = () => {
   const navigate = useNavigate();

@@ -62,7 +62,7 @@ CREATE TABLE "salesInvoice" (
   CONSTRAINT "salesInvoice_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customer"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_invoiceCustomerId_fkey" FOREIGN KEY ("invoiceCustomerId") REFERENCES "customer"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "salesInvoice_invoiceCustomerLocationId_fkey" FOREIGN KEY ("invoiceCustomerLocationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoice_invoiceCustomerLocationId_fkey" FOREIGN KEY ("invoiceCustomerLocationId") REFERENCES "customerLocation"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_invoiceCustomerContactId_fkey" FOREIGN KEY ("invoiceCustomerContactId") REFERENCES "contact"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_paymentTermId_fkey" FOREIGN KEY ("paymentTermId") REFERENCES "paymentTerm"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_currencyCode_fkey" FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") ON DELETE CASCADE ON UPDATE CASCADE,
@@ -148,7 +148,7 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
     si.*,
     sil."thumbnailPath",
     sil."itemType", 
-    sil."invoiceTotal" + COALESCE(sil."shippingCost", 0) AS "invoiceTotal",
+    sil."invoiceTotal" + COALESCE(ss."shippingCost", 0) AS "invoiceTotal",
     sil."lines"
   FROM "salesInvoice" si
   LEFT JOIN (
@@ -178,7 +178,8 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
       ON i."id" = sil."itemId"
     LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
     GROUP BY sil."invoiceId"
-  ) sil ON sil."invoiceId" = si."id";
+  ) sil ON sil."invoiceId" = si."id" 
+  JOIN "salesInvoiceShipment" ss ON ss."id" = si."id";
 
 
 CREATE TABLE "salesInvoiceShipment" (

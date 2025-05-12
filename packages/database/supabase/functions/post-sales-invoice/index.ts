@@ -51,7 +51,7 @@ serve(async (req: Request) => {
         client.from("salesInvoiceLine").select("*").eq("invoiceId", invoiceId),
         client
           .from("salesInvoiceShipment")
-          .select("customerShippingCost")
+          .select("shippingCost")
           .eq("id", invoiceId)
           .single(),
       ]);
@@ -62,9 +62,7 @@ serve(async (req: Request) => {
     if (salesInvoiceShipment.error)
       throw new Error("Failed to fetch sales invoice shipment");
 
-    const shippingCost =
-      (salesInvoiceShipment.data?.shippingCost ?? 0) *
-      (salesInvoice.data?.exchangeRate ?? 1);
+    const shippingCost = salesInvoiceShipment.data?.shippingCost ?? 0;
 
     const totalLinesCost = salesInvoiceLines.data.reduce((acc, invoiceLine) => {
       const lineCost =
@@ -140,9 +138,6 @@ serve(async (req: Request) => {
       .eq("companyId", companyId);
 
     if (salesOrders.error) throw new Error("Failed to fetch sales orders");
-
-    const costLedgerInserts: Database["public"]["Tables"]["costLedger"]["Insert"][] =
-      [];
 
     const journalLineInserts: Omit<
       Database["public"]["Tables"]["journalLine"]["Insert"],
@@ -239,6 +234,12 @@ serve(async (req: Request) => {
       Database["public"]["Tables"]["postingGroupInventory"]["Row"] | null
     > = {};
 
+    // sales posting group
+    const salesPostingGroups: Record<
+      string,
+      Database["public"]["Tables"]["postingGroupSales"]["Row"] | null
+    > = {};
+
     for await (const invoiceLine of salesInvoiceLines.data) {
       const invoiceLineQuantityInInventoryUnit = invoiceLine.quantity;
 
@@ -246,7 +247,7 @@ serve(async (req: Request) => {
         (invoiceLine.quantity * (invoiceLine.unitPrice ?? 0) +
           (invoiceLine.shippingCost ?? 0) +
           (invoiceLine.addOnCost ?? 0)) *
-        (1 + (invoiceLine.taxRate ?? 0));
+        (1 + (invoiceLine.taxPercent ?? 0));
 
       const lineCostPercentageOfTotalCost =
         totalLinesCost === 0 ? 0 : totalLineCost / totalLinesCost;
@@ -265,12 +266,6 @@ serve(async (req: Request) => {
         | null = null;
 
       let itemPostingGroupId: string | null = null;
-
-      // sales posting group
-      const salesPostingGroups: Record<
-        string,
-        Database["public"]["Tables"]["postingGroupSales"]["Row"] | null
-      > = {};
 
       let postingGroupSales:
         | Database["public"]["Tables"]["postingGroupSales"]["Row"]
@@ -355,7 +350,7 @@ serve(async (req: Request) => {
               throw new Error("No sales posting group found");
             }
 
-            // if the sales order line is null, we receive the part, do the normal entries and do not use accrual/reversing
+            // if the sales order line is null, we ship the part, do the normal entries and do not use accrual/reversing
             if (invoiceLine.salesOrderLineId === null) {
               // create the shipment line
               shipmentLineInserts.push({
@@ -381,8 +376,8 @@ serve(async (req: Request) => {
                   quantity: invoiceLineQuantityInInventoryUnit,
                   locationId: invoiceLine.locationId,
                   shelfId: invoiceLine.shelfId,
-                  entryType: "Positive Adjmt.",
-                  documentType: "Sales Receipt",
+                  entryType: "Negative Adjmt.",
+                  documentType: "Sales Shipment",
                   documentId: salesInvoice.data?.id ?? undefined,
                   externalDocumentId:
                     salesInvoice.data?.customerReference ?? undefined,
@@ -555,15 +550,9 @@ serve(async (req: Request) => {
                 (line) => line.id === invoiceLine.salesOrderLineId
               );
 
-              const isOutsideProcessing = !!salesOrderLine?.jobOperationId;
+              const quantitySent = salesOrderLine?.quantitySent ?? 0;
 
-              const quantitySent =
-                (salesOrderLine?.quantitySent ?? 0) *
-                (salesOrderLine?.conversionFactor ?? 1);
-
-              const quantityInvoiced =
-                (salesOrderLine?.quantityInvoiced ?? 0) *
-                (salesOrderLine?.conversionFactor ?? 1);
+              const quantityInvoiced = salesOrderLine?.quantityInvoiced ?? 0;
 
               const quantityToReverse = Math.max(
                 0,

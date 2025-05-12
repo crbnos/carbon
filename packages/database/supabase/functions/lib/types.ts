@@ -23554,7 +23554,7 @@ export type Database = {
             foreignKeyName: "salesInvoice_invoiceCustomerLocationId_fkey";
             columns: ["invoiceCustomerLocationId"];
             isOneToOne: false;
-            referencedRelation: "location";
+            referencedRelation: "customerLocation";
             referencedColumns: ["id"];
           },
           {
@@ -39334,7 +39334,7 @@ export type Database = {
             foreignKeyName: "salesInvoice_invoiceCustomerLocationId_fkey";
             columns: ["invoiceCustomerLocationId"];
             isOneToOne: false;
-            referencedRelation: "location";
+            referencedRelation: "customerLocation";
             referencedColumns: ["id"];
           },
           {
