@@ -616,6 +616,7 @@ serve(async (req: Request) => {
                 invoiceLineType: line.salesOrderLineType,
                 salesOrderId: line.salesOrderId,
                 salesOrderLineId: line.id,
+                methodType: line.methodType,
                 itemId: line.itemId,
                 itemReadableId: line.itemReadableId,
                 locationId: line.locationId,
