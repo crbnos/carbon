@@ -238,6 +238,7 @@ serve(async (req: Request) => {
                 inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
                 conversionFactor: line.conversionFactor,
                 exchangeRate: line.exchangeRate ?? 1,
+                jobOperationId: line.jobOperationId,
                 companyId,
                 createdBy: userId,
               });

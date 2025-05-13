@@ -73,6 +73,9 @@ serve(async (req: Request) => {
     const supplierPartUpdates: Database["public"]["Tables"]["supplierPart"]["Update"][] =
       [];
 
+    const jobOperationUpdates: Database["public"]["Tables"]["jobOperation"]["Update"][] =
+      [];
+
     const historicalPartCosts: Record<
       string,
       { quantity: number; cost: number }
@@ -93,7 +96,11 @@ serve(async (req: Request) => {
     });
 
     purchaseInvoiceLines.data.forEach((line) => {
-      if (line.itemId && historicalPartCosts[line.itemId]) {
+      if (
+        line.itemId &&
+        !line.jobOperationId &&
+        historicalPartCosts[line.itemId]
+      ) {
         itemCostUpdates.push({
           itemId: line.itemId,
           unitCost:
@@ -128,6 +135,15 @@ serve(async (req: Request) => {
           });
         }
       }
+
+      if (line.jobOperationId) {
+        jobOperationUpdates.push({
+          id: line.jobOperationId,
+          operationMinimumCost: 0,
+          operationUnitCost: line.unitPrice ?? 0,
+          updatedBy: "system",
+        });
+      }
     });
 
     await db.transaction().execute(async (trx) => {
@@ -137,6 +153,17 @@ serve(async (req: Request) => {
             .updateTable("itemCost")
             .set(itemCostUpdate)
             .where("itemId", "=", itemCostUpdate.itemId!)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
+      }
+
+      if (jobOperationUpdates.length > 0) {
+        for await (const jobOperationUpdate of jobOperationUpdates) {
+          await trx
+            .updateTable("jobOperation")
+            .set(jobOperationUpdate)
+            .where("id", "=", jobOperationUpdate.id!)
             .where("companyId", "=", companyId)
             .execute();
         }

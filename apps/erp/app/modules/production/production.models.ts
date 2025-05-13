@@ -325,8 +325,20 @@ export const jobOperationValidator = baseJobOperationValidator
 export const jobOperationValidatorForReleasedJob = baseJobOperationValidator
   .merge(
     z.object({
-      workCenterId: z.string().min(1, { message: "Work center is required" }),
+      workCenterId: zfd.text(z.string().optional()),
     })
+  )
+  .refine(
+    (data) => {
+      if (data.operationType === "Inside") {
+        return !!data.workCenterId;
+      }
+      return true;
+    },
+    {
+      message: "Work center is required",
+      path: ["workCenterId"],
+    }
   )
   .refine(
     (data) => {
