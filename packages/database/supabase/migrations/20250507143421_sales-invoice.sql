@@ -228,3 +228,42 @@ CREATE OR REPLACE VIEW "salesInvoiceLines" WITH(SECURITY_INVOKER=true) AS (
   LEFT JOIN "itemCost" ic ON ic."itemId" = i.id
   LEFT JOIN "modelUpload" imu ON imu.id = i."modelUploadId"
 );
+
+
+-- Create the salesInvoiceLocations view
+CREATE OR REPLACE VIEW "salesInvoiceLocations" WITH(SECURITY_INVOKER=true) AS
+  SELECT 
+    si.id,
+    c.name AS "customerName",
+    ca."addressLine1" AS "customerAddressLine1",
+    ca."addressLine2" AS "customerAddressLine2",
+    ca."city" AS "customerCity",
+    ca."stateProvince" AS "customerStateProvince",
+    ca."postalCode" AS "customerPostalCode",
+    ca."countryCode" AS "customerCountryCode",
+    cc."name" AS "customerCountryName",
+    ic.name AS "invoiceCustomerName",
+    ica."addressLine1" AS "invoiceAddressLine1",
+    ica."addressLine2" AS "invoiceAddressLine2",
+    ica."city" AS "invoiceCity",
+    ica."stateProvince" AS "invoiceStateProvince",
+    ica."postalCode" AS "invoicePostalCode",
+    ica."countryCode" AS "invoiceCountryCode",
+    icc."name" AS "invoiceCountryName"
+  FROM "salesInvoice" si 
+  INNER JOIN "customer" c 
+    ON c.id = si."customerId"
+  LEFT OUTER JOIN "customerLocation" cl
+    ON cl.id = si."locationId"
+  LEFT OUTER JOIN "address" ca
+    ON ca.id = cl."addressId"
+  LEFT OUTER JOIN "country" cc
+    ON cc.alpha2 = ca."countryCode"
+  LEFT OUTER JOIN "customer" ic
+    ON ic.id = si."invoiceCustomerId"
+  LEFT OUTER JOIN "customerLocation" icl
+    ON icl.id = si."invoiceCustomerLocationId"
+  LEFT OUTER JOIN "address" ica
+    ON ica.id = icl."addressId"
+  LEFT OUTER JOIN "country" icc
+    ON icc.alpha2 = ica."countryCode";

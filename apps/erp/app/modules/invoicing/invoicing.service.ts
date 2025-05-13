@@ -176,6 +176,17 @@ export async function getSalesInvoice(
     .single();
 }
 
+export async function getSalesInvoiceCustomerDetails(
+  client: SupabaseClient<Database>,
+  salesInvoiceId: string
+) {
+  return client
+    .from("salesInvoiceLocations")
+    .select("*")
+    .eq("id", salesInvoiceId)
+    .single();
+}
+
 export async function getSalesInvoices(
   client: SupabaseClient<Database>,
   companyId: string,

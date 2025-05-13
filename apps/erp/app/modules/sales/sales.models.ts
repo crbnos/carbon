@@ -542,6 +542,19 @@ export const salesOrderStatusType = [
   "Closed",
 ] as const;
 
+export const salesConfirmValidator = z
+  .object({
+    notification: z.enum(["Email", "None"]).optional(),
+    customerContact: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => (data.notification === "Email" ? data.customerContact : true),
+    {
+      message: "Customer contact is required for email",
+      path: ["customerContact"], // path of error
+    }
+  );
+
 export const salesOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   salesOrderId: zfd.text(z.string().optional()),

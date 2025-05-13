@@ -9,9 +9,19 @@ import {
   HStack,
   Heading,
   IconButton,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  VStack,
+  toast,
   useDisclosure,
 } from "@carbon/react";
 
+import type { FetcherWithComponents } from "@remix-run/react";
 import { Await, Link, useFetcher, useParams } from "@remix-run/react";
 import {
   LuCheckCheck,
@@ -31,21 +41,127 @@ import {
 
 import { usePanels } from "~/components/Layout";
 import { usePermissions, useRouteData } from "~/hooks";
+import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { path } from "~/utils/path";
 import type { Opportunity, SalesOrder, SalesOrderLine } from "../../types";
 
-import { Suspense, useMemo } from "react";
+import { SelectControlled, ValidatedForm } from "@carbon/form";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { CSVLink } from "react-csv";
+import { CustomerContact } from "~/components/Form";
 import Confirm from "~/components/Modals/Confirm/Confirm";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import type { Shipment } from "~/modules/inventory/types";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
 import { useCustomers } from "~/stores/customers";
+import { salesConfirmValidator } from "../../sales.models";
 import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
+
+const SalesOrderConfirmModal = ({
+  fetcher,
+  salesOrder,
+  onClose,
+}: {
+  fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
+  salesOrder?: SalesOrder;
+  onClose: () => void;
+}) => {
+  const { orderId } = useParams();
+  if (!orderId) throw new Error("orderId not found");
+
+  const integrations = useIntegrations();
+  const canEmail = integrations.has("resend");
+
+  const [notificationType, setNotificationType] = useState<"Email" | "None">(
+    canEmail ? "Email" : "None"
+  );
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    } else if (fetcher.data?.success === false && fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data?.success]);
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <ModalContent>
+        <ValidatedForm
+          method="post"
+          action={path.to.salesOrderConfirm(orderId)}
+          validator={salesConfirmValidator}
+          onSubmit={onClose}
+          defaultValues={{
+            notification: notificationType,
+            customerContact: salesOrder?.customerContactId ?? undefined,
+          }}
+          fetcher={fetcher}
+        >
+          <ModalHeader>
+            <ModalTitle>{`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
+            <ModalDescription>
+              Are you sure you want to confirm this sales order? Confirming the
+              order will affect on order quantities used to calculate supply and
+              demand.
+            </ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <VStack spacing={4}>
+              {canEmail && (
+                <SelectControlled
+                  label="Send Via"
+                  name="notification"
+                  options={[
+                    {
+                      label: "None",
+                      value: "None",
+                    },
+                    {
+                      label: "Email",
+                      value: "Email",
+                    },
+                  ]}
+                  value={notificationType}
+                  onChange={(t) => {
+                    if (t) setNotificationType(t.value as "Email" | "None");
+                  }}
+                />
+              )}
+              {notificationType === "Email" && (
+                <CustomerContact
+                  name="customerContact"
+                  customer={salesOrder?.customerId ?? undefined}
+                />
+              )}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={fetcher.state !== "idle"}>
+              Confirm
+            </Button>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
+  );
+};
 
 const SalesOrderHeader = () => {
   const { orderId } = useParams();
@@ -69,9 +185,11 @@ const SalesOrderHeader = () => {
   const permissions = usePermissions();
 
   const statusFetcher = useFetcher<typeof statusAction>();
+  const confirmFetcher = useFetcher<typeof confirmAction>();
   const { ship, invoice } = useSalesOrder();
 
   const salesOrderToJobsModal = useDisclosure();
+  const confirmDisclosure = useDisclosure();
   const [customers] = useCustomers();
 
   const csvExportData = useMemo(() => {
@@ -195,31 +313,26 @@ const SalesOrderHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <statusFetcher.Form
-              method="post"
-              action={path.to.salesOrderStatus(orderId)}
+            <Button
+              leftIcon={<LuCheckCheck />}
+              variant={
+                routeData?.salesOrder?.status === "Draft"
+                  ? "primary"
+                  : "secondary"
+              }
+              isLoading={confirmFetcher.state !== "idle"}
+              onClick={confirmDisclosure.onOpen}
+              isDisabled={
+                confirmFetcher.state !== "idle" ||
+                !["Draft", "Needs Approval"].includes(
+                  routeData?.salesOrder?.status ?? ""
+                ) ||
+                routeData?.lines.length === 0 ||
+                !permissions.can("update", "sales")
+              }
             >
-              <input type="hidden" name="status" value="To Ship and Invoice" />
-              <Button
-                isDisabled={
-                  !["Draft", "Needs Approval"].includes(
-                    routeData?.salesOrder?.status ?? ""
-                  ) ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
-                }
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") ===
-                    "To Ship and Invoice"
-                }
-                leftIcon={<LuCheckCheck />}
-                type="submit"
-                variant="secondary"
-              >
-                Confirm
-              </Button>
-            </statusFetcher.Form>
+              Confirm
+            </Button>
 
             <statusFetcher.Form
               method="post"
@@ -452,6 +565,13 @@ const SalesOrderHeader = () => {
           onCancel={salesOrderToJobsModal.onClose}
           onSubmit={salesOrderToJobsModal.onClose}
           action={path.to.salesOrderLinesToJobs(orderId)}
+        />
+      )}
+      {confirmDisclosure.isOpen && (
+        <SalesOrderConfirmModal
+          fetcher={confirmFetcher}
+          salesOrder={routeData?.salesOrder}
+          onClose={confirmDisclosure.onClose}
         />
       )}
     </>

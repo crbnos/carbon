@@ -186,6 +186,8 @@ export const path = {
       },
 
       salesOrder: (id: string) => generatePath(`${file}/sales-order/${id}.pdf`),
+      salesInvoice: (id: string) =>
+        generatePath(`${file}/sales-invoice/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
       shipmentLabelsPdf: (
         id: string,
@@ -1034,6 +1036,8 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/shipment`),
     salesInvoices: `${x}/sales/invoices`,
     salesOrder: (id: string) => generatePath(`${x}/sales-order/${id}`),
+    salesOrderConfirm: (id: string) =>
+      generatePath(`${x}/sales-order/${id}/confirm`),
     salesOrderShipment: (id: string) =>
       generatePath(`${x}/sales-order/${id}/shipment`),
     salesOrderDetails: (id: string) =>

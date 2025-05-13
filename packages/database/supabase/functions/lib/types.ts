@@ -23812,6 +23812,13 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
             columns: ["invoiceId"]
             isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
+            columns: ["invoiceId"]
+            isOneToOne: false
             referencedRelation: "salesInvoices"
             referencedColumns: ["id"]
           },
@@ -24059,6 +24066,13 @@ export type Database = {
             columns: ["id"]
             isOneToOne: true
             referencedRelation: "salesInvoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceShipment_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "salesInvoiceLocations"
             referencedColumns: ["id"]
           },
           {
@@ -39030,6 +39044,13 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
             columns: ["invoiceId"]
             isOneToOne: false
+            referencedRelation: "salesInvoiceLocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_invoiceId_fkey"
+            columns: ["invoiceId"]
+            isOneToOne: false
             referencedRelation: "salesInvoices"
             referencedColumns: ["id"]
           },
@@ -39165,6 +39186,43 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+        ]
+      }
+      salesInvoiceLocations: {
+        Row: {
+          customerAddressLine1: string | null
+          customerAddressLine2: string | null
+          customerCity: string | null
+          customerCountryCode: string | null
+          customerCountryName: string | null
+          customerName: string | null
+          customerPostalCode: string | null
+          customerStateProvince: string | null
+          id: string | null
+          invoiceAddressLine1: string | null
+          invoiceAddressLine2: string | null
+          invoiceCity: string | null
+          invoiceCountryCode: string | null
+          invoiceCountryName: string | null
+          invoiceCustomerName: string | null
+          invoicePostalCode: string | null
+          invoiceStateProvince: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["invoiceCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
+          },
+          {
+            foreignKeyName: "address_countryCode_fkey"
+            columns: ["customerCountryCode"]
+            isOneToOne: false
+            referencedRelation: "country"
+            referencedColumns: ["alpha2"]
           },
         ]
       }
