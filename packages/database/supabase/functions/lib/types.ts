@@ -23638,6 +23638,7 @@ export type Database = {
           itemId: string | null;
           itemReadableId: string | null;
           locationId: string | null;
+          methodType: Database["public"]["Enums"]["methodType"];
           modelUploadId: string | null;
           opportunityId: string | null;
           quantity: number;
@@ -23674,6 +23675,7 @@ export type Database = {
           itemId?: string | null;
           itemReadableId?: string | null;
           locationId?: string | null;
+          methodType?: Database["public"]["Enums"]["methodType"];
           modelUploadId?: string | null;
           opportunityId?: string | null;
           quantity?: number;
@@ -23710,6 +23712,7 @@ export type Database = {
           itemId?: string | null;
           itemReadableId?: string | null;
           locationId?: string | null;
+          methodType?: Database["public"]["Enums"]["methodType"];
           modelUploadId?: string | null;
           opportunityId?: string | null;
           quantity?: number;
@@ -38927,6 +38930,7 @@ export type Database = {
           itemName: string | null;
           itemReadableId: string | null;
           locationId: string | null;
+          methodType: Database["public"]["Enums"]["methodType"] | null;
           modelUploadId: string | null;
           opportunityId: string | null;
           quantity: number | null;

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { methodItemType } from "../shared";
+import { methodItemType, methodType } from "../shared";
 
 export const purchaseInvoiceLineType = [
   "Part",
@@ -181,6 +181,11 @@ export const salesInvoiceLineValidator = z
     invoiceLineType: z.enum(methodItemType, {
       errorMap: (issue, ctx) => ({
         message: "Type is required",
+      }),
+    }),
+    methodType: z.enum(methodType, {
+      errorMap: (issue, ctx) => ({
+        message: "Method is required",
       }),
     }),
     purchaseOrderId: zfd.text(z.string().optional()),

@@ -130,10 +130,7 @@ verify_jwt = false
 [functions.sync]
 enabled = true
 verify_jwt = true
-import_map = "./functions/sync/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/sync/index.ts"
+
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sync/*.html" ]
@@ -141,10 +138,6 @@ entrypoint = "./functions/sync/index.ts"
 [functions.post-sales-invoice]
 enabled = true
 verify_jwt = true
-import_map = "./functions/post-sales-invoice/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/post-sales-invoice/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/post-sales-invoice/*.html" ]
@@ -152,10 +145,7 @@ entrypoint = "./functions/post-sales-invoice/index.ts"
 [functions.update-sales-prices]
 enabled = true
 verify_jwt = true
-import_map = "./functions/update-sales-prices/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/update-sales-prices/index.ts"
+
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/update-sales-prices/*.html" ]

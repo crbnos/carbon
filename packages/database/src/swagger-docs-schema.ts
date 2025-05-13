@@ -26047,6 +26047,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLines.methodType",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLines.itemReadableId",
           },
           {
@@ -48979,6 +48982,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
           },
           {
@@ -49140,6 +49146,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
           },
           {
@@ -49253,6 +49262,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLine.methodType",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoiceLine.itemReadableId",
@@ -66563,6 +66575,11 @@ export default {
           format: "text",
           type: "string",
         },
+        methodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
         itemReadableId: {
           format: "text",
           type: "string",
@@ -77671,6 +77688,7 @@ export default {
         "id",
         "invoiceId",
         "invoiceLineType",
+        "methodType",
         "quantity",
         "unitOfMeasureCode",
         "exchangeRate",
@@ -77721,6 +77739,12 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        methodType: {
+          default: "Pick",
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
           type: "string",
         },
         itemReadableId: {
@@ -91627,6 +91651,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesInvoiceLines.methodType": {
+      name: "methodType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesInvoiceLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -104259,6 +104289,12 @@ export default {
     },
     "rowFilter.salesInvoiceLine.itemId": {
       name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLine.methodType": {
+      name: "methodType",
       required: false,
       in: "query",
       type: "string",

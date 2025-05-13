@@ -92,6 +92,7 @@ CREATE TABLE "salesInvoiceLine" (
   "invoiceLineType" "salesInvoiceLineType" NOT NULL,
   "description" TEXT,
   "itemId" TEXT,
+  "methodType" "methodType" NOT NULL DEFAULT 'Pick',
   "itemReadableId" TEXT,
   "accountNumber" TEXT,
   "assetId" TEXT,
@@ -142,6 +143,28 @@ CREATE INDEX "salesInvoiceLine_invoiceId_idx" ON "salesInvoiceLine" ("invoiceId"
 CREATE INDEX "salesInvoiceLine_itemId_idx" ON "salesInvoiceLine" ("itemId");
 CREATE INDEX "salesInvoiceLine_locationId_idx" ON "salesInvoiceLine" ("locationId");
 
+CREATE TABLE "salesInvoiceShipment" (
+  "id" TEXT NOT NULL,
+  "shippingCost" NUMERIC NOT NULL DEFAULT 0,
+  "locationId" TEXT,
+  "shippingMethodId" TEXT,
+  "shippingTermId" TEXT,
+  "customFields" JSONB NOT NULL DEFAULT '{}',
+  "companyId" TEXT,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "updatedAt" TIMESTAMP WITH TIME ZONE,
+  "updatedBy" TEXT,
+
+  CONSTRAINT "salesInvoiceShipment_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "salesInvoiceShipment_id_fkey" FOREIGN KEY ("id") REFERENCES "salesInvoice"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoiceShipment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoiceShipment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoiceShipment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
+);
+
+CREATE INDEX "salesInvoiceShipment_companyId_idx" ON "salesInvoiceShipment" ("companyId");
+
 DROP VIEW IF EXISTS "salesInvoices";
 CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
   SELECT
@@ -180,29 +203,6 @@ CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS
     GROUP BY sil."invoiceId"
   ) sil ON sil."invoiceId" = si."id" 
   JOIN "salesInvoiceShipment" ss ON ss."id" = si."id";
-
-
-CREATE TABLE "salesInvoiceShipment" (
-  "id" TEXT NOT NULL,
-  "shippingCost" NUMERIC NOT NULL DEFAULT 0,
-  "locationId" TEXT,
-  "shippingMethodId" TEXT,
-  "shippingTermId" TEXT,
-  "customFields" JSONB NOT NULL DEFAULT '{}',
-  "companyId" TEXT,
-  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-  "createdBy" TEXT NOT NULL,
-  "updatedAt" TIMESTAMP WITH TIME ZONE,
-  "updatedBy" TEXT,
-
-  CONSTRAINT "salesInvoiceShipment_pkey" PRIMARY KEY ("id"),
-  CONSTRAINT "salesInvoiceShipment_id_fkey" FOREIGN KEY ("id") REFERENCES "salesInvoice"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "salesInvoiceShipment_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "salesInvoiceShipment_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
-  CONSTRAINT "salesInvoiceShipment_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
-);
-
-CREATE INDEX "salesInvoiceShipment_companyId_idx" ON "salesInvoiceShipment" ("companyId");
 
 
 DROP VIEW IF EXISTS "salesInvoiceLines";

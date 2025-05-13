@@ -19,6 +19,7 @@ import { ValidatedForm } from "@carbon/form";
 import { useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import type { z } from "zod";
+import { MethodIcon } from "~/components";
 import {
   CustomFormFields,
   Hidden,
@@ -26,6 +27,7 @@ import {
   Location,
   Number,
   NumberControlled,
+  SelectControlled,
   Shelf,
   Submit,
 } from "~/components/Form";
@@ -33,6 +35,7 @@ import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { SalesInvoice } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import type { MethodItemType } from "~/modules/shared";
+import { methodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type SalesInvoiceLineFormProps = {
@@ -69,6 +72,7 @@ const SalesInvoiceLineForm = ({
   const [itemData, setItemData] = useState<{
     itemId: string;
     itemReadableId: string;
+    methodType: string;
     description: string;
     quantity: number;
     unitPrice: number;
@@ -80,6 +84,7 @@ const SalesInvoiceLineForm = ({
   }>({
     itemId: initialValues.itemId ?? "",
     itemReadableId: initialValues.itemReadableId ?? "",
+    methodType: initialValues.methodType ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
     unitPrice: initialValues.unitPrice ?? 0,
@@ -123,6 +128,7 @@ const SalesInvoiceLineForm = ({
     setItemData({
       itemId: "",
       itemReadableId: "",
+      methodType: "",
       description: "",
       quantity: 1,
       unitPrice: 0,
@@ -147,7 +153,7 @@ const SalesInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost)"
+              "name, readableId, type, unitOfMeasureCode, defaultMethodType, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -168,6 +174,7 @@ const SalesInvoiceLineForm = ({
           itemId: itemId,
           itemReadableId: item.data?.readableId ?? "",
           description: item.data?.name ?? "",
+          methodType: item.data?.defaultMethodType ?? "",
           unitPrice:
             (itemCost?.unitCost ?? 0) /
             (routeData?.salesInvoice?.exchangeRate ?? 1),
@@ -261,6 +268,7 @@ const SalesInvoiceLineForm = ({
                 name="unitOfMeasureCode"
                 value={itemData?.unitOfMeasureCode}
               />
+              <Hidden name="methodType" value={itemData?.methodType} />
 
               <VStack>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
@@ -292,6 +300,30 @@ const SalesInvoiceLineForm = ({
                     itemType
                   ) && (
                     <>
+                      <SelectControlled
+                        name="methodType"
+                        label="Method"
+                        options={
+                          methodType.map((m) => ({
+                            label: (
+                              <span className="flex items-center gap-2">
+                                <MethodIcon type={m} />
+                                {m}
+                              </span>
+                            ),
+                            value: m,
+                          })) ?? []
+                        }
+                        value={itemData.methodType}
+                        onChange={(newValue) => {
+                          if (newValue)
+                            setItemData((d) => ({
+                              ...d,
+                              methodType: newValue?.value,
+                            }));
+                        }}
+                      />
+
                       <NumberControlled
                         minValue={itemData.quantity}
                         name="quantity"
