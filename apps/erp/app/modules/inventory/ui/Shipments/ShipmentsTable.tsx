@@ -15,24 +15,24 @@ import {
   LuUser,
 } from "react-icons/lu";
 import {
+  CustomerAvatar,
   EmployeeAvatar,
   Hyperlink,
   New,
-  CustomerAvatar,
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import { usePeople, useCustomers } from "~/stores";
+import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
-import ShipmentStatus from "./ShipmentStatus";
-import type { Shipment } from "../../types";
 import {
   shipmentSourceDocumentType,
   shipmentStatusType,
 } from "../../inventory.models";
+import type { Shipment } from "../../types";
+import ShipmentStatus from "./ShipmentStatus";
 
 type ShipmentsTableProps = {
   data: Shipment[];
@@ -86,6 +86,16 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
         cell: ({ row }) => {
           if (!row.original.sourceDocumentId) return null;
           switch (row.original.sourceDocument) {
+            case "Sales Invoice":
+              return (
+                <Hyperlink
+                  to={path.to.salesInvoiceDetails(
+                    row.original.sourceDocumentId!
+                  )}
+                >
+                  {row.original.sourceDocumentReadableId}
+                </Hyperlink>
+              );
             case "Sales Order":
               return (
                 <Hyperlink

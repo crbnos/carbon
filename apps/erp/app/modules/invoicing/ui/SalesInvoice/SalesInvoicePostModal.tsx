@@ -12,11 +12,13 @@ import {
   Td,
   Th,
   Thead,
+  toast,
   Tr,
   VStack,
 } from "@carbon/react";
 
 import { useFetcher } from "@remix-run/react";
+import { useEffect } from "react";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import { path } from "~/utils/path";
 
@@ -41,6 +43,16 @@ const SalesInvoicePostModal = ({
   const hasLinesToShip = linesToShip.length > 0;
 
   const fetcher = useFetcher<typeof action>();
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    } else if (fetcher.data?.success === false && fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data?.success]);
+
   return (
     <Modal
       open={isOpen}
@@ -96,7 +108,7 @@ const SalesInvoicePostModal = ({
             </Button>
             <fetcher.Form
               method="post"
-              action={path.to.purchaseInvoicePost(invoiceId)}
+              action={path.to.salesInvoicePost(invoiceId)}
             >
               <Button
                 isDisabled={fetcher.state !== "idle"}

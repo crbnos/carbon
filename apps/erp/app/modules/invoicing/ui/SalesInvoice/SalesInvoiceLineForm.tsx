@@ -11,6 +11,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  toast,
   VStack,
 } from "@carbon/react";
 
@@ -153,7 +154,7 @@ const SalesInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, defaultMethodType, itemCost(unitCost)"
+              "name, readableId, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -168,6 +169,37 @@ const SalesInvoiceLineForm = ({
         ]);
 
         const itemCost = item?.data?.itemCost?.[0];
+        const trackingType = item?.data?.itemTrackingType;
+        const methodType = item?.data?.defaultMethodType;
+
+        // Check if item requires a sales order
+        if (
+          trackingType === "Batch" ||
+          trackingType === "Serial" ||
+          methodType === "Make"
+        ) {
+          const errorMessage =
+            trackingType === "Batch"
+              ? "Batch items require a sales order"
+              : trackingType === "Serial"
+              ? "Serial items require a sales order"
+              : "Make items require a sales order";
+          toast.error(errorMessage);
+          setItemData({
+            itemId: "",
+            itemReadableId: "",
+            methodType: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            shippingCost: 0,
+            unitOfMeasureCode: "",
+            shelfId: "",
+            taxAmount: 0,
+            taxPercent: 0,
+          });
+          return;
+        }
 
         setItemData((prev) => ({
           ...prev,
@@ -268,7 +300,6 @@ const SalesInvoiceLineForm = ({
                 name="unitOfMeasureCode"
                 value={itemData?.unitOfMeasureCode}
               />
-              <Hidden name="methodType" value={itemData?.methodType} />
 
               <VStack>
                 <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">

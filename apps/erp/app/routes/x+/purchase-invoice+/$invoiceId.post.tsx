@@ -1,9 +1,7 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
-import { path, requestReferrer } from "~/utils/path";
+import { json } from "@vercel/remix";
 
 export const config = { runtime: "nodejs" };
 
@@ -23,13 +21,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("id", invoiceId);
 
   if (setPendingState.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.purchaseInvoice(invoiceId),
-      await flash(
-        request,
-        error(setPendingState.error, "Failed to post purchase invoice")
-      )
-    );
+    return json({
+      success: false,
+      message: "Failed to post purchase invoice",
+    });
   }
 
   try {
@@ -53,13 +48,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("id", invoiceId);
 
-      throw redirect(
-        path.to.purchaseInvoices,
-        await flash(
-          request,
-          error(postPurchaseInvoice.error, "Failed to post purchase invoice")
-        )
-      );
+      return json({
+        success: false,
+        message: "Failed to post purchase invoice",
+      });
     }
 
     const priceUpdate = await serviceRole.functions.invoke(
@@ -80,13 +72,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("id", invoiceId);
 
-      throw redirect(
-        path.to.purchaseInvoices,
-        await flash(
-          request,
-          error(priceUpdate.error, "Failed to update prices")
-        )
-      );
+      return json({
+        success: false,
+        message: "Failed to update prices",
+      });
     }
   } catch (error) {
     await client
@@ -95,9 +84,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         status: "Draft",
       })
       .eq("id", invoiceId);
+
+    return json({
+      success: false,
+      message: "Failed to post purchase invoice",
+    });
   }
 
-  throw redirect(
-    requestReferrer(request) ?? path.to.purchaseInvoice(invoiceId)
-  );
+  return json({
+    success: true,
+    message: "Purchase invoice posted successfully",
+  });
 }

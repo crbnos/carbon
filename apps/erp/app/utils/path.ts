@@ -1028,6 +1028,8 @@ export const path = {
       generatePath(`${x}/sales-invoice/${id}/exchange-rate`),
     salesInvoiceLine: (id: string, lineId: string) =>
       generatePath(`${x}/sales-invoice/${id}/${lineId}/details`),
+    salesInvoicePost: (id: string) =>
+      generatePath(`${x}/sales-invoice/${id}/post`),
     salesInvoiceShipment: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/shipment`),
     salesInvoices: `${x}/sales/invoices`,
