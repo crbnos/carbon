@@ -177,6 +177,118 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const headers = new Headers({ "Content-Type": "application/pdf" });
       return new Response(body, { status: 200, headers });
     }
+    case "Sales Invoice": {
+      const salesInvoice = await client
+        .from("salesInvoice")
+        .select("*, salesInvoiceShipment(*)")
+        .eq("id", shipment.data.sourceDocumentId ?? "")
+        .single();
+
+      if (salesInvoice.error) {
+        console.error(salesInvoice.error);
+        throw new Error("Failed to load sales invoice");
+      }
+
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        shipmentTracking,
+      ] = await Promise.all([
+        client
+          .from("customer")
+          .select("*")
+          .eq("id", salesInvoice.data?.customerId ?? "")
+          .single(),
+        getCustomerLocation(client, salesInvoice.data?.locationId ?? ""),
+        getPaymentTerm(client, salesInvoice.data?.paymentTermId ?? ""),
+        getShippingMethod(
+          client,
+          shipment.data.shippingMethodId ??
+            salesInvoice.data?.salesInvoiceShipment?.shippingMethodId ??
+            ""
+        ),
+        getShipmentTracking(client, shipment.data.id, companyId),
+      ]);
+
+      if (customer.error) {
+        console.error(customer.error);
+        throw new Error("Failed to load customer");
+      }
+
+      const thumbnailPaths = shipmentLines.data?.reduce<
+        Record<string, string | null>
+      >((acc, line) => {
+        if (line.thumbnailPath) {
+          acc[line.id!] = line.thumbnailPath;
+        }
+        return acc;
+      }, {});
+
+      const thumbnails: Record<string, string | null> =
+        (thumbnailPaths
+          ? await Promise.all(
+              Object.entries(thumbnailPaths).map(([id, path]) => {
+                if (!path) {
+                  return null;
+                }
+                return getBase64ImageFromSupabase(client, path).then(
+                  (data) => ({
+                    id,
+                    data,
+                  })
+                );
+              })
+            )
+          : []
+        )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+          if (thumbnail) {
+            acc[thumbnail.id] = thumbnail.data;
+          }
+          return acc;
+        }, {}) ?? {};
+
+      const stream = await renderToStream(
+        <PackingSlipPDF
+          company={company.data}
+          customer={customer.data}
+          locale={locale}
+          meta={{
+            author: "CarbonOS",
+            keywords: "packing slip",
+            subject: "Packing Slip",
+          }}
+          customerReference={salesInvoice.data?.customerReference ?? undefined}
+          sourceDocument="Sales Invoice"
+          sourceDocumentId={salesInvoice.data?.invoiceId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-ignore
+          shippingAddress={customerLocation.data?.address}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={shipmentTracking.data ?? []}
+          title="Packing Slip"
+          thumbnails={thumbnails}
+        />
+      );
+
+      const body: Buffer = await new Promise((resolve, reject) => {
+        const buffers: Uint8Array[] = [];
+        stream.on("data", (data) => {
+          buffers.push(data);
+        });
+        stream.on("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+        stream.on("error", reject);
+      });
+
+      const headers = new Headers({ "Content-Type": "application/pdf" });
+      return new Response(body, { status: 200, headers });
+    }
     case "Purchase Order": {
       const [purchaseOrder, purchaseOrderDelivery] = await Promise.all([
         getPurchaseOrder(client, shipment.data.sourceDocumentId),

@@ -46,6 +46,7 @@ CREATE TABLE "salesInvoice" (
   "exchangeRate" NUMERIC NOT NULL DEFAULT 1,
   "exchangeRateUpdatedAt" TIMESTAMP WITH TIME ZONE,
   "opportunityId" TEXT,
+  "shipmentId" TEXT,
   "assignee" TEXT,
   "companyId" TEXT NOT NULL,
   "customFields" JSONB NOT NULL DEFAULT '{}',
@@ -63,10 +64,11 @@ CREATE TABLE "salesInvoice" (
   CONSTRAINT "salesInvoice_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_invoiceCustomerId_fkey" FOREIGN KEY ("invoiceCustomerId") REFERENCES "customer"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_invoiceCustomerLocationId_fkey" FOREIGN KEY ("invoiceCustomerLocationId") REFERENCES "customerLocation"("id") ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT "salesInvoice_invoiceCustomerContactId_fkey" FOREIGN KEY ("invoiceCustomerContactId") REFERENCES "contact"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoice_invoiceCustomerContactId_fkey" FOREIGN KEY ("invoiceCustomerContactId") REFERENCES "customerContact"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_paymentTermId_fkey" FOREIGN KEY ("paymentTermId") REFERENCES "paymentTerm"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_currencyCode_fkey" FOREIGN KEY ("currencyCode") REFERENCES "currencyCode"("code") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_opportunityId_fkey" FOREIGN KEY ("opportunityId") REFERENCES "opportunity"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT "salesInvoice_shipmentId_fkey" FOREIGN KEY ("shipmentId") REFERENCES "shipment"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON UPDATE CASCADE,
   CONSTRAINT "salesInvoice_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON UPDATE CASCADE
@@ -74,6 +76,47 @@ CREATE TABLE "salesInvoice" (
 
 CREATE INDEX "salesInvoice_companyId_idx" ON "salesInvoice" ("companyId");
 CREATE INDEX "salesInvoice_customerId_idx" ON "salesInvoice" ("customerId");
+
+
+CREATE POLICY "SELECT" ON "public"."salesInvoice"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."salesInvoice"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."salesInvoice"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."salesInvoice"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_delete')
+    )::text[]
+  )
+);
 
 CREATE TYPE "salesInvoiceLineType" AS ENUM (
   'Comment',
@@ -143,6 +186,46 @@ CREATE INDEX "salesInvoiceLine_invoiceId_idx" ON "salesInvoiceLine" ("invoiceId"
 CREATE INDEX "salesInvoiceLine_itemId_idx" ON "salesInvoiceLine" ("itemId");
 CREATE INDEX "salesInvoiceLine_locationId_idx" ON "salesInvoiceLine" ("locationId");
 
+CREATE POLICY "SELECT" ON "public"."salesInvoiceLine"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."salesInvoiceLine"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."salesInvoiceLine"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."salesInvoiceLine"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_delete')
+    )::text[]
+  )
+);
+
 CREATE TABLE "salesInvoiceShipment" (
   "id" TEXT NOT NULL,
   "shippingCost" NUMERIC NOT NULL DEFAULT 0,
@@ -164,6 +247,46 @@ CREATE TABLE "salesInvoiceShipment" (
 );
 
 CREATE INDEX "salesInvoiceShipment_companyId_idx" ON "salesInvoiceShipment" ("companyId");
+
+CREATE POLICY "SELECT" ON "public"."salesInvoiceShipment"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."salesInvoiceShipment"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."salesInvoiceShipment"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."salesInvoiceShipment"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('invoicing_delete')
+    )::text[]
+  )
+);
 
 DROP VIEW IF EXISTS "salesInvoices";
 CREATE OR REPLACE VIEW "salesInvoices" WITH(SECURITY_INVOKER=true) AS

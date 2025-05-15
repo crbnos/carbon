@@ -12,6 +12,7 @@ import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
+import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   finalizePurchaseOrder,
@@ -167,6 +168,7 @@ export async function action(args: ActionFunctionArgs) {
           purchaseOrder,
           purchaseOrderLines,
           purchaseOrderLocations,
+          paymentTerms,
           buyer,
         ] = await Promise.all([
           getCompany(serviceRole, companyId),
@@ -174,6 +176,7 @@ export async function action(args: ActionFunctionArgs) {
           getPurchaseOrder(serviceRole, orderId),
           getPurchaseOrderLines(serviceRole, orderId),
           getPurchaseOrderLocations(serviceRole, orderId),
+          getPaymentTermsList(serviceRole, companyId),
           getUser(serviceRole, userId),
         ]);
 
@@ -185,6 +188,7 @@ export async function action(args: ActionFunctionArgs) {
           throw new Error("Failed to get purchase order");
         if (!purchaseOrderLocations.data)
           throw new Error("Failed to get purchase order locations");
+        if (!paymentTerms.data) throw new Error("Failed to get payment terms");
 
         const emailTemplate = PurchaseOrderEmail({
           company: company.data,
@@ -202,6 +206,7 @@ export async function action(args: ActionFunctionArgs) {
             firstName: buyer.data.firstName,
             lastName: buyer.data.lastName,
           },
+          paymentTerms: paymentTerms.data,
         });
 
         const html = await renderAsync(emailTemplate);
@@ -210,7 +215,7 @@ export async function action(args: ActionFunctionArgs) {
         await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
           to: [buyer.data.email, supplier.data.contact.email],
           from: buyer.data.email,
-          subject: `${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+          subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
           html,
           text,
           attachments: [

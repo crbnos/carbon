@@ -57,6 +57,22 @@ export async function createSalesInvoiceFromSalesOrder(
   });
 }
 
+export async function createSalesInvoiceFromShipment(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string,
+  userId: string
+) {
+  return client.functions.invoke<{ id: string }>("convert", {
+    body: {
+      type: "shipmentToSalesInvoice",
+      id: shipmentId,
+      companyId,
+      userId,
+    },
+  });
+}
+
 export async function deletePurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoiceId: string

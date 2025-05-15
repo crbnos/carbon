@@ -1,11 +1,12 @@
 import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
+import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getSalesInvoice,
@@ -32,7 +33,12 @@ export async function action(args: ActionFunctionArgs) {
   });
 
   const { invoiceId } = params;
-  if (!invoiceId) throw new Error("Could not find invoiceId");
+  if (!invoiceId) {
+    return {
+      success: false,
+      message: "Could not find invoiceId",
+    };
+  }
 
   let file: ArrayBuffer;
   let fileName: string;
@@ -51,8 +57,8 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
-  // Call the edge function to post the invoice
   const serviceRole = getCarbonServiceRole();
+
   try {
     const postSalesInvoice = await serviceRole.functions.invoke(
       "post-sales-invoice",
@@ -66,7 +72,6 @@ export async function action(args: ActionFunctionArgs) {
     );
 
     if (postSalesInvoice.error) {
-      // Revert to Draft status if posting fails
       await client
         .from("salesInvoice")
         .update({
@@ -80,7 +85,6 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
   } catch (err) {
-    // Revert to Draft status if an exception occurs
     await client
       .from("salesInvoice")
       .update({
@@ -117,9 +121,17 @@ export async function action(args: ActionFunctionArgs) {
   });
 
   try {
-    const pdf = await pdfLoader(args);
-    if (pdf.headers.get("content-type") !== "application/pdf")
-      throw new Error("Failed to generate PDF");
+    const pdf = await pdfLoader({
+      ...args,
+      params: { ...args.params, id: invoiceId },
+    });
+
+    if (pdf.headers.get("content-type") !== "application/pdf") {
+      return {
+        success: false,
+        message: "Failed to generate PDF",
+      };
+    }
 
     file = await pdf.arrayBuffer();
     fileName = stripSpecialCharacters(
@@ -175,7 +187,10 @@ export async function action(args: ActionFunctionArgs) {
   );
 
   if (validation.error) {
-    return validationError(validation.error);
+    return {
+      success: false,
+      message: "Invalid notification type",
+    };
   }
 
   const { notification, customerContact } = validation.data;
@@ -183,7 +198,12 @@ export async function action(args: ActionFunctionArgs) {
   switch (notification) {
     case "Email":
       try {
-        if (!customerContact) throw new Error("Customer contact is required");
+        if (!customerContact) {
+          return {
+            success: false,
+            message: "Customer contact is required",
+          };
+        }
 
         const [
           company,
@@ -193,6 +213,7 @@ export async function action(args: ActionFunctionArgs) {
           salesInvoiceLocations,
           salesInvoiceShipment,
           seller,
+          paymentTerms,
         ] = await Promise.all([
           getCompany(serviceRole, companyId),
           getCustomerContact(serviceRole, customerContact),
@@ -201,15 +222,51 @@ export async function action(args: ActionFunctionArgs) {
           getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
           getSalesInvoiceShipment(serviceRole, invoiceId),
           getUser(serviceRole, userId),
+          getPaymentTermsList(serviceRole, companyId),
         ]);
 
-        if (!customer?.data?.contact)
-          throw new Error("Failed to get customer contact");
-        if (!company.data) throw new Error("Failed to get company");
-        if (!seller.data) throw new Error("Failed to get user");
-        if (!salesInvoice.data) throw new Error("Failed to get sales invoice");
-        if (!salesInvoiceLocations.data)
-          throw new Error("Failed to get sales invoice locations");
+        if (!customer?.data?.contact) {
+          return {
+            success: false,
+            message: "Failed to get customer contact",
+          };
+        }
+        if (!company.data) {
+          return {
+            success: false,
+            message: "Failed to get company",
+          };
+        }
+        if (!seller.data) {
+          return {
+            success: false,
+            message: "Failed to get user",
+          };
+        }
+        if (!salesInvoice.data) {
+          return {
+            success: false,
+            message: "Failed to get sales invoice",
+          };
+        }
+        if (!salesInvoiceLocations.data) {
+          return {
+            success: false,
+            message: "Failed to get sales invoice locations",
+          };
+        }
+        if (!salesInvoiceShipment.data) {
+          return {
+            success: false,
+            message: "Failed to get sales invoice shipment",
+          };
+        }
+        if (!paymentTerms.data) {
+          return {
+            success: false,
+            message: "Failed to get payment terms",
+          };
+        }
 
         const emailTemplate = SalesInvoiceEmail({
           company: company.data,
@@ -228,6 +285,7 @@ export async function action(args: ActionFunctionArgs) {
             firstName: seller.data.firstName,
             lastName: seller.data.lastName,
           },
+          paymentTerms: paymentTerms.data,
         });
 
         const html = await renderAsync(emailTemplate);
@@ -236,7 +294,7 @@ export async function action(args: ActionFunctionArgs) {
         await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
           to: [seller.data.email, customer.data.contact.email],
           from: seller.data.email,
-          subject: `${salesInvoice.data.invoiceId} from ${company.data.name}`,
+          subject: `Invoice ${salesInvoice.data.invoiceId} from ${company.data.name}`,
           html,
           text,
           attachments: [
@@ -253,7 +311,6 @@ export async function action(args: ActionFunctionArgs) {
           message: "Failed to send email",
         };
       }
-
       break;
     case undefined:
     case "None":

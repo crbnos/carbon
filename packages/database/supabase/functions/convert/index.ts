@@ -35,6 +35,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
+    purchaseOrderNumber: z.string().optional(),
     selectedLines: z.record(
       z.string(),
       z.object({
@@ -53,6 +54,12 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("salesOrderToSalesInvoice"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("shipmentToSalesInvoice"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
@@ -271,6 +278,7 @@ serve(async (req: Request) => {
       case "quoteToSalesOrder": {
         const {
           selectedLines,
+          purchaseOrderNumber,
           digitalQuoteAcceptedBy,
           digitalQuoteAcceptedByEmail,
         } = payload;
@@ -325,7 +333,7 @@ serve(async (req: Request) => {
                 customerId: quote.data.customerId,
                 customerContactId: quote.data.customerContactId,
                 customerLocationId: quote.data.customerLocationId,
-                customerReference: quote.data.customerReference,
+                customerReference: purchaseOrderNumber ?? "",
                 locationId: quote.data.locationId,
                 salesPersonId: quote.data.salesPersonId ?? userId,
                 status: salesOrderStatus,
@@ -585,10 +593,6 @@ serve(async (req: Request) => {
 
           if (!salesInvoice.id) throw new Error("Purchase invoice not created");
           salesInvoiceId = salesInvoice.id;
-
-          console.log({
-            salesOrderShipment: salesOrderShipment.data,
-          });
 
           await trx
             .insertInto("salesInvoiceShipment")
@@ -1004,6 +1008,196 @@ serve(async (req: Request) => {
             )
         );
         break;
+      }
+      case "shipmentToSalesInvoice": {
+        const shipmentId = id;
+        const [shipment, shipmentLines] = await Promise.all([
+          client.from("shipment").select("*").eq("id", shipmentId).single(),
+          client.from("shipmentLine").select("*").eq("shipmentId", shipmentId),
+        ]);
+
+        if (shipmentLines.error) throw shipmentLines.error;
+
+        const quantitiesByLine = shipmentLines.data.reduce<
+          Record<string, number>
+        >((acc, line) => {
+          acc[line.lineId!] = line.shippedQuantity;
+          return acc;
+        }, {});
+
+        const salesOrderLineIds = Object.keys(quantitiesByLine);
+
+        if (
+          !shipment.data?.sourceDocumentId ||
+          shipment.data?.sourceDocument !== "Sales Order"
+        ) {
+          throw new Error("Shipment has no source document id");
+        }
+
+        const [
+          salesOrder,
+          salesOrderLines,
+          salesOrderPayment,
+          salesOrderShipment,
+        ] = await Promise.all([
+          client
+            .from("salesOrder")
+            .select("*")
+            .eq("id", shipment.data?.sourceDocumentId)
+            .single(),
+          client.from("salesOrderLine").select("*").in("id", salesOrderLineIds),
+          client
+            .from("salesOrderPayment")
+            .select("*")
+            .eq("id", shipment.data?.sourceDocumentId)
+            .single(),
+          client
+            .from("salesOrderShipment")
+            .select("*")
+            .eq("id", shipment.data?.sourceDocumentId)
+            .single(),
+        ]);
+
+        if (!salesOrder.data) throw new Error("Purchase order not found");
+        if (salesOrderLines.error)
+          throw new Error(salesOrderLines.error.message);
+        if (!salesOrderPayment.data)
+          throw new Error("Purchase order payment not found");
+        if (!salesOrderShipment.data)
+          throw new Error("Purchase order delivery not found");
+
+        const uninvoicedLines = salesOrderLines?.data?.reduce<
+          (typeof salesOrderLines)["data"]
+        >((acc, line) => {
+          if (line.id in quantitiesByLine && quantitiesByLine[line.id] > 0) {
+            acc.push({
+              ...line,
+              quantityToInvoice: quantitiesByLine[line.id],
+            });
+          }
+
+          return acc;
+        }, []);
+
+        const uninvoicedSubtotal = uninvoicedLines?.reduce((acc, line) => {
+          if (
+            line?.quantityToInvoice &&
+            line.unitPrice &&
+            line.quantityToInvoice > 0
+          ) {
+            acc += line.quantityToInvoice * line.unitPrice;
+          }
+
+          return acc;
+        }, 0);
+
+        let salesInvoiceId = "";
+
+        await db.transaction().execute(async (trx) => {
+          salesInvoiceId = await getNextSequence(
+            trx,
+            "salesInvoice",
+            companyId
+          );
+
+          const salesInvoice = await trx
+            .insertInto("salesInvoice")
+            .values({
+              invoiceId: salesInvoiceId!,
+              status: "Draft",
+              customerId: salesOrder.data.customerId,
+              customerReference: salesOrder.data.customerReference ?? "",
+              invoiceCustomerId: salesOrderPayment.data.invoiceCustomerId,
+              invoiceCustomerContactId:
+                salesOrderPayment.data.invoiceCustomerContactId,
+              invoiceCustomerLocationId:
+                salesOrderPayment.data.invoiceCustomerLocationId,
+              locationId: salesOrderShipment.data.locationId,
+              paymentTermId: salesOrderPayment.data.paymentTermId,
+              currencyCode: salesOrder.data.currencyCode ?? "USD",
+              dateIssued: new Date().toISOString().split("T")[0],
+              exchangeRate: salesOrder.data.exchangeRate ?? 1,
+              subtotal: uninvoicedSubtotal ?? 0,
+              opportunityId: salesOrder.data.opportunityId,
+              shipmentId: shipmentId,
+              totalDiscount: 0,
+              totalAmount: uninvoicedSubtotal ?? 0,
+              totalTax: 0,
+              balance: uninvoicedSubtotal ?? 0,
+              companyId,
+              createdBy: userId,
+            })
+            .returning(["id"])
+            .executeTakeFirstOrThrow();
+
+          if (!salesInvoice.id) throw new Error("Purchase invoice not created");
+          salesInvoiceId = salesInvoice.id;
+
+          await trx
+            .insertInto("salesInvoiceShipment")
+            .values({
+              id: salesInvoiceId,
+              locationId: salesOrderShipment.data.locationId,
+              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
+              shippingMethodId: salesOrderShipment.data.shippingMethodId,
+              shippingTermId: salesOrderShipment.data.shippingTermId,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const salesInvoiceLines = uninvoicedLines?.reduce<
+            Database["public"]["Tables"]["salesInvoiceLine"]["Insert"][]
+          >((acc, line) => {
+            if (
+              line?.quantityToInvoice &&
+              line.quantityToInvoice > 0 &&
+              !line.invoicedComplete
+            ) {
+              acc.push({
+                invoiceId: salesInvoiceId,
+                invoiceLineType: line.salesOrderLineType,
+                salesOrderId: line.salesOrderId,
+                salesOrderLineId: line.id,
+                methodType: line.methodType,
+                itemId: line.itemId,
+                itemReadableId: line.itemReadableId,
+                locationId: line.locationId,
+                shelfId: line.shelfId,
+                accountNumber: line.accountNumber,
+                assetId: line.assetId,
+                description: line.description,
+                quantity: line.quantityToInvoice,
+                unitPrice: line.unitPrice ?? 0,
+                addOnCost: line.addOnCost ?? 0,
+                shippingCost: line.shippingCost ?? 0,
+                taxPercent: line.taxPercent ?? 0,
+                unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
+                exchangeRate: line.exchangeRate ?? 1,
+                companyId,
+                createdBy: userId,
+              });
+            }
+            return acc;
+          }, []);
+
+          if (salesInvoiceLines.length > 0) {
+            await trx
+              .insertInto("salesInvoiceLine")
+              .values(salesInvoiceLines)
+              .execute();
+          }
+        });
+
+        return new Response(
+          JSON.stringify({
+            id: salesInvoiceId,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          }
+        );
       }
       case "supplierQuoteToPurchaseOrder": {
         const { selectedLines } = payload;

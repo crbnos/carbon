@@ -11,13 +11,13 @@ export const useSalesOrder = () => {
     [navigate]
   );
 
-  const invoice = useCallback(
-    (salesOrder: SalesOrder) =>
-      navigate(
-        `${path.to.newSalesInvoice}?sourceDocument=Sales Order&sourceDocumentId=${salesOrder.id}`
-      ),
-    [navigate]
-  );
+  // const invoice = useCallback(
+  //   (salesOrder: SalesOrder) =>
+  //     navigate(
+  //       `${path.to.newSalesInvoice}?sourceDocument=Sales Order&sourceDocumentId=${salesOrder.id}`
+  //     ),
+  //   [navigate]
+  // );
 
   const ship = useCallback(
     (salesOrder: SalesOrder) =>
@@ -29,7 +29,7 @@ export const useSalesOrder = () => {
 
   return {
     edit,
-    invoice,
+    // invoice,
     ship,
   };
 };

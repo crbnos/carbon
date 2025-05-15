@@ -1,26 +1,38 @@
 import {
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   HStack,
   Heading,
   SplitButton,
   useDisclosure,
 } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
+import { Await, Link, useNavigate, useParams } from "@remix-run/react";
 import {
-  LuCheckCheck,
   LuBarcode,
+  LuCheckCheck,
+  LuChevronDown,
+  LuCirclePlus,
+  LuCreditCard,
   LuQrCode,
   LuShoppingCart,
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemTracking, Shipment, ShipmentLine } from "~/modules/inventory";
 
+import type { TrackedEntityAttributes } from "@carbon/utils";
+import { labelSizes } from "@carbon/utils";
+import { Suspense } from "react";
+import { RiProgress8Line } from "react-icons/ri";
+import type { SalesInvoice } from "~/modules/invoicing/types";
+import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { path } from "~/utils/path";
 import ShipmentPostModal from "./ShipmentPostModal";
-import { RiProgress8Line } from "react-icons/ri";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import ShipmentStatus from "./ShipmentStatus";
-import { labelSizes } from "@carbon/utils";
 
 const ShipmentHeader = () => {
   const { shipmentId } = useParams();
@@ -30,18 +42,23 @@ const ShipmentHeader = () => {
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
     shipmentLineTracking: ItemTracking[];
+    relatedItems?: Promise<{
+      invoices: SalesInvoice[];
+    }>;
   }>(path.to.shipment(shipmentId));
 
   if (!routeData?.shipment) throw new Error("Failed to load shipment");
 
   const permissions = usePermissions();
   const postModal = useDisclosure();
+  const navigate = useNavigate();
 
   const canPost =
     routeData.shipmentLines.length > 0 &&
     routeData.shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0);
 
   const isPosted = routeData.shipment.status === "Posted";
+  const isInvoiced = routeData.shipment.invoiced;
   const hasTrackingLabels = routeData.shipmentLineTracking.some(
     (line) => "Split Entity ID" in (line.attributes as TrackedEntityAttributes)
   );
@@ -63,6 +80,14 @@ const ShipmentHeader = () => {
         "_blank"
       );
     }
+  };
+
+  const invoice = (shipment?: Shipment) => {
+    if (!shipment) return;
+    // Navigate to create invoice from shipment
+    navigate(
+      `${path.to.newSalesInvoice}?sourceDocument=Shipment&sourceDocumentId=${shipmentId}`
+    );
   };
 
   return (
@@ -112,6 +137,180 @@ const ShipmentHeader = () => {
                 routeData.shipment.sourceDocumentReadableId ?? undefined
               }
             />
+
+            {permissions.can("view", "invoicing") && (
+              <>
+                {routeData?.shipment.sourceDocument === "Sales Order" && (
+                  <Suspense
+                    fallback={
+                      <Button
+                        leftIcon={<LuCreditCard />}
+                        variant="secondary"
+                        isLoading
+                      >
+                        Loading...
+                      </Button>
+                    }
+                  >
+                    <Await resolve={routeData?.relatedItems}>
+                      {(relatedItems) => {
+                        const invoices = relatedItems?.invoices || [];
+                        return invoices.length > 0 ? (
+                          invoices.length === 1 ? (
+                            <Button
+                              leftIcon={<LuCreditCard />}
+                              variant={!isInvoiced ? "primary" : "secondary"}
+                              isDisabled={!isPosted}
+                              asChild
+                            >
+                              <Link to={path.to.salesInvoice(invoices[0].id!)}>
+                                Invoice
+                              </Link>
+                            </Button>
+                          ) : (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  leftIcon={<LuCreditCard />}
+                                  rightIcon={<LuChevronDown />}
+                                  variant={
+                                    !isInvoiced ? "primary" : "secondary"
+                                  }
+                                >
+                                  Invoice
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  disabled={!isPosted}
+                                  onClick={() => {
+                                    invoice(routeData?.shipment);
+                                  }}
+                                >
+                                  <DropdownMenuIcon icon={<LuCirclePlus />} />
+                                  New Invoice
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {invoices.map((invoice) => (
+                                  <DropdownMenuItem key={invoice.id} asChild>
+                                    <Link
+                                      to={path.to.salesInvoice(invoice.id!)}
+                                    >
+                                      <DropdownMenuIcon
+                                        icon={<LuCreditCard />}
+                                      />
+                                      <HStack spacing={8}>
+                                        <span>{invoice.invoiceId}</span>
+                                        <SalesInvoiceStatus
+                                          status={invoice.status}
+                                        />
+                                      </HStack>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )
+                        ) : (
+                          <Button
+                            leftIcon={<LuCreditCard />}
+                            variant={isPosted ? "primary" : "secondary"}
+                            isDisabled={!isPosted}
+                            onClick={() => {
+                              invoice(routeData?.shipment);
+                            }}
+                          >
+                            Invoice
+                          </Button>
+                        );
+                      }}
+                    </Await>
+                  </Suspense>
+                )}
+                {routeData?.shipment.sourceDocument === "Sales Invoice" && (
+                  <Suspense
+                    fallback={
+                      <Button
+                        leftIcon={<LuCreditCard />}
+                        variant="secondary"
+                        isLoading
+                      >
+                        Loading...
+                      </Button>
+                    }
+                  >
+                    <Await resolve={routeData?.relatedItems}>
+                      {(relatedItems) => {
+                        const invoices = relatedItems?.invoices || [];
+
+                        if (invoices.length === 0) {
+                          return (
+                            <Button
+                              variant="secondary"
+                              leftIcon={<LuCreditCard />}
+                              asChild
+                            >
+                              <Link
+                                to={path.to.salesInvoice(
+                                  routeData.shipment.sourceDocumentId!
+                                )}
+                              >
+                                Invoice
+                              </Link>
+                            </Button>
+                          );
+                        } else if (invoices.length === 1) {
+                          return (
+                            <Button
+                              variant="secondary"
+                              leftIcon={<LuCreditCard />}
+                              asChild
+                            >
+                              <Link to={path.to.salesInvoice(invoices[0].id!)}>
+                                Invoice
+                              </Link>
+                            </Button>
+                          );
+                        } else {
+                          return (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  leftIcon={<LuCreditCard />}
+                                  rightIcon={<LuChevronDown />}
+                                  variant="secondary"
+                                >
+                                  Invoices
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {invoices.map((invoice) => (
+                                  <DropdownMenuItem key={invoice.id} asChild>
+                                    <Link
+                                      to={path.to.salesInvoice(invoice.id!)}
+                                    >
+                                      <DropdownMenuIcon
+                                        icon={<LuCreditCard />}
+                                      />
+                                      <HStack spacing={8}>
+                                        <span>{invoice.invoiceId}</span>
+                                        <SalesInvoiceStatus
+                                          status={invoice.status}
+                                        />
+                                      </HStack>
+                                    </Link>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          );
+                        }
+                      }}
+                    </Await>
+                  </Suspense>
+                )}
+              </>
+            )}
             <Button
               variant={canPost && !isPosted ? "primary" : "secondary"}
               onClick={postModal.onOpen}

@@ -254,7 +254,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
       },
       {
         accessorKey: "customerReference",
-        header: "Customer Ref.",
+        header: "Customer PO",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />,

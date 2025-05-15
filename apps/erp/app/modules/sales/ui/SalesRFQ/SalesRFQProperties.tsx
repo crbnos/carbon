@@ -185,7 +185,7 @@ const SalesRFQProperties = () => {
       >
         <InputControlled
           name="customerReference"
-          label="Customer Ref. Number"
+          label="Customer RFQ"
           value={routeData?.rfqSummary?.customerReference ?? ""}
           size="sm"
           inline

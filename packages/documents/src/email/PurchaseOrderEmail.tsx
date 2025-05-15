@@ -26,6 +26,7 @@ interface PurchaseOrderEmailProps extends Email {
   purchaseOrder: Database["public"]["Views"]["purchaseOrders"]["Row"];
   purchaseOrderLines: Database["public"]["Views"]["purchaseOrderLines"]["Row"][];
   purchaseOrderLocations: Database["public"]["Views"]["purchaseOrderLocations"]["Row"];
+  paymentTerms: { id: string; name: string }[];
 }
 
 const PurchaseOrderEmail = ({
@@ -35,6 +36,7 @@ const PurchaseOrderEmail = ({
   purchaseOrderLocations,
   recipient,
   sender,
+  paymentTerms,
 }: PurchaseOrderEmailProps) => {
   const {
     deliveryName,
@@ -121,7 +123,7 @@ const PurchaseOrderEmail = ({
             </Section>
             <Section>
               <Text className="text-left text-sm font-medium text-gray-900 my-9">
-                {recipient.firstName ? `Hi ${recipient.firstName},` : "Hi,"}
+                {recipient.firstName ? `Hi ${recipient.firstName}, ` : "Hi, "}
                 please see the attached purchase order and let me know if you
                 have any questions.
               </Text>
@@ -148,7 +150,13 @@ const PurchaseOrderEmail = ({
                         <Text className="text-gray-600 uppercase text-[10px]">
                           Payment Terms
                         </Text>
-                        <Text>{purchaseOrder.paymentTermName ?? "-"}</Text>
+                        <Text>
+                          {
+                            paymentTerms?.find(
+                              (term) => term.id === purchaseOrder.paymentTermId
+                            )?.name
+                          }
+                        </Text>
                       </Column>
                     </Row>
                     <Row>

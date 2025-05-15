@@ -78,7 +78,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   setCustomer(newValue?.value as string | undefined)
                 }
               />
-              <Input name="customerReference" label="Customer Ref. Number" />
+              <Input name="customerReference" label="Customer RFQ" />
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"

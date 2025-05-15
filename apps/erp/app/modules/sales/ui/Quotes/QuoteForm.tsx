@@ -129,7 +129,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 label="Customer"
                 onChange={onCustomerChange}
               />
-              <Input name="customerReference" label="Customer Ref. Number" />
+              <Input name="customerReference" label="Customer RFQ" />
               <CustomerLocation
                 name="customerLocationId"
                 label="Customer Location"

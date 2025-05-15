@@ -18010,7 +18010,6 @@ export type Database = {
           invoiceSupplierContactId: string | null
           invoiceSupplierId: string | null
           invoiceSupplierLocationId: string | null
-          jobOperationId: string | null
           locationId: string | null
           paymentTermId: string | null
           postingDate: string | null
@@ -18045,7 +18044,6 @@ export type Database = {
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
           invoiceSupplierLocationId?: string | null
-          jobOperationId?: string | null
           locationId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
@@ -18080,7 +18078,6 @@ export type Database = {
           invoiceSupplierContactId?: string | null
           invoiceSupplierId?: string | null
           invoiceSupplierLocationId?: string | null
-          jobOperationId?: string | null
           locationId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
@@ -18256,27 +18253,6 @@ export type Database = {
             columns: ["invoiceSupplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoice_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoice_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithDependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchaseInvoice_jobOperationId_fkey"
-            columns: ["jobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {
@@ -23347,6 +23323,7 @@ export type Database = {
           opportunityId: string | null
           paymentTermId: string | null
           postingDate: string | null
+          shipmentId: string | null
           status: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal: number
           tags: string[] | null
@@ -23382,6 +23359,7 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          shipmentId?: string | null
           status?: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal?: number
           tags?: string[] | null
@@ -23417,6 +23395,7 @@ export type Database = {
           opportunityId?: string | null
           paymentTermId?: string | null
           postingDate?: string | null
+          shipmentId?: string | null
           status?: Database["public"]["Enums"]["salesInvoiceStatus"]
           subtotal?: number
           tags?: string[] | null
@@ -23522,7 +23501,7 @@ export type Database = {
             foreignKeyName: "salesInvoice_invoiceCustomerContactId_fkey"
             columns: ["invoiceCustomerContactId"]
             isOneToOne: false
-            referencedRelation: "contact"
+            referencedRelation: "customerContact"
             referencedColumns: ["id"]
           },
           {
@@ -23572,6 +23551,13 @@ export type Database = {
             columns: ["paymentTermId"]
             isOneToOne: false
             referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
             referencedColumns: ["id"]
           },
           {
@@ -39212,14 +39198,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -39256,6 +39242,7 @@ export type Database = {
           opportunityId: string | null
           paymentTermId: string | null
           postingDate: string | null
+          shipmentId: string | null
           status: Database["public"]["Enums"]["salesInvoiceStatus"] | null
           subtotal: number | null
           tags: string[] | null
@@ -39362,7 +39349,7 @@ export type Database = {
             foreignKeyName: "salesInvoice_invoiceCustomerContactId_fkey"
             columns: ["invoiceCustomerContactId"]
             isOneToOne: false
-            referencedRelation: "contact"
+            referencedRelation: "customerContact"
             referencedColumns: ["id"]
           },
           {
@@ -39412,6 +39399,13 @@ export type Database = {
             columns: ["paymentTermId"]
             isOneToOne: false
             referencedRelation: "paymentTerm"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoice_shipmentId_fkey"
+            columns: ["shipmentId"]
+            isOneToOne: false
+            referencedRelation: "shipment"
             referencedColumns: ["id"]
           },
           {

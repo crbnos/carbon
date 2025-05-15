@@ -139,7 +139,7 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
       },
       {
         accessorKey: "customerReference",
-        header: "Customer Reference",
+        header: "Customer RFQ",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />,

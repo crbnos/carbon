@@ -165,6 +165,19 @@ export const salesInvoiceValidator = z.object({
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
 });
 
+export const salesInvoicePostValidator = z
+  .object({
+    notification: z.enum(["Email", "None"]).optional(),
+    customerContact: zfd.text(z.string().optional()),
+  })
+  .refine(
+    (data) => (data.notification === "Email" ? data.customerContact : true),
+    {
+      message: "Customer contact is required for email",
+      path: ["customerContact"], // path of error
+    }
+  );
+
 export const salesInvoiceShipmentValidator = z.object({
   id: z.string(),
   locationId: zfd.text(z.string().optional()),

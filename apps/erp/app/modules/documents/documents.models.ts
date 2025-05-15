@@ -10,6 +10,7 @@ export const documentSourceTypes = [
   "Supplier Quote",
   "Sales Order",
   "Sales Invoice",
+  "Shipment",
   ...methodItemType,
 ] as const;
 

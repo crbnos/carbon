@@ -204,7 +204,7 @@ const SalesOrderProperties = () => {
       >
         <InputControlled
           name="customerReference"
-          label="Customer Ref. Number"
+          label="Customer PO"
           value={routeData?.salesOrder?.customerReference ?? ""}
           size="sm"
           inline

@@ -3,6 +3,7 @@ import {
   Button,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuTrigger,
   HStack,
@@ -10,13 +11,12 @@ import {
   IconButton,
   useDisclosure,
 } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
   LuChevronDown,
-  LuHandCoins,
   LuPanelLeft,
   LuPanelRight,
   LuTruck,
@@ -24,15 +24,17 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
+import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
+import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";
-
 const SalesInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
+  const postFetcher = useFetcher<typeof action>();
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -58,12 +60,12 @@ const SalesInvoiceHeader = () => {
 
   const [relatedDocs, setRelatedDocs] = useState<{
     salesOrders: { id: string; readableId: string }[];
-    shipments: { id: string; readableId: string }[];
+    shipments: { id: string; readableId: string; status: string }[];
   }>({ salesOrders: [], shipments: [] });
 
   // Load related documents on mount
   useEffect(() => {
-    async function loadRelatedDocs() {
+    async function getRelatedDocuments() {
       if (!carbon || !salesInvoice.opportunityId) return;
 
       const [salesOrdersResult, shipmentsResult] = await Promise.all([
@@ -73,7 +75,7 @@ const SalesInvoiceHeader = () => {
           .eq("opportunityId", salesInvoice.opportunityId),
         carbon
           .from("shipment")
-          .select("id, shipmentId")
+          .select("id, shipmentId, status")
           .eq("opportunityId", salesInvoice.opportunityId),
       ]);
 
@@ -91,12 +93,13 @@ const SalesInvoiceHeader = () => {
           shipmentsResult.data?.map((r) => ({
             id: r.id,
             readableId: r.shipmentId,
+            status: r.status,
           })) ?? [],
       });
     }
 
-    loadRelatedDocs();
-  }, [carbon, salesInvoice.opportunityId]);
+    getRelatedDocuments();
+  }, [carbon, salesInvoice.opportunityId, salesInvoice.status]);
 
   const showPostModal = async () => {
     // check if there are any lines that are not associated with a PO
@@ -157,9 +160,15 @@ const SalesInvoiceHeader = () => {
               </Button>
             )}
 
-            {relatedDocs.shipments.length === 1 && (
+            {(relatedDocs.shipments.length === 1 ||
+              routeData?.salesInvoice.shipmentId) && (
               <Button variant="secondary" leftIcon={<LuTruck />} asChild>
-                <Link to={path.to.shipment(relatedDocs.shipments[0].id)}>
+                <Link
+                  to={path.to.shipment(
+                    routeData?.salesInvoice.shipmentId ??
+                      relatedDocs.shipments[0].id
+                  )}
+                >
                   Shipment
                 </Link>
               </Button>
@@ -184,28 +193,35 @@ const SalesInvoiceHeader = () => {
               </DropdownMenu>
             )}
 
-            {relatedDocs.shipments.length > 1 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuHandCoins />}
-                    rightIcon={<LuChevronDown />}
-                  >
-                    Shipments
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  {relatedDocs.shipments.map((shipment) => (
-                    <DropdownMenuItem key={shipment.id} asChild>
-                      <Link to={path.to.shipment(shipment.id)}>
-                        {shipment.readableId}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            {relatedDocs.shipments.length > 1 &&
+              !routeData.salesInvoice.shipmentId && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      leftIcon={<LuTruck />}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      Shipments
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    {relatedDocs.shipments.map((shipment) => (
+                      <DropdownMenuItem key={shipment.id} asChild>
+                        <Link to={path.to.shipment(shipment.id)}>
+                          <DropdownMenuIcon icon={<LuTruck />} />
+                          <HStack spacing={8}>
+                            <span>{shipment.readableId}</span>
+                            <ShipmentStatus
+                              status={shipment.status as "Posted"}
+                            />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             <Button
               leftIcon={<LuCheckCheck />}
               variant={
@@ -236,9 +252,12 @@ const SalesInvoiceHeader = () => {
       {postingModal.isOpen && (
         <SalesInvoicePostModal
           invoiceId={invoiceId}
+          customerId={salesInvoice.invoiceCustomerId}
+          customerContactId={salesInvoice.invoiceCustomerContactId}
           isOpen={postingModal.isOpen}
           onClose={postingModal.onClose}
           linesToShip={linesNotAssociatedWithSO}
+          fetcher={postFetcher}
         />
       )}
     </>

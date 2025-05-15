@@ -7,6 +7,7 @@ import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
+import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
   getCustomerContact,
@@ -163,6 +164,7 @@ export async function action(args: ActionFunctionArgs) {
             salesOrderLines,
             salesOrderLocations,
             seller,
+            paymentTerms,
           ] = await Promise.all([
             getCompany(serviceRole, companyId),
             getCustomerContact(serviceRole, customerContact),
@@ -170,6 +172,7 @@ export async function action(args: ActionFunctionArgs) {
             getSalesOrderLines(serviceRole, orderId),
             getSalesOrderCustomerDetails(serviceRole, orderId),
             getUser(serviceRole, userId),
+            getPaymentTermsList(serviceRole, companyId),
           ]);
 
           if (!customer?.data?.contact) {
@@ -203,6 +206,13 @@ export async function action(args: ActionFunctionArgs) {
             });
           }
 
+          if (!paymentTerms.data) {
+            return json({
+              success: false,
+              message: "Failed to get payment terms",
+            });
+          }
+
           const emailTemplate = SalesOrderEmail({
             company: company.data,
             locale: locales?.[0] ?? "en-US",
@@ -219,6 +229,7 @@ export async function action(args: ActionFunctionArgs) {
               firstName: seller.data.firstName,
               lastName: seller.data.lastName,
             },
+            paymentTerms: paymentTerms.data,
           });
 
           const html = await renderAsync(emailTemplate);
@@ -227,7 +238,7 @@ export async function action(args: ActionFunctionArgs) {
           await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
             to: [seller.data.email, customer.data.contact.email],
             from: seller.data.email,
-            subject: `${salesOrder.data.salesOrderId} from ${company.data.name}`,
+            subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
             html,
             text,
             attachments: [

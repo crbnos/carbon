@@ -10113,6 +10113,99 @@ export default {
         tags: ["department"],
       },
     },
+    "/salesInvoiceLocations": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerAddressLine1",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerAddressLine2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerCity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerStateProvince",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerPostalCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.customerCountryName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceCustomerName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceAddressLine1",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceAddressLine2",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceCity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceStateProvince",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoicePostalCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceCountryCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoiceLocations.invoiceCountryName",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/salesInvoiceLocations",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["salesInvoiceLocations"],
+      },
+    },
     "/itemLedger": {
       get: {
         parameters: [
@@ -11803,6 +11896,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoice.shipmentId",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoice.assignee",
           },
           {
@@ -11961,6 +12057,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
           },
           {
+            $ref: "#/parameters/rowFilter.salesInvoice.shipmentId",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesInvoice.assignee",
           },
           {
@@ -12071,6 +12170,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoice.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoice.shipmentId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoice.assignee",
@@ -25429,6 +25531,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -25599,6 +25704,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -25721,6 +25829,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.taxPercent",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.jobOperationId",
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine",
@@ -35336,6 +35447,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoices.opportunityId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesInvoices.shipmentId",
           },
           {
             $ref: "#/parameters/rowFilter.salesInvoices.assignee",
@@ -57845,7 +57959,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -57894,7 +58008,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -59397,6 +59511,84 @@ export default {
       },
       type: "object",
     },
+    salesInvoiceLocations: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        customerName: {
+          format: "text",
+          type: "string",
+        },
+        customerAddressLine1: {
+          format: "text",
+          type: "string",
+        },
+        customerAddressLine2: {
+          format: "text",
+          type: "string",
+        },
+        customerCity: {
+          format: "text",
+          type: "string",
+        },
+        customerStateProvince: {
+          format: "text",
+          type: "string",
+        },
+        customerPostalCode: {
+          format: "text",
+          type: "string",
+        },
+        customerCountryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        customerCountryName: {
+          format: "text",
+          type: "string",
+        },
+        invoiceCustomerName: {
+          format: "text",
+          type: "string",
+        },
+        invoiceAddressLine1: {
+          format: "text",
+          type: "string",
+        },
+        invoiceAddressLine2: {
+          format: "text",
+          type: "string",
+        },
+        invoiceCity: {
+          format: "text",
+          type: "string",
+        },
+        invoiceStateProvince: {
+          format: "text",
+          type: "string",
+        },
+        invoicePostalCode: {
+          format: "text",
+          type: "string",
+        },
+        invoiceCountryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "text",
+          type: "string",
+        },
+        invoiceCountryName: {
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     itemLedger: {
       required: [
         "id",
@@ -60183,7 +60375,7 @@ export default {
         },
         invoiceCustomerContactId: {
           description:
-            "Note:\nThis is a Foreign Key to `contact.id`.<fk table='contact' column='id'/>",
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60258,6 +60450,12 @@ export default {
         opportunityId: {
           description:
             "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shipmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shipment.id`.<fk table='shipment' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -66345,6 +66543,12 @@ export default {
           format: "numeric",
           type: "number",
         },
+        jobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -71015,7 +71219,7 @@ export default {
         },
         invoiceCustomerContactId: {
           description:
-            "Note:\nThis is a Foreign Key to `contact.id`.<fk table='contact' column='id'/>",
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -71084,6 +71288,12 @@ export default {
         opportunityId: {
           description:
             "Note:\nThis is a Foreign Key to `opportunity.id`.<fk table='opportunity' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        shipmentId: {
+          description:
+            "Note:\nThis is a Foreign Key to `shipment.id`.<fk table='shipment' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -83674,6 +83884,117 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.salesInvoiceLocations": {
+      name: "salesInvoiceLocations",
+      description: "salesInvoiceLocations",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/salesInvoiceLocations",
+      },
+    },
+    "rowFilter.salesInvoiceLocations.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerName": {
+      name: "customerName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerAddressLine1": {
+      name: "customerAddressLine1",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerAddressLine2": {
+      name: "customerAddressLine2",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerCity": {
+      name: "customerCity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerStateProvince": {
+      name: "customerStateProvince",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerPostalCode": {
+      name: "customerPostalCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerCountryCode": {
+      name: "customerCountryCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.customerCountryName": {
+      name: "customerCountryName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceCustomerName": {
+      name: "invoiceCustomerName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceAddressLine1": {
+      name: "invoiceAddressLine1",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceAddressLine2": {
+      name: "invoiceAddressLine2",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceCity": {
+      name: "invoiceCity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceStateProvince": {
+      name: "invoiceStateProvince",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoicePostalCode": {
+      name: "invoicePostalCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceCountryCode": {
+      name: "invoiceCountryCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoiceLocations.invoiceCountryName": {
+      name: "invoiceCountryName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.itemLedger": {
       name: "itemLedger",
       description: "itemLedger",
@@ -84564,6 +84885,12 @@ export default {
     },
     "rowFilter.salesInvoice.opportunityId": {
       name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoice.shipmentId": {
+      name: "shipmentId",
       required: false,
       in: "query",
       type: "string",
@@ -91384,6 +91711,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.purchaseInvoiceLine.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.materialForm": {
       name: "materialForm",
       description: "materialForm",
@@ -96909,6 +97242,12 @@ export default {
     },
     "rowFilter.salesInvoices.opportunityId": {
       name: "opportunityId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesInvoices.shipmentId": {
+      name: "shipmentId",
       required: false,
       in: "query",
       type: "string",

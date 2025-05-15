@@ -67,6 +67,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       const selectedLines = parseResult.data;
 
+      // Extract purchase order number from PDF filename if available
+      let purchaseOrderNumber = "";
+      if (file instanceof File && file.name.toLowerCase().endsWith(".pdf")) {
+        purchaseOrderNumber = file.name.replace(/\.pdf$/i, "");
+      }
+
       const [convert] = await Promise.all([
         convertQuoteToOrder(serviceRole, {
           id: quote.data.id,
@@ -75,6 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           selectedLines,
           digitalQuoteAcceptedBy,
           digitalQuoteAcceptedByEmail,
+          purchaseOrderNumber,
         }),
       ]);
 

@@ -104,7 +104,7 @@ const SalesRFQsTable = memo(({ data, count }: SalesRFQsTableProps) => {
       },
       {
         accessorKey: "customerReference",
-        header: "Customer Reference",
+        header: "Customer RFQ",
         cell: (item) => item.getValue(),
         meta: {
           icon: <LuQrCode />,

@@ -9,6 +9,7 @@ import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
 import {
   createSalesInvoiceFromSalesOrder,
+  createSalesInvoiceFromShipment,
   salesInvoiceValidator,
   upsertSalesInvoice,
 } from "~/modules/invoicing";
@@ -50,6 +51,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
       if (result.error || !result?.data) {
         throw redirect(
           request.headers.get("Referer") ?? path.to.salesOrders,
+          await flash(
+            request,
+            error(result.error, "Failed to create sales invoice")
+          )
+        );
+      }
+
+      throw redirect(path.to.salesInvoice(result.data?.id!));
+
+    case "Shipment":
+      if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
+      result = await createSalesInvoiceFromShipment(
+        getCarbonServiceRole(),
+        sourceDocumentId,
+        companyId,
+        userId
+      );
+
+      if (result.error || !result?.data) {
+        throw redirect(
+          request.headers.get("Referer") ?? path.to.shipment(sourceDocumentId),
           await flash(
             request,
             error(result.error, "Failed to create sales invoice")

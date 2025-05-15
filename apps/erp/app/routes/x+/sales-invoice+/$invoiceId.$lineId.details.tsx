@@ -111,6 +111,7 @@ export default function EditSalesInvoiceLineRoute() {
     id: salesInvoiceLine?.id ?? undefined,
     invoiceId: salesInvoiceLine?.invoiceId ?? "",
     invoiceLineType: (salesInvoiceLine?.invoiceLineType ?? "Part") as "Part",
+    methodType: (salesInvoiceLine?.methodType ?? "Pick") as "Pick",
     itemId: salesInvoiceLine?.itemId ?? "",
     itemReadableId: salesInvoiceLine?.itemReadableId ?? "",
     accountNumber: salesInvoiceLine?.accountNumber ?? "",

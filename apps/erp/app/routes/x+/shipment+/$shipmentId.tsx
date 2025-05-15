@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
@@ -8,8 +8,9 @@ import { defer, redirect } from "@vercel/remix";
 import { PanelProvider } from "~/components/Layout";
 import {
   getShipment,
-  getShipmentTracking,
   getShipmentLines,
+  getShipmentRelatedItems,
+  getShipmentTracking,
 } from "~/modules/inventory";
 import ShipmentHeader from "~/modules/inventory/ui/Shipments/ShipmentHeader";
 import type { Handle } from "~/utils/handle";
@@ -21,19 +22,18 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
+    bypassRls: true,
   });
-
-  const serviceRole = await getCarbonServiceRole();
 
   const { shipmentId } = params;
   if (!shipmentId) throw new Error("Could not find shipmentId");
 
   const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
-    getShipment(serviceRole, shipmentId),
-    getShipmentLines(serviceRole, shipmentId),
-    getShipmentTracking(serviceRole, shipmentId, companyId),
+    getShipment(client, shipmentId),
+    getShipmentLines(client, shipmentId),
+    getShipmentTracking(client, shipmentId, companyId),
   ]);
 
   if (shipment.error) {
@@ -51,6 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     shipmentLineTracking: shipmentLineTracking.data ?? [],
+    relatedItems: getShipmentRelatedItems(client, shipmentId),
   });
 }
 

@@ -39,6 +39,7 @@ serve(async (req: Request) => {
       invoiceId,
       userId,
     });
+
     const client = await getSupabaseServiceRole(
       req.headers.get("Authorization"),
       req.headers.get("carbon-key") ?? "",
@@ -674,6 +675,16 @@ serve(async (req: Request) => {
           .insertInto("itemLedger")
           .values(itemLedgerInserts)
           .returning(["id"])
+          .execute();
+      }
+
+      if (salesInvoice.data.shipmentId) {
+        await trx
+          .updateTable("shipment")
+          .set({
+            invoiced: true,
+          })
+          .where("id", "=", salesInvoice.data.shipmentId)
           .execute();
       }
 

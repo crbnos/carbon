@@ -54,7 +54,7 @@ const SalesInvoicePDF = ({
   paymentTerms,
   shippingMethods,
   thumbnails,
-  title = "Sales Invoice",
+  title = "Invoice",
 }: SalesInvoicePDFProps) => {
   const {
     customerName,
@@ -108,8 +108,8 @@ const SalesInvoicePDF = ({
       title={title}
       meta={{
         author: meta?.author ?? "CarbonOS",
-        keywords: meta?.keywords ?? "sales order",
-        subject: meta?.subject ?? "Sales Invoice",
+        keywords: meta?.keywords ?? "sales invoice",
+        subject: meta?.subject ?? "Invoice",
       }}
     >
       <View>

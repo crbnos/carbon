@@ -204,7 +204,7 @@ const SalesInvoiceProperties = () => {
       >
         <InputControlled
           name="customerReference"
-          label="Customer Ref. Number"
+          label="Customer PO"
           value={routeData?.salesInvoice?.customerReference ?? ""}
           size="sm"
           inline

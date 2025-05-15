@@ -198,7 +198,7 @@ const QuoteProperties = () => {
       >
         <InputControlled
           name="customerReference"
-          label="Customer Ref. Number"
+          label="Customer RFQ"
           value={routeData?.quote?.customerReference ?? ""}
           size="sm"
           inline

@@ -10,6 +10,7 @@ import {
   DrawerTitle,
   Heading,
   HStack,
+  Input,
   Label,
   NumberField,
   NumberInput,
@@ -82,6 +83,7 @@ const QuoteToOrderDrawer = ({
   const [selectedLines, setSelectedLines] = useState<
     Record<string, SelectedLine>
   >({});
+  const [poNumber, setPoNumber] = useState<string>("");
 
   const { carbon } = useCarbon();
   const { quoteId } = useParams();
@@ -115,6 +117,12 @@ const QuoteToOrderDrawer = ({
       const file = acceptedFiles[0];
       if (file) {
         upload([file]);
+
+        // Extract PO number from filename if it's a PDF
+        if (file.name.toLowerCase().endsWith(".pdf") && poNumber === "") {
+          const extractedPoNumber = file.name.replace(/\.pdf$/i, "");
+          setPoNumber(extractedPoNumber);
+        }
       }
 
       const purchaseOrderDocumentPath = getPath(file);
@@ -161,6 +169,7 @@ const QuoteToOrderDrawer = ({
       toast.error("Failed to remove purchase order");
     } else {
       setPurchaseOrder(null);
+      setPoNumber("");
       toast.success("Purchase order removed successfully");
     }
     setUploading(false);
@@ -204,19 +213,31 @@ const QuoteToOrderDrawer = ({
               )}
               <LuUpload className="mx-auto mt-4 h-12 w-12 text-muted-foreground" />
             </div>
-            {purchaseOrder ? (
-              <Button
-                className="w-full"
-                leftIcon={<LuTrash />}
-                size="lg"
-                isDisabled={uploading}
-                isLoading={uploading}
-                variant="secondary"
-                onClick={removePurchaseOrder}
-              >
-                Remove
-              </Button>
-            ) : (
+
+            <VStack spacing={2} className="w-full">
+              <Label htmlFor="poNumber">Purchase Order Number</Label>
+              <Input
+                id="poNumber"
+                value={poNumber}
+                onChange={(e) => setPoNumber(e.target.value)}
+                placeholder="Enter PO number"
+              />
+              {purchaseOrder && (
+                <Button
+                  className="w-full"
+                  leftIcon={<LuTrash />}
+                  size="lg"
+                  isDisabled={uploading}
+                  isLoading={uploading}
+                  variant="secondary"
+                  onClick={removePurchaseOrder}
+                >
+                  Remove
+                </Button>
+              )}
+            </VStack>
+
+            {!purchaseOrder && (
               <Button
                 className="w-full"
                 leftIcon={<LuBan />}
@@ -268,7 +289,7 @@ const QuoteToOrderDrawer = ({
       case 2:
         return (
           <VStack spacing={4}>
-            <CustomerDetailsForm />
+            <CustomerDetailsForm poNumber={poNumber} />
             <PaymentDetailsForm />
             <ShippingDetailsForm />
           </VStack>
@@ -327,6 +348,7 @@ const QuoteToOrderDrawer = ({
                 name="selectedLines"
                 value={JSON.stringify(selectedLines)}
               />
+              <input type="hidden" name="poNumber" value={poNumber} />
             </Form>
           )}
         </DrawerFooter>
@@ -806,7 +828,7 @@ function PaymentDetailsForm() {
   );
 }
 
-function CustomerDetailsForm() {
+function CustomerDetailsForm({ poNumber }: { poNumber: string }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -841,9 +863,15 @@ function CustomerDetailsForm() {
               </Td>
             </Tr>
             <Tr>
-              <Td className="w-1/2">Customer Ref:</Td>
+              <Td className="w-1/2">Customer RFQ</Td>
               <Td>{quoteData?.quote.customerReference}</Td>
             </Tr>
+            {poNumber && (
+              <Tr>
+                <Td className="w-1/2">Customer PO</Td>
+                <Td>{poNumber}</Td>
+              </Tr>
+            )}
           </Tbody>
         </Table>
       )}

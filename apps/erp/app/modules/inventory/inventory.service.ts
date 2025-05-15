@@ -400,6 +400,20 @@ export async function getShipmentFiles(
   };
 }
 
+export async function getShipmentRelatedItems(
+  client: SupabaseClient<Database>,
+  shipmentId: string
+) {
+  const invoices = await client
+    .from("salesInvoice")
+    .select("*")
+    .eq("shipmentId", shipmentId);
+
+  return {
+    invoices: invoices.data ?? [],
+  };
+}
+
 export async function getShipmentTracking(
   client: SupabaseClient<Database>,
   shipmentId: string,

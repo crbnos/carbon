@@ -26,6 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const selectedLinesRaw = formData.get("selectedLines") ?? "{}";
+  const poNumber = (formData.get("poNumber") ?? "") as string;
 
   if (typeof selectedLinesRaw !== "string") {
     throw redirect(
@@ -51,6 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const convert = await convertQuoteToOrder(serviceRole, {
     id: quoteId,
+    purchaseOrderNumber: poNumber ?? "",
     companyId,
     userId,
     selectedLines,

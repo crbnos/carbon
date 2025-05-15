@@ -143,6 +143,21 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
         },
       },
       {
+        accessorKey: "invoiced",
+        header: "Invoiced",
+        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
+        meta: {
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ],
+          },
+          icon: <LuCheck />,
+        },
+      },
+      {
         id: "postedBy",
         header: "Posted By",
         cell: ({ row }) => (
@@ -199,23 +214,6 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
             })),
           },
           icon: <LuUser />,
-        },
-      },
-
-      {
-        accessorKey: "invoiced",
-        header: "Invoiced",
-        cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
-        meta: {
-          filter: {
-            type: "static",
-            options: [
-              { value: "true", label: "Yes" },
-              { value: "false", label: "No" },
-            ],
-          },
-          pluralHeader: "Invoiced Statuses",
-          icon: <LuCheck />,
         },
       },
       {

@@ -186,7 +186,7 @@ const SalesOrderHeader = () => {
 
   const statusFetcher = useFetcher<typeof statusAction>();
   const confirmFetcher = useFetcher<typeof confirmAction>();
-  const { ship, invoice } = useSalesOrder();
+  const { ship } = useSalesOrder();
 
   const salesOrderToJobsModal = useDisclosure();
   const confirmDisclosure = useDisclosure();
@@ -450,7 +450,7 @@ const SalesOrderHeader = () => {
                           Ship
                         </Button>
                       )}
-                      {invoices?.length > 0 ? (
+                      {invoices?.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -464,24 +464,10 @@ const SalesOrderHeader = () => {
                                   : "secondary"
                               }
                             >
-                              Invoice
+                              Invoices
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              disabled={
-                                !["To Invoice", "To Ship and Invoice"].includes(
-                                  routeData?.salesOrder?.status ?? ""
-                                )
-                              }
-                              onClick={() => {
-                                invoice(routeData?.salesOrder);
-                              }}
-                            >
-                              <DropdownMenuIcon icon={<LuCirclePlus />} />
-                              New Invoice
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
                             {invoices.map((invoice) => (
                               <DropdownMenuItem key={invoice.id} asChild>
                                 <Link to={path.to.salesInvoice(invoice.id!)}>
@@ -497,27 +483,6 @@ const SalesOrderHeader = () => {
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
-                      ) : (
-                        <Button
-                          leftIcon={<LuCreditCard />}
-                          isDisabled={
-                            !["To Invoice", "To Ship and Invoice"].includes(
-                              routeData?.salesOrder?.status ?? ""
-                            )
-                          }
-                          variant={
-                            ["To Invoice", "To Ship and Invoice"].includes(
-                              routeData?.salesOrder?.status ?? ""
-                            )
-                              ? "primary"
-                              : "secondary"
-                          }
-                          onClick={() => {
-                            invoice(routeData?.salesOrder);
-                          }}
-                        >
-                          Invoice
-                        </Button>
                       )}
                     </>
                   );

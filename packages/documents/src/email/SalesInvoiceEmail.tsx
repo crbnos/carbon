@@ -21,50 +21,46 @@ import {
   getLineDescriptionDetails,
   getLineTotal,
   getTotal,
-} from "../utils/sales-order";
+} from "../utils/sales-invoice";
 import { getCurrencyFormatter } from "../utils/shared";
 
-interface SalesOrderEmailProps extends Email {
-  salesOrder: Database["public"]["Views"]["salesOrders"]["Row"];
-  salesOrderLines: Database["public"]["Views"]["salesOrderLines"]["Row"][];
-  salesOrderLocations: Database["public"]["Views"]["salesOrderLocations"]["Row"];
+interface SalesInvoiceEmailProps extends Email {
+  salesInvoice: Database["public"]["Views"]["salesInvoices"]["Row"];
+  salesInvoiceLines: Database["public"]["Views"]["salesInvoiceLines"]["Row"][];
+  salesInvoiceLocations: Database["public"]["Views"]["salesInvoiceLocations"]["Row"];
+  salesInvoiceShipment: Database["public"]["Tables"]["salesInvoiceShipment"]["Row"];
   paymentTerms: { id: string; name: string }[];
 }
 
-const SalesOrderEmail = ({
+const SalesInvoiceEmail = ({
   company,
   locale,
-  salesOrder,
-  salesOrderLines,
-  salesOrderLocations,
+  salesInvoice,
+  salesInvoiceLines,
+  salesInvoiceLocations,
+  salesInvoiceShipment,
   recipient,
   sender,
   paymentTerms,
-}: SalesOrderEmailProps) => {
+}: SalesInvoiceEmailProps) => {
   const {
-    customerName,
-    customerAddressLine1,
-    customerAddressLine2,
-    customerCity,
-    customerStateProvince,
-    customerPostalCode,
-    customerCountryName,
-    // paymentCustomerName,
-    // paymentAddressLine1,
-    // paymentAddressLine2,
-    // paymentCity,
-    // paymentStateProvince,
-    // paymentPostalCode,
-    // paymentCountryName,
-  } = salesOrderLocations;
+    invoiceCustomerName,
+    invoiceAddressLine1,
+    invoiceAddressLine2,
+    invoiceCity,
+    invoiceStateProvince,
+    invoicePostalCode,
+    invoiceCountryName,
+  } = salesInvoiceLocations;
 
-  const reSubject = `Re: ${salesOrder.salesOrderId} from ${company.name}`;
+  const reSubject = `Re: ${salesInvoice.invoiceId} from ${company.name}`;
 
-  const formatter = getCurrencyFormatter(company.baseCurrencyCode, locale);
+  const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
+  const formatter = getCurrencyFormatter(currencyCode, locale);
 
   return (
     <Html>
-      <Preview>{`${salesOrder.salesOrderId} from ${company.name}`}</Preview>
+      <Preview>{`${salesInvoice.invoiceId} from ${company.name}`}</Preview>
       <Tailwind>
         <head>
           <Font
@@ -119,7 +115,7 @@ const SalesOrderEmail = ({
                 </Column>
                 <Column className="text-right">
                   <Text className="text-3xl font-light text-gray-500">
-                    Sales Order
+                    Sales Invoice
                   </Text>
                 </Column>
               </Row>
@@ -127,8 +123,8 @@ const SalesOrderEmail = ({
             <Section>
               <Text className="text-left text-sm font-medium text-gray-900 my-9">
                 {recipient.firstName ? `Hi ${recipient.firstName}, ` : "Hi, "}
-                please see the attached sales order and let me know if you have
-                any questions.
+                please see the attached invoice and let me know if you have any
+                questions.
               </Text>
             </Section>
             <Section className="bg-gray-50 rounded-lg text-xs">
@@ -156,7 +152,7 @@ const SalesOrderEmail = ({
                         <Text>
                           {
                             paymentTerms?.find(
-                              (term) => term.id === salesOrder.paymentTermId
+                              (term) => term.id === salesInvoice.paymentTermId
                             )?.name
                           }
                         </Text>
@@ -165,15 +161,15 @@ const SalesOrderEmail = ({
                     <Row>
                       <Column>
                         <Text className="text-gray-600 uppercase text-[10px]">
-                          Order ID
+                          Invoice ID
                         </Text>
-                        <Text>{salesOrder.salesOrderId}</Text>
+                        <Text>{salesInvoice.invoiceId}</Text>
                       </Column>
                       <Column>
                         <Text className="text-gray-600 uppercase text-[10px]">
-                          Requested Date
+                          Due Date
                         </Text>
-                        <Text>{salesOrder.receiptRequestedDate ?? "-"}</Text>
+                        <Text>{salesInvoice.dateDue ?? "-"}</Text>
                       </Column>
                     </Row>
                   </Section>
@@ -182,27 +178,27 @@ const SalesOrderEmail = ({
                   <Text className="text-gray-600 uppercase text-[10px]">
                     Ship To
                   </Text>
-                  <Text>{customerName}</Text>
-                  {customerAddressLine1 && <Text>{customerAddressLine1}</Text>}
-                  {customerAddressLine2 && <Text>{customerAddressLine2}</Text>}
+                  <Text>{invoiceCustomerName}</Text>
+                  {invoiceAddressLine1 && <Text>{invoiceAddressLine1}</Text>}
+                  {invoiceAddressLine2 && <Text>{invoiceAddressLine2}</Text>}
                   <Text>
                     {formatCityStatePostalCode(
-                      customerCity,
-                      customerStateProvince,
-                      customerPostalCode
+                      invoiceCity,
+                      invoiceStateProvince,
+                      invoicePostalCode
                     )}
                   </Text>
-                  <Text>{customerCountryName}</Text>
+                  <Text>{invoiceCountryName}</Text>
                 </Column>
               </Row>
             </Section>
             <Section className="mt-8 mb-4">
               <Text className="text-gray-600 uppercase text-[10px] pl-5">
-                Sales Order Lines
+                Sales Invoice Lines
               </Text>
             </Section>
             <Section>
-              {salesOrderLines.map((line) => (
+              {salesInvoiceLines.map((line) => (
                 <Row key={line.id} className="mb-2.5 pl-5">
                   <Column>
                     <Text className="text-xs font-semibold">
@@ -218,21 +214,21 @@ const SalesOrderEmail = ({
                   </Column>
                   <Column className="text-right pr-5 align-top w-[100px]">
                     <Text className="text-xs font-semibold">
-                      {line.salesOrderLineType === "Comment"
+                      {line.invoiceLineType === "Comment"
                         ? ""
-                        : `(${line.saleQuantity} ${line.unitOfMeasureCode})`}
+                        : `(${line.quantity} ${line.unitOfMeasureCode})`}
                     </Text>
                   </Column>
                   <Column className="text-right pr-5 align-top w-[100px]">
                     <Text className="text-xs font-semibold">
-                      {line.salesOrderLineType === "Comment"
+                      {line.invoiceLineType === "Comment"
                         ? "-"
-                        : formatter.format(line.unitPrice ?? 0)}
+                        : formatter.format(line.convertedUnitPrice ?? 0)}
                     </Text>
                   </Column>
                   <Column className="text-right pr-5 align-top w-[100px]">
                     <Text className="text-xs font-semibold">
-                      {line.salesOrderLineType === "Comment"
+                      {line.invoiceLineType === "Comment"
                         ? "-"
                         : formatter.format(getLineTotal(line))}
                     </Text>
@@ -251,7 +247,13 @@ const SalesOrderEmail = ({
                 <Column className="border-l border-gray-200 h-12"></Column>
                 <Column className="w-[90px] pr-5">
                   <Text className="text-base font-semibold whitespace-nowrap">
-                    {formatter.format(getTotal(salesOrderLines, salesOrder))}
+                    {formatter.format(
+                      getTotal(
+                        salesInvoiceLines,
+                        salesInvoice,
+                        salesInvoiceShipment
+                      )
+                    )}
                   </Text>
                 </Column>
               </Row>
@@ -282,4 +284,4 @@ const SalesOrderEmail = ({
   );
 };
 
-export default SalesOrderEmail;
+export default SalesInvoiceEmail;
