@@ -40,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   switch (sourceDocument) {
     case "Sales Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
-      console.log("sourceDocumentId", sourceDocumentId);
+
       result = await createSalesInvoiceFromSalesOrder(
         getCarbonServiceRole(),
         sourceDocumentId,
