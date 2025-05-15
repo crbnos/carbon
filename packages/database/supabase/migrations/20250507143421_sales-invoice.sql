@@ -390,3 +390,12 @@ CREATE OR REPLACE VIEW "salesInvoiceLocations" WITH(SECURITY_INVOKER=true) AS
     ON ica.id = icl."addressId"
   LEFT OUTER JOIN "country" icc
     ON icc.alpha2 = ica."countryCode";
+
+
+-- Update shipments to set invoiced = true where source document is a completed Sales Order
+UPDATE "shipment"
+SET "invoiced" = true
+FROM "salesOrder" so
+WHERE "shipment"."sourceDocument" = 'Sales Order'
+  AND "shipment"."sourceDocumentId" = so.id
+  AND so.status = 'Completed';
