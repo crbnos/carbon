@@ -22,7 +22,7 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
-  getMakeMethod,
+  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const makeMethod = await getMakeMethod(client, itemId, companyId);
+  const makeMethods = await getMakeMethods(client, itemId, companyId);
 
   if (makeMethod.error) {
     throw redirect(

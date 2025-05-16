@@ -25,7 +25,7 @@ import {
   getConfigurationParameters,
   getConfigurationRules,
   getItemManufacturing,
-  getMakeMethod,
+  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
@@ -43,14 +43,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const makeMethod = await getMakeMethod(client, itemId, companyId);
+  const makeMethods = await getMakeMethods(client, itemId, companyId);
 
-  if (makeMethod.error) {
+  if (makeMethods.error) {
     throw redirect(
       path.to.partDetails(itemId),
       await flash(
         request,
-        error(makeMethod.error, "Failed to load make method")
+        error(makeMethods.error, "Failed to load make methods")
       )
     );
   }

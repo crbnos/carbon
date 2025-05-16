@@ -4,6 +4,13 @@ import {
   AlertTitle,
   Button,
   Checkbox,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   HStack,
   Menubar,
   MenubarItem,
@@ -21,9 +28,12 @@ import {
 import { Link, useFetcher } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
+  LuChevronDown,
+  LuCirclePlus,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuGitPullRequestArrow,
   LuTriangleAlert,
 } from "react-icons/lu";
 import { Hidden, Item } from "~/components/Form";
@@ -36,9 +46,13 @@ import { getLinkToItemDetails } from "./ItemForm";
 type MakeMethodToolsProps = {
   itemId: string;
   type: MethodItemType;
+  revisions: {
+    id: string;
+    name: string;
+  }[];
 };
 
-const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
+const MakeMethodTools = ({ itemId, revisions, type }: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{ error: string | null }>();
 
@@ -57,13 +71,13 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
 
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
-
+  const newVersionDisclosure = useDisclosure();
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
   return (
     <>
       <Menubar>
-        <HStack className="w-full justify-start">
+        <HStack className="w-full justify-between">
           <HStack spacing={0}>
             <MenubarItem
               isLoading={isGetMethodLoading}
@@ -93,6 +107,41 @@ const MakeMethodTools = ({ itemId, type }: MakeMethodToolsProps) => {
               </MenubarItem>
             )}
           </HStack>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                leftIcon={<LuGitPullRequestArrow />}
+                rightIcon={<LuChevronDown />}
+              >
+                Versions
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {permissions.can("create", "production") && (
+                <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
+                  <DropdownMenuIcon icon={<LuCirclePlus />} />
+                  New Version
+                </DropdownMenuItem>
+              )}
+              {revisions && revisions.length > 0 && (
+                <>
+                  <DropdownMenuLabel>Version History</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {revisions.map((revision) => (
+                    <Link
+                      key={revision.id}
+                      to={path.to.procedure(revision.id)}
+                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                    >
+                      {revision.name}
+                    </Link>
+                  ))}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </HStack>
       </Menubar>
 

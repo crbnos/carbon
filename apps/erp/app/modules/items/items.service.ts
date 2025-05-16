@@ -708,7 +708,7 @@ export async function getPartUsedIn(
   };
 }
 
-export async function getMakeMethod(
+export async function getMakeMethods(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
@@ -1977,6 +1977,7 @@ export async function upsertMethodMaterial(
   let materialMakeMethodId: string | null = null;
   if (methodMaterial.methodType === "Make") {
     const makeMethod = await client
+      // TODO: get we need to pass the make method since there can be multiple
       .from("makeMethod")
       .select("id")
       .eq("itemId", methodMaterial.itemId!)
