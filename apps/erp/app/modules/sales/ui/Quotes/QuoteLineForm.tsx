@@ -167,7 +167,7 @@ const QuoteLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -193,7 +193,7 @@ const QuoteLineForm = ({
     const newItemData = {
       ...itemData,
       itemId,
-      itemReadableId: item.data?.readableId ?? "",
+      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       uom: item.data?.unitOfMeasureCode ?? "",

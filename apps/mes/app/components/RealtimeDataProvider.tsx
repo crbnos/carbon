@@ -45,7 +45,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           "id, readableIdWithRevision, name, type, replenishmentSystem, itemTrackingType, active"
         )
         .eq("companyId", companyId)
-        .order("readableIdWithRevision"),
+        .order("readableId", { ascending: true })
+        .order("revision", { ascending: false }),
 
       carbon
         .from("employees")

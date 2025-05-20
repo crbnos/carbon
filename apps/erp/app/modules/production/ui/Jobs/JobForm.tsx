@@ -117,7 +117,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
       carbon
         .from("item")
         .select(
-          "name, readableId, defaultMethodType, type, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, defaultMethodType, type, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)

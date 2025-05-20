@@ -41,6 +41,17 @@ export const interpolateSequenceDate = (value?: string | null) => {
   return result;
 };
 
+export const getReadableIdWithRevision = (
+  readableId: string,
+  revision?: string | null
+) => {
+  if (revision && revision !== "0") {
+    return `${readableId}.${revision}`;
+  }
+
+  return readableId;
+};
+
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
 export const credit = (accountType: AccountType, amount: number) => {

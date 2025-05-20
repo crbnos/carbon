@@ -5,6 +5,7 @@ import { json } from "@vercel/remix";
 import { Onshape as OnshapeConfig } from "~/integrations/onshape/config";
 import { OnshapeClient } from "~/integrations/onshape/lib/client";
 import { getIntegration } from "~/modules/settings/settings.service";
+import { getReadableIdWithRevision } from "~/utils/string";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
@@ -95,7 +96,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
 
       const uniquePartNumbers = new Set(
-        flattenedData.map((row) => row["Part number"] || row["Name"])
+        flattenedData.map((row) =>
+          getReadableIdWithRevision(
+            row["Part number"] || row["Name"],
+            row["Revision"]
+          )
+        )
       );
 
       let itemsMap: Map<
@@ -110,12 +116,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       if (uniquePartNumbers.size) {
         const items = await client
           .from("item")
-          .select("id, readableId, defaultMethodType, replenishmentSystem")
-          .in("readableId", Array.from(uniquePartNumbers));
+          .select(
+            "id, readableId, readableIdWithRevision, defaultMethodType, replenishmentSystem"
+          )
+          .in("readableIdWithRevision", Array.from(uniquePartNumbers));
+
+        console.log({ items: items.data });
 
         itemsMap = new Map(
           items.data?.map((item) => [
-            item.readableId,
+            item.readableIdWithRevision,
             {
               itemId: item.id,
               defaultMethodType: item.defaultMethodType,
@@ -123,10 +133,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             },
           ])
         );
+
+        console.log({ itemsMap });
       }
 
       const flattenedDataWithMetadata = flattenedData.map((row) => {
-        const item = itemsMap?.get(row["Part number"] || row["Name"]);
+        const item = itemsMap?.get(
+          getReadableIdWithRevision(
+            row["Part number"] || row["Name"],
+            row["Revision"]
+          )
+        );
         let replenishmentSystem = item?.replenishmentSystem;
         let defaultMethodType = item?.defaultMethodType;
 
@@ -147,6 +164,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           mass: row["Mass"],
           index: row["Item"],
           readableId: row["Part number"],
+          revision: row["Revision"],
+          readableIdWithRevision: getReadableIdWithRevision(
+            row["Part number"],
+            row["Revision"]
+          ),
           name: row["Name"],
           id: item?.itemId ?? undefined,
           replenishmentSystem,
@@ -155,6 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           level: row["Item"].toString().split(".").length,
         };
       });
+
+      console.log({ flattenedDataWithMetadata });
 
       // Return the transformed data instead of the raw response
       return json({

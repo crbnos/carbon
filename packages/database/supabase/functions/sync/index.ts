@@ -4,6 +4,7 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import z from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getReadableIdWithRevision } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -12,6 +13,7 @@ const onShapeDataValidator = z.object({
   index: z.string(),
   id: z.string().optional(),
   readableId: z.string().optional(),
+  revision: z.string().optional(),
   name: z.string(),
   quantity: z.number(),
   replenishmentSystem: z.enum(["Make", "Buy", "Buy and Make"]),
@@ -66,7 +68,9 @@ serve(async (req: Request) => {
           .in("itemId", Array.from(existingItemIds)),
         client
           .from("item")
-          .select("id, readableId, unitOfMeasureCode, type")
+          .select(
+            "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
+          )
           .eq("companyId", companyId)
           .in("id", Array.from(existingItemIds)),
       ]);
@@ -163,6 +167,7 @@ serve(async (req: Request) => {
             const {
               id,
               readableId,
+              revision,
               name,
               quantity,
               replenishmentSystem,
@@ -185,6 +190,7 @@ serve(async (req: Request) => {
                   .insertInto("item")
                   .values({
                     readableId: partId,
+                    revision: revision ?? "0",
                     name,
                     type: "Part",
                     unitOfMeasureCode: "EA",
@@ -203,7 +209,6 @@ serve(async (req: Request) => {
                   .insertInto("part")
                   .values({
                     id: partId,
-                    itemId: itemId!,
                     companyId,
                     createdBy: userId,
                   })
@@ -216,6 +221,11 @@ serve(async (req: Request) => {
                   existingItemsByItemId.set(itemId, {
                     id: itemId,
                     readableId: partId,
+                    readableIdWithRevision: getReadableIdWithRevision(
+                      partId,
+                      revision
+                    ),
+                    revision: revision ?? "0",
                     unitOfMeasureCode: "EA",
                     type: "Part",
                   });
@@ -281,7 +291,8 @@ serve(async (req: Request) => {
                 methodType: defaultMethodType,
                 order: index,
                 itemReadableId:
-                  existingItemsByItemId.get(itemId)?.readableId ?? partId,
+                  existingItemsByItemId.get(itemId)?.readableIdWithRevision ??
+                  partId,
                 itemType: existingItemsByItemId.get(itemId)?.type ?? "Part",
                 unitOfMeasureCode:
                   existingItemsByItemId.get(itemId)?.unitOfMeasureCode ?? "EA",

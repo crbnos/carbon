@@ -153,7 +153,7 @@ serve(async (req: Request) => {
           const item = await trx
             .selectFrom("item")
             .where("id", "=", job?.itemId!)
-            .select(["readableId"])
+            .select(["readableIdWithRevision"])
             .executeTakeFirstOrThrow();
 
           const quantityReceivedToInventory =
@@ -189,7 +189,7 @@ serve(async (req: Request) => {
               documentId: jobId,
               companyId,
               itemId: job?.itemId!,
-              itemReadableId: item?.readableId,
+              itemReadableId: item?.readableIdWithRevision,
               quantity: quantityReceivedToInventory,
               locationId,
               shelfId,
@@ -215,7 +215,7 @@ serve(async (req: Request) => {
                 documentId: jobId,
                 companyId,
                 itemId: job?.itemId!,
-                itemReadableId: item?.readableId,
+                itemReadableId: item?.readableIdWithRevision,
                 quantity: 1,
                 locationId,
                 shelfId,
@@ -242,7 +242,7 @@ serve(async (req: Request) => {
               documentId: jobId,
               companyId,
               itemId: job?.itemId!,
-              itemReadableId: item?.readableId,
+              itemReadableId: item?.readableIdWithRevision,
               quantity: quantityReceivedToInventory,
               locationId,
               shelfId,
@@ -663,7 +663,13 @@ serve(async (req: Request) => {
             trx
               .selectFrom("item")
               .where("id", "=", itemId)
-              .select(["id", "itemTrackingType", "name", "readableId", "type"])
+              .select([
+                "id",
+                "itemTrackingType",
+                "name",
+                "readableIdWithRevision",
+                "type",
+              ])
               .executeTakeFirst(),
           ]);
 
@@ -777,7 +783,7 @@ serve(async (req: Request) => {
                 description: item?.name,
                 estimatedQuantity: 0,
                 itemId: itemId!,
-                itemReadableId: item?.readableId,
+                itemReadableId: item?.readableIdWithRevision,
                 itemType: item?.type,
                 jobId: jobOperation?.jobId!,
                 jobMakeMethodId: jobOperation?.jobMakeMethodId,

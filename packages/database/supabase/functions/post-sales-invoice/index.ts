@@ -86,7 +86,7 @@ serve(async (req: Request) => {
     const [items, itemCosts, salesOrderLines, customer] = await Promise.all([
       client
         .from("item")
-        .select("id, itemTrackingType, readableId")
+        .select("id, itemTrackingType")
         .in("id", itemIds)
         .eq("companyId", companyId),
       client

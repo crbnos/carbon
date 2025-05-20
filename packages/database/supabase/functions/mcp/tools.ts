@@ -1,19 +1,19 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
-import { tool } from "../lib/tool.ts";
+import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import z from "npm:zod@^3.24.1";
-import { Database } from "../lib/types.ts";
+import { getCurrencyByCode } from "../lib/api/accounting.ts";
 import {
-  getSupplierPayment,
+  deletePurchaseOrder,
   getSupplier as getSupplierById,
+  getSupplierPayment,
   getSupplierShipping,
   insertSupplierInteraction,
-  deletePurchaseOrder,
 } from "../lib/api/purchasing.ts";
-import { getCurrencyByCode } from "../lib/api/accounting.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { Transaction } from "https://esm.sh/v135/kysely@0.26.3/dist/cjs/kysely.d.ts";
 import { DB } from "../lib/database.ts";
+import { tool } from "../lib/tool.ts";
+import { Database } from "../lib/types.ts";
+import { getNextSequence } from "../shared/get-next-sequence.ts";
 
 const model = new Supabase.ai.Session("gte-small");
 
@@ -93,6 +93,7 @@ const createPurchaseOrder = tool({
 
     if (supplier.currencyCode) {
       const currency = await getCurrencyByCode(
+        // @ts-ignore
         context.db,
         context.companyId,
         supplier.currencyCode
@@ -151,12 +152,18 @@ const createPurchaseOrder = tool({
 
       // Create purchase order lines for each part
       await Promise.all(
-        args.parts.map(async (part) => {
+        args.parts.map(async (part: { partId: string; quantity: number }) => {
           // Get item details
           const [item, supplierPart] = await Promise.all([
             context.db
               .selectFrom("item")
-              .select(["id", "name", "readableId", "type", "unitOfMeasureCode"])
+              .select([
+                "id",
+                "name",
+                "readableIdWithRevision",
+                "type",
+                "unitOfMeasureCode",
+              ])
               .where("id", "=", part.partId)
               .where("companyId", "=", context.companyId)
               .executeTakeFirst(),
@@ -197,7 +204,7 @@ const createPurchaseOrder = tool({
             .values({
               purchaseOrderId: purchaseOrderId,
               itemId: part.partId,
-              itemReadableId: item.readableId,
+              itemReadableId: item.readableIdWithRevision,
               description: item.name,
               purchaseOrderLineType: item.type,
               purchaseQuantity: part.quantity,
@@ -256,9 +263,12 @@ const getPart = tool({
         context.client
           .from("item")
           .select("*")
-          .eq("readableId", readableId)
+          .or(
+            `readableId.eq.${readableId},readableIdWithRevision.eq.${readableId}`
+          )
           .eq("companyId", context.companyId)
-          .single(),
+          .order("revision", { ascending: false })
+          .limit(1),
         context.client
           .from("supplierPart")
           .select("*, item(*)")
@@ -275,11 +285,11 @@ const getPart = tool({
           supplierId: supplierPart.data.supplierId,
         };
       }
-      if (part.data) {
+      if (part.data?.[0]) {
         return {
-          id: part.data.id,
-          name: part.data.name,
-          description: part.data.description,
+          id: part.data[0].id,
+          name: part.data[0].name,
+          description: part.data[0].description,
         };
       }
 

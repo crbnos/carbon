@@ -621,7 +621,9 @@ function MaterialForm({
 
     const item = await carbon
       .from("item")
-      .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
+      .select(
+        "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType"
+      )
       .eq("id", itemId)
       .eq("companyId", company.id)
       .single();
@@ -634,7 +636,7 @@ function MaterialForm({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableId ?? "",
+      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
       methodType: item.data?.defaultMethodType ?? "Buy",

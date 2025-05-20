@@ -242,6 +242,12 @@ export const fieldMappings = {
       required: true,
       type: "string",
     },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0",
+    },
     name: {
       label: "Short Description",
       required: true,
@@ -329,6 +335,12 @@ export const fieldMappings = {
       label: "Part Number",
       required: true,
       type: "string",
+    },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0",
     },
     name: {
       label: "Short Description",
@@ -418,6 +430,12 @@ export const fieldMappings = {
       required: true,
       type: "string",
     },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0",
+    },
     name: {
       label: "Short Description",
       required: true,
@@ -506,6 +524,12 @@ export const fieldMappings = {
       required: true,
       type: "string",
     },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0",
+    },
     name: {
       label: "Short Description",
       required: true,
@@ -593,6 +617,12 @@ export const fieldMappings = {
       label: "Part Number",
       required: true,
       type: "string",
+    },
+    revision: {
+      label: "Revision",
+      required: true,
+      type: "string",
+      default: "0",
     },
     name: {
       label: "Short Description",

@@ -64,7 +64,7 @@ const JobTravelerPDF = ({
         <View style={tw("mb-6")}>
           <Header
             title={job.jobId}
-            subtitle={item.readableId}
+            subtitle={item.readableIdWithRevision}
             tertiaryTitle={item.name}
             company={company}
           />

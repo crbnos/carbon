@@ -23,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const itemData = await getItem(client, itemId);
-  const readableId = itemData?.data?.readableId;
+  const readableId = itemData?.data?.readableIdWithRevision;
 
   return json({
     readableId,

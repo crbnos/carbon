@@ -100,7 +100,7 @@ export function AdjustInventory({ add }: { add: boolean }) {
     return items
       .filter((i) => !["Batch", "Serial"].includes(i.itemTrackingType))
       .map((item) => ({
-        label: item.readableId,
+        label: item.readableIdWithRevision,
         helper: item.name,
         value: item.id,
       }));

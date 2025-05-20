@@ -685,10 +685,8 @@ serve(async (req: Request) => {
         if (linesToCreateItems.length > 0) {
           itemInserts = await Promise.all(
             linesToCreateItems.map(async (line) => {
-              const baseReadableId = line.customerPartRevision
-                ? `${line.customerPartId}-${line.customerPartRevision}`
-                : `${line.customerPartId}`;
-              let readableId = baseReadableId;
+              let revisionId = line.customerPartRevision ?? "0";
+              let readableId = line.customerPartId ?? "";
               let suffix = 1;
 
               // Check for uniqueness and append a suffix if necessary
@@ -697,6 +695,7 @@ serve(async (req: Request) => {
                   .from("item")
                   .select("id")
                   .eq("readableId", readableId)
+                  .eq("revision", revisionId)
                   .eq("companyId", companyId)
                   .single();
 
@@ -711,13 +710,14 @@ serve(async (req: Request) => {
                 }
 
                 // If not unique, append or increment suffix
-                readableId = `${baseReadableId} (${suffix})`;
+                revisionId = `${revisionId} (${suffix})`;
                 suffix++;
               }
 
               readableIdToLineIdMapping.set(readableId, line.id!);
               return {
                 readableId,
+                revision: revisionId,
                 type: "Part" as const,
                 active: false,
                 name: line.description ?? line.itemName ?? "",
@@ -797,17 +797,25 @@ serve(async (req: Request) => {
             const itemIds = await trx
               .insertInto("item")
               .values(itemInserts)
-              .returning(["id", "readableId"])
+              .returning(["id", "readableId", "revision"])
               .execute();
 
             const partInserts: Database["public"]["Tables"]["part"]["Insert"][] =
               itemIds.map((item) => ({
                 id: item.readableId!,
-                itemId: item.id!,
                 companyId,
                 createdBy: userId,
               }));
-            await trx.insertInto("part").values(partInserts).execute();
+            await trx
+              .insertInto("part")
+              .values(partInserts)
+              .onConflict((oc) =>
+                oc.columns(["id", "companyId"]).doUpdateSet({
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                })
+              )
+              .execute();
 
             const salesRfqLineUpdates: Database["public"]["Tables"]["salesRfqLine"]["Update"][] =
               itemIds.map((item) => ({
