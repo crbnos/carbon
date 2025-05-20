@@ -104,7 +104,7 @@ FROM
   LEFT JOIN open_sales_orders so ON i."id" = so."itemId"
   LEFT JOIN open_purchase_orders po ON i."id" = po."itemId"
   LEFT JOIN open_jobs jo ON i."id" = jo."itemId"
-  LEFT JOIN material m ON i."id" = m."itemId"
+  LEFT JOIN material m ON i."readableId" = m."itemId"
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
 WHERE
   i."itemTrackingType" <> 'Non-Inventory' AND i."companyId" = company_id;

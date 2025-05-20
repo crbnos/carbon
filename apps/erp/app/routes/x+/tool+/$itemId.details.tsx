@@ -200,8 +200,8 @@ export default function ToolDetailsRoute() {
           <ScrollArea className="h-[calc(100dvh-99px)]">
             <VStack spacing={2} className="p-2">
               <ItemNotes
-                id={toolData.toolSummary?.itemId ?? null}
-                title={toolData.toolSummary?.id ?? ""}
+                id={toolData.toolSummary?.id ?? null}
+                title={toolData.toolSummary?.readableIdWithRevision ?? ""}
                 subTitle={toolData.toolSummary?.name ?? ""}
                 notes={toolData.toolSummary?.notes as JSONContent}
               />

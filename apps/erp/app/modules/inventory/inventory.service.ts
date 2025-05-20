@@ -646,7 +646,7 @@ export async function insertManualInventoryAdjustment(
             id: inventoryAdjustment.trackedEntityId,
             sourceDocument: "Item",
             sourceDocumentId: data.itemId,
-            sourceDocumentReadableId: item.data?.readableId,
+            sourceDocumentReadableId: item.data?.readableIdWithRevision,
             quantity: data.quantity,
             status: "Available",
             companyId: data.companyId,

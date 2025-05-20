@@ -11,14 +11,14 @@ import {
   LuNetwork,
 } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { usePermissions } from "~/hooks";
 import { trackedEntityStatus, type TrackedEntity } from "~/modules/inventory";
-import { path } from "~/utils/path";
-import TrackedEntityStatus from "./TrackedEntityStatus";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { Item } from "~/stores/items";
 import { useItems } from "~/stores/items";
-import { Enumerable } from "~/components/Enumerable";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { path } from "~/utils/path";
+import TrackedEntityStatus from "./TrackedEntityStatus";
 
 type TrackedEntitiesTableProps = {
   data: TrackedEntity[];
@@ -55,7 +55,7 @@ const TrackedEntitiesTable = memo(
             filter: {
               type: "static",
               options: items.map((i) => ({
-                label: i.readableId,
+                label: i.readableIdWithRevision,
                 value: i.id,
               })),
             },

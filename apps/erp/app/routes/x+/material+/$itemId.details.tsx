@@ -198,9 +198,11 @@ export default function MaterialDetailsRoute() {
           <ScrollArea className="h-[calc(100dvh-99px)]">
             <VStack spacing={2} className="p-2">
               <ItemNotes
-                id={materialData.materialSummary?.itemId ?? null}
+                id={materialData.materialSummary?.id ?? null}
                 title={materialData.materialSummary?.name ?? ""}
-                subTitle={materialData.materialSummary?.id ?? ""}
+                subTitle={
+                  materialData.materialSummary?.readableIdWithRevision ?? ""
+                }
                 notes={materialData.materialSummary?.notes as JSONContent}
               />
               {permissions.is("employee") && (

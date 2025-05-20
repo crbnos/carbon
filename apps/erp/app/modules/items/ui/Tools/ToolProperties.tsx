@@ -25,6 +25,7 @@ import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Boolean, Tags } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -38,7 +39,6 @@ import {
 } from "../../items.models";
 import type { ItemFile, PickMethod, SupplierPart, Tool } from "../../types";
 import { FileBadge } from "../Item";
-import { ReplenishmentSystemIcon } from "~/components/Icons";
 
 const ToolProperties = () => {
   const { itemId } = useParams();
@@ -172,14 +172,14 @@ const ToolProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.toolSummary?.itemId ?? "")
+                    copyToClipboard(routeData?.toolSummary?.id ?? "")
                   }
                 >
                   <LuKeySquare className="w-3 h-3" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <span>Copy part unique identifier</span>
+                <span>Copy tool unique identifier</span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>
@@ -190,7 +190,9 @@ const ToolProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.toolSummary?.id ?? "")
+                    copyToClipboard(
+                      routeData?.toolSummary?.readableIdWithRevision ?? ""
+                    )
                   }
                 >
                   <LuCopy className="w-3 h-3" />
@@ -204,7 +206,7 @@ const ToolProperties = () => {
         </HStack>
         <VStack spacing={0}>
           <span className="text-sm tracking-tight">
-            {routeData?.toolSummary?.id}
+            {routeData?.toolSummary?.readableIdWithRevision}
           </span>
           <ValidatedForm
             defaultValues={{

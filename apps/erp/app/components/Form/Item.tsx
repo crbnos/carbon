@@ -100,7 +100,7 @@ const Item = ({
       })
       .map((item) => ({
         value: item.id,
-        label: item.readableId,
+        label: item.readableIdWithRevision,
         helper: item.name,
       }));
 

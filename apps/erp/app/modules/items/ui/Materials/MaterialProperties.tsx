@@ -24,6 +24,8 @@ import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import Shape from "~/components/Form/Shape";
+import Substance from "~/components/Form/Substance";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -34,8 +36,6 @@ import { copyToClipboard } from "~/utils/string";
 import { itemTrackingTypes } from "../../items.models";
 import type { ItemFile, Material, PickMethod, SupplierPart } from "../../types";
 import { FileBadge } from "../Item";
-import Substance from "~/components/Form/Substance";
-import Shape from "~/components/Form/Shape";
 
 const MaterialProperties = () => {
   const { itemId } = useParams();
@@ -175,7 +175,7 @@ const MaterialProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.materialSummary?.itemId ?? "")
+                    copyToClipboard(routeData?.materialSummary?.id ?? "")
                   }
                 >
                   <LuKeySquare className="w-3 h-3" />
@@ -207,7 +207,7 @@ const MaterialProperties = () => {
         </HStack>
         <VStack spacing={0}>
           <span className="text-sm tracking-tight">
-            {routeData?.materialSummary?.id}
+            {routeData?.materialSummary?.readableIdWithRevision}
           </span>
           <ValidatedForm
             defaultValues={{

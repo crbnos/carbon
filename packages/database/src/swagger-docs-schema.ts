@@ -1306,6 +1306,15 @@ export default {
             $ref: "#/parameters/rowFilter.consumables.notes",
           },
           {
+            $ref: "#/parameters/rowFilter.consumables.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.readableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.readableIdWithRevision",
+          },
+          {
             $ref: "#/parameters/rowFilter.consumables.id",
           },
           {
@@ -1346,6 +1355,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumables.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -27145,6 +27157,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -27282,6 +27297,9 @@ export default {
             $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
           },
           {
+            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -27371,6 +27389,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.shipment.supplierInteractionId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.shipment.externalDocumentId",
           },
           {
             $ref: "#/parameters/body.shipment",
@@ -32122,6 +32143,15 @@ export default {
             $ref: "#/parameters/rowFilter.parts.notes",
           },
           {
+            $ref: "#/parameters/rowFilter.parts.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.readableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.readableIdWithRevision",
+          },
+          {
             $ref: "#/parameters/rowFilter.parts.thumbnailPath",
           },
           {
@@ -32186,6 +32216,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.parts.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -32638,6 +32671,15 @@ export default {
             $ref: "#/parameters/rowFilter.materials.notes",
           },
           {
+            $ref: "#/parameters/rowFilter.materials.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.readableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.readableIdWithRevision",
+          },
+          {
             $ref: "#/parameters/rowFilter.materials.id",
           },
           {
@@ -32699,6 +32741,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -34276,28 +34321,22 @@ export default {
             $ref: "#/parameters/rowFilter.tools.replenishmentSystem",
           },
           {
+            $ref: "#/parameters/rowFilter.tools.thumbnailPath",
+          },
+          {
             $ref: "#/parameters/rowFilter.tools.unitOfMeasureCode",
           },
           {
             $ref: "#/parameters/rowFilter.tools.notes",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.thumbnailPath",
+            $ref: "#/parameters/rowFilter.tools.revision",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.modelId",
+            $ref: "#/parameters/rowFilter.tools.readableId",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.autodeskUrn",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.modelPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.modelName",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.modelSize",
+            $ref: "#/parameters/rowFilter.tools.readableIdWithRevision",
           },
           {
             $ref: "#/parameters/rowFilter.tools.id",
@@ -34340,6 +34379,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -45640,6 +45682,12 @@ export default {
             $ref: "#/parameters/rowFilter.item.embedding",
           },
           {
+            $ref: "#/parameters/rowFilter.item.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.readableIdWithRevision",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -45765,6 +45813,12 @@ export default {
             $ref: "#/parameters/rowFilter.item.embedding",
           },
           {
+            $ref: "#/parameters/rowFilter.item.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.readableIdWithRevision",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -45842,6 +45896,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.item.embedding",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.revision",
+          },
+          {
+            $ref: "#/parameters/rowFilter.item.readableIdWithRevision",
           },
           {
             $ref: "#/parameters/body.item",
@@ -55385,6 +55445,18 @@ export default {
         notes: {
           format: "jsonb",
         },
+        revision: {
+          format: "text",
+          type: "string",
+        },
+        readableId: {
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -55452,6 +55524,9 @@ export default {
         unitOfMeasure: {
           format: "text",
           type: "string",
+        },
+        revisions: {
+          format: "json",
         },
       },
       type: "object",
@@ -57959,7 +58034,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -58008,7 +58083,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -67531,6 +67606,10 @@ export default {
           format: "text",
           type: "string",
         },
+        externalDocumentId: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -69567,6 +69646,18 @@ export default {
         notes: {
           format: "jsonb",
         },
+        revision: {
+          format: "text",
+          type: "string",
+        },
+        readableId: {
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -69667,6 +69758,9 @@ export default {
         unitOfMeasure: {
           format: "text",
           type: "string",
+        },
+        revisions: {
+          format: "json",
         },
       },
       type: "object",
@@ -69846,6 +69940,18 @@ export default {
         notes: {
           format: "jsonb",
         },
+        revision: {
+          format: "text",
+          type: "string",
+        },
+        readableId: {
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
@@ -69945,6 +70051,9 @@ export default {
         unitOfMeasure: {
           format: "text",
           type: "string",
+        },
+        revisions: {
+          format: "json",
         },
       },
       type: "object",
@@ -70610,6 +70719,10 @@ export default {
           format: 'public."itemReplenishmentSystem"',
           type: "string",
         },
+        thumbnailPath: {
+          format: "text",
+          type: "string",
+        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -70617,30 +70730,17 @@ export default {
         notes: {
           format: "jsonb",
         },
-        thumbnailPath: {
+        revision: {
           format: "text",
           type: "string",
         },
-        modelId: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
+        readableId: {
           format: "text",
           type: "string",
         },
-        autodeskUrn: {
+        readableIdWithRevision: {
           format: "text",
           type: "string",
-        },
-        modelPath: {
-          format: "text",
-          type: "string",
-        },
-        modelName: {
-          format: "text",
-          type: "string",
-        },
-        modelSize: {
-          format: "bigint",
-          type: "integer",
         },
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -70709,6 +70809,9 @@ export default {
         unitOfMeasure: {
           format: "text",
           type: "string",
+        },
+        revisions: {
+          format: "json",
         },
       },
       type: "object",
@@ -76381,6 +76484,15 @@ export default {
           format: "extensions.halfvec(384)",
           type: "string",
         },
+        revision: {
+          default: "0",
+          format: "text",
+          type: "string",
+        },
+        readableIdWithRevision: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -79201,6 +79313,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.consumables.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.consumables.id": {
       name: "id",
       required: false,
@@ -79281,6 +79411,12 @@ export default {
     },
     "rowFilter.consumables.unitOfMeasure": {
       name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -92905,6 +93041,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.shipment.externalDocumentId": {
+      name: "externalDocumentId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.groupMembers": {
       name: "groupMembers",
       description: "groupMembers",
@@ -95254,6 +95396,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.parts.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.parts.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.parts.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.parts.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -95382,6 +95542,12 @@ export default {
     },
     "rowFilter.parts.unitOfMeasure": {
       name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.parts.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -95605,6 +95771,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.materials.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.readableId": {
+      name: "readableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.readableIdWithRevision": {
+      name: "readableIdWithRevision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.materials.id": {
       name: "id",
       required: false,
@@ -95727,6 +95911,12 @@ export default {
     },
     "rowFilter.materials.unitOfMeasure": {
       name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -96433,6 +96623,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.tools.thumbnailPath": {
+      name: "thumbnailPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.tools.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -96445,38 +96641,20 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.thumbnailPath": {
-      name: "thumbnailPath",
+    "rowFilter.tools.revision": {
+      name: "revision",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.modelId": {
-      name: "modelId",
+    "rowFilter.tools.readableId": {
+      name: "readableId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.autodeskUrn": {
-      name: "autodeskUrn",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.modelPath": {
-      name: "modelPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.modelName": {
-      name: "modelName",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.modelSize": {
-      name: "modelSize",
+    "rowFilter.tools.readableIdWithRevision": {
+      name: "readableIdWithRevision",
       required: false,
       in: "query",
       type: "string",
@@ -96561,6 +96739,12 @@ export default {
     },
     "rowFilter.tools.unitOfMeasure": {
       name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -102891,6 +103075,18 @@ export default {
     },
     "rowFilter.item.embedding": {
       name: "embedding",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.item.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.item.readableIdWithRevision": {
+      name: "readableIdWithRevision",
       required: false,
       in: "query",
       type: "string",

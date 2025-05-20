@@ -14,6 +14,9 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
   toast,
   useDisclosure,
   VStack,
@@ -27,6 +30,7 @@ import {
   LuBookMarked,
   LuCalendar,
   LuCheck,
+  LuGitPullRequestArrow,
   LuLoaderCircle,
   LuPencil,
   LuTag,
@@ -86,9 +90,9 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
               thumbnailPath={row.original.thumbnailPath}
               type="Tool"
             />
-            <Hyperlink to={path.to.toolDetails(row.original.itemId!)}>
+            <Hyperlink to={path.to.toolDetails(row.original.id!)}>
               <VStack spacing={0}>
-                {row.original.id}
+                {row.original.readableIdWithRevision}
                 <div className="w-full truncate text-muted-foreground text-xs">
                   {row.original.name}
                 </div>
@@ -303,7 +307,7 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
     ) => {
       const formData = new FormData();
       selectedRows.forEach((row) => {
-        if (row.itemId) formData.append("items", row.itemId);
+        if (row.id) formData.append("items", row.id);
       });
       formData.append("field", field);
       formData.append("value", value);
@@ -374,25 +378,51 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
-    return (row: Tool) => (
-      <>
-        <MenuItem onClick={() => navigate(path.to.tool(row.itemId!))}>
-          <MenuIcon icon={<LuPencil />} />
-          Edit Tool
-        </MenuItem>
-        <MenuItem
-          destructive
-          disabled={!permissions.can("delete", "parts")}
-          onClick={() => {
-            setSelectedItem(row);
-            deleteItemModal.onOpen();
-          }}
-        >
-          <MenuIcon icon={<LuTrash />} />
-          Delete Tool
-        </MenuItem>
-      </>
-    );
+    return (row: Tool) => {
+      const revisions =
+        (row.revisions as {
+          id: string;
+          revision: number;
+        }[]) ?? [];
+      return (
+        <>
+          <MenuItem onClick={() => navigate(path.to.tool(row.id!))}>
+            <MenuIcon icon={<LuPencil />} />
+            Edit Tool
+          </MenuItem>
+          {revisions && revisions.length > 1 && (
+            <MenuSub>
+              <MenuSubTrigger>
+                <MenuIcon icon={<LuGitPullRequestArrow />} />
+                Versions
+              </MenuSubTrigger>
+              <MenuSubContent>
+                {revisions.map((revision) => (
+                  <MenuItem
+                    key={revision.id}
+                    onClick={() => navigate(path.to.tool(revision.id))}
+                  >
+                    <MenuIcon icon={<LuTag />} />
+                    Revision {revision.revision}
+                  </MenuItem>
+                ))}
+              </MenuSubContent>
+            </MenuSub>
+          )}
+          <MenuItem
+            destructive
+            disabled={!permissions.can("delete", "parts")}
+            onClick={() => {
+              setSelectedItem(row);
+              deleteItemModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Tool
+          </MenuItem>
+        </>
+      );
+    };
   }, [deleteItemModal, navigate, permissions]);
 
   return (
@@ -432,10 +462,10 @@ const ToolsTable = memo(({ data, tags, count }: ToolsTableProps) => {
       />
       {selectedItem && selectedItem.id && (
         <ConfirmDelete
-          action={path.to.deleteItem(selectedItem.itemId!)}
+          action={path.to.deleteItem(selectedItem.id!)}
           isOpen={deleteItemModal.isOpen}
-          name={selectedItem.id!}
-          text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+          name={selectedItem.readableIdWithRevision!}
+          text={`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
           onCancel={() => {
             deleteItemModal.onClose();
             setSelectedItem(null);

@@ -350,7 +350,7 @@ function ShipmentLineItem({
                   {item?.name}
                 </span>
                 <span className="text-xs text-muted-foreground truncate block w-full">
-                  {item?.readableId}
+                  {item?.readableIdWithRevision}
                 </span>
               </div>
               <div className="mt-2">

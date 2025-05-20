@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -28,8 +29,8 @@ import {
   useDisclosure,
   VStack,
 } from "@carbon/react";
-import { ValidatedForm, Number, Submit } from "@carbon/form";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import { labelSizes } from "@carbon/utils";
 import {
   Await,
   Outlet,
@@ -63,9 +64,8 @@ import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
-import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
-import { labelSizes } from "@carbon/utils";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
+import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -337,7 +337,7 @@ function ReceiptLineItem({
             <VStack spacing={0}>
               <span className="text-sm font-medium">{item?.name}</span>
               <span className="text-xs text-muted-foreground line-clamp-2">
-                {item?.readableId}
+                {item?.readableIdWithRevision}
               </span>
               <div className="mt-2">
                 <Enumerable

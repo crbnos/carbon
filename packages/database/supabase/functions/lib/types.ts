@@ -1836,7 +1836,35 @@ export type Database = {
             foreignKeyName: "batchProperty_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "batchProperty_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -2256,7 +2284,35 @@ export type Database = {
             foreignKeyName: "configurationParameter_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameter_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameter_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameter_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameter_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -2354,7 +2410,35 @@ export type Database = {
             foreignKeyName: "configurationParameterGroup_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameterGroup_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameterGroup_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameterGroup_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationParameterGroup_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
         ]
@@ -2417,7 +2501,35 @@ export type Database = {
             foreignKeyName: "configurationRule_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationRule_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationRule_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationRule_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "configurationRule_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -2467,7 +2579,6 @@ export type Database = {
           customFields: Json | null
           externalId: Json | null
           id: string
-          itemId: string | null
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -2481,7 +2592,6 @@ export type Database = {
           customFields?: Json | null
           externalId?: Json | null
           id: string
-          itemId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -2495,7 +2605,6 @@ export type Database = {
           customFields?: Json | null
           externalId?: Json | null
           id?: string
-          itemId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -2598,13 +2707,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "consumable_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "consumable_updatedBy_fkey"
@@ -3829,7 +3931,35 @@ export type Database = {
             foreignKeyName: "customerPartToItem_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerPartToItem_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
         ]
@@ -6008,7 +6138,35 @@ export type Database = {
             foreignKeyName: "fixture_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fixture_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -7043,7 +7201,9 @@ export type Database = {
           name: string
           notes: Json | null
           readableId: string
+          readableIdWithRevision: string | null
           replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          revision: string | null
           thumbnailPath: string | null
           trackingMethod: string | null
           type: Database["public"]["Enums"]["itemType"]
@@ -7067,7 +7227,9 @@ export type Database = {
           name: string
           notes?: Json | null
           readableId: string
+          readableIdWithRevision?: string | null
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          revision?: string | null
           thumbnailPath?: string | null
           trackingMethod?: string | null
           type: Database["public"]["Enums"]["itemType"]
@@ -7091,7 +7253,9 @@ export type Database = {
           name?: string
           notes?: Json | null
           readableId?: string
+          readableIdWithRevision?: string | null
           replenishmentSystem?: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          revision?: string | null
           thumbnailPath?: string | null
           trackingMethod?: string | null
           type?: Database["public"]["Enums"]["itemType"]
@@ -7216,21 +7380,7 @@ export type Database = {
             foreignKeyName: "item_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "item_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "item_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -7356,7 +7506,35 @@ export type Database = {
             foreignKeyName: "itemCost_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemCost_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -7542,7 +7720,35 @@ export type Database = {
             foreignKeyName: "itemLedger_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemLedger_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -7737,7 +7943,35 @@ export type Database = {
             foreignKeyName: "itemPlanning_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemPlanning_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -8051,7 +8285,35 @@ export type Database = {
             foreignKeyName: "itemReplenishment_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: true
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemReplenishment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemReplenishment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemReplenishment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemReplenishment_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: true
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -8264,7 +8526,35 @@ export type Database = {
             foreignKeyName: "itemUnitSalePrice_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemUnitSalePrice_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemUnitSalePrice_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemUnitSalePrice_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "itemUnitSalePrice_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -8547,7 +8837,35 @@ export type Database = {
             foreignKeyName: "job_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -8839,7 +9157,35 @@ export type Database = {
             foreignKeyName: "jobMakeMethod_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -9073,7 +9419,35 @@ export type Database = {
             foreignKeyName: "jobMaterial_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -10337,15 +10711,36 @@ export type Database = {
             foreignKeyName: "jobOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
-            referencedRelation: "tool"
-            referencedColumns: ["itemId"]
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
             referencedRelation: "tools"
-            referencedColumns: ["itemId"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "jobOperationTool_updatedBy_fkey"
@@ -10659,7 +11054,6 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
-          revision: string
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -10671,7 +11065,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
-          revision?: string
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -10683,7 +11076,6 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
-          revision?: string
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -10756,7 +11148,35 @@ export type Database = {
             foreignKeyName: "method_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
         ]
@@ -10774,7 +11194,6 @@ export type Database = {
           finish: string | null
           grade: string | null
           id: string
-          itemId: string | null
           materialFormId: string | null
           materialSubstanceId: string | null
           tags: string[] | null
@@ -10793,7 +11212,6 @@ export type Database = {
           finish?: string | null
           grade?: string | null
           id: string
-          itemId?: string | null
           materialFormId?: string | null
           materialSubstanceId?: string | null
           tags?: string[] | null
@@ -10812,7 +11230,6 @@ export type Database = {
           finish?: string | null
           grade?: string | null
           id?: string
-          itemId?: string | null
           materialFormId?: string | null
           materialSubstanceId?: string | null
           tags?: string[] | null
@@ -10917,13 +11334,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "material_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "material_materialFormId_fkey"
@@ -11455,7 +11865,35 @@ export type Database = {
             foreignKeyName: "methodMaterial_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -12178,15 +12616,36 @@ export type Database = {
             foreignKeyName: "methodOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
-            referencedRelation: "tool"
-            referencedColumns: ["itemId"]
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
             referencedRelation: "tools"
-            referencedColumns: ["itemId"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodOperationTool_updatedBy_fkey"
@@ -12579,7 +13038,35 @@ export type Database = {
             foreignKeyName: "nonConformance_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nonConformance_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -15616,7 +16103,6 @@ export type Database = {
           externalId: Json | null
           fromDate: string | null
           id: string
-          itemId: string
           tags: string[] | null
           toDate: string | null
           updatedAt: string | null
@@ -15632,7 +16118,6 @@ export type Database = {
           externalId?: Json | null
           fromDate?: string | null
           id: string
-          itemId: string
           tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
@@ -15648,7 +16133,6 @@ export type Database = {
           externalId?: Json | null
           fromDate?: string | null
           id?: string
-          itemId?: string
           tags?: string[] | null
           toDate?: string | null
           updatedAt?: string | null
@@ -15752,13 +16236,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "part_id_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "part_updatedBy_fkey"
@@ -16204,7 +16681,35 @@ export type Database = {
             foreignKeyName: "pickMethod_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pickMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -18619,21 +19124,7 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -18738,7 +19229,35 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -19790,7 +20309,35 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -19846,21 +20393,7 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -21057,7 +21590,35 @@ export type Database = {
             foreignKeyName: "quoteLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -21085,21 +21646,7 @@ export type Database = {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -21457,7 +22004,35 @@ export type Database = {
             foreignKeyName: "quoteMakeMethod_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMakeMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -21700,7 +22275,35 @@ export type Database = {
             foreignKeyName: "quoteMaterial_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -22515,15 +23118,36 @@ export type Database = {
             foreignKeyName: "quoteOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
-            referencedRelation: "tool"
-            referencedColumns: ["itemId"]
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteOperationTool_toolId_fkey"
+            columns: ["toolId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperationTool_toolId_fkey"
             columns: ["toolId"]
             isOneToOne: false
             referencedRelation: "tools"
-            referencedColumns: ["itemId"]
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "quoteOperationTool_updatedBy_fkey"
@@ -23238,7 +23862,35 @@ export type Database = {
             foreignKeyName: "receiptLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -23815,7 +24467,35 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -23843,21 +24523,7 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -24682,7 +25348,35 @@ export type Database = {
             foreignKeyName: "salesOrderLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -25797,7 +26491,35 @@ export type Database = {
             foreignKeyName: "salesRfqLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -25818,21 +26540,7 @@ export type Database = {
             foreignKeyName: "salesRfqLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesRfqLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesRfqLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -26345,7 +27053,35 @@ export type Database = {
             foreignKeyName: "service_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -27181,7 +27917,35 @@ export type Database = {
             foreignKeyName: "shipmentLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -28384,7 +29148,35 @@ export type Database = {
             foreignKeyName: "buyMethod_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyMethod_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -29331,7 +30123,35 @@ export type Database = {
             foreignKeyName: "supplierQuoteLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -30502,7 +31322,6 @@ export type Database = {
           customFields: Json | null
           externalId: Json | null
           id: string
-          itemId: string | null
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -30516,7 +31335,6 @@ export type Database = {
           customFields?: Json | null
           externalId?: Json | null
           id: string
-          itemId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -30530,7 +31348,6 @@ export type Database = {
           customFields?: Json | null
           externalId?: Json | null
           id?: string
-          itemId?: string | null
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -30633,13 +31450,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "tool_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "tool_updatedBy_fkey"
@@ -32937,8 +33747,6 @@ export type Database = {
       consumables: {
         Row: {
           active: boolean | null
-          approved: boolean | null
-          approvedBy: string | null
           assignee: string | null
           companyId: string | null
           createdAt: string | null
@@ -32946,17 +33754,23 @@ export type Database = {
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
-          externalId: Json | null
           id: string | null
-          itemId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
           name: string | null
           notes: Json | null
+          readableId: string | null
+          readableIdWithRevision: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          revision: string | null
+          revisions: Json | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -32967,176 +33781,162 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "consumable_approvedBy_fkey"
-            columns: ["approvedBy"]
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_approvedBy_fkey"
-            columns: ["approvedBy"]
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_approvedBy_fkey"
-            columns: ["approvedBy"]
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_approvedBy_fkey"
-            columns: ["approvedBy"]
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_approvedBy_fkey"
-            columns: ["approvedBy"]
+            foreignKeyName: "item_assignee_fkey"
+            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "consumable_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "consumable_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "consumable_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "consumable_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_updatedBy_fkey"
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "item_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "consumable_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "item_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_assignee_fkey"
-            columns: ["assignee"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "item_assignee_fkey"
-            columns: ["assignee"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -34424,7 +35224,35 @@ export type Database = {
             foreignKeyName: "jobMaterial_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -35295,7 +36123,35 @@ export type Database = {
             foreignKeyName: "job_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -35408,8 +36264,6 @@ export type Database = {
       materials: {
         Row: {
           active: boolean | null
-          approved: boolean | null
-          approvedBy: string | null
           assignee: string | null
           companyId: string | null
           createdAt: string | null
@@ -35418,11 +36272,9 @@ export type Database = {
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
           dimensions: string | null
-          externalId: Json | null
           finish: string | null
           grade: string | null
           id: string | null
-          itemId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
@@ -35430,11 +36282,19 @@ export type Database = {
           materialFormId: string | null
           materialSubstance: string | null
           materialSubstanceId: string | null
+          modelName: string | null
+          modelPath: string | null
+          modelSize: number | null
+          modelUploadId: string | null
           name: string | null
           notes: Json | null
+          readableId: string | null
+          readableIdWithRevision: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          revision: string | null
+          revisions: Json | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -35480,109 +36340,130 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "material_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "material_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "material_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "material_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "material_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "material_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "modelUpload"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_modelUploadId_fkey"
+            columns: ["modelUploadId"]
+            isOneToOne: false
+            referencedRelation: "salesRfqLines"
+            referencedColumns: ["modelId"]
+          },
+          {
+            foreignKeyName: "item_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "item_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
           {
             foreignKeyName: "material_materialFormId_fkey"
@@ -35597,41 +36478,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "materialSubstance"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "material_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
           },
         ]
       }
@@ -35733,14 +36579,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -35785,36 +36631,32 @@ export type Database = {
       parts: {
         Row: {
           active: boolean | null
-          approved: boolean | null
-          approvedBy: string | null
           assignee: string | null
-          autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
-          externalId: Json | null
-          fromDate: string | null
           id: string | null
-          itemId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
-          modelId: string | null
           modelName: string | null
           modelPath: string | null
           modelSize: number | null
           name: string | null
           notes: Json | null
+          readableId: string | null
+          readableIdWithRevision: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          revision: string | null
+          revisions: Json | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
-          toDate: string | null
           unitOfMeasure: string | null
           unitOfMeasureCode: string | null
           updatedAt: string | null
@@ -35857,140 +36699,105 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "part_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "part_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "part_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "part_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "part_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "part_id_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
+            foreignKeyName: "item_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           },
           {
-            foreignKeyName: "part_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "part_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -36269,21 +37076,7 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -36388,7 +37181,35 @@ export type Database = {
             foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLines_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -36898,7 +37719,35 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -36954,21 +37803,7 @@ export type Database = {
             foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "purchaseOrderLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -37075,14 +37910,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -37639,7 +38474,35 @@ export type Database = {
             foreignKeyName: "quoteLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -37667,21 +38530,7 @@ export type Database = {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -37891,7 +38740,35 @@ export type Database = {
             foreignKeyName: "quoteLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -37919,21 +38796,7 @@ export type Database = {
             foreignKeyName: "quoteLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "quoteLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -38097,7 +38960,35 @@ export type Database = {
             foreignKeyName: "quoteMaterial_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quoteMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -38841,7 +39732,35 @@ export type Database = {
             foreignKeyName: "receiptLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receiptLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -39050,7 +39969,35 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesInvoiceLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -39078,21 +40025,7 @@ export type Database = {
             foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesInvoiceLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -39621,7 +40554,35 @@ export type Database = {
             foreignKeyName: "salesOrderLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrderLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -40117,7 +41078,35 @@ export type Database = {
             foreignKeyName: "salesRfqLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfqLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -40138,21 +41127,7 @@ export type Database = {
             foreignKeyName: "salesRfqLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
-            referencedRelation: "parts"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesRfqLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
             referencedRelation: "salesRfqLines"
-            referencedColumns: ["modelId"]
-          },
-          {
-            foreignKeyName: "salesRfqLine_modelUploadId_fkey"
-            columns: ["modelUploadId"]
-            isOneToOne: false
-            referencedRelation: "tools"
             referencedColumns: ["modelId"]
           },
           {
@@ -40673,7 +41648,35 @@ export type Database = {
             foreignKeyName: "shipmentLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shipmentLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -41000,7 +42003,35 @@ export type Database = {
             foreignKeyName: "supplierQuoteLine_itemId_fkey"
             columns: ["itemId"]
             isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
             referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierQuoteLine_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
             referencedColumns: ["id"]
           },
           {
@@ -41512,31 +42543,29 @@ export type Database = {
       tools: {
         Row: {
           active: boolean | null
-          approved: boolean | null
-          approvedBy: string | null
           assignee: string | null
-          autodeskUrn: string | null
           companyId: string | null
           createdAt: string | null
           createdBy: string | null
           customFields: Json | null
           defaultMethodType: Database["public"]["Enums"]["methodType"] | null
           description: string | null
-          externalId: Json | null
           id: string | null
-          itemId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
-          modelId: string | null
           modelName: string | null
           modelPath: string | null
           modelSize: number | null
           name: string | null
           notes: Json | null
+          readableId: string | null
+          readableIdWithRevision: string | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          revision: string | null
+          revisions: Json | null
           supplierIds: string | null
           tags: string[] | null
           thumbnailPath: string | null
@@ -41582,140 +42611,105 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "tool_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tool_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tool_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tool_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tool_approvedBy_fkey"
-            columns: ["approvedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "tool_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "company"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "customFieldTables"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "tool_companyId_fkey"
+            foreignKeyName: "item_companyId_fkey"
             columns: ["companyId"]
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
           {
-            foreignKeyName: "tool_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_createdBy_fkey"
+            foreignKeyName: "item_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
           },
           {
-            foreignKeyName: "tool_itemId_fkey"
-            columns: ["itemId"]
-            isOneToOne: true
-            referencedRelation: "item"
-            referencedColumns: ["id"]
+            foreignKeyName: "item_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
           },
           {
-            foreignKeyName: "tool_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "user"
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tool_updatedBy_fkey"
+            foreignKeyName: "item_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -42121,6 +43115,41 @@ export type Database = {
         }
         Returns: string
       }
+      get_consumable_details: {
+        Args: {
+          item_id: string
+        }
+        Returns: {
+          active: boolean
+          assignee: string
+          defaultMethodType: Database["public"]["Enums"]["methodType"]
+          description: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          name: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          unitOfMeasureCode: string
+          notes: Json
+          thumbnailPath: string
+          modelUploadId: string
+          modelPath: string
+          modelName: string
+          modelSize: number
+          id: string
+          companyId: string
+          readableId: string
+          revision: string
+          readableIdWithRevision: string
+          supplierIds: string
+          unitOfMeasure: string
+          revisions: Json
+          customFields: Json
+          tags: string[]
+          createdBy: string
+          createdAt: string
+          updatedBy: string
+          updatedAt: string
+        }[]
+      }
       get_custom_field_unique_values: {
         Args: {
           table_name: string
@@ -42209,6 +43238,7 @@ export type Database = {
         Returns: {
           id: string
           readableId: string
+          readableIdWithRevision: string
           name: string
           active: boolean
           type: Database["public"]["Enums"]["itemType"]
@@ -42380,6 +43410,48 @@ export type Database = {
           quantityOnProductionOrder: number
         }[]
       }
+      get_material_details: {
+        Args: {
+          item_id: string
+        }
+        Returns: {
+          active: boolean
+          assignee: string
+          defaultMethodType: Database["public"]["Enums"]["methodType"]
+          description: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          name: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          unitOfMeasureCode: string
+          notes: Json
+          thumbnailPath: string
+          modelUploadId: string
+          modelPath: string
+          modelName: string
+          modelSize: number
+          id: string
+          companyId: string
+          readableId: string
+          revision: string
+          readableIdWithRevision: string
+          supplierIds: string
+          unitOfMeasure: string
+          revisions: Json
+          materialForm: string
+          materialSubstance: string
+          finish: string
+          grade: string
+          dimensions: string
+          materialSubstanceId: string
+          materialFormId: string
+          customFields: Json
+          tags: string[]
+          createdBy: string
+          createdAt: string
+          updatedBy: string
+          updatedAt: string
+        }[]
+      }
       get_method_tree: {
         Args: {
           uid: string
@@ -42450,6 +43522,40 @@ export type Database = {
           salesRfqs: Json
           quotes: Json
           salesOrders: Json
+        }[]
+      }
+      get_part_details: {
+        Args: {
+          item_id: string
+        }
+        Returns: {
+          active: boolean
+          assignee: string
+          defaultMethodType: Database["public"]["Enums"]["methodType"]
+          description: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          name: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          unitOfMeasureCode: string
+          notes: Json
+          thumbnailPath: string
+          modelId: string
+          modelPath: string
+          modelName: string
+          modelSize: number
+          id: string
+          companyId: string
+          unitOfMeasure: string
+          readableId: string
+          revision: string
+          readableIdWithRevision: string
+          revisions: Json
+          customFields: Json
+          tags: string[]
+          createdBy: string
+          createdAt: string
+          updatedBy: string
+          updatedAt: string
         }[]
       }
       get_permission_companies: {
@@ -42550,6 +43656,40 @@ export type Database = {
           permission: string
         }
         Returns: string[]
+      }
+      get_tool_details: {
+        Args: {
+          item_id: string
+        }
+        Returns: {
+          active: boolean
+          assignee: string
+          defaultMethodType: Database["public"]["Enums"]["methodType"]
+          description: string
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          name: string
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          unitOfMeasureCode: string
+          notes: Json
+          thumbnailPath: string
+          modelId: string
+          modelPath: string
+          modelName: string
+          modelSize: number
+          id: string
+          companyId: string
+          unitOfMeasure: string
+          readableId: string
+          revision: string
+          readableIdWithRevision: string
+          revisions: Json
+          customFields: Json
+          tags: string[]
+          createdBy: string
+          createdAt: string
+          updatedBy: string
+          updatedAt: string
+        }[]
       }
       groups_for_user: {
         Args: {

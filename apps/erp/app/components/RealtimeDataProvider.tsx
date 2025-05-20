@@ -52,10 +52,10 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       carbon
         .from("item")
         .select(
-          "id, readableId, name, type, replenishmentSystem, active, itemTrackingType"
+          "id, readableIdWithRevision, name, type, replenishmentSystem, active, itemTrackingType"
         )
         .eq("companyId", companyId)
-        .order("readableId"),
+        .order("readableIdWithRevision"),
       carbon
         .from("supplier")
         .select("id, name")
@@ -136,14 +136,18 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                     {
                       id: inserted.id,
                       name: inserted.name,
-                      readableId: inserted.readableId,
+                      readableIdWithRevision: inserted.readableIdWithRevision,
                       description: inserted.description,
                       replenishmentSystem: inserted.replenishmentSystem,
                       itemTrackingType: inserted.itemTrackingType,
                       type: inserted.type,
                       active: inserted.active,
                     },
-                  ].sort((a, b) => a.readableId.localeCompare(b.readableId))
+                  ].sort((a, b) =>
+                    a.readableIdWithRevision.localeCompare(
+                      b.readableIdWithRevision
+                    )
+                  )
                 );
 
                 break;
@@ -156,7 +160,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       if (i.id === updated.id) {
                         return {
                           ...i,
-                          readableId: updated.readableId,
+                          readableIdWithRevision:
+                            updated.readableIdWithRevision,
                           name: updated.name,
                           replenishmentSystem: updated.replenishmentSystem,
                           type: updated.type,
@@ -165,7 +170,11 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       }
                       return i;
                     })
-                    .sort((a, b) => a.readableId.localeCompare(b.readableId))
+                    .sort((a, b) =>
+                      a.readableIdWithRevision.localeCompare(
+                        b.readableIdWithRevision
+                      )
+                    )
                 );
                 break;
               case "DELETE":

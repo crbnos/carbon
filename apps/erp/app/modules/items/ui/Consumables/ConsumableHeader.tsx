@@ -22,10 +22,12 @@ const ConsumableHeader = () => {
         <HStack>
           <Link to={path.to.consumableDetails(itemId)}>
             <Heading size="h4" className="flex items-center gap-2">
-              {routeData?.consumableSummary?.id}
+              {routeData?.consumableSummary?.readableIdWithRevision}
             </Heading>
           </Link>
-          <Copy text={routeData?.consumableSummary?.id ?? ""} />
+          <Copy
+            text={routeData?.consumableSummary?.readableIdWithRevision ?? ""}
+          />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

@@ -30,6 +30,7 @@ import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
 import { Boolean, Tags, UnitOfMeasure } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
@@ -48,7 +49,6 @@ import type {
   SupplierPart,
 } from "../../types";
 import { FileBadge } from "../Item";
-import { ReplenishmentSystemIcon } from "~/components/Icons";
 
 const PartProperties = () => {
   const { itemId } = useParams();
@@ -184,7 +184,7 @@ const PartProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.partSummary?.itemId ?? "")
+                    copyToClipboard(routeData?.partSummary?.id ?? "")
                   }
                 >
                   <LuKeySquare className="w-3 h-3" />
@@ -202,7 +202,9 @@ const PartProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.partSummary?.id ?? "")
+                    copyToClipboard(
+                      routeData?.partSummary?.readableIdWithRevision ?? ""
+                    )
                   }
                 >
                   <LuCopy className="w-3 h-3" />
@@ -216,7 +218,7 @@ const PartProperties = () => {
         </HStack>
         <VStack spacing={0}>
           <span className="text-sm tracking-tight">
-            {routeData?.partSummary?.id}
+            {routeData?.partSummary?.readableIdWithRevision}
           </span>
           <ValidatedForm
             defaultValues={{
@@ -374,7 +376,7 @@ const PartProperties = () => {
         {routeData?.partSummary?.replenishmentSystem?.includes("Make") && (
           <MethodBadge
             type="Make"
-            text={routeData?.partSummary?.id ?? ""}
+            text={routeData?.partSummary?.readableIdWithRevision ?? ""}
             to={path.to.partManufacturing(itemId)}
           />
         )}

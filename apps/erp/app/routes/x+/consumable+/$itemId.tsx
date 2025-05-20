@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (consumableSummary.error) {
     throw redirect(
-      path.to.items,
+      path.to.consumables,
       await flash(
         request,
         error(consumableSummary.error, "Failed to load consumable summary")

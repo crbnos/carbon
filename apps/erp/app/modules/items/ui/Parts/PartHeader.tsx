@@ -23,10 +23,10 @@ const PartHeader = () => {
           <Link to={path.to.partDetails(itemId)}>
             <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Part" />} /> */}
-              <span>{routeData?.partSummary?.id}</span>
+              <span>{routeData?.partSummary?.readableIdWithRevision}</span>
             </Heading>
           </Link>
-          <Copy text={routeData?.partSummary?.id ?? ""} />
+          <Copy text={routeData?.partSummary?.readableIdWithRevision ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

@@ -18,6 +18,7 @@ import {
   ContextMenuShortcut,
   ContextMenuSub,
   ContextMenuSubContent,
+  ContextMenuSubTrigger,
 } from "./Context";
 import type { DropdownMenuIconProps } from "./Dropdown";
 import {
@@ -32,6 +33,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "./Dropdown";
 
 const MenuTypeContext = createContext<"context" | "dropdown">("dropdown");
@@ -207,6 +209,22 @@ const MenuSubContent = forwardRef<
 });
 MenuSubContent.displayName = "MenuSubContent";
 
+const MenuSubTrigger = forwardRef<
+  | ElementRef<typeof ContextMenuSubTrigger>
+  | ElementRef<typeof DropdownMenuSubTrigger>,
+  | ComponentPropsWithoutRef<typeof ContextMenuSubTrigger>
+  | ComponentPropsWithoutRef<typeof DropdownMenuSubTrigger>
+>((props, ref) => {
+  const type = useMenuType();
+
+  if (type === "context") {
+    return <ContextMenuSubTrigger {...props} ref={ref} />;
+  }
+
+  return <DropdownMenuSubTrigger {...props} ref={ref} />;
+});
+MenuSubTrigger.displayName = "MenuSubTrigger";
+
 export {
   Menu,
   MenuCheckboxItem,
@@ -220,4 +238,5 @@ export {
   MenuShortcut,
   MenuSub,
   MenuSubContent,
+  MenuSubTrigger,
 };

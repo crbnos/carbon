@@ -23,10 +23,12 @@ const MaterialHeader = () => {
           <Link to={path.to.materialDetails(itemId)}>
             <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Material" />} /> */}
-              <span>{routeData?.materialSummary?.id}</span>
+              <span>{routeData?.materialSummary?.readableIdWithRevision}</span>
             </Heading>
           </Link>
-          <Copy text={routeData?.materialSummary?.id ?? ""} />
+          <Copy
+            text={routeData?.materialSummary?.readableIdWithRevision ?? ""}
+          />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">
