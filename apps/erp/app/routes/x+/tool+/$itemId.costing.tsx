@@ -94,7 +94,7 @@ export default function ToolCostingRoute() {
         }}
       />
       <ItemCostHistoryChart
-        readableId={itemCost.readableId}
+        readableId={itemCost.readableIdWithRevision ?? ""}
         itemCostHistory={itemCostHistory}
       />
     </VStack>

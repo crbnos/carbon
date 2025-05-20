@@ -2395,7 +2395,9 @@ function ToolsListItem({
                 <LuHammer className="size-4" />
               </div>
               <VStack spacing={0}>
-                <span className="text-sm font-medium">{tool.readableId}</span>
+                <span className="text-sm font-medium">
+                  {tool.readableIdWithRevision}
+                </span>
                 <span className="text-xs text-muted-foreground">
                   {tool.name}
                 </span>
@@ -2439,8 +2441,8 @@ function ToolsListItem({
         <ConfirmDelete
           action={path.to.deleteQuoteOperationTool(id)}
           isOpen={deleteModalDisclosure.isOpen}
-          name={tool.readableId}
-          text={`Are you sure you want to delete ${tool.readableId} from this operation? This cannot be undone.`}
+          name={tool.readableIdWithRevision}
+          text={`Are you sure you want to delete ${tool.readableIdWithRevision} from this operation? This cannot be undone.`}
           onCancel={() => {
             deleteModalDisclosure.onClose();
           }}

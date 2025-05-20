@@ -110,15 +110,15 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         },
       },
       {
-        accessorKey: "itemReadableId",
+        accessorKey: "itemReadableIdWithRevision",
         header: "Item",
         cell: (item) => item.getValue(),
         meta: {
           filter: {
             type: "static",
             options: items?.map((item) => ({
-              value: item.readableId,
-              label: item.readableId,
+              value: item.readableIdWithRevision,
+              label: item.readableIdWithRevision,
             })),
           },
           icon: <AiOutlinePartition />,

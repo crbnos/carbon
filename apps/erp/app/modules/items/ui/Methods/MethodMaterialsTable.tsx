@@ -22,7 +22,7 @@ const MethodMaterialsTable = memo(
     const columns = useMemo<ColumnDef<MethodMaterial>[]>(() => {
       return [
         {
-          accessorKey: "makeMethod.item.readableId",
+          accessorKey: "makeMethod.item.readableIdWithRevision",
           header: "Method Id",
           cell: ({ row }) => (
             <HStack className="py-1">
@@ -36,21 +36,21 @@ const MethodMaterialsTable = memo(
                 className="max-w-[260px] truncate"
               >
                 {/* @ts-ignore */}
-                {row.original.makeMethod?.item?.readableId}
+                {row.original.makeMethod?.item?.readableIdWithRevision}
               </Hyperlink>
             </HStack>
           ),
         },
         {
-          accessorKey: "itemReadableId",
+          accessorKey: "itemReadableIdWithRevision",
           header: "Material ID",
           cell: (item) => item.getValue(),
           meta: {
             filter: {
               type: "static",
               options: items?.map((item) => ({
-                value: item.readableId,
-                label: item.readableId,
+                value: item.readableIdWithRevision,
+                label: item.readableIdWithRevision,
               })),
             },
           },

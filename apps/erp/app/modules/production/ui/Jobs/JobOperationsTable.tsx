@@ -131,7 +131,7 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
         id: "item",
         header: "Item",
         cell: ({ row }) => {
-          return row.original.jobMakeMethod?.item?.readableId;
+          return row.original.jobMakeMethod?.item?.readableIdWithRevision;
         },
         meta: {
           icon: <AiOutlinePartition />,

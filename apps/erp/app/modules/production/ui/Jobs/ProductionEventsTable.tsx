@@ -56,7 +56,8 @@ const ProductionEventsTable = memo(
           id: "item",
           header: "Item",
           cell: ({ row }) => {
-            return row.original.jobOperation?.jobMakeMethod?.item?.readableId;
+            return row.original.jobOperation?.jobMakeMethod?.item
+              ?.readableIdWithRevision;
           },
         },
         {
