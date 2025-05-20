@@ -200,9 +200,11 @@ export default function ConsumableDetailsRoute() {
           <ScrollArea className="h-[calc(100dvh-99px)]">
             <VStack spacing={2} className="p-2">
               <ItemNotes
-                id={consumableData.consumableSummary?.itemId ?? null}
+                id={consumableData.consumableSummary?.id ?? null}
                 title={consumableData.consumableSummary?.name ?? ""}
-                subTitle={consumableData.consumableSummary?.id ?? ""}
+                subTitle={
+                  consumableData.consumableSummary?.readableIdWithRevision ?? ""
+                }
                 notes={consumableData.consumableSummary?.notes as JSONContent}
               />
               {permissions.is("employee") && (

@@ -45,7 +45,7 @@ const Tool = ({ name, label, helperText, ...props }: ToolSelectProps) => {
     () =>
       tools.map((item) => ({
         value: item.id,
-        label: item.readableId,
+        label: item.readableIdWithRevision,
         helper: item.name,
       })) ?? [],
     [tools]

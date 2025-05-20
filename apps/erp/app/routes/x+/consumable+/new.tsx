@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
-  const itemId = createConsumable.data?.itemId;
+  const itemId = createConsumable.data?.id;
   if (!itemId) throw new Error("Consumable ID not found");
 
   return modal

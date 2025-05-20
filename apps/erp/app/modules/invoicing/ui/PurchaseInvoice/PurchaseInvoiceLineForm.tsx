@@ -157,7 +157,7 @@ const PurchaseInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -183,7 +183,7 @@ const PurchaseInvoiceLineForm = ({
 
         setItemData({
           itemId: itemId,
-          itemReadableId: item.data?.readableId ?? "",
+          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           quantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:

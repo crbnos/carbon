@@ -75,6 +75,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "./Context";
+import Copy from "./Copy";
 import { Count } from "./Count";
 import type { CreatableComboboxProps } from "./CreateableCombobox";
 import { CreatableCombobox } from "./CreateableCombobox";
@@ -151,6 +152,7 @@ import {
   MenuShortcut,
   MenuSub,
   MenuSubContent,
+  MenuSubTrigger,
 } from "./Menu";
 import { Menubar, MenubarItem } from "./Menubar";
 import {
@@ -270,6 +272,7 @@ import {
 import { Skeleton } from "./Skeleton";
 import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
+import { SplitButton } from "./SplitButton";
 import { Status } from "./Status";
 import { Switch } from "./Switch";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
@@ -293,8 +296,6 @@ import type {
 } from "./hooks/useShortcutKeys";
 import { cn } from "./utils/cn";
 import { getValidChildren, reactNodeToString } from "./utils/react";
-import Copy from "./Copy";
-import { SplitButton } from "./SplitButton";
 
 export * from "./hooks";
 export {
@@ -425,6 +426,7 @@ export {
   MenuShortcut,
   MenuSub,
   MenuSubContent,
+  MenuSubTrigger,
   Menubar,
   MenubarItem,
   Modal,

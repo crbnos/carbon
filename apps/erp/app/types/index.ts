@@ -37,7 +37,6 @@ export type ModelUpload = {
   modelPath: string | null;
   modelSize: number | null;
   thumbnailPath: string | null;
-  autodeskUrn: string | null;
 };
 
 export type NavItem = Omit<Route, "icon"> & {

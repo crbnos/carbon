@@ -154,7 +154,7 @@ const SalesInvoiceLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, itemCost(unitCost)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType, itemTrackingType, itemCost(unitCost)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -204,7 +204,7 @@ const SalesInvoiceLineForm = ({
         setItemData((prev) => ({
           ...prev,
           itemId: itemId,
-          itemReadableId: item.data?.readableId ?? "",
+          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           methodType: item.data?.defaultMethodType ?? "",
           unitPrice:

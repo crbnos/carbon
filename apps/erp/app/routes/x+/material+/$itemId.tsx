@@ -45,7 +45,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (materialSummary.error) {
     throw redirect(
-      path.to.items,
+      path.to.materials,
       await flash(
         request,
         error(materialSummary.error, "Failed to load material summary")
@@ -64,7 +64,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function MaterialRoute() {
   return (
-    <div className="flex flex-col h-[calc(100dvh-49px)] w-full">
+    <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <MaterialHeader />
       <div className="flex h-[calc(100dvh-99px)] w-full">
         <div className="flex h-full w-full overflow-y-auto scrollbar-hide">

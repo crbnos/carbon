@@ -49,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
-  const itemId = createTool.data?.itemId;
+  const itemId = createTool.data?.id;
   if (!itemId) throw new Error("Tool ID not found");
 
   return modal

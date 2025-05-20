@@ -196,7 +196,9 @@ export default function PartDetailsRoute() {
                     return (
                       <UsedInTree
                         tree={tree}
-                        itemReadableId={partData.partSummary?.id ?? ""}
+                        itemReadableId={
+                          partData.partSummary?.readableIdWithRevision ?? ""
+                        }
                       />
                     );
                   }}
@@ -210,9 +212,9 @@ export default function PartDetailsRoute() {
           <ScrollArea className="h-[calc(100dvh-99px)]">
             <VStack spacing={2} className="p-2">
               <ItemNotes
-                id={partData.partSummary?.itemId ?? null}
+                id={partData.partSummary?.id ?? null}
                 title={partData.partSummary?.name ?? ""}
-                subTitle={partData.partSummary?.id ?? ""}
+                subTitle={partData.partSummary?.readableIdWithRevision ?? ""}
                 notes={partData.partSummary?.notes as JSONContent}
               />
               {permissions.is("employee") && (

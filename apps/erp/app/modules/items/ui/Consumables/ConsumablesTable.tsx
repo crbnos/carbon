@@ -81,9 +81,9 @@ const ConsumablesTable = memo(
                 thumbnailPath={row.original.thumbnailPath}
                 type="Consumable"
               />
-              <Hyperlink to={path.to.consumableDetails(row.original.itemId!)}>
+              <Hyperlink to={path.to.consumableDetails(row.original.id!)}>
                 <VStack spacing={0}>
-                  {row.original.id}
+                  {row.original.readableIdWithRevision}
                   <div className="w-full truncate text-muted-foreground text-xs">
                     {row.original.name}
                   </div>
@@ -284,7 +284,7 @@ const ConsumablesTable = memo(
       ) => {
         const formData = new FormData();
         selectedRows.forEach((row) => {
-          if (row.itemId) formData.append("items", row.itemId);
+          if (row.id) formData.append("items", row.id);
         });
         formData.append("field", field);
         formData.append("value", value);
@@ -361,7 +361,7 @@ const ConsumablesTable = memo(
       // eslint-disable-next-line react/display-name
       return (row: Consumable) => (
         <>
-          <MenuItem onClick={() => navigate(path.to.consumable(row.itemId!))}>
+          <MenuItem onClick={() => navigate(path.to.consumable(row.id!))}>
             <MenuIcon icon={<LuPencil />} />
             Edit Consumable
           </MenuItem>
@@ -417,10 +417,10 @@ const ConsumablesTable = memo(
         />
         {selectedItem && selectedItem.id && (
           <ConfirmDelete
-            action={path.to.deleteItem(selectedItem.itemId!)}
+            action={path.to.deleteItem(selectedItem.id!)}
             isOpen={deleteItemModal.isOpen}
-            name={selectedItem.id!}
-            text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+            name={selectedItem.readableIdWithRevision!}
+            text={`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
             onCancel={() => {
               deleteItemModal.onClose();
               setSelectedItem(null);

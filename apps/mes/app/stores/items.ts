@@ -5,7 +5,7 @@ import { useNanoStore } from "~/hooks";
 import type { ListItem } from "~/types";
 
 export type Item = ListItem & {
-  readableId: string;
+  readableIdWithRevision: string;
   type: Database["public"]["Enums"]["itemType"];
   itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];

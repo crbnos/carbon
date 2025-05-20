@@ -241,10 +241,9 @@ export async function getConsumable(
   companyId: string
 ) {
   return client
-    .from("consumables")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
+    .rpc("get_consumable_details", {
+      item_id: itemId,
+    })
     .single();
 }
 
@@ -694,10 +693,9 @@ export async function getMaterial(
   companyId: string
 ) {
   return client
-    .from("materials")
-    .select("*")
-    .eq("itemId", itemId)
-    .or(`companyId.eq.${companyId},companyId.is.null`)
+    .rpc("get_material_details", {
+      item_id: itemId,
+    })
     .single();
 }
 
@@ -996,10 +994,9 @@ export async function getPart(
   companyId: string
 ) {
   return client
-    .from("parts")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
+    .rpc("get_part_details", {
+      item_id: itemId,
+    })
     .single();
 }
 
@@ -1174,10 +1171,9 @@ export async function getTool(
   companyId: string
 ) {
   return client
-    .from("tools")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
+    .rpc("get_tool_details", {
+      item_id: itemId,
+    })
     .single();
 }
 
@@ -1495,7 +1491,6 @@ export async function upsertConsumable(
       .from("consumable")
       .insert({
         id: consumable.id,
-        itemId: itemId,
         companyId: consumable.companyId,
         createdBy: consumable.createdBy,
         customFields: consumable.customFields,
@@ -1514,7 +1509,13 @@ export async function upsertConsumable(
 
     if (costUpdate.error) return costUpdate;
 
-    return consumableInsert;
+    const newConsumable = await client
+      .from("consumables")
+      .select("id")
+      .eq("readableId", consumable.id)
+      .single();
+
+    return newConsumable;
   }
 
   const itemUpdate = {
@@ -1586,17 +1587,12 @@ export async function upsertPart(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const partInsert = await client
-      .from("part")
-      .insert({
-        id: part.id,
-        itemId: itemId,
-        companyId: part.companyId,
-        createdBy: part.createdBy,
-        customFields: part.customFields,
-      })
-      .select("*")
-      .single();
+    const partInsert = await client.from("part").insert({
+      id: part.id,
+      companyId: part.companyId,
+      createdBy: part.createdBy,
+      customFields: part.customFields,
+    });
 
     if (partInsert.error) return partInsert;
 
@@ -1618,7 +1614,13 @@ export async function upsertPart(
       if (itemReplenishmentInsert.error) return itemReplenishmentInsert;
     }
 
-    return partInsert;
+    const newPart = await client
+      .from("parts")
+      .select("id")
+      .eq("readableId", part.id)
+      .single();
+
+    return newPart;
   }
 
   const itemUpdate = {
@@ -2064,7 +2066,6 @@ export async function upsertMaterial(
       .from("material")
       .insert({
         id: material.id,
-        itemId: itemId,
         materialFormId: material.materialFormId,
         materialSubstanceId: material.materialSubstanceId,
         finish: material.finish,
@@ -2235,7 +2236,6 @@ export async function upsertService(
       .from("service")
       .insert({
         id: service.id,
-        itemId: itemId,
         serviceType: service.serviceType,
         companyId: service.companyId,
         createdBy: service.createdBy,
@@ -2363,7 +2363,6 @@ export async function upsertTool(
       .from("tool")
       .insert({
         id: tool.id,
-        itemId: itemId,
         companyId: tool.companyId,
         createdBy: tool.createdBy,
         customFields: tool.customFields,
@@ -2382,7 +2381,13 @@ export async function upsertTool(
 
     if (costUpdate.error) return costUpdate;
 
-    return toolInsert;
+    const newTool = await client
+      .from("tools")
+      .select("*")
+      .eq("readableId", tool.id)
+      .single();
+
+    return newTool;
   }
 
   const itemUpdate = {

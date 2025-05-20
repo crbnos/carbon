@@ -20,13 +20,13 @@ import {
   Table,
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { useLocations } from "~/components/Form/Location";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useUrlParams } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
 import type { InventoryItem } from "../../types";
-import { useLocations } from "~/components/Form/Location";
-import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 
 type InventoryTableProps = {
   data: InventoryItem[];
@@ -46,7 +46,7 @@ const InventoryTable = memo(
     const columns = useMemo<ColumnDef<InventoryItem>[]>(() => {
       return [
         {
-          accessorKey: "readableId",
+          accessorKey: "readableIdWithRevision",
           header: "Item ID",
           cell: ({ row }) => (
             <HStack className="py-1">
@@ -61,7 +61,7 @@ const InventoryTable = memo(
                 to={`${path.to.inventoryItem(row.original.id!)}/?${params}`}
               >
                 <VStack spacing={0}>
-                  {row.original.readableId}
+                  {row.original.readableIdWithRevision}
                   <div className="w-full truncate text-muted-foreground text-xs">
                     {row.original.name}
                   </div>
@@ -215,7 +215,7 @@ const InventoryTable = memo(
     };
 
     const defaultColumnPinning = {
-      left: ["readableId"],
+      left: ["readableIdWithRevision"],
     };
 
     return (

@@ -62,7 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const itemId = createPart.data?.itemId;
+  const itemId = createPart.data?.id;
   if (!itemId) throw new Error("Part ID not found");
 
   return modal

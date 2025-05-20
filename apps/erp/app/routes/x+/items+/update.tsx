@@ -67,6 +67,19 @@ export async function action({ request }: ActionFunctionArgs) {
     case "finish":
     case "materialFormId":
     case "materialSubstanceId":
+      const materialItems = await client
+        .from("item")
+        .select("readableId")
+        .in("id", items as string[]);
+      const materialIds = [
+        ...new Set(materialItems.data?.map((item) => item.readableId) ?? []),
+      ];
+      if (materialIds.length === 0) {
+        return json({ error: { message: "No materials found" }, data: null });
+      }
+
+      console.log({ materialIds, field, value });
+
       return json(
         await client
           .from("material")
@@ -75,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedBy: userId,
             updatedAt: new Date().toISOString(),
           })
-          .in("itemId", items as string[])
+          .in("id", materialIds as string[])
       );
     case "active":
       return json(

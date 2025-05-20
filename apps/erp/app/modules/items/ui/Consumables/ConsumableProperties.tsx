@@ -174,7 +174,9 @@ const ConsumableProperties = () => {
                   size="sm"
                   className="p-1"
                   onClick={() =>
-                    copyToClipboard(routeData?.consumableSummary?.id ?? "")
+                    copyToClipboard(
+                      routeData?.consumableSummary?.readableIdWithRevision ?? ""
+                    )
                   }
                 >
                   <LuCopy className="w-3 h-3" />
@@ -188,7 +190,7 @@ const ConsumableProperties = () => {
         </HStack>
         <VStack spacing={0}>
           <span className="text-sm tracking-tight">
-            {routeData?.consumableSummary?.id}
+            {routeData?.consumableSummary?.readableIdWithRevision}
           </span>
           <ValidatedForm
             defaultValues={{
@@ -307,7 +309,7 @@ const ConsumableProperties = () => {
               key={method.id}
               type="Buy"
               text={method?.supplier?.name ?? ""}
-              to={path.to.partPurchasing(itemId)}
+              to={path.to.consumablePurchasing(itemId)}
             />
           ))}
         {pickMethods.map((method) => (
@@ -315,7 +317,7 @@ const ConsumableProperties = () => {
             key={method.locationId}
             type="Pick"
             text={locations.find((l) => l.id === method.locationId)?.name ?? ""}
-            to={path.to.partInventoryLocation(itemId, method.locationId)}
+            to={path.to.consumableInventoryLocation(itemId, method.locationId)}
           />
         ))}
       </VStack>

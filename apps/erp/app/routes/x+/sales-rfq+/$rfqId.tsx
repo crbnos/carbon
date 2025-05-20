@@ -58,7 +58,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.salesRfqs,
       await flash(
         request,
-        error(rfqSummary.error, "Failed to load part summary")
+        error(rfqSummary.error, "Failed to load sales RFQ summary")
       )
     );
   }

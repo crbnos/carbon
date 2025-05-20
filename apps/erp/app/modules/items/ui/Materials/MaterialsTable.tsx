@@ -14,6 +14,9 @@ import {
   HStack,
   MenuIcon,
   MenuItem,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
   toast,
   useDisclosure,
   VStack,
@@ -28,6 +31,7 @@ import {
   LuCalendar,
   LuCheck,
   LuExpand,
+  LuGitPullRequestArrow,
   LuGlassWater,
   LuPaintBucket,
   LuPencil,
@@ -87,9 +91,9 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
               thumbnailPath={row.original.thumbnailPath}
               type="Material"
             />
-            <Hyperlink to={path.to.material(row.original.itemId!)}>
+            <Hyperlink to={path.to.material(row.original.id!)}>
               <VStack spacing={0}>
-                {row.original.id}
+                {row.original.readableIdWithRevision}
                 <div className="w-full truncate text-muted-foreground text-xs">
                   {row.original.name}
                 </div>
@@ -226,7 +230,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         header: "Tags",
         cell: ({ row }) => (
           <HStack spacing={0} className="gap-1">
-            {row.original.tags?.map((tag) => (
+            {(row.original.tags || []).map((tag) => (
               <Badge key={tag} variant="secondary">
                 {tag}
               </Badge>
@@ -334,7 +338,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
     ) => {
       const formData = new FormData();
       selectedRows.forEach((row) => {
-        if (row.itemId) formData.append("items", row.itemId);
+        if (row.id) formData.append("items", row.id);
       });
       formData.append("field", field);
       formData.append("value", value);
@@ -405,25 +409,51 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
 
   const renderContextMenu = useMemo(() => {
     // eslint-disable-next-line react/display-name
-    return (row: Material) => (
-      <>
-        <MenuItem onClick={() => navigate(path.to.material(row.itemId!))}>
-          <MenuIcon icon={<LuPencil />} />
-          Edit Material
-        </MenuItem>
-        <MenuItem
-          destructive
-          disabled={!permissions.can("delete", "parts")}
-          onClick={() => {
-            setSelectedItem(row);
-            deleteItemModal.onOpen();
-          }}
-        >
-          <MenuIcon icon={<LuTrash />} />
-          Delete Part
-        </MenuItem>
-      </>
-    );
+    return (row: Material) => {
+      const revisions =
+        (row.revisions as {
+          id: string;
+          revision: number;
+        }[]) ?? [];
+      return (
+        <>
+          <MenuItem onClick={() => navigate(path.to.material(row.id!))}>
+            <MenuIcon icon={<LuPencil />} />
+            Edit Material
+          </MenuItem>
+          {revisions && revisions.length > 1 && (
+            <MenuSub>
+              <MenuSubTrigger>
+                <MenuIcon icon={<LuGitPullRequestArrow />} />
+                Versions
+              </MenuSubTrigger>
+              <MenuSubContent>
+                {revisions.map((revision) => (
+                  <MenuItem
+                    key={revision.id}
+                    onClick={() => navigate(path.to.material(revision.id))}
+                  >
+                    <MenuIcon icon={<LuTag />} />
+                    Revision {revision.revision}
+                  </MenuItem>
+                ))}
+              </MenuSubContent>
+            </MenuSub>
+          )}
+          <MenuItem
+            destructive
+            disabled={!permissions.can("delete", "parts")}
+            onClick={() => {
+              setSelectedItem(row);
+              deleteItemModal.onOpen();
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            Delete Material
+          </MenuItem>
+        </>
+      );
+    };
   }, [deleteItemModal, navigate, permissions]);
 
   return (
@@ -463,10 +493,10 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
       />
       {selectedItem && selectedItem.id && (
         <ConfirmDelete
-          action={path.to.deleteItem(selectedItem.itemId!)}
+          action={path.to.deleteItem(selectedItem.id!)}
           isOpen={deleteItemModal.isOpen}
-          name={selectedItem.id!}
-          text={`Are you sure you want to delete ${selectedItem.id!}? This cannot be undone.`}
+          name={selectedItem.readableIdWithRevision!}
+          text={`Are you sure you want to delete ${selectedItem.readableIdWithRevision!}? This cannot be undone.`}
           onCancel={() => {
             deleteItemModal.onClose();
             setSelectedItem(null);

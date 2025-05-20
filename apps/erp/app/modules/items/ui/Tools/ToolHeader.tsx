@@ -21,10 +21,10 @@ const ToolHeader = () => {
           <Link to={path.to.toolDetails(itemId)}>
             <Heading size="h4" className="flex items-center gap-2">
               {/* <ModuleIcon icon={<MethodItemTypeIcon type="Tool" />} /> */}
-              <span>{routeData?.toolSummary?.id}</span>
+              <span>{routeData?.toolSummary?.readableIdWithRevision}</span>
             </Heading>
           </Link>
-          <Copy text={routeData?.toolSummary?.id ?? ""} />
+          <Copy text={routeData?.toolSummary?.readableIdWithRevision ?? ""} />
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">

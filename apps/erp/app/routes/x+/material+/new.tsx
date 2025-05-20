@@ -55,7 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
         );
   }
 
-  const itemId = createMaterial.data?.itemId;
+  const itemId = createMaterial.data?.id;
   if (!itemId) throw new Error("Material ID not found");
 
   return modal
