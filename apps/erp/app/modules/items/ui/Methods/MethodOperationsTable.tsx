@@ -39,18 +39,18 @@ const MethodOperationsTable = memo(
           ),
         },
         {
-          accessorKey: "makeMethod.item.readableId",
+          accessorKey: "makeMethod.item.readableIdWithRevision",
           header: "Item ID",
           cell: ({ row }) => {
             // @ts-ignore
-            return row.original.makeMethod?.item?.readableId;
+            return row.original.makeMethod?.item?.readableIdWithRevision;
           },
           meta: {
             filter: {
               type: "static",
               options: items?.map((item) => ({
-                value: item.readableId,
-                label: item.readableId,
+                value: item.readableIdWithRevision,
+                label: item.readableIdWithRevision,
               })),
             },
           },

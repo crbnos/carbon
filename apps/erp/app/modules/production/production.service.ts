@@ -412,9 +412,12 @@ export async function getJobOperations(
 ) {
   let query = client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableId))", {
-      count: "exact",
-    })
+    .select(
+      "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
+      {
+        count: "exact",
+      }
+    )
     .eq("jobId", jobId);
 
   if (args?.search) {
@@ -584,7 +587,7 @@ export async function getProductionEvents(
   let query = client
     .from("productionEvent")
     .select(
-      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))",
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         count: "exact",
       }
@@ -645,7 +648,7 @@ export async function getProductionEventsByOperations(
   return client
     .from("productionEvent")
     .select(
-      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))"
     )
     .in("jobOperationId", jobOperationIds)
     .order("startTime", { ascending: true });
@@ -670,7 +673,7 @@ export async function getProductionQuantities(
   let query = client
     .from("productionQuantity")
     .select(
-      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))",
+      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         count: "exact",
       }
@@ -698,13 +701,13 @@ export async function getProductionDataByOperations(
     client
       .from("productionQuantity")
       .select(
-        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))"
       )
       .in("jobOperationId", jobOperationIds),
     client
       .from("productionEvent")
       .select(
-        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableId)))"
+        "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))"
       )
       .in("jobOperationId", jobOperationIds),
     client

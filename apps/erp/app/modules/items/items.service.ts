@@ -284,7 +284,7 @@ export async function getConsumablesList(
 ) {
   let query = client
     .from("item")
-    .select("id, name, readableId")
+    .select("id, name, readableIdWithRevision")
     .eq("type", "Consumable")
     .eq("companyId", companyId)
     .eq("active", true);
@@ -302,7 +302,7 @@ export async function getItemCost(
 ) {
   return client
     .from("itemCost")
-    .select("*, ...item(readableId)")
+    .select("*, ...item(readableIdWithRevision)")
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
@@ -510,7 +510,7 @@ export async function getMaterialUsedIn(
     client
       .from("methodMaterial")
       .select(
-        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableId, documentId:id, itemType:type))"
+        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableIdWithRevision, documentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -596,7 +596,7 @@ export async function getPartUsedIn(
     client
       .from("methodMaterial")
       .select(
-        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableId, documentId:id, itemType:type))"
+        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableIdWithRevision, documentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -736,7 +736,7 @@ export async function getMaterialsList(
 ) {
   let query = client
     .from("item")
-    .select("id, name, readableId")
+    .select("id, name, readableIdWithRevision")
     .eq("type", "Material")
     .or(`companyId.eq.${companyId},companyId.is.null`)
     .eq("active", true);
@@ -849,7 +849,7 @@ export async function getMethodMaterials(
   let query = client
     .from("methodMaterial")
     .select(
-      "*, item(name, readableId), makeMethod!makeMethodId(item(id, type, name, readableId))",
+      "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
         count: "exact",
       }
@@ -885,9 +885,12 @@ export async function getMethodOperations(
 ) {
   let query = client
     .from("methodOperation")
-    .select("*, makeMethod!makeMethodId(item(id, type, name, readableId))", {
-      count: "exact",
-    })
+    .select(
+      "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
+      {
+        count: "exact",
+      }
+    )
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1037,7 +1040,7 @@ export async function getPartsList(
 ) {
   let query = client
     .from("item")
-    .select("id, name, readableId")
+    .select("id, name, readableIdWithRevision")
     .eq("type", "Part")
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1214,7 +1217,7 @@ export async function getToolsList(
 ) {
   let query = client
     .from("item")
-    .select("id, name, readableId")
+    .select("id, name, readableIdWithRevision")
     .eq("type", "Tool")
     .eq("companyId", companyId)
     .eq("active", true);
@@ -2089,7 +2092,13 @@ export async function upsertMaterial(
 
     if (costUpdate.error) return costUpdate;
 
-    return materialInsert;
+    const newMaterial = await client
+      .from("materials")
+      .select("*")
+      .eq("readableId", material.id)
+      .single();
+
+    return newMaterial;
   }
 
   const itemUpdate = {
@@ -2255,7 +2264,13 @@ export async function upsertService(
 
     if (costUpdate.error) return costUpdate;
 
-    return serviceInsert;
+    const newService = await client
+      .from("service")
+      .select("*")
+      .eq("readableId", service.id)
+      .single();
+
+    return newService;
   }
   const itemUpdate = {
     id: service.id,

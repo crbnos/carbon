@@ -81,8 +81,8 @@ const JobMaterialsTable = memo(({ data, count }: JobMaterialsTableProps) => {
           filter: {
             type: "static",
             options: items.map((item) => ({
-              value: item.readableId,
-              label: item.readableId,
+              value: item.readableIdWithRevision,
+              label: item.readableIdWithRevision,
             })),
           },
         },
