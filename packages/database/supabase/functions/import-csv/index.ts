@@ -1,12 +1,13 @@
 import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^3.24.1";
 import { sql } from "npm:kysely@0.27.6";
+import z from "npm:zod@^3.24.1";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
+import { getReadableIdWithRevision } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -342,7 +343,7 @@ serve(async (req: Request) => {
           }[] = [];
           const materialPartialInserts: Record<
             string,
-            Omit<Database["public"]["Tables"]["material"]["Insert"], "itemId">
+            Database["public"]["Tables"]["material"]["Insert"]
           > = {};
 
           const materialUpdates: {
@@ -353,6 +354,7 @@ serve(async (req: Request) => {
           const itemValidator = z.object({
             id: z.string(),
             readableId: z.string(),
+            revision: z.string().optional(),
             name: z.string(),
             description: z.string().optional(),
             active: z.string().optional(),
@@ -378,7 +380,7 @@ serve(async (req: Request) => {
           });
 
           for (const record of mappedRecords) {
-            const item = itemValidator.safeParse(record);
+            let item = itemValidator.safeParse(record);
 
             if (!item.success) {
               console.error(item.error.message);
@@ -386,18 +388,23 @@ serve(async (req: Request) => {
             }
 
             const { id, ...rest } = item.data;
+            const readableIdWithRevision = getReadableIdWithRevision(
+              item.data.readableId,
+              item.data.revision
+            );
 
             if (
               externalIdMap.has(getExternalId(id)) &&
-              !readableIds.has(item.data.readableId)
+              !readableIds.has(readableIdWithRevision)
             ) {
               const existingItem = externalIdMap.get(getExternalId(id))!;
 
-              readableIds.add(item.data.readableId);
+              readableIds.add(readableIdWithRevision);
               itemUpdates.push({
                 id: existingItem.id,
                 data: {
                   ...rest,
+                  revision: rest.revision ?? "0",
                   active: rest.active?.toLowerCase() !== "false" ?? true,
                   updatedAt: new Date().toISOString(),
                   updatedBy: userId,
@@ -411,7 +418,7 @@ serve(async (req: Request) => {
                 const material = materialValidator.safeParse(record);
                 if (material.success) {
                   materialUpdates.push({
-                    id: existingItem.id,
+                    id: material.data.readableId,
                     data: {
                       materialSubstanceId: material.data.materialSubstanceId,
                       materialFormId: material.data.materialFormId,
@@ -425,8 +432,8 @@ serve(async (req: Request) => {
                   });
                 }
               }
-            } else if (!readableIds.has(rest.readableId)) {
-              readableIds.add(rest.readableId);
+            } else if (!readableIds.has(readableIdWithRevision)) {
+              readableIds.add(readableIdWithRevision);
               const newItem = {
                 ...rest,
                 replenishmentSystem: rest.replenishmentSystem ?? "Buy",
@@ -439,6 +446,7 @@ serve(async (req: Request) => {
                   | "Fixture"
                   | "Consumable",
                 companyId,
+                revision: rest.revision ?? "0",
                 createdAt: new Date().toISOString(),
                 createdBy: userId,
                 externalId: {
@@ -454,9 +462,9 @@ serve(async (req: Request) => {
                   continue;
                 }
                 if (material.success) {
-                  materialPartialInserts[rest.readableId!] = {
+                  materialPartialInserts[material.data.readableId!] = {
                     ...material.data,
-                    id: rest.readableId,
+                    id: material.data.readableId,
                     companyId,
                     createdAt: new Date().toISOString(),
                     createdBy: userId,
@@ -494,7 +502,6 @@ serve(async (req: Request) => {
               const specificInserts: Database["public"]["Tables"]["part"]["Insert"][] =
                 insertedItems.map((item) => ({
                   id: item.readableId,
-                  itemId: item.id!,
                   approved: true,
                   externalId: item.externalId,
                   companyId,
@@ -516,7 +523,6 @@ serve(async (req: Request) => {
                 if (materialData) {
                   acc.push({
                     id: item.readableId,
-                    itemId: item.id!,
                     materialSubstanceId: materialData.materialSubstanceId,
                     materialFormId: materialData.materialFormId,
                     dimensions: materialData.dimensions,
@@ -560,7 +566,7 @@ serve(async (req: Request) => {
                 await trx
                   .updateTable("material")
                   .set(update.data)
-                  .where("itemId", "=", update.id)
+                  .where("id", "=", update.id)
                   .execute();
               }
             }

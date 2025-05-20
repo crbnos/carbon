@@ -41,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
         client
           .from("item")
           .select(
-            "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
+            "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
           )
           .eq("id", value)
           .eq("companyId", companyId)
@@ -58,6 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
           .from("job")
           .update({
             itemId: value,
+            itemReadableId: item.data?.readableIdWithRevision ?? "",
             unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
             quantity:
               (manufacturing?.data?.lotSize ?? 0) === 0

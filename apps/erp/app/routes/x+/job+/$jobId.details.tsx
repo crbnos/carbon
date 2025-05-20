@@ -142,7 +142,7 @@ export default function JobDetailsRoute() {
       <JobNotes
         id={jobId}
         title={jobData?.job.jobId ?? ""}
-        subTitle={jobData?.job.itemReadableId ?? ""}
+        subTitle={jobData?.job.itemReadableIdWithRevision ?? ""}
         notes={notes}
       />
 
@@ -272,7 +272,7 @@ function JobPurchaseOrderLineItem({ line }: { line: JobPurchaseOrderLine }) {
           </VStack>
           <VStack className="items-center" spacing={0}>
             <span className="text-sm font-medium text-center">
-              {item?.readableId}
+              {item?.readableIdWithRevision}
             </span>
             <span className="text-xs text-muted-foreground text-center">
               {item?.name}

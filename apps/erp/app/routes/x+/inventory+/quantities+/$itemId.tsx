@@ -120,7 +120,7 @@ export default function ItemInventoryRoute() {
       >
         <ScrollArea className="h-[calc(100dvh-49px)]">
           <InventoryItemHeader
-            itemReadableId={item.readableId}
+            itemReadableId={item.readableIdWithRevision ?? item.readableId}
             // @ts-ignore
             itemType={item.type}
           />

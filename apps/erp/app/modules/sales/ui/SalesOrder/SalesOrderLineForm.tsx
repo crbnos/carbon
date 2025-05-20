@@ -128,7 +128,7 @@ const SalesOrderLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableId, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -150,7 +150,7 @@ const SalesOrderLineForm = ({
 
     setItemData({
       itemId,
-      itemReadableId: item.data?.readableId,
+      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       unitPrice: price.data?.unitSalePrice ?? 0,

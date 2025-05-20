@@ -20,6 +20,7 @@ import {
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import { useFetcher, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import type { z } from "zod";
 import {
@@ -40,7 +41,6 @@ import type { MethodItemType } from "~/modules/shared";
 import type { action } from "~/routes/x+/purchase-order+/$orderId.$lineId.details";
 import { path } from "~/utils/path";
 import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
-import type { PostgrestResponse } from "@supabase/supabase-js";
 
 type PurchaseOrderLineFormProps = {
   initialValues: z.infer<typeof purchaseOrderLineValidator>;
@@ -173,7 +173,7 @@ const PurchaseOrderLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableId, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)
@@ -199,7 +199,7 @@ const PurchaseOrderLineForm = ({
 
         setItemData({
           itemId: itemId,
-          itemReadableId: item.data?.readableId ?? "",
+          itemReadableId: item.data?.readableIdWithRevision ?? "",
           description: item.data?.name ?? "",
           purchaseQuantity: supplierPart?.data?.minimumOrderQuantity ?? 1,
           supplierUnitPrice:

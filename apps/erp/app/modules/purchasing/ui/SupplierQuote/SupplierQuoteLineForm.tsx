@@ -119,7 +119,7 @@ const SupplierQuoteLineForm = ({
     const [item, supplierPart] = await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, type, unitOfMeasureCode")
+        .select("name, readableIdWithRevision, type, unitOfMeasureCode")
         .eq("id", itemId)
         .eq("companyId", company.id)
         .single(),
@@ -139,7 +139,7 @@ const SupplierQuoteLineForm = ({
     const newItemData = {
       ...itemData,
       itemId,
-      itemReadableId: item.data?.readableId ?? "",
+      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       inventoryUom: item.data?.unitOfMeasureCode ?? "EA",
       purchaseUom:

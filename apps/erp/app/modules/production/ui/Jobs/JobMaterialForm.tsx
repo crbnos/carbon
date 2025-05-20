@@ -103,7 +103,9 @@ const JobMaterialForm = ({
     const [item, itemCost] = await await Promise.all([
       carbon
         .from("item")
-        .select("name, readableId, type, unitOfMeasureCode, defaultMethodType")
+        .select(
+          "name, readableIdWithRevision, type, unitOfMeasureCode, defaultMethodType"
+        )
         .eq("id", itemId)
         .single(),
       carbon.from("itemCost").select("unitCost").eq("itemId", itemId).single(),
@@ -117,7 +119,7 @@ const JobMaterialForm = ({
     setItemData((d) => ({
       ...d,
       itemId,
-      itemReadableId: item.data?.readableId ?? "",
+      itemReadableId: item.data?.readableIdWithRevision ?? "",
       description: item.data?.name ?? "",
       unitCost: itemCost.data?.unitCost ?? 0,
       unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",

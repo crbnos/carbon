@@ -33,7 +33,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!customerPart?.data) throw new Error("Could not find customer part");
 
   const itemData = await getItem(client, customerPart.data.itemId);
-  const readableId = itemData?.data?.readableId;
+  const readableId = itemData?.data?.readableIdWithRevision;
 
   return json({
     customerPart: customerPart?.data ?? null,

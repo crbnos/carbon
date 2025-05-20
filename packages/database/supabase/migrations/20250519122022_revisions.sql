@@ -1,6 +1,6 @@
 ALTER TABLE "item" ADD COLUMN "revision" TEXT DEFAULT '0';
 ALTER TABLE "item" ADD COLUMN "readableIdWithRevision" TEXT GENERATED ALWAYS AS (
-  COALESCE("readableId" || CASE WHEN "revision" != '0' THEN '.' || "revision" ELSE '' END, "readableId")
+  COALESCE("readableId" || CASE WHEN "revision" = '0' THEN '' WHEN "revision" = '' THEN '' ELSE '.' || "revision" END, "readableId")
 ) STORED;
 
 ALTER TABLE "item" DROP CONSTRAINT "item_unique";

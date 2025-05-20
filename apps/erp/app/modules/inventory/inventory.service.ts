@@ -111,7 +111,7 @@ export async function getInventoryItems(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
+      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
   }
 
@@ -138,7 +138,7 @@ export async function getInventoryItemsCount(
 
   if (args?.search) {
     query = query.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
+      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
   }
 

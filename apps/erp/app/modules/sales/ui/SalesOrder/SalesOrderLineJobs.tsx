@@ -354,7 +354,9 @@ function JobDetails({ job }: { job: Job }) {
     const [operations] = await Promise.all([
       carbon
         .from("jobOperation")
-        .select("*, jobMakeMethod(parentMaterialId, item(readableId))")
+        .select(
+          "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+        )
         .eq("jobId", job.id!),
     ]);
 

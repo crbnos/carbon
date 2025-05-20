@@ -648,7 +648,7 @@ serve(async (req: Request) => {
                     purchaseOrderId,
                     purchaseOrderLineType: item.type,
                     itemId: item.id,
-                    itemReadableId: item.readableId,
+                    itemReadableId: item.readableIdWithRevision,
                     description: item.name || item.description,
                     purchaseQuantity: operation.operationQuantity || 1,
                     purchaseUnitOfMeasureCode: item.unitOfMeasureCode,

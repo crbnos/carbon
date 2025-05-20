@@ -7,6 +7,7 @@ export const onShapeDataValidator = z
     id: z.string().optional(),
     index: z.string(),
     readableId: z.string().optional(),
+    revision: z.string().optional(),
     name: z.string(),
     quantity: z.number(),
     replenishmentSystem: z.enum(itemReplenishmentSystems),

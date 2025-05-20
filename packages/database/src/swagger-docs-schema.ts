@@ -1297,9 +1297,6 @@ export default {
             $ref: "#/parameters/rowFilter.consumables.replenishmentSystem",
           },
           {
-            $ref: "#/parameters/rowFilter.consumables.thumbnailPath",
-          },
-          {
             $ref: "#/parameters/rowFilter.consumables.unitOfMeasureCode",
           },
           {
@@ -1318,19 +1315,37 @@ export default {
             $ref: "#/parameters/rowFilter.consumables.id",
           },
           {
-            $ref: "#/parameters/rowFilter.consumables.itemId",
+            $ref: "#/parameters/rowFilter.consumables.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.consumables.approved",
+            $ref: "#/parameters/rowFilter.consumables.thumbnailPath",
           },
           {
-            $ref: "#/parameters/rowFilter.consumables.approvedBy",
+            $ref: "#/parameters/rowFilter.consumables.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.supplierIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.consumables.revisions",
           },
           {
             $ref: "#/parameters/rowFilter.consumables.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.consumables.companyId",
+            $ref: "#/parameters/rowFilter.consumables.tags",
           },
           {
             $ref: "#/parameters/rowFilter.consumables.createdBy",
@@ -1343,21 +1358,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.consumables.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumables.externalId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumables.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumables.supplierIds",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumables.unitOfMeasure",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumables.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -9220,9 +9220,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.id",
           },
           {
-            $ref: "#/parameters/rowFilter.material.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.materialFormId",
           },
           {
@@ -9330,9 +9327,6 @@ export default {
             $ref: "#/parameters/rowFilter.material.id",
           },
           {
-            $ref: "#/parameters/rowFilter.material.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.material.materialFormId",
           },
           {
@@ -9392,9 +9386,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.material.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.material.itemId",
           },
           {
             $ref: "#/parameters/rowFilter.material.materialFormId",
@@ -9865,7 +9856,7 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.name",
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.itemReadableId",
+            $ref: "#/parameters/rowFilter.jobs.itemReadableIdWithRevision",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.itemType",
@@ -16192,9 +16183,6 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.id",
           },
           {
-            $ref: "#/parameters/rowFilter.consumable.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.consumable.approved",
           },
           {
@@ -16287,9 +16275,6 @@ export default {
             $ref: "#/parameters/rowFilter.consumable.id",
           },
           {
-            $ref: "#/parameters/rowFilter.consumable.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.consumable.approved",
           },
           {
@@ -16334,9 +16319,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.consumable.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.consumable.itemId",
           },
           {
             $ref: "#/parameters/rowFilter.consumable.approved",
@@ -32152,13 +32134,13 @@ export default {
             $ref: "#/parameters/rowFilter.parts.readableIdWithRevision",
           },
           {
+            $ref: "#/parameters/rowFilter.parts.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.parts.companyId",
+          },
+          {
             $ref: "#/parameters/rowFilter.parts.thumbnailPath",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.modelId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.autodeskUrn",
           },
           {
             $ref: "#/parameters/rowFilter.parts.modelPath",
@@ -32170,25 +32152,19 @@ export default {
             $ref: "#/parameters/rowFilter.parts.modelSize",
           },
           {
-            $ref: "#/parameters/rowFilter.parts.id",
+            $ref: "#/parameters/rowFilter.parts.supplierIds",
           },
           {
-            $ref: "#/parameters/rowFilter.parts.itemId",
+            $ref: "#/parameters/rowFilter.parts.unitOfMeasure",
           },
           {
-            $ref: "#/parameters/rowFilter.parts.approved",
+            $ref: "#/parameters/rowFilter.parts.revisions",
           },
           {
-            $ref: "#/parameters/rowFilter.parts.approvedBy",
+            $ref: "#/parameters/rowFilter.parts.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.parts.fromDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.toDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.companyId",
+            $ref: "#/parameters/rowFilter.parts.tags",
           },
           {
             $ref: "#/parameters/rowFilter.parts.createdBy",
@@ -32201,24 +32177,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.parts.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.customFields",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.externalId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.supplierIds",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.unitOfMeasure",
-          },
-          {
-            $ref: "#/parameters/rowFilter.parts.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -32662,9 +32620,6 @@ export default {
             $ref: "#/parameters/rowFilter.materials.replenishmentSystem",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.thumbnailPath",
-          },
-          {
             $ref: "#/parameters/rowFilter.materials.unitOfMeasureCode",
           },
           {
@@ -32683,13 +32638,40 @@ export default {
             $ref: "#/parameters/rowFilter.materials.id",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.itemId",
+            $ref: "#/parameters/rowFilter.materials.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.materialFormId",
+            $ref: "#/parameters/rowFilter.materials.thumbnailPath",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.materialSubstanceId",
+            $ref: "#/parameters/rowFilter.materials.modelUploadId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.supplierIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.revisions",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.materialForm",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.materialSubstance",
+          },
+          {
+            $ref: "#/parameters/rowFilter.materials.finish",
           },
           {
             $ref: "#/parameters/rowFilter.materials.grade",
@@ -32698,19 +32680,16 @@ export default {
             $ref: "#/parameters/rowFilter.materials.dimensions",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.finish",
+            $ref: "#/parameters/rowFilter.materials.materialSubstanceId",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.approved",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.approvedBy",
+            $ref: "#/parameters/rowFilter.materials.materialFormId",
           },
           {
             $ref: "#/parameters/rowFilter.materials.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.materials.companyId",
+            $ref: "#/parameters/rowFilter.materials.tags",
           },
           {
             $ref: "#/parameters/rowFilter.materials.createdBy",
@@ -32723,27 +32702,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.materials.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.externalId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.materialForm",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.materialSubstance",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.supplierIds",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.unitOfMeasure",
-          },
-          {
-            $ref: "#/parameters/rowFilter.materials.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -33448,9 +33406,6 @@ export default {
             $ref: "#/parameters/rowFilter.tool.id",
           },
           {
-            $ref: "#/parameters/rowFilter.tool.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.tool.approved",
           },
           {
@@ -33543,9 +33498,6 @@ export default {
             $ref: "#/parameters/rowFilter.tool.id",
           },
           {
-            $ref: "#/parameters/rowFilter.tool.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.tool.approved",
           },
           {
@@ -33590,9 +33542,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.tool.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tool.itemId",
           },
           {
             $ref: "#/parameters/rowFilter.tool.approved",
@@ -34321,9 +34270,6 @@ export default {
             $ref: "#/parameters/rowFilter.tools.replenishmentSystem",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.thumbnailPath",
-          },
-          {
             $ref: "#/parameters/rowFilter.tools.unitOfMeasureCode",
           },
           {
@@ -34342,19 +34288,34 @@ export default {
             $ref: "#/parameters/rowFilter.tools.id",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.itemId",
+            $ref: "#/parameters/rowFilter.tools.companyId",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.approved",
+            $ref: "#/parameters/rowFilter.tools.thumbnailPath",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.approvedBy",
+            $ref: "#/parameters/rowFilter.tools.modelPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.modelName",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.modelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.supplierIds",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.unitOfMeasure",
+          },
+          {
+            $ref: "#/parameters/rowFilter.tools.revisions",
           },
           {
             $ref: "#/parameters/rowFilter.tools.customFields",
           },
           {
-            $ref: "#/parameters/rowFilter.tools.companyId",
+            $ref: "#/parameters/rowFilter.tools.tags",
           },
           {
             $ref: "#/parameters/rowFilter.tools.createdBy",
@@ -34367,21 +34328,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.tools.updatedAt",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.externalId",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.tags",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.supplierIds",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.unitOfMeasure",
-          },
-          {
-            $ref: "#/parameters/rowFilter.tools.revisions",
           },
           {
             $ref: "#/parameters/select",
@@ -50002,9 +49948,6 @@ export default {
             $ref: "#/parameters/rowFilter.part.id",
           },
           {
-            $ref: "#/parameters/rowFilter.part.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.part.approved",
           },
           {
@@ -50103,9 +50046,6 @@ export default {
             $ref: "#/parameters/rowFilter.part.id",
           },
           {
-            $ref: "#/parameters/rowFilter.part.itemId",
-          },
-          {
             $ref: "#/parameters/rowFilter.part.approved",
           },
           {
@@ -50156,9 +50096,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.part.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.part.itemId",
           },
           {
             $ref: "#/parameters/rowFilter.part.approved",
@@ -51142,6 +51079,63 @@ export default {
           },
         },
         tags: ["(rpc) get_permission_companies"],
+      },
+    },
+    "/rpc/get_tool_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_tool_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                item_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["item_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_tool_details"],
       },
     },
     "/rpc/get_inventory_quantities": {
@@ -52536,6 +52530,63 @@ export default {
           },
         },
         tags: ["(rpc) get_next_numeric_sequence"],
+      },
+    },
+    "/rpc/get_part_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_part_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                item_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["item_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_part_details"],
       },
     },
     "/rpc/xid_pid": {
@@ -53941,6 +53992,63 @@ export default {
         tags: ["(rpc) get_next_sequence"],
       },
     },
+    "/rpc/get_consumable_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_consumable_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                item_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["item_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_consumable_details"],
+      },
+    },
     "/rpc/nanoid": {
       get: {
         parameters: [
@@ -54424,6 +54532,63 @@ export default {
           },
         },
         tags: ["(rpc) get_active_job_operations_by_employee"],
+      },
+    },
+    "/rpc/get_material_details": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "item_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_details"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                item_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["item_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_material_details"],
       },
     },
     "/rpc/xid_counter": {
@@ -55434,10 +55599,6 @@ export default {
           format: 'public."itemReplenishmentSystem"',
           type: "string",
         },
-        thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -55462,30 +55623,54 @@ export default {
           format: "text",
           type: "string",
         },
-        itemId: {
+        companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
-        approved: {
-          format: "boolean",
-          type: "boolean",
-        },
-        approvedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+        thumbnailPath: {
           format: "text",
           type: "string",
+        },
+        modelUploadId: {
+          description:
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        supplierIds: {
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        revisions: {
+          format: "json",
         },
         customFields: {
           format: "jsonb",
         },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         createdBy: {
           description:
@@ -55506,27 +55691,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        supplierIds: {
-          format: "text",
-          type: "string",
-        },
-        unitOfMeasure: {
-          format: "text",
-          type: "string",
-        },
-        revisions: {
-          format: "json",
         },
       },
       type: "object",
@@ -55834,7 +55998,7 @@ export default {
         },
         toolId: {
           description:
-            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -59054,12 +59218,6 @@ export default {
           format: "text",
           type: "string",
         },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string",
-        },
         materialFormId: {
           description:
             "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
@@ -59461,7 +59619,7 @@ export default {
           format: "text",
           type: "string",
         },
-        itemReadableId: {
+        itemReadableIdWithRevision: {
           format: "text",
           type: "string",
         },
@@ -61461,7 +61619,7 @@ export default {
         },
         toolId: {
           description:
-            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62441,12 +62599,6 @@ export default {
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -69658,16 +69810,18 @@ export default {
           format: "text",
           type: "string",
         },
-        thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
-        modelId: {
+        id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
         },
-        autodeskUrn: {
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        thumbnailPath: {
           format: "text",
           type: "string",
         },
@@ -69683,40 +69837,26 @@ export default {
           format: "bigint",
           type: "integer",
         },
-        id: {
-          description: "Note:\nThis is a Primary Key.<pk/>",
+        supplierIds: {
           format: "text",
           type: "string",
         },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+        unitOfMeasure: {
           format: "text",
           type: "string",
         },
-        approved: {
-          format: "boolean",
-          type: "boolean",
+        revisions: {
+          format: "json",
         },
-        approvedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string",
+        customFields: {
+          format: "jsonb",
         },
-        fromDate: {
-          format: "date",
-          type: "string",
-        },
-        toDate: {
-          format: "date",
-          type: "string",
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         createdBy: {
           description:
@@ -69737,30 +69877,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
-        },
-        customFields: {
-          format: "jsonb",
-        },
-        externalId: {
-          format: "jsonb",
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        supplierIds: {
-          format: "text",
-          type: "string",
-        },
-        unitOfMeasure: {
-          format: "text",
-          type: "string",
-        },
-        revisions: {
-          format: "json",
         },
       },
       type: "object",
@@ -69929,10 +70045,6 @@ export default {
           format: 'public."itemReplenishmentSystem"',
           type: "string",
         },
-        thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -69957,21 +70069,54 @@ export default {
           format: "text",
           type: "string",
         },
-        itemId: {
+        companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
-        materialFormId: {
-          description:
-            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
+        thumbnailPath: {
           format: "text",
           type: "string",
         },
-        materialSubstanceId: {
+        modelUploadId: {
           description:
-            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
+            "Note:\nThis is a Foreign Key to `modelUpload.id`.<fk table='modelUpload' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        supplierIds: {
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        revisions: {
+          format: "json",
+        },
+        materialForm: {
+          format: "text",
+          type: "string",
+        },
+        materialSubstance: {
+          format: "text",
+          type: "string",
+        },
+        finish: {
           format: "text",
           type: "string",
         },
@@ -69983,28 +70128,27 @@ export default {
           format: "text",
           type: "string",
         },
-        finish: {
+        materialSubstanceId: {
+          description:
+            "Note:\nThis is a Foreign Key to `materialSubstance.id`.<fk table='materialSubstance' column='id'/>",
           format: "text",
           type: "string",
         },
-        approved: {
-          format: "boolean",
-          type: "boolean",
-        },
-        approvedBy: {
+        materialFormId: {
           description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+            "Note:\nThis is a Foreign Key to `materialForm.id`.<fk table='materialForm' column='id'/>",
           format: "text",
           type: "string",
         },
         customFields: {
           format: "jsonb",
         },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         createdBy: {
           description:
@@ -70025,35 +70169,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        materialForm: {
-          format: "text",
-          type: "string",
-        },
-        materialSubstance: {
-          format: "text",
-          type: "string",
-        },
-        supplierIds: {
-          format: "text",
-          type: "string",
-        },
-        unitOfMeasure: {
-          format: "text",
-          type: "string",
-        },
-        revisions: {
-          format: "json",
         },
       },
       type: "object",
@@ -70354,12 +70469,6 @@ export default {
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -70719,10 +70828,6 @@ export default {
           format: 'public."itemReplenishmentSystem"',
           type: "string",
         },
-        thumbnailPath: {
-          format: "text",
-          type: "string",
-        },
         unitOfMeasureCode: {
           format: "text",
           type: "string",
@@ -70747,30 +70852,48 @@ export default {
           format: "text",
           type: "string",
         },
-        itemId: {
+        companyId: {
           description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
-        approved: {
-          format: "boolean",
-          type: "boolean",
-        },
-        approvedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+        thumbnailPath: {
           format: "text",
           type: "string",
+        },
+        modelPath: {
+          format: "text",
+          type: "string",
+        },
+        modelName: {
+          format: "text",
+          type: "string",
+        },
+        modelSize: {
+          format: "bigint",
+          type: "integer",
+        },
+        supplierIds: {
+          format: "text",
+          type: "string",
+        },
+        unitOfMeasure: {
+          format: "text",
+          type: "string",
+        },
+        revisions: {
+          format: "json",
         },
         customFields: {
           format: "jsonb",
         },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string",
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
         createdBy: {
           description:
@@ -70791,27 +70914,6 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string",
-        },
-        externalId: {
-          format: "jsonb",
-        },
-        tags: {
-          format: "text[]",
-          items: {
-            type: "string",
-          },
-          type: "array",
-        },
-        supplierIds: {
-          format: "text",
-          type: "string",
-        },
-        unitOfMeasure: {
-          format: "text",
-          type: "string",
-        },
-        revisions: {
-          format: "json",
         },
       },
       type: "object",
@@ -71063,7 +71165,7 @@ export default {
         },
         toolId: {
           description:
-            "Note:\nThis is a Foreign Key to `tool.itemId`.<fk table='tool' column='itemId'/>",
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -78416,23 +78518,10 @@ export default {
       type: "object",
     },
     part: {
-      required: [
-        "id",
-        "itemId",
-        "approved",
-        "companyId",
-        "createdBy",
-        "createdAt",
-      ],
+      required: ["id", "approved", "companyId", "createdBy", "createdAt"],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        itemId: {
-          description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -79295,12 +79384,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.consumables.thumbnailPath": {
-      name: "thumbnailPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.consumables.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -79337,20 +79420,56 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.consumables.itemId": {
-      name: "itemId",
+    "rowFilter.consumables.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.consumables.approved": {
-      name: "approved",
+    "rowFilter.consumables.thumbnailPath": {
+      name: "thumbnailPath",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.consumables.approvedBy": {
-      name: "approvedBy",
+    "rowFilter.consumables.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.modelPath": {
+      name: "modelPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.modelName": {
+      name: "modelName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.modelSize": {
+      name: "modelSize",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.consumables.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -79361,8 +79480,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.consumables.companyId": {
-      name: "companyId",
+    "rowFilter.consumables.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -79387,36 +79506,6 @@ export default {
     },
     "rowFilter.consumables.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumables.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumables.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumables.supplierIds": {
-      name: "supplierIds",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumables.unitOfMeasure": {
-      name: "unitOfMeasure",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumables.revisions": {
-      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -83402,12 +83491,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.material.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.material.materialFormId": {
       name: "materialFormId",
       required: false,
@@ -83867,8 +83950,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobs.itemReadableId": {
-      name: "itemReadableId",
+    "rowFilter.jobs.itemReadableIdWithRevision": {
+      name: "itemReadableIdWithRevision",
       required: false,
       in: "query",
       type: "string",
@@ -87184,12 +87267,6 @@ export default {
     },
     "rowFilter.consumable.id": {
       name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.consumable.itemId": {
-      name: "itemId",
       required: false,
       in: "query",
       type: "string",
@@ -95414,20 +95491,20 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.parts.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.parts.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.parts.thumbnailPath": {
       name: "thumbnailPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.modelId": {
-      name: "modelId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.autodeskUrn": {
-      name: "autodeskUrn",
       required: false,
       in: "query",
       type: "string",
@@ -95450,44 +95527,32 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.parts.id": {
-      name: "id",
+    "rowFilter.parts.supplierIds": {
+      name: "supplierIds",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.parts.itemId": {
-      name: "itemId",
+    "rowFilter.parts.unitOfMeasure": {
+      name: "unitOfMeasure",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.parts.approved": {
-      name: "approved",
+    "rowFilter.parts.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.parts.approvedBy": {
-      name: "approvedBy",
+    "rowFilter.parts.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.parts.fromDate": {
-      name: "fromDate",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.toDate": {
-      name: "toDate",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.companyId": {
-      name: "companyId",
+    "rowFilter.parts.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -95512,42 +95577,6 @@ export default {
     },
     "rowFilter.parts.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.supplierIds": {
-      name: "supplierIds",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.unitOfMeasure": {
-      name: "unitOfMeasure",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.parts.revisions": {
-      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -95753,12 +95782,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.thumbnailPath": {
-      name: "thumbnailPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.materials.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -95795,20 +95818,74 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.itemId": {
-      name: "itemId",
+    "rowFilter.materials.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.materialFormId": {
-      name: "materialFormId",
+    "rowFilter.materials.thumbnailPath": {
+      name: "thumbnailPath",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.materialSubstanceId": {
-      name: "materialSubstanceId",
+    "rowFilter.materials.modelUploadId": {
+      name: "modelUploadId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.modelPath": {
+      name: "modelPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.modelName": {
+      name: "modelName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.modelSize": {
+      name: "modelSize",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.revisions": {
+      name: "revisions",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.materialForm": {
+      name: "materialForm",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.materialSubstance": {
+      name: "materialSubstance",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.materials.finish": {
+      name: "finish",
       required: false,
       in: "query",
       type: "string",
@@ -95825,20 +95902,14 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.finish": {
-      name: "finish",
+    "rowFilter.materials.materialSubstanceId": {
+      name: "materialSubstanceId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.approved": {
-      name: "approved",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.approvedBy": {
-      name: "approvedBy",
+    "rowFilter.materials.materialFormId": {
+      name: "materialFormId",
       required: false,
       in: "query",
       type: "string",
@@ -95849,8 +95920,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.materials.companyId": {
-      name: "companyId",
+    "rowFilter.materials.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -95875,48 +95946,6 @@ export default {
     },
     "rowFilter.materials.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.materialForm": {
-      name: "materialForm",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.materialSubstance": {
-      name: "materialSubstance",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.supplierIds": {
-      name: "supplierIds",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.unitOfMeasure": {
-      name: "unitOfMeasure",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.materials.revisions": {
-      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -96217,12 +96246,6 @@ export default {
     },
     "rowFilter.tool.id": {
       name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tool.itemId": {
-      name: "itemId",
       required: false,
       in: "query",
       type: "string",
@@ -96623,12 +96646,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.thumbnailPath": {
-      name: "thumbnailPath",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.tools.unitOfMeasureCode": {
       name: "unitOfMeasureCode",
       required: false,
@@ -96665,20 +96682,50 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.itemId": {
-      name: "itemId",
+    "rowFilter.tools.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.approved": {
-      name: "approved",
+    "rowFilter.tools.thumbnailPath": {
+      name: "thumbnailPath",
       required: false,
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.approvedBy": {
-      name: "approvedBy",
+    "rowFilter.tools.modelPath": {
+      name: "modelPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.modelName": {
+      name: "modelName",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.modelSize": {
+      name: "modelSize",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.supplierIds": {
+      name: "supplierIds",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.unitOfMeasure": {
+      name: "unitOfMeasure",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.tools.revisions": {
+      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -96689,8 +96736,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.tools.companyId": {
-      name: "companyId",
+    "rowFilter.tools.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string",
@@ -96715,36 +96762,6 @@ export default {
     },
     "rowFilter.tools.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.externalId": {
-      name: "externalId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.tags": {
-      name: "tags",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.supplierIds": {
-      name: "supplierIds",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.unitOfMeasure": {
-      name: "unitOfMeasure",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.tools.revisions": {
-      name: "revisions",
       required: false,
       in: "query",
       type: "string",
@@ -105220,12 +105237,6 @@ export default {
     },
     "rowFilter.part.id": {
       name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.part.itemId": {
-      name: "itemId",
       required: false,
       in: "query",
       type: "string",

@@ -205,7 +205,7 @@ function VirtualizedCommand({
         >
           {items.map((virtualRow) => {
             const item = filteredOptions[virtualRow.index];
-            const value =
+            const itemValue =
               typeof item.label === "string"
                 ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
                 : reactNodeToString(item.label);
@@ -245,7 +245,7 @@ function VirtualizedCommand({
                 <LuCheck
                   className={cn(
                     "ml-auto h-4 w-4",
-                    item.value === value ? "opacity-100" : "opacity-0"
+                    itemValue === value ? "opacity-100" : "opacity-0"
                   )}
                 />
               </CommandItem>

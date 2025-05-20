@@ -39,6 +39,7 @@ interface TreeData {
   id?: string;
   index: string;
   readableId: string;
+  readableIdWithRevision: string;
   name?: string;
   quantity: number;
   unitOfMeasure: string;
@@ -369,7 +370,7 @@ export const OnshapeSync = ({
           <div className="max-h-60 overflow-y-auto flex flex-col">
             {bomRows.map((row) => {
               const isSynced = row.id;
-              const partId = row.readableId || row.name;
+              const partId = row.readableIdWithRevision || row.name;
               return (
                 <div
                   key={row.index}
@@ -416,7 +417,7 @@ export const OnshapeSync = ({
 
                     {partId ? (
                       <span className="line-clamp-1">
-                        {row.readableId || row.name}
+                        {row.readableIdWithRevision || row.name}
                       </span>
                     ) : (
                       <Status color="red">No part ID</Status>

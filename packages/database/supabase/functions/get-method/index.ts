@@ -690,13 +690,14 @@ serve(async (req: Request) => {
                 const item = await client
                   .from("item")
                   .select(
-                    "readableId, type, name, itemTrackingType, itemCost(unitCost)"
+                    "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
                   )
                   .eq("id", itemId)
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
-                  itemReadableId = item.data.readableId;
+                  itemReadableId =
+                    item.data.readableIdWithRevision ?? item.data.readableId;
                   itemType = item.data.type;
                   unitCost =
                     item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
@@ -752,9 +753,10 @@ serve(async (req: Request) => {
             if (bomConfiguration) {
               // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
               materialsWithConfiguredFields = bomConfiguration
-                .map((readableId, index) => {
+                .map((readableIdWithRevision, index) => {
                   const material = materialsWithConfiguredFields.find(
-                    (material) => material.itemReadableId === readableId
+                    (material) =>
+                      material.itemReadableId === readableIdWithRevision
                   );
                   if (material) {
                     return {
@@ -1549,12 +1551,15 @@ serve(async (req: Request) => {
               if (itemId !== child.data.itemId) {
                 const item = await client
                   .from("item")
-                  .select("readableId, type, name, itemCost(unitCost)")
+                  .select(
+                    "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
+                  )
                   .eq("id", itemId)
                   .eq("companyId", companyId)
                   .single();
                 if (item.data) {
-                  itemReadableId = item.data.readableId;
+                  itemReadableId =
+                    item.data.readableIdWithRevision ?? item.data.readableId;
                   itemType = item.data.type;
                   unitCost =
                     item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
@@ -1605,9 +1610,10 @@ serve(async (req: Request) => {
             if (bomConfiguration) {
               // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
               materialsWithConfiguredFields = bomConfiguration
-                .map((readableId, index) => {
+                .map((readableIdWithRevision, index) => {
                   const material = materialsWithConfiguredFields.find(
-                    (material) => material.itemReadableId === readableId
+                    (material) =>
+                      material.itemReadableId === readableIdWithRevision
                   );
                   if (material) {
                     return {
