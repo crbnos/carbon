@@ -58,6 +58,53 @@ export async function copyMakeMethod(
   });
 }
 
+export async function createRevision(
+  client: SupabaseClient<Database>,
+  args: {
+    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+    revision: string;
+    createdBy: string;
+  }
+) {
+  const { item, revision, createdBy } = args;
+  const itemInsert = await client
+    .from("item")
+    .insert({
+      readableId: item.readableId,
+      revision: revision,
+      name: item.name,
+      type: item.type,
+      replenishmentSystem: item.replenishmentSystem,
+      defaultMethodType: item.defaultMethodType,
+      itemTrackingType: item.itemTrackingType,
+      unitOfMeasureCode: item.unitOfMeasureCode,
+      active: item.active,
+      modelUploadId: item.modelUploadId,
+      companyId: item.companyId,
+      createdBy: createdBy,
+    })
+    .select("id")
+    .single();
+
+  if (itemInsert.error) {
+    return itemInsert;
+  }
+
+  if (item.replenishmentSystem !== "Buy") {
+    await client.functions.invoke("get-method", {
+      body: {
+        type: "itemToItem",
+        sourceId: item.id,
+        targetId: itemInsert.data.id,
+        companyId: item.companyId,
+        userId: createdBy,
+      },
+    });
+  }
+
+  return itemInsert;
+}
+
 export async function deleteConfigurationParameter(
   client: SupabaseClient<Database>,
   id: string

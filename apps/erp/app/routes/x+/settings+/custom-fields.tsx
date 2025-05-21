@@ -85,7 +85,6 @@ function getIdField(table: string) {
     case "consumable":
     case "tool":
     case "fixture":
-      return "itemId";
     default:
       return "id";
   }

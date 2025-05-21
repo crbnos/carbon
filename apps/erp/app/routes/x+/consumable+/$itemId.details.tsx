@@ -184,8 +184,13 @@ export default function ConsumableDetailsRoute() {
                     return (
                       <UsedInTree
                         tree={tree}
+                        revisions={consumableData.consumableSummary?.revisions}
                         itemReadableId={
-                          consumableData.consumableSummary?.id ?? ""
+                          consumableData.consumableSummary?.readableId ?? ""
+                        }
+                        itemReadableIdWithRevision={
+                          consumableData.consumableSummary
+                            ?.readableIdWithRevision ?? ""
                         }
                       />
                     );

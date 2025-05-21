@@ -3,10 +3,8 @@ import { VStack } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
-import { CadModel } from "~/components";
+import CadModel from "~/components/CadModel";
 import { usePermissions, useRouteData } from "~/hooks";
-import { getTagsList } from "~/modules/shared";
-
 import type {
   MakeMethod,
   Material,
@@ -18,8 +16,10 @@ import {
   BillOfProcess,
   MakeMethodTools,
 } from "~/modules/items/ui/Item";
-
+import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+// loader
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -38,27 +38,37 @@ export default function MakeMethodRoute() {
 
   const { tags } = useLoaderData<typeof loader>();
 
+  const itemRouteData = useRouteData<{
+    toolSummary: ToolSummary;
+  }>(path.to.part(itemId));
+
   const manufacturingRouteData = useRouteData<{
     makeMethod: MakeMethod;
     methodMaterials: Material[];
     methodOperations: MethodOperation[];
   }>(path.to.toolManufacturing(itemId));
 
-  const itemRouteData = useRouteData<{
-    toolSummary: ToolSummary;
-  }>(path.to.tool(itemId));
+  if (!manufacturingRouteData) throw new Error("Could not find route data");
 
   const makeMethodId = manufacturingRouteData?.makeMethod?.id;
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Tool" />
+      <MakeMethodTools itemId={itemId} type="Part" />
+
       <BillOfProcess
         key={`bop:${itemId}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
+        // configurable={
+        //   manufacturingRouteData?.toolManufacturing.requiresConfiguration
+        // }
+        // configurationRules={manufacturingRouteData?.configurationRules}
+        // parameters={
+        //   manufacturingRouteData?.configurationParametersAndGroups.parameters
+        // }
         tags={tags}
       />
       <BillOfMaterial
@@ -68,9 +78,17 @@ export default function MakeMethodRoute() {
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
+        // configurable={
+        //   manufacturingRouteData?.toolManufacturing.requiresConfiguration
+        // }
+        // configurationRules={manufacturingRouteData?.configurationRules}
+        // parameters={
+        //   manufacturingRouteData?.configurationParametersAndGroups.parameters
+        // }
       />
+
       <CadModel
-        isReadOnly={!permissions.can("update", "tools")}
+        isReadOnly={!permissions.can("update", "parts")}
         metadata={{ itemId }}
         modelPath={itemRouteData?.toolSummary?.modelPath ?? null}
         title="CAD Model"

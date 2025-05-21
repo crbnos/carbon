@@ -106,7 +106,7 @@ const MaterialProperties = () => {
     (value: string[]) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.materialSummary?.readableId ?? "");
       formData.append("table", "material");
       value.forEach((v) => {
         formData.append("value", v);
@@ -118,14 +118,14 @@ const MaterialProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.materialSummary?.readableId]
   );
 
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.materialSummary?.readableId ?? "");
       formData.append("table", "material");
       formData.append("value", value);
 
@@ -135,7 +135,7 @@ const MaterialProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.materialSummary?.readableId]
   );
 
   return (

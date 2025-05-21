@@ -808,6 +808,7 @@ export const path = {
     newQuoteMaterial: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/methods/${quoteId}/${lineId}/material/new`),
     newReceipt: `${x}/receipt/new`,
+    newRevision: `${x}/items/revisions/new`,
     newSalesInvoice: `${x}/sales-invoice/new`,
     newSalesInvoiceLine: (id: string) =>
       generatePath(`${x}/sales-invoice/${id}/new`),
@@ -1021,6 +1022,7 @@ export const path = {
     resendInvite: `${x}/users/resend-invite`,
     resetPassword: "/reset-password",
     resources: `${x}/resources`,
+    revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),
     revokeInvite: `${x}/users/revoke-invite`,
     root: "/",
     routings: `${x}/items/routing`,

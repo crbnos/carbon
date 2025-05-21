@@ -184,7 +184,14 @@ export default function MaterialDetailsRoute() {
                     return (
                       <UsedInTree
                         tree={tree}
-                        itemReadableId={materialData.materialSummary?.id ?? ""}
+                        revisions={materialData.materialSummary?.revisions}
+                        itemReadableId={
+                          materialData.materialSummary?.readableId ?? ""
+                        }
+                        itemReadableIdWithRevision={
+                          materialData.materialSummary
+                            ?.readableIdWithRevision ?? ""
+                        }
                       />
                     );
                   }}

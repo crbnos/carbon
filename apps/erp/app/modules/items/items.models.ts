@@ -485,6 +485,20 @@ export const pickMethodValidator = z.object({
   defaultShelfId: zfd.text(z.string().optional()),
 });
 
+export const revisionValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    type: z.enum(["Part", "Material", "Tool", "Consumable", "Service"]),
+    copyFromId: zfd.text(z.string().optional()),
+    revision: z.string().min(1, { message: "Revision is required" }),
+  })
+  .refine(
+    (data) => {
+      return data.id || data.copyFromId;
+    },
+    { message: "Revision or copy from is required" }
+  );
+
 export const serviceValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Service ID is required" }).max(255),

@@ -196,7 +196,9 @@ export default function PartDetailsRoute() {
                     return (
                       <UsedInTree
                         tree={tree}
-                        itemReadableId={
+                        revisions={partData.partSummary?.revisions}
+                        itemReadableId={partData.partSummary?.readableId ?? ""}
+                        itemReadableIdWithRevision={
                           partData.partSummary?.readableIdWithRevision ?? ""
                         }
                       />

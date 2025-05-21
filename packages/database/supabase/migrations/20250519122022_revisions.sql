@@ -204,10 +204,8 @@ BEGIN
         json_build_object(
           'id', i.id,
           'revision', i."revision",
-          'name', i."name",
-          'description', i."description",
-          'active', i."active",
-          'createdAt', i."createdAt"
+          'methodType', i."defaultMethodType",
+          'type', i."type"
         ) ORDER BY i."revision" DESC NULLS LAST
       ) as "revisions"
     FROM "item" i
@@ -357,10 +355,8 @@ item_revisions AS (
       json_build_object(
         'id', i.id,
         'revision', i."revision",
-        'name', i."name",
-        'description', i."description",
-        'active', i."active",
-        'createdAt', i."createdAt"
+        'methodType', i."defaultMethodType",
+        'type', i."type"
       ) ORDER BY i."revision" DESC NULLS LAST
     ) as "revisions"
   FROM "item" i
@@ -469,10 +465,8 @@ BEGIN
         json_build_object(
           'id', i.id,
           'revision', i."revision",
-          'name', i."name",
-          'description', i."description",
-          'active', i."active",
-          'createdAt', i."createdAt"
+          'methodType', i."defaultMethodType",
+          'type', i."type"
         ) ORDER BY i."revision" DESC NULLS LAST
       ) as "revisions"
     FROM "item" i
@@ -556,10 +550,8 @@ item_revisions AS (
       json_build_object(
         'id', i.id,
         'revision', i."revision",
-        'name', i."name",
-        'description', i."description",
-        'active', i."active",
-        'createdAt', i."createdAt"
+        'methodType', i."defaultMethodType",
+        'type', i."type"
       ) ORDER BY i."revision" DESC NULLS LAST
     ) as "revisions"
   FROM "item" i
@@ -651,10 +643,8 @@ BEGIN
         json_build_object(
           'id', i.id,
           'revision', i."revision",
-          'name', i."name",
-          'description', i."description",
-          'active', i."active",
-          'createdAt', i."createdAt"
+          'methodType', i."defaultMethodType",
+          'type', i."type"
         ) ORDER BY i."revision" DESC NULLS LAST
       ) as "revisions"
     FROM "item" i
@@ -749,10 +739,8 @@ BEGIN
         json_build_object(
           'id', i.id,
           'revision', i."revision",
-          'name', i."name",
-          'description', i."description",
-          'active', i."active",
-          'createdAt', i."createdAt"
+          'methodType', i."defaultMethodType",
+          'type', i."type"
         ) ORDER BY i."revision" DESC NULLS LAST
       ) as "revisions"
     FROM "item" i
@@ -827,10 +815,8 @@ item_revisions AS (
       json_build_object(
         'id', i.id,
         'revision', i."revision",
-        'name', i."name",
-        'description', i."description",
-        'active', i."active",
-        'createdAt', i."createdAt"
+        'methodType', i."defaultMethodType",
+        'type', i."type"
       ) ORDER BY i."revision" DESC NULLS LAST
     ) as "revisions"
   FROM "item" i
