@@ -5,6 +5,7 @@ import {
   ResizablePanelGroup,
   ScrollArea,
 } from "@carbon/react";
+
 import {
   Outlet,
   json,
@@ -33,6 +34,7 @@ import { path } from "~/utils/path";
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
+    bypassRls: true,
   });
 
   const { itemId } = params;
@@ -42,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (makeMethod.error) {
     throw redirect(
-      path.to.toolDetails(itemId),
+      path.to.partDetails(itemId),
       await flash(
         request,
         error(makeMethod.error, "Failed to load make method")
@@ -50,14 +52,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  if (companyId !== makeMethod.data.companyId) {
+    throw redirect(
+      path.to.authenticatedRoot,
+      await flash(request, error("Access denied"))
+    );
+  }
+
   const [methodTree, methodMaterials, methodOperations] = await Promise.all([
     getMethodTree(client, makeMethod.data.id),
     getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
     getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
+    // getItemManufacturing(client, itemId, companyId),
   ]);
   if (methodTree?.error) {
     throw redirect(
-      path.to.toolDetails(itemId),
+      path.to.partDetails(itemId),
       await flash(
         request,
         error(methodTree.error, "Failed to load method tree")
@@ -67,7 +77,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   if (methodOperations.error) {
     throw redirect(
-      path.to.toolDetails(itemId),
+      path.to.partDetails(itemId),
       await flash(
         request,
         error(methodOperations.error, "Failed to load method operations")
@@ -76,7 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (methodMaterials.error) {
     throw redirect(
-      path.to.toolDetails(itemId),
+      path.to.partDetails(itemId),
       await flash(
         request,
         error(methodMaterials.error, "Failed to load method materials")
@@ -97,11 +107,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       methodOperations.data?.map((operation) => ({
         ...operation,
         workCenterId: operation.workCenterId ?? undefined,
-        workInstruction: operation.workInstruction as JSONContent,
+        operationSupplierProcessId:
+          operation.operationSupplierProcessId ?? undefined,
+        workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
     methods: (methodTree.data.length > 0
       ? flattenTree(methodTree.data[0])
       : []) satisfies FlatTreeItem<Method>[],
+    // toolManufacturing: toolManufacturing.data,
+    // configurationParametersAndGroups: toolManufacturing.data
+    //   ?.requiresConfiguration
+    //   ? await getConfigurationParameters(client, itemId, companyId)
+    //   : { groups: [], parameters: [] },
+    // configurationRules: toolManufacturing.data?.requiresConfiguration
+    //   ? await getConfigurationRules(client, itemId, companyId)
+    //   : [],
   });
 }
 

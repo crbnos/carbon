@@ -103,7 +103,7 @@ const ConsumableProperties = () => {
     (value: string[]) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.consumableSummary?.readableId ?? "");
       formData.append("table", "consumable");
 
       value.forEach((v) => {
@@ -116,14 +116,14 @@ const ConsumableProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.consumableSummary?.readableId]
   );
 
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.consumableSummary?.readableId ?? "");
       formData.append("table", "consumable");
       formData.append("value", value);
 
@@ -133,7 +133,7 @@ const ConsumableProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.consumableSummary?.readableId]
   );
 
   return (

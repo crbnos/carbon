@@ -16,15 +16,13 @@ import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
-  getItem,
-  getMethodMaterial,
+  getMakeMethodById,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
 } from "~/modules/items";
 import {
   BillOfMaterial,
   BillOfProcess,
-  ItemForm,
   MakeMethodTools,
 } from "~/modules/items/ui/Item";
 import {
@@ -40,24 +38,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "parts",
   });
 
-  const { itemId, materialId, makeMethodId } = params;
+  const { itemId, makeMethodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
-  if (!materialId) throw new Error("Could not find materialId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
-  const [material, methodMaterials, methodOperations, tags] = await Promise.all(
-    [
-      getMethodMaterial(client, materialId),
+  const [makeMethod, methodMaterials, methodOperations, tags] =
+    await Promise.all([
+      getMakeMethodById(client, makeMethodId, companyId),
       getMethodMaterialsByMakeMethod(client, makeMethodId),
       getMethodOperationsByMakeMethodId(client, makeMethodId),
       getTagsList(client, companyId, "operation"),
-    ]
-  );
+    ]);
 
-  if (material.error) {
+  if (makeMethod.error) {
     throw redirect(
       path.to.toolDetails(itemId),
-      await flash(request, error(material.error, "Failed to load material"))
+      await flash(
+        request,
+        error(makeMethod.error, "Failed to load make method")
+      )
     );
   }
 
@@ -80,69 +79,57 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const item = await getItem(client, material.data.itemId);
-  if (item.error) {
-    throw redirect(
-      path.to.toolDetails(itemId),
-      await flash(request, error(item.error, "Failed to load item"))
-    );
-  }
-
   return defer({
-    item: {
-      ...item.data,
-      defaultMethodType: item.data.defaultMethodType ?? "Buy",
-      unitOfMeasureCode: item.data.unitOfMeasureCode ?? "EA",
-      description: item.data.description ?? "",
-    },
-    material: material.data,
+    makeMethod: makeMethod.data,
+
     methodMaterials:
       methodMaterials.data?.map((m) => ({
         ...m,
         description: m.item?.name ?? "",
+        methodOperationId: m.methodOperationId ?? undefined,
         methodType: m.methodType as MethodType,
         itemType: m.itemType as MethodItemType,
-        methodOperationId: m.methodOperationId ?? undefined,
       })) ?? [],
     methodOperations:
       methodOperations.data?.map((operation) => ({
         ...operation,
-        workCenterId: operation.workCenterId ?? undefined,
+        description: operation.description ?? "",
+        procedureId: operation.procedureId ?? undefined,
         operationSupplierProcessId:
           operation.operationSupplierProcessId ?? undefined,
         operationMinimumCost: operation.operationMinimumCost ?? 0,
         operationLeadTime: operation.operationLeadTime ?? 0,
         operationUnitCost: operation.operationUnitCost ?? 0,
         tags: operation.tags ?? [],
+        workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
-    model: getModelByItemId(client, material.data.itemId),
+    model: getModelByItemId(client, makeMethod.data.itemId),
     tags: tags.data ?? [],
   });
 }
 
 export default function MethodMaterialMakePage() {
-  const permissions = usePermissions();
   const loaderData = useLoaderData<typeof loader>();
-  const { item, methodMaterials, methodOperations, tags } = loaderData;
+  const permissions = usePermissions();
+  const { makeMethod, methodMaterials, methodOperations, tags } = loaderData;
 
-  const { itemId, makeMethodId, materialId } = useParams();
+  const { itemId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
-  if (!materialId) throw new Error("Could not find materialId");
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={item.id} type="Tool" />
-      <ItemForm
-        key={`item:${itemId}:${makeMethodId}:${materialId}`}
-        type={item.type}
-        initialValues={item}
-      />
+      <MakeMethodTools itemId={makeMethod.itemId} type="Tool" />
+
       <BillOfProcess
         key={`bop:${itemId}`}
         makeMethodId={makeMethodId}
+        // @ts-ignore
         operations={methodOperations}
+        // configurable={routeData?.toolManufacturing.requiresConfiguration}
+        // configurationRules={routeData?.configurationRules}
+        // parameters={routeData?.configurationParametersAndGroups.parameters}
         tags={tags}
       />
       <BillOfMaterial
@@ -150,6 +137,9 @@ export default function MethodMaterialMakePage() {
         makeMethodId={makeMethodId}
         materials={methodMaterials}
         operations={methodOperations}
+        // configurable={routeData?.toolManufacturing.requiresConfiguration}
+        // configurationRules={routeData?.configurationRules}
+        // parameters={routeData?.configurationParametersAndGroups.parameters}
       />
       <Suspense fallback={null}>
         <Await resolve={loaderData.model}>

@@ -103,7 +103,7 @@ const ToolProperties = () => {
     (value: string[]) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.toolSummary?.readableId ?? "");
       formData.append("table", "tool");
       value.forEach((v) => {
         formData.append("value", v);
@@ -115,14 +115,14 @@ const ToolProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.toolSummary?.readableId]
   );
 
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.toolSummary?.readableId ?? "");
       formData.append("table", "tool");
       formData.append("value", value);
 
@@ -132,7 +132,7 @@ const ToolProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.toolSummary?.readableId]
   );
 
   return (

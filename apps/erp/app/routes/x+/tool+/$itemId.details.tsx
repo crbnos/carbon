@@ -186,7 +186,11 @@ export default function ToolDetailsRoute() {
                     return (
                       <UsedInTree
                         tree={tree}
-                        itemReadableId={toolData.toolSummary?.id ?? ""}
+                        revisions={toolData.toolSummary?.revisions}
+                        itemReadableId={toolData.toolSummary?.readableId ?? ""}
+                        itemReadableIdWithRevision={
+                          toolData.toolSummary?.readableIdWithRevision ?? ""
+                        }
                       />
                     );
                   }}

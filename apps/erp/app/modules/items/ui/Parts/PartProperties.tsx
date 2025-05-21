@@ -108,14 +108,14 @@ const PartProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.partSummary?.id]
   );
 
   const onUpdateTags = useCallback(
     (value: string[]) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.partSummary?.readableId ?? "");
       formData.append("table", "part");
       value.forEach((v) => {
         formData.append("value", v);
@@ -127,14 +127,14 @@ const PartProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.partSummary?.readableId]
   );
 
   const onUpdateCustomFields = useCallback(
     (value: string) => {
       const formData = new FormData();
 
-      formData.append("ids", itemId);
+      formData.append("ids", routeData?.partSummary?.readableId ?? "");
       formData.append("table", "part");
       formData.append("value", value);
 
@@ -144,7 +144,7 @@ const PartProperties = () => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [itemId]
+    [routeData?.partSummary?.readableId]
   );
 
   return (

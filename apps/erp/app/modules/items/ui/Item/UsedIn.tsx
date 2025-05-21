@@ -1,21 +1,29 @@
+import type { Database, Json } from "@carbon/database";
 import {
   cn,
   Count,
   HStack,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
   Skeleton,
+  useDisclosure,
   VStack,
 } from "@carbon/react";
+import { useParams } from "@remix-run/react";
 import { useState } from "react";
-import { LuChevronRight, LuSearch, LuTruck } from "react-icons/lu";
+import { flushSync } from "react-dom";
+import { LuChevronRight, LuPlus, LuSearch, LuTruck } from "react-icons/lu";
+import { z } from "zod";
 import { Hyperlink, MethodIcon } from "~/components";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
+import { getReadableIdWithRevision } from "~/utils/string";
 import { getLinkToItemManufacturing } from "./ItemForm";
+import RevisionForm from "./RevisionForm";
 
 export function UsedInSkeleton() {
   return (
@@ -29,6 +37,7 @@ export function UsedInSkeleton() {
 }
 
 export type UsedInKey =
+  | Database["public"]["Enums"]["itemType"]
   | "jobMaterials"
   | "jobs"
   | "methodMaterials"
@@ -54,14 +63,37 @@ export type UsedInNode = {
   }[];
 };
 
+const revisionValidator = z.array(
+  z.object({
+    id: z.string(),
+    revision: z.string(),
+    methodType: z.string(),
+    type: z.string(),
+  })
+);
+
 export function UsedInTree({
   tree,
+  revisions: revisionsJson,
   itemReadableId,
+  itemReadableIdWithRevision,
 }: {
   tree: UsedInNode[];
+  revisions?: Json;
   itemReadableId: string;
+  itemReadableIdWithRevision: string;
 }) {
   const [filterText, setFilterText] = useState("");
+
+  const revisions = (revisionValidator.safeParse(revisionsJson)?.data ?? [])
+    ?.map((r) => ({
+      id: r.id,
+      documentReadableId: getReadableIdWithRevision(itemReadableId, r.revision),
+      methodType: r.methodType,
+      type: r.type,
+      revision: r.revision,
+    }))
+    .sort((a, b) => b.revision.localeCompare(a.revision));
 
   return (
     <VStack>
@@ -78,12 +110,22 @@ export function UsedInTree({
         </InputGroup>
       </HStack>
       <VStack spacing={0}>
+        <RevisionsItem
+          filterText={filterText}
+          node={{
+            key: (revisions?.[0]?.type as UsedInKey) ?? "Part",
+            name: "Revisions",
+            module: "parts",
+            children: revisions,
+          }}
+          maxRevision={revisions?.[0]?.revision ?? ""}
+        />
         {tree.map((node) => (
           <UsedInItem
             key={node.key}
             filterText={filterText}
             node={node}
-            itemReadableId={itemReadableId}
+            itemReadableIdWithRevision={itemReadableIdWithRevision}
           />
         ))}
       </VStack>
@@ -91,14 +133,139 @@ export function UsedInTree({
   );
 }
 
+export function RevisionsItem({
+  node,
+  filterText,
+  maxRevision,
+}: {
+  node: UsedInNode;
+  filterText: string;
+  maxRevision: string;
+}) {
+  const { itemId } = useParams();
+  const permissions = usePermissions();
+  const disclosure = useDisclosure();
+
+  const [selectedRevision, setSelectedRevision] = useState<{
+    id?: string;
+    copyFromId?: string;
+    type: "Part" | "Material" | "Tool" | "Service" | "Consumable";
+    revision: string;
+  } | null>();
+  const [isExpanded, setIsExpanded] = useState(
+    node.children.length > 0 && node.children.length < 10
+  );
+
+  const filteredChildren = node.children.filter((child) =>
+    child.documentReadableId.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  return (
+    <>
+      <div className="relative w-full">
+        <button
+          className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-2 gap-2 text-sm hover:bg-muted/90 w-full font-medium"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsExpanded(!isExpanded);
+          }}
+        >
+          <div className="h-8 w-4 flex items-center justify-center">
+            <LuChevronRight
+              className={cn("size-4", isExpanded && "rotate-90")}
+            />
+          </div>
+          <div className="flex flex-grow items-center justify-between gap-2 pr-6">
+            <span>{node.name}</span>
+
+            {filteredChildren.length > 0 && (
+              <Count count={filteredChildren.length} />
+            )}
+          </div>
+        </button>
+        {permissions.can("create", "parts") && (
+          <IconButton
+            size="sm"
+            variant="secondary"
+            icon={<LuPlus />}
+            aria-label="Create"
+            className="size-5 absolute right-2 top-1.5"
+            onClick={() => {
+              flushSync(() => {
+                setSelectedRevision({
+                  copyFromId: itemId,
+                  type: node.key as "Part",
+                  revision: getNextRevision(maxRevision),
+                });
+                disclosure.onOpen();
+              });
+            }}
+          />
+        )}
+      </div>
+      {isExpanded && (
+        <div className="flex flex-col w-full">
+          {node.children.length === 0 ? (
+            <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-4">
+              <LevelLine isSelected={false} />
+              <div className="text-xs text-muted-foreground">
+                No {node.name.toLowerCase()} found
+              </div>
+            </div>
+          ) : (
+            filteredChildren.map((child, index) => {
+              const isActive = child.id === itemId;
+              return (
+                <Hyperlink
+                  key={index}
+                  to={getUseInLink(child, node.key, "")}
+                  className={cn(
+                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap",
+                    isActive && "bg-muted/90"
+                  )}
+                >
+                  <LevelLine isSelected={isActive} className="mr-2" />
+                  <MethodIcon
+                    type={child.methodType ?? "Method"}
+                    className="mr-2"
+                  />
+                  <span className="truncate">{child.documentReadableId}</span>
+                </Hyperlink>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {disclosure.isOpen && selectedRevision && (
+        <RevisionForm
+          initialValues={selectedRevision!}
+          onClose={disclosure.onClose}
+        />
+      )}
+    </>
+  );
+}
+
+function getNextRevision(maxRevision: string) {
+  if (/^\d+$/.test(maxRevision)) {
+    return (parseInt(maxRevision) + 1).toString();
+  } else if (/^[A-Z]$/.test(maxRevision)) {
+    return maxRevision === "Z"
+      ? "AA"
+      : String.fromCharCode(maxRevision.charCodeAt(0) + 1);
+  }
+  return maxRevision;
+}
+
 export function UsedInItem({
   node,
-  itemReadableId,
+  itemReadableIdWithRevision,
   filterText,
 }: {
   node: UsedInNode;
-  itemReadableId: string;
   filterText: string;
+  itemReadableIdWithRevision: string;
 }) {
   const [isExpanded, setIsExpanded] = useState(
     node.children.length > 0 && node.children.length < 10
@@ -145,7 +312,7 @@ export function UsedInItem({
             filteredChildren.map((child, index) => (
               <Hyperlink
                 key={index}
-                to={getUseInLink(child, node.key, itemReadableId)}
+                to={getUseInLink(child, node.key, itemReadableIdWithRevision)}
                 className="flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap"
               >
                 <LevelLine isSelected={false} className="mr-2" />
@@ -170,16 +337,26 @@ export function UsedInItem({
 function getUseInLink(
   child: UsedInNode["children"][number],
   key: UsedInKey,
-  itemReadableId: string
+  itemReadableIdWithRevision: string
 ) {
   switch (key) {
+    case "Part":
+      return path.to.partDetails(child.id);
+    case "Material":
+      return path.to.materialDetails(child.id);
+    case "Tool":
+      return path.to.toolDetails(child.id);
+    case "Consumable":
+      return path.to.consumableDetails(child.id);
+    case "Service":
+      return path.to.serviceDetails(child.id);
     case "jobs":
       return path.to.job(child.id);
     case "jobMaterials":
       if (!child.documentId) return "#";
       return `${path.to.jobMaterials(
         child.documentId
-      )}?filter=itemReadableId:eq:${itemReadableId}`;
+      )}?filter=itemReadableId:eq:${itemReadableIdWithRevision}`;
     case "methodMaterials":
       if (!child.documentId || !child.itemType) return "#";
       return getLinkToItemManufacturing(child.itemType, child.documentId);
