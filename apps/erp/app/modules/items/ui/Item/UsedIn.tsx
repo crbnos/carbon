@@ -2,6 +2,11 @@ import type { Database, Json } from "@carbon/database";
 import {
   cn,
   Count,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   IconButton,
   Input,
@@ -14,9 +19,17 @@ import {
 import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
-import { LuChevronRight, LuPlus, LuSearch, LuTruck } from "react-icons/lu";
+import {
+  LuChevronRight,
+  LuEllipsisVertical,
+  LuPlus,
+  LuSearch,
+  LuStar,
+  LuTruck,
+} from "react-icons/lu";
 import { z } from "zod";
 import { Hyperlink, MethodIcon } from "~/components";
+import { Confirm } from "~/components/Modals";
 import { LevelLine } from "~/components/TreeView";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
@@ -60,6 +73,7 @@ export type UsedInNode = {
     documentParentId?: string;
     itemType?: MethodItemType;
     methodType?: string;
+    revision?: string;
   }[];
 };
 
@@ -93,7 +107,14 @@ export function UsedInTree({
       type: r.type,
       revision: r.revision,
     }))
-    .sort((a, b) => b.revision.localeCompare(a.revision));
+    .sort((a, b) => {
+      // First sort by length (descending)
+      if (a.revision.length !== b.revision.length) {
+        return b.revision.length - a.revision.length;
+      }
+      // Then sort alphabetically (descending)
+      return b.revision.localeCompare(a.revision);
+    });
 
   return (
     <VStack>
@@ -144,7 +165,8 @@ export function RevisionsItem({
 }) {
   const { itemId } = useParams();
   const permissions = usePermissions();
-  const disclosure = useDisclosure();
+  const revisionDisclosure = useDisclosure();
+  const defaultDisclosure = useDisclosure();
 
   const [selectedRevision, setSelectedRevision] = useState<{
     id?: string;
@@ -197,14 +219,14 @@ export function RevisionsItem({
                   type: node.key as "Part",
                   revision: getNextRevision(maxRevision),
                 });
-                disclosure.onOpen();
+                revisionDisclosure.onOpen();
               });
             }}
           />
         )}
       </div>
       {isExpanded && (
-        <div className="flex flex-col w-full">
+        <div className="flex flex-col w-full relative ">
           {node.children.length === 0 ? (
             <div className="flex h-8 items-center overflow-hidden rounded-sm px-2 gap-4">
               <LevelLine isSelected={false} />
@@ -216,31 +238,95 @@ export function RevisionsItem({
             filteredChildren.map((child, index) => {
               const isActive = child.id === itemId;
               return (
-                <Hyperlink
-                  key={index}
-                  to={getUseInLink(child, node.key, "")}
-                  className={cn(
-                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap",
-                    isActive && "bg-muted/90"
+                <div className="relative group/used-in" key={index}>
+                  <Hyperlink
+                    to={getUseInLink(child, node.key, "")}
+                    className={cn(
+                      "pr-6 flex h-8 cursor-pointer items-center overflow-hidden rounded-sm px-1 gap-4 text-sm hover:bg-muted/90 w-full font-medium whitespace-nowrap",
+                      isActive && "bg-muted/90"
+                    )}
+                  >
+                    <LevelLine isSelected={isActive} className="mr-2" />
+                    <MethodIcon
+                      type={child.methodType ?? "Method"}
+                      className="mr-2"
+                    />
+                    <span className="truncate">{child.documentReadableId}</span>
+                  </Hyperlink>
+                  {permissions.can("update", "parts") && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <IconButton
+                          size="sm"
+                          variant="secondary"
+                          icon={<LuEllipsisVertical />}
+                          aria-label="Edit"
+                          className="absolute right-2 top-1 flex-shrink-0 opacity-0 group-hover/used-in:opacity-100 data-[state=open]:opacity-100"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {/* <DropdownMenuItem
+                          onSelect={() => {
+                            flushSync(() => {
+                              setSelectedRevision({
+                                id: child.id,
+                                type: node.key as "Part",
+                                revision: child.revision ?? "",
+                              });
+                              revisionDisclosure.onOpen();
+                            });
+                          }}
+                        >
+                          <DropdownMenuIcon icon={<LuPencil />} />
+                          Edit
+                        </DropdownMenuItem> */}
+                        <DropdownMenuItem
+                          destructive
+                          onSelect={() => {
+                            flushSync(() => {
+                              setSelectedRevision({
+                                id: child.id,
+                                type: node.key as "Part",
+                                revision: child.revision ?? "",
+                              });
+                              defaultDisclosure.onOpen();
+                            });
+                          }}
+                        >
+                          <DropdownMenuIcon icon={<LuStar />} />
+                          Make Default
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
-                >
-                  <LevelLine isSelected={isActive} className="mr-2" />
-                  <MethodIcon
-                    type={child.methodType ?? "Method"}
-                    className="mr-2"
-                  />
-                  <span className="truncate">{child.documentReadableId}</span>
-                </Hyperlink>
+                </div>
               );
             })
           )}
         </div>
       )}
 
-      {disclosure.isOpen && selectedRevision && (
+      {revisionDisclosure.isOpen && selectedRevision && (
         <RevisionForm
           initialValues={selectedRevision!}
-          onClose={disclosure.onClose}
+          onClose={revisionDisclosure.onClose}
+        />
+      )}
+      {defaultDisclosure.isOpen && selectedRevision && (
+        <Confirm
+          action={path.to.defaultRevision(
+            selectedRevision.id,
+            selectedRevision.revision
+          )}
+          confirmText="Make Default"
+          title={`Make revision ${selectedRevision.revision} default?`}
+          text="This will replace all method materials of other revisions with this revision."
+          isOpen
+          onSubmit={() => {
+            defaultDisclosure.onClose();
+            setSelectedRevision(null);
+          }}
+          onCancel={defaultDisclosure.onClose}
         />
       )}
     </>
@@ -250,10 +336,20 @@ export function RevisionsItem({
 function getNextRevision(maxRevision: string) {
   if (/^\d+$/.test(maxRevision)) {
     return (parseInt(maxRevision) + 1).toString();
-  } else if (/^[A-Z]$/.test(maxRevision)) {
-    return maxRevision === "Z"
-      ? "AA"
-      : String.fromCharCode(maxRevision.charCodeAt(0) + 1);
+  } else if (/^[A-Z]{1,2}$/.test(maxRevision)) {
+    // Handle single letter case
+    if (maxRevision.length === 1) {
+      return maxRevision === "Z"
+        ? "AA"
+        : String.fromCharCode(maxRevision.charCodeAt(0) + 1);
+    }
+    // Handle double letter case
+    const firstChar = maxRevision[0];
+    const secondChar = maxRevision[1];
+    if (secondChar === "Z") {
+      return String.fromCharCode(firstChar.charCodeAt(0) + 1) + "A";
+    }
+    return firstChar + String.fromCharCode(secondChar.charCodeAt(0) + 1);
   }
   return maxRevision;
 }

@@ -1391,6 +1391,23 @@ export async function updateOperationOrder(
   return Promise.all(updatePromises);
 }
 
+export async function updateRevision(
+  client: SupabaseClient<Database>,
+  revision: {
+    id: string;
+    revision: string;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("item")
+    .update({
+      ...revision,
+      updatedAt: today(getLocalTimeZone()).toString(),
+    })
+    .eq("id", revision.id);
+}
+
 export async function upsertConfigurationParameter(
   client: SupabaseClient<Database>,
   configurationParameter: z.infer<typeof configurationParameterValidator> & {

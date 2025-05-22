@@ -206,7 +206,8 @@ BEGIN
           'revision', i."revision",
           'methodType', i."defaultMethodType",
           'type', i."type"
-        ) ORDER BY i."revision" DESC NULLS LAST
+        ) ORDER BY 
+          i."createdAt"
       ) as "revisions"
     FROM "item" i
     GROUP BY i."readableId"
@@ -271,7 +272,7 @@ WITH latest_items AS (
     mu."size" as "modelSize"
   FROM "item" i
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  ORDER BY i."readableId", i."revision" DESC NULLS LAST
+  ORDER BY i."readableId", i."createdAt" DESC NULLS LAST
 ),
 item_revisions AS (
   SELECT 
@@ -284,8 +285,8 @@ item_revisions AS (
         'description', i."description",
         'active', i."active",
         'createdAt', i."createdAt"
-      ) ORDER BY i."revision" DESC NULLS LAST
-    ) as "revisions"
+      ) ORDER BY i."createdAt"
+      ) as "revisions"
   FROM "item" i
   GROUP BY i."readableId"
 )
@@ -322,7 +323,7 @@ SELECT
   li."updatedBy",
   li."updatedAt"
 FROM "part" p
-  INNER JOIN latest_items li ON li."readableId" = p."id"
+INNER JOIN latest_items li ON li."readableId" = p."id"
 LEFT JOIN item_revisions ir ON ir."readableId" = p."id"
 LEFT JOIN (
   SELECT 
@@ -346,7 +347,7 @@ WITH latest_items AS (
     mu."size" as "modelSize"
   FROM "item" i
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  ORDER BY i."readableId", i."revision" DESC NULLS LAST
+  ORDER BY i."readableId", i."createdAt" DESC NULLS LAST
 ),
 item_revisions AS (
   SELECT 
@@ -357,8 +358,8 @@ item_revisions AS (
         'revision', i."revision",
         'methodType', i."defaultMethodType",
         'type', i."type"
-      ) ORDER BY i."revision" DESC NULLS LAST
-    ) as "revisions"
+      ) ORDER BY i."createdAt"
+      ) as "revisions"
   FROM "item" i
   GROUP BY i."readableId"
 )
@@ -467,7 +468,8 @@ BEGIN
           'revision', i."revision",
           'methodType', i."defaultMethodType",
           'type', i."type"
-        ) ORDER BY i."revision" DESC NULLS LAST
+        ) ORDER BY 
+          i."createdAt"
       ) as "revisions"
     FROM "item" i
     GROUP BY i."readableId"
@@ -541,7 +543,7 @@ WITH latest_items AS (
     mu."size" as "modelSize"
   FROM "item" i
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  ORDER BY i."readableId", i."revision" DESC NULLS LAST
+  ORDER BY i."readableId", i."createdAt" DESC NULLS LAST
 ),
 item_revisions AS (
   SELECT 
@@ -552,8 +554,8 @@ item_revisions AS (
         'revision', i."revision",
         'methodType', i."defaultMethodType",
         'type', i."type"
-      ) ORDER BY i."revision" DESC NULLS LAST
-    ) as "revisions"
+      ) ORDER BY i."createdAt"
+      ) as "revisions"
   FROM "item" i
   GROUP BY i."readableId"
 )
@@ -645,7 +647,8 @@ BEGIN
           'revision', i."revision",
           'methodType', i."defaultMethodType",
           'type', i."type"
-        ) ORDER BY i."revision" DESC NULLS LAST
+        ) ORDER BY 
+          i."createdAt"
       ) as "revisions"
     FROM "item" i
     GROUP BY i."readableId"
@@ -741,7 +744,8 @@ BEGIN
           'revision', i."revision",
           'methodType', i."defaultMethodType",
           'type', i."type"
-        ) ORDER BY i."revision" DESC NULLS LAST
+        ) ORDER BY 
+          i."createdAt"
       ) as "revisions"
     FROM "item" i
     GROUP BY i."readableId"
@@ -806,7 +810,7 @@ WITH latest_items AS (
     mu."size" as "modelSize"
   FROM "item" i
   LEFT JOIN "modelUpload" mu ON mu.id = i."modelUploadId"
-  ORDER BY i."readableId", i."revision" DESC NULLS LAST
+  ORDER BY i."readableId", i."createdAt" DESC NULLS LAST
 ),
 item_revisions AS (
   SELECT 
@@ -817,10 +821,10 @@ item_revisions AS (
         'revision', i."revision",
         'methodType', i."defaultMethodType",
         'type', i."type"
-      ) ORDER BY i."revision" DESC NULLS LAST
-    ) as "revisions"
-  FROM "item" i
-  GROUP BY i."readableId"
+      ) ORDER BY i."createdAt"
+      ) as "revisions"
+    FROM "item" i
+    GROUP BY i."readableId"
 )
 SELECT
   li."active",
