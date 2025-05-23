@@ -1,4 +1,8 @@
 import { Extension, Node } from "@tiptap/core";
+import Table from "@tiptap/extension-table";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import TableRow from "@tiptap/extension-table-row";
 import { Plugin, PluginKey } from "@tiptap/pm/state";
 import { cx } from "class-variance-authority";
 import {
@@ -208,4 +212,8 @@ export const defaultExtensions = [
   aiHighlight,
   LoomEmbed,
   HTMLContent,
+  Table,
+  TableCell,
+  TableHeader,
+  TableRow,
 ];
