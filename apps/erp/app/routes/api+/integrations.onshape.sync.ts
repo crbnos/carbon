@@ -3,6 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { onShapeDataValidator } from "~/integrations/onshape/lib/data";
 
+export const config = {
+  maxDuration: 90,
+};
+
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",
