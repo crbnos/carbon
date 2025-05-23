@@ -67,9 +67,7 @@ const BoMExplorer = ({
       fn: (value, node) => {
         if (value.text === "") return true;
         if (
-          node.data.itemReadableId
-            .toLowerCase()
-            .includes(value.text.toLowerCase())
+          node.data.description.toLowerCase().includes(value.text.toLowerCase())
         ) {
           return true;
         }
