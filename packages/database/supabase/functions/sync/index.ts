@@ -212,6 +212,12 @@ serve(async (req: Request) => {
                     companyId,
                     createdBy: userId,
                   })
+                  .onConflict((oc) =>
+                    oc.columns(["id", "companyId"]).doUpdateSet({
+                      updatedBy: userId,
+                      updatedAt: new Date().toISOString(),
+                    })
+                  )
                   .execute();
 
                 // Store the newly created item to avoid duplicate inserts
