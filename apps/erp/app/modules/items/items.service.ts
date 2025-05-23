@@ -1328,6 +1328,40 @@ export async function updateConfigurationParameterGroupOrder(
     .eq("id", data.id);
 }
 
+export async function updateDefaultRevision(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    updatedBy: string;
+  }
+) {
+  const [item, makeMethod] = await Promise.all([
+    client
+      .from("item")
+      .select("id,readableId, readableIdWithRevision")
+      .eq("id", data.id)
+      .single(),
+    client.from("makeMethod").select("id").eq("itemId", data.id).maybeSingle(),
+  ]);
+  if (item.error) return item;
+  const readableId = item.data.readableId;
+  const relatedItems = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", readableId);
+
+  const itemIds = relatedItems.data?.map((item) => item.id) ?? [];
+
+  return client
+    .from("methodMaterial")
+    .update({
+      itemId: item.data.id,
+      itemReadableId: item.data.readableId,
+      materialMakeMethodId: makeMethod.data?.id,
+    })
+    .in("itemId", itemIds);
+}
+
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<

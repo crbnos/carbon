@@ -314,10 +314,7 @@ export function RevisionsItem({
       )}
       {defaultDisclosure.isOpen && selectedRevision && (
         <Confirm
-          action={path.to.defaultRevision(
-            selectedRevision.id,
-            selectedRevision.revision
-          )}
+          action={path.to.defaultRevision(selectedRevision.id!)}
           confirmText="Make Default"
           title={`Make revision ${selectedRevision.revision} default?`}
           text="This will replace all method materials of other revisions with this revision."
