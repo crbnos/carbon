@@ -378,6 +378,8 @@ export const path = {
     deactivateGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/deactivate/${id}`),
     deactivateUsers: `${x}/users/deactivate`,
+    defaultRevision: (id: string, revision: string) =>
+      generatePath(`${x}/items/revisions/default/${id}/${revision}`),
     deleteAbility: (id: string) =>
       generatePath(`${x}/resources/abilities/delete/${id}`),
     deleteAccountingCategory: (id: string) =>
