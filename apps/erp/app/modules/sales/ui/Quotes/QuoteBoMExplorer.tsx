@@ -5,6 +5,7 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -15,13 +16,19 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
-import { useFetchers, useNavigate, useParams } from "@remix-run/react";
+import { Link, useFetchers, useNavigate, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
-import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuChevronRight,
+  LuExternalLink,
+  LuSearch,
+} from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { QuoteMethod } from "../../types";
@@ -138,7 +145,7 @@ const QuoteBoMExplorer = ({
                   <div
                     key={node.id}
                     className={cn(
-                      "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                      "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
                       state.selected
                         ? "bg-muted hover:bg-muted/90"
                         : "bg-transparent hover:bg-muted/90"
@@ -233,6 +240,11 @@ function NodeText({ node }: { node: FlatTreeItem<QuoteMethod> }) {
       <span className="font-medium text-sm truncate">
         {node.data.description || node.data.itemReadableId}
       </span>
+      {node.data.revision && node.data.revision !== "0" && (
+        <Badge variant="outline" className="text-xs">
+          {node.data.revision}
+        </Badge>
+      )}
     </div>
   );
 }
@@ -266,7 +278,22 @@ function NodePreview({ node }: { node: FlatTreeItem<QuoteMethod> }) {
         </span>
         <HStack className="w-full justify-between">
           <span>{node.data.itemReadableId}</span>
-          <Copy text={node.data.itemReadableId} />
+          <HStack spacing={1}>
+            <Copy text={node.data.itemReadableId} />
+            <Link
+              to={getLinkToItemDetails(
+                node.data.itemType as "Part",
+                node.data.itemId
+              )}
+            >
+              <IconButton
+                aria-label="View Item Master"
+                size="sm"
+                variant="secondary"
+                icon={<LuExternalLink />}
+              />
+            </Link>
+          </HStack>
         </HStack>
       </VStack>
       <VStack spacing={1}>

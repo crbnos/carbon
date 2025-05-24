@@ -5,6 +5,7 @@ import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -13,9 +14,14 @@ import {
   useMount,
 } from "@carbon/react";
 import { useOptimisticLocation } from "@carbon/remix";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuChevronRight,
+  LuExternalLink,
+  LuSearch,
+} from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
@@ -25,6 +31,7 @@ import { type MethodItemType } from "~/modules/shared";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { Method } from "../../types";
+import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;
@@ -132,7 +139,7 @@ const BoMExplorer = ({
                 <div
                   key={node.id}
                   className={cn(
-                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
                     state.selected
                       ? "bg-muted hover:bg-muted/90"
                       : "bg-transparent hover:bg-muted/90"
@@ -242,10 +249,15 @@ export default BoMExplorer;
 
 function NodeText({ node }: { node: FlatTreeItem<Method> }) {
   return (
-    <div className="flex flex-col items-start gap-0">
+    <div className="flex items-start gap-1">
       <span className="text-sm truncate font-medium">
         {node.data.description || node.data.itemReadableId}
       </span>
+      {node.data.revision && node.data.revision !== "0" && (
+        <Badge variant="outline" className="text-xs opacity-0">
+          {node.data.revision}
+        </Badge>
+      )}
     </div>
   );
 }
@@ -273,7 +285,22 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
         </span>
         <HStack className="w-full justify-between">
           <span>{node.data.itemReadableId}</span>
-          <Copy text={node.data.itemReadableId} />
+          <HStack spacing={1}>
+            <Copy text={node.data.itemReadableId} />
+            <Link
+              to={getLinkToItemDetails(
+                node.data.itemType as "Part",
+                node.data.itemId
+              )}
+            >
+              <IconButton
+                aria-label="View Item Master"
+                size="sm"
+                variant="secondary"
+                icon={<LuExternalLink />}
+              />
+            </Link>
+          </HStack>
         </HStack>
       </VStack>
       <VStack spacing={1}>
