@@ -40137,14 +40137,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -40680,14 +40680,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -43476,6 +43476,7 @@ export type Database = {
           isRoot: boolean
           kit: boolean
           revision: string
+          externalId: Json
         }[]
       }
       get_my_claim: {
@@ -43588,6 +43589,7 @@ export type Database = {
           isRoot: boolean
           kit: boolean
           revision: string
+          externalId: Json
         }[]
       }
       get_quote_methods_by_method_id: {
@@ -43614,6 +43616,7 @@ export type Database = {
           isRoot: boolean
           kit: boolean
           revision: string
+          externalId: Json
         }[]
       }
       get_recent_job_operations_by_employee: {

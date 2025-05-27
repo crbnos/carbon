@@ -19,7 +19,8 @@ RETURNS TABLE (
     "order" DOUBLE PRECISION,
     "isRoot" BOOLEAN,
     "kit" BOOLEAN,
-    "revision" TEXT
+    "revision" TEXT,
+    "externalId" JSONB
 ) AS $$
 WITH RECURSIVE material AS (
     SELECT 
@@ -81,7 +82,8 @@ SELECT
   material."order",
   material."isRoot",
   material."kit",
-  item."revision"
+  item."revision",
+  item."externalId"
 FROM material 
 INNER JOIN item ON material."itemId" = item.id
 ORDER BY "order"
@@ -108,7 +110,8 @@ RETURNS TABLE (
     "operationId" TEXT,
     "isRoot" BOOLEAN,
     "kit" BOOLEAN,
-    "revision" TEXT
+    "revision" TEXT,
+    "externalId" JSONB
 ) AS $$
 WITH RECURSIVE material AS (
     SELECT 
@@ -162,7 +165,8 @@ SELECT
   material."operationId",
   false AS "isRoot",
   material."kit",
-  item."revision"
+  item."revision",
+  item."externalId"
 FROM material 
 INNER JOIN item 
   ON material."itemId" = item.id
@@ -187,7 +191,8 @@ SELECT
   NULL AS "operationId",
   true AS "isRoot",
   false AS "kit",
-  item."revision"
+  item."revision",
+  item."externalId"
 FROM "makeMethod" mm 
 INNER JOIN item 
   ON mm."itemId" = item.id
@@ -217,7 +222,8 @@ RETURNS TABLE (
     "order" DOUBLE PRECISION,
     "isRoot" BOOLEAN,
     "kit" BOOLEAN,
-    "revision" TEXT
+    "revision" TEXT,
+    "externalId" JSONB
 ) AS $$
 WITH RECURSIVE material AS (
     SELECT 
@@ -277,7 +283,8 @@ SELECT
   material."order",
   material."isRoot",
   material."kit",
-  item."revision"
+  item."revision",
+  item."externalId"
 FROM material 
 INNER JOIN item ON material."itemId" = item.id
 WHERE material."quoteId" = qid
@@ -302,8 +309,7 @@ RETURNS TABLE (
     "order" DOUBLE PRECISION,
     "isRoot" BOOLEAN,
     "kit" BOOLEAN,
-    "revision" TEXT,
-    "externalId" JSONB
+    "revision" TEXT
 ) AS $$
 WITH RECURSIVE material AS (
     SELECT 
@@ -361,8 +367,7 @@ SELECT
   material."order",
   material."isRoot",
   material."kit",
-  item."revision",
-  item."externalId"
+  item."revision"
 FROM material 
 INNER JOIN item ON material."itemId" = item.id
 WHERE material."jobId" = jid

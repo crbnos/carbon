@@ -12,5 +12,6 @@ export const onShapeDataValidator = z
     quantity: z.number(),
     replenishmentSystem: z.enum(itemReplenishmentSystems),
     defaultMethodType: z.enum(methodType),
+    data: z.record(z.string(), z.any()),
   })
   .array();

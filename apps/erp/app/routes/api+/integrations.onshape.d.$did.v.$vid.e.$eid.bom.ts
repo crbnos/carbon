@@ -121,8 +121,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           )
           .in("readableIdWithRevision", Array.from(uniquePartNumbers));
 
-        console.log({ items: items.data });
-
         itemsMap = new Map(
           items.data?.map((item) => [
             item.readableIdWithRevision,
@@ -133,8 +131,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             },
           ])
         );
-
-        console.log({ itemsMap });
       }
 
       const flattenedDataWithMetadata = flattenedData.map((row) => {
@@ -161,7 +157,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
 
         return {
-          mass: row["Mass"],
           index: row["Item"],
           readableId: row["Part number"],
           revision: row["Revision"],
@@ -175,10 +170,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           defaultMethodType,
           quantity: row["Quantity"],
           level: row["Item"].toString().split(".").length,
+          data: row,
         };
       });
-
-      console.log({ flattenedDataWithMetadata });
 
       // Return the transformed data instead of the raw response
       return json({

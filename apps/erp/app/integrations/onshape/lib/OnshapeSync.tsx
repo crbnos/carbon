@@ -24,6 +24,7 @@ import { useFetcher } from "@remix-run/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { MethodIcon } from "~/components";
+import { OnshapeStatus } from "~/components/Icons";
 import { Logo } from "~/integrations/onshape/config";
 import { methodType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
@@ -45,8 +46,8 @@ interface TreeData {
   unitOfMeasure: string;
   replenishmentSystem: string;
   defaultMethodType: string;
-  mass: number;
   level: number;
+  data: Record<string, any>;
 }
 
 export const OnshapeSync = ({
@@ -423,6 +424,9 @@ export const OnshapeSync = ({
                       <Status color="red">No part ID</Status>
                     )}
                     {!isSynced && partId && <PulsingDot className="mt-0.5" />}
+                    {row.data["State"] && (
+                      <OnshapeStatus status={row.data["State"]} />
+                    )}
                   </div>
                   <HStack spacing={1}>
                     <Badge className="text-xs" variant="outline">

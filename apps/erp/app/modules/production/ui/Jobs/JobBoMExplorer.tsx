@@ -10,9 +10,6 @@ import {
   InputGroup,
   InputLeftElement,
   Spinner,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   VStack,
   cn,
 } from "@carbon/react";
@@ -25,9 +22,11 @@ import {
   LuSearch,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { OnshapeStatus } from "~/components/Icons";
 import type { FlatTree, FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
+import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
@@ -232,36 +231,40 @@ function NodeText({ node }: { node: FlatTreeItem<JobMethod> }) {
       <span className="font-medium text-sm truncate">
         {node.data.description || node.data.itemReadableId}
       </span>
-      {node.data.revision && node.data.revision !== "0" && (
-        <Badge variant="outline" className="text-xs">
-          {node.data.revision}
-        </Badge>
-      )}
     </div>
   );
 }
 
 function NodeData({ node }: { node: FlatTreeItem<JobMethod> }) {
+  const integrations = useIntegrations();
+  const onShapeState = integrations.has("onshape")
+    ? // @ts-expect-error
+      node.data.externalId?.["onshapeData"]?.["State"]
+    : null;
+
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
         {node.data.quantity}
       </Badge>
-      <Tooltip>
-        <TooltipTrigger>
-          <Badge variant="secondary">
-            <MethodItemTypeIcon type={node.data.itemType} />
-          </Badge>
-        </TooltipTrigger>
-        <TooltipContent side="left">
-          <span>{node.data.itemType}</span>
-        </TooltipContent>
-      </Tooltip>
+      {onShapeState ? (
+        <OnshapeStatus status={onShapeState} />
+      ) : (
+        <Badge variant="secondary">
+          <MethodItemTypeIcon type={node.data.itemType} />
+        </Badge>
+      )}
     </HStack>
   );
 }
 
 function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
+  const integrations = useIntegrations();
+  const onShapeState = integrations.has("onshape")
+    ? // @ts-expect-error
+      node.data.externalId?.["onshapeData"]?.["State"]
+    : null;
+
   return (
     <VStack className="w-full text-sm">
       <VStack spacing={1}>
@@ -323,6 +326,17 @@ function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {onShapeState && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            Onshape Status
+          </span>
+          <HStack className="w-full">
+            <OnshapeStatus status={onShapeState} />
+            <span>{onShapeState}</span>
+          </HStack>
+        </VStack>
+      )}
     </VStack>
   );
 }

@@ -23,6 +23,7 @@ import {
   LuSearch,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
+import { OnshapeStatus } from "~/components/Icons";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useIntegrations } from "~/hooks/useIntegrations";
@@ -263,20 +264,36 @@ function NodeText({ node }: { node: FlatTreeItem<Method> }) {
 }
 
 function NodeData({ node }: { node: FlatTreeItem<Method> }) {
+  const integrations = useIntegrations();
+  const onShapeState = integrations.has("onshape")
+    ? // @ts-expect-error
+      node.data.externalId?.["onshapeData"]?.["State"]
+    : null;
+
   return (
     <HStack spacing={1}>
       <Badge className="text-xs" variant="outline">
         {node.data.quantity}
       </Badge>
 
-      <Badge variant="secondary">
-        <MethodItemTypeIcon type={node.data.itemType} />
-      </Badge>
+      {onShapeState ? (
+        <OnshapeStatus status={onShapeState} />
+      ) : (
+        <Badge variant="secondary">
+          <MethodItemTypeIcon type={node.data.itemType} />
+        </Badge>
+      )}
     </HStack>
   );
 }
 
 function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
+  const integrations = useIntegrations();
+  const onShapeState = integrations.has("onshape")
+    ? // @ts-expect-error
+      node.data.externalId?.["onshapeData"]?.["State"]
+    : null;
+
   return (
     <VStack className="w-full text-sm">
       <VStack spacing={1}>
@@ -340,6 +357,17 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {onShapeState && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            Onshape Status
+          </span>
+          <HStack className="w-full">
+            <OnshapeStatus status={onShapeState} />
+            <span>{onShapeState}</span>
+          </HStack>
+        </VStack>
+      )}
     </VStack>
   );
 }

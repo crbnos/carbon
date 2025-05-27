@@ -18,6 +18,7 @@ const onShapeDataValidator = z.object({
   quantity: z.number(),
   replenishmentSystem: z.enum(["Make", "Buy", "Buy and Make"]),
   defaultMethodType: z.enum(["Make", "Buy", "Pick"]),
+  data: z.record(z.string(), z.any()),
 });
 
 const payloadValidator = z.discriminatedUnion("type", [
@@ -180,7 +181,20 @@ serve(async (req: Request) => {
             const isMade = children.length > 0;
             let itemId = id;
 
-            if (!itemId) {
+            if (itemId) {
+              // Update existing item with Onshape data
+              await trx
+                .updateTable("item")
+                .set({
+                  externalId: {
+                    onshapeData: data.data,
+                  },
+                  updatedBy: userId,
+                  updatedAt: new Date().toISOString(),
+                })
+                .where("id", "=", itemId)
+                .execute();
+            } else {
               // Check if we've already created this part in this transaction
               itemId = newlyCreatedItemsByPartId.get(partId);
 
@@ -198,6 +212,9 @@ serve(async (req: Request) => {
                     replenishmentSystem,
                     defaultMethodType,
                     companyId,
+                    externalId: {
+                      onshapeData: data.data,
+                    },
                     createdBy: userId,
                   })
                   .returning(["id"])

@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { Badge, cn, HStack } from "@carbon/react";
+import { Badge, cn, HStack, Status } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
@@ -139,6 +139,27 @@ function getReplenishmentBadgeColor(type: MethodType, mode: "light" | "dark") {
     ? getColor("green", mode)
     : getColor("orange", mode);
 }
+
+export const OnshapeStatus = ({
+  status,
+  className,
+}: {
+  status: string;
+  className?: string;
+}) => {
+  switch (status) {
+    case "In progress":
+      return <AlmostDoneIcon className={className} />;
+    case "Released":
+      return <LuCircleCheck className={cn("text-blue-600", className)} />;
+    case "Rejected":
+      return <LuCircleX className={cn("text-red-600", className)} />;
+    case "Pending":
+      return <InProgressStatusIcon className={className} />;
+    default:
+      return <Status color="gray">{status}</Status>;
+  }
+};
 
 export function OperationStatusIcon({
   status,
