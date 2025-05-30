@@ -5,6 +5,8 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
   Heading,
@@ -17,6 +19,7 @@ import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
   LuChevronDown,
+  LuDollarSign,
   LuPanelLeft,
   LuPanelRight,
   LuTruck,
@@ -26,15 +29,19 @@ import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
+import { salesInvoiceStatusType } from "~/modules/invoicing";
 import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
+import type { action as statusAction } from "~/routes/x+/sales-invoice+/$invoiceId.status";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
 import SalesInvoiceStatus from "./SalesInvoiceStatus";
+
 const SalesInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
   const postFetcher = useFetcher<typeof action>();
+  const statusFetcher = useFetcher<typeof statusAction>();
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -127,6 +134,13 @@ const SalesInvoiceHeader = () => {
     postingModal.onOpen();
   };
 
+  const handleStatusChange = (status: string) => {
+    statusFetcher.submit(
+      { status },
+      { method: "post", action: path.to.salesInvoiceStatus(invoiceId) }
+    );
+  };
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
@@ -143,7 +157,7 @@ const SalesInvoiceHeader = () => {
                 <span>{routeData?.salesInvoice?.invoiceId}</span>
               </Heading>
             </Link>
-            <SalesInvoiceStatus status={routeData?.salesInvoice?.status} />
+            <SalesInvoiceStatus status={salesInvoice.status} />
           </HStack>
           <HStack>
             {relatedDocs.salesOrders.length === 1 && (
@@ -240,7 +254,36 @@ const SalesInvoiceHeader = () => {
             >
               Post
             </Button>
-
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  isDisabled={
+                    salesInvoice.status === "Draft" ||
+                    salesInvoice.status === "Pending" ||
+                    !permissions.can("update", "invoicing")
+                  }
+                  leftIcon={<LuDollarSign />}
+                  rightIcon={<LuChevronDown />}
+                >
+                  Payment
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup
+                  value={salesInvoice.status ?? "Draft"}
+                  onValueChange={handleStatusChange}
+                >
+                  {salesInvoiceStatusType
+                    .filter((status) => !["Draft", "Pending"].includes(status))
+                    .map((status) => (
+                      <DropdownMenuRadioItem key={status} value={status}>
+                        <SalesInvoiceStatus status={status} />
+                      </DropdownMenuRadioItem>
+                    ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <IconButton
               aria-label="Toggle Properties"
               icon={<LuPanelRight />}

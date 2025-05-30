@@ -4,17 +4,20 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
   Heading,
   IconButton,
   useDisclosure,
 } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
+  LuChevronDown,
   LuHandCoins,
   LuPanelLeft,
   LuPanelRight,
@@ -24,6 +27,7 @@ import { usePanels } from "~/components/Layout/Panels";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { PurchaseInvoice, PurchaseInvoiceLine } from "~/modules/invoicing";
 import { PurchaseInvoicingStatus } from "~/modules/invoicing";
+import type { action as statusAction } from "~/routes/x+/purchase-invoice+/$invoiceId.status";
 import { path } from "~/utils/path";
 import PurchaseInvoicePostModal from "./PurchaseInvoicePostModal";
 
@@ -31,6 +35,7 @@ const PurchaseInvoiceHeader = () => {
   const permissions = usePermissions();
   const { invoiceId } = useParams();
   const postingModal = useDisclosure();
+  const statusFetcher = useFetcher<typeof statusAction>();
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithPO, setLinesNotAssociatedWithPO] = useState<
@@ -120,6 +125,13 @@ const PurchaseInvoiceHeader = () => {
       )
     );
     postingModal.onOpen();
+  };
+
+  const handleStatusChange = (status: string) => {
+    statusFetcher.submit(
+      { status },
+      { method: "post", action: path.to.purchaseInvoiceStatus(invoiceId) }
+    );
   };
 
   return (
@@ -216,6 +228,37 @@ const PurchaseInvoiceHeader = () => {
             >
               Post
             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="secondary"
+                  isDisabled={
+                    purchaseInvoice.status === "Draft" ||
+                    purchaseInvoice.status === "Pending" ||
+                    !permissions.can("update", "invoicing")
+                  }
+                  leftIcon={<LuHandCoins />}
+                  rightIcon={<LuChevronDown />}
+                >
+                  Payment
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuRadioGroup
+                  value={purchaseInvoice.status ?? "Draft"}
+                  onValueChange={handleStatusChange}
+                >
+                  {(["Paid", "Partially Paid", "Voided"] as const).map(
+                    (status) => (
+                      <DropdownMenuRadioItem key={status} value={status}>
+                        <PurchaseInvoicingStatus status={status} />
+                      </DropdownMenuRadioItem>
+                    )
+                  )}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <IconButton
               aria-label="Toggle Properties"

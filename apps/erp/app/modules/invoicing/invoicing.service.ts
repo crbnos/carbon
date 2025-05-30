@@ -1,5 +1,5 @@
 import type { Database, Json } from "@carbon/database";
-import { getLocalTimeZone, today } from "@internationalized/date";
+import { getLocalTimeZone, now, today } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import {
@@ -19,9 +19,11 @@ import {
 import type {
   purchaseInvoiceDeliveryValidator,
   purchaseInvoiceLineValidator,
+  purchaseInvoiceStatusType,
   purchaseInvoiceValidator,
   salesInvoiceLineValidator,
   salesInvoiceShipmentValidator,
+  salesInvoiceStatusType,
   salesInvoiceValidator,
 } from "./invoicing.models";
 
@@ -279,6 +281,29 @@ export async function updatePurchaseInvoiceExchangeRate(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
+export async function updatePurchaseInvoiceStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof purchaseInvoiceStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  const { status, ...rest } = update;
+
+  // Set completedDate when status is Confirmed
+  const updateData = {
+    status,
+    ...rest,
+    ...(["Paid"].includes(status)
+      ? { datePaid: now(getLocalTimeZone()).toAbsoluteString() }
+      : {}),
+  };
+
+  return client.from("purchaseInvoice").update(updateData).eq("id", update.id);
+}
+
 export async function updateSalesInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -293,6 +318,28 @@ export async function updateSalesInvoiceExchangeRate(
   };
 
   return client.from("salesInvoice").update(update).eq("id", update.id);
+}
+
+export async function updateSalesInvoiceStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    status: (typeof salesInvoiceStatusType)[number];
+    assignee: null | undefined;
+    updatedBy: string;
+  }
+) {
+  const { status, ...rest } = update;
+
+  const updateData = {
+    status,
+    ...rest,
+    ...(["Paid"].includes(status)
+      ? { datePaid: now(getLocalTimeZone()).toAbsoluteString() }
+      : {}),
+  };
+
+  return client.from("salesInvoice").update(updateData).eq("id", update.id);
 }
 
 export async function upsertPurchaseInvoice(
