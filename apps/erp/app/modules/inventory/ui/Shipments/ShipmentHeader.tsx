@@ -162,7 +162,7 @@ const ShipmentHeader = () => {
                           invoices.length === 1 ? (
                             <Button
                               leftIcon={<LuCreditCard />}
-                              variant={!isInvoiced ? "primary" : "secondary"}
+                              variant={"secondary"}
                               isDisabled={!isPosted}
                               asChild
                             >
@@ -176,9 +176,7 @@ const ShipmentHeader = () => {
                                 <Button
                                   leftIcon={<LuCreditCard />}
                                   rightIcon={<LuChevronDown />}
-                                  variant={
-                                    !isInvoiced ? "primary" : "secondary"
-                                  }
+                                  variant={"secondary"}
                                 >
                                   Invoice
                                 </Button>
@@ -217,7 +215,7 @@ const ShipmentHeader = () => {
                         ) : (
                           <Button
                             leftIcon={<LuCreditCard />}
-                            variant={isPosted ? "primary" : "secondary"}
+                            variant={"primary"}
                             isDisabled={!isPosted}
                             onClick={() => {
                               invoice(routeData?.shipment);
