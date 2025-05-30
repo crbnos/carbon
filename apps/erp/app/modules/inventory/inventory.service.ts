@@ -115,7 +115,9 @@ export async function getInventoryItems(
     );
   }
 
-  query = setGenericQueryFilters(query, args);
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableIdWithRevision", ascending: true },
+  ]);
 
   return query;
 }
