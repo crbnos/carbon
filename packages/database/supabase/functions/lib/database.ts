@@ -18,19 +18,9 @@ export type DB = {
 };
 
 export function getConnectionPool(connections: number) {
-  return new Pool(Deno.env.get("SUPABASE_DB_URL")!, connections);
-  // TODO: if we're deploying to a remote environment, use this:
-  // return new Pool(
-  //   {
-  //     tls: { caCertificates: [Deno.env.get("DB_SSL_CERT")!] },
-  //     database: "postgres",
-  //     hostname: Deno.env.get("DB_HOSTNAME"),
-  //     user: "postgres",
-  //     port: 5432,
-  //     password: Deno.env.get("DB_PASSWORD"),
-  //   },
-  //   connections
-  // );
+  const url = Deno.env.get("SUPABASE_DB_URL")!;
+  const connectionPoolerUrl = url.replace("5432", "6543");
+  return new Pool(connectionPoolerUrl, connections);
 }
 
 export function getDatabaseClient<T>(pool: Pool): Kysely<T> {
