@@ -44,7 +44,7 @@ export function links() {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "CarbonOS | MES",
+      title: "Carbon | MES",
     },
   ];
 };
@@ -100,7 +100,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 function Document({
   children,
-  title = "CarbonOS",
+  title = "Carbon",
   mode = "dark",
   theme = "zinc",
 }: {

@@ -18,7 +18,7 @@ import { acceptInvite } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Accept Invite | CarbonOS" }];
+  return [{ title: "Accept Invite | Carbon" }];
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -143,14 +143,14 @@ export default function Invite() {
           size="h1"
           className="m-0"
         >
-          Welcome to CarbonOS
+          Welcome to Carbon
         </Heading>
         <motion.p
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
           className="text-muted-foreground text-sm pb-4"
         >
-          CarbonOS is the operating system for manufacturing
+          Carbon is the operating system for manufacturing
         </motion.p>
 
         <Form method="post">

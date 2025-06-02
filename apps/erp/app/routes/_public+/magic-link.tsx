@@ -53,14 +53,14 @@ export default function ConfirmMagicLink() {
           size="h1"
           className="m-0"
         >
-          Welcome to CarbonOS
+          Welcome to Carbon
         </Heading>
         <motion.p
           {...fade}
           transition={{ duration: 0.8, ease: "easeInOut", delay: 0.5 }}
           className="text-muted-foreground text-sm pb-4"
         >
-          CarbonOS is the operating system for manufacturing
+          Carbon is the operating system for manufacturing
         </motion.p>
 
         <Button

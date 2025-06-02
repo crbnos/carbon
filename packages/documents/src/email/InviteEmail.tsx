@@ -58,7 +58,7 @@ export const InviteEmail = ({
             fontStyle="normal"
           />
         </head>
-        <Preview>{`Join ${companyName} on CarbonOS`}</Preview>
+        <Preview>{`Join ${companyName} on Carbon`}</Preview>
 
         <Body className="bg-[#fff] my-auto mx-auto font-sans">
           <Container
@@ -67,7 +67,7 @@ export const InviteEmail = ({
           >
             <Logo />
             <Heading className="mx-0 my-[30px] p-0 text-[24px] font-normal text-[#121212] text-center">
-              Join <strong>{companyName}</strong> on <strong>CarbonOS</strong>
+              Join <strong>{companyName}</strong> on <strong>Carbon</strong>
             </Heading>
 
             <Text className="text-[14px] leading-[24px] text-[#121212]">
@@ -79,7 +79,7 @@ export const InviteEmail = ({
                 {invitedByEmail}
               </Link>
               ) has invited you to join <strong>{companyName}</strong> on{" "}
-              <strong>CarbonOS</strong>.
+              <strong>Carbon</strong>.
             </Text>
             <Section className="mb-[42px] mt-[32px] text-center">
               <Button

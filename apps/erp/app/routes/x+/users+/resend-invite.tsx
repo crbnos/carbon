@@ -65,9 +65,9 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const invitationEmail = await resend.emails.send({
-      from: "CarbonOS <no-reply@carbonos.dev>",
+      from: "Carbon <no-reply@carbonos.dev>",
       to: user.data.email,
-      subject: `You have been invited to join ${company.data?.name} on CarbonOS`,
+      subject: `You have been invited to join ${company.data?.name} on Carbon`,
       headers: {
         "X-Entity-Ref-ID": nanoid(),
       },

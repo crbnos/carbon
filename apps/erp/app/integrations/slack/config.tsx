@@ -8,9 +8,9 @@ export const Slack: IntegrationConfig = {
   active: false,
   logo: Logo,
   shortDescription:
-    "Integrating with CarbonOS enables you to use CarbonOS Assistant within your Slack workspace.",
+    "Integrating with Carbon enables you to use Carbon Assistant within your Slack workspace.",
   description:
-    "Integrating CarbonOS with Slack brings powerful capabilities directly into your team's communication hub. With this integration, you can seamlessly interact with CarbonOS Assistant without leaving your Slack workspace, enabling quick access to insights and actions.",
+    "Integrating Carbon with Slack brings powerful capabilities directly into your team's communication hub. With this integration, you can seamlessly interact with Carbon without leaving your Slack workspace, enabling quick access to insights and actions.",
   images: [],
   settings: [],
   schema: z.object({}),

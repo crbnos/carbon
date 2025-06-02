@@ -143,7 +143,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           customer={customer.data}
           locale={locale}
           meta={{
-            author: "CarbonOS",
+            author: "Carbon",
             keywords: "packing slip",
             subject: "Packing Slip",
           }}
@@ -255,7 +255,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           customer={customer.data}
           locale={locale}
           meta={{
-            author: "CarbonOS",
+            author: "Carbon",
             keywords: "packing slip",
             subject: "Packing Slip",
           }}
@@ -359,7 +359,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           customer={supplier.data}
           locale={locale}
           meta={{
-            author: "CarbonOS",
+            author: "Carbon",
             keywords: "packing slip",
             subject: "Packing Slip",
           }}

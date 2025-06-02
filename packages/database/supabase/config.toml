@@ -90,11 +90,11 @@ double_confirm_changes = true
 enable_confirmations = false
 
 [auth.email.template.invite]
-subject = "You have been invited to CarbonOS"
+subject = "You have been invited to Carbon"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
-subject = "Your CarbonOS Magic Link"
+subject = "Your Carbon Magic Link"
 content_path = "./supabase/templates/magic-link.html"
 
 [auth.sms]
