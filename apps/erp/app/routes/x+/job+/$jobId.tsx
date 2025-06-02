@@ -20,6 +20,7 @@ import {
   getJob,
   getJobDocuments,
   getJobMethodTree,
+  getTrackedEntityByJobId,
 } from "~/modules/production";
 import {
   JobBoMExplorer,
@@ -65,6 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     tags: tags.data ?? [],
     files: getJobDocuments(client, companyId, job.data),
+    trackedEntity: getTrackedEntityByJobId(client, jobId),
     method: getJobMethodTree(client, jobId), // returns a promise
     configurationParameters: getConfigurationParameters(
       client,

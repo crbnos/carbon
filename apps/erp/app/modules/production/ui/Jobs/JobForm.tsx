@@ -18,6 +18,7 @@ import {
   useDisclosure,
 } from "@carbon/react";
 import { useState } from "react";
+import { LuDiamond, LuLayers } from "react-icons/lu";
 import type { z } from "zod";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
@@ -216,11 +217,17 @@ const JobForm = ({ initialValues }: JobFormProps) => {
   return (
     <>
       <Tabs defaultValue="job">
-        <VStack className="w-full items-center">
+        <VStack className="w-full items-center relative">
           {!isEditing && (
-            <TabsList className="bg-background/30">
-              <TabsTrigger value="job">Single Job</TabsTrigger>
-              <TabsTrigger value="bulk">Many Jobs</TabsTrigger>
+            <TabsList className="absolute top-10 right-8 z-50">
+              <TabsTrigger value="job">
+                <LuDiamond className="mr-1" />
+                Single Job
+              </TabsTrigger>
+              <TabsTrigger value="bulk">
+                <LuLayers className="mr-1" />
+                Many Jobs
+              </TabsTrigger>
             </TabsList>
           )}
 

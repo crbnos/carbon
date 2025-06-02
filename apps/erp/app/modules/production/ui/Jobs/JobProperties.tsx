@@ -8,8 +8,8 @@ import {
   VStack,
   toast,
 } from "@carbon/react";
-import { useFetcher, useParams } from "@remix-run/react";
-import { useCallback, useEffect, useState } from "react";
+import { Await, useFetcher, useParams } from "@remix-run/react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { LuBox, LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { action } from "~/routes/x+/items+/update";
@@ -17,10 +17,12 @@ import type { action } from "~/routes/x+/items+/update";
 import type { Json } from "@carbon/database";
 import {
   DatePicker,
+  InputControlled,
   NumberControlled,
   Select,
   ValidatedForm,
 } from "@carbon/form";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import { RiProgress8Line } from "react-icons/ri";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -33,6 +35,7 @@ import {
   UnitOfMeasure,
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import type { TrackedEntity } from "~/modules/inventory/types";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -47,6 +50,7 @@ const JobProperties = () => {
   const routeData = useRouteData<{
     job: Job;
     tags: { name: string }[];
+    trackedEntity: Promise<PostgrestSingleResponse<TrackedEntity>>;
   }>(path.to.job(jobId));
 
   const fetcher = useFetcher<typeof action>();
@@ -115,6 +119,21 @@ const JobProperties = () => {
     [jobId]
   );
 
+  const onUpdateBatchNumber = useCallback(
+    (trackedEntityId: string, value: string) => {
+      const formData = new FormData();
+
+      formData.append("id", trackedEntityId);
+      formData.append("value", value);
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.jobBatchNumber(jobId),
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
   const permissions = usePermissions();
   const optimisticAssignment = useOptimisticAssignment({
     id: jobId,
@@ -180,6 +199,48 @@ const JobProperties = () => {
       </VStack>
 
       <VStack spacing={2}>
+        <Suspense fallback={null}>
+          <Await resolve={routeData?.trackedEntity}>
+            {(trackedEntity) => {
+              const trackingType = routeData?.job?.itemTrackingType ?? "";
+              const batchNumber: string =
+                // @ts-ignore
+                trackedEntity?.data?.attributes?.["Batch Number"]?.toString() ??
+                "";
+              if (!["Batch", "Serial"].includes(trackingType)) {
+                return null;
+              }
+              return (
+                <>
+                  <ValidatedForm
+                    defaultValues={{
+                      batchNumber,
+                    }}
+                    validator={z.object({
+                      batchNumber: zfd.text(z.string().optional()),
+                    })}
+                    className="w-full"
+                  >
+                    <InputControlled
+                      name="batchNumber"
+                      label={`${trackingType} Number`}
+                      value={batchNumber}
+                      size="sm"
+                      inline
+                      onBlur={(e) => {
+                        onUpdateBatchNumber(
+                          trackedEntity?.data?.id ?? "",
+                          e.target.value
+                        );
+                      }}
+                    />
+                  </ValidatedForm>
+                </>
+              );
+            }}
+          </Await>
+        </Suspense>
+
         <span className="text-xs text-muted-foreground">Target</span>
         {routeData?.job?.customerId &&
         routeData?.job?.salesOrderId &&

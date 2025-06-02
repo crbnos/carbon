@@ -12,6 +12,7 @@ interface JobTravelerProps extends PDF {
   jobOperations: Database["public"]["Tables"]["jobOperation"]["Row"][];
   customer: Database["public"]["Tables"]["customer"]["Row"] | null;
   item: Database["public"]["Tables"]["item"]["Row"];
+  batchNumber: string | undefined;
   notes?: JSONContent;
 }
 
@@ -46,10 +47,17 @@ const JobTravelerPDF = ({
   jobOperations,
   customer,
   item,
+  batchNumber,
   meta,
   notes,
   title = "Job Traveler",
 }: JobTravelerProps) => {
+  const subtitle = batchNumber
+    ? batchNumber
+    : item.name ?? item.readableIdWithRevision;
+  const tertiaryTitle = batchNumber
+    ? `${item.name ?? item.readableIdWithRevision}`
+    : undefined;
   return (
     <Template
       title={title}
@@ -64,8 +72,8 @@ const JobTravelerPDF = ({
         <View style={tw("mb-6")}>
           <Header
             title={job.jobId}
-            subtitle={item.readableIdWithRevision}
-            tertiaryTitle={item.name}
+            subtitle={subtitle}
+            tertiaryTitle={tertiaryTitle}
             company={company}
           />
           {/* Subheader with Make Method Information */}

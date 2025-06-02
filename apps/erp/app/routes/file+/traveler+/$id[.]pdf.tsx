@@ -7,6 +7,7 @@ import {
   getJob,
   getJobMakeMethodById,
   getJobOperationsByMethodId,
+  getTrackedEntityByJobId,
 } from "~/modules/production/production.service";
 import { getCompany } from "~/modules/settings";
 import { getLocale } from "~/utils/request";
@@ -66,6 +67,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load item");
   }
 
+  let batchNumber: string | undefined;
+  if (["Batch", "Serial"].includes(item.data.itemTrackingType)) {
+    const trackedEntity = await getTrackedEntityByJobId(client, job.data.id!);
+    if (trackedEntity.error) {
+      console.error(trackedEntity.error);
+      throw new Error("Failed to load tracked entity");
+    }
+    // @ts-ignore
+    batchNumber = trackedEntity.data?.attributes["Batch Number"] as string;
+  }
+
   // Get job notes if they exist
   const jobNotes = job.data.notes as JSONContent | undefined;
 
@@ -79,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       jobOperations={jobOperations.data}
       customer={customer.data}
       item={item.data}
+      batchNumber={batchNumber}
       locale={locale}
       meta={{
         author: "CarbonOS",

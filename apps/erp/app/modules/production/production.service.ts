@@ -768,6 +768,31 @@ export async function getScrapReasons(
   return query;
 }
 
+export async function getTrackedEntityByJobId(
+  client: SupabaseClient<Database>,
+  jobId: string
+) {
+  const jobMakeMethod = await client
+    .from("jobMakeMethod")
+    .select("*")
+    .eq("jobId", jobId)
+    .is("parentMaterialId", null)
+    .single();
+  if (jobMakeMethod.error) {
+    return {
+      data: null,
+      error: jobMakeMethod.error,
+    };
+  }
+
+  return client
+    .from("trackedEntity")
+    .select("*")
+    .eq("attributes ->> Job Make Method", jobMakeMethod.data.id)
+    .eq("companyId", jobMakeMethod.data.companyId)
+    .single();
+}
+
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
   params: {
@@ -813,6 +838,36 @@ export async function recalculateJobMakeMethodRequirements(
       ...params,
     },
   });
+}
+
+export async function updateJobBatchNumber(
+  client: SupabaseClient<Database>,
+  trackedEntityId: string,
+  value: string
+) {
+  const currentAttributes = await client
+    .from("trackedEntity")
+    .select("id, attributes")
+    .eq("id", trackedEntityId)
+    .single();
+  if (currentAttributes.error) {
+    return currentAttributes;
+  }
+
+  if (typeof currentAttributes.data?.attributes !== "object") {
+    return { error: new Error("Attributes is not an object") };
+  }
+
+  return client
+    .from("trackedEntity")
+    .update({
+      attributes: {
+        ...currentAttributes.data?.attributes,
+        "Batch Number": value,
+      },
+    })
+    .eq("id", currentAttributes.data.id)
+    .select("id, attributes");
 }
 
 export async function updateJobStatus(
