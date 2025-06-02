@@ -19,7 +19,10 @@ export type DB = {
 
 export function getConnectionPool(connections: number) {
   const url = Deno.env.get("SUPABASE_DB_URL")!;
-  const connectionPoolerUrl = url.replace("5432", "6543");
+
+  const connectionPoolerUrl = url.includes("supabase.co")
+    ? url.replace("5432", "6543")
+    : url;
   return new Pool(connectionPoolerUrl, connections);
 }
 

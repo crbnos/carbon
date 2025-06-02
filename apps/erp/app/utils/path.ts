@@ -721,6 +721,7 @@ export const path = {
     newAttributeForCategory: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}/new`),
     newBatch: `${x}/inventory/batches/new`,
+    newBulkJob: `${x}/job/bulk/new`,
     newChartOfAccount: `${x}/accounting/charts/new`,
     newCompany: `${x}/settings/company/new`,
     newConsumable: `${x}/consumable/new`,

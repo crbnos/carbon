@@ -125,7 +125,7 @@ export default function JobNewRoute() {
     itemType: "Item" as MethodItemType,
     jobId: undefined,
     locationId: defaults?.locationId ?? "",
-    quantity: 0,
+    quantity: 1,
     scrapQuantity: 0,
     status: "Draft" as const,
     unitOfMeasureCode: "EA",

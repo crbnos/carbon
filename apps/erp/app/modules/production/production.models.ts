@@ -76,6 +76,62 @@ const baseJobValidator = z.object({
   configuration: z.any().optional(),
 });
 
+export const bulkJobValidator = z
+  .object({
+    itemId: z.string().min(1, { message: "Item is required" }),
+    totalQuantity: zfd.numeric(z.number().min(0)),
+    quantityPerJob: zfd.numeric(z.number().min(0)),
+    scrapQuantityPerJob: zfd.numeric(z.number().min(0)),
+    unitOfMeasureCode: z
+      .string()
+      .min(1, { message: "Unit of measure is required" }),
+    deadlineType: z.enum(deadlineTypes, {
+      errorMap: () => ({ message: "Deadline type is required" }),
+    }),
+    dueDateOfFirstJob: zfd.text(z.string().optional()),
+    dueDateOfLastJob: zfd.text(z.string().optional()),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    customerId: zfd.text(z.string().optional()),
+    modelUploadId: zfd.text(z.string().optional()),
+    configuration: z.any().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.dueDateOfFirstJob && data.dueDateOfLastJob) {
+        return data.dueDateOfFirstJob <= data.dueDateOfLastJob;
+      }
+      return true;
+    },
+    {
+      message: "Due date of first job must be before due date of last job",
+      path: ["dueDateOfLastJob"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (["Hard Deadline", "Soft Deadline"].includes(data.deadlineType)) {
+        return !!data.dueDateOfFirstJob;
+      }
+      return true;
+    },
+    {
+      message: "Due date of first job is required for hard and soft deadlines",
+      path: ["dueDateOfFirstJob"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (["Hard Deadline", "Soft Deadline"].includes(data.deadlineType)) {
+        return !!data.dueDateOfLastJob;
+      }
+      return true;
+    },
+    {
+      message: "Due date of last job is required for hard and soft deadlines",
+      path: ["dueDateOfLastJob"],
+    }
+  );
+
 export const jobValidator = baseJobValidator.refine(
   (data) => {
     if (
