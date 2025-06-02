@@ -67,13 +67,32 @@ export async function action({ request }: ActionFunctionArgs) {
     const startDate = toCalendarDateTime(parseDateTime(dueDateOfFirstJob));
     const endDate = toCalendarDateTime(parseDateTime(dueDateOfLastJob));
     const daysBetween = endDate.compare(startDate);
-    const daysPerJob = Math.floor(daysBetween / (jobs - 1));
 
-    dueDateDistribution = Array.from({ length: jobs }, (_, i) => {
-      if (i === jobs - 1) return dueDateOfLastJob;
-      const jobDate = startDate.add({ days: i * daysPerJob });
-      return jobDate.toString();
-    });
+    // Determine if we have multiple jobs per day or multiple days per job
+    const jobsPerDay = (jobs - 1) / daysBetween;
+    const daysPerJob = daysBetween / (jobs - 1);
+
+    if (jobsPerDay >= 1) {
+      // Multiple jobs per day - distribute jobs evenly across days
+      let cumulativeJobs = 0;
+      dueDateDistribution = Array.from({ length: jobs }, (_, i) => {
+        if (i === jobs - 1) return dueDateOfLastJob;
+
+        cumulativeJobs += 1;
+        const dayOffset = Math.floor(cumulativeJobs / jobsPerDay);
+        const jobDate = startDate.add({ days: dayOffset });
+        return jobDate.toString();
+      });
+    } else {
+      // Multiple days per job - distribute days evenly across jobs
+      dueDateDistribution = Array.from({ length: jobs }, (_, i) => {
+        if (i === jobs - 1) return dueDateOfLastJob;
+
+        const dayOffset = Math.floor(i * daysPerJob);
+        const jobDate = startDate.add({ days: dayOffset });
+        return jobDate.toString();
+      });
+    }
   }
 
   for await (const [i] of Array.from({ length: jobs }, (_, i) => [i])) {
