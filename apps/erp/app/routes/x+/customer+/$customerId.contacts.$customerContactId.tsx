@@ -129,6 +129,7 @@ export default function EditCustomerContactRoute() {
     homePhone: contact?.contact?.homePhone ?? "",
     workPhone: contact?.contact?.workPhone ?? "",
     fax: contact?.contact?.fax ?? "",
+    notes: contact?.contact?.notes ?? "",
     customerLocationId: contact?.customerLocationId ?? "",
     ...getCustomFields(contact?.customFields),
   };

@@ -130,6 +130,7 @@ export default function EditSupplierContactRoute() {
     workPhone: contact?.contact?.workPhone ?? "",
     fax: contact?.contact?.fax ?? "",
     supplierLocationId: contact?.supplierLocationId ?? "",
+    notes: contact?.contact?.notes ?? "",
     ...getCustomFields(contact?.customFields),
   };
 
