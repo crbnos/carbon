@@ -1,9 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Menubar, VStack } from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
+import { Suspense } from "react";
 import CadModel from "~/components/CadModel";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
@@ -56,20 +57,23 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Tool" revisions={[]} />
+      <Suspense fallback={<Menubar />}>
+        <Await resolve={itemRouteData?.makeMethods}>
+          {(makeMethods) => (
+            <MakeMethodTools
+              itemId={manufacturingRouteData?.makeMethod.itemId}
+              makeMethods={makeMethods?.data ?? []}
+              type="Tool"
+            />
+          )}
+        </Await>
+      </Suspense>
 
       <BillOfProcess
         key={`bop:${itemId}`}
         makeMethodId={makeMethodId}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
-        // configurable={
-        //   manufacturingRouteData?.toolManufacturing.requiresConfiguration
-        // }
-        // configurationRules={manufacturingRouteData?.configurationRules}
-        // parameters={
-        //   manufacturingRouteData?.configurationParametersAndGroups.parameters
-        // }
         tags={tags}
       />
       <BillOfMaterial
@@ -79,13 +83,6 @@ export default function MakeMethodRoute() {
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations}
-        // configurable={
-        //   manufacturingRouteData?.toolManufacturing.requiresConfiguration
-        // }
-        // configurationRules={manufacturingRouteData?.configurationRules}
-        // parameters={
-        //   manufacturingRouteData?.configurationParametersAndGroups.parameters
-        // }
       />
 
       <CadModel

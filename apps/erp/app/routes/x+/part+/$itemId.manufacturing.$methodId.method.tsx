@@ -2,11 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Menubar, VStack } from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import type { z } from "zod";
 import CadModel from "~/components/CadModel";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -35,8 +36,6 @@ import {
 import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-// loader
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -132,7 +131,17 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Part" revisions={[]} />
+      <Suspense fallback={<Menubar />}>
+        <Await resolve={itemRouteData?.makeMethods}>
+          {(makeMethods) => (
+            <MakeMethodTools
+              itemId={manufacturingRouteData?.makeMethod.itemId}
+              makeMethods={makeMethods?.data ?? []}
+              type="Part"
+            />
+          )}
+        </Await>
+      </Suspense>
       <PartManufacturingForm
         key={itemId}
         // @ts-ignore

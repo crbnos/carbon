@@ -37,6 +37,7 @@ import { getLinkToItemDetails } from "./ItemForm";
 type BoMExplorerProps = {
   itemType: MethodItemType;
   makeMethodId: string;
+  makeMethodVersion: string;
   methods: FlatTreeItem<Method>[];
   selectedId?: string;
 };
@@ -44,6 +45,7 @@ type BoMExplorerProps = {
 const BoMExplorer = ({
   itemType,
   makeMethodId,
+  makeMethodVersion,
   methods,
   selectedId,
 }: BoMExplorerProps) => {
@@ -232,7 +234,7 @@ const BoMExplorer = ({
                     <div className="flex items-center gap-1">
                       {node.data.isRoot ? (
                         <Badge variant="outline" className="text-xs">
-                          Method
+                          V{makeMethodVersion}
                         </Badge>
                       ) : (
                         <NodeData node={node} />

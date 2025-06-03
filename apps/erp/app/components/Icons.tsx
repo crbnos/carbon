@@ -106,7 +106,7 @@ export const MethodIcon = ({
 };
 
 type MethodBadgeProps = {
-  type: "Buy" | "Make" | "Pick";
+  type: "Buy" | "Make" | "Pick" | "Make Inactive";
   text: string;
   to: string;
   className?: string;
@@ -118,7 +118,10 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   return (
     <HStack className="group" spacing={1}>
       <Badge style={style} className={className}>
-        <MethodIcon type={type} className="w-3 h-3 mr-1 " />
+        <MethodIcon
+          type={type === "Make Inactive" ? "Make" : type}
+          className="w-3 h-3 mr-1 "
+        />
         {text}
       </Badge>
       <Link
@@ -132,11 +135,16 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   );
 }
 
-function getReplenishmentBadgeColor(type: MethodType, mode: "light" | "dark") {
+function getReplenishmentBadgeColor(
+  type: MethodType | "Make Inactive",
+  mode: "light" | "dark"
+) {
   return type === "Buy"
     ? getColor("blue", mode)
     : type === "Make"
     ? getColor("green", mode)
+    : type === "Make Inactive"
+    ? getColor("gray", mode)
     : getColor("orange", mode);
 }
 

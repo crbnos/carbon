@@ -147,6 +147,7 @@ export default function ToolManufacturing() {
               <BoMExplorer
                 itemType="Tool"
                 makeMethodId={makeMethod.id}
+                makeMethodVersion={makeMethod.version.toString()}
                 // @ts-ignore
                 methods={methods}
               />

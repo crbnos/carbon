@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import { Menubar, VStack } from "@carbon/react";
 import {
   Await,
   defer,
@@ -17,6 +17,7 @@ import { CadModel } from "~/components";
 import { usePermissions } from "~/hooks/usePermissions";
 import {
   getMakeMethodById,
+  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
 } from "~/modules/items";
@@ -105,6 +106,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
     model: getModelByItemId(client, makeMethod.data.itemId),
+    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
     tags: tags.data ?? [],
   });
 }
@@ -112,7 +114,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function MethodMaterialMakePage() {
   const loaderData = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { makeMethod, methodMaterials, methodOperations, tags } = loaderData;
+  const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
+    loaderData;
 
   const { itemId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -120,7 +123,17 @@ export default function MethodMaterialMakePage() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={makeMethod.itemId} type="Tool" />
+      <Suspense fallback={<Menubar />}>
+        <Await resolve={makeMethods}>
+          {(makeMethods) => (
+            <MakeMethodTools
+              itemId={makeMethod.itemId}
+              makeMethods={makeMethods.data ?? []}
+              type="Tool"
+            />
+          )}
+        </Await>
+      </Suspense>
 
       <BillOfProcess
         key={`bop:${itemId}`}

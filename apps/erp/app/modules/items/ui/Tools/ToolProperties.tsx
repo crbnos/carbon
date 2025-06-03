@@ -347,14 +347,19 @@ const ToolProperties = () => {
           <Suspense fallback={null}>
             <Await resolve={routeData?.makeMethods}>
               {(makeMethods) =>
-                makeMethods.data?.map((method) => (
-                  <MethodBadge
-                    key={method.id}
-                    type="Make"
-                    text={`Revision ${method.revision}`}
-                    to={path.to.partMakeMethod(itemId, method.id)}
-                  />
-                ))
+                makeMethods.data?.map((method) => {
+                  const isActive =
+                    method.status === "Active" ||
+                    makeMethods.data?.length === 1;
+                  return (
+                    <MethodBadge
+                      key={method.id}
+                      type={isActive ? "Make" : "Make Inactive"}
+                      text={`Version ${method.version}`}
+                      to={path.to.partMakeMethod(itemId, method.id)}
+                    />
+                  );
+                })
               }
             </Await>
           </Suspense>

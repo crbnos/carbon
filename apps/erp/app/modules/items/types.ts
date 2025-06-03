@@ -12,7 +12,7 @@ import type {
   getItemPostingGroupsList,
   getItemQuantities,
   getItemShelfQuantities,
-  getMakeMethod,
+  getMakeMethods,
   getMaterial,
   getMaterialForms,
   getMaterialSubstances,
@@ -99,8 +99,8 @@ export type ItemReplenishmentSystem =
   Database["public"]["Enums"]["itemReplenishmentSystem"];
 
 export type MakeMethod = NonNullable<
-  Awaited<ReturnType<typeof getMakeMethod>>["data"]
->;
+  Awaited<ReturnType<typeof getMakeMethods>>["data"]
+>[number];
 
 export type Material = NonNullable<
   Awaited<ReturnType<typeof getMaterials>>["data"]

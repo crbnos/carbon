@@ -8,7 +8,6 @@ import {
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   HStack,
@@ -22,39 +21,47 @@ import {
   ModalHeader,
   ModalTitle,
   VStack,
+  cn,
   toast,
   useDisclosure,
 } from "@carbon/react";
-import { Link, useFetcher } from "@remix-run/react";
+import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import {
+  LuCheck,
   LuChevronDown,
   LuCirclePlus,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
-  LuGitPullRequestArrow,
   LuTriangleAlert,
 } from "react-icons/lu";
+import { RxCodesandboxLogo } from "react-icons/rx";
 import { Hidden, Item } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getMethodValidator } from "../../items.models";
+import type { MakeMethod } from "../../types";
+import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
+import MakeMethodVersionStatus from "./MakeMethodVersionStatus";
 
 type MakeMethodToolsProps = {
   itemId: string;
   type: MethodItemType;
-  revisions: {
-    id: string;
-    name: string;
-  }[];
+  makeMethods: MakeMethod[];
 };
 
-const MakeMethodTools = ({ itemId, revisions, type }: MakeMethodToolsProps) => {
+const MakeMethodTools = ({
+  itemId,
+  makeMethods,
+  type,
+}: MakeMethodToolsProps) => {
   const permissions = usePermissions();
   const fetcher = useFetcher<{ error: string | null }>();
+  const params = useParams();
+  const { methodId, makeMethodId } = params;
 
   const isGetMethodLoading =
     fetcher.state !== "idle" && fetcher.formAction === path.to.makeMethodGet;
@@ -73,6 +80,9 @@ const MakeMethodTools = ({ itemId, revisions, type }: MakeMethodToolsProps) => {
   const saveMethodModal = useDisclosure();
   const newVersionDisclosure = useDisclosure();
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
+
+  const activeVersion =
+    makeMethods.find((m) => m.id === methodId) ?? makeMethods[0];
 
   return (
     <>
@@ -112,10 +122,10 @@ const MakeMethodTools = ({ itemId, revisions, type }: MakeMethodToolsProps) => {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                leftIcon={<LuGitPullRequestArrow />}
+                leftIcon={<RxCodesandboxLogo />}
                 rightIcon={<LuChevronDown />}
               >
-                Versions
+                Version {activeVersion.version}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -125,19 +135,34 @@ const MakeMethodTools = ({ itemId, revisions, type }: MakeMethodToolsProps) => {
                   New Version
                 </DropdownMenuItem>
               )}
-              {revisions && revisions.length > 0 && (
+              {makeMethods && makeMethods.length > 0 && (
                 <>
-                  <DropdownMenuLabel>Version History</DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  {revisions.map((revision) => (
-                    <Link
-                      key={revision.id}
-                      to={path.to.procedure(revision.id)}
-                      className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    >
-                      {revision.name}
-                    </Link>
-                  ))}
+                  {makeMethods.map((makeMethod) => {
+                    const isCurrent =
+                      (makeMethod.id === methodId &&
+                        makeMethodId === undefined) ||
+                      makeMethod.id === makeMethodId;
+                    return (
+                      <Link
+                        key={makeMethod.id}
+                        to={getPathToMakeMethod(type, itemId, makeMethod.id)}
+                        className="relative flex gap-4 justify-between cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LuCheck className={cn(!isCurrent && "opacity-0")} />
+                          <span>Version {makeMethod.version}</span>
+                        </div>
+                        <MakeMethodVersionStatus
+                          status={makeMethod.status}
+                          isActive={
+                            makeMethod.status === "Active" ||
+                            makeMethods.length === 1
+                          }
+                        />
+                      </Link>
+                    );
+                  })}
                 </>
               )}
             </DropdownMenuContent>
