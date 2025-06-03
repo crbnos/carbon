@@ -11054,9 +11054,11 @@ export type Database = {
           customFields: Json | null
           id: string
           itemId: string
+          status: Database["public"]["Enums"]["makeMethodStatus"]
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
+          version: number
         }
         Insert: {
           companyId: string
@@ -11065,9 +11067,11 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId: string
+          status?: Database["public"]["Enums"]["makeMethodStatus"]
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Update: {
           companyId?: string
@@ -11076,9 +11080,11 @@ export type Database = {
           customFields?: Json | null
           id?: string
           itemId?: string
+          status?: Database["public"]["Enums"]["makeMethodStatus"]
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -36579,14 +36585,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -40137,14 +40143,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -44070,6 +44076,7 @@ export type Database = {
         | "Credit Memo"
         | "Blanket Order"
         | "Return Order"
+      makeMethodStatus: "Draft" | "Active" | "Archived"
       methodOperationOrder: "After Previous" | "With Previous"
       methodType: "Buy" | "Make" | "Pick"
       module:

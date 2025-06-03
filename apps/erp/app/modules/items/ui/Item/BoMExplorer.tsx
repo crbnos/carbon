@@ -88,8 +88,9 @@ const BoMExplorer = ({
   const navigate = useNavigate();
   const location = useOptimisticLocation();
 
-  const { itemId } = params;
+  const { itemId, methodId } = params;
   if (!itemId) throw new Error("itemId not found");
+  if (!methodId) throw new Error("methodId not found");
 
   const [selectedMaterialId, setSelectedMaterialId] = useBom();
   useMount(() => {
@@ -149,8 +150,11 @@ const BoMExplorer = ({
                     selectNode(node.id);
                     setSelectedMaterialId(node.data.methodMaterialId);
                     if (node.data.isRoot) {
-                      if (location.pathname !== getRootLink(itemType, itemId)) {
-                        navigate(getRootLink(itemType, itemId));
+                      if (
+                        location.pathname !==
+                        getRootLink(itemType, itemId, methodId)
+                      ) {
+                        navigate(getRootLink(itemType, itemId, methodId));
                       }
                     } else {
                       if (
@@ -158,6 +162,7 @@ const BoMExplorer = ({
                         getMaterialLink(
                           itemType,
                           itemId,
+                          methodId,
                           node.data.methodType === "Make"
                             ? node.data.materialMakeMethodId
                             : node.data.makeMethodId
@@ -167,6 +172,7 @@ const BoMExplorer = ({
                           getMaterialLink(
                             itemType,
                             itemId,
+                            methodId,
                             node.data.methodType === "Make"
                               ? node.data.materialMakeMethodId
                               : node.data.makeMethodId
@@ -372,12 +378,16 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
   );
 }
 
-function getRootLink(itemType: MethodItemType, itemId: string) {
+function getRootLink(
+  itemType: MethodItemType,
+  itemId: string,
+  methodId: string
+) {
   switch (itemType) {
     case "Part":
-      return path.to.partMakeMethod(itemId);
+      return path.to.partMakeMethod(itemId, methodId);
     case "Tool":
-      return path.to.toolMakeMethod(itemId);
+      return path.to.toolMakeMethod(itemId, methodId);
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }
@@ -386,13 +396,14 @@ function getRootLink(itemType: MethodItemType, itemId: string) {
 function getMaterialLink(
   itemType: MethodItemType,
   itemId: string,
+  methodId: string,
   makeMethodId: string
 ) {
   switch (itemType) {
     case "Part":
-      return path.to.partManufacturingMaterial(itemId, makeMethodId);
+      return path.to.partManufacturingMaterial(itemId, methodId, makeMethodId);
     case "Tool":
-      return path.to.toolManufacturingMaterial(itemId, makeMethodId);
+      return path.to.toolManufacturingMaterial(itemId, methodId, makeMethodId);
     default:
       throw new Error(`Unimplemented BoMExplorer itemType: ${itemType}`);
   }

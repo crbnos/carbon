@@ -22,7 +22,7 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
-  getMakeMethods,
+  getMakeMethodById,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
@@ -37,14 +37,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bypassRls: true,
   });
 
-  const { itemId } = params;
+  const { itemId, methodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const makeMethod = await getMakeMethodById(client, methodId, companyId);
 
   if (makeMethod.error) {
     throw redirect(
-      path.to.partDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(makeMethod.error, "Failed to load make method")

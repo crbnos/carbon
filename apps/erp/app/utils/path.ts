@@ -883,12 +883,20 @@ export const path = {
     partInventory: (id: string) => generatePath(`${x}/part/${id}/inventory`),
     partInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/inventory?location=${locationId}`),
-    partMakeMethod: (id: string) =>
-      generatePath(`${x}/part/${id}/manufacturing/method`),
+    partMethod: (id: string, methodId: string) =>
+      generatePath(`${x}/part/${id}/manufacturing/${methodId}`),
+    partMakeMethod: (id: string, methodId: string) =>
+      generatePath(`${x}/part/${id}/manufacturing/${methodId}/method`),
     partManufacturing: (id: string) =>
       generatePath(`${x}/part/${id}/manufacturing`),
-    partManufacturingMaterial: (itemId: string, makeMethodId: string) =>
-      generatePath(`${x}/part/${itemId}/manufacturing/${makeMethodId}`),
+    partManufacturingMaterial: (
+      itemId: string,
+      methodId: string,
+      makeMethodId: string
+    ) =>
+      generatePath(
+        `${x}/part/${itemId}/manufacturing/${methodId}/${makeMethodId}`
+      ),
     partPlanning: (id: string) => generatePath(`${x}/part/${id}/planning`),
     partPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/part/${id}/planning?location=${locationId}`),
@@ -1177,12 +1185,20 @@ export const path = {
     toolInventory: (id: string) => generatePath(`${x}/tool/${id}/inventory`),
     toolInventoryLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/inventory?location=${locationId}`),
-    toolMakeMethod: (id: string) =>
-      generatePath(`${x}/tool/${id}/manufacturing/method`),
+    toolMethod: (id: string, methodId: string) =>
+      generatePath(`${x}/tool/${id}/manufacturing/${methodId}`),
+    toolMakeMethod: (id: string, methodId: string) =>
+      generatePath(`${x}/tool/${id}/manufacturing/${methodId}/method`),
     toolManufacturing: (id: string) =>
       generatePath(`${x}/tool/${id}/manufacturing`),
-    toolManufacturingMaterial: (itemId: string, makeMethodId: string) =>
-      generatePath(`${x}/tool/${itemId}/manufacturing/${makeMethodId}`),
+    toolManufacturingMaterial: (
+      itemId: string,
+      methodId: string,
+      makeMethodId: string
+    ) =>
+      generatePath(
+        `${x}/tool/${itemId}/manufacturing/${methodId}/${makeMethodId}`
+      ),
     toolPlanning: (id: string) => generatePath(`${x}/tool/${id}/planning`),
     toolPlanningLocation: (id: string, locationId: string) =>
       generatePath(`${x}/tool/${id}/planning?location=${locationId}`),

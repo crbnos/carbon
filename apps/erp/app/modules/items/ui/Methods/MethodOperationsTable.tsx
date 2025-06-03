@@ -30,7 +30,9 @@ const MethodOperationsTable = memo(
                 // @ts-ignore
                 row.original.makeMethod?.item?.type,
                 // @ts-ignore
-                row.original.makeMethod?.item?.id
+                row.original.makeMethod?.item?.id,
+                // @ts-ignore
+                row.original.makeMethod?.id
               )}
               className="max-w-[260px] truncate"
             >

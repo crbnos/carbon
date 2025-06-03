@@ -25,7 +25,7 @@ import {
   getConfigurationParameters,
   getConfigurationRules,
   getItemManufacturing,
-  getMakeMethods,
+  getMakeMethodById,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
@@ -40,18 +40,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bypassRls: true,
   });
 
-  const { itemId } = params;
+  const { itemId, methodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
-  const makeMethods = await getMakeMethods(client, itemId, companyId);
+  const makeMethod = await getMakeMethodById(client, methodId, companyId);
 
-  if (makeMethods.error) {
+  if (makeMethod.error) {
     throw redirect(
       path.to.partDetails(itemId),
       await flash(
         request,
-        error(makeMethods.error, "Failed to load make methods")
+        error(makeMethod.error, "Failed to load make methods")
       )
+    );
+  }
+
+  if (companyId !== makeMethod.data.companyId) {
+    throw redirect(
+      path.to.authenticatedRoot,
+      await flash(request, error("Access denied"))
     );
   }
 

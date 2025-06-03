@@ -17,6 +17,7 @@ import {
   toast,
 } from "@carbon/react";
 import { Await, useFetcher, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect } from "react";
 import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { z } from "zod";
@@ -37,7 +38,13 @@ import {
   itemReplenishmentSystems,
   itemTrackingTypes,
 } from "../../items.models";
-import type { ItemFile, PickMethod, SupplierPart, Tool } from "../../types";
+import type {
+  ItemFile,
+  MakeMethod,
+  PickMethod,
+  SupplierPart,
+  Tool,
+} from "../../types";
 import { FileBadge } from "../Item";
 
 const ToolProperties = () => {
@@ -52,6 +59,7 @@ const ToolProperties = () => {
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
   }>(path.to.tool(itemId));
 
@@ -335,7 +343,22 @@ const ToolProperties = () => {
         <HStack className="w-full justify-between">
           <h3 className="text-xs text-muted-foreground">Methods</h3>
         </HStack>
-
+        {routeData?.toolSummary?.replenishmentSystem?.includes("Make") && (
+          <Suspense fallback={null}>
+            <Await resolve={routeData?.makeMethods}>
+              {(makeMethods) =>
+                makeMethods.data?.map((method) => (
+                  <MethodBadge
+                    key={method.id}
+                    type="Make"
+                    text={`Revision ${method.revision}`}
+                    to={path.to.partMakeMethod(itemId, method.id)}
+                  />
+                ))
+              }
+            </Await>
+          </Suspense>
+        )}
         {routeData?.toolSummary?.replenishmentSystem?.includes("Buy") &&
           supplierParts.map((method) => (
             <MethodBadge

@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
 import { useLoaderData, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import CadModel from "~/components/CadModel";
@@ -19,8 +20,6 @@ import {
 import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
 
-// loader
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -33,20 +32,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function MakeMethodRoute() {
   const permissions = usePermissions();
-  const { itemId } = useParams();
+  const { itemId, methodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
   const { tags } = useLoaderData<typeof loader>();
 
   const itemRouteData = useRouteData<{
     toolSummary: ToolSummary;
-  }>(path.to.part(itemId));
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
+  }>(path.to.tool(itemId));
 
   const manufacturingRouteData = useRouteData<{
     makeMethod: MakeMethod;
     methodMaterials: Material[];
     methodOperations: MethodOperation[];
-  }>(path.to.toolManufacturing(itemId));
+  }>(path.to.toolMethod(itemId, methodId));
 
   if (!manufacturingRouteData) throw new Error("Could not find route data");
 
@@ -55,7 +56,7 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Part" />
+      <MakeMethodTools itemId={itemId} type="Tool" revisions={[]} />
 
       <BillOfProcess
         key={`bop:${itemId}`}
