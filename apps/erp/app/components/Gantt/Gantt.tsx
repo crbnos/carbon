@@ -46,7 +46,7 @@ import type { GanttEvent } from "~/components/Gantt/types";
 import * as Timeline from "~/components/Timeline";
 import type { NodesState, UseTreeStateOutput } from "~/components/TreeView";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
-import { setResizableGanttSettings } from "~/utils/resizablePanel";
+import { setResizableGanttSettings } from "~/utils/resizable-panels";
 import {
   GanttTaskStatusIcon,
   runStatusClassNameColor,

@@ -17,7 +17,7 @@ import { useReplaceLocation } from "~/hooks/useReplaceLocation";
 import {
   getResizableGanttSettings,
   setResizableGanttSettings,
-} from "~/utils/resizablePanel";
+} from "~/utils/resizable-panels";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   await requirePermissions(request, {});

@@ -94,7 +94,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       batchNumber={batchNumber}
       locale={locale}
       meta={{
-        author: "CarbonOS",
+        author: "Carbon",
         keywords: "job traveler, manufacturing",
         subject: "Job Traveler",
       }}

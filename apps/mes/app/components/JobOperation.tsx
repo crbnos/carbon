@@ -228,7 +228,6 @@ export const JobOperation = ({
   trackedEntities,
   workCenter,
 }: JobOperationProps) => {
-  console.log({ job });
   const [params, setParams] = useUrlParams();
 
   const trackedEntityParam = params.get("trackedEntityId");
