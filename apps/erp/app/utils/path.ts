@@ -765,6 +765,7 @@ export const path = {
     newJobOperationParameter: `${x}/job/methods/operation/parameter/new`,
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newLocation: `${x}/resources/locations/new`,
+    newMakeMethodVersion: `${x}/items/methods/version/new`,
     newMaterial: `${x}/material/new`,
     newMethodMaterial: `${x}/items/methods/material/new`,
     newMethodOperation: `${x}/items/methods/operation/new`,

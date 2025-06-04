@@ -3,7 +3,7 @@ import { Status } from "@carbon/react";
 
 type MakeMethodVersionStatusProps = {
   status?: Database["public"]["Enums"]["makeMethodStatus"];
-  isActive: boolean;
+  isActive?: boolean;
 };
 
 const MakeMethodVersionStatus = ({

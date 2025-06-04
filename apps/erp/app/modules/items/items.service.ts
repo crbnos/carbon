@@ -26,6 +26,7 @@ import type {
   itemPurchasingValidator,
   itemUnitSalePriceValidator,
   itemValidator,
+  makeMethodVersionValidator,
   materialFormValidator,
   materialSubstanceValidator,
   materialValidator,
@@ -1956,6 +1957,22 @@ export async function upsertItemUnitSalePrice(
     .from("itemUnitSalePrice")
     .update(sanitize(itemUnitSalePrice))
     .eq("itemId", itemUnitSalePrice.itemId);
+}
+
+export async function upsertMakeMethodVersion(
+  client: SupabaseClient<Database>,
+  makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  console.log(makeMethodVersion);
+  return {
+    data: {
+      id: makeMethodVersion.copyFromId,
+    },
+    error: null,
+  };
 }
 
 export async function upsertMethodMaterial(

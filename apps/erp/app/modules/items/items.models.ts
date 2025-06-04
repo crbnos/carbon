@@ -165,6 +165,13 @@ export const getMethodValidator = z.object({
   sourceId: z.string().min(1, { message: "Please select a source method" }),
 });
 
+export const makeMethodVersionValidator = z.object({
+  copyFromId: z.string().min(1, { message: "Please select a source method" }),
+  version: zfd.numeric(
+    z.number().min(0, { message: "Please enter a version" })
+  ),
+});
+
 export const materialValidator = itemValidator.merge(
   z.object({
     id: z.string().min(1, { message: "Material ID is required" }).max(255),

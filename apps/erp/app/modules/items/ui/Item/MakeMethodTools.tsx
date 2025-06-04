@@ -1,4 +1,4 @@
-import { Submit, ValidatedForm } from "@carbon/form";
+import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
@@ -41,7 +41,10 @@ import { Hidden, Item } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
-import { getMethodValidator } from "../../items.models";
+import {
+  getMethodValidator,
+  makeMethodVersionValidator,
+} from "../../items.models";
 import type { MakeMethod } from "../../types";
 import { getPathToMakeMethod } from "../Methods/utils";
 import { getLinkToItemDetails } from "./ItemForm";
@@ -83,6 +86,7 @@ const MakeMethodTools = ({
 
   const activeVersion =
     makeMethods.find((m) => m.id === methodId) ?? makeMethods[0];
+  const maxVersion = Math.max(...makeMethods.map((m) => m.version));
 
   return (
     <>
@@ -129,12 +133,6 @@ const MakeMethodTools = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {permissions.can("create", "production") && (
-                <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
-                  <DropdownMenuIcon icon={<LuCirclePlus />} />
-                  New Version
-                </DropdownMenuItem>
-              )}
               {makeMethods && makeMethods.length > 0 && (
                 <>
                   <DropdownMenuSeparator />
@@ -163,6 +161,13 @@ const MakeMethodTools = ({
                       </Link>
                     );
                   })}
+                  <DropdownMenuSeparator />
+                  {permissions.can("create", "production") && (
+                    <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
+                      <DropdownMenuIcon icon={<LuCirclePlus />} />
+                      New Version
+                    </DropdownMenuItem>
+                  )}
                 </>
               )}
             </DropdownMenuContent>
@@ -220,7 +225,7 @@ const MakeMethodTools = ({
                     </label>
                   </div>
 
-                  <Alert variant="destructive">
+                  <Alert variant="destructive" className="mt-4">
                     <LuTriangleAlert className="h-4 w-4" />
                     <AlertTitle>
                       This will overwrite the existing manufacturing method
@@ -295,6 +300,70 @@ const MakeMethodTools = ({
                   Cancel
                 </Button>
                 <Submit>Confirm</Submit>
+              </ModalFooter>
+            </ValidatedForm>
+          </ModalContent>
+        </Modal>
+      )}
+
+      {newVersionDisclosure.isOpen && (
+        <Modal
+          open
+          onOpenChange={(open) => {
+            if (!open) {
+              newVersionDisclosure.onClose();
+            }
+          }}
+        >
+          <ModalContent>
+            <ValidatedForm
+              method="post"
+              fetcher={fetcher}
+              action={path.to.newMakeMethodVersion}
+              validator={makeMethodVersionValidator}
+              defaultValues={{
+                copyFromId: activeVersion.id,
+                version: maxVersion + 1,
+              }}
+              onSubmit={newVersionDisclosure.onClose}
+            >
+              <ModalHeader>
+                <ModalTitle>New Version</ModalTitle>
+                <ModalDescription>
+                  Create a new version of the manufacturing method
+                </ModalDescription>
+              </ModalHeader>
+              <ModalBody>
+                <Hidden name="copyFromId" />
+                <VStack spacing={4}>
+                  {makeMethods.length == 1 && (
+                    <Alert variant="warning">
+                      <LuTriangleAlert className="h-4 w-4" />
+                      <AlertTitle>
+                        This will set the current version of the make method to{" "}
+                        <MakeMethodVersionStatus status="Active" /> making it
+                        read-only.
+                      </AlertTitle>
+                    </Alert>
+                  )}
+                  <Number
+                    name="version"
+                    label="New Version"
+                    helperText="The new version number of the method"
+                    minValue={maxVersion + 1}
+                    maxValue={100000}
+                    step={1}
+                  />
+                </VStack>
+              </ModalBody>
+              <ModalFooter>
+                <Button
+                  onClick={newVersionDisclosure.onClose}
+                  variant="secondary"
+                >
+                  Cancel
+                </Button>
+                <Submit>Create Version</Submit>
               </ModalFooter>
             </ValidatedForm>
           </ModalContent>
