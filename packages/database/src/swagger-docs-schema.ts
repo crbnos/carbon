@@ -4066,6 +4066,12 @@ export default {
             $ref: "#/parameters/rowFilter.makeMethod.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.makeMethod.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.makeMethod.status",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -4152,6 +4158,12 @@ export default {
             $ref: "#/parameters/rowFilter.makeMethod.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.makeMethod.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.makeMethod.status",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -4190,6 +4202,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.makeMethod.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.makeMethod.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.makeMethod.status",
           },
           {
             $ref: "#/parameters/body.makeMethod",
@@ -56764,7 +56782,15 @@ export default {
       type: "object",
     },
     makeMethod: {
-      required: ["id", "itemId", "companyId", "createdAt", "createdBy"],
+      required: [
+        "id",
+        "itemId",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "version",
+        "status",
+      ],
       properties: {
         id: {
           default: "public.xid()",
@@ -56812,6 +56838,17 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        version: {
+          default: 1,
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."makeMethodStatus"',
+          type: "string",
         },
       },
       type: "object",
@@ -80754,6 +80791,18 @@ export default {
     },
     "rowFilter.makeMethod.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.makeMethod.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.makeMethod.status": {
+      name: "status",
       required: false,
       in: "query",
       type: "string",

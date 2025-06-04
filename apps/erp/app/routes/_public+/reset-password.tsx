@@ -59,14 +59,9 @@ export default function ResetPasswordRoute() {
     <>
       <div>
         <img
-          src="/carbon-logo-dark.png"
+          src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="block dark:hidden max-w-[100px] mb-3"
-        />
-        <img
-          src="/carbon-logo-light.png"
-          alt="Carbon Logo"
-          className="hidden dark:block max-w-[100px] mb-3"
+          className="block max-w-[100px] mb-3"
         />
       </div>
       <div className="rounded-lg bg-card border border-border shadow-lg p-8 w-[380px]">
