@@ -156,7 +156,7 @@ export default function MethodMaterialMakePage() {
 
       <BillOfProcess
         key={`bop:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={makeMethod}
         // @ts-ignore
         operations={methodOperations}
         configurable={routeData?.partManufacturing.requiresConfiguration}
@@ -166,7 +166,7 @@ export default function MethodMaterialMakePage() {
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={makeMethod}
         materials={methodMaterials}
         operations={methodOperations}
         configurable={routeData?.partManufacturing.requiresConfiguration}
@@ -178,7 +178,7 @@ export default function MethodMaterialMakePage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={!permissions.can("update", "parts")}
               metadata={{
                 itemId: model?.itemId ?? undefined,
               }}

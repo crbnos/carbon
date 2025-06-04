@@ -50,6 +50,7 @@ import {
   LuHammer,
   LuInfo,
   LuList,
+  LuLock,
   LuMaximize2,
   LuMinimize2,
   LuSettings2,
@@ -117,7 +118,11 @@ import { ProcedureAttributeTypeIcon } from "~/components/Icons";
 import { useTools } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { methodOperationValidator } from "../../items.models";
-import type { ConfigurationParameter, ConfigurationRule } from "../../types";
+import type {
+  ConfigurationParameter,
+  ConfigurationRule,
+  MakeMethod,
+} from "../../types";
 
 type Operation = z.infer<typeof methodOperationValidator> & {
   workInstruction: JSONContent | null;
@@ -131,7 +136,7 @@ type ItemWithData = Item & {
 type BillOfProcessProps = {
   configurable?: boolean;
   configurationRules?: ConfigurationRule[];
-  makeMethodId: string;
+  makeMethod: MakeMethod;
   operations: (Operation & {
     methodOperationTool: OperationTool[];
     methodOperationParameter: OperationParameter[];
@@ -180,12 +185,18 @@ const initialOperation: Omit<Operation, "makeMethodId" | "order" | "tools"> = {
 const BillOfProcess = ({
   configurable = false,
   configurationRules,
-  makeMethodId,
+  makeMethod,
   operations: initialOperations,
   parameters,
   tags,
 }: BillOfProcessProps) => {
   const permissions = usePermissions();
+  const isReadOnly =
+    permissions.can("update", "parts") === false ||
+    makeMethod.status === "Active";
+
+  const makeMethodId = makeMethod.id;
+
   const { carbon } = useCarbon();
   const sortOrderFetcher = useFetcher<{}>();
   const deleteOperationFetcher = useFetcher<{ success: boolean }>();
@@ -306,7 +317,7 @@ const BillOfProcess = ({
   };
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -314,7 +325,7 @@ const BillOfProcess = ({
   };
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
 
     // Create new order state
     const newOrderState = items.reduce<OrderState>((acc, item, index) => {
@@ -374,7 +385,7 @@ const BillOfProcess = ({
   };
 
   const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
 
     const operation = operationsById.get(id);
     if (!operation) return;
@@ -443,6 +454,7 @@ const BillOfProcess = ({
               }}
             >
               <OperationForm
+                isReadOnly={isReadOnly}
                 configurable={configurable}
                 item={item}
                 rulesByField={rulesByField}
@@ -479,14 +491,14 @@ const BillOfProcess = ({
         content: (
           <div className="flex flex-col">
             <div>
-              {permissions.can("update", "parts") ? (
+              {!isReadOnly ? (
                 <Editor
                   initialValue={
                     workInstructions[item.id] ?? ({} as JSONContent)
                   }
                   onUpload={onUploadImage}
                   onChange={(content) => {
-                    if (!permissions.can("update", "parts")) return;
+                    if (isReadOnly) return;
                     setWorkInstructions((prev) => ({
                       ...prev,
                       [item.id]: content,
@@ -610,6 +622,7 @@ const BillOfProcess = ({
 
     return (
       <SortableListItem<Operation>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -737,16 +750,16 @@ const BillOfProcess = ({
     <Card>
       <HStack className="justify-between">
         <CardHeader>
-          <CardTitle>Bill of Process</CardTitle>
+          <CardTitle className="flex flex-row items-center gap-2">
+            Bill of Process {isReadOnly && <LuLock />}
+          </CardTitle>
         </CardHeader>
 
         <CardAction>
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              isDisabled={
-                !permissions.can("update", "parts") || selectedItemId !== null
-              }
+              isDisabled={isReadOnly || selectedItemId !== null}
               onClick={onAddItem}
             >
               Add Operation
@@ -781,6 +794,7 @@ const BillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
@@ -809,6 +823,7 @@ function isTemporaryId(id: string) {
 
 type OperationFormProps = {
   configurable: boolean;
+  isReadOnly: boolean;
   item: ItemWithData;
   rulesByField: Map<string, ConfigurationRule>;
   workInstruction: JSONContent;
@@ -819,6 +834,7 @@ type OperationFormProps = {
 };
 
 function OperationForm({
+  isReadOnly,
   configurable,
   item,
   rulesByField,
@@ -831,7 +847,7 @@ function OperationForm({
   const methodOperationFetcher = useFetcher<{ id: string }>();
   const { id: userId, company } = useUser();
   const { carbon } = useCarbon();
-  const permissions = usePermissions();
+
   const addingWorkInstruction = useRef(false);
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
@@ -1632,7 +1648,7 @@ function OperationForm({
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
-          <Submit isDisabled={!permissions.can("update", "parts")}>Save</Submit>
+          <Submit isDisabled={isReadOnly}>Save</Submit>
         </motion.div>
       </motion.div>
     </ValidatedForm>

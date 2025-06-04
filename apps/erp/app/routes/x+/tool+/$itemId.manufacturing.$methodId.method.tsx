@@ -71,14 +71,14 @@ export default function MakeMethodRoute() {
 
       <BillOfProcess
         key={`bop:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={manufacturingRouteData?.makeMethod}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
         tags={tags}
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={manufacturingRouteData?.makeMethod}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore
