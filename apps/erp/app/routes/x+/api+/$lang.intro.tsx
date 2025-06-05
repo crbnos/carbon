@@ -16,7 +16,7 @@ export default function Route() {
       <h2 className="doc-heading">Authentication</h2>
       <div className="doc-section">
         <article className="code-column text-foreground">
-          <p>CarbonOS uses API token authentication for the public API.</p>
+          <p>Carbon uses API token authentication for the public API.</p>
           <p>
             First you'll need an <Link to={path.to.apiKeys}>API Key</Link>.
           </p>

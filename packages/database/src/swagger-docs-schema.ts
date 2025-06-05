@@ -25266,6 +25266,84 @@ export default {
         tags: ["customerContact"],
       },
     },
+    "/activeMakeMethods": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.customFields",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.version",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.status",
+          },
+          {
+            $ref: "#/parameters/rowFilter.activeMakeMethods.rn",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/activeMakeMethods",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["activeMakeMethods"],
+      },
+    },
     "/oauthCode": {
       get: {
         parameters: [
@@ -58235,7 +58313,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -58284,7 +58362,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -66544,6 +66622,69 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+      },
+      type: "object",
+    },
+    activeMakeMethods: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          format: "text",
+          type: "string",
+        },
+        customFields: {
+          format: "jsonb",
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        version: {
+          format: "numeric",
+          type: "number",
+        },
+        status: {
+          enum: ["Draft", "Active", "Archived"],
+          format: 'public."makeMethodStatus"',
+          type: "string",
+        },
+        rn: {
+          format: "bigint",
+          type: "integer",
         },
       },
       type: "object",
@@ -91681,6 +91822,87 @@ export default {
     },
     "rowFilter.customerContact.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.activeMakeMethods": {
+      name: "activeMakeMethods",
+      description: "activeMakeMethods",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/activeMakeMethods",
+      },
+    },
+    "rowFilter.activeMakeMethods.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.tags": {
+      name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.activeMakeMethods.rn": {
+      name: "rn",
       required: false,
       in: "query",
       type: "string",

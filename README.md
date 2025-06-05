@@ -1,4 +1,4 @@
-![CarbonOS](https://github.com/user-attachments/assets/664eb49a-f873-49f8-bb6f-95a94ba89f97)
+![Carbon](https://github.com/user-attachments/assets/664eb49a-f873-49f8-bb6f-95a94ba89f97)
 
 Carbon is the open-source operating system for manufacturing.
 

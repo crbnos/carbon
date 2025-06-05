@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { Badge, cn, HStack, Status } from "@carbon/react";
+import { Badge, cn, Status } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
@@ -116,7 +116,7 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
   const style = getReplenishmentBadgeColor(type, mode);
   return (
-    <HStack className="group" spacing={1}>
+    <Link to={to} prefetch="intent" className="group flex items-center gap-1">
       <Badge style={style} className={className}>
         <MethodIcon
           type={type === "Make Inactive" ? "Make" : type}
@@ -124,14 +124,10 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
         />
         {text}
       </Badge>
-      <Link
-        className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-        to={to}
-        prefetch="intent"
-      >
+      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
-      </Link>
-    </HStack>
+      </span>
+    </Link>
   );
 }
 

@@ -167,6 +167,7 @@ export const getMethodValidator = z.object({
 
 export const makeMethodVersionValidator = z.object({
   copyFromId: z.string().min(1, { message: "Please select a source method" }),
+  activeVersionId: zfd.text(z.string().optional()),
   version: zfd.numeric(
     z.number().min(0, { message: "Please enter a version" })
   ),

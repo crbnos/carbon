@@ -75,6 +75,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return defer({
+    makeMethod: makeMethod.data,
     materials:
       materials?.data.map((m) => ({
         ...m,

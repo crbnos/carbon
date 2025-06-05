@@ -193,7 +193,7 @@ const BillOfProcess = ({
   const permissions = usePermissions();
   const isReadOnly =
     permissions.can("update", "parts") === false ||
-    makeMethod.status === "Active";
+    makeMethod.status !== "Draft";
 
   const makeMethodId = makeMethod.id;
 
@@ -550,7 +550,9 @@ const BillOfProcess = ({
               parameters={parameters}
               operationId={item.id!}
               isDisabled={
-                selectedItemId === null || isTemporaryId(selectedItemId!)
+                isReadOnly ||
+                selectedItemId === null ||
+                isTemporaryId(selectedItemId!)
               }
               configurable={configurable}
               rulesByField={rulesByField}
@@ -588,7 +590,9 @@ const BillOfProcess = ({
               attributes={attributes}
               operationId={item.id!}
               isDisabled={
-                selectedItemId === null || isTemporaryId(selectedItemId!)
+                isReadOnly ||
+                selectedItemId === null ||
+                isTemporaryId(selectedItemId!)
               }
               configurable={configurable}
               rulesByField={rulesByField}
@@ -612,7 +616,9 @@ const BillOfProcess = ({
               tools={tools}
               operationId={item.id!}
               isDisabled={
-                selectedItemId === null || isTemporaryId(selectedItemId!)
+                isReadOnly ||
+                selectedItemId === null ||
+                isTemporaryId(selectedItemId!)
               }
             />
           </div>

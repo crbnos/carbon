@@ -1,8 +1,9 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
+  Badge,
   Button,
   Checkbox,
   HStack,
@@ -44,12 +45,13 @@ import { RiProgress4Line } from "react-icons/ri";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { getMethodValidator } from "../../sales.models";
@@ -154,6 +156,48 @@ const QuoteMakeMethodTools = () => {
       action: path.to.quoteLineConfigure(quoteId, lineId!),
       encType: "application/json",
     });
+  };
+
+  const {
+    company: { id: companyId },
+  } = useUser();
+  const [makeMethods, setMakeMethods] = useState<
+    { label: JSX.Element; value: string }[]
+  >([]);
+  const [selectedMakeMethod, setSelectedMakeMethod] = useState<string | null>(
+    null
+  );
+
+  const getMakeMethods = async (itemId: string) => {
+    setMakeMethods([]);
+    setSelectedMakeMethod(null);
+    if (!carbon) return;
+    const { data, error } = await carbon
+      .from("makeMethod")
+      .select("id, version, status")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+
+    if (error) {
+      toast.error(error.message);
+    }
+
+    setMakeMethods(
+      data?.map(({ id, version, status }) => ({
+        label: (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">V{version}</Badge>{" "}
+            <MakeMethodVersionStatus status={status} />
+          </div>
+        ),
+        value: id,
+      })) ?? []
+    );
+
+    if (data?.length === 1) {
+      setSelectedMakeMethod(data[0].id);
+    }
   };
 
   return (
@@ -380,12 +424,40 @@ const QuoteMakeMethodTools = () => {
                 )}
 
                 <VStack spacing={4}>
+                  <Alert variant="destructive">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      This will overwrite the existing manufacturing method and
+                      the latest versions of all subassemblies.
+                    </AlertTitle>
+                  </Alert>
                   <Item
-                    name="targetId"
+                    name="itemId"
                     label="Target Method"
                     type={(line?.itemType ?? "Part") as "Part"}
+                    onChange={(value) => {
+                      if (value) {
+                        getMakeMethods(value?.value);
+                      } else {
+                        setMakeMethods([]);
+                        setSelectedMakeMethod(null);
+                      }
+                    }}
                     includeInactive={includeInactive === true}
                     replenishmentSystem="Make"
+                  />
+                  <SelectControlled
+                    name="targetId"
+                    options={makeMethods}
+                    label="Version"
+                    value={selectedMakeMethod ?? undefined}
+                    onChange={(value) => {
+                      if (value) {
+                        setSelectedMakeMethod(value?.value);
+                      } else {
+                        setSelectedMakeMethod(null);
+                      }
+                    }}
                   />
                   <div className="flex items-center space-x-2">
                     <Checkbox

@@ -2,13 +2,18 @@ import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
+  Badge,
   Button,
   Checkbox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   HStack,
   Menubar,
@@ -27,17 +32,23 @@ import {
 } from "@carbon/react";
 import { Link, useFetcher, useParams } from "@remix-run/react";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import {
   LuCheck,
   LuChevronDown,
   LuCirclePlus,
+  LuCopy,
+  LuEye,
   LuGitBranch,
   LuGitFork,
   LuGitMerge,
+  LuPencil,
+  LuStar,
+  LuTrash,
   LuTriangleAlert,
 } from "react-icons/lu";
-import { RxCodesandboxLogo } from "react-icons/rx";
 import { Hidden, Item } from "~/components/Form";
+import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -81,12 +92,17 @@ const MakeMethodTools = ({
 
   const getMethodModal = useDisclosure();
   const saveMethodModal = useDisclosure();
-  const newVersionDisclosure = useDisclosure();
+  const newVersionModal = useDisclosure();
+  const activeMethodModal = useDisclosure();
   const itemLink = type && itemId ? getLinkToItemDetails(type, itemId) : null;
 
-  const activeVersion =
-    makeMethods.find((m) => m.id === methodId) ?? makeMethods[0];
+  const activeMethodId = makeMethodId ?? methodId;
+  const activeMethod =
+    makeMethods.find((m) => m.id === activeMethodId) ?? makeMethods[0];
+
   const maxVersion = Math.max(...makeMethods.map((m) => m.version));
+  const [selectedVersion, setSelectedVersion] =
+    useState<MakeMethod>(activeMethod);
 
   return (
     <>
@@ -124,46 +140,102 @@ const MakeMethodTools = ({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                leftIcon={<RxCodesandboxLogo />}
-                rightIcon={<LuChevronDown />}
-              >
-                Version {activeVersion.version}
+              <Button variant="ghost" rightIcon={<LuChevronDown />}>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">V{activeMethod.version}</Badge>
+                  <MakeMethodVersionStatus status={activeMethod.status} />
+                </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {makeMethods && makeMethods.length > 0 && (
                 <>
-                  <DropdownMenuSeparator />
-                  {makeMethods.map((makeMethod) => {
-                    const isCurrent =
-                      (makeMethod.id === methodId &&
-                        makeMethodId === undefined) ||
-                      makeMethod.id === makeMethodId;
-                    return (
-                      <Link
-                        key={makeMethod.id}
-                        to={getPathToMakeMethod(type, itemId, makeMethod.id)}
-                        className="relative flex gap-4 justify-between cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                      >
-                        <div className="flex items-center gap-2">
-                          <LuCheck className={cn(!isCurrent && "opacity-0")} />
-                          <span>Version {makeMethod.version}</span>
-                        </div>
-                        <MakeMethodVersionStatus
-                          status={makeMethod.status}
-                          isActive={
-                            makeMethod.status === "Active" ||
-                            makeMethods.length === 1
-                          }
-                        />
-                      </Link>
-                    );
-                  })}
+                  {makeMethods
+                    .sort((a, b) => b.version - a.version)
+                    .map((makeMethod) => {
+                      const isCurrent =
+                        (makeMethod.id === methodId &&
+                          makeMethodId === undefined) ||
+                        makeMethod.id === makeMethodId;
+
+                      const isReadOnly = makeMethod.status !== "Draft";
+
+                      return (
+                        <DropdownMenuSub key={makeMethod.id}>
+                          <DropdownMenuSubTrigger className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                              <LuCheck
+                                className={cn(!isCurrent && "opacity-0")}
+                              />
+                              <span>Version {makeMethod.version}</span>
+                            </div>
+                            <MakeMethodVersionStatus
+                              status={makeMethod.status}
+                              isActive={
+                                makeMethod.status === "Active" ||
+                                makeMethods.length === 1
+                              }
+                            />
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuPortal>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  to={getPathToMakeMethod(
+                                    type,
+                                    itemId,
+                                    makeMethod.id
+                                  )}
+                                >
+                                  <DropdownMenuIcon
+                                    icon={isReadOnly ? <LuEye /> : <LuPencil />}
+                                  />
+                                  {isReadOnly ? "View Version" : "Edit Version"}
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  flushSync(() => {
+                                    setSelectedVersion(makeMethod);
+                                  });
+                                  newVersionModal.onOpen();
+                                }}
+                              >
+                                <DropdownMenuIcon icon={<LuCopy />} />
+                                Copy Version
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                destructive
+                                disabled={
+                                  makeMethod.status === "Active" ||
+                                  !permissions.can("delete", "parts")
+                                }
+                              >
+                                <DropdownMenuIcon icon={<LuTrash />} />
+                                Delete Version
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={makeMethod.status === "Active"}
+                                onClick={() => {
+                                  flushSync(() => {
+                                    setSelectedVersion(makeMethod);
+                                  });
+                                  activeMethodModal.onOpen();
+                                }}
+                              >
+                                <DropdownMenuIcon icon={<LuStar />} />
+                                Set as Active Version
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuPortal>
+                        </DropdownMenuSub>
+                      );
+                    })}
                   <DropdownMenuSeparator />
                   {permissions.can("create", "production") && (
-                    <DropdownMenuItem onClick={newVersionDisclosure.onOpen}>
+                    <DropdownMenuItem onClick={newVersionModal.onOpen}>
                       <DropdownMenuIcon icon={<LuCirclePlus />} />
                       New Version
                     </DropdownMenuItem>
@@ -206,7 +278,6 @@ const MakeMethodTools = ({
                     label="Source Method"
                     type={type}
                     includeInactive={includeInactive}
-                    disabledItems={[itemId]}
                     replenishmentSystem="Make"
                   />
                   <div className="flex items-center space-x-2">
@@ -306,12 +377,12 @@ const MakeMethodTools = ({
         </Modal>
       )}
 
-      {newVersionDisclosure.isOpen && (
+      {newVersionModal.isOpen && (
         <Modal
           open
           onOpenChange={(open) => {
             if (!open) {
-              newVersionDisclosure.onClose();
+              newVersionModal.onClose();
             }
           }}
         >
@@ -319,13 +390,15 @@ const MakeMethodTools = ({
             <ValidatedForm
               method="post"
               fetcher={fetcher}
-              action={path.to.newMakeMethodVersion}
+              action={`${path.to.newMakeMethodVersion}?methodToReplace=${activeMethodId}`}
               validator={makeMethodVersionValidator}
               defaultValues={{
-                copyFromId: activeVersion.id,
+                copyFromId: selectedVersion.id,
+                activeVersionId:
+                  makeMethods.length === 1 ? selectedVersion.id : undefined,
                 version: maxVersion + 1,
               }}
-              onSubmit={newVersionDisclosure.onClose}
+              onSubmit={newVersionModal.onClose}
             >
               <ModalHeader>
                 <ModalTitle>New Version</ModalTitle>
@@ -335,6 +408,7 @@ const MakeMethodTools = ({
               </ModalHeader>
               <ModalBody>
                 <Hidden name="copyFromId" />
+                <Hidden name="activeVersionId" />
                 <VStack spacing={4}>
                   {makeMethods.length == 1 && (
                     <Alert variant="warning">
@@ -357,10 +431,7 @@ const MakeMethodTools = ({
                 </VStack>
               </ModalBody>
               <ModalFooter>
-                <Button
-                  onClick={newVersionDisclosure.onClose}
-                  variant="secondary"
-                >
+                <Button onClick={newVersionModal.onClose} variant="secondary">
                   Cancel
                 </Button>
                 <Submit>Create Version</Submit>
@@ -368,6 +439,23 @@ const MakeMethodTools = ({
             </ValidatedForm>
           </ModalContent>
         </Modal>
+      )}
+
+      {activeMethodModal.isOpen && (
+        <Confirm
+          action={`${path.to.activeMethodVersion(
+            selectedVersion.id
+          )}?methodToReplace=${activeMethodId}`}
+          confirmText="Make Active"
+          title={`Set Version ${selectedVersion.version} as Active Version?`}
+          text="This will make this version read-only and replace any material make methods with this version."
+          isOpen
+          onSubmit={() => {
+            activeMethodModal.onClose();
+            setSelectedVersion(activeMethod);
+          }}
+          onCancel={activeMethodModal.onClose}
+        />
       )}
     </>
   );

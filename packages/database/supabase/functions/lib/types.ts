@@ -8619,6 +8619,7 @@ export type Database = {
           itemId: string
           jobId: string
           locationId: string
+          makeMethodId: string | null
           modelUploadId: string | null
           notes: Json | null
           productionQuantity: number | null
@@ -8656,6 +8657,7 @@ export type Database = {
           itemId: string
           jobId: string
           locationId: string
+          makeMethodId?: string | null
           modelUploadId?: string | null
           notes?: Json | null
           productionQuantity?: number | null
@@ -8693,6 +8695,7 @@ export type Database = {
           itemId?: string
           jobId?: string
           locationId?: string
+          makeMethodId?: string | null
           modelUploadId?: string | null
           notes?: Json | null
           productionQuantity?: number | null
@@ -8876,6 +8879,34 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "job_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "activeMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
+          },
+          {
+            foreignKeyName: "job_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
+          },
+          {
             foreignKeyName: "job_quoteId_fkey"
             columns: ["quoteId"]
             isOneToOne: false
@@ -9056,6 +9087,7 @@ export type Database = {
           trackedEntityId: string | null
           updatedAt: string | null
           updatedBy: string | null
+          version: number
         }
         Insert: {
           companyId: string
@@ -9072,6 +9104,7 @@ export type Database = {
           trackedEntityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Update: {
           companyId?: string
@@ -9088,6 +9121,7 @@ export type Database = {
           trackedEntityId?: string | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -11906,6 +11940,13 @@ export type Database = {
             foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
             columns: ["materialMakeMethodId"]
             isOneToOne: false
+            referencedRelation: "activeMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "methodMaterial_materialMakeMethodId_fkey"
+            columns: ["materialMakeMethodId"]
+            isOneToOne: false
             referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["makeMethodId"]
           },
@@ -11922,6 +11963,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "quoteOperationsWithMakeMethods"
             referencedColumns: ["makeMethodId"]
+          },
+          {
+            foreignKeyName: "methodMaterial_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "activeMakeMethods"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodMaterial_methodId_fkey"
@@ -12146,6 +12194,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "methodOperation_methodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "activeMakeMethods"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "methodOperation_methodId_fkey"
@@ -20979,6 +21034,7 @@ export type Database = {
           id: string
           internalNotes: Json | null
           locationId: string | null
+          makeMethodId: string | null
           opportunityId: string | null
           quoteId: string
           revisionId: number
@@ -21014,6 +21070,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
+          makeMethodId?: string | null
           opportunityId?: string | null
           quoteId: string
           revisionId?: number
@@ -21049,6 +21106,7 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
+          makeMethodId?: string | null
           opportunityId?: string | null
           quoteId?: string
           revisionId?: number
@@ -21247,6 +21305,34 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "activeMakeMethods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
+          },
+          {
+            foreignKeyName: "quote_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "makeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_makeMethodId_fkey"
+            columns: ["makeMethodId"]
+            isOneToOne: false
+            referencedRelation: "quoteOperationsWithMakeMethods"
+            referencedColumns: ["makeMethodId"]
           },
           {
             foreignKeyName: "quote_opportunityId_fkey"
@@ -21911,6 +21997,7 @@ export type Database = {
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
+          version: number
         }
         Insert: {
           companyId: string
@@ -21926,6 +22013,7 @@ export type Database = {
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Update: {
           companyId?: string
@@ -21941,6 +22029,7 @@ export type Database = {
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
+          version?: number
         }
         Relationships: [
           {
@@ -33616,6 +33705,122 @@ export type Database = {
           },
         ]
       }
+      activeMakeMethods: {
+        Row: {
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          customFields: Json | null
+          id: string | null
+          itemId: string | null
+          rn: number | null
+          status: Database["public"]["Enums"]["makeMethodStatus"] | null
+          tags: string[] | null
+          updatedAt: string | null
+          updatedBy: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "method_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "method_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companies: {
         Row: {
           addressLine1: string | null
@@ -37916,14 +38121,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -40143,14 +40348,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -40686,14 +40891,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

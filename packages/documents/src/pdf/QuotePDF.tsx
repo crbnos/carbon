@@ -128,7 +128,7 @@ const QuotePDF = ({
     <Template
       title={title}
       meta={{
-        author: meta?.author ?? "CarbonOS",
+        author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "quote",
         subject: meta?.subject ?? "Quote",
       }}

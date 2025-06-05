@@ -9,7 +9,7 @@ export const Xero: IntegrationConfig = {
   category: "Accounting",
   logo: Logo,
   description:
-    "Integrating CarbonOS with Xero enables you to post transactions from sales invoices and purchase invoices into your existing accounting software, neatly organizing everything in your bookkeeping software.",
+    "Integrating Carbon with Xero enables you to post transactions from sales invoices and purchase invoices into your existing accounting software, neatly organizing everything in your bookkeeping software.",
   shortDescription:
     "Automatically post transactions from sales and purchase invoices.",
   images: [],

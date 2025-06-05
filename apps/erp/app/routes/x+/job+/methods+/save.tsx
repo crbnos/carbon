@@ -19,6 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   const validation = await validator(getJobMethodValidator).validate(formData);
+
   if (validation.error) {
     return validationError(validation.error);
   }

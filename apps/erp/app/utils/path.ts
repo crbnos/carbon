@@ -257,6 +257,8 @@ export const path = {
     accountingRoot: `${x}/accounting`,
     accountingSubcategory: (id: string) =>
       generatePath(`${x}/accounting/subcategory/${id}`),
+    activeMethodVersion: (id: string) =>
+      generatePath(`${x}/items/methods/versions/activate/${id}`),
     activateGauge: (id: string) =>
       generatePath(`${x}/quality/gauges/activate/${id}`),
     attribute: (id: string) => generatePath(`${x}/people/attribute/${id}`),
@@ -627,13 +629,8 @@ export const path = {
     jobMaterials: (id: string) => generatePath(`${x}/job/${id}/materials`),
     jobMethod: (jobId: string, methodId: string) =>
       generatePath(`${x}/job/${jobId}/method/${methodId}`),
-    jobMakeMethod: (jobId: string, makeMethodId: string, materialId?: string) =>
-      generatePath(
-        `${x}/job/${jobId}/make/${makeMethodId}${
-          materialId ? `?materialId=${materialId}` : ""
-        }`
-      ),
-
+    jobMakeMethod: (jobId: string, makeMethodId: string) =>
+      generatePath(`${x}/job/${jobId}/make/${makeMethodId}`),
     jobMaterialsOrder: `${x}/job/methods/material/order`,
     jobMethodGet: `${x}/job/methods/get`,
     jobMethodSave: `${x}/job/methods/save`,

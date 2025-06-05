@@ -46,6 +46,7 @@ const payloadValidator = z.object({
     "itemToQuoteMakeMethod",
     "jobMakeMethodToItem",
     "jobToItem",
+    "makeMethodToMakeMethod",
     "procedureToOperation",
     "quoteLineToItem",
     "quoteLineToJob",
@@ -90,19 +91,26 @@ serve(async (req: Request) => {
       case "itemToItem": {
         const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", sourceId)
             .eq("companyId", companyId)
             .single(),
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", targetId)
             .eq("companyId", companyId)
             .single(),
         ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        if (
+          sourceMakeMethod.data.id === null ||
+          targetMakeMethod.data.id === null
+        ) {
           throw new Error("Failed to get make methods");
         }
 
@@ -147,7 +155,7 @@ serve(async (req: Request) => {
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
-                  makeMethodId: targetMakeMethod.data.id,
+                  makeMethodId: targetMakeMethod.data.id!,
                   createdBy: userId,
                 }))
               )
@@ -168,7 +176,7 @@ serve(async (req: Request) => {
                   }) => ({
                     ...operation,
                     id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id,
+                    makeMethodId: targetMakeMethod.data.id!,
                     createdBy: userId,
                   })
                 )
@@ -262,7 +270,7 @@ serve(async (req: Request) => {
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -294,7 +302,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees, configurationRules] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
           isConfigured
             ? client
                 .from("configurationRule")
@@ -340,6 +348,11 @@ serve(async (req: Request) => {
               .execute(),
             trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute(),
             trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute(),
+            trx
+              .updateTable("jobMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", jobMakeMethod.data.id!)
+              .execute(),
           ]);
 
           async function getConfiguredValue<T>({
@@ -834,7 +847,7 @@ serve(async (req: Request) => {
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -861,7 +874,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -888,6 +901,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("jobOperation")
               .where("jobMakeMethodId", "=", jobMakeMethodId)
+              .execute(),
+            trx
+              .updateTable("jobMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", jobMakeMethodId)
               .execute(),
           ]);
 
@@ -1125,7 +1143,7 @@ serve(async (req: Request) => {
           configurationRules,
         ] = await Promise.all([
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
@@ -1168,7 +1186,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -1204,6 +1222,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("quoteOperation")
               .where("quoteLineId", "=", quoteLineId)
+              .execute(),
+            trx
+              .updateTable("quoteMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", quoteMakeMethod.data.id!)
               .execute(),
           ]);
 
@@ -1691,7 +1714,7 @@ serve(async (req: Request) => {
         const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -1718,7 +1741,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -1745,6 +1768,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("quoteOperation")
               .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+              .execute(),
+            trx
+              .updateTable("quoteMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", quoteMakeMethodId)
               .execute(),
           ]);
 
@@ -1963,13 +1991,13 @@ serve(async (req: Request) => {
       }
       case "jobMakeMethodToItem": {
         const jobMakeMethodId = sourceId;
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, jobMakeMethod] = await Promise.all([
           client
             .from("makeMethod")
             .select("*")
-            .eq("itemId", itemId)
+            .eq("id", makeMethodId)
             .eq("companyId", companyId)
             .single(),
           client
@@ -1987,6 +2015,8 @@ serve(async (req: Request) => {
         if (jobMakeMethod.error) {
           throw new Error("Failed to get job make method");
         }
+
+        const itemId = makeMethod.data?.itemId;
 
         const [jobOperations] = await Promise.all([
           client
@@ -2235,13 +2265,13 @@ serve(async (req: Request) => {
         if (!jobId) {
           throw new Error("Invalid sourceId");
         }
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, jobMakeMethod, jobOperations] = await Promise.all([
           client
             .from("makeMethod")
             .select("*")
-            .eq("itemId", itemId)
+            .eq("id", makeMethodId)
             .eq("companyId", companyId)
             .single(),
           client
@@ -2272,6 +2302,8 @@ serve(async (req: Request) => {
           throw new Error("Failed to get job operations");
         }
 
+        const itemId = makeMethod.data?.itemId;
+
         const [jobMethodTrees] = await Promise.all([
           getJobMethodTree(client, jobMakeMethod.data.id),
         ]);
@@ -2292,7 +2324,7 @@ serve(async (req: Request) => {
         });
 
         const makeMethods = await client
-          .from("makeMethod")
+          .from("activeMakeMethods")
           .select("*")
           .in("itemId", madeItemIds)
           .eq("companyId", companyId);
@@ -2302,7 +2334,7 @@ serve(async (req: Request) => {
 
         const makeMethodByItemId: Record<string, string> = {};
         makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
+          makeMethodByItemId[m.itemId ?? ""] = m.id;
         });
 
         await db.transaction().execute(async (trx) => {
@@ -2494,6 +2526,169 @@ serve(async (req: Request) => {
 
         break;
       }
+      case "makeMethodToMakeMethod": {
+        const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("id", sourceId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("id", targetId)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+        if (sourceMakeMethod.error || targetMakeMethod.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const [sourceMaterials, sourceOperations] = await Promise.all([
+          client
+            .from("methodMaterial")
+            .select("*")
+            .eq("makeMethodId", sourceMakeMethod.data.id)
+            .eq("companyId", companyId),
+          client
+            .from("methodOperation")
+            .select(
+              "*, methodOperationTool(*), methodOperationParameter(*), methodOperationAttribute(*)"
+            )
+            .eq("makeMethodId", sourceMakeMethod.data.id)
+            .eq("companyId", companyId),
+        ]);
+
+        if (sourceMaterials.error || sourceOperations.error) {
+          throw new Error("Failed to get source materials or operations");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing materials and operations from target method
+          await Promise.all([
+            trx
+              .deleteFrom("methodMaterial")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+            trx
+              .deleteFrom("methodOperation")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+          ]);
+
+          // Copy materials from source to target
+          if (sourceMaterials.data && sourceMaterials.data.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                sourceMaterials.data.map((material) => ({
+                  ...material,
+                  productionQuantity: undefined,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id,
+                  createdBy: userId,
+                }))
+              )
+              .execute();
+          }
+
+          // Copy operations from source to target
+          if (sourceOperations.data && sourceOperations.data.length > 0) {
+            const operationIds = await trx
+              .insertInto("methodOperation")
+              .values(
+                sourceOperations.data.map(
+                  ({
+                    methodOperationTool: _tools,
+                    methodOperationParameter: _parameters,
+                    methodOperationAttribute: _attributes,
+                    ...operation
+                  }) => ({
+                    ...operation,
+                    id: undefined, // Let the database generate a new ID
+                    makeMethodId: targetMakeMethod.data.id,
+                    createdBy: userId,
+                  })
+                )
+              )
+              .returning(["id"])
+              .execute();
+
+            for await (const [
+              index,
+              operation,
+            ] of sourceOperations.data.entries()) {
+              const {
+                methodOperationTool,
+                methodOperationParameter,
+                methodOperationAttribute,
+                procedureId,
+              } = operation;
+              const operationId = operationIds[index].id;
+
+              if (
+                operationId &&
+                Array.isArray(methodOperationTool) &&
+                methodOperationTool.length > 0
+              ) {
+                await trx
+                  .insertInto("methodOperationTool")
+                  .values(
+                    methodOperationTool.map((tool) => ({
+                      toolId: tool.toolId,
+                      quantity: tool.quantity,
+                      operationId,
+                      companyId,
+                      createdBy: userId,
+                    }))
+                  )
+                  .execute();
+              }
+
+              if (!procedureId) {
+                if (
+                  Array.isArray(methodOperationParameter) &&
+                  methodOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      methodOperationParameter.map((param) => ({
+                        operationId: operationId!,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(methodOperationAttribute) &&
+                  methodOperationAttribute.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationAttribute")
+                    .values(
+                      methodOperationAttribute.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          operationId: operationId!,
+                          companyId,
+                          createdBy: userId,
+                        })
+                      )
+                    )
+                    .execute();
+                }
+              }
+            }
+          }
+        });
+        break;
+      }
       case "procedureToOperation": {
         const procedureId = sourceId;
         const operationId = targetId;
@@ -2629,14 +2824,14 @@ serve(async (req: Request) => {
         if (!quoteId || !quoteLineId) {
           throw new Error("Invalid sourceId");
         }
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, quoteMakeMethod, quoteOperations] =
           await Promise.all([
             client
               .from("makeMethod")
               .select("*")
-              .eq("itemId", itemId)
+              .eq("id", makeMethodId)
               .eq("companyId", companyId)
               .single(),
             client
@@ -2667,6 +2862,8 @@ serve(async (req: Request) => {
           throw new Error("Failed to get quote operations");
         }
 
+        const itemId = makeMethod.data?.itemId;
+
         const [quoteMethodTrees] = await Promise.all([
           getQuoteMethodTree(client, quoteMakeMethod.data.id),
         ]);
@@ -2691,7 +2888,7 @@ serve(async (req: Request) => {
         );
 
         const makeMethods = await client
-          .from("makeMethod")
+          .from("activeMakeMethods")
           .select("*")
           .in("itemId", madeItemIds)
           .eq("companyId", companyId);
@@ -2701,7 +2898,7 @@ serve(async (req: Request) => {
 
         const makeMethodByItemId: Record<string, string> = {};
         makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
+          makeMethodByItemId[m.itemId ?? ""] = m.id;
         });
 
         await db.transaction().execute(async (trx) => {
@@ -3465,13 +3662,13 @@ serve(async (req: Request) => {
       }
       case "quoteMakeMethodToItem": {
         const quoteMakeMethodId = sourceId;
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, quoteMakeMethod] = await Promise.all([
           client
             .from("makeMethod")
             .select("*")
-            .eq("itemId", itemId)
+            .eq("id", makeMethodId)
             .eq("companyId", companyId)
             .single(),
           client
@@ -3489,6 +3686,8 @@ serve(async (req: Request) => {
         if (quoteMakeMethod.error) {
           throw new Error("Failed to get quote make method");
         }
+
+        const itemId = makeMethod.data?.itemId;
 
         const [quoteOperations] = await Promise.all([
           client
@@ -3533,16 +3732,20 @@ serve(async (req: Request) => {
         });
 
         const makeMethods = await client
-          .from("makeMethod")
+          .from("activeMakeMethods")
           .select("*")
-          .in("itemId", madeItemIds);
+          .in("itemId", madeItemIds)
+          .eq("companyId", companyId);
+
         if (makeMethods.error) {
           throw new Error("Failed to get make methods");
         }
 
         const makeMethodByItemId: Record<string, string> = {};
         makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
+          if (m.itemId) {
+            makeMethodByItemId[m.itemId] = m.id;
+          }
         });
 
         await db.transaction().execute(async (trx) => {

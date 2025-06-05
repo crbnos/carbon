@@ -41,7 +41,23 @@ import type {
   unitOfMeasureValidator,
 } from "./items.models";
 
-export async function copyMakeMethod(
+export async function activateMethodVersion(
+  client: SupabaseClient<Database>,
+  payload: {
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{ convertedId: string }>("convert", {
+    body: {
+      type: "methodVersionToActive",
+      ...payload,
+    },
+  });
+}
+
+export async function copyItem(
   client: SupabaseClient<Database>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
@@ -51,6 +67,24 @@ export async function copyMakeMethod(
   return client.functions.invoke("get-method", {
     body: {
       type: "itemToItem",
+      sourceId: args.sourceId,
+      targetId: args.targetId,
+      companyId: args.companyId,
+      userId: args.userId,
+    },
+  });
+}
+
+export async function copyMakeMethod(
+  client: SupabaseClient<Database>,
+  args: z.infer<typeof getMethodValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("get-method", {
+    body: {
+      type: "makeMethodToMakeMethod",
       sourceId: args.sourceId,
       targetId: args.targetId,
       companyId: args.companyId,
@@ -558,7 +592,7 @@ export async function getMaterialUsedIn(
     client
       .from("methodMaterial")
       .select(
-        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableIdWithRevision, documentId:id, itemType:type))"
+        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -644,7 +678,7 @@ export async function getPartUsedIn(
     client
       .from("methodMaterial")
       .select(
-        "id, methodType, ...makeMethod!makeMethodId(...item(documentReadableId:readableIdWithRevision, documentId:id, itemType:type))"
+        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
       )
       .eq("itemId", itemId)
       .eq("companyId", companyId),
@@ -1966,13 +2000,38 @@ export async function upsertMakeMethodVersion(
     createdBy: string;
   }
 ) {
-  console.log(makeMethodVersion);
-  return {
-    data: {
-      id: makeMethodVersion.copyFromId,
-    },
-    error: null,
-  };
+  const currentMakeMethod = await client
+    .from("makeMethod")
+    .select("*")
+    .eq("id", makeMethodVersion.copyFromId)
+    .eq("companyId", makeMethodVersion.companyId)
+    .single();
+
+  if (currentMakeMethod.error) return currentMakeMethod;
+
+  const { id, version, ...data } = currentMakeMethod.data;
+
+  const insert = await client
+    .from("makeMethod")
+    .insert({
+      ...data,
+      status: "Draft",
+      version: makeMethodVersion.version,
+      createdBy: makeMethodVersion.createdBy,
+    })
+    .select("id, ...item(itemId:id, type)")
+    .single();
+
+  if (insert.error) return insert;
+
+  if (makeMethodVersion.activeVersionId) {
+    await client
+      .from("makeMethod")
+      .update({ status: "Active" })
+      .eq("id", makeMethodVersion.activeVersionId);
+  }
+
+  return insert;
 }
 
 export async function upsertMethodMaterial(

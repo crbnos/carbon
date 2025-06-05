@@ -139,7 +139,7 @@ const BillOfMaterial = ({
   const permissions = usePermissions();
   const isReadOnly =
     permissions.can("update", "parts") === false ||
-    makeMethod.status === "Active";
+    makeMethod.status !== "Draft";
 
   const fetcher = useFetcher<{}>();
   const [searchParams] = useSearchParams();

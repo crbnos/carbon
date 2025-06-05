@@ -13,7 +13,7 @@ export default function PublicRoute() {
           className="relative z-20 flex items-center text-white"
         >
           <BsHexagonFill className="w-6 h-6 mr-2" />
-          CarbonOS
+          Carbon
         </Heading>
 
         <div className="relative z-20 mt-auto">

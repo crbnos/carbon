@@ -82,7 +82,7 @@ export function IntegrationForm({
 
                 <span className="text-xs text-[#878787] text-right">
                   <Badge variant="secondary">{integration.category}</Badge> •
-                  Published by CarbonOS
+                  Published by Carbon
                 </span>
               </div>
             </VStack>

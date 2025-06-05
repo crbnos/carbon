@@ -2,7 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
-import { copyMakeMethod, getMethodValidator } from "~/modules/items";
+import { copyItem, getMethodValidator } from "~/modules/items";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -19,7 +19,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const upsert = await copyMakeMethod(serviceRole, {
+  const upsert = await copyItem(serviceRole, {
     ...validation.data,
     companyId,
     userId,

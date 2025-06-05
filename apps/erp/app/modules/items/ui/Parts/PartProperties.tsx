@@ -380,19 +380,21 @@ const PartProperties = () => {
           <Suspense fallback={null}>
             <Await resolve={routeData?.makeMethods}>
               {(makeMethods) =>
-                makeMethods.data?.map((method) => {
-                  const isActive =
-                    method.status === "Active" ||
-                    makeMethods.data?.length === 1;
-                  return (
-                    <MethodBadge
-                      key={method.id}
-                      type={isActive ? "Make" : "Make Inactive"}
-                      text={`Version ${method.version}`}
-                      to={path.to.partMakeMethod(itemId, method.id)}
-                    />
-                  );
-                })
+                makeMethods.data
+                  ?.sort((a, b) => b.version - a.version)
+                  .map((method) => {
+                    const isActive =
+                      method.status === "Active" ||
+                      makeMethods.data?.length === 1;
+                    return (
+                      <MethodBadge
+                        key={method.id}
+                        type={isActive ? "Make" : "Make Inactive"}
+                        text={`Version ${method.version}`}
+                        to={path.to.partMakeMethod(itemId, method.id)}
+                      />
+                    );
+                  })
               }
             </Await>
           </Suspense>
@@ -466,19 +468,19 @@ const PartProperties = () => {
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
         {routeData?.partSummary?.modelId && (
-          <HStack className="group" spacing={1}>
+          <Link
+            className="group flex items-center gap-1"
+            to={path.to.file.cadModel(routeData?.partSummary.modelId)}
+            target="_blank"
+          >
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
               3D Model
             </Badge>
-            <Link
-              className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.partSummary.modelId)}
-              target="_blank"
-            >
+            <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
               <LuExternalLink />
-            </Link>
-          </HStack>
+            </span>
+          </Link>
         )}
 
         <Suspense fallback={null}>

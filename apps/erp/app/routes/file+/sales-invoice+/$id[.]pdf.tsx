@@ -118,7 +118,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       company={company.data}
       locale={locale}
       meta={{
-        author: "CarbonOS",
+        author: "Carbon",
         keywords: "sales order",
         subject: "Sales Invoice",
       }}

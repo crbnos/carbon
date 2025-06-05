@@ -1,12 +1,10 @@
-import type { Database } from "@carbon/database";
-import { Text, View, Image } from "@react-pdf/renderer";
-import { createTw } from "react-pdf-tailwind";
 import bwipjs from "@bwip-js/node";
-import {
-  formatCityStatePostalCode,
-  TrackedEntityAttributes,
-} from "@carbon/utils";
+import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
+import type { TrackedEntityAttributes } from "@carbon/utils";
+import { formatCityStatePostalCode } from "@carbon/utils";
+import { Image, Text, View } from "@react-pdf/renderer";
+import { createTw } from "react-pdf-tailwind";
 import type { PDF } from "../types";
 import { Header, Note, Summary, Template } from "./components";
 
@@ -100,7 +98,7 @@ const PackingSlipPDF = ({
     <Template
       title={title}
       meta={{
-        author: meta?.author ?? "CarbonOS",
+        author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "packing slip",
         subject: meta?.subject ?? "Packing Slip",
       }}
