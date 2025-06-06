@@ -53,9 +53,11 @@ interface TreeData {
 export const OnshapeSync = ({
   itemId,
   makeMethodId,
+  isDisabled,
 }: {
   itemId: string;
   makeMethodId: string;
+  isDisabled: boolean;
 }) => {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [versionId, setVersionId] = useState<string | null>(null);
@@ -91,7 +93,9 @@ export const OnshapeSync = ({
   >({});
 
   useMount(() => {
-    documentsFetcher.load(path.to.api.onShapeDocuments);
+    if (!isDisabled) {
+      documentsFetcher.load(path.to.api.onShapeDocuments);
+    }
   });
 
   useEffect(() => {
@@ -118,7 +122,7 @@ export const OnshapeSync = ({
   >({});
 
   useEffect(() => {
-    if (documentId) {
+    if (documentId && !isDisabled) {
       versionsFetcher.load(path.to.api.onShapeVersions(documentId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -142,7 +146,7 @@ export const OnshapeSync = ({
   >({});
 
   useEffect(() => {
-    if (documentId && versionId) {
+    if (documentId && versionId && !isDisabled) {
       elementsFetcher.load(path.to.api.onShapeElements(documentId, versionId));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -251,6 +255,7 @@ export const OnshapeSync = ({
                 <Combobox
                   isLoading={documentsFetcher.state === "loading"}
                   options={documentOptions}
+                  disabled={isDisabled}
                   onChange={(value) => {
                     setVersionId(null);
                     setElementId(null);
@@ -268,6 +273,7 @@ export const OnshapeSync = ({
               <div className="w-[180px]">
                 <Combobox
                   isLoading={versionsFetcher.state === "loading"}
+                  disabled={isDisabled}
                   options={versionOptions}
                   onChange={(value) => {
                     setVersionId(value);
@@ -286,6 +292,7 @@ export const OnshapeSync = ({
                 <Combobox
                   isLoading={elementsFetcher.state === "loading"}
                   options={elementOptions}
+                  disabled={isDisabled}
                   onChange={(value) => {
                     setElementId(value);
                   }}
@@ -343,7 +350,9 @@ export const OnshapeSync = ({
             <Button
               variant={bomRows.length > 0 ? "secondary" : "primary"}
               isLoading={bomFetcher.state !== "idle"}
-              isDisabled={!isReadyForSync || bomFetcher.state !== "idle"}
+              isDisabled={
+                isDisabled || !isReadyForSync || bomFetcher.state !== "idle"
+              }
               size="sm"
               onClick={loadBom}
             >
@@ -362,7 +371,7 @@ export const OnshapeSync = ({
               size="sm"
               onClick={saveBom}
               isLoading={upsertBomFetcher.state !== "idle"}
-              isDisabled={upsertBomFetcher.state !== "idle"}
+              isDisabled={isDisabled || upsertBomFetcher.state !== "idle"}
             >
               Save
             </Button>

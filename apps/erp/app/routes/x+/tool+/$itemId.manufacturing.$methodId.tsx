@@ -146,8 +146,7 @@ export default function ToolManufacturing() {
             <div className="grid h-full overflow-hidden p-2">
               <BoMExplorer
                 itemType="Tool"
-                makeMethodId={makeMethod.id}
-                makeMethodVersion={makeMethod.version.toString()}
+                makeMethod={makeMethod}
                 // @ts-ignore
                 methods={methods}
               />

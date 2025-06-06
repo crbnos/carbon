@@ -36,16 +36,14 @@ import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;
-  makeMethodId: string;
-  makeMethodVersion: string;
+  makeMethod: MakeMethod;
   methods: FlatTreeItem<Method>[];
   selectedId?: string;
 };
 
 const BoMExplorer = ({
   itemType,
-  makeMethodId,
-  makeMethodVersion,
+  makeMethod,
   methods,
   selectedId,
 }: BoMExplorerProps) => {
@@ -53,6 +51,13 @@ const BoMExplorer = ({
   const parentRef = useRef<HTMLDivElement>(null);
   const integrations = useIntegrations();
   const params = useParams();
+
+  const {
+    id: makeMethodId,
+    version: makeMethodVersion,
+    status: makeMethodStatus,
+  } = makeMethod;
+
   const {
     nodes,
     getTreeProps,
@@ -126,7 +131,11 @@ const BoMExplorer = ({
         </InputGroup>
       </HStack>
       {integrations.has("onshape") && (
-        <OnshapeSync makeMethodId={makeMethodId} itemId={itemId} />
+        <OnshapeSync
+          makeMethodId={makeMethodId}
+          itemId={itemId}
+          isDisabled={makeMethodStatus !== "Draft"}
+        />
       )}
       <TreeView
         parentRef={parentRef}

@@ -60,7 +60,12 @@ import {
   LuX,
 } from "react-icons/lu";
 import { z } from "zod";
-import { DirectionAwareTabs, EmployeeAvatar, TimeTypeIcon } from "~/components";
+import {
+  DirectionAwareTabs,
+  EmployeeAvatar,
+  Empty,
+  TimeTypeIcon,
+} from "~/components";
 import {
   Hidden,
   InputControlled,
@@ -1735,125 +1740,127 @@ function AttributesForm({
       isLoading={fetcher.state !== "idle"}
       // this is a hack to re-render the editor component when the form is submitted with the default values
     >
-      <div className="p-6 border rounded-lg mb-6">
-        <ValidatedForm
-          action={path.to.newMethodOperationAttribute}
-          method="post"
-          validator={operationAttributeValidator}
-          fetcher={fetcher}
-          resetAfterSubmit
-          defaultValues={{
-            id: undefined,
-            name: "",
-            description: {},
-            type: "Task",
-            unitOfMeasureCode: "",
-            minValue: 0,
-            maxValue: 0,
-            listValues: [],
-            sortOrder:
-              attributes.reduce(
-                (acc, a) => Math.max(acc, a.sortOrder ?? 0),
-                0
-              ) + 1,
-            operationId,
-          }}
-          onSubmit={() => {
-            setType("Task");
-            setDescription({});
-          }}
-          className="w-full"
-        >
-          <Hidden name="operationId" />
-          <Hidden name="sortOrder" />
-          <Hidden name="description" value={JSON.stringify(description)} />
-          <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <SelectControlled
-                name="type"
-                label="Type"
-                options={typeOptions}
-                value={type}
-                onChange={(option) => {
-                  if (option) {
-                    setType(option.value as OperationAttribute["type"]);
-                  }
-                }}
-              />
-              <Input name="name" label="Name" />
-            </div>
-
-            <VStack spacing={2} className="w-full col-span-2">
-              <Label>Description</Label>
-              <Editor
-                initialValue={description}
-                onUpload={onUploadImage}
-                onChange={(value) => {
-                  setDescription(value);
-                }}
-                className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
-              />
-            </VStack>
-
-            {type === "Measurement" && (
+      {!isDisabled && (
+        <div className="p-6 border rounded-lg mb-6">
+          <ValidatedForm
+            action={path.to.newMethodOperationAttribute}
+            method="post"
+            validator={operationAttributeValidator}
+            fetcher={fetcher}
+            resetAfterSubmit
+            defaultValues={{
+              id: undefined,
+              name: "",
+              description: {},
+              type: "Task",
+              unitOfMeasureCode: "",
+              minValue: 0,
+              maxValue: 0,
+              listValues: [],
+              sortOrder:
+                attributes.reduce(
+                  (acc, a) => Math.max(acc, a.sortOrder ?? 0),
+                  0
+                ) + 1,
+              operationId,
+            }}
+            onSubmit={() => {
+              setType("Task");
+              setDescription({});
+            }}
+            className="w-full"
+          >
+            <Hidden name="operationId" />
+            <Hidden name="sortOrder" />
+            <Hidden name="description" value={JSON.stringify(description)} />
+            <VStack spacing={4}>
               <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-                <UnitOfMeasure
-                  name="unitOfMeasureCode"
-                  label="Unit of Measure"
+                <SelectControlled
+                  name="type"
+                  label="Type"
+                  options={typeOptions}
+                  value={type}
+                  onChange={(option) => {
+                    if (option) {
+                      setType(option.value as OperationAttribute["type"]);
+                    }
+                  }}
                 />
-
-                <ToggleGroup
-                  type="multiple"
-                  value={numericControls}
-                  onValueChange={setNumericControls}
-                  className="justify-start items-start mt-6"
-                >
-                  <ToggleGroupItem size="sm" value="min">
-                    <LuMinimize2 className="mr-2" />
-                    Minimum
-                  </ToggleGroupItem>
-                  <ToggleGroupItem size="sm" value="max">
-                    <LuMaximize2 className="mr-2" />
-                    Maximum
-                  </ToggleGroupItem>
-                </ToggleGroup>
-
-                {numericControls.includes("min") && (
-                  <Number
-                    name="minValue"
-                    label="Minimum"
-                    formatOptions={{
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 10,
-                    }}
-                  />
-                )}
-                {numericControls.includes("max") && (
-                  <Number
-                    name="maxValue"
-                    label="Maximum"
-                    formatOptions={{
-                      minimumFractionDigits: 0,
-                      maximumFractionDigits: 10,
-                    }}
-                  />
-                )}
+                <Input name="name" label="Name" />
               </div>
-            )}
-            {type === "List" && (
-              <ArrayInput name="listValues" label="List Options" />
-            )}
 
-            <Submit
-              leftIcon={<LuCirclePlus />}
-              isDisabled={isDisabled || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              Add Step
-            </Submit>
-          </VStack>
-        </ValidatedForm>
-      </div>
+              <VStack spacing={2} className="w-full col-span-2">
+                <Label>Description</Label>
+                <Editor
+                  initialValue={description}
+                  onUpload={onUploadImage}
+                  onChange={(value) => {
+                    setDescription(value);
+                  }}
+                  className="[&_.is-empty]:text-muted-foreground min-h-[120px] p-4 rounded-lg border w-full"
+                />
+              </VStack>
+
+              {type === "Measurement" && (
+                <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                  <UnitOfMeasure
+                    name="unitOfMeasureCode"
+                    label="Unit of Measure"
+                  />
+
+                  <ToggleGroup
+                    type="multiple"
+                    value={numericControls}
+                    onValueChange={setNumericControls}
+                    className="justify-start items-start mt-6"
+                  >
+                    <ToggleGroupItem size="sm" value="min">
+                      <LuMinimize2 className="mr-2" />
+                      Minimum
+                    </ToggleGroupItem>
+                    <ToggleGroupItem size="sm" value="max">
+                      <LuMaximize2 className="mr-2" />
+                      Maximum
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+
+                  {numericControls.includes("min") && (
+                    <Number
+                      name="minValue"
+                      label="Minimum"
+                      formatOptions={{
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 10,
+                      }}
+                    />
+                  )}
+                  {numericControls.includes("max") && (
+                    <Number
+                      name="maxValue"
+                      label="Maximum"
+                      formatOptions={{
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 10,
+                      }}
+                    />
+                  )}
+                </div>
+              )}
+              {type === "List" && (
+                <ArrayInput name="listValues" label="List Options" />
+              )}
+
+              <Submit
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled || fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Add Step
+              </Submit>
+            </VStack>
+          </ValidatedForm>
+        </div>
+      )}
 
       {attributes.length > 0 && (
         <div className="border rounded-lg">
@@ -1871,6 +1878,11 @@ function AttributesForm({
                 onConfigure={onConfigure}
               />
             ))}
+        </div>
+      )}
+      {attributes.length === 0 && isDisabled && (
+        <div className="flex flex-1 py-24 justify-between items-center w-full">
+          <Empty />
         </div>
       )}
     </Loading>
@@ -2304,41 +2316,43 @@ function ParametersForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg">
-        <ValidatedForm
-          action={path.to.newMethodOperationParameter}
-          method="post"
-          validator={operationParameterValidator}
-          fetcher={fetcher}
-          resetAfterSubmit
-          defaultValues={{
-            id: undefined,
-            key: "",
-            value: "",
-            operationId,
-          }}
-          className="w-full"
-        >
-          <Hidden name="operationId" />
-          <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <Input
-                name="key"
-                label="Key"
-                autoFocus={parameters.length === 0}
-              />
-              <Input name="value" label="Value" />
-            </div>
-            <Submit
-              leftIcon={<LuCirclePlus />}
-              isDisabled={isDisabled || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              Add Parameter
-            </Submit>
-          </VStack>
-        </ValidatedForm>
-      </div>
+      {!isDisabled && (
+        <div className="p-6 border rounded-lg">
+          <ValidatedForm
+            action={path.to.newMethodOperationParameter}
+            method="post"
+            validator={operationParameterValidator}
+            fetcher={fetcher}
+            resetAfterSubmit
+            defaultValues={{
+              id: undefined,
+              key: "",
+              value: "",
+              operationId,
+            }}
+            className="w-full"
+          >
+            <Hidden name="operationId" />
+            <VStack spacing={4}>
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <Input
+                  name="key"
+                  label="Key"
+                  autoFocus={parameters.length === 0}
+                />
+                <Input name="value" label="Value" />
+              </div>
+              <Submit
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled || fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Add Parameter
+              </Submit>
+            </VStack>
+          </ValidatedForm>
+        </div>
+      )}
 
       {parameters.length > 0 && (
         <div className="border rounded-lg">
@@ -2357,6 +2371,11 @@ function ParametersForm({
                 onConfigure={onConfigure}
               />
             ))}
+        </div>
+      )}
+      {parameters.length === 0 && isDisabled && (
+        <div className="flex flex-1 py-24 justify-between items-center w-full">
+          <Empty />
         </div>
       )}
     </div>
@@ -2575,38 +2594,44 @@ function ToolsForm({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="p-6 border rounded-lg">
-        <ValidatedForm
-          action={path.to.newMethodOperationTool}
-          method="post"
-          validator={operationToolValidator}
-          fetcher={fetcher}
-          resetAfterSubmit
-          defaultValues={{
-            id: undefined,
-            toolId: "",
-            quantity: 1,
-            operationId,
-          }}
-          className="w-full"
-        >
-          <Hidden name="operationId" />
-          <VStack spacing={4}>
-            <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-              <Tool name="toolId" label="Tool" autoFocus={tools.length === 0} />
-              <Number name="quantity" label="Quantity" />
-            </div>
+      {!isDisabled && (
+        <div className="p-6 border rounded-lg">
+          <ValidatedForm
+            action={path.to.newMethodOperationTool}
+            method="post"
+            validator={operationToolValidator}
+            fetcher={fetcher}
+            resetAfterSubmit
+            defaultValues={{
+              id: undefined,
+              toolId: "",
+              quantity: 1,
+              operationId,
+            }}
+            className="w-full"
+          >
+            <Hidden name="operationId" />
+            <VStack spacing={4}>
+              <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+                <Tool
+                  name="toolId"
+                  label="Tool"
+                  autoFocus={tools.length === 0}
+                />
+                <Number name="quantity" label="Quantity" />
+              </div>
 
-            <Submit
-              leftIcon={<LuCirclePlus />}
-              isDisabled={isDisabled || fetcher.state !== "idle"}
-              isLoading={fetcher.state !== "idle"}
-            >
-              Add Tool
-            </Submit>
-          </VStack>
-        </ValidatedForm>
-      </div>
+              <Submit
+                leftIcon={<LuCirclePlus />}
+                isDisabled={isDisabled || fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                Add Tool
+              </Submit>
+            </VStack>
+          </ValidatedForm>
+        </div>
+      )}
 
       {tools.length > 0 && (
         <div className="border rounded-lg">
@@ -2622,6 +2647,11 @@ function ToolsForm({
                 className={index === tools.length - 1 ? "border-none" : ""}
               />
             ))}
+        </div>
+      )}
+      {tools.length === 0 && isDisabled && (
+        <div className="flex flex-1 py-24 justify-between items-center w-full">
+          <Empty />
         </div>
       )}
     </div>

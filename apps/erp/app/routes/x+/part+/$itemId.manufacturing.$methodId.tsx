@@ -157,8 +157,8 @@ export default function PartManufacturing() {
             <div className="grid h-full overflow-hidden p-2">
               <BoMExplorer
                 itemType="Part"
-                makeMethodId={makeMethod.id}
-                makeMethodVersion={makeMethod.version.toString()}
+                makeMethod={makeMethod}
+                makeMethodStatus={makeMethod.status}
                 // @ts-ignore
                 methods={methods}
               />
