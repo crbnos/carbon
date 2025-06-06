@@ -481,7 +481,7 @@ const BillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>
@@ -535,7 +535,7 @@ const BillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>
@@ -575,7 +575,7 @@ const BillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>

@@ -71,7 +71,7 @@ function IntegrationCard({
             <Badge variant="green">Installed</Badge>
           ) : null
         ) : (
-          <Badge variant="gray">Coming soon</Badge>
+          <Badge variant="secondary">Coming soon</Badge>
         )}
       </div>
       <CardHeader className="pb-0">

@@ -18,7 +18,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuChevronDown,
@@ -299,22 +299,25 @@ function QuoteLineItem({
                   <DropdownMenuIcon icon={<LuTrash />} />
                   Delete Line
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link
-                    to={getLinkToItemDetails(
-                      line.itemType as MethodItemType,
-                      line.itemId!
-                    )}
-                  >
-                    <DropdownMenuIcon
-                      icon={
-                        <MethodItemTypeIcon
-                          type={line.itemType as MethodItemType}
-                        />
-                      }
-                    />
-                    View Item Master
-                  </Link>
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(
+                      getLinkToItemDetails(
+                        line.itemType as MethodItemType,
+                        line.itemId!
+                      )
+                    );
+                  }}
+                >
+                  <DropdownMenuIcon
+                    icon={
+                      <MethodItemTypeIcon
+                        type={line.itemType as MethodItemType}
+                      />
+                    }
+                  />
+                  View Item Master
                 </DropdownMenuItem>
                 {line.methodType === "Make" && (
                   <DropdownMenuItem onClick={searchDisclosure.onOpen}>

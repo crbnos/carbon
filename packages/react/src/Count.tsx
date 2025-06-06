@@ -6,7 +6,7 @@ export interface CountProps extends ComponentProps<typeof Badge> {
 
 const Count = ({ count, ...props }: CountProps) => {
   const c = count > 99 ? "99+" : count;
-  return <Badge variant="gray" {...props}>{`${c}`}</Badge>;
+  return <Badge variant="secondary" {...props}>{`${c}`}</Badge>;
 };
 
 export { Count };

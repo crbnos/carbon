@@ -1,3 +1,6 @@
+import { useCarbon } from "@carbon/auth";
+import type {
+  ShortcutDefinition} from "@carbon/react";
 import {
   Badge,
   Button,
@@ -13,31 +16,27 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  ShortcutDefinition,
   ShortcutKey,
+  toast,
   useDisclosure,
   useMount,
   useShortcutKeys,
 } from "@carbon/react";
+import type { LanguageModelV1Prompt } from "ai";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import {
+  LuCheck,
   LuChevronDown,
+  LuChevronRight,
+  LuCircleStop,
   LuRotateCcw,
   LuShoppingCart,
   LuSparkles,
-} from "react-icons/lu";
-import { useUser } from "~/hooks/useUser";
-import { Fragment, useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
-import { useCarbon } from "@carbon/auth";
-import type { LanguageModelV1Prompt } from "ai";
-import { EmployeeAvatar } from "~/components";
-import { toast } from "@carbon/react";
-import {
-  LuCheck,
-  LuChevronRight,
   LuWrench,
-  LuCircleStop,
 } from "react-icons/lu";
+import { EmployeeAvatar } from "~/components";
+import { useUser } from "~/hooks/useUser";
 import { camelCaseToWords } from "~/utils/string";
 import SYSTEM_PROMPT from "./system.txt?raw";
 
@@ -524,7 +523,7 @@ function ToolExecution({ toolCall, result }: { toolCall: any; result?: any }) {
         }}
       >
         <div className="flex items-center gap-1">
-          <Badge variant="gray" className="font-mono ml-1">
+          <Badge variant="secondary" className="font-mono ml-1">
             <LuWrench className="mr-1" />
             {camelCaseToWords(toolCall.toolName)}
           </Badge>

@@ -66,11 +66,11 @@ function SetupInstructions({ companyId }: { companyId: string }) {
     <>
       <p className="text-sm text-muted-foreground">
         First, get the base URL of your Onshape account. This is either{" "}
-        <Badge className="font-mono lowercase" variant="gray">
+        <Badge className="font-mono lowercase" variant="secondary">
           https://cad.onshape.com
         </Badge>{" "}
         or something like{" "}
-        <Badge className="font-mono lowercase" variant="gray">
+        <Badge className="font-mono lowercase" variant="secondary">
           https://your-company.onshape.com/
         </Badge>
         .

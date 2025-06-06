@@ -538,7 +538,7 @@ const QuoteBillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>
@@ -592,7 +592,7 @@ const QuoteBillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>
@@ -627,7 +627,7 @@ const QuoteBillOfProcess = ({
             {hasProcedure && (
               <Tooltip>
                 <TooltipTrigger>
-                  <Badge variant="gray">
+                  <Badge variant="secondary">
                     <LuWaypoints />
                   </Badge>
                 </TooltipTrigger>
