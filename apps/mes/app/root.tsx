@@ -101,8 +101,8 @@ export async function action({ request }: ActionFunctionArgs) {
 function Document({
   children,
   title = "Carbon",
-  mode = "dark",
-  theme = "zinc",
+  mode = "light",
+  theme = "blue",
 }: {
   children: React.ReactNode;
   title?: string;

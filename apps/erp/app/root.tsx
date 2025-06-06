@@ -102,8 +102,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export function Document({
   children,
   title = "Carbon",
-  mode = "dark",
-  theme = "zinc",
+  mode = "light",
+  theme = "blue",
 }: {
   children: React.ReactNode;
   title?: string;
@@ -217,7 +217,7 @@ export function ErrorBoundary() {
 
   return (
     <Document title="Error!">
-      <div className="dark">
+      <div className="light">
         <div className="flex flex-col w-full h-screen bg-zinc-900 items-center justify-center space-y-4 ">
           <img
             src="/carbon-logo-mark.svg"
