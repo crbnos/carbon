@@ -472,21 +472,16 @@ const QuoteMakeMethodTools = () => {
                       Include Inactive
                     </label>
                   </div>
-                  {hasMethods && (
-                    <Alert variant="destructive">
-                      <LuTriangleAlert className="h-4 w-4" />
-                      <AlertTitle>
-                        This will overwrite the existing manufacturing method
-                      </AlertTitle>
-                    </Alert>
-                  )}
                 </VStack>
               </ModalBody>
               <ModalFooter>
                 <Button onClick={saveMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit variant={hasMethods ? "destructive" : "primary"}>
+                <Submit
+                  isDisabled={!selectedMakeMethod}
+                  variant={hasMethods ? "destructive" : "primary"}
+                >
                   Confirm
                 </Submit>
               </ModalFooter>

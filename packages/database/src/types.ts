@@ -8619,7 +8619,6 @@ export type Database = {
           itemId: string
           jobId: string
           locationId: string
-          makeMethodId: string | null
           modelUploadId: string | null
           notes: Json | null
           productionQuantity: number | null
@@ -8657,7 +8656,6 @@ export type Database = {
           itemId: string
           jobId: string
           locationId: string
-          makeMethodId?: string | null
           modelUploadId?: string | null
           notes?: Json | null
           productionQuantity?: number | null
@@ -8695,7 +8693,6 @@ export type Database = {
           itemId?: string
           jobId?: string
           locationId?: string
-          makeMethodId?: string | null
           modelUploadId?: string | null
           notes?: Json | null
           productionQuantity?: number | null
@@ -8877,34 +8874,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "activeMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
-            referencedColumns: ["makeMethodId"]
-          },
-          {
-            foreignKeyName: "job_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "makeMethod"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "quoteOperationsWithMakeMethods"
-            referencedColumns: ["makeMethodId"]
           },
           {
             foreignKeyName: "job_quoteId_fkey"
@@ -21034,7 +21003,6 @@ export type Database = {
           id: string
           internalNotes: Json | null
           locationId: string | null
-          makeMethodId: string | null
           opportunityId: string | null
           quoteId: string
           revisionId: number
@@ -21070,7 +21038,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
-          makeMethodId?: string | null
           opportunityId?: string | null
           quoteId: string
           revisionId?: number
@@ -21106,7 +21073,6 @@ export type Database = {
           id?: string
           internalNotes?: Json | null
           locationId?: string | null
-          makeMethodId?: string | null
           opportunityId?: string | null
           quoteId?: string
           revisionId?: number
@@ -21305,34 +21271,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "location"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "activeMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
-            referencedColumns: ["makeMethodId"]
-          },
-          {
-            foreignKeyName: "quote_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "makeMethod"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "quote_makeMethodId_fkey"
-            columns: ["makeMethodId"]
-            isOneToOne: false
-            referencedRelation: "quoteOperationsWithMakeMethods"
-            referencedColumns: ["makeMethodId"]
           },
           {
             foreignKeyName: "quote_opportunityId_fkey"
@@ -35366,6 +35304,7 @@ export type Database = {
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
+          version: number | null
         }
         Relationships: [
           {
@@ -39102,6 +39041,7 @@ export type Database = {
           unitOfMeasureCode: string | null
           updatedAt: string | null
           updatedBy: string | null
+          version: number | null
         }
         Relationships: [
           {
@@ -40348,14 +40288,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -43500,6 +43440,7 @@ export type Database = {
           isRoot: boolean
           kit: boolean
           revision: string
+          version: number
         }[]
       }
       get_job_methods_by_method_id: {
@@ -43688,6 +43629,7 @@ export type Database = {
           kit: boolean
           revision: string
           externalId: Json
+          version: number
         }[]
       }
       get_my_claim: {
@@ -43801,6 +43743,7 @@ export type Database = {
           kit: boolean
           revision: string
           externalId: Json
+          version: number
         }[]
       }
       get_quote_methods_by_method_id: {
@@ -43828,6 +43771,7 @@ export type Database = {
           kit: boolean
           revision: string
           externalId: Json
+          version: number
         }[]
       }
       get_recent_job_operations_by_employee: {

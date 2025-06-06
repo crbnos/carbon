@@ -1375,7 +1375,11 @@ export async function updateDefaultRevision(
       .select("id,readableId, readableIdWithRevision")
       .eq("id", data.id)
       .single(),
-    client.from("makeMethod").select("id").eq("itemId", data.id).maybeSingle(),
+    client
+      .from("activeMakeMethods")
+      .select("id, version")
+      .eq("itemId", data.id)
+      .maybeSingle(),
   ]);
   if (item.error) return item;
   const readableId = item.data.readableId;
@@ -2052,9 +2056,8 @@ export async function upsertMethodMaterial(
   let materialMakeMethodId: string | null = null;
   if (methodMaterial.methodType === "Make") {
     const makeMethod = await client
-      // TODO: get we need to pass the make method since there can be multiple
-      .from("makeMethod")
-      .select("id")
+      .from("activeMakeMethods")
+      .select("id, version")
       .eq("itemId", methodMaterial.itemId!)
       .single();
 

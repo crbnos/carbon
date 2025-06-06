@@ -7441,6 +7441,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.jobMaterialMakeMethodId",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMaterialWithMakeMethodId.version",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -8504,6 +8507,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMaterialWithMakeMethodId.version",
           },
           {
             $ref: "#/parameters/select",
@@ -14587,6 +14593,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.version",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14688,6 +14697,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
           },
           {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.version",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -14741,6 +14753,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobMakeMethod.requiresBatchTracking",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobMakeMethod.version",
           },
           {
             $ref: "#/parameters/body.jobMakeMethod",
@@ -44530,6 +44545,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.version",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -44628,6 +44646,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
           },
           {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.version",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -44678,6 +44699,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteMakeMethod.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteMakeMethod.version",
           },
           {
             $ref: "#/parameters/body.quoteMakeMethod",
@@ -58526,6 +58550,10 @@ export default {
           format: "text",
           type: "string",
         },
+        version: {
+          format: "numeric",
+          type: "number",
+        },
       },
       type: "object",
     },
@@ -59048,6 +59076,10 @@ export default {
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
+        },
+        version: {
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -61976,6 +62008,7 @@ export default {
         "createdBy",
         "requiresSerialTracking",
         "requiresBatchTracking",
+        "version",
       ],
       properties: {
         id: {
@@ -62052,6 +62085,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean",
+        },
+        version: {
+          default: 1,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -75870,6 +75908,7 @@ export default {
         "companyId",
         "createdAt",
         "createdBy",
+        "version",
       ],
       properties: {
         id: {
@@ -75943,6 +75982,11 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        version: {
+          default: 1,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -82736,6 +82780,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.jobMaterialWithMakeMethodId.version": {
+      name: "version",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.gauges": {
       name: "gauges",
       description: "gauges",
@@ -83368,6 +83418,12 @@ export default {
     },
     "rowFilter.quoteMaterialWithMakeMethodId.quoteMaterialMakeMethodId": {
       name: "quoteMaterialMakeMethodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMaterialWithMakeMethodId.version": {
+      name: "version",
       required: false,
       in: "query",
       type: "string",
@@ -86692,6 +86748,12 @@ export default {
     },
     "rowFilter.jobMakeMethod.requiresBatchTracking": {
       name: "requiresBatchTracking",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobMakeMethod.version": {
+      name: "version",
       required: false,
       in: "query",
       type: "string",
@@ -102457,6 +102519,12 @@ export default {
     },
     "rowFilter.quoteMakeMethod.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quoteMakeMethod.version": {
+      name: "version",
       required: false,
       in: "query",
       type: "string",

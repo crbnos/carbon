@@ -210,7 +210,7 @@ const QuoteBoMExplorer = ({
                       <div className="flex items-center gap-1">
                         {node.data.isRoot ? (
                           <Badge variant="outline" className="text-xs">
-                            Method
+                            V{node.data.version}
                           </Badge>
                         ) : (
                           <NodeData node={node} />
@@ -339,6 +339,16 @@ function NodePreview({ node }: { node: FlatTreeItem<QuoteMethod> }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {node.data.methodType === "Make" && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            Make Method Version
+          </span>
+          <HStack className="w-full">
+            <Badge variant="outline">V{node.data.version}</Badge>
+          </HStack>
+        </VStack>
+      )}
       {onShapeState && (
         <VStack spacing={1}>
           <span className="text-xs text-muted-foreground font-medium">

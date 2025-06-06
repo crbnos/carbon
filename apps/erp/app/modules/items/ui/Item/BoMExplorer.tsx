@@ -365,6 +365,16 @@ function NodePreview({ node }: { node: FlatTreeItem<Method> }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {node.data.methodType === "Make" && node.data.version && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            Make Method Version
+          </span>
+          <HStack className="w-full">
+            <Badge variant="outline">V{node.data.version}</Badge>
+          </HStack>
+        </VStack>
+      )}
       {onShapeState && (
         <VStack spacing={1}>
           <span className="text-xs text-muted-foreground font-medium">
