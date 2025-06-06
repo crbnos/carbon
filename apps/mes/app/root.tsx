@@ -206,8 +206,8 @@ export function ErrorBoundary() {
 
   return (
     <Document title="Error!">
-      <div className="dark">
-        <div className="flex flex-col w-full h-screen bg-zinc-900 items-center justify-center space-y-4 ">
+      <div className="light">
+        <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
           <img
             src="/carbon-logo-mark.svg"
             alt="Carbon Logo"
