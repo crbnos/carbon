@@ -20,10 +20,15 @@ type DetailTopbarProps = {
     count?: number;
     shortcut?: string;
   }[];
+  matchRouteParts?: number;
   preserveParams?: boolean;
 };
 
-const DetailTopbar = ({ links, preserveParams = false }: DetailTopbarProps) => {
+const DetailTopbar = ({
+  links,
+  matchRouteParts,
+  preserveParams = false,
+}: DetailTopbarProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [params] = useUrlParams();
@@ -45,7 +50,15 @@ const DetailTopbar = ({ links, preserveParams = false }: DetailTopbarProps) => {
   return (
     <div className="inline-flex h-8 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
       {links.map((route) => {
-        const isActive = location.pathname.includes(route.to);
+        const isActive = matchRouteParts
+          ? location.pathname.includes(
+              route.to
+                .split("/")
+                .slice(1, matchRouteParts + 1)
+                .join("/")
+            )
+          : location.pathname.includes(route.to);
+
         const linkTo = preserveParams
           ? `${route.to}?${params.toString()}`
           : route.to;

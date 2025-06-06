@@ -28,7 +28,7 @@ const ToolHeader = () => {
         </HStack>
       </VStack>
       <VStack spacing={0} className="flex-shrink justify-center items-end">
-        <DetailsTopbar links={links} />
+        <DetailsTopbar links={links} matchRouteParts={4} />
       </VStack>
     </div>
   );
