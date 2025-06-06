@@ -113,7 +113,7 @@ function makeItem(
   return {
     id: material.id!,
     title: (
-      <VStack spacing={0} className="py-2.5 cursor-pointer">
+      <VStack spacing={0} className="py-1 cursor-pointer">
         <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
         {material?.description && (
           <span className="text-xs text-muted-foreground">
@@ -425,13 +425,7 @@ const QuoteBillOfMaterial = ({
         handleDrag={onCloseOnDrag}
         className="my-2 "
         renderExtra={(item) => (
-          <div
-            key={`${isOpen}`}
-            className={cn(
-              "flex h-full flex-col items-center justify-center pl-2",
-              isOpen ? "py-1" : "py-3 "
-            )}
-          >
+          <div key={`${isOpen}`}>
             <motion.button
               layout
               onClick={
@@ -444,11 +438,7 @@ const QuoteBillOfMaterial = ({
                     }
               }
               key="collapse"
-              className={cn(
-                isOpen
-                  ? "absolute right-3 top-3 z-10 "
-                  : "relative z-10 ml-auto mr-3 "
-              )}
+              className={cn("absolute right-3 top-3 z-10")}
             >
               {isOpen ? (
                 <motion.span
@@ -732,7 +722,7 @@ function MaterialForm({
       {itemData.methodType === "Make" && (
         <Hidden name="unitCost" value={itemData.unitCost} />
       )}
-      <VStack className="pt-4">
+      <VStack>
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <Item
             disabledItems={[params.itemId!]}

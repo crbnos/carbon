@@ -336,13 +336,7 @@ const BillOfMaterial = ({
         handleDrag={onCloseOnDrag}
         className="my-2 "
         renderExtra={(item) => (
-          <div
-            key={`${isOpen}`}
-            className={cn(
-              "flex h-full flex-col items-center justify-center pl-2",
-              isOpen ? "py-1" : "py-3 "
-            )}
-          >
+          <div key={`${isOpen}`}>
             <motion.button
               layout
               onClick={
@@ -355,11 +349,7 @@ const BillOfMaterial = ({
                     }
               }
               key="collapse"
-              className={cn(
-                isOpen
-                  ? "absolute right-3 top-3 z-10 "
-                  : "relative z-10 ml-auto mr-3 "
-              )}
+              className={cn("absolute right-3 top-3 z-10")}
             >
               {isOpen ? (
                 <motion.span
@@ -684,12 +674,14 @@ function MaterialForm({
         }
       }}
     >
-      <Hidden name="id" />
-      <Hidden name="makeMethodId" />
-      <Hidden name="itemReadableId" value={itemData.itemReadableId} />
-      <Hidden name="order" />
-      <Hidden name="kit" value={itemData.kit.toString()} />
-      <VStack className="pt-4">
+      <div>
+        <Hidden name="id" />
+        <Hidden name="makeMethodId" />
+        <Hidden name="itemReadableId" value={itemData.itemReadableId} />
+        <Hidden name="order" />
+        <Hidden name="kit" value={itemData.kit.toString()} />
+      </div>
+      <VStack>
         <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
           <Item
             disabledItems={[params.itemId!]}
