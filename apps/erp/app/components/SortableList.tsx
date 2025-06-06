@@ -112,11 +112,13 @@ function SortableListItem<T>({
           whileDrag={{ zIndex: 9999 }}
         >
           <div className={cn(isExpanded ? "w-full" : "", "z-20 ")}>
-            <motion.div
-              className="grid items-center justify-between grid-cols-[1fr_auto] w-full gap-2 py-1"
-              layout="position"
-            >
-              {!isExpanded ? (
+            <motion.div className="w-full py-3 px-3" layout="position">
+              <div
+                className={cn(
+                  "items-center justify-between w-full gap-2",
+                  isExpanded && "flex flex-col flex-grow"
+                )}
+              >
                 <div className="flex flex-col w-full">
                   <div className="flex w-full items-center gap-x-2 truncate pl-3">
                     {/* List Remove Actions */}
@@ -141,7 +143,7 @@ function SortableListItem<T>({
                     >
                       <HStack
                         className={cn(
-                          "w-full justify-between",
+                          "w-full justify-between pr-8",
                           !isReadOnly && "cursor-grab"
                         )}
                       >
@@ -182,9 +184,9 @@ function SortableListItem<T>({
                     </div>
                   </div>
                 </div>
-              ) : null}
 
-              {/* List Item Children */}
+                {/* List Item Children */}
+              </div>
               {renderExtra && renderExtra(item)}
             </motion.div>
             {item.footer && (
