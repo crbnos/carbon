@@ -202,20 +202,20 @@ const DocumentsTable = memo(
           cell: ({ row }) =>
             row.original.sourceDocument &&
             row.original.sourceDocumentId && (
-              <HStack className="group" spacing={1}>
+              <Link
+                to={getDocumentLocation(
+                  row.original
+                    .sourceDocument as (typeof documentSourceTypes)[number],
+                  row.original.sourceDocumentId
+                )}
+                prefetch="intent"
+                className="group flex items-center gap-1"
+              >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <Link
-                  className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-                  to={getDocumentLocation(
-                    row.original
-                      .sourceDocument as (typeof documentSourceTypes)[number],
-                    row.original.sourceDocumentId
-                  )}
-                  prefetch="intent"
-                >
+                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
                   <LuExternalLink />
-                </Link>
-              </HStack>
+                </span>
+              </Link>
             ),
           meta: {
             icon: <LuFileText />,

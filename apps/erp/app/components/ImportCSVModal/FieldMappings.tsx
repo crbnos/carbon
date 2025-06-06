@@ -172,7 +172,7 @@ export function FieldMapping({
         {currentStep === 0 ? (
           <div className="grid grid-cols-2 gap-x-4 gap-y-2">
             <div className="text-sm">CSV column</div>
-            <div className="text-sm">CarbonOS column</div>
+            <div className="text-sm">Carbon column</div>
             {Object.entries(mappableFields).map(
               ([name, { label, required, type }]) => (
                 <FieldRow

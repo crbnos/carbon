@@ -45,7 +45,7 @@ const NonConformancePDF = ({
     <Template
       title={title}
       meta={{
-        author: meta?.author ?? "CarbonOS",
+        author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "non-conformance report",
         subject: meta?.subject ?? "Non-Conformance Report",
       }}

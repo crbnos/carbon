@@ -35,6 +35,7 @@ interface SortableListItemProps<T> {
   isHighlighted?: boolean;
   className?: string;
   handleDrag: () => void;
+  isReadOnly?: boolean;
 }
 
 function SortableListItem<T>({
@@ -49,14 +50,15 @@ function SortableListItem<T>({
   isExpanded,
   isHighlighted,
   className,
+  isReadOnly = false,
 }: SortableListItemProps<T>) {
   const [isDragging, setIsDragging] = useState(false);
-  const [isDraggable] = useState(!isExpanded);
+  const [isDraggable] = useState(!isExpanded && !isReadOnly);
   const dragControls = useDragControls();
   const itemRef = useRef<HTMLDivElement>(null);
 
   const handleDragStart = (event: any) => {
-    if (isExpanded) return;
+    if (isExpanded || isReadOnly) return;
     flushSync(() => setIsDragging(true));
     dragControls.start(event, { snapToCursor: true });
     handleDrag();
@@ -85,12 +87,12 @@ function SortableListItem<T>({
             "relative z-auto grow",
             "h-full rounded-md bg-muted/30",
             "border border-border rounded-lg ",
-            !isExpanded && "cursor-grab",
+            !isExpanded && !isReadOnly && "cursor-grab",
             isHighlighted && "border-2 border-primary",
             item.checked && !isDragging ? "w-7/10" : "w-full"
           )}
           key={item.id}
-          dragListener={!item.checked && !isExpanded}
+          dragListener={!item.checked && !isExpanded && !isReadOnly}
           dragControls={dragControls}
           onDragEnd={handleDragEnd}
           style={
@@ -116,15 +118,17 @@ function SortableListItem<T>({
             >
               {!isExpanded ? (
                 <div className="flex flex-col w-full">
-                  <div className="flex w-full items-center gap-x-2 truncate">
+                  <div className="flex w-full items-center gap-x-2 truncate pl-3">
                     {/* List Remove Actions */}
-                    <Checkbox
-                      checked={item.checked}
-                      id={`checkbox-${item.id}`}
-                      aria-label="Mark to delete"
-                      onCheckedChange={() => onToggleItem(item.id)}
-                      className="ml-3 border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
-                    />
+                    {!isReadOnly && (
+                      <Checkbox
+                        checked={item.checked}
+                        id={`checkbox-${item.id}`}
+                        aria-label="Mark to delete"
+                        onCheckedChange={() => onToggleItem(item.id)}
+                        className="border-foreground/20 bg-background/30 data-[state=checked]:bg-background data-[state=checked]:text-red-200 flex flex-shrink-0 "
+                      />
+                    )}
                     {/* List Order */}
                     <p className="font-medium text-xs pl-1 text-foreground/50 flex flex-shrink-0">
                       {getParallelizedOrder(order, item, items)}
@@ -135,7 +139,12 @@ function SortableListItem<T>({
                       className="px-1 flex flex-grow truncate"
                       role="button"
                     >
-                      <HStack className="w-full justify-between cursor-grab">
+                      <HStack
+                        className={cn(
+                          "w-full justify-between",
+                          !isReadOnly && "cursor-grab"
+                        )}
+                      >
                         {/* List Title */}
                         {typeof item.title === "string" ? (
                           <span
@@ -184,16 +193,20 @@ function SortableListItem<T>({
               </div>
             )}
           </div>
-          <div
-            onPointerDown={isDraggable ? handleDragStart : undefined}
-            style={{ touchAction: "none" }}
-          />
+          {!isReadOnly && (
+            <div
+              onPointerDown={isDraggable ? handleDragStart : undefined}
+              style={{ touchAction: "none" }}
+            />
+          )}
         </Reorder.Item>
         {/* List Delete Action Animation */}
 
-        {item.checked ? <div className="h-[1.5rem] w-3" /> : null}
+        {!isReadOnly && item.checked ? (
+          <div className="h-[1.5rem] w-3" />
+        ) : null}
 
-        {item.checked ? (
+        {!isReadOnly && item.checked ? (
           <div className="inset-0 z-0 rounded-full bg-card border-border border dark:shadow-[0_1px_0_0_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(255,255,255,0.03)_inset,0_0_0_1px_rgba(0,0,0,0.1),0_2px_2px_0_rgba(0,0,0,0.1),0_4px_4px_0_rgba(0,0,0,0.1),0_8px_8px_0_rgba(0,0,0,0.1)] dark:bg-[#161716]/50">
             <button
               className="inline-flex h-10 items-center justify-center space-nowrap rounded-md px-3 text-sm font-medium  transition-colors duration-150  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
@@ -222,6 +235,7 @@ interface SortableListProps<T extends Item> {
   onRemoveItem: (id: string) => void;
   onReorder: (items: T[]) => void;
   renderItem: (props: SortableItemRenderProps<T>) => React.ReactNode;
+  isReadOnly?: boolean;
 }
 
 function SortableList<T extends Item>({
@@ -230,6 +244,7 @@ function SortableList<T extends Item>({
   onToggleItem,
   onReorder,
   renderItem,
+  isReadOnly = false,
 }: SortableListProps<T>) {
   if (items && Array.isArray(items) && items.length > 0) {
     return (
@@ -237,7 +252,7 @@ function SortableList<T extends Item>({
         <Reorder.Group
           axis="y"
           values={items}
-          onReorder={onReorder}
+          onReorder={isReadOnly ? () => {} : onReorder}
           className="flex flex-col"
         >
           {items?.map((item, index) =>
@@ -263,12 +278,10 @@ export { SortableList, SortableListItem };
 
 function getParallelizedOrder(index: number, item: Item, items: Item[]) {
   if (item?.order !== "With Previous") return index + 1;
-  // traverse backwards through the list of items to find the first item that is not "With Previous" and return its index + 1
   for (let i = index - 1; i >= 0; i--) {
     if (items[i].order !== "With Previous") {
       return i + 1;
     }
   }
-
   return 1;
 }

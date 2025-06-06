@@ -1,5 +1,5 @@
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import { Menubar, VStack } from "@carbon/react";
 import {
   Await,
   defer,
@@ -25,6 +25,7 @@ import type {
 } from "~/modules/items";
 import {
   getMakeMethodById,
+  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
 } from "~/modules/items";
@@ -112,6 +113,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null,
       })) ?? [],
+    makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
     model: getModelByItemId(client, makeMethod.data.itemId),
     tags: tags.data ?? [],
   });
@@ -120,7 +122,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function MethodMaterialMakePage() {
   const loaderData = useLoaderData<typeof loader>();
   const permissions = usePermissions();
-  const { makeMethod, methodMaterials, methodOperations, tags } = loaderData;
+  const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
+    loaderData;
 
   const { itemId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -139,11 +142,21 @@ export default function MethodMaterialMakePage() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={makeMethod.itemId} type="Part" />
+      <Suspense fallback={<Menubar />}>
+        <Await resolve={makeMethods}>
+          {(makeMethods) => (
+            <MakeMethodTools
+              itemId={makeMethod.itemId}
+              makeMethods={makeMethods.data ?? []}
+              type="Part"
+            />
+          )}
+        </Await>
+      </Suspense>
 
       <BillOfProcess
         key={`bop:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={makeMethod}
         // @ts-ignore
         operations={methodOperations}
         configurable={routeData?.partManufacturing.requiresConfiguration}
@@ -153,7 +166,7 @@ export default function MethodMaterialMakePage() {
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={makeMethod}
         materials={methodMaterials}
         operations={methodOperations}
         configurable={routeData?.partManufacturing.requiresConfiguration}
@@ -165,7 +178,7 @@ export default function MethodMaterialMakePage() {
           {(model) => (
             <CadModel
               key={`cad:${model.itemId}`}
-              isReadOnly={!permissions.can("update", "sales")}
+              isReadOnly={!permissions.can("update", "parts")}
               metadata={{
                 itemId: model?.itemId ?? undefined,
               }}

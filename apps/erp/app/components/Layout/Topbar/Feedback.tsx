@@ -154,7 +154,7 @@ const Feedback = () => {
             <p className="text-sm">
               Have a technical issue? Contact{" "}
               <a className="text-primary" href={`mailto:${SUPPORT_EMAIL}`}>
-                CarbonOS Support.
+                Carbon Support.
               </a>
             </p>
           </VStack>

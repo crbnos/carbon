@@ -37,6 +37,7 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuChevronDown,
+  LuLock,
   LuSettings2,
   LuSquareFunction,
   LuX,
@@ -73,7 +74,11 @@ import { useBom } from "~/stores";
 import { path } from "~/utils/path";
 import type { methodOperationValidator } from "../../items.models";
 import { methodMaterialValidator } from "../../items.models";
-import type { ConfigurationParameter, ConfigurationRule } from "../../types";
+import type {
+  ConfigurationParameter,
+  ConfigurationRule,
+  MakeMethod,
+} from "../../types";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -91,7 +96,7 @@ type ItemWithData = SortableItem & {
 
 type BillOfMaterialProps = {
   configurable?: boolean;
-  makeMethodId: string;
+  makeMethod: MakeMethod;
   materials: Material[];
   operations: Operation[];
   parameters?: ConfigurationParameter[];
@@ -126,15 +131,22 @@ const initialMethodMaterial: Omit<Material, "makeMethodId" | "order"> & {
 const BillOfMaterial = ({
   configurable = false,
   configurationRules,
-  makeMethodId,
+  makeMethod,
   materials: initialMaterials,
   operations,
   parameters,
 }: BillOfMaterialProps) => {
-  const fetcher = useFetcher<{}>();
   const permissions = usePermissions();
+  const isReadOnly =
+    permissions.can("update", "parts") === false ||
+    makeMethod.status !== "Draft";
+
+  const fetcher = useFetcher<{}>();
   const [searchParams] = useSearchParams();
+
+  const makeMethodId = makeMethod.id;
   const materialId = searchParams.get("materialId");
+
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
@@ -186,7 +198,7 @@ const BillOfMaterial = ({
   ).sort((a, b) => a.data.order - b.data.order);
 
   const onToggleItem = (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     setCheckedState((prev) => ({
       ...prev,
       [id]: !prev[id],
@@ -194,7 +206,7 @@ const BillOfMaterial = ({
   };
 
   const onAddItem = () => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
     const temporaryId = Math.random().toString(16).slice(2);
     setSelectedItemId(temporaryId);
 
@@ -220,7 +232,7 @@ const BillOfMaterial = ({
   };
 
   const onRemoveItem = async (id: string) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
 
     if (isTemporaryId(id)) {
       setTemporaryItems((prev) => {
@@ -252,7 +264,7 @@ const BillOfMaterial = ({
   }, 1000);
 
   const onReorder = (items: ItemWithData[]) => {
-    if (!permissions.can("update", "parts")) return;
+    if (isReadOnly) return;
 
     // Create new order state
     const newOrderState = items.reduce<OrderState>((acc, item, index) => {
@@ -311,6 +323,7 @@ const BillOfMaterial = ({
 
     return (
       <SortableListItem<Material>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -410,6 +423,7 @@ const BillOfMaterial = ({
                         >
                           <MaterialForm
                             configurable={configurable}
+                            isReadOnly={isReadOnly}
                             item={item}
                             methodOperations={operations}
                             orderState={orderState}
@@ -453,16 +467,16 @@ const BillOfMaterial = ({
     <Card>
       <HStack className="justify-between">
         <CardHeader>
-          <CardTitle>Bill of Material</CardTitle>
+          <CardTitle className="flex flex-row items-center gap-2">
+            Bill of Material {isReadOnly && <LuLock />}
+          </CardTitle>
         </CardHeader>
 
         <CardAction>
           <div className="flex items-center gap-2">
             <Button
               variant="secondary"
-              isDisabled={
-                !permissions.can("update", "parts") || selectedItemId !== null
-              }
+              isDisabled={isReadOnly || selectedItemId !== null}
               onClick={onAddItem}
             >
               Add Material
@@ -497,6 +511,7 @@ const BillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={materials}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
@@ -524,6 +539,7 @@ function isTemporaryId(id: string) {
 
 function MaterialForm({
   configurable,
+  isReadOnly,
   item,
   methodOperations,
   rulesByField,
@@ -533,6 +549,7 @@ function MaterialForm({
   setTemporaryItems,
 }: {
   configurable: boolean;
+  isReadOnly: boolean;
   item: ItemWithData;
   methodOperations: Operation[];
   orderState: OrderState;
@@ -547,7 +564,7 @@ function MaterialForm({
   const methodMaterialFetcher = useFetcher<{ id: string }>();
   const params = useParams();
   const { company } = useUser();
-  const permissions = usePermissions();
+
   const unitOfMeasures = useUnitOfMeasure();
 
   useEffect(() => {
@@ -853,9 +870,7 @@ function MaterialForm({
               <div />
             )}
 
-            <Submit isDisabled={!permissions.can("update", "parts")}>
-              Save
-            </Submit>
+            <Submit isDisabled={isReadOnly}>Save</Submit>
           </motion.div>
         </motion.div>
       </VStack>

@@ -46,6 +46,7 @@ const payloadValidator = z.object({
     "itemToQuoteMakeMethod",
     "jobMakeMethodToItem",
     "jobToItem",
+    "makeMethodToMakeMethod",
     "procedureToOperation",
     "quoteLineToItem",
     "quoteLineToJob",
@@ -90,19 +91,26 @@ serve(async (req: Request) => {
       case "itemToItem": {
         const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", sourceId)
             .eq("companyId", companyId)
             .single(),
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", targetId)
             .eq("companyId", companyId)
             .single(),
         ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        if (
+          sourceMakeMethod.data.id === null ||
+          targetMakeMethod.data.id === null
+        ) {
           throw new Error("Failed to get make methods");
         }
 
@@ -147,7 +155,7 @@ serve(async (req: Request) => {
                   ...material,
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
-                  makeMethodId: targetMakeMethod.data.id,
+                  makeMethodId: targetMakeMethod.data.id!,
                   createdBy: userId,
                 }))
               )
@@ -168,7 +176,7 @@ serve(async (req: Request) => {
                   }) => ({
                     ...operation,
                     id: undefined, // Let the database generate a new ID
-                    makeMethodId: targetMakeMethod.data.id,
+                    makeMethodId: targetMakeMethod.data.id!,
                     createdBy: userId,
                   })
                 )
@@ -262,7 +270,7 @@ serve(async (req: Request) => {
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -294,7 +302,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees, configurationRules] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
           isConfigured
             ? client
                 .from("configurationRule")
@@ -340,6 +348,11 @@ serve(async (req: Request) => {
               .execute(),
             trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute(),
             trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute(),
+            trx
+              .updateTable("jobMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", jobMakeMethod.data.id!)
+              .execute(),
           ]);
 
           async function getConfiguredValue<T>({
@@ -834,7 +847,7 @@ serve(async (req: Request) => {
         const [makeMethod, jobMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -861,7 +874,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -888,6 +901,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("jobOperation")
               .where("jobMakeMethodId", "=", jobMakeMethodId)
+              .execute(),
+            trx
+              .updateTable("jobMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", jobMakeMethodId)
               .execute(),
           ]);
 
@@ -1125,7 +1143,7 @@ serve(async (req: Request) => {
           configurationRules,
         ] = await Promise.all([
           client
-            .from("makeMethod")
+            .from("activeMakeMethods")
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
@@ -1168,7 +1186,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -1204,6 +1222,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("quoteOperation")
               .where("quoteLineId", "=", quoteLineId)
+              .execute(),
+            trx
+              .updateTable("quoteMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", quoteMakeMethod.data.id!)
               .execute(),
           ]);
 
@@ -1691,7 +1714,7 @@ serve(async (req: Request) => {
         const [makeMethod, quoteMakeMethod, workCenters, supplierProcesses] =
           await Promise.all([
             client
-              .from("makeMethod")
+              .from("activeMakeMethods")
               .select("*")
               .eq("itemId", itemId)
               .eq("companyId", companyId)
@@ -1718,7 +1741,7 @@ serve(async (req: Request) => {
         }
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id),
+          getMethodTree(client, makeMethod.data.id!),
         ]);
 
         if (methodTrees.error) {
@@ -1745,6 +1768,11 @@ serve(async (req: Request) => {
             trx
               .deleteFrom("quoteOperation")
               .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+              .execute(),
+            trx
+              .updateTable("quoteMakeMethod")
+              .set({ version: makeMethod.data.version ?? 1 })
+              .where("id", "=", quoteMakeMethodId)
               .execute(),
           ]);
 
@@ -1963,13 +1991,13 @@ serve(async (req: Request) => {
       }
       case "jobMakeMethodToItem": {
         const jobMakeMethodId = sourceId;
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, jobMakeMethod] = await Promise.all([
           client
             .from("makeMethod")
             .select("*")
-            .eq("itemId", itemId)
+            .eq("id", makeMethodId)
             .eq("companyId", companyId)
             .single(),
           client
@@ -1987,6 +2015,8 @@ serve(async (req: Request) => {
         if (jobMakeMethod.error) {
           throw new Error("Failed to get job make method");
         }
+
+        const itemId = makeMethod.data?.itemId;
 
         const [jobOperations] = await Promise.all([
           client
@@ -2235,13 +2265,13 @@ serve(async (req: Request) => {
         if (!jobId) {
           throw new Error("Invalid sourceId");
         }
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, jobMakeMethod, jobOperations] = await Promise.all([
           client
             .from("makeMethod")
             .select("*")
-            .eq("itemId", itemId)
+            .eq("id", makeMethodId)
             .eq("companyId", companyId)
             .single(),
           client
@@ -2272,6 +2302,8 @@ serve(async (req: Request) => {
           throw new Error("Failed to get job operations");
         }
 
+        const itemId = makeMethod.data?.itemId;
+
         const [jobMethodTrees] = await Promise.all([
           getJobMethodTree(client, jobMakeMethod.data.id),
         ]);
@@ -2292,7 +2324,7 @@ serve(async (req: Request) => {
         });
 
         const makeMethods = await client
-          .from("makeMethod")
+          .from("activeMakeMethods")
           .select("*")
           .in("itemId", madeItemIds)
           .eq("companyId", companyId);
@@ -2302,7 +2334,10 @@ serve(async (req: Request) => {
 
         const makeMethodByItemId: Record<string, string> = {};
         makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
+          if (m.itemId) {
+            // @ts-expect-error - itemId is not null
+            makeMethodByItemId[m.itemId!] = m.id;
+          }
         });
 
         await db.transaction().execute(async (trx) => {
@@ -2494,6 +2529,169 @@ serve(async (req: Request) => {
 
         break;
       }
+      case "makeMethodToMakeMethod": {
+        const [sourceMakeMethod, targetMakeMethod] = await Promise.all([
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("id", sourceId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("id", targetId)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+        if (sourceMakeMethod.error || targetMakeMethod.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const [sourceMaterials, sourceOperations] = await Promise.all([
+          client
+            .from("methodMaterial")
+            .select("*")
+            .eq("makeMethodId", sourceMakeMethod.data.id)
+            .eq("companyId", companyId),
+          client
+            .from("methodOperation")
+            .select(
+              "*, methodOperationTool(*), methodOperationParameter(*), methodOperationAttribute(*)"
+            )
+            .eq("makeMethodId", sourceMakeMethod.data.id)
+            .eq("companyId", companyId),
+        ]);
+
+        if (sourceMaterials.error || sourceOperations.error) {
+          throw new Error("Failed to get source materials or operations");
+        }
+
+        await db.transaction().execute(async (trx) => {
+          // Delete existing materials and operations from target method
+          await Promise.all([
+            trx
+              .deleteFrom("methodMaterial")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+            trx
+              .deleteFrom("methodOperation")
+              .where("makeMethodId", "=", targetMakeMethod.data.id)
+              .execute(),
+          ]);
+
+          // Copy materials from source to target
+          if (sourceMaterials.data && sourceMaterials.data.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                sourceMaterials.data.map((material) => ({
+                  ...material,
+                  productionQuantity: undefined,
+                  id: undefined, // Let the database generate a new ID
+                  makeMethodId: targetMakeMethod.data.id,
+                  createdBy: userId,
+                }))
+              )
+              .execute();
+          }
+
+          // Copy operations from source to target
+          if (sourceOperations.data && sourceOperations.data.length > 0) {
+            const operationIds = await trx
+              .insertInto("methodOperation")
+              .values(
+                sourceOperations.data.map(
+                  ({
+                    methodOperationTool: _tools,
+                    methodOperationParameter: _parameters,
+                    methodOperationAttribute: _attributes,
+                    ...operation
+                  }) => ({
+                    ...operation,
+                    id: undefined, // Let the database generate a new ID
+                    makeMethodId: targetMakeMethod.data.id,
+                    createdBy: userId,
+                  })
+                )
+              )
+              .returning(["id"])
+              .execute();
+
+            for await (const [
+              index,
+              operation,
+            ] of sourceOperations.data.entries()) {
+              const {
+                methodOperationTool,
+                methodOperationParameter,
+                methodOperationAttribute,
+                procedureId,
+              } = operation;
+              const operationId = operationIds[index].id;
+
+              if (
+                operationId &&
+                Array.isArray(methodOperationTool) &&
+                methodOperationTool.length > 0
+              ) {
+                await trx
+                  .insertInto("methodOperationTool")
+                  .values(
+                    methodOperationTool.map((tool) => ({
+                      toolId: tool.toolId,
+                      quantity: tool.quantity,
+                      operationId,
+                      companyId,
+                      createdBy: userId,
+                    }))
+                  )
+                  .execute();
+              }
+
+              if (!procedureId) {
+                if (
+                  Array.isArray(methodOperationParameter) &&
+                  methodOperationParameter.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationParameter")
+                    .values(
+                      methodOperationParameter.map((param) => ({
+                        operationId: operationId!,
+                        key: param.key,
+                        value: param.value,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (
+                  Array.isArray(methodOperationAttribute) &&
+                  methodOperationAttribute.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationAttribute")
+                    .values(
+                      methodOperationAttribute.map(
+                        ({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          operationId: operationId!,
+                          companyId,
+                          createdBy: userId,
+                        })
+                      )
+                    )
+                    .execute();
+                }
+              }
+            }
+          }
+        });
+        break;
+      }
       case "procedureToOperation": {
         const procedureId = sourceId;
         const operationId = targetId;
@@ -2629,14 +2827,14 @@ serve(async (req: Request) => {
         if (!quoteId || !quoteLineId) {
           throw new Error("Invalid sourceId");
         }
-        const itemId = targetId;
+        const makeMethodId = targetId;
 
         const [makeMethod, quoteMakeMethod, quoteOperations] =
           await Promise.all([
             client
               .from("makeMethod")
               .select("*")
-              .eq("itemId", itemId)
+              .eq("id", makeMethodId)
               .eq("companyId", companyId)
               .single(),
             client
@@ -2667,6 +2865,8 @@ serve(async (req: Request) => {
           throw new Error("Failed to get quote operations");
         }
 
+        const itemId = makeMethod.data?.itemId;
+
         const [quoteMethodTrees] = await Promise.all([
           getQuoteMethodTree(client, quoteMakeMethod.data.id),
         ]);
@@ -2691,7 +2891,7 @@ serve(async (req: Request) => {
         );
 
         const makeMethods = await client
-          .from("makeMethod")
+          .from("activeMakeMethods")
           .select("*")
           .in("itemId", madeItemIds)
           .eq("companyId", companyId);
@@ -2701,7 +2901,10 @@ serve(async (req: Request) => {
 
         const makeMethodByItemId: Record<string, string> = {};
         makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
+          if (m.itemId) {
+            // @ts-expect-error - itemId is not null
+            makeMethodByItemId[m.itemId!] = m.id;
+          }
         });
 
         await db.transaction().execute(async (trx) => {
@@ -2793,7 +2996,6 @@ serve(async (req: Request) => {
               order: op.order ?? 1,
               operationOrder: op.operationOrder ?? "After Previous",
               operationType: op.operationType ?? "Inside",
-              operationSupplierProcessId: op.operationSupplierProcessId,
               operationMinimumCost: op.operationMinimumCost ?? 0,
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
@@ -2875,7 +3077,286 @@ serve(async (req: Request) => {
                     quoteOperationAttribute.length > 0
                   ) {
                     await trx
-                      .insertInto("quoteOperationAttribute")
+                      .insertInto("methodOperationAttribute")
+                      .values(
+                        quoteOperationAttribute.map(
+                          ({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            operationId,
+                            companyId,
+                            createdBy: userId,
+                          })
+                        )
+                      )
+                      .execute();
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        break;
+      }
+      case "quoteMakeMethodToItem": {
+        const quoteMakeMethodId = sourceId;
+        const makeMethodId = targetId;
+
+        const [makeMethod, quoteMakeMethod] = await Promise.all([
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("id", makeMethodId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("quoteMakeMethod")
+            .select("*")
+            .eq("id", quoteMakeMethodId)
+            .eq("companyId", companyId)
+            .single(),
+        ]);
+
+        if (makeMethod.error) {
+          throw new Error("Failed to get make method");
+        }
+
+        if (quoteMakeMethod.error) {
+          throw new Error("Failed to get quote make method");
+        }
+
+        const itemId = makeMethod.data?.itemId;
+
+        const [quoteOperations] = await Promise.all([
+          client
+            .from("quoteOperationsWithMakeMethods")
+            .select(
+              "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationAttribute(*)"
+            )
+            .eq("quoteLineId", quoteMakeMethod.data.quoteLineId)
+            .eq("companyId", companyId),
+        ]);
+
+        if (quoteOperations.error) {
+          throw new Error("Failed to get quote operations");
+        }
+
+        const [quoteMethodTrees] = await Promise.all([
+          getQuoteMethodTree(
+            client,
+            quoteMakeMethodId,
+            quoteMakeMethod.data.parentMaterialId
+          ),
+        ]);
+
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        if (quoteMethodTrees.error) {
+          throw new Error("Failed to get method tree");
+        }
+
+        const quoteMethodTree = quoteMethodTrees
+          .data?.[0] as QuoteMethodTreeItem;
+        if (!quoteMethodTree) throw new Error("Job method tree not found");
+
+        const madeItemIds: string[] = [];
+
+        traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
+          if (node.data.itemId && node.data.methodType === "Make") {
+            madeItemIds.push(node.data.itemId);
+          }
+        });
+
+        const makeMethods = await client
+          .from("activeMakeMethods")
+          .select("*")
+          .in("itemId", madeItemIds)
+          .eq("companyId", companyId);
+        if (makeMethods.error) {
+          throw new Error("Failed to get make methods");
+        }
+
+        const makeMethodByItemId: Record<string, string> = {};
+        makeMethods.data?.forEach((m) => {
+          if (m.itemId) {
+            // @ts-expect-error - itemId is not null
+            makeMethodByItemId[m.itemId!] = m.id;
+          }
+        });
+
+        await db.transaction().execute(async (trx) => {
+          let makeMethodsToDelete: string[] = [];
+          const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
+            [];
+          const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
+            [];
+
+          await traverseQuoteMethod(
+            quoteMethodTree!,
+            (node: QuoteMethodTreeItem) => {
+              if (node.data.itemId && node.data.methodType === "Make") {
+                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              }
+
+              node.children.forEach((child) => {
+                materialInserts.push({
+                  makeMethodId: makeMethodByItemId[node.data.itemId],
+                  materialMakeMethodId: makeMethodByItemId[child.data.itemId],
+                  itemId: child.data.itemId,
+                  kit: child.data.kit,
+                  itemReadableId: child.data.itemReadableId,
+                  itemType: child.data.itemType,
+                  methodType: child.data.methodType,
+                  order: child.data.order,
+                  quantity: child.data.quantity,
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {},
+                });
+              });
+            }
+          );
+
+          if (makeMethodsToDelete.length > 0) {
+            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
+              mm === makeMethodByItemId[quoteMakeMethod.data.itemId]
+                ? makeMethod.data.id
+                : mm
+            );
+            await Promise.all([
+              trx
+                .deleteFrom("methodMaterial")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+              trx
+                .deleteFrom("methodOperation")
+                .where("makeMethodId", "in", makeMethodsToDelete)
+                .execute(),
+            ]);
+          }
+
+          if (materialInserts.length > 0) {
+            await trx
+              .insertInto("methodMaterial")
+              .values(
+                materialInserts.map((insert) => ({
+                  ...insert,
+                  productionQuantity: undefined,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                  itemId:
+                    insert.itemId === quoteMakeMethod.data.itemId
+                      ? itemId
+                      : insert.itemId,
+                }))
+              )
+              .execute();
+          }
+
+          quoteOperations.data?.forEach((op) => {
+            operationInserts.push({
+              makeMethodId: op.makeMethodId!,
+              processId: op.processId!,
+              procedureId: op.procedureId,
+              workCenterId: op.workCenterId,
+              description: op.description ?? "",
+              setupTime: op.setupTime ?? 0,
+              setupUnit: op.setupUnit ?? "Total Minutes",
+              laborTime: op.laborTime ?? 0,
+              laborUnit: op.laborUnit ?? "Minutes/Piece",
+              machineTime: op.machineTime ?? 0,
+              machineUnit: op.machineUnit ?? "Minutes/Piece",
+              order: op.order ?? 1,
+              operationOrder: op.operationOrder ?? "After Previous",
+              operationType: op.operationType ?? "Inside",
+              operationMinimumCost: op.operationMinimumCost ?? 0,
+              operationLeadTime: op.operationLeadTime ?? 0,
+              operationUnitCost: op.operationUnitCost ?? 0,
+              tags: op.tags ?? [],
+              workInstruction: op.workInstruction,
+              companyId,
+              createdBy: userId,
+              customFields: {},
+            });
+          });
+
+          if (operationInserts.length > 0) {
+            const operationIds = await trx
+              .insertInto("methodOperation")
+              .values(
+                operationInserts.map((insert) => ({
+                  ...insert,
+                  makeMethodId:
+                    insert.makeMethodId ===
+                    makeMethodByItemId[quoteMakeMethod.data.itemId]
+                      ? makeMethod.data.id
+                      : insert.makeMethodId,
+                }))
+              )
+              .returning(["id"])
+              .execute();
+
+            for (const [index, operation] of (
+              quoteOperations.data ?? []
+            ).entries()) {
+              const operationId = operationIds[index].id;
+              if (operationId) {
+                const {
+                  quoteOperationTool,
+                  quoteOperationParameter,
+                  quoteOperationAttribute,
+                  procedureId,
+                } = operation;
+
+                if (
+                  Array.isArray(quoteOperationTool) &&
+                  quoteOperationTool.length > 0
+                ) {
+                  await trx
+                    .insertInto("methodOperationTool")
+                    .values(
+                      quoteOperationTool.map((tool) => ({
+                        toolId: tool.toolId,
+                        quantity: tool.quantity,
+                        operationId,
+                        companyId,
+                        createdBy: userId,
+                      }))
+                    )
+                    .execute();
+                }
+
+                if (!procedureId) {
+                  if (
+                    Array.isArray(quoteOperationParameter) &&
+                    quoteOperationParameter.length > 0
+                  ) {
+                    await trx
+                      .insertInto("methodOperationParameter")
+                      .values(
+                        quoteOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId,
+                        }))
+                      )
+                      .execute();
+                  }
+
+                  if (
+                    Array.isArray(quoteOperationAttribute) &&
+                    quoteOperationAttribute.length > 0
+                  ) {
+                    await trx
+                      .insertInto("methodOperationAttribute")
                       .values(
                         quoteOperationAttribute.map(
                           ({ id: _id, ...attribute }) => ({
@@ -3463,279 +3944,7 @@ serve(async (req: Request) => {
 
         break;
       }
-      case "quoteMakeMethodToItem": {
-        const quoteMakeMethodId = sourceId;
-        const itemId = targetId;
 
-        const [makeMethod, quoteMakeMethod] = await Promise.all([
-          client
-            .from("makeMethod")
-            .select("*")
-            .eq("itemId", itemId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("quoteMakeMethod")
-            .select("*")
-            .eq("id", quoteMakeMethodId)
-            .eq("companyId", companyId)
-            .single(),
-        ]);
-
-        if (makeMethod.error) {
-          throw new Error("Failed to get make method");
-        }
-
-        if (quoteMakeMethod.error) {
-          throw new Error("Failed to get quote make method");
-        }
-
-        const [quoteOperations] = await Promise.all([
-          client
-            .from("quoteOperationsWithMakeMethods")
-            .select(
-              "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationAttribute(*)"
-            )
-            .eq("quoteLineId", quoteMakeMethod.data.quoteLineId)
-            .eq("companyId", companyId),
-        ]);
-
-        if (quoteOperations.error) {
-          throw new Error("Failed to get quote operations");
-        }
-
-        const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(
-            client,
-            quoteMakeMethodId,
-            quoteMakeMethod.data.parentMaterialId
-          ),
-        ]);
-
-        if (quoteMethodTrees.error) {
-          throw new Error("Failed to get method tree");
-        }
-
-        if (quoteMethodTrees.error) {
-          throw new Error("Failed to get method tree");
-        }
-
-        const quoteMethodTree = quoteMethodTrees
-          .data?.[0] as QuoteMethodTreeItem;
-        if (!quoteMethodTree) throw new Error("Job method tree not found");
-
-        const madeItemIds: string[] = [];
-
-        traverseQuoteMethod(quoteMethodTree, (node: QuoteMethodTreeItem) => {
-          if (node.data.itemId && node.data.methodType === "Make") {
-            madeItemIds.push(node.data.itemId);
-          }
-        });
-
-        const makeMethods = await client
-          .from("makeMethod")
-          .select("*")
-          .in("itemId", madeItemIds);
-        if (makeMethods.error) {
-          throw new Error("Failed to get make methods");
-        }
-
-        const makeMethodByItemId: Record<string, string> = {};
-        makeMethods.data?.forEach((m) => {
-          makeMethodByItemId[m.itemId] = m.id;
-        });
-
-        await db.transaction().execute(async (trx) => {
-          let makeMethodsToDelete: string[] = [];
-          const materialInserts: Database["public"]["Tables"]["methodMaterial"]["Insert"][] =
-            [];
-          const operationInserts: Database["public"]["Tables"]["methodOperation"]["Insert"][] =
-            [];
-
-          await traverseQuoteMethod(
-            quoteMethodTree!,
-            (node: QuoteMethodTreeItem) => {
-              if (node.data.itemId && node.data.methodType === "Make") {
-                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
-              }
-
-              node.children.forEach((child) => {
-                materialInserts.push({
-                  makeMethodId: makeMethodByItemId[node.data.itemId],
-                  materialMakeMethodId: makeMethodByItemId[child.data.itemId],
-                  itemId: child.data.itemId,
-                  kit: child.data.kit,
-                  itemReadableId: child.data.itemReadableId,
-                  itemType: child.data.itemType,
-                  methodType: child.data.methodType,
-                  order: child.data.order,
-                  quantity: child.data.quantity,
-                  unitOfMeasureCode: child.data.unitOfMeasureCode,
-                  companyId,
-                  createdBy: userId,
-                  customFields: {},
-                });
-              });
-            }
-          );
-
-          if (makeMethodsToDelete.length > 0) {
-            makeMethodsToDelete = makeMethodsToDelete.map((mm) =>
-              mm === makeMethodByItemId[quoteMakeMethod.data.itemId]
-                ? makeMethod.data.id
-                : mm
-            );
-            await Promise.all([
-              trx
-                .deleteFrom("methodMaterial")
-                .where("makeMethodId", "in", makeMethodsToDelete)
-                .execute(),
-              trx
-                .deleteFrom("methodOperation")
-                .where("makeMethodId", "in", makeMethodsToDelete)
-                .execute(),
-            ]);
-          }
-
-          if (materialInserts.length > 0) {
-            await trx
-              .insertInto("methodMaterial")
-              .values(
-                materialInserts.map((insert) => ({
-                  ...insert,
-                  productionQuantity: undefined,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                  itemId:
-                    insert.itemId === quoteMakeMethod.data.itemId
-                      ? itemId
-                      : insert.itemId,
-                }))
-              )
-              .execute();
-          }
-
-          quoteOperations.data?.forEach((op) => {
-            operationInserts.push({
-              makeMethodId: op.makeMethodId!,
-              processId: op.processId!,
-              procedureId: op.procedureId,
-              workCenterId: op.workCenterId,
-              description: op.description ?? "",
-              setupTime: op.setupTime ?? 0,
-              setupUnit: op.setupUnit ?? "Total Minutes",
-              laborTime: op.laborTime ?? 0,
-              laborUnit: op.laborUnit ?? "Minutes/Piece",
-              machineTime: op.machineTime ?? 0,
-              machineUnit: op.machineUnit ?? "Minutes/Piece",
-              order: op.order ?? 1,
-              operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Inside",
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              tags: op.tags ?? [],
-              workInstruction: op.workInstruction,
-              companyId,
-              createdBy: userId,
-              customFields: {},
-            });
-          });
-
-          if (operationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("methodOperation")
-              .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                }))
-              )
-              .returning(["id"])
-              .execute();
-
-            for (const [index, operation] of (
-              quoteOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  quoteOperationTool,
-                  quoteOperationParameter,
-                  quoteOperationAttribute,
-                  procedureId,
-                } = operation;
-
-                if (
-                  Array.isArray(quoteOperationTool) &&
-                  quoteOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
-
-                if (!procedureId) {
-                  if (
-                    Array.isArray(quoteOperationParameter) &&
-                    quoteOperationParameter.length > 0
-                  ) {
-                    await trx
-                      .insertInto("methodOperationParameter")
-                      .values(
-                        quoteOperationParameter.map((param) => ({
-                          operationId,
-                          key: param.key,
-                          value: param.value,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .execute();
-                  }
-
-                  if (
-                    Array.isArray(quoteOperationAttribute) &&
-                    quoteOperationAttribute.length > 0
-                  ) {
-                    await trx
-                      .insertInto("methodOperationAttribute")
-                      .values(
-                        quoteOperationAttribute.map(
-                          ({ id: _id, ...attribute }) => ({
-                            ...attribute,
-                            operationId,
-                            companyId,
-                            createdBy: userId,
-                          })
-                        )
-                      )
-                      .execute();
-                  }
-                }
-              }
-            }
-          }
-        });
-
-        break;
-      }
       case "quoteToQuote": {
         const sourceQuoteId = sourceId;
         const asRevision = !!targetId;

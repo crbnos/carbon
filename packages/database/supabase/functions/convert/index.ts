@@ -19,7 +19,7 @@ const db = getDatabaseClient<DB>(pool);
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("salesRfqToQuote"),
+    type: z.literal("methodVersionToActive"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
@@ -52,8 +52,15 @@ const payloadValidator = z.discriminatedUnion("type", [
     digitalQuoteAcceptedBy: z.string().optional(),
     digitalQuoteAcceptedByEmail: z.string().optional(),
   }),
+
   z.object({
     type: z.literal("salesOrderToSalesInvoice"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("salesRfqToQuote"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
@@ -108,6 +115,95 @@ serve(async (req: Request) => {
     );
 
     switch (type) {
+      case "methodVersionToActive": {
+        const makeMethodId = id;
+        const makeMethod = await client
+          .from("makeMethod")
+          .select("*")
+          .eq("id", makeMethodId)
+          .single();
+        if (makeMethod.error) throw new Error(makeMethod.error.message);
+
+        const [relatedMakeMethods, draftQuotes, draftJobs] = await Promise.all([
+          client
+            .from("makeMethod")
+            .select("*")
+            .eq("itemId", makeMethod.data?.itemId)
+            .eq("companyId", companyId),
+          client
+            .from("quote")
+            .select("*")
+            .eq("companyId", companyId)
+            .eq("status", "Draft"),
+          client
+            .from("job")
+            .select("*")
+            .eq("companyId", companyId)
+            .eq("status", "Draft"),
+        ]);
+
+        if (relatedMakeMethods.error)
+          throw new Error(relatedMakeMethods.error.message);
+
+        if (draftQuotes.error) throw new Error(draftQuotes.error.message);
+        if (draftJobs.error) throw new Error(draftJobs.error.message);
+
+        const draftMakeMethodIds = relatedMakeMethods.data
+          ?.filter(
+            (makeMethod) =>
+              makeMethod.id !== makeMethodId && makeMethod.status === "Draft"
+          )
+          ?.map((makeMethod) => makeMethod.id);
+
+        const activeMakeMethodIds = relatedMakeMethods.data
+          ?.filter(
+            (makeMethod) =>
+              makeMethod.id !== makeMethodId && makeMethod.status === "Active"
+          )
+          ?.map((makeMethod) => makeMethod.id);
+
+        const relatedMakeMethodIds = [
+          ...(draftMakeMethodIds ?? []),
+          ...(activeMakeMethodIds ?? []),
+        ];
+
+        const [methodMaterials] = await Promise.all([
+          client
+            .from("methodMaterial")
+            .select("*")
+            .in("materialMakeMethodId", relatedMakeMethodIds)
+            .eq("companyId", companyId),
+        ]);
+
+        if (methodMaterials.error)
+          throw new Error(methodMaterials.error.message);
+
+        await db.transaction().execute(async (trx) => {
+          if (activeMakeMethodIds.length > 0) {
+            await trx
+              .updateTable("makeMethod")
+              .set({ status: "Archived" })
+              .where("id", "in", activeMakeMethodIds)
+              .execute();
+          }
+
+          await trx
+            .updateTable("makeMethod")
+            .set({ status: "Active" })
+            .where("id", "=", makeMethodId)
+            .execute();
+
+          if (relatedMakeMethodIds.length > 0) {
+            await trx
+              .updateTable("methodMaterial")
+              .set({ materialMakeMethodId: makeMethodId })
+              .where("materialMakeMethodId", "in", relatedMakeMethodIds)
+              .execute();
+          }
+        });
+
+        break;
+      }
       case "purchaseOrderToPurchaseInvoice": {
         const purchaseOrderId = id;
         const [

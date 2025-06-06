@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { Text, View, Image } from "@react-pdf/renderer";
+import { Image, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
 import type { JSONContent } from "@carbon/react";
@@ -78,7 +78,7 @@ const SalesOrderPDF = ({
     <Template
       title={title}
       meta={{
-        author: meta?.author ?? "CarbonOS",
+        author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "sales order",
         subject: meta?.subject ?? "Sales Order",
       }}

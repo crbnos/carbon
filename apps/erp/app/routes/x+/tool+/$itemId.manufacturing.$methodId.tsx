@@ -22,10 +22,7 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
-  getConfigurationParameters,
-  getConfigurationRules,
-  getItemManufacturing,
-  getMakeMethod,
+  getMakeMethodById,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   getMethodTree,
@@ -40,14 +37,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     bypassRls: true,
   });
 
-  const { itemId } = params;
+  const { itemId, methodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
-  const makeMethod = await getMakeMethod(client, itemId, companyId);
+  const makeMethod = await getMakeMethodById(client, methodId, companyId);
 
   if (makeMethod.error) {
     throw redirect(
-      path.to.partDetails(itemId),
+      path.to.toolDetails(itemId),
       await flash(
         request,
         error(makeMethod.error, "Failed to load make method")
@@ -62,13 +60,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [methodTree, methodMaterials, methodOperations, partManufacturing] =
-    await Promise.all([
-      getMethodTree(client, makeMethod.data.id),
-      getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
-      getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
-      getItemManufacturing(client, itemId, companyId),
-    ]);
+  const [methodTree, methodMaterials, methodOperations] = await Promise.all([
+    getMethodTree(client, makeMethod.data.id),
+    getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
+    getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
+    // getItemManufacturing(client, itemId, companyId),
+  ]);
   if (methodTree?.error) {
     throw redirect(
       path.to.partDetails(itemId),
@@ -118,18 +115,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methods: (methodTree.data.length > 0
       ? flattenTree(methodTree.data[0])
       : []) satisfies FlatTreeItem<Method>[],
-    partManufacturing: partManufacturing.data,
-    configurationParametersAndGroups: partManufacturing.data
-      ?.requiresConfiguration
-      ? await getConfigurationParameters(client, itemId, companyId)
-      : { groups: [], parameters: [] },
-    configurationRules: partManufacturing.data?.requiresConfiguration
-      ? await getConfigurationRules(client, itemId, companyId)
-      : [],
+    // toolManufacturing: toolManufacturing.data,
+    // configurationParametersAndGroups: toolManufacturing.data
+    //   ?.requiresConfiguration
+    //   ? await getConfigurationParameters(client, itemId, companyId)
+    //   : { groups: [], parameters: [] },
+    // configurationRules: toolManufacturing.data?.requiresConfiguration
+    //   ? await getConfigurationRules(client, itemId, companyId)
+    //   : [],
   });
 }
 
-export default function PartManufacturing() {
+export default function ToolManufacturing() {
   const { makeMethod, methods } = useLoaderData<typeof loader>();
 
   const params = useParams();
@@ -148,8 +145,9 @@ export default function PartManufacturing() {
           <ScrollArea className="h-[calc(100dvh-99px)]">
             <div className="grid h-full overflow-hidden p-2">
               <BoMExplorer
-                itemType="Part"
+                itemType="Tool"
                 makeMethodId={makeMethod.id}
+                makeMethodVersion={makeMethod.version.toString()}
                 // @ts-ignore
                 methods={methods}
               />

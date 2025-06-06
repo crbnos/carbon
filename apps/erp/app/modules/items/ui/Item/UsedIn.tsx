@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import {
+  Badge,
   cn,
   Count,
   DropdownMenu,
@@ -35,7 +36,7 @@ import { usePermissions } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import { getReadableIdWithRevision } from "~/utils/string";
-import { getLinkToItemManufacturing } from "./ItemForm";
+import { getPathToMakeMethod } from "../Methods/utils";
 import RevisionForm from "./RevisionForm";
 
 export function UsedInSkeleton() {
@@ -74,6 +75,7 @@ export type UsedInNode = {
     itemType?: MethodItemType;
     methodType?: string;
     revision?: string;
+    version?: number;
   }[];
 };
 
@@ -281,7 +283,6 @@ export function RevisionsItem({
                           Edit
                         </DropdownMenuItem> */}
                         <DropdownMenuItem
-                          destructive
                           onSelect={() => {
                             flushSync(() => {
                               setSelectedRevision({
@@ -294,7 +295,7 @@ export function RevisionsItem({
                           }}
                         >
                           <DropdownMenuIcon icon={<LuStar />} />
-                          Make Default
+                          Set as Default Revision
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -418,6 +419,11 @@ export function UsedInItem({
                   />
                 )}
                 <span className="truncate">{child.documentReadableId}</span>
+                {child.version && (
+                  <Badge variant="outline" className="ml-2">
+                    V{child.version}
+                  </Badge>
+                )}
               </Hyperlink>
             ))
           )}
@@ -452,7 +458,11 @@ function getUseInLink(
       )}?filter=itemReadableId:eq:${itemReadableIdWithRevision}`;
     case "methodMaterials":
       if (!child.documentId || !child.itemType) return "#";
-      return getLinkToItemManufacturing(child.itemType, child.documentId);
+      return getPathToMakeMethod(
+        child.itemType,
+        child.documentParentId!,
+        child.documentId
+      );
     case "purchaseOrderLines":
       if (!child.documentId) return "#";
       return path.to.purchaseOrder(child.documentId);

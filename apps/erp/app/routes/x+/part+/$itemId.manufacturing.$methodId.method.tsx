@@ -2,10 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
-import { useLoaderData, useParams } from "@remix-run/react";
+import { Menubar, VStack } from "@carbon/react";
+import { Await, useLoaderData, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { Suspense } from "react";
 import type { z } from "zod";
 import CadModel from "~/components/CadModel";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -35,8 +37,6 @@ import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
-// loader
-
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -47,16 +47,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return json({ tags: tags.data ?? [] });
 }
 
-// action
-
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, userId } = await requirePermissions(request, {
     update: "parts",
   });
 
-  const { itemId } = params;
+  const { itemId, methodId } = params;
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
   const formData = await request.formData();
   const validation = await validator(partManufacturingValidator).validate(
@@ -87,20 +86,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.partManufacturing(itemId),
+    path.to.partMakeMethod(itemId, methodId),
     await flash(request, success("Updated part manufacturing"))
   );
 }
 
 export default function MakeMethodRoute() {
   const permissions = usePermissions();
-  const { itemId } = useParams();
+  const { itemId, methodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
 
   const { tags } = useLoaderData<typeof loader>();
 
   const itemRouteData = useRouteData<{
     partSummary: PartSummary;
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
   }>(path.to.part(itemId));
 
   const manufacturingRouteData = useRouteData<{
@@ -115,7 +116,7 @@ export default function MakeMethodRoute() {
     makeMethod: MakeMethod;
     methodMaterials: Material[];
     methodOperations: MethodOperation[];
-  }>(path.to.partManufacturing(itemId));
+  }>(path.to.partMethod(itemId, methodId));
 
   if (!manufacturingRouteData) throw new Error("Could not find route data");
 
@@ -130,7 +131,17 @@ export default function MakeMethodRoute() {
 
   return (
     <VStack spacing={2} className="p-2">
-      <MakeMethodTools itemId={itemId} type="Part" />
+      <Suspense fallback={<Menubar />}>
+        <Await resolve={itemRouteData?.makeMethods}>
+          {(makeMethods) => (
+            <MakeMethodTools
+              itemId={manufacturingRouteData?.makeMethod.itemId}
+              makeMethods={makeMethods?.data ?? []}
+              type="Part"
+            />
+          )}
+        </Await>
+      </Suspense>
       <PartManufacturingForm
         key={itemId}
         // @ts-ignore
@@ -150,7 +161,7 @@ export default function MakeMethodRoute() {
 
       <BillOfProcess
         key={`bop:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={manufacturingRouteData?.makeMethod}
         // @ts-ignore
         operations={manufacturingRouteData?.methodOperations ?? []}
         configurable={
@@ -164,7 +175,7 @@ export default function MakeMethodRoute() {
       />
       <BillOfMaterial
         key={`bom:${itemId}`}
-        makeMethodId={makeMethodId}
+        makeMethod={manufacturingRouteData?.makeMethod}
         // @ts-ignore
         materials={manufacturingRouteData?.methodMaterials ?? []}
         // @ts-ignore

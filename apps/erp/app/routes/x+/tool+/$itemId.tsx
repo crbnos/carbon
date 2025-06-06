@@ -6,6 +6,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import {
   getItemFiles,
+  getMakeMethods,
   getPickMethods,
   getSupplierParts,
   getTool,
@@ -52,6 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getItemFiles(serviceRole, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
+    makeMethods: getMakeMethods(serviceRole, itemId, companyId),
     tags: tags.data ?? [],
   });
 }

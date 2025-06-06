@@ -29,13 +29,13 @@ import {
   Thead,
   Tr,
 } from "@carbon/react";
-import { FunnelChart } from "@carbon/react/FunnelChart";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@carbon/react/Chart";
+import { FunnelChart } from "@carbon/react/FunnelChart";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";

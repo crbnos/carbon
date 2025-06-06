@@ -1,8 +1,9 @@
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Alert,
   AlertTitle,
+  Badge,
   Button,
   Checkbox,
   HStack,
@@ -47,12 +48,13 @@ import { RiProgress4Line } from "react-icons/ri";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import { Hidden, Item, Submit } from "~/components/Form";
 import type { Tree } from "~/components/TreeView";
-import { usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
 } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import MakeMethodVersionStatus from "~/modules/items/ui/Item/MakeMethodVersionStatus";
 import { QuoteLineMethodForm } from "~/modules/sales/ui/Quotes/QuoteLineMethodForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
@@ -76,7 +78,9 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
 
   const materialRouteData = useRouteData<{
     makeMethod: JobMakeMethod;
-  }>(path.to.jobMakeMethod(jobId, methodId!, methodId!));
+  }>(path.to.jobMakeMethod(jobId, methodId!));
+
+  console.log(materialRouteData);
 
   const itemId =
     materialRouteData?.makeMethod?.itemId ?? routeData?.job?.itemId;
@@ -182,6 +186,48 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
+  const {
+    company: { id: companyId },
+  } = useUser();
+  const [makeMethods, setMakeMethods] = useState<
+    { label: JSX.Element; value: string }[]
+  >([]);
+  const [selectedMakeMethod, setSelectedMakeMethod] = useState<string | null>(
+    null
+  );
+
+  const getMakeMethods = async (itemId: string) => {
+    setMakeMethods([]);
+    setSelectedMakeMethod(null);
+    if (!carbon) return;
+    const { data, error } = await carbon
+      .from("makeMethod")
+      .select("id, version, status")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId)
+      .order("version", { ascending: false });
+
+    if (error) {
+      toast.error(error.message);
+    }
+
+    setMakeMethods(
+      data?.map(({ id, version, status }) => ({
+        label: (
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">V{version}</Badge>{" "}
+            <MakeMethodVersionStatus status={status} />
+          </div>
+        ),
+        value: id,
+      })) ?? []
+    );
+
+    if (data?.length === 1) {
+      setSelectedMakeMethod(data[0].id);
+    }
+  };
+
   return (
     <>
       {permissions.can("update", "production") &&
@@ -189,6 +235,14 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
           <Menubar>
             <HStack className="w-full justify-start">
               <HStack spacing={0}>
+                <MenubarItem
+                  isLoading={isGetMethodLoading}
+                  isDisabled={isDisabled || isGetMethodLoading}
+                  leftIcon={<LuGitBranch />}
+                  onClick={getMethodModal.onOpen}
+                >
+                  Get Method
+                </MenubarItem>
                 <MenubarItem
                   isDisabled={
                     !permissions.can("update", "parts") || isSaveMethodLoading
@@ -199,14 +253,7 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 >
                   Save Method
                 </MenubarItem>
-                <MenubarItem
-                  isLoading={isGetMethodLoading}
-                  isDisabled={isDisabled || isGetMethodLoading}
-                  leftIcon={<LuGitBranch />}
-                  onClick={getMethodModal.onOpen}
-                >
-                  Get Method
-                </MenubarItem>
+
                 {isConfigured && isJobMethod && (
                   <MenubarItem
                     leftIcon={<LuGitMerge />}
@@ -408,12 +455,40 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 )}
 
                 <VStack spacing={4}>
+                  <Alert variant="destructive">
+                    <LuTriangleAlert className="h-4 w-4" />
+                    <AlertTitle>
+                      This will overwrite the existing manufacturing method and
+                      the latest versions of all subassemblies.
+                    </AlertTitle>
+                  </Alert>
                   <Item
-                    name="targetId"
+                    name="itemId"
                     label="Target Method"
                     type={(routeData?.job?.itemType ?? "Part") as "Part"}
+                    onChange={(value) => {
+                      if (value) {
+                        getMakeMethods(value?.value);
+                      } else {
+                        setMakeMethods([]);
+                        setSelectedMakeMethod(null);
+                      }
+                    }}
                     includeInactive={includeInactive === true}
                     replenishmentSystem="Make"
+                  />
+                  <SelectControlled
+                    name="targetId"
+                    options={makeMethods}
+                    label="Version"
+                    value={selectedMakeMethod ?? undefined}
+                    onChange={(value) => {
+                      if (value) {
+                        setSelectedMakeMethod(value?.value);
+                      } else {
+                        setSelectedMakeMethod(null);
+                      }
+                    }}
                   />
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -442,7 +517,12 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
                 <Button onClick={saveMethodModal.onClose} variant="secondary">
                   Cancel
                 </Button>
-                <Submit variant={hasMethods ? "destructive" : "primary"}>
+                <Submit
+                  variant={hasMethods ? "destructive" : "primary"}
+                  isDisabled={
+                    !selectedMakeMethod || !permissions.can("update", "parts")
+                  }
+                >
                   Confirm
                 </Submit>
               </ModalFooter>

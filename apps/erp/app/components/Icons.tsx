@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { Badge, cn, HStack, Status } from "@carbon/react";
+import { Badge, cn, Status } from "@carbon/react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
@@ -106,7 +106,7 @@ export const MethodIcon = ({
 };
 
 type MethodBadgeProps = {
-  type: "Buy" | "Make" | "Pick";
+  type: "Buy" | "Make" | "Pick" | "Make Inactive";
   text: string;
   to: string;
   className?: string;
@@ -116,27 +116,31 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
   const style = getReplenishmentBadgeColor(type, mode);
   return (
-    <HStack className="group" spacing={1}>
+    <Link to={to} prefetch="intent" className="group flex items-center gap-1">
       <Badge style={style} className={className}>
-        <MethodIcon type={type} className="w-3 h-3 mr-1 " />
+        <MethodIcon
+          type={type === "Make Inactive" ? "Make" : type}
+          className="w-3 h-3 mr-1 "
+        />
         {text}
       </Badge>
-      <Link
-        className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-        to={to}
-        prefetch="intent"
-      >
+      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
-      </Link>
-    </HStack>
+      </span>
+    </Link>
   );
 }
 
-function getReplenishmentBadgeColor(type: MethodType, mode: "light" | "dark") {
+function getReplenishmentBadgeColor(
+  type: MethodType | "Make Inactive",
+  mode: "light" | "dark"
+) {
   return type === "Buy"
     ? getColor("blue", mode)
     : type === "Make"
     ? getColor("green", mode)
+    : type === "Make Inactive"
+    ? getColor("gray", mode)
     : getColor("orange", mode);
 }
 

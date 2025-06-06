@@ -113,6 +113,7 @@ export default function QuoteMakeMethodRoute() {
       <QuoteBillOfProcess
         key={`bop:${methodId}`}
         quoteMakeMethodId={methodId}
+        // @ts-expect-error
         operations={operations}
         tags={tags ?? []}
       />
@@ -120,6 +121,7 @@ export default function QuoteMakeMethodRoute() {
         key={`bom:${methodId}`}
         quoteMakeMethodId={methodId}
         materials={materials}
+        // @ts-expect-error
         operations={operations}
       />
 

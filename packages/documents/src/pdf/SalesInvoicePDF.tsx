@@ -107,7 +107,7 @@ const SalesInvoicePDF = ({
     <Template
       title={title}
       meta={{
-        author: meta?.author ?? "CarbonOS",
+        author: meta?.author ?? "Carbon",
         keywords: meta?.keywords ?? "sales invoice",
         subject: meta?.subject ?? "Invoice",
       }}

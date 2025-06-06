@@ -202,7 +202,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                       <div className="flex items-center gap-1">
                         {node.data.isRoot ? (
                           <Badge variant="outline" className="text-xs">
-                            Method
+                            V{node.data.version}
                           </Badge>
                         ) : (
                           <NodeData node={node} />
@@ -231,6 +231,11 @@ function NodeText({ node }: { node: FlatTreeItem<JobMethod> }) {
       <span className="font-medium text-sm truncate">
         {node.data.description || node.data.itemReadableId}
       </span>
+      {node.data.revision && node.data.revision !== "0" && (
+        <Badge variant="outline" className="text-xs">
+          {node.data.revision}
+        </Badge>
+      )}
     </div>
   );
 }
@@ -326,6 +331,16 @@ function NodePreview({ node }: { node: FlatTreeItem<JobMethod> }) {
           <span>{node.data.itemType}</span>
         </HStack>
       </VStack>
+      {node.data.methodType === "Make" && (
+        <VStack spacing={1}>
+          <span className="text-xs text-muted-foreground font-medium">
+            Make Method Version
+          </span>
+          <HStack className="w-full">
+            <Badge variant="outline">V{node.data.version}</Badge>
+          </HStack>
+        </VStack>
+      )}
       {onShapeState && (
         <VStack spacing={1}>
           <span className="text-xs text-muted-foreground font-medium">

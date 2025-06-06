@@ -17,7 +17,7 @@ import {
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 
-import type { action } from "~/routes/x+/part+/$itemId.manufacturing.method";
+import type { action } from "~/routes/x+/part+/$itemId.manufacturing.$methodId.method";
 import { partManufacturingValidator } from "../../items.models";
 
 type PartManufacturingFormProps = {

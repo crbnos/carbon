@@ -41,7 +41,7 @@ const Template = ({ title, meta, children }: TemplateProps) => {
 
   return (
     <Document
-      author={meta?.author ?? "CarbonOS"}
+      author={meta?.author ?? "Carbon"}
       keywords={meta?.keywords}
       subject={meta?.subject}
       title={title}

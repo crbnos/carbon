@@ -17,6 +17,7 @@ import {
   toast,
 } from "@carbon/react";
 import { Await, Link, useFetcher, useParams } from "@remix-run/react";
+import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect } from "react";
 import {
   LuCopy,
@@ -44,6 +45,7 @@ import {
 } from "../../items.models";
 import type {
   ItemFile,
+  MakeMethod,
   PartSummary,
   PickMethod,
   SupplierPart,
@@ -62,6 +64,7 @@ const PartProperties = () => {
     files: Promise<ItemFile[]>;
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
+    makeMethods: Promise<PostgrestResponse<MakeMethod>>;
     tags: { name: string }[];
   }>(path.to.part(itemId));
 
@@ -374,11 +377,27 @@ const PartProperties = () => {
           <h3 className="text-xs text-muted-foreground">Methods</h3>
         </HStack>
         {routeData?.partSummary?.replenishmentSystem?.includes("Make") && (
-          <MethodBadge
-            type="Make"
-            text={routeData?.partSummary?.readableIdWithRevision ?? ""}
-            to={path.to.partManufacturing(itemId)}
-          />
+          <Suspense fallback={null}>
+            <Await resolve={routeData?.makeMethods}>
+              {(makeMethods) =>
+                makeMethods.data
+                  ?.sort((a, b) => b.version - a.version)
+                  .map((method) => {
+                    const isActive =
+                      method.status === "Active" ||
+                      makeMethods.data?.length === 1;
+                    return (
+                      <MethodBadge
+                        key={method.id}
+                        type={isActive ? "Make" : "Make Inactive"}
+                        text={`Version ${method.version}`}
+                        to={path.to.partMakeMethod(itemId, method.id)}
+                      />
+                    );
+                  })
+              }
+            </Await>
+          </Suspense>
         )}
         {routeData?.partSummary?.replenishmentSystem?.includes("Buy") &&
           supplierParts.map((method) => (
@@ -449,19 +468,19 @@ const PartProperties = () => {
           <h3 className="text-xs text-muted-foreground">Files</h3>
         </HStack>
         {routeData?.partSummary?.modelId && (
-          <HStack className="group" spacing={1}>
+          <Link
+            className="group flex items-center gap-1"
+            to={path.to.file.cadModel(routeData?.partSummary.modelId)}
+            target="_blank"
+          >
             <Badge variant="secondary">
               <LuMove3D className="w-3 h-3 mr-1 text-emerald-500" />
               3D Model
             </Badge>
-            <Link
-              className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground"
-              to={path.to.file.cadModel(routeData?.partSummary.modelId)}
-              target="_blank"
-            >
+            <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
               <LuExternalLink />
-            </Link>
-          </HStack>
+            </span>
+          </Link>
         )}
 
         <Suspense fallback={null}>

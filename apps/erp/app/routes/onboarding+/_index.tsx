@@ -19,18 +19,11 @@ export default function GetStarted() {
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 2, ease: "easeInOut" }}
-          src="/carbon-logo-dark.png"
+          src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="block dark:hidden max-w-[60px] mb-3"
+          className="block max-w-[60px] mb-3"
         />
-        <motion.img
-          initial={{ opacity: 0, scale: 0.4 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 2, ease: "easeInOut" }}
-          src="/carbon-logo-light.png"
-          alt="Carbon Logo"
-          className="hidden dark:block max-w-[60px] mb-3"
-        />
+
         <Heading
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
