@@ -886,7 +886,7 @@ export const path = {
     partMakeMethod: (id: string, methodId: string) =>
       generatePath(`${x}/part/${id}/manufacturing/${methodId}/method`),
     partManufacturing: (id: string) =>
-      generatePath(`${x}/part/${id}/manufacturing`),
+      generatePath(`${x}/part/${id}/manufacturing/methods`),
     partManufacturingMaterial: (
       itemId: string,
       methodId: string,
@@ -1188,7 +1188,7 @@ export const path = {
     toolMakeMethod: (id: string, methodId: string) =>
       generatePath(`${x}/tool/${id}/manufacturing/${methodId}/method`),
     toolManufacturing: (id: string) =>
-      generatePath(`${x}/tool/${id}/manufacturing`),
+      generatePath(`${x}/tool/${id}/manufacturing/methods`),
     toolManufacturingMaterial: (
       itemId: string,
       methodId: string,
