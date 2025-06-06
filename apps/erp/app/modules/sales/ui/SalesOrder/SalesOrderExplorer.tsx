@@ -1,6 +1,7 @@
 import {
   Button,
   cn,
+  Count,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -8,6 +9,9 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
   Kbd,
   Tooltip,
   TooltipContent,
@@ -16,27 +20,23 @@ import {
   useKeyboardShortcuts,
   useMount,
   VStack,
-  Count,
-  Input,
-  InputGroup,
-  InputLeftElement,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useNavigate, useParams, Await } from "@remix-run/react";
-import { useRef, useState, Suspense } from "react";
+import { Await, useNavigate, useParams } from "@remix-run/react";
+import { Suspense, useRef, useState } from "react";
 import {
+  LuChevronDown,
+  LuChevronRight,
   LuCirclePlus,
   LuEllipsisVertical,
-  LuTrash,
-  LuChevronDown,
   LuSearch,
-  LuChevronRight,
+  LuTrash,
   LuTruck,
 } from "react-icons/lu";
 import {
   Empty,
-  ItemThumbnail,
   Hyperlink,
+  ItemThumbnail,
   MethodIcon,
   MethodItemTypeIcon,
 } from "~/components";
@@ -328,18 +328,21 @@ function SalesOrderLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line?.salesOrderLineType ?? "") && (
-                  <DropdownMenuItem asChild>
-                    <Link
-                      to={getLinkToItemDetails(
-                        line.salesOrderLineType as MethodItemType,
-                        line.itemId!
-                      )}
-                    >
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={"Part"} />}
-                      />
-                      View Item Master
-                    </Link>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(
+                        getLinkToItemDetails(
+                          line.salesOrderLineType as MethodItemType,
+                          line.itemId!
+                        )
+                      );
+                    }}
+                  >
+                    <DropdownMenuIcon
+                      icon={<MethodItemTypeIcon type={"Part"} />}
+                    />
+                    View Item Master
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={searchDisclosure.onOpen}>

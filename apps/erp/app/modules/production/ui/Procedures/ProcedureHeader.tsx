@@ -16,10 +16,6 @@ import {
 } from "@carbon/react";
 
 import { Await, Link, useParams } from "@remix-run/react";
-import { usePermissions, useRouteData } from "~/hooks";
-import { path } from "~/utils/path";
-import type { Procedure } from "../../types";
-import ProcedureStatus from "./ProcedureStatus";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useEffect } from "react";
 import {
@@ -29,8 +25,12 @@ import {
   LuPanelLeft,
   LuPanelRight,
 } from "react-icons/lu";
-import ProcedureForm from "./ProcedureForm";
 import { usePanels } from "~/components/Layout";
+import { usePermissions, useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
+import type { Procedure } from "../../types";
+import ProcedureForm from "./ProcedureForm";
+import ProcedureStatus from "./ProcedureStatus";
 
 const ProcedureHeader = () => {
   const { id } = useParams();
@@ -62,7 +62,7 @@ const ProcedureHeader = () => {
           />
           <Heading size="h4" className="flex items-center gap-2">
             <span>{routeData?.procedure?.name}</span>
-            <Badge variant="gray">V{routeData?.procedure?.version}</Badge>
+            <Badge variant="secondary">V{routeData?.procedure?.version}</Badge>
             <ProcedureStatus status={routeData?.procedure?.status} />
           </Heading>
         </HStack>
