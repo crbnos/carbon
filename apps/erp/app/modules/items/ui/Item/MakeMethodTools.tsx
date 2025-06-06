@@ -44,7 +44,6 @@ import {
   LuGitMerge,
   LuPencil,
   LuStar,
-  LuTrash,
   LuTriangleAlert,
 } from "react-icons/lu";
 import { Hidden, Item } from "~/components/Form";
@@ -205,7 +204,7 @@ const MakeMethodTools = ({
                                 Copy Version
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem
+                              {/* <DropdownMenuItem
                                 destructive
                                 disabled={
                                   makeMethod.status === "Active" ||
@@ -214,7 +213,7 @@ const MakeMethodTools = ({
                               >
                                 <DropdownMenuIcon icon={<LuTrash />} />
                                 Delete Version
-                              </DropdownMenuItem>
+                              </DropdownMenuItem> */}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 disabled={makeMethod.status === "Active"}
