@@ -76,6 +76,20 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      quoteBillOfMaterials: (
+        methodId: string,
+        withOperations: boolean = false
+      ) =>
+        generatePath(
+          `${api}/sales/quote/line/${methodId}/bom?withOperations=${withOperations}`
+        ),
+      quoteBillOfMaterialsCsv: (
+        methodId: string,
+        withOperations: boolean = false
+      ) =>
+        generatePath(
+          `${api}/sales/quote/line/${methodId}/bom.csv?withOperations=${withOperations}`
+        ),
       quotes: `${api}/sales/quotes`,
       quoteLines: (quoteId: string) =>
         generatePath(`${api}/sales/quotes/${quoteId}/lines`),

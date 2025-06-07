@@ -1,10 +1,15 @@
 import {
+  Badge,
   Button,
   cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
   HStack,
   IconButton,
@@ -21,10 +26,13 @@ import { prettifyKeyboardShortcut } from "@carbon/utils";
 import { useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
+  LuBraces,
   LuChevronDown,
   LuCirclePlus,
+  LuDownload,
   LuEllipsisVertical,
   LuSearch,
+  LuTable,
   LuTrash,
 } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
@@ -289,17 +297,6 @@ function QuoteLineItem({
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
-                  destructive
-                  disabled={isDisabled || !permissions.can("update", "sales")}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(line);
-                  }}
-                >
-                  <DropdownMenuIcon icon={<LuTrash />} />
-                  Delete Line
-                </DropdownMenuItem>
-                <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
                     navigate(
@@ -320,11 +317,105 @@ function QuoteLineItem({
                   View Item Master
                 </DropdownMenuItem>
                 {line.methodType === "Make" && (
-                  <DropdownMenuItem onClick={searchDisclosure.onOpen}>
-                    <DropdownMenuIcon icon={<LuSearch />} />
-                    Search
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem onClick={searchDisclosure.onOpen}>
+                      <DropdownMenuIcon icon={<LuSearch />} />
+                      Search
+                    </DropdownMenuItem>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <DropdownMenuIcon icon={<LuDownload />} />
+                        Download
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent>
+                        <DropdownMenuItem asChild>
+                          <a
+                            href={path.to.api.quoteBillOfMaterialsCsv(
+                              line.id!,
+                              false
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <DropdownMenuIcon icon={<LuTable />} />
+                            <div className="flex flex-grow items-center gap-4 justify-between">
+                              <span>BoM</span>
+                              <Badge variant="green" className="text-xs">
+                                CSV
+                              </Badge>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a
+                            href={path.to.api.quoteBillOfMaterialsCsv(
+                              line.id!,
+                              true
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <DropdownMenuIcon icon={<LuTable />} />
+                            <div className="flex flex-grow items-center gap-4 justify-between">
+                              <span>BoM + BoP</span>
+                              <Badge variant="green" className="text-xs">
+                                CSV
+                              </Badge>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a
+                            href={path.to.api.quoteBillOfMaterials(
+                              line.id!,
+                              false
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <DropdownMenuIcon icon={<LuBraces />} />
+                            <div className="flex flex-grow items-center gap-4 justify-between">
+                              <span>BoM</span>
+                              <Badge variant="outline" className="text-xs">
+                                JSON
+                              </Badge>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <a
+                            href={path.to.api.quoteBillOfMaterials(
+                              line.id!,
+                              true
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <DropdownMenuIcon icon={<LuBraces />} />
+                            <div className="flex flex-grow items-center gap-4 justify-between">
+                              <span>BoM + BoP</span>
+                              <Badge variant="outline" className="text-xs">
+                                JSON
+                              </Badge>
+                            </div>
+                          </a>
+                        </DropdownMenuItem>
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  </>
                 )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  destructive
+                  disabled={isDisabled || !permissions.can("update", "sales")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(line);
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  Delete Line
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>

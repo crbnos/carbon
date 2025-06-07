@@ -1,9 +1,10 @@
 import type { FlatTreeItem } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
+import type { QuoteMethod } from "~/modules/sales/types";
 
 export const calculateTotalQuantity = (
-  node: FlatTreeItem<Method>,
-  nodes: FlatTreeItem<Method>[]
+  node: FlatTreeItem<QuoteMethod> | FlatTreeItem<Method>,
+  nodes: FlatTreeItem<QuoteMethod>[] | FlatTreeItem<Method>[]
 ): number => {
   // Create lookup map for faster parent finding
   const nodeMap = new Map(nodes.map((n) => [n.id, n]));
@@ -20,7 +21,9 @@ export const calculateTotalQuantity = (
   return quantity;
 };
 
-export const generateBomIds = (nodes: FlatTreeItem<Method>[]): string[] => {
+export const generateBomIds = (
+  nodes: FlatTreeItem<QuoteMethod>[] | FlatTreeItem<Method>[]
+): string[] => {
   const ids = new Array(nodes.length);
   const levelCounters = new Map<number, number>();
 
