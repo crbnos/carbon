@@ -56,14 +56,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const quote = await client
     .from("quoteLine")
-    .select("quoteId, quantity")
+    .select("quoteId, quantity, itemReadableId")
     .eq("id", id)
     .single();
+  const fileName = `${quote.data?.itemReadableId}-bom.csv`;
   if (quote.error) {
     return new Response(bomHeaders.join(",") + "\n", {
       headers: {
         "Content-Type": "text/csv",
-        "Content-Disposition": "attachment; filename=bom.csv",
+        "Content-Disposition": `attachment; filename=${fileName}`,
       },
     });
   }
@@ -189,7 +190,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv",
-      "Content-Disposition": "attachment; filename=bom.csv",
+      "Content-Disposition": `attachment; filename=${fileName}`,
     },
   });
 }

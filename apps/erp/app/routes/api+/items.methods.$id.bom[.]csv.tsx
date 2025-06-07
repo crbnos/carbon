@@ -75,6 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
+  const fileName = `${methodTree.data[0].data.itemReadableId}-bom.csv`;
+
   const methods = (
     methodTree.data.length > 0 ? flattenTree(methodTree.data[0]) : []
   ) satisfies FlatTreeItem<Method>[];
@@ -166,7 +168,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv",
-      "Content-Disposition": "attachment; filename=bom.csv",
+      "Content-Disposition": `attachment; filename=${fileName}`,
     },
   });
 }
