@@ -37,7 +37,7 @@ import { LuCircleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon Developers | Login" }];
+  return [{ title: "Carbon | Login" }];
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -95,19 +95,19 @@ export default function LoginRoute() {
 
   return (
     <>
-      <div className="flex flex-col items-center justify-center">
+      <div>
         <img
-          src="/carbon-logo-mark.svg"
+          src="/carbon-word-light.svg"
           alt="Carbon Logo"
-          className="block dark:hidden max-w-[100px] mb-3"
+          className="max-w-[240px] mb-3 dark:hidden"
         />
         <img
-          src="/carbon-logo-mark.svg"
+          src="/carbon-word-dark.svg"
           alt="Carbon Logo"
-          className="hidden dark:block max-w-[100px] mb-3"
+          className="max-w-[240px] mb-3 dark:block hidden"
         />
       </div>
-      <div className="p-8 w-[380px]">
+      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
         <ValidatedForm
           validator={loginValidator}
           defaultValues={{ redirectTo }}
@@ -138,6 +138,28 @@ export default function LoginRoute() {
             </Button>
           </VStack>
         </ValidatedForm>
+      </div>
+      <div className="text-sm text-muted-foreground w-[380px] mt-4">
+        <p>
+          By signing in, you agree to the{" "}
+          <a
+            href="https://carbon.ms/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://carbon.ms/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            Privacy Policy.
+          </a>
+        </p>
       </div>
     </>
   );

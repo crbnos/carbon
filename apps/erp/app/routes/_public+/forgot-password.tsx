@@ -84,12 +84,8 @@ export default function ForgotPasswordRoute() {
 
   return (
     <>
-      <div>
-        <img
-          src="/carbon-logo-mark.svg"
-          alt="Carbon Logo"
-          className="block max-w-[100px] mb-3"
-        />
+      <div className="flex justify-center mb-4">
+        <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
       {actionData?.success ? (
         <Alert

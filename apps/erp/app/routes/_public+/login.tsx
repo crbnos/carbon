@@ -89,12 +89,8 @@ export default function LoginRoute() {
 
   return (
     <>
-      <div>
-        <img
-          src="/carbon-logo-mark.svg"
-          alt="Carbon Logo"
-          className="block max-w-[100px] mb-3"
-        />
+      <div className="flex justify-center mb-4">
+        <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
       <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
         <ValidatedForm
@@ -127,6 +123,28 @@ export default function LoginRoute() {
             </Button>
           </VStack>
         </ValidatedForm>
+      </div>
+      <div className="text-sm text-muted-foreground w-[380px] mt-4">
+        <p>
+          By signing in, you agree to the{" "}
+          <a
+            href="https://carbon.ms/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://carbon.ms/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            Privacy Policy.
+          </a>
+        </p>
       </div>
     </>
   );

@@ -18,7 +18,7 @@ export default function RequestAccessRoute() {
         <img
           src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="block max-w-[100px] mb-3"
+          className="w-36 mb-3"
         />
 
         <h3 className="font-mono font-bold leading-loose uppercase text-xl">

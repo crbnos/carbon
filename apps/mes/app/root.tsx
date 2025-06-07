@@ -169,7 +169,7 @@ export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const result = loaderData?.result;
-  const theme = loaderData?.theme ?? "zinc";
+  const theme = loaderData?.theme ?? "blue";
 
   /* Toast Messages */
   useEffect(() => {

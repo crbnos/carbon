@@ -37,7 +37,7 @@ export default function ConfirmMagicLink() {
           transition={{ duration: 1, ease: "easeInOut" }}
           src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="block max-w-[60px] mb-3"
+          className="w-36 mb-3"
         />
 
         <Heading

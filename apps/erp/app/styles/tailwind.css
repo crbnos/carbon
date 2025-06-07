@@ -120,11 +120,39 @@ p.is-editor-empty:first-child:before {
 }
 
 @keyframes thinking-spin-outer {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes thinking-spin-inner {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(-720deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-720deg);
+  }
+}
+
+@keyframes loading {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.loading-dot {
+  animation: loading 1.4s ease-in-out infinite;
+  opacity: 0;
+}
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
 }

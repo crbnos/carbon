@@ -94,62 +94,64 @@ export default function LoginRoute() {
   };
 
   return (
-    <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-      <div className="flex space-y-2 justify-center">
-        <img
-          src="/carbon-logo-mark.svg"
-          alt="Carbon Logo"
-          className="block max-w-[100px] mb-3"
-        />
+    <>
+      <div className="flex justify-center mb-4">
+        <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
+      <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
+        <ValidatedForm
+          validator={loginValidator}
+          defaultValues={{ redirectTo }}
+          method="post"
+        >
+          <VStack spacing={4}>
+            {result && result?.message && (
+              <Alert variant="destructive">
+                <LuCircleAlert className="w-4 h-4" />
+                <AlertTitle>Authentication Error</AlertTitle>
+                <AlertDescription>{result?.message}</AlertDescription>
+              </Alert>
+            )}
 
-      <ValidatedForm
-        validator={loginValidator}
-        defaultValues={{ redirectTo }}
-        method="post"
-      >
-        <VStack spacing={4}>
-          {result && result?.message && (
-            <Alert variant="destructive">
-              <LuCircleAlert className="w-4 h-4" />
-              <AlertTitle>Authentication Error</AlertTitle>
-              <AlertDescription>{result?.message}</AlertDescription>
-            </Alert>
-          )}
-
-          <Input name="email" label="Email" />
-          <Password name="password" label="Password" type="password" />
-          <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-          <Submit
-            size="lg"
-            className="w-full"
-            onClick={handleClick}
-            withBlocker={false}
+            <Input name="email" label="Email" />
+            <Password name="password" label="Password" type="password" />
+            <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Submit
+              size="lg"
+              className="w-full"
+              onClick={handleClick}
+              withBlocker={false}
+            >
+              Sign In
+            </Submit>
+            <Button variant="link" asChild className="w-full">
+              <Link to={path.to.forgotPassword}>Forgot Password</Link>
+            </Button>
+          </VStack>
+        </ValidatedForm>
+      </div>
+      <div className="text-sm text-muted-foreground w-[380px] mt-4">
+        <p>
+          By signing in, you agree to the{" "}
+          <a
+            href="https://carbon.ms/terms"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
           >
-            Sign In
-          </Submit>
-          <Button variant="link" asChild className="w-full">
-            <Link to={path.to.forgotPassword}>Forgot Password</Link>
-          </Button>
-        </VStack>
-      </ValidatedForm>
-      <p className="px-10 text-center text-sm text-muted-foreground">
-        By clicking sign in, you agree to our{" "}
-        <Link
-          to="/terms"
-          className="underline underline-offset-4 hover:text-primary"
-        >
-          Terms of Service
-        </Link>{" "}
-        and{" "}
-        <Link
-          to="/privacy"
-          className="underline underline-offset-4 hover:text-primary"
-        >
-          Privacy Policy
-        </Link>
-        .
-      </p>
-    </div>
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a
+            href="https://carbon.ms/privacy"
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            Privacy Policy.
+          </a>
+        </p>
+      </div>
+    </>
   );
 }

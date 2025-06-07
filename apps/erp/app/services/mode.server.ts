@@ -6,7 +6,9 @@ const cookieName = "mode";
 
 export function getMode(request: Request): Mode | null {
   const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : "dark";
+  const parsed = cookieHeader
+    ? cookie.parse(cookieHeader)[cookieName]
+    : "light";
   if (parsed === "light" || parsed === "dark") return parsed;
   return null;
 }
