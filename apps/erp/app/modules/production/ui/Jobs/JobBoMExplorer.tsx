@@ -1,6 +1,11 @@
 import {
   Badge,
   Copy,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   HoverCard,
   HoverCardContent,
@@ -16,10 +21,13 @@ import {
 import { Link, useFetchers, useNavigate, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import {
+  LuBraces,
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuExternalLink,
   LuSearch,
+  LuTable,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
@@ -41,7 +49,7 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [filterText, setFilterText] = useState("");
-  const { methodId } = useParams();
+  const { jobId, methodId } = useParams();
 
   const fetchers = useFetchers();
   const getMethodFetcher = fetchers.find(
@@ -121,6 +129,79 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
                 onChange={(e) => setFilterText(e.target.value)}
               />
             </InputGroup>
+            {jobId && (
+              <DropdownMenu>
+                <DropdownMenuTrigger>
+                  <IconButton
+                    aria-label="Actions"
+                    variant="ghost"
+                    icon={<LuDownload />}
+                  />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.api.jobBillOfMaterialsCsv(jobId, false)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuTable />} />
+                      <div className="flex flex-grow items-center gap-4 justify-between">
+                        <span>BoM</span>
+                        <Badge variant="green" className="text-xs">
+                          CSV
+                        </Badge>
+                      </div>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.api.jobBillOfMaterialsCsv(jobId, true)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuTable />} />
+                      <div className="flex flex-grow items-center gap-4 justify-between">
+                        <span>BoM + BoP</span>
+                        <Badge variant="green" className="text-xs">
+                          CSV
+                        </Badge>
+                      </div>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.api.jobBillOfMaterials(jobId, false)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuBraces />} />
+                      <div className="flex flex-grow items-center gap-4 justify-between">
+                        <span>BoM</span>
+                        <Badge variant="outline" className="text-xs">
+                          JSON
+                        </Badge>
+                      </div>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.api.jobBillOfMaterials(jobId, true)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuBraces />} />
+                      <div className="flex flex-grow items-center gap-4 justify-between">
+                        <span>BoM + BoP</span>
+                        <Badge variant="outline" className="text-xs">
+                          JSON
+                        </Badge>
+                      </div>
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </HStack>
           <TreeView
             parentRef={parentRef}
