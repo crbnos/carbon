@@ -47,6 +47,7 @@ import {
 } from "@carbon/react";
 import { Form, Link, useFetcher, useLocation } from "@remix-run/react";
 import { useRef, type ComponentProps } from "react";
+import { BsFillHexagonFill } from "react-icons/bs";
 import { useMode, useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -54,7 +55,6 @@ import { ERP_URL, path } from "~/utils/path";
 import { AdjustInventory } from "./AdjustInventory";
 import { EndShift } from "./EndShift";
 import Feedback from "./Feedback";
-import { BsFillHexagonFill } from "react-icons/bs";
 
 export function AppSidebar({
   activeEvents,

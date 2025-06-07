@@ -19,6 +19,14 @@ export const path = {
       autodeskUpload: `${api}/autodesk/upload`,
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
+      billOfMaterials: (methodId: string, withOperations: boolean = false) =>
+        generatePath(
+          `${api}/items/methods/${methodId}/bom?withOperations=${withOperations}`
+        ),
+      billOfMaterialsCsv: (methodId: string, withOperations: boolean = false) =>
+        generatePath(
+          `${api}/items/methods/${methodId}/bom.csv?withOperations=${withOperations}`
+        ),
       countries: `${api}/countries`,
       currencies: `${api}/accounting/currencies`,
       customerContacts: (id: string) =>
