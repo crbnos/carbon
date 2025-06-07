@@ -1,6 +1,12 @@
+/* eslint-disable react/jsx-no-undef */
 import {
   Badge,
   Copy,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
   HoverCard,
   HoverCardContent,
@@ -16,13 +22,14 @@ import {
 import { useOptimisticLocation } from "@carbon/remix";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
-import { CSVLink } from "react-csv";
 import {
+  LuBraces,
   LuChevronDown,
   LuChevronRight,
   LuDownload,
   LuExternalLink,
   LuSearch,
+  LuTable,
 } from "react-icons/lu";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
@@ -33,13 +40,14 @@ import { OnshapeSync } from "~/integrations/onshape/lib/OnshapeSync";
 import { type MethodItemType } from "~/modules/shared";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
-import type { MakeMethod, Method } from "../../types";
+import type { MakeMethod, Method, MethodOperation } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
   itemType: MethodItemType;
   makeMethod: MakeMethod;
   methods: FlatTreeItem<Method>[];
+  operations: MethodOperation[];
   selectedId?: string;
 };
 
@@ -59,17 +67,6 @@ const BoMExplorer = ({
     version: makeMethodVersion,
     status: makeMethodStatus,
   } = makeMethod;
-
-  const csvData = methods.map((node) => ({
-    "Item ID": node.data.itemReadableId,
-    Description: node.data.description,
-    Quantity: node.data.quantity,
-    UOM: node.data.unitOfMeasureCode,
-    "Method Type": node.data.methodType,
-    "Item Type": node.data.itemType,
-    Level: node.level,
-    Version: node.data.version || "",
-  }));
 
   const {
     nodes,
@@ -139,13 +136,78 @@ const BoMExplorer = ({
             onChange={(e) => setFilterText(e.target.value)}
           />
         </InputGroup>
-        <CSVLink
-          data={csvData}
-          filename={`bom-${makeMethod.id}-v${makeMethodVersion}.csv`}
-          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 w-9"
-        >
-          <LuDownload className="h-4 w-4" />
-        </CSVLink>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <IconButton
+              aria-label="Actions"
+              variant="ghost"
+              icon={<LuDownload />}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterialsCsv(makeMethodId, false)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuTable />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM</span>
+                  <Badge variant="green" className="text-xs">
+                    CSV
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterialsCsv(makeMethodId, true)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuTable />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM + BoP</span>
+                  <Badge variant="green" className="text-xs">
+                    CSV
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterials(makeMethodId, false)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuBraces />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM</span>
+                  <Badge variant="outline" className="text-xs">
+                    JSON
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <a
+                href={path.to.api.billOfMaterials(makeMethodId, true)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <DropdownMenuIcon icon={<LuBraces />} />
+                <div className="flex flex-grow items-center gap-4 justify-between">
+                  <span>BoM + BoP</span>
+                  <Badge variant="outline" className="text-xs">
+                    JSON
+                  </Badge>
+                </div>
+              </a>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </HStack>
       {integrations.has("onshape") && (
         <OnshapeSync
