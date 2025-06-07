@@ -119,12 +119,8 @@ export default function AuthCallback() {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <div>
-        <img
-          src="/carbon-logo-mark.svg"
-          alt="Carbon Logo"
-          className="block max-w-[100px] mb-3"
-        />
+      <div className="flex justify-center mb-4">
+        <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
       <p className="text-muted-foreground">Loading...</p>
     </div>

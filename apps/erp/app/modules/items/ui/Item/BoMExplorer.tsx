@@ -16,9 +16,11 @@ import {
 import { useOptimisticLocation } from "@carbon/remix";
 import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
+import { CSVLink } from "react-csv";
 import {
   LuChevronDown,
   LuChevronRight,
+  LuDownload,
   LuExternalLink,
   LuSearch,
 } from "react-icons/lu";
@@ -31,7 +33,7 @@ import { OnshapeSync } from "~/integrations/onshape/lib/OnshapeSync";
 import { type MethodItemType } from "~/modules/shared";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
-import type { Method } from "../../types";
+import type { MakeMethod, Method } from "../../types";
 import { getLinkToItemDetails } from "./ItemForm";
 
 type BoMExplorerProps = {
@@ -58,14 +60,23 @@ const BoMExplorer = ({
     status: makeMethodStatus,
   } = makeMethod;
 
+  const csvData = methods.map((node) => ({
+    "Item ID": node.data.itemReadableId,
+    Description: node.data.description,
+    Quantity: node.data.quantity,
+    UOM: node.data.unitOfMeasureCode,
+    "Method Type": node.data.methodType,
+    "Item Type": node.data.itemType,
+    Level: node.level,
+    Version: node.data.version || "",
+  }));
+
   const {
     nodes,
     getTreeProps,
     getNodeProps,
-    // toggleNodeSelection,
     toggleExpandNode,
     expandAllBelowDepth,
-    // toggleExpandLevel,
     collapseAllBelowDepth,
     selectNode,
     scrollToNode,
@@ -73,7 +84,6 @@ const BoMExplorer = ({
   } = useTree({
     tree: methods,
     selectedId,
-    // collapsedIds,
     onSelectedIdChanged: () => {},
     estimatedRowHeight: () => 40,
     parentRef,
@@ -118,7 +128,7 @@ const BoMExplorer = ({
 
   return (
     <VStack>
-      <HStack className="w-full">
+      <HStack className="w-full justify-between">
         <InputGroup size="sm" className="flex flex-grow">
           <InputLeftElement>
             <LuSearch className="h-4 w-4" />
@@ -129,6 +139,13 @@ const BoMExplorer = ({
             onChange={(e) => setFilterText(e.target.value)}
           />
         </InputGroup>
+        <CSVLink
+          data={csvData}
+          filename={`bom-${makeMethod.id}-v${makeMethodVersion}.csv`}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground hover:bg-secondary/80 h-9 w-9"
+        >
+          <LuDownload className="h-4 w-4" />
+        </CSVLink>
       </HStack>
       {integrations.has("onshape") && (
         <OnshapeSync

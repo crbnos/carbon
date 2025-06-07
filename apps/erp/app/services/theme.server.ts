@@ -17,9 +17,9 @@ type Theme = (typeof themes)[number];
 
 export function getTheme(request: Request): Theme {
   const cookieHeader = request.headers.get("cookie");
-  const parsed = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : "zinc";
+  const parsed = cookieHeader ? cookie.parse(cookieHeader)[cookieName] : "blue";
   if (themes.includes(parsed as Theme)) return parsed as Theme;
-  return "zinc";
+  return "blue";
 }
 
 export function setTheme(theme: string) {

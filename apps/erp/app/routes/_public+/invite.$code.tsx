@@ -89,12 +89,8 @@ export default function Invite() {
         spacing={4}
         className="max-w-lg pt-[16dvh] items-center text-center"
       >
-        <div>
-          <img
-            src="/carbon-logo-mark.svg"
-            alt="Carbon Logo"
-            className="block max-w-[100px] mb-3"
-          />
+        <div className="flex justify-center mb-4">
+          <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
         </div>
         <VStack spacing={2} className="text-center w-full">
           <Heading className="w-full text-center">Invalid Invite</Heading>
@@ -122,7 +118,7 @@ export default function Invite() {
           transition={{ duration: 2, ease: "easeInOut" }}
           src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="block max-w-[60px] mb-3"
+          className="w-36 mb-3"
         />
 
         <Heading
