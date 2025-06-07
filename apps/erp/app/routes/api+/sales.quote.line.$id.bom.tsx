@@ -1,10 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
-import type { Method } from "~/modules/items";
-import { getMethodTree } from "~/modules/items";
+import { getQuoteMethodTrees } from "~/modules/sales";
 import { calculateTotalQuantity, generateBomIds } from "~/utils/bom";
 import { makeDurations } from "~/utils/duration";
 
@@ -14,7 +12,7 @@ export const config = {
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
+    view: "sales",
   });
 
   const { id } = params;
@@ -24,23 +22,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return { data: [], error: null };
   }
 
-  const methodTree = await getMethodTree(client, id);
-  if (methodTree.error) {
-    return { data: [], error: methodTree.error };
+  const quote = await client
+    .from("quoteLine")
+    .select("quoteId, quantity")
+    .eq("id", id)
+    .single();
+  if (quote.error) {
+    return { data: [], error: "Failed to load quote line" };
   }
 
-  const methods = (
-    methodTree.data.length > 0 ? flattenTree(methodTree.data[0]) : []
-  ) satisfies FlatTreeItem<Method>[];
+  const methodTrees = await getQuoteMethodTrees(client, quote.data?.quoteId);
+
+  if (methodTrees.error) {
+    return { data: [], error: methodTrees.error };
+  }
+
+  const methodTree = methodTrees.data.find((m) => m.data.quoteLineId === id);
+  const flattenedMethods = methodTree ? flattenTree(methodTree) : [];
 
   const makeMethodIds = [
-    ...new Set(methods.map((method) => method.data.makeMethodId)),
+    ...new Set(flattenedMethods.map((method) => method.data.quoteMakeMethodId)),
   ];
 
   let operationsByMakeMethodId: Record<
     string,
     Array<
-      Database["public"]["Tables"]["methodOperation"]["Row"] & {
+      Database["public"]["Tables"]["quoteOperation"]["Row"] & {
         processName: string;
         workCenterName: string | null;
       }
@@ -48,18 +55,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   > = {};
 
   if (withOperations) {
-    const methodOperations = await client
-      .from("methodOperation")
+    const quoteOperations = await client
+      .from("quoteOperation")
       .select(
         "*, ...process(processName:name), ...workCenter(workCenterName:name)"
       )
-      .in("makeMethodId", makeMethodIds)
+      .in("quoteMakeMethodId", makeMethodIds)
       .eq("companyId", companyId);
-    if (methodOperations.data) {
-      operationsByMakeMethodId = methodOperations.data.reduce(
+    if (quoteOperations.data) {
+      operationsByMakeMethodId = quoteOperations.data.reduce(
         (acc, operation) => {
-          acc[operation.makeMethodId] = [
-            ...(acc[operation.makeMethodId] || []),
+          acc[operation.quoteMakeMethodId ?? ""] = [
+            ...(acc[operation.quoteMakeMethodId ?? ""] || []),
             operation,
           ];
           return acc;
@@ -69,10 +76,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  const bomIds = generateBomIds(methods);
+  console.log({ withOperations, operationsByMakeMethodId });
 
-  const result = methods.map((node, index) => {
-    const total = calculateTotalQuantity(node, methods);
+  const bomIds = generateBomIds(flattenedMethods);
+
+  const result = flattenedMethods.map((node, index) => {
+    const total = calculateTotalQuantity(node, flattenedMethods);
     const totalCost = total * (node.data.unitCost || 0);
 
     const bomItem = {
@@ -83,7 +92,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       total,
       unitCost: node.data.unitCost,
       totalCost,
-      uom: node.data.unitOfMeasureCode,
       methodType: node.data.methodType,
       itemType: node.data.itemType,
       level: node.level,
@@ -94,7 +102,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return bomItem;
     }
 
-    const operations = operationsByMakeMethodId[node.data.materialMakeMethodId];
+    const operations =
+      operationsByMakeMethodId[node.data.quoteMaterialMakeMethodId];
     if (!operations) {
       return { ...bomItem, operations: [] };
     }
@@ -102,15 +111,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       ...bomItem,
       operations: operations.map((operation) => {
-        const op1 = makeDurations({ ...operation, operationQuantity: total });
-        const op100 = makeDurations({
-          ...operation,
-          operationQuantity: total * 100,
-        });
-        const op1000 = makeDurations({
-          ...operation,
-          operationQuantity: total * 1000,
-        });
+        const durations: Record<string, number> = (quote.data?.quantity ?? [])
+          .map((quantity) => {
+            const duration = makeDurations({
+              ...operation,
+              operationQuantity: quantity,
+            });
+            return [quantity, duration.duration];
+          })
+          .reduce((acc, [quantity, duration]) => {
+            acc[`totalDuration${quantity}`] = duration;
+            return acc;
+          }, {} as Record<string, number>);
 
         return {
           description: operation.description,
@@ -123,9 +135,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           laborUnit: operation.laborUnit,
           machineTime: operation.machineTime,
           machineUnit: operation.machineUnit,
-          totalDurationX1: op1.duration,
-          totalDurationX100: op100.duration,
-          totalDurationX1000: op1000.duration,
+          ...durations,
         };
       }),
     };

@@ -44,7 +44,9 @@ const operationHeaders = [
 ];
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {
+    view: "parts",
+  });
 
   const { id } = params;
   const withOperations = request.url.includes("withOperations=true");
