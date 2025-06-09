@@ -1,31 +1,34 @@
 import {
   assertIsPost,
+  carbonClient,
   error,
-  loginValidator,
-  safeRedirect,
+  magicLinkValidator,
 } from "@carbon/auth";
-import { signInWithEmail, verifyAuthSession } from "@carbon/auth/auth.server";
-import { setCompanyId } from "@carbon/auth/company.server";
-import { getAuthSession, setAuthSession } from "@carbon/auth/session.server";
-import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { getUserByEmail } from "@carbon/auth/users.server";
+import { ValidatedForm, validator } from "@carbon/form";
+import { redis } from "@carbon/kv";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
+  Separator,
+  toast,
   VStack,
 } from "@carbon/react";
-import { Link, useActionData, useSearchParams } from "@remix-run/react";
+import { useFetcher, useSearchParams } from "@remix-run/react";
+import { Ratelimit } from "@upstash/ratelimit";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction,
 } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import posthog from "posthog-js";
-import { LuCircleAlert } from "react-icons/lu";
+import { LuCircleAlert, LuMailCheck } from "react-icons/lu";
 
-import { Hidden, Input, Password, Submit } from "~/components/Form";
+import { Hidden, Input, Submit } from "~/components/Form";
 
 import type { FormActionData, Result } from "~/types";
 import { path } from "~/utils/path";
@@ -43,48 +46,73 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return null;
 }
 
+const ratelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(5, "1 h"), // 5 submissions per hour
+  analytics: true,
+});
+
 export async function action({ request }: ActionFunctionArgs): FormActionData {
   assertIsPost(request);
-  const validation = await validator(loginValidator).validate(
+  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const { success } = await ratelimit.limit(ip);
+
+  if (!success) {
+    return json(
+      error(null, "Rate limit exceeded"),
+      await flash(request, error(null, "Rate limit exceeded"))
+    );
+  }
+
+  const validation = await validator(magicLinkValidator).validate(
     await request.formData()
   );
 
   if (validation.error) {
-    return validationError(validation.error);
+    return json(error(validation.error, "Invalid email address"));
   }
 
-  const { email, password, redirectTo } = validation.data;
+  const { email } = validation.data;
+  const user = await getUserByEmail(email);
 
-  const authSession = await signInWithEmail(email, password);
+  if (user.data && user.data.active) {
+    const magicLink = await sendMagicLink(email);
 
-  if (!authSession) {
-    // delay on incorrect password as minimal brute force protection
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    return json(error(authSession, "Invalid email/password"), {
-      status: 500,
-    });
+    if (!magicLink) {
+      return json(
+        error(magicLink, "Failed to send magic link"),
+        await flash(request, error(magicLink, "Failed to send magic link"))
+      );
+    }
+  } else {
+    return json(
+      error(user, "User record not found"),
+      await flash(request, error(user.error, "User record not found"))
+    );
   }
 
-  const sessionCookie = await setAuthSession(request, {
-    authSession,
-  });
-  const companyIdCookie = setCompanyId(authSession.companyId);
-
-  throw redirect(safeRedirect(redirectTo), {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie],
-    ],
-  });
+  return json({ success: true });
 }
 
 export default function LoginRoute() {
-  const result = useActionData<Result>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
-  const handleClick = () => {
-    posthog.capture("sign_in_clicked");
+  const fetcher = useFetcher<Result>();
+
+  const onSignInWithGoogle = async () => {
+    const { error } = await carbonClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/callback${
+          redirectTo ? `?redirectTo=${redirectTo}` : ""
+        }`,
+      },
+    });
+
+    if (error) {
+      toast.error(error.message);
+    }
   };
 
   return (
@@ -93,38 +121,64 @@ export default function LoginRoute() {
         <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
       <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
-        <ValidatedForm
-          validator={loginValidator}
-          defaultValues={{ redirectTo }}
-          method="post"
-        >
-          <VStack spacing={4}>
-            {result && result?.message && (
-              <Alert variant="destructive">
-                <LuCircleAlert className="w-4 h-4" />
-                <AlertTitle>Authentication Error</AlertTitle>
-                <AlertDescription>{result?.message}</AlertDescription>
-              </Alert>
-            )}
+        {fetcher.data?.success === true ? (
+          <>
+            <VStack spacing={4} className="items-center justify-center">
+              <LuMailCheck className="size-24" />
 
-            <Input name="email" label="Email" />
-            <Password name="password" label="Password" type="password" />
+              <h2 className="text-2xl font-semibold tracking-tight mb-2">
+                Check your email
+              </h2>
+              <p className="text-muted-foreground text-center text-balance">
+                We've sent you a magic link to sign in to your account.
+              </p>
+            </VStack>
+          </>
+        ) : (
+          <ValidatedForm
+            fetcher={fetcher}
+            validator={magicLinkValidator}
+            defaultValues={{ redirectTo }}
+            method="post"
+          >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Submit
-              size="lg"
-              className="w-full"
-              onClick={handleClick}
-              withBlocker={false}
-            >
-              Sign In
-            </Submit>
-            <Button variant="link" asChild className="w-full">
-              <Link to={path.to.forgotPassword}>Forgot Password</Link>
-            </Button>
-          </VStack>
-        </ValidatedForm>
+            <VStack spacing={4}>
+              {fetcher.data?.success === false && fetcher.data?.message && (
+                <Alert variant="destructive">
+                  <LuCircleAlert className="w-4 h-4" />
+                  <AlertTitle>Authentication Error</AlertTitle>
+                  <AlertDescription>{fetcher.data?.message}</AlertDescription>
+                </Alert>
+              )}
+
+              <Input name="email" label="" placeholder="Email Address" />
+
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state === "submitting"}
+                size="lg"
+                className="w-full"
+                withBlocker={false}
+              >
+                Continue with Email
+              </Submit>
+              <Separator />
+              <Button
+                type="button"
+                size="lg"
+                className="w-full"
+                onClick={onSignInWithGoogle}
+                isDisabled={fetcher.state !== "idle"}
+                variant="secondary"
+                leftIcon={<GoogleIcon />}
+              >
+                Continue with Google
+              </Button>
+            </VStack>
+          </ValidatedForm>
+        )}
       </div>
-      <div className="text-sm text-muted-foreground w-[380px] mt-4">
+      <div className="text-sm text-center text-balance text-muted-foreground w-[380px] mt-4">
         <p>
           By signing in, you agree to the{" "}
           <a
@@ -147,5 +201,34 @@ export default function LoginRoute() {
         </p>
       </div>
     </>
+  );
+}
+
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      height="16"
+      strokeLinejoin="round"
+      viewBox="0 0 16 16"
+      width="16"
+      {...props}
+    >
+      <path
+        d="M8.15991 6.54543V9.64362H12.4654C12.2763 10.64 11.709 11.4837 10.8581 12.0509L13.4544 14.0655C14.9671 12.6692 15.8399 10.6182 15.8399 8.18188C15.8399 7.61461 15.789 7.06911 15.6944 6.54552L8.15991 6.54543Z"
+        fill="#4285F4"
+      ></path>
+      <path
+        d="M3.6764 9.52268L3.09083 9.97093L1.01807 11.5855C2.33443 14.1963 5.03241 16 8.15966 16C10.3196 16 12.1305 15.2873 13.4542 14.0655L10.8578 12.0509C10.1451 12.5309 9.23598 12.8219 8.15966 12.8219C6.07967 12.8219 4.31245 11.4182 3.67967 9.5273L3.6764 9.52268Z"
+        fill="#34A853"
+      ></path>
+      <path
+        d="M1.01803 4.41455C0.472607 5.49087 0.159912 6.70543 0.159912 7.99995C0.159912 9.29447 0.472607 10.509 1.01803 11.5854C1.01803 11.5926 3.6799 9.51991 3.6799 9.51991C3.5199 9.03991 3.42532 8.53085 3.42532 7.99987C3.42532 7.46889 3.5199 6.95983 3.6799 6.47983L1.01803 4.41455Z"
+        fill="#FBBC05"
+      ></path>
+      <path
+        d="M8.15982 3.18545C9.33802 3.18545 10.3853 3.59271 11.2216 4.37818L13.5125 2.0873C12.1234 0.792777 10.3199 0 8.15982 0C5.03257 0 2.33443 1.79636 1.01807 4.41455L3.67985 6.48001C4.31254 4.58908 6.07983 3.18545 8.15982 3.18545Z"
+        fill="#EA4335"
+      ></path>
+    </svg>
   );
 }

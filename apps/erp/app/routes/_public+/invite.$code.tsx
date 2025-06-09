@@ -118,7 +118,7 @@ export default function Invite() {
           transition={{ duration: 2, ease: "easeInOut" }}
           src="/carbon-logo-mark.svg"
           alt="Carbon Logo"
-          className="w-36 mb-3"
+          className="w-24 mb-3"
         />
 
         <Heading
@@ -129,13 +129,6 @@ export default function Invite() {
         >
           Welcome to Carbon
         </Heading>
-        <motion.p
-          {...fade}
-          transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
-          className="text-muted-foreground text-sm pb-4"
-        >
-          Carbon is the operating system for manufacturing
-        </motion.p>
 
         <Form method="post">
           <Button

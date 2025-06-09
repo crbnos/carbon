@@ -14,8 +14,8 @@ INSERT INTO auth.users (
     '82fd05db-270d-46af-b29e-082e9f709b1f', 
     'authenticated', 
     'authenticated', 
-    'admin@carbon.us.org', 
-    crypt('carbon', gen_salt('bf')),
+    'brad@carbonos.dev', 
+    crypt(md5(random()::text), gen_salt('bf')),
     CURRENT_TIMESTAMP, 
     NULL, 
     '', 
@@ -59,7 +59,7 @@ INSERT INTO
 VALUES (
     '82fd05db-270d-46af-b29e-082e9f709b1f',
     '82fd05db-270d-46af-b29e-082e9f709b1f',
-    format('{"sub":"%s","email":"%s"}', '82fd05db-270d-46af-b29e-082e9f709b1f', 'admin@carbon.us.org')::jsonb,
+    format('{"sub":"%s","email":"%s"}', '82fd05db-270d-46af-b29e-082e9f709b1f', 'brad@carbonos.dev')::jsonb,
     'email',
     CURRENT_TIMESTAMP,
     CURRENT_TIMESTAMP,
@@ -73,9 +73,9 @@ INSERT INTO public."user" (
     active, "createdAt", "updatedAt", developer, admin
 ) VALUES (
     '82fd05db-270d-46af-b29e-082e9f709b1f', 
-    'admin@carbon.us.org', 
-    'Carbon', 
-    'Admin', 
+    'brad@carbonos.dev', 
+    'Brad', 
+    'Barbin', 
     '', 
     NULL, 
     true, 

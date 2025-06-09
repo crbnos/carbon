@@ -13,12 +13,22 @@ import {
   getAuthSession,
   setAuthSession,
 } from "@carbon/auth/session.server";
+import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
-import { useFetcher } from "@remix-run/react";
+
+import { Link, useFetcher, useLocation } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Button,
+  VStack,
+} from "@carbon/react";
+import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -43,20 +53,17 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { refreshToken, userId } = validation.data;
-  const carbonServiceClient = getCarbonServiceRole();
-  const companies = await carbonServiceClient
+  const serviceRole = getCarbonServiceRole();
+  const companies = await serviceRole
     .from("userToCompany")
     .select("companyId")
     .eq("userId", userId);
-  if (!companies.data || companies.data.length < 1) {
-    return json(error(companies.error, "No companies found for user"), {
-      status: 500,
-    });
-  }
+
   const authSession = await refreshAccessToken(
     refreshToken,
-    companies.data?.[0].companyId
+    companies.data?.[0]?.companyId
   );
+
   if (!authSession) {
     return redirect(
       path.to.root,
@@ -64,42 +71,54 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const sessionCookie = await setAuthSession(request, {
-    authSession,
-  });
-  const companyIdCookie = setCompanyId(authSession.companyId);
+  const user = await getUserByEmail(authSession.email);
 
-  return redirect(path.to.authenticatedRoot, {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie],
-    ],
-  });
+  if (user?.data) {
+    const sessionCookie = await setAuthSession(request, {
+      authSession,
+    });
+    const companyIdCookie = setCompanyId(authSession.companyId);
+    return redirect(path.to.authenticatedRoot, {
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie],
+      ],
+    });
+  } else {
+    return redirect(
+      path.to.root,
+      await flash(request, error(user.error, "User not found"))
+    );
+  }
 }
 
 export default function AuthCallback() {
   const fetcher = useFetcher<{}>();
   const isAuthenticating = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const { hash } = useLocation();
+
+  useEffect(() => {
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const errorDescription = hashParams.get("error_description");
+    if (errorDescription) {
+      setError(decodeURIComponent(errorDescription.replace(/\+/g, " ")));
+    }
+  }, [hash]);
 
   useEffect(() => {
     const {
       data: { subscription },
-    } = carbonClient.auth.onAuthStateChange((event, carbonSession) => {
+    } = carbonClient.auth.onAuthStateChange((event, session) => {
       if (
         ["SIGNED_IN", "INITIAL_SESSION"].includes(event) &&
         !isAuthenticating.current
       ) {
         isAuthenticating.current = true;
 
-        // carbon sdk has ability to read url fragment that contains your token after third party provider redirects you here
-        // this fragment url looks like https://.....#access_token=evxxxxxxxx&refresh_token=xxxxxx, and it's not readable server-side (Oauth security)
-        // carbon auth listener gives us a user session, based on what it founds in this fragment url
-        // we can't use it directly, client-side, because we can't access sessionStorage from here
-
-        // we should not trust what's happen client side
-        // so, we only pick the refresh token, and let's back-end getting user session from it
-        const refreshToken = carbonSession?.refresh_token;
-        const userId = carbonSession?.user.id;
+        const refreshToken = session?.refresh_token;
+        const userId = session?.user.id;
 
         if (!refreshToken || !userId) return;
 
@@ -112,7 +131,6 @@ export default function AuthCallback() {
     });
 
     return () => {
-      // prevent memory leak. Listener stays alive 👨‍🎤
       subscription.unsubscribe();
     };
   }, [fetcher]);
@@ -122,7 +140,30 @@ export default function AuthCallback() {
       <div className="flex justify-center mb-4">
         <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
-      <p className="text-muted-foreground">Loading...</p>
+      {error ? (
+        <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 mt-8 w-[380px]">
+          <VStack spacing={4}>
+            <Alert variant="destructive">
+              <LuTriangleAlert className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+            {error.includes("expired") && (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  But don't worry. You can use the forgot password flow to
+                  request a new magic link.
+                </p>
+                <Button size="lg" asChild className="w-full">
+                  <Link to={path.to.login}>Login</Link>
+                </Button>
+              </>
+            )}
+          </VStack>
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Loading...</p>
+      )}
     </div>
   );
 }

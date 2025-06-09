@@ -1,14 +1,13 @@
 import type { Redis as RedisType } from "@upstash/redis";
 import { Redis } from "@upstash/redis";
-import type { Redis as IoRedisType } from "ioredis";
 
 const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-let redis: RedisType | IoRedisType;
+let redis: RedisType;
 
 declare global {
-  var __redis: RedisType | IoRedisType | undefined;
+  var __redis: RedisType | undefined;
 }
 
 if (!UPSTASH_REDIS_REST_URL) {

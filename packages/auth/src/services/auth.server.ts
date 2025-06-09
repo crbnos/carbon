@@ -15,9 +15,9 @@ import {
 import { getCompaniesForUser } from "./users";
 import { getUserClaims } from "./users.server";
 
+import { getCarbonAPIKeyClient } from "../lib/supabase/client";
 import type { AuthSession } from "../types";
 import { error } from "../utils/result";
-import { getCarbonAPIKeyClient } from "../lib/supabase/client";
 
 export async function createEmailAuthAccount(
   email: string,
