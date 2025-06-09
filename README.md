@@ -1,6 +1,4 @@
-
 ![Carbon](https://github.com/user-attachments/assets/1cfd6001-0888-4ae4-9379-e7cdf0775c78)
-
 
 Carbon is the open-source operating system for manufacturing.
 
@@ -148,26 +146,28 @@ $ npm run db:start  # pull and run the containers
 
 Create an `.env` file and copy the contents of `.env.example` file into it
 
-```bash
+````bash
 $ cp ./.env.example ./.env
-```
 
-1. Use the output of `npm run db:start` to set the supabase entries:
+1. Set your email address:
+- `DEFAULT_EMAIL_ADDRESS=[your-email@address.com]`
+
+2. Use the output of `npm run db:start` to set the supabase entries:
 
 - `SUPABASE_SERVICE_ROLE_KEY=[service_role key]`
 - `SUPABASE_ANON_KEY=[anon key]`
 
-2. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
+3. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
 
 - `UPSTASH_REDIS_REST_URL=[UPSTASH_REDIS_REST_URL]`
 - `UPSTASH_REDIS_REST_TOKEN=[UPSTASH_REDIS_REST_TOKEN]`
 
-3. Navigate to the project you created in [https://cloud.trigger.dev/](Trigger.dev) and copy the following from the `Environments & API Keys` section:
+4. Navigate to the project you created in [https://cloud.trigger.dev/](Trigger.dev) and copy the following from the `Environments & API Keys` section:
 
 - `TRIGGER_PUBLIC_API_KEY=[Public 'dev' API Key, starting 'pk_dev*']`
 - `TRIGGER_API_KEY=[Server 'dev' API Key, starting 'tr_dev*']`
 
-4. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
+5. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
 
 - `POSTHOG_API_HOST=[https://[region].posthog.com]`
 - `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
@@ -177,7 +177,7 @@ Then you can run the following:
 ```bash
 $ npm run db:build     # run db migrations and seed script
 $ npm run build        # build the packages
-```
+````
 
 Finally, start the apps and packages:
 
@@ -188,7 +188,7 @@ $ npm run dev:mes        # npm run dev in all apps & packages
 
 You can now sign in with:
 
-username: admin@carbon.us.org
+username: <your-email@address.com>
 password: carbon
 
 After installation you should be able run the apps locally.

@@ -82,10 +82,9 @@ export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {
     id: string;
-    email?: string;
     firstName: string;
     lastName: string;
-    about: string;
+    about?: string;
   }
 ) {
   return client.from("user").update(sanitize(account)).eq("id", account.id);

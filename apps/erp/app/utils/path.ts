@@ -617,7 +617,7 @@ export const path = {
     externalQuote: (id: string) => generatePath(`/share/quote/${id}`),
     feedback: `${x}/feedback`,
     fiscalYears: `${x}/accounting/years`,
-    forgotPassword: "/forgot-password",
+
     gauge: (id: string) => generatePath(`${x}/quality/gauges/${id}`),
     gauges: `${x}/quality/gauges`,
     gaugeCalibrationRecord: (id: string) =>
@@ -1062,7 +1062,6 @@ export const path = {
     receiptRoot: `${x}/receipt`,
     refreshSession: "/refresh-session",
     resendInvite: `${x}/users/resend-invite`,
-    resetPassword: "/reset-password",
     resources: `${x}/resources`,
     revision: (id: string) => generatePath(`${x}/items/revisions/${id}`),
     revokeInvite: `${x}/users/revoke-invite`,

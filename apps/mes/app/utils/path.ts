@@ -68,7 +68,7 @@ export const path = {
     endShift: `${x}/end-shift`,
     feedback: `${x}/feedback`,
     finish: `${x}/finish`,
-    forgotPassword: `${ERP_URL}/forgot-password`,
+
     healthcheck: "/healthcheck",
     inventoryAdjustment: `${x}/adjustment`,
     issue: `${x}/issue`,

@@ -15,20 +15,14 @@ import {
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { validator } from "@carbon/form";
-import { Link, useFetcher, useLocation } from "@remix-run/react";
+
+import { useFetcher, useLocation } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useEffect, useRef, useState } from "react";
 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Button,
-  VStack,
-} from "@carbon/react";
+import { Alert, AlertDescription, AlertTitle, VStack } from "@carbon/react";
 import { LuTriangleAlert } from "react-icons/lu";
-import type { FormActionData } from "~/types";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -39,7 +33,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json({});
 }
 
-export async function action({ request }: ActionFunctionArgs): FormActionData {
+export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
   const validation = await validator(callbackValidator).validate(
@@ -58,15 +52,12 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
     .from("userToCompany")
     .select("companyId")
     .eq("userId", userId);
-  if (!companies.data || companies.data.length < 1) {
-    return json(error(companies.error, "No companies found for user"), {
-      status: 500,
-    });
-  }
+
   const authSession = await refreshAccessToken(
     refreshToken,
-    companies.data?.[0].companyId
+    companies.data?.[0]?.companyId
   );
+
   if (!authSession) {
     return redirect(
       path.to.root,
@@ -75,12 +66,13 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   }
 
   const user = await getUserByEmail(authSession.email);
+
   if (user?.data) {
     const sessionCookie = await setAuthSession(request, {
       authSession,
     });
     const companyIdCookie = setCompanyId(authSession.companyId);
-    return redirect(path.to.resetPassword, {
+    return redirect(path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", companyIdCookie],
@@ -156,9 +148,6 @@ export default function AuthCallback() {
                   But don't worry. You can use the forgot password flow to
                   request a new magic link.
                 </p>
-                <Button size="lg" asChild className="w-full">
-                  <Link to={path.to.forgotPassword}>Forgot Password</Link>
-                </Button>
               </>
             )}
           </VStack>

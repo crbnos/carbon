@@ -1,7 +1,6 @@
 {
   "name": "@carbon/kv",
   "dependencies": {
-    "ioredis": "^5.2.4",
     "@upstash/redis": "1.28.4"
   },
   "devDependencies": {

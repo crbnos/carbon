@@ -13,7 +13,7 @@ export const path = {
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),
     dashboard: `${ERP_URL}/x`,
-    forgotPassword: `${ERP_URL}/forgot-password`,
+
     healthcheck: "/healthcheck",
     login: "/login",
     logout: "/logout",

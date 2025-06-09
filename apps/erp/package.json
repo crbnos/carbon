@@ -42,6 +42,7 @@
     "@trigger.dev/react": "3.3.12",
     "@trigger.dev/remix": "3.3.12",
     "@trigger.dev/sdk": "3.3.12",
+    "@upstash/ratelimit": "^2.0.5",
     "@vercel/analytics": "^1.2.2",
     "@vercel/remix": "2.11.2",
     "@visx/responsive": "^2.1.0",

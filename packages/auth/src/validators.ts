@@ -1,12 +1,20 @@
 import { z } from "zod";
+import { zfd } from "zod-form-data";
 
 export const loginValidator = z.object({
   email: z
     .string()
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
-  password: z.string().min(6, { message: "Password is too short" }),
   redirectTo: z.string(),
+});
+
+export const emailAndPasswordValidator = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email("Must be a valid email"),
+  password: z.string().min(6, { message: "Password is too short" }),
 });
 
 export const forgotPasswordValidator = z.object({
@@ -14,6 +22,14 @@ export const forgotPasswordValidator = z.object({
     .string()
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
+});
+
+export const magicLinkValidator = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email("Must be a valid email"),
+  redirectTo: zfd.text(z.string().optional()),
 });
 
 export const resetPasswordValidator = z.object({

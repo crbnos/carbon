@@ -1,4 +1,4 @@
-import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
@@ -15,7 +15,7 @@ import {
 import { Link, useLoaderData } from "@remix-run/react";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import type { z } from "zod";
-import { Hidden, Input, Password, Submit } from "~/components/Form";
+import { Hidden, Input, Submit, TextArea } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import {
   onboardingUserValidator,
@@ -50,27 +50,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { firstName, lastName, email, password, next } = validation.data;
-
-  const updatePassword = await getCarbonServiceRole().auth.admin.updateUserById(
-    userId,
-    {
-      email,
-      password,
-    }
-  );
-
-  if (updatePassword.error) {
-    console.error(updatePassword.error);
-    throw new Error("Fatal: failed to update password");
-  }
+  const { firstName, lastName, about, next } = validation.data;
 
   const updateAccount = await updatePublicAccount(client, {
     id: userId,
-    email,
     firstName,
     lastName,
-    about: "",
+    about: about ?? "",
   });
 
   if (updateAccount.error) {
@@ -87,9 +73,6 @@ export default function OnboardingUser() {
 
   const initialValues = {} as z.infer<typeof onboardingUserValidator>;
 
-  if (user?.email && user.email !== "admin@carbon.us.org") {
-    initialValues.email = user.email;
-  }
   if (
     user?.firstName &&
     user?.lastName &&
@@ -98,6 +81,7 @@ export default function OnboardingUser() {
   ) {
     initialValues.firstName = user?.firstName!;
     initialValues.lastName = user?.lastName!;
+    initialValues.about = user?.about!;
   }
 
   return (
@@ -116,8 +100,7 @@ export default function OnboardingUser() {
           <VStack spacing={4}>
             <Input autoFocus name="firstName" label="First Name" />
             <Input name="lastName" label="Last Name" />
-            <Input autoComplete="off" name="email" label="Email" />
-            <Password autoComplete="off" name="password" label="Password" />
+            <TextArea name="about" label="About" />
           </VStack>
         </CardContent>
         <CardFooter>
