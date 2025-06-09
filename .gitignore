@@ -21,5 +21,6 @@ vite.config.ts.timestamp*
 .env.production.local
 !packages/apps/**/.env
 packages/database/.env
+packages/database/supabase/seed.sql
 
 .vercel

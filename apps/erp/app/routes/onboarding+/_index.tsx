@@ -14,6 +14,10 @@ export default function GetStarted() {
       <Heading size="h1" className="m-0">
         Welcome to Carbon
       </Heading>
+      <p className="text-muted-foreground text-balance text-sm pb-4">
+        Carbon is a manufacturing platform that combines ERP, MES, and QMS into
+        a single, unified system.
+      </p>
 
       <Button size="lg" asChild>
         <Link to={onboardingSequence[0]}>Get Started</Link>
