@@ -11,6 +11,11 @@ export const shouldRevalidate: ShouldRevalidateFunction = () => {
   return false;
 };
 
+export const config = {
+  maxDuration: 300,
+  runtime: "node",
+};
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
