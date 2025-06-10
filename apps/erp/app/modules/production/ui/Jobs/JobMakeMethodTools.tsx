@@ -228,6 +228,12 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     }
   };
 
+  useMount(() => {
+    if (isJobMethod && routeData?.job.itemId) {
+      getMakeMethods(routeData.job.itemId);
+    }
+  });
+
   return (
     <>
       {permissions.can("update", "production") &&
@@ -429,7 +435,8 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
               action={path.to.jobMethodSave}
               validator={getJobMethodValidator}
               defaultValues={{
-                targetId: isJobMethod
+                // @ts-expect-error
+                itemId: isJobMethod
                   ? routeData?.job?.itemId ?? undefined
                   : undefined,
               }}

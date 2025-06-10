@@ -200,6 +200,12 @@ const QuoteMakeMethodTools = () => {
     }
   };
 
+  useMount(() => {
+    if (isQuoteLineMethod && line?.itemId) {
+      getMakeMethods(line.itemId);
+    }
+  });
+
   return (
     <>
       {line &&
@@ -397,7 +403,8 @@ const QuoteMakeMethodTools = () => {
                 sourceId: isQuoteLineMethod
                   ? line?.itemId ?? undefined
                   : undefined,
-                targetId: isQuoteLineMethod
+                // @ts-expect-error
+                itemId: isQuoteLineMethod
                   ? line?.itemId ?? undefined
                   : undefined,
               }}
