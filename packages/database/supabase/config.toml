@@ -139,3 +139,8 @@ verify_jwt = true
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/post-sales-invoice/*.html" ]
 
+
+[functions.demand-forecast]
+enabled = true
+verify_jwt = true
+
