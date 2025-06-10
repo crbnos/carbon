@@ -426,7 +426,7 @@ function ConvertToQuoteModal({
                     <li key={line.id}>
                       {line.customerPartId}
                       {line.customerPartRevision &&
-                        `-${line.customerPartRevision}`}
+                        `.${line.customerPartRevision}`}
                     </li>
                   ))}
                 </ul>
