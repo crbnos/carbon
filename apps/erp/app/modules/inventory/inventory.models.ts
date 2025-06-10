@@ -2,6 +2,9 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
 
+export const demandPeriodTypes = ["Week", "Day", "Month"] as const;
+export const demandSourceTypes = ["Sales Order", "Job Material"] as const;
+
 export const itemTypes = [
   "Part",
   "Material",

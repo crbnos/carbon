@@ -4753,6 +4753,360 @@ export type Database = {
         }
         Relationships: []
       }
+      demandActual: {
+        Row: {
+          actualQuantity: number
+          createdAt: string
+          createdBy: string
+          demandPeriodId: string
+          id: string
+          itemId: string
+          locationId: string | null
+          notes: string | null
+          sourceId: string | null
+          sourceType: Database["public"]["Enums"]["demandSourceType"]
+          updatedAt: string
+          updatedBy: string
+        }
+        Insert: {
+          actualQuantity?: number
+          createdAt?: string
+          createdBy: string
+          demandPeriodId: string
+          id?: string
+          itemId: string
+          locationId?: string | null
+          notes?: string | null
+          sourceId?: string | null
+          sourceType: Database["public"]["Enums"]["demandSourceType"]
+          updatedAt?: string
+          updatedBy: string
+        }
+        Update: {
+          actualQuantity?: number
+          createdAt?: string
+          createdBy?: string
+          demandPeriodId?: string
+          id?: string
+          itemId?: string
+          locationId?: string | null
+          notes?: string | null
+          sourceId?: string | null
+          sourceType?: Database["public"]["Enums"]["demandSourceType"]
+          updatedAt?: string
+          updatedBy?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demandActual_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "demandActual_demandPeriodId_fkey"
+            columns: ["demandPeriodId"]
+            isOneToOne: false
+            referencedRelation: "demandPeriod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      demandForecast: {
+        Row: {
+          confidence: number | null
+          createdAt: string
+          createdBy: string
+          demandPeriodId: string
+          forecastMethod: string | null
+          forecastQuantity: number
+          id: string
+          itemId: string
+          locationId: string | null
+          notes: string | null
+          updatedAt: string
+          updatedBy: string
+        }
+        Insert: {
+          confidence?: number | null
+          createdAt?: string
+          createdBy: string
+          demandPeriodId: string
+          forecastMethod?: string | null
+          forecastQuantity?: number
+          id?: string
+          itemId: string
+          locationId?: string | null
+          notes?: string | null
+          updatedAt?: string
+          updatedBy: string
+        }
+        Update: {
+          confidence?: number | null
+          createdAt?: string
+          createdBy?: string
+          demandPeriodId?: string
+          forecastMethod?: string | null
+          forecastQuantity?: number
+          id?: string
+          itemId?: string
+          locationId?: string | null
+          notes?: string | null
+          updatedAt?: string
+          updatedBy?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demandForecast_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "demandForecast_demandPeriodId_fkey"
+            columns: ["demandPeriodId"]
+            isOneToOne: false
+            referencedRelation: "demandPeriod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      demandPeriod: {
+        Row: {
+          createdAt: string
+          endDate: string
+          id: string
+          periodType: Database["public"]["Enums"]["demandPeriodType"]
+          startDate: string
+        }
+        Insert: {
+          createdAt?: string
+          endDate: string
+          id?: string
+          periodType: Database["public"]["Enums"]["demandPeriodType"]
+          startDate: string
+        }
+        Update: {
+          createdAt?: string
+          endDate?: string
+          id?: string
+          periodType?: Database["public"]["Enums"]["demandPeriodType"]
+          startDate?: string
+        }
+        Relationships: []
+      }
       department: {
         Row: {
           companyId: string
@@ -44070,6 +44424,8 @@ export type Database = {
         | "Variance"
         | "Total"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
+      demandPeriodType: "Week" | "Day" | "Month"
+      demandSourceType: "Sales Order" | "Job Material"
       documentSourceType:
         | "Job"
         | "Part"
