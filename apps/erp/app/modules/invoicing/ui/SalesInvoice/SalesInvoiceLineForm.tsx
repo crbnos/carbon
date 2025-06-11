@@ -356,7 +356,6 @@ const SalesInvoiceLineForm = ({
                       />
 
                       <NumberControlled
-                        minValue={itemData.quantity}
                         name="quantity"
                         label="Quantity"
                         value={itemData.quantity}

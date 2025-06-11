@@ -1175,11 +1175,17 @@ serve(async (req: Request) => {
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
         >((acc, line) => {
-          if (line.id in quantitiesByLine && quantitiesByLine[line.id] > 0) {
-            acc.push({
-              ...line,
-              quantityToInvoice: quantitiesByLine[line.id],
-            });
+          if (line.id in quantitiesByLine) {
+            // Deduct any previously invoiced quantity
+            const remainingQuantity =
+              quantitiesByLine[line.id] - (line.quantityInvoiced ?? 0);
+
+            if (remainingQuantity > 0) {
+              acc.push({
+                ...line,
+                quantityToInvoice: remainingQuantity,
+              });
+            }
           }
 
           return acc;

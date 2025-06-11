@@ -177,7 +177,7 @@ serve(async (req: Request) => {
 
         const invoicedComplete =
           salesOrderLine.invoicedComplete ||
-          invoiceLine.quantity >=
+          newQuantityInvoiced >=
             (salesOrderLine.quantityToInvoice ?? salesOrderLine.saleQuantity);
 
         return {
