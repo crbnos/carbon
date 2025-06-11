@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import {
   getLocalTimeZone,
   today as getToday,
+  parseDate,
   startOfWeek,
   type CalendarDate,
 } from "npm:@internationalized/date";
@@ -51,8 +52,6 @@ serve(async (req: Request) => {
   const today = getToday(getLocalTimeZone()).add({ months: -2 });
   const periods = getStartAndEndDates(today, "Week");
   const demandPeriods = await getOrCreateDemandPeriods(db, periods, "Week");
-
-  console.log({ demandPeriods: demandPeriods.length });
 
   try {
     switch (type) {
@@ -175,5 +174,11 @@ async function getOrCreateDemandPeriods(
   });
 
   // Return all periods (existing + newly created)
-  return [...existingPeriods, ...created];
+  return [...existingPeriods, ...created].map((p) => ({
+    id: p.id,
+    startDate: parseDate(p.startDate),
+    endDate: parseDate(p.endDate),
+    periodType: p.periodType,
+    createdAt: p.createdAt,
+  }));
 }
