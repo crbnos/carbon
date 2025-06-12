@@ -237,11 +237,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         priority: op.priority,
         title: op.jobReadableId,
         link: op.parentMaterialId
-          ? path.to.jobMakeMethod(
-              op.jobId,
-              op.jobMakeMethodId,
-              op.parentMaterialId
-            )
+          ? path.to.jobMakeMethod(op.jobId, op.jobMakeMethodId)
           : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
         subtitle: op.itemReadableId,
         assignee: op.assignee,

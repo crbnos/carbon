@@ -268,29 +268,24 @@ class ResourceManager {
       };
     }
 
-    const priorityByWorkCenter: Map<string | null, number> = new Map();
-    workCenters.forEach((workCenter) => {
-      const { priority } = this.getPriorityByWorkCenterId(workCenter);
-      priorityByWorkCenter.set(workCenter, priority);
-    });
-
-    // TODO: use cached durations if available
-    workCenters.forEach((workCenter) => {
-      const duration = this.getDurationByWorkCenterIdAndPriority(
-        workCenter,
-        priorityByWorkCenter.get(workCenter) ?? 0
-      );
-      this.durationsByWorkCenter.set(workCenter, duration);
-    });
-
     let selectedWorkCenter: string | null = null;
     let lowestDuration = Infinity;
+    let selectedPriority = 0;
 
+    // Find work center with lowest total duration including current durations
     for (const workCenter of workCenters) {
-      const duration = this.durationsByWorkCenter.get(workCenter) ?? 0;
-      if (duration < lowestDuration) {
-        lowestDuration = duration;
+      const { priority } = this.getPriorityByWorkCenterId(workCenter);
+      const currentDuration = this.durationsByWorkCenter.get(workCenter) ?? 0;
+      const queuedDuration = this.getDurationByWorkCenterIdAndPriority(
+        workCenter,
+        priority
+      );
+      const totalDuration = currentDuration + queuedDuration;
+
+      if (totalDuration < lowestDuration) {
+        lowestDuration = totalDuration;
         selectedWorkCenter = workCenter;
+        selectedPriority = priority;
       }
     }
 
@@ -304,7 +299,7 @@ class ResourceManager {
 
     return {
       workCenter: selectedWorkCenter,
-      priority: priorityByWorkCenter.get(selectedWorkCenter) ?? 0,
+      priority: selectedPriority,
     };
   }
 
