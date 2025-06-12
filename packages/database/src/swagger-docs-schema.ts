@@ -9526,9 +9526,6 @@ export default {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.demandForecast.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.demandForecast.itemId",
           },
           {
@@ -9621,9 +9618,6 @@ export default {
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.demandForecast.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.demandForecast.itemId",
           },
           {
@@ -9669,9 +9663,6 @@ export default {
       },
       patch: {
         parameters: [
-          {
-            $ref: "#/parameters/rowFilter.demandForecast.id",
-          },
           {
             $ref: "#/parameters/rowFilter.demandForecast.itemId",
           },
@@ -14464,9 +14455,6 @@ export default {
       get: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.demandActual.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.demandActual.itemId",
           },
           {
@@ -14480,9 +14468,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.sourceType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandActual.sourceId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
@@ -14559,9 +14544,6 @@ export default {
       delete: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.demandActual.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.demandActual.itemId",
           },
           {
@@ -14575,9 +14557,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.sourceType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandActual.sourceId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
@@ -14608,9 +14587,6 @@ export default {
       patch: {
         parameters: [
           {
-            $ref: "#/parameters/rowFilter.demandActual.id",
-          },
-          {
             $ref: "#/parameters/rowFilter.demandActual.itemId",
           },
           {
@@ -14624,9 +14600,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.sourceType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandActual.sourceId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
@@ -45411,6 +45384,84 @@ export default {
         tags: ["purchaseOrders"],
       },
     },
+    "/openSalesOrderLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.salesOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.promisedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.methodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.quantityToSend",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.salesOrderLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/openSalesOrderLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["openSalesOrderLines"],
+      },
+    },
     "/supplier": {
       get: {
         parameters: [
@@ -59998,8 +60049,8 @@ export default {
     },
     demandForecast: {
       required: [
-        "id",
         "itemId",
+        "locationId",
         "demandPeriodId",
         "forecastQuantity",
         "createdBy",
@@ -60008,27 +60059,21 @@ export default {
         "updatedBy",
       ],
       properties: {
-        id: {
-          default: "gen_random_uuid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
         itemId: {
           description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
         locationId: {
           description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
         demandPeriodId: {
           description:
-            "Note:\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62417,8 +62462,8 @@ export default {
     },
     demandActual: {
       required: [
-        "id",
         "itemId",
+        "locationId",
         "demandPeriodId",
         "actualQuantity",
         "sourceType",
@@ -62428,27 +62473,21 @@ export default {
         "updatedBy",
       ],
       properties: {
-        id: {
-          default: "gen_random_uuid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
         itemId: {
           description:
-            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
           format: "text",
           type: "string",
         },
         locationId: {
           description:
-            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
           format: "text",
           type: "string",
         },
         demandPeriodId: {
           description:
-            "Note:\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62458,12 +62497,9 @@ export default {
           type: "number",
         },
         sourceType: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
           enum: ["Sales Order", "Job Material"],
           format: 'public."demandSourceType"',
-          type: "string",
-        },
-        sourceId: {
-          format: "text",
           type: "string",
         },
         notes: {
@@ -64707,7 +64743,7 @@ export default {
       required: ["id", "startDate", "endDate", "periodType", "createdAt"],
       properties: {
         id: {
-          default: "gen_random_uuid()",
+          default: "public.xid()",
           description: "Note:\nThis is a Primary Key.<pk/>",
           format: "text",
           type: "string",
@@ -76925,6 +76961,77 @@ export default {
       },
       type: "object",
     },
+    openSalesOrderLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        salesOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `salesOrder.id`.<fk table='salesOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        promisedDate: {
+          format: "date",
+          type: "string",
+        },
+        methodType: {
+          enum: ["Buy", "Make", "Pick"],
+          format: 'public."methodType"',
+          type: "string",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        quantityToSend: {
+          format: "numeric",
+          type: "number",
+        },
+        salesOrderLineType: {
+          enum: [
+            "Comment",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+            "Fixed Asset",
+          ],
+          format: 'public."salesOrderLineType"',
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          format: "text",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     supplier: {
       required: ["id", "name", "companyId", "createdAt", "taxPercent"],
       properties: {
@@ -84582,12 +84689,6 @@ export default {
         $ref: "#/definitions/demandForecast",
       },
     },
-    "rowFilter.demandForecast.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.demandForecast.itemId": {
       name: "itemId",
       required: false,
@@ -87240,12 +87341,6 @@ export default {
         $ref: "#/definitions/demandActual",
       },
     },
-    "rowFilter.demandActual.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.demandActual.itemId": {
       name: "itemId",
       required: false,
@@ -87272,12 +87367,6 @@ export default {
     },
     "rowFilter.demandActual.sourceType": {
       name: "sourceType",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.demandActual.sourceId": {
-      name: "sourceId",
       required: false,
       in: "query",
       type: "string",
@@ -103694,6 +103783,87 @@ export default {
     },
     "rowFilter.purchaseOrders.supplierShippingCost": {
       name: "supplierShippingCost",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.openSalesOrderLines": {
+      name: "openSalesOrderLines",
+      description: "openSalesOrderLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/openSalesOrderLines",
+      },
+    },
+    "rowFilter.openSalesOrderLines.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.salesOrderId": {
+      name: "salesOrderId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.methodType": {
+      name: "methodType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.quantityToSend": {
+      name: "quantityToSend",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.salesOrderLineType": {
+      name: "salesOrderLineType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.itemTrackingType": {
+      name: "itemTrackingType",
       required: false,
       in: "query",
       type: "string",

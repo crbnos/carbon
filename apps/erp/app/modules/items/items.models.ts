@@ -444,7 +444,7 @@ export const itemPurchasingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   preferredSupplierId: zfd.text(z.string().optional()),
   conversionFactor: zfd.numeric(z.number().min(0)),
-  purchasingLeadTime: zfd.numeric(z.number().min(0)),
+  leadTime: zfd.numeric(z.number().min(0)),
   purchasingUnitOfMeasureCode: zfd.text(z.string().optional()),
   purchasingBlocked: zfd.checkbox(),
 });
