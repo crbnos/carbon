@@ -13,6 +13,7 @@ import {
   upsertItemPlanning,
 } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
+import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
@@ -99,6 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     toolPlanning: toolPlanning.data,
+    locationId,
   });
 }
 
@@ -145,7 +147,7 @@ export default function ToolPlanningRoute() {
     locations: ListItem[];
   }>(path.to.toolRoot);
 
-  const { toolPlanning } = useLoaderData<typeof loader>();
+  const { toolPlanning, locationId } = useLoaderData<typeof loader>();
 
   if (!sharedToolsData) throw new Error("Could not load shared tools data");
 
@@ -160,6 +162,7 @@ export default function ToolPlanningRoute() {
         locations={sharedToolsData.locations ?? []}
         type="Tool"
       />
+      <ItemPlanningChart itemId={toolPlanning.itemId} locationId={locationId} />
     </VStack>
   );
 }

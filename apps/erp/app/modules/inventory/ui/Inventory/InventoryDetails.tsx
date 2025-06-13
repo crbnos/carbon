@@ -60,7 +60,12 @@ const InventoryDetails = ({
               <VStack>Quantity on Purchase Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl ">
-              {`${formatter.format(quantities?.quantityOnPurchaseOrder ?? 0)}`}
+              <div className="flex justify-start items-center gap-1">
+                {`${formatter.format(
+                  quantities?.quantityOnPurchaseOrder ?? 0
+                )}`}
+                <LuMoveUp className="text-emerald-500 text-lg" />
+              </div>
             </CardTitle>
           </CardHeader>
         </Card>
@@ -70,7 +75,10 @@ const InventoryDetails = ({
               <VStack>Quantity on Sales Order</VStack>
             </CardDescription>
             <CardTitle className="text-4xl">
-              {`${formatter.format(quantities?.quantityOnSalesOrder ?? 0)}`}
+              <div className="flex justify-start items-center gap-1">
+                {`${formatter.format(quantities?.quantityOnSalesOrder ?? 0)}`}
+                <LuMoveDown className="text-red-500 text-lg" />
+              </div>
             </CardTitle>
           </CardHeader>
         </Card>

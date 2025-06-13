@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { VStack } from "@carbon/react";
 import { useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
@@ -12,6 +13,7 @@ import {
   upsertItemPlanning,
 } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
+import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
@@ -106,6 +108,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     materialPlanning: materialPlanning.data,
+    locationId,
   });
 }
 
@@ -152,20 +155,26 @@ export default function MateriallanningRoute() {
     locations: ListItem[];
   }>(path.to.materialRoot);
 
-  const { materialPlanning } = useLoaderData<typeof loader>();
+  const { materialPlanning, locationId } = useLoaderData<typeof loader>();
 
   if (!sharedMaterialsData)
     throw new Error("Could not load shared materials data");
 
   return (
-    <ItemPlanningForm
-      key={materialPlanning.itemId}
-      initialValues={{
-        ...materialPlanning,
-        ...getCustomFields(materialPlanning.customFields),
-      }}
-      locations={sharedMaterialsData.locations ?? []}
-      type="Material"
-    />
+    <VStack spacing={2} className="p-2">
+      <ItemPlanningForm
+        key={materialPlanning.itemId}
+        initialValues={{
+          ...materialPlanning,
+          ...getCustomFields(materialPlanning.customFields),
+        }}
+        locations={sharedMaterialsData.locations ?? []}
+        type="Material"
+      />
+      <ItemPlanningChart
+        itemId={materialPlanning.itemId}
+        locationId={locationId}
+      />
+    </VStack>
   );
 }

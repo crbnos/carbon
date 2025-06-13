@@ -8,6 +8,7 @@ import { getItemDemand, getPeriods } from "~/modules/items/items.service";
 const defaultResponse = {
   demand: [],
   periods: [],
+  forecast: 0,
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -49,5 +50,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({ demand: demand.data, periods: periods.data });
+  return json({ demand: demand.data, periods: periods.data, forecast: 10 });
 }

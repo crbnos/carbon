@@ -51,6 +51,7 @@ export function useMaterialNavigation() {
     {
       name: "Planning",
       to: path.to.materialPlanning(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee"],
       icon: LuChartLine,
       shortcut: "Command+Shift+p",

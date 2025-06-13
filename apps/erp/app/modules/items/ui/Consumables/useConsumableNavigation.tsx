@@ -51,6 +51,7 @@ export function useConsumableNavigation() {
     {
       name: "Planning",
       to: path.to.consumablePlanning(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee"],
       icon: LuChartLine,
       shortcut: "Command+Shift+p",

@@ -64,6 +64,7 @@ export function useToolNavigation() {
     {
       name: "Planning",
       to: path.to.toolPlanning(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee"],
       icon: LuChartLine,
       shortcut: "Command+Shift+p",

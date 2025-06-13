@@ -17,7 +17,7 @@ import {
   upsertPickMethod,
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { ItemDemandChart } from "~/modules/items/ui/Item/ItemDemandChart";
+import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { useItems } from "~/stores";
@@ -222,7 +222,7 @@ export default function PartInventoryRoute() {
         quantities={quantities}
         shelves={sharedPartsData?.shelves ?? []}
       />
-      <ItemDemandChart itemId={itemId} locationId={locationId} />
+      <ItemPlanningChart itemId={itemId} locationId={locationId} />
     </VStack>
   );
 }

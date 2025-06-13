@@ -18,6 +18,7 @@ import { useFetcher } from "@remix-run/react";
 
 import { useMemo } from "react";
 import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
+import { Empty } from "~/components";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
 
@@ -43,7 +44,7 @@ interface ChartDataPoint {
   forecast: number;
 }
 
-export const ItemDemandChart = ({
+export const ItemPlanningChart = ({
   itemId,
   locationId,
 }: {
@@ -113,62 +114,77 @@ export const ItemDemandChart = ({
 
   const chartConfig = {} satisfies ChartConfig;
 
+  if (forecastFetcher.data?.demand.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Demand</CardTitle>
+        </CardHeader>
+        <CardContent className="min-h-[360px] flex items-center justify-center">
+          <Empty>No demand data</Empty>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Demand</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="min-h-[200px] max-h-[360px]">
-          <Loading isLoading={isFetching}>
-            <ChartContainer config={chartConfig} className="w-full h-full">
-              <BarChart data={chartData}>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="startDate"
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(value) =>
-                    dateFormatter.format(
-                      parseDate(value).toDate(getLocalTimeZone())
-                    )
-                  }
-                />
-                <YAxis tickLine={false} axisLine={false} />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(value) =>
-                        `Week of ${dateFormatter.format(
-                          parseDate(value).toDate(getLocalTimeZone())
-                        )}`
-                      }
-                    />
-                  }
-                />
-                {sourceTypes.map((sourceType: string, index: number) => (
-                  <Bar
-                    key={sourceType}
-                    dataKey={sourceType}
-                    stackId="demand"
-                    className={
-                      sourceType === "Sales Order"
-                        ? "fill-violet-600"
-                        : "fill-teal-500"
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Demand</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="min-h-[200px] max-h-[360px]">
+            <Loading isLoading={isFetching}>
+              <ChartContainer config={chartConfig} className="w-full h-full">
+                <BarChart data={chartData}>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="startDate"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) =>
+                      dateFormatter.format(
+                        parseDate(value).toDate(getLocalTimeZone())
+                      )
                     }
                   />
-                ))}
-                <Line
-                  type="monotone"
-                  dataKey="forecast"
-                  stroke="#ff7300"
-                  strokeWidth={2}
-                />
-              </BarChart>
-            </ChartContainer>
-          </Loading>
-        </div>
-      </CardContent>
-    </Card>
+                  <YAxis tickLine={false} axisLine={false} />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(value) =>
+                          `Week of ${dateFormatter.format(
+                            parseDate(value).toDate(getLocalTimeZone())
+                          )}`
+                        }
+                      />
+                    }
+                  />
+                  {sourceTypes.map((sourceType: string, index: number) => (
+                    <Bar
+                      key={sourceType}
+                      dataKey={sourceType}
+                      stackId="demand"
+                      className={
+                        sourceType === "Sales Order"
+                          ? "fill-violet-600"
+                          : "fill-teal-500"
+                      }
+                    />
+                  ))}
+                  <Line
+                    type="monotone"
+                    dataKey="forecast"
+                    stroke="#ff7300"
+                    strokeWidth={2}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </Loading>
+          </div>
+        </CardContent>
+      </Card>
+    </>
   );
 };
