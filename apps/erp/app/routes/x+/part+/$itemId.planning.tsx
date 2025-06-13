@@ -13,7 +13,7 @@ import {
   upsertItemPlanning,
 } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
-import { ItemDemandChart } from "~/modules/items/ui/Item/ItemDemandChart";
+import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
@@ -162,7 +162,7 @@ export default function PartPlanningRoute() {
         locations={sharedPartsData.locations ?? []}
         type="Part"
       />
-      <ItemDemandChart itemId={partPlanning.itemId} locationId={locationId} />
+      <ItemPlanningChart itemId={partPlanning.itemId} locationId={locationId} />
     </VStack>
   );
 }

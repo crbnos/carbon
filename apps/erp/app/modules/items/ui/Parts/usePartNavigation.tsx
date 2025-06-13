@@ -55,14 +55,6 @@ export function usePartNavigation() {
       shortcut: "Command+Shift+m",
     },
     {
-      name: "Inventory",
-      to: path.to.partInventory(itemId),
-      isDisabled: itemTrackingType === "Non-Inventory",
-      role: ["employee", "supplier"],
-      icon: LuBox,
-      shortcut: "Command+Shift+i",
-    },
-    {
       name: "Costing",
       to: path.to.partCosting(itemId),
       role: ["employee"],
@@ -73,9 +65,18 @@ export function usePartNavigation() {
     {
       name: "Planning",
       to: path.to.partPlanning(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
       role: ["employee"],
       icon: LuChartLine,
       shortcut: "Command+Shift+p",
+    },
+    {
+      name: "Inventory",
+      to: path.to.partInventory(itemId),
+      isDisabled: itemTrackingType === "Non-Inventory",
+      role: ["employee", "supplier"],
+      icon: LuBox,
+      shortcut: "Command+Shift+i",
     },
     {
       name: "Sales",

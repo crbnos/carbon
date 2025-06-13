@@ -7,6 +7,7 @@ import {
   jobMaterialValidator,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
+  runMRP,
   upsertJobMaterial,
 } from "~/modules/production";
 import { setCustomFields } from "~/utils/form";
@@ -138,6 +139,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
   }
+
+  await runMRP(client, {
+    type: "item",
+    id: validation.data.itemId,
+    companyId,
+    userId,
+  });
 
   return json({
     id: jobMaterialId,
