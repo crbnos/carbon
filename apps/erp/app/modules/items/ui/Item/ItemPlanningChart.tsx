@@ -134,7 +134,7 @@ export const ItemPlanningChart = ({
           <CardTitle>Demand</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="min-h-[200px] max-h-[360px]">
+          <div className="w-full h-[360px]">
             <Loading isLoading={isFetching}>
               <ChartContainer config={chartConfig} className="w-full h-full">
                 <BarChart data={chartData}>

@@ -104,7 +104,7 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
 
   return (
     <>
-      <Card className="w-full h-full min-h-[50vh]">
+      <Card className="w-full">
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>Supplier Parts</CardTitle>
@@ -113,6 +113,7 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
         </HStack>
         <CardContent>
           <Grid<SupplierPart>
+            contained={false}
             data={supplierParts}
             columns={columns}
             canEdit={canEdit}

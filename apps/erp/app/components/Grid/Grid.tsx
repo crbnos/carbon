@@ -321,16 +321,19 @@ const Grid = <T extends object>({
   const rows = table.getRowModel().rows;
 
   return (
-    <VStack spacing={0} className="h-full">
+    <VStack spacing={0} className="h-full w-full">
       <div
-        className="w-full h-full bg-card overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-        style={{
-          contain: contained ? "strict" : undefined,
-        }}
+        className={cn(
+          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          contained ? "bg-card" : "relative"
+        )}
         ref={tableContainerRef}
         onKeyDown={onKeyDown}
       >
-        <Table full={contained} className="absolute border">
+        <Table
+          full={contained}
+          className={cn("border", !contained && "w-full")}
+        >
           <Thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
               <Tr key={headerGroup.id} className="h-10">
@@ -342,17 +345,11 @@ const Grid = <T extends object>({
                     accessorKey &&
                     !accessorKey.endsWith(".id") &&
                     header.column.columnDef.enableSorting !== false;
-                  // const sorted = isSorted(accessorKey ?? "");
 
                   return (
                     <Th
                       key={header.id}
                       colSpan={header.colSpan}
-                      // onClick={
-                      //   sortable
-                      //     ? () => toggleSortBy(accessorKey ?? "")
-                      //     : undefined
-                      // }
                       className={cn(
                         "border-r border-border px-4 py-3 whitespace-nowrap text-sm",
                         sortable && "cursor-pointer"
@@ -367,20 +364,6 @@ const Grid = <T extends object>({
                             header.column.columnDef.header,
                             header.getContext()
                           )}
-                          {/* <span className="pl-4">
-                            {sorted ? (
-                              sorted === -1 ? (
-                                <FaSortDown aria-label="sorted descending" />
-                              ) : (
-                                <FaSortUp aria-label="sorted ascending" />
-                              )
-                            ) : sortable ? (
-                              <FaSort
-                                aria-label="sort"
-                                style={{ opacity: 0.4 }}
-                              />
-                            ) : null}
-                          </span> */}
                         </div>
                       )}
                     </Th>

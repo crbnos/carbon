@@ -104,7 +104,7 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
 
   return (
     <>
-      <Card className="w-full h-full min-h-[50vh]">
+      <Card className="w-full">
         <HStack className="justify-between items-start">
           <CardHeader>
             <CardTitle>Customer Parts</CardTitle>

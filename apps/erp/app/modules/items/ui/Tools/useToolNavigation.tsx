@@ -52,6 +52,7 @@ export function useToolNavigation() {
       role: ["employee"],
       icon: LuFactory,
       shortcut: "Command+Shift+m",
+      isActive: (pathname: string) => pathname.includes("manufacturing"),
     },
     {
       name: "Costing",

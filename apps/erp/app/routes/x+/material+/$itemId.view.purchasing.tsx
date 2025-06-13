@@ -12,11 +12,13 @@ import { getBatchProperties } from "~/modules/inventory";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
 import {
+  getItemCostHistory,
   getItemReplenishment,
   itemPurchasingValidator,
   upsertItemPurchasing,
 } from "~/modules/items";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
+import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -27,23 +29,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [toolPurchasingResult] = await Promise.all([
+  const [materialPurchasingResult, itemCostHistory] = await Promise.all([
     getItemReplenishment(client, itemId, companyId),
+    getItemCostHistory(client, itemId, companyId),
   ]);
 
-  if (toolPurchasingResult.error) {
+  if (materialPurchasingResult.error) {
     throw redirect(
       path.to.items,
       await flash(
         request,
-        error(toolPurchasingResult.error, "Failed to load tool purchasing")
+        error(
+          materialPurchasingResult.error,
+          "Failed to load material purchasing"
+        )
       )
     );
   }
 
   return defer({
-    toolPurchasing: toolPurchasingResult.data,
+    materialPurchasing: materialPurchasingResult.data,
     batchProperties: getBatchProperties(client, [itemId], companyId),
+    itemCostHistory: itemCostHistory.data ?? [],
   });
 }
 
@@ -56,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  // validate with toolsValidator
+  // validate with materialsValidator
   const validation = await validator(itemPurchasingValidator).validate(
     await request.formData()
   );
@@ -65,49 +72,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updateToolPurchasing = await upsertItemPurchasing(client, {
+  const updateMaterialPurchasing = await upsertItemPurchasing(client, {
     ...validation.data,
     itemId,
     updatedBy: userId,
   });
-  if (updateToolPurchasing.error) {
+  if (updateMaterialPurchasing.error) {
     throw redirect(
-      path.to.tool(itemId),
+      path.to.material(itemId),
       await flash(
         request,
-        error(updateToolPurchasing.error, "Failed to update tool purchasing")
+        error(
+          updateMaterialPurchasing.error,
+          "Failed to update material purchasing"
+        )
       )
     );
   }
 
   throw redirect(
-    path.to.toolPurchasing(itemId),
-    await flash(request, success("Updated tool purchasing"))
+    path.to.materialPurchasing(itemId),
+    await flash(request, success("Updated material purchasing"))
   );
 }
 
-export default function ToolPurchasingRoute() {
-  const { toolPurchasing, batchProperties } = useLoaderData<typeof loader>();
+export default function MaterialPurchasingRoute() {
+  const { materialPurchasing, batchProperties, itemCostHistory } =
+    useLoaderData<typeof loader>();
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
   const routeData = useRouteData<{ supplierParts: SupplierPart[] }>(
-    path.to.tool(itemId)
+    path.to.material(itemId)
   );
   const supplierParts = routeData?.supplierParts ?? [];
 
-  const toolData = useRouteData<{
-    toolSummary: { itemTrackingType?: string };
-  }>(path.to.tool(itemId));
+  const materialData = useRouteData<{
+    materialSummary: {
+      itemTrackingType?: string;
+      readableIdWithRevision?: string;
+    };
+  }>(path.to.material(itemId));
 
   const initialValues = {
-    ...toolPurchasing,
-    preferredSupplierId: toolPurchasing?.preferredSupplierId ?? undefined,
-    leadTime: toolPurchasing?.leadTime ?? "",
-    purchasingBlocked: toolPurchasing?.purchasingBlocked ?? false,
+    ...materialPurchasing,
+    preferredSupplierId: materialPurchasing?.preferredSupplierId ?? undefined,
+    leadTime: materialPurchasing?.leadTime ?? "",
+    purchasingBlocked: materialPurchasing?.purchasingBlocked ?? false,
     purchasingUnitOfMeasureCode:
-      toolPurchasing?.purchasingUnitOfMeasureCode ?? "",
-    conversionFactor: toolPurchasing?.conversionFactor ?? 1,
+      materialPurchasing?.purchasingUnitOfMeasureCode ?? "",
+    conversionFactor: materialPurchasing?.conversionFactor ?? 1,
   };
 
   return (
@@ -121,7 +135,7 @@ export default function ToolPurchasingRoute() {
       />
       <SupplierParts supplierParts={supplierParts} />
       {["Batch", "Serial"].includes(
-        toolData?.toolSummary?.itemTrackingType ?? ""
+        materialData?.materialSummary?.itemTrackingType ?? ""
       ) && (
         <Suspense fallback={null}>
           <Await resolve={batchProperties}>
@@ -135,6 +149,10 @@ export default function ToolPurchasingRoute() {
           </Await>
         </Suspense>
       )}
+      <ItemCostHistoryChart
+        readableId={materialData?.materialSummary?.readableIdWithRevision ?? ""}
+        itemCostHistory={itemCostHistory}
+      />
     </VStack>
   );
 }

@@ -11,7 +11,7 @@ import {
   getPickMethods,
   getSupplierParts,
 } from "~/modules/items";
-import { PartHeader, PartProperties } from "~/modules/items/ui/Parts";
+import { PartHeader } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -62,12 +62,7 @@ export default function PartRoute() {
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <PartHeader />
-      <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
-          <Outlet />
-        </div>
-        <PartProperties />
-      </div>
+      <Outlet />
     </div>
   );
 }
