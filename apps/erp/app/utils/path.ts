@@ -49,6 +49,9 @@ export const path = {
       groupsByType: (type?: string) =>
         generatePath(`${api}/users/groups?type=${type}`),
       item: (type: string) => generatePath(`${api}/item/${type}`),
+      itemForecast: (itemId: string, locationId: string) =>
+        generatePath(`${api}/items/${itemId}/${locationId}/forecast`),
+      itemPostingGroups: `${api}/items/groups`,
       jobBillOfMaterials: (id: string, withOperations: boolean = false) =>
         generatePath(
           `${api}/production/methods/${id}/bom?withOperations=${withOperations}`
@@ -59,7 +62,6 @@ export const path = {
         ),
       jobs: `${api}/production/jobs`,
       locations: `${api}/resources/locations`,
-      itemPostingGroups: `${api}/items/groups`,
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,

@@ -21,7 +21,7 @@ import type {
   ConfigurationParameter,
   ConfigurationParameterGroup,
   ConfigurationRule,
-  partManufacturingValidator,
+  itemManufacturingValidator,
 } from "~/modules/items";
 import {
   getMakeMethodById,
@@ -130,7 +130,7 @@ export default function MethodMaterialMakePage() {
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const routeData = useRouteData<{
-    partManufacturing: z.infer<typeof partManufacturingValidator> & {
+    partManufacturing: z.infer<typeof itemManufacturingValidator> & {
       customFields: Record<string, string>;
     };
     configurationParametersAndGroups: {

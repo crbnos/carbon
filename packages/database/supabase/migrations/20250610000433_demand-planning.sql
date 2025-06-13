@@ -1,5 +1,10 @@
+
 ALTER TABLE "jobOperation" ADD COLUMN "startDate" DATE;
 ALTER TABLE "jobOperation" ADD COLUMN "dueDate" DATE;
+
+ALTER TABLE "itemPlanning" ALTER COLUMN "demandAccumulationPeriod" SET DEFAULT 30;
+UPDATE "itemPlanning" SET "demandAccumulationPeriod" = 30;
+
 
 ALTER TABLE "itemReplenishment" ADD COLUMN "leadTime" INTEGER NOT NULL DEFAULT 7;
 UPDATE "itemReplenishment" 
@@ -13,38 +18,40 @@ ALTER TABLE "itemReplenishment" DROP COLUMN "purchasingLeadTime";
 -- Demand Planning Tables
 
 -- Enum types
-CREATE TYPE "demandPeriodType" AS ENUM ('Week', 'Day', 'Month');
+CREATE TYPE "periodType" AS ENUM ('Week', 'Day', 'Month');
 CREATE TYPE "demandSourceType" AS ENUM ('Sales Order', 'Job Material');
 
 -- Time periods table for flexible bucketing (weeks initially, days in future)
-CREATE TABLE "demandPeriod" (
+CREATE TABLE "period" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "startDate" DATE NOT NULL,
   "endDate" DATE NOT NULL,
-  "periodType" "demandPeriodType" NOT NULL,
+  "periodType" "periodType" NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   
-  CONSTRAINT "demandPeriod_pkey" PRIMARY KEY ("id")
+  CONSTRAINT "period_pkey" PRIMARY KEY ("id")
 );
 
 -- Demand forecasts table for estimates
 CREATE TABLE "demandForecast" (
   "itemId" TEXT NOT NULL,
   "locationId" TEXT,
-  "demandPeriodId" TEXT NOT NULL,
+  "periodId" TEXT NOT NULL,
   "forecastQuantity" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "forecastMethod" TEXT, -- 'manual', 'statistical', 'ml', etc.
   "confidence" NUMERIC(3,2), -- 0.00 to 1.00
   "notes" TEXT,
+  "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT NOT NULL,
   
-  CONSTRAINT "demandForecast_pkey" PRIMARY KEY ("itemId", "locationId", "demandPeriodId"),
+  CONSTRAINT "demandForecast_pkey" PRIMARY KEY ("itemId", "locationId", "periodId"),
   CONSTRAINT "demandForecast_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "demandForecast_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
-  CONSTRAINT "demandForecast_demandPeriodId_fkey" FOREIGN KEY ("demandPeriodId") REFERENCES "demandPeriod"("id") ON DELETE CASCADE,
+  CONSTRAINT "demandForecast_periodId_fkey" FOREIGN KEY ("periodId") REFERENCES "period"("id") ON DELETE CASCADE,
+  CONSTRAINT "demandForecast_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "demandForecast_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "demandForecast_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
@@ -53,37 +60,39 @@ CREATE TABLE "demandForecast" (
 CREATE TABLE "demandActual" (
   "itemId" TEXT NOT NULL,
   "locationId" TEXT,
-  "demandPeriodId" TEXT NOT NULL,
+  "periodId" TEXT NOT NULL,
   "actualQuantity" NUMERIC(15,5) NOT NULL DEFAULT 0,
   "sourceType" "demandSourceType" NOT NULL,
   "notes" TEXT,
+  "companyId" TEXT NOT NULL,
   "createdBy" TEXT NOT NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   "updatedBy" TEXT NOT NULL,
   
-  CONSTRAINT "demandActual_pkey" PRIMARY KEY ("itemId", "locationId", "demandPeriodId", "sourceType"),
+  CONSTRAINT "demandActual_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "sourceType"),
   CONSTRAINT "demandActual_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
   CONSTRAINT "demandActual_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
-  CONSTRAINT "demandActual_demandPeriodId_fkey" FOREIGN KEY ("demandPeriodId") REFERENCES "demandPeriod"("id") ON DELETE CASCADE,
+  CONSTRAINT "demandActual_periodId_fkey" FOREIGN KEY ("periodId") REFERENCES "period"("id") ON DELETE CASCADE,
+  CONSTRAINT "demandActual_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "demandActual_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "demandActual_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
 
 -- Indexes for performance
-CREATE INDEX "demandPeriod_startDate_endDate_idx" ON "demandPeriod" ("periodType", "startDate", "endDate");
+CREATE INDEX "period_startDate_endDate_idx" ON "period" ("periodType", "startDate", "endDate");
 
-CREATE INDEX "demandPeriod_startDate_idx" ON "demandPeriod" ("periodType","startDate");
-CREATE INDEX "demandPeriod_endDate_idx" ON "demandPeriod" ("periodType", "endDate");
+CREATE INDEX "period_startDate_idx" ON "period" ("periodType","startDate");
+CREATE INDEX "period_endDate_idx" ON "period" ("periodType", "endDate");
 
-CREATE INDEX "demandForecast_itemId_locationId_demandPeriodId_idx" ON "demandForecast" ("itemId", "locationId", "demandPeriodId");
+CREATE INDEX "demandForecast_itemId_locationId_periodId_idx" ON "demandForecast" ("itemId", "locationId", "periodId");
 CREATE INDEX "demandForecast_createdAt_idx" ON "demandForecast" ("createdAt");
 
-CREATE INDEX "demandActual_itemId_locationId_demandPeriodId_idx" ON "demandActual" ("itemId", "locationId", "demandPeriodId");
+CREATE INDEX "demandActual_itemId_locationId_periodId_idx" ON "demandActual" ("itemId", "locationId", "periodId");
 CREATE INDEX "demandActual_createdAt_idx" ON "demandActual" ("createdAt");
 
 -- Unique constraints to prevent duplicate forecasts/actuals for same item/location/period
-CREATE UNIQUE INDEX "demandForecast_unique_item_location_period_idx" ON "demandForecast" ("itemId", COALESCE("locationId", ''), "demandPeriodId");
+CREATE UNIQUE INDEX "demandForecast_unique_item_location_period_idx" ON "demandForecast" ("itemId", COALESCE("locationId", ''), "periodId");
 
 CREATE OR REPLACE VIEW "openSalesOrderLines" AS (
   SELECT 
@@ -120,15 +129,14 @@ CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
     jm."companyId",
     i1."replenishmentSystem", 
     i1."itemTrackingType",
-    ir1."leadTime" + ir2."leadTime" AS "leadTime",
+    ir."leadTime" AS "leadTime",
     j."locationId",
     j."dueDate"
   FROM "jobMaterial" jm
   INNER JOIN "job" j ON jm."jobId" = j."id"
   INNER JOIN "item" i1 ON jm."itemId" = i1."id"
-  INNER JOIN "itemReplenishment" ir1 ON i1."id" = ir1."itemId"
   INNER JOIN "item" i2 ON j."itemId" = i2."id"
-  INNER JOIN "itemReplenishment" ir2 ON i2."id" = ir2."itemId"
+  INNER JOIN "itemReplenishment" ir ON i2."id" = ir."itemId"
   WHERE j."status" IN (
       'Draft',
       'Ready',

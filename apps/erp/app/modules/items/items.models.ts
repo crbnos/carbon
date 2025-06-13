@@ -412,6 +412,15 @@ export const itemCostValidator = z.object({
   // costIsAdjusted: zfd.checkbox(),
 });
 
+export const itemManufacturingValidator = z.object({
+  itemId: z.string().min(1, { message: "Item ID is required" }),
+  // manufacturingBlocked: zfd.checkbox(),
+  requiresConfiguration: zfd.checkbox().optional(),
+  lotSize: zfd.numeric(z.number().min(0)),
+  scrapPercentage: zfd.numeric(z.number().min(0)),
+  leadTime: zfd.numeric(z.number().min(0)),
+});
+
 export const itemPostingGroupValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().min(1, { message: "Name is required" }).max(255),
@@ -430,7 +439,6 @@ export const itemPlanningValidator = z.object({
   safetyStockQuantity: zfd.numeric(z.number().min(0).optional()),
   safetyStockLeadTime: zfd.numeric(z.number().min(0).optional()),
   demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
-  demandReschedulingPeriod: zfd.numeric(z.number().min(0).optional()),
   demandAccumulationIncludesInventory: zfd.checkbox().optional(),
   reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
   reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
@@ -446,7 +454,7 @@ export const itemPurchasingValidator = z.object({
   conversionFactor: zfd.numeric(z.number().min(0)),
   leadTime: zfd.numeric(z.number().min(0)),
   purchasingUnitOfMeasureCode: zfd.text(z.string().optional()),
-  purchasingBlocked: zfd.checkbox(),
+  // purchasingBlocked: zfd.checkbox(),
 });
 
 export const itemUnitSalePriceValidator = z.object({
@@ -478,14 +486,6 @@ export const partValidator = itemValidator.merge(
     lotSize: zfd.numeric(z.number().min(0).optional()),
   })
 );
-
-export const partManufacturingValidator = z.object({
-  itemId: z.string().min(1, { message: "Item ID is required" }),
-  // manufacturingBlocked: zfd.checkbox(),
-  requiresConfiguration: zfd.checkbox(),
-  lotSize: zfd.numeric(z.number().min(0)),
-  scrapPercentage: zfd.numeric(z.number().min(0)),
-});
 
 export const pickMethodValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),

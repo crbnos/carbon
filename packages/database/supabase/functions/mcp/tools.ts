@@ -192,7 +192,7 @@ const createPurchaseOrder = tool({
               .select([
                 "purchasingUnitOfMeasureCode",
                 "conversionFactor",
-                "purchasingLeadTime",
+                "leadTime",
               ])
               .where("itemId", "=", part.partId)
               .executeTakeFirst(),

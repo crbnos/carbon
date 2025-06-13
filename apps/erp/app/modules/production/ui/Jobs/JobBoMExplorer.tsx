@@ -98,14 +98,16 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
       const node = method.find(
         (m) => m.data.methodMaterialId === selectedMaterialId
       );
-      selectNode(node?.id ?? method[0].id);
+      if (node) {
+        selectNode(node.id);
+      }
     } else if (methodId) {
       const node = method.find(
         (m) => m.data.jobMaterialMakeMethodId === methodId
       );
-      selectNode(node?.id ?? method[0].id);
-    } else if (method?.length > 0) {
-      selectNode(method[0].id);
+      if (node) {
+        selectNode(node.id);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedMaterialId, methodId]);

@@ -10,7 +10,6 @@ import { useParams } from "@remix-run/react";
 import { useState } from "react";
 import type { z } from "zod";
 import {
-  Boolean,
   ConversionFactor,
   Hidden,
   Number,
@@ -74,7 +73,7 @@ const ItemPurchasingForm = ({
               label="Preferred Supplier"
               options={allowedSuppliersOptions}
             />
-            <Number name="purchasingLeadTime" label="Lead Time (Days)" />
+            <Number name="leadTime" label="Lead Time (Days)" />
             <UnitOfMeasure
               name="purchasingUnitOfMeasureCode"
               label="Purchasing Unit of Measure"
@@ -88,7 +87,7 @@ const ItemPurchasingForm = ({
               purchasingCode={purchasingCode ?? undefined}
               inventoryCode={inventoryCode ?? undefined}
             />
-            <Boolean name="purchasingBlocked" label="Purchasing Blocked" />
+            {/* <Boolean name="purchasingBlocked" label="Purchasing Blocked" /> */}
           </div>
         </CardContent>
         <CardFooter>

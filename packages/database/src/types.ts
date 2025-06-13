@@ -4756,41 +4756,72 @@ export type Database = {
       demandActual: {
         Row: {
           actualQuantity: number
+          companyId: string
           createdAt: string
           createdBy: string
-          demandPeriodId: string
           itemId: string
           locationId: string
           notes: string | null
+          periodId: string
           sourceType: Database["public"]["Enums"]["demandSourceType"]
           updatedAt: string
           updatedBy: string
         }
         Insert: {
           actualQuantity?: number
+          companyId: string
           createdAt?: string
           createdBy: string
-          demandPeriodId: string
           itemId: string
           locationId: string
           notes?: string | null
+          periodId: string
           sourceType: Database["public"]["Enums"]["demandSourceType"]
           updatedAt?: string
           updatedBy: string
         }
         Update: {
           actualQuantity?: number
+          companyId?: string
           createdAt?: string
           createdBy?: string
-          demandPeriodId?: string
           itemId?: string
           locationId?: string
           notes?: string | null
+          periodId?: string
           sourceType?: Database["public"]["Enums"]["demandSourceType"]
           updatedAt?: string
           updatedBy?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "demandActual_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandActual_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "demandActual_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
           {
             foreignKeyName: "demandActual_createdBy_fkey"
             columns: ["createdBy"]
@@ -4825,13 +4856,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "demandActual_demandPeriodId_fkey"
-            columns: ["demandPeriodId"]
-            isOneToOne: false
-            referencedRelation: "demandPeriod"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "demandActual_itemId_fkey"
@@ -4876,6 +4900,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demandActual_periodId_fkey"
+            columns: ["periodId"]
+            isOneToOne: false
+            referencedRelation: "period"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "demandActual_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -4914,45 +4945,76 @@ export type Database = {
       }
       demandForecast: {
         Row: {
+          companyId: string
           confidence: number | null
           createdAt: string
           createdBy: string
-          demandPeriodId: string
           forecastMethod: string | null
           forecastQuantity: number
           itemId: string
           locationId: string
           notes: string | null
+          periodId: string
           updatedAt: string
           updatedBy: string
         }
         Insert: {
+          companyId: string
           confidence?: number | null
           createdAt?: string
           createdBy: string
-          demandPeriodId: string
           forecastMethod?: string | null
           forecastQuantity?: number
           itemId: string
           locationId: string
           notes?: string | null
+          periodId: string
           updatedAt?: string
           updatedBy: string
         }
         Update: {
+          companyId?: string
           confidence?: number | null
           createdAt?: string
           createdBy?: string
-          demandPeriodId?: string
           forecastMethod?: string | null
           forecastQuantity?: number
           itemId?: string
           locationId?: string
           notes?: string | null
+          periodId?: string
           updatedAt?: string
           updatedBy?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "demandForecast_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "demandForecast_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "demandForecast_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
           {
             foreignKeyName: "demandForecast_createdBy_fkey"
             columns: ["createdBy"]
@@ -4987,13 +5049,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "demandForecast_demandPeriodId_fkey"
-            columns: ["demandPeriodId"]
-            isOneToOne: false
-            referencedRelation: "demandPeriod"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "demandForecast_itemId_fkey"
@@ -5038,6 +5093,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "demandForecast_periodId_fkey"
+            columns: ["periodId"]
+            isOneToOne: false
+            referencedRelation: "period"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "demandForecast_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
@@ -5073,30 +5135,6 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
-      }
-      demandPeriod: {
-        Row: {
-          createdAt: string
-          endDate: string
-          id: string
-          periodType: Database["public"]["Enums"]["demandPeriodType"]
-          startDate: string
-        }
-        Insert: {
-          createdAt?: string
-          endDate: string
-          id?: string
-          periodType: Database["public"]["Enums"]["demandPeriodType"]
-          startDate: string
-        }
-        Update: {
-          createdAt?: string
-          endDate?: string
-          id?: string
-          periodType?: Database["public"]["Enums"]["demandPeriodType"]
-          startDate?: string
-        }
-        Relationships: []
       }
       department: {
         Row: {
@@ -16987,6 +17025,30 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      period: {
+        Row: {
+          createdAt: string
+          endDate: string
+          id: string
+          periodType: Database["public"]["Enums"]["periodType"]
+          startDate: string
+        }
+        Insert: {
+          createdAt?: string
+          endDate: string
+          id?: string
+          periodType: Database["public"]["Enums"]["periodType"]
+          startDate: string
+        }
+        Update: {
+          createdAt?: string
+          endDate?: string
+          id?: string
+          periodType?: Database["public"]["Enums"]["periodType"]
+          startDate?: string
+        }
+        Relationships: []
       }
       pickMethod: {
         Row: {
@@ -44671,7 +44733,6 @@ export type Database = {
         | "Variance"
         | "Total"
       deadlineType: "No Deadline" | "ASAP" | "Soft Deadline" | "Hard Deadline"
-      demandPeriodType: "Week" | "Day" | "Month"
       demandSourceType: "Sales Order" | "Job Material"
       documentSourceType:
         | "Job"
@@ -44895,6 +44956,7 @@ export type Database = {
         | "Consumable"
         | "Fixture"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
+      periodType: "Week" | "Day" | "Month"
       procedureAttributeType:
         | "Value"
         | "Measurement"

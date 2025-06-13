@@ -268,7 +268,7 @@ const InventoryTable = memo(
                     isDisabled={mrpFetcher.state !== "idle"}
                     isLoading={mrpFetcher.state !== "idle"}
                   >
-                    MRP
+                    Recalculate
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>

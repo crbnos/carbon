@@ -1,6 +1,12 @@
 import { useParams } from "@remix-run/react";
 
-import { LuBox, LuFileText, LuShoppingCart, LuTags } from "react-icons/lu";
+import {
+  LuBox,
+  LuChartLine,
+  LuFileText,
+  LuShoppingCart,
+  LuTags,
+} from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
@@ -42,13 +48,13 @@ export function useMaterialNavigation() {
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
-    // {
-    //   name: "Planning",
-    //   to: path.to.materialPlanning(itemId),
-    //   role: ["employee"],
-    //   icon: LuFileBarChart,
-    //   shortcut: "Command+Shift+p",
-    // },
+    {
+      name: "Planning",
+      to: path.to.materialPlanning(itemId),
+      role: ["employee"],
+      icon: LuChartLine,
+      shortcut: "Command+Shift+p",
+    },
     {
       name: "Inventory",
       to: path.to.materialInventory(itemId),

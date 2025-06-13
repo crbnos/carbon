@@ -173,7 +173,7 @@ const PurchaseOrderLineForm = ({
           carbon
             .from("item")
             .select(
-              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, purchasingLeadTime)"
+              "name, readableIdWithRevision, type, unitOfMeasureCode, itemCost(unitCost), itemReplenishment(purchasingUnitOfMeasureCode, conversionFactor, leadTime)"
             )
             .eq("id", itemId)
             .eq("companyId", company.id)

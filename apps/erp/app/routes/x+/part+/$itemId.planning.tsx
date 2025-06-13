@@ -13,6 +13,7 @@ import {
   upsertItemPlanning,
 } from "~/modules/items";
 import { ItemPlanningForm } from "~/modules/items/ui/Item";
+import { ItemDemandChart } from "~/modules/items/ui/Item/ItemDemandChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import type { ListItem } from "~/types";
@@ -99,6 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return json({
     partPlanning: partPlanning.data,
+    locationId,
   });
 }
 
@@ -145,7 +147,7 @@ export default function PartPlanningRoute() {
     locations: ListItem[];
   }>(path.to.partRoot);
 
-  const { partPlanning } = useLoaderData<typeof loader>();
+  const { partPlanning, locationId } = useLoaderData<typeof loader>();
 
   if (!sharedPartsData) throw new Error("Could not load shared parts data");
 
@@ -160,6 +162,7 @@ export default function PartPlanningRoute() {
         locations={sharedPartsData.locations ?? []}
         type="Part"
       />
+      <ItemDemandChart itemId={partPlanning.itemId} locationId={locationId} />
     </VStack>
   );
 }

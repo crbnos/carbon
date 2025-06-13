@@ -18,15 +18,17 @@ import {
 import { usePermissions } from "~/hooks";
 
 import type { action } from "~/routes/x+/part+/$itemId.manufacturing.$methodId.method";
-import { partManufacturingValidator } from "../../items.models";
+import { itemManufacturingValidator } from "../../items.models";
 
-type PartManufacturingFormProps = {
-  initialValues: z.infer<typeof partManufacturingValidator>;
+type ItemManufacturingFormProps = {
+  initialValues: z.infer<typeof itemManufacturingValidator>;
+  withConfiguration?: boolean;
 };
 
-const PartManufacturingForm = ({
+const ItemManufacturingForm = ({
   initialValues,
-}: PartManufacturingFormProps) => {
+  withConfiguration = true,
+}: ItemManufacturingFormProps) => {
   const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { itemId } = useParams();
@@ -37,7 +39,7 @@ const PartManufacturingForm = ({
     <Card>
       <ValidatedForm
         method="post"
-        validator={partManufacturingValidator}
+        validator={itemManufacturingValidator}
         defaultValues={initialValues}
         fetcher={fetcher}
       >
@@ -55,19 +57,24 @@ const PartManufacturingForm = ({
                 style: "percent",
               }}
             />
+            <Number name="leadTime" label="Lead Time (Days)" />
             {/* <Boolean
               name="manufacturingBlocked"
               label="Manufacturing Blocked"
             /> */}
+            <div className="col-span-2" />
 
-            <Boolean
-              name="requiresConfiguration"
-              label="Requires Configuration"
-            />
+            {withConfiguration && (
+              <Boolean
+                name="requiresConfiguration"
+                label=""
+                description="Use parameters to generate the Bill of Materials and Bill of Process"
+              />
+            )}
             <CustomFormFields table="partReplenishment" />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-between">
           <Submit
             withBlocker={false}
             isDisabled={!permissions.can("update", "parts")}
@@ -80,4 +87,4 @@ const PartManufacturingForm = ({
   );
 };
 
-export default PartManufacturingForm;
+export default ItemManufacturingForm;

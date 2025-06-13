@@ -2,6 +2,7 @@ import { useParams } from "@remix-run/react";
 
 import {
   LuBox,
+  LuChartLine,
   LuFactory,
   LuFileText,
   LuShoppingCart,
@@ -60,13 +61,13 @@ export function useToolNavigation() {
       icon: LuTags,
       shortcut: "Command+Shift+c",
     },
-    // {
-    //   name: "Planning",
-    //   to: path.to.toolPlanning(itemId),
-    //   role: ["employee"],
-    //   icon: LuFileBarChart,
-    //   shortcut: "Command+Shift+p",
-    // },
+    {
+      name: "Planning",
+      to: path.to.toolPlanning(itemId),
+      role: ["employee"],
+      icon: LuChartLine,
+      shortcut: "Command+Shift+p",
+    },
     {
       name: "Inventory",
       to: path.to.toolInventory(itemId),

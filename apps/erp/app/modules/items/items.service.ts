@@ -21,6 +21,7 @@ import type {
   customerPartValidator,
   getMethodValidator,
   itemCostValidator,
+  itemManufacturingValidator,
   itemPlanningValidator,
   itemPostingGroupValidator,
   itemPurchasingValidator,
@@ -32,7 +33,6 @@ import type {
   materialValidator,
   methodMaterialValidator,
   methodOperationValidator,
-  partManufacturingValidator,
   partValidator,
   pickMethodValidator,
   serviceValidator,
@@ -433,6 +433,29 @@ export async function getItemCustomerParts(
     .eq("companyId", companyId);
 }
 
+export async function getItemDemand(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    locationId,
+    periods,
+    companyId,
+  }: {
+    itemId: string;
+    locationId: string;
+    periods: string[];
+    companyId: string;
+  }
+) {
+  return client
+    .from("demandActual")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId)
+    .in("periodId", periods);
+}
+
 export async function getItemFiles(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -641,101 +664,6 @@ export async function getMaterialUsedIn(
     methodMaterials: methodMaterials.data ?? [],
     purchaseOrderLines: purchaseOrderLines.data ?? [],
     receiptLines: receiptLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? [],
-  };
-}
-
-export async function getPartUsedIn(
-  client: SupabaseClient<Database>,
-  itemId: string,
-  companyId: string
-) {
-  const [
-    jobMaterials,
-    jobs,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes,
-  ] = await Promise.all([
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("job")
-      .select("id, documentReadableId:jobId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("quoteLine")
-      .select(
-        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-  ]);
-
-  return {
-    jobMaterials: jobMaterials.data ?? [],
-    jobs: jobs.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteLines: quoteLines.data ?? [],
     quoteMaterials: quoteMaterials.data ?? [],
     salesOrderLines: salesOrderLines.data ?? [],
     shipmentLines: shipmentLines.data ?? [],
@@ -1127,6 +1055,113 @@ export async function getPartsList(
     .eq("active", true);
 
   return query.order("name");
+}
+
+export async function getPartUsedIn(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [
+    jobMaterials,
+    jobs,
+    methodMaterials,
+    purchaseOrderLines,
+    receiptLines,
+    quoteLines,
+    quoteMaterials,
+    salesOrderLines,
+    shipmentLines,
+    supplierQuotes,
+  ] = await Promise.all([
+    client
+      .from("jobMaterial")
+      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("job")
+      .select("id, documentReadableId:jobId")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("methodMaterial")
+      .select(
+        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("receiptLine")
+      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("quoteLine")
+      .select(
+        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("quoteMaterial")
+      .select(
+        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(documentReadableId:itemReadableId)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("salesOrderLine")
+      .select(
+        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("shipmentLine")
+      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+    client
+      .from("supplierQuoteLine")
+      .select(
+        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
+      )
+      .eq("itemId", itemId)
+      .eq("companyId", companyId),
+  ]);
+
+  return {
+    jobMaterials: jobMaterials.data ?? [],
+    jobs: jobs.data ?? [],
+    methodMaterials: methodMaterials.data ?? [],
+    purchaseOrderLines: purchaseOrderLines.data ?? [],
+    receiptLines: receiptLines.data ?? [],
+    quoteLines: quoteLines.data ?? [],
+    quoteMaterials: quoteMaterials.data ?? [],
+    salesOrderLines: salesOrderLines.data ?? [],
+    shipmentLines: shipmentLines.data ?? [],
+    supplierQuotes: supplierQuotes.data ?? [],
+  };
+}
+
+export async function getPeriods(
+  client: SupabaseClient<Database>,
+  { startDate, endDate }: { startDate: string; endDate: string }
+) {
+  const endWithTime = endDate.includes("T") ? endDate : `${endDate}T23:59:59`;
+  return client
+    .from("period")
+    .select("*")
+    .gte("startDate", startDate)
+    .lte("endDate", endWithTime);
 }
 
 export async function getPickMethod(
@@ -1851,7 +1886,7 @@ export async function upsertPickMethod(
 
 export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
-  partManufacturing: z.infer<typeof partManufacturingValidator> & {
+  partManufacturing: z.infer<typeof itemManufacturingValidator> & {
     updatedBy: string;
     customFields?: Json;
   }
