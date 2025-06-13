@@ -20,13 +20,6 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         table: "job",
       },
       {
-        name: "Procedures",
-        to: path.to.procedures,
-        icon: <LuWaypoints />,
-        table: "procedure",
-        role: "employee",
-      },
-      {
         name: "Schedule",
         to: path.to.schedule,
         icon: <LuSquareKanban />,
@@ -36,6 +29,13 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
   {
     name: "Configure",
     routes: [
+      {
+        name: "Procedures",
+        to: path.to.procedures,
+        icon: <LuWaypoints />,
+        table: "procedure",
+        role: "employee",
+      },
       {
         name: "Scrap Reasons",
         to: path.to.scrapReasons,

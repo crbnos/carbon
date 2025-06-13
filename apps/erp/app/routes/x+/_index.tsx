@@ -1,30 +1,11 @@
-import { getCarbonServiceRole } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { Heading, cn } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { Link } from "@remix-run/react";
-import type { LoaderFunctionArgs } from "@vercel/remix";
 import { useMemo, type ComponentProps } from "react";
 import { LuHardHat } from "react-icons/lu";
 import { useModules, useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
-
-export async function loader({ request }: LoaderFunctionArgs) {
-  const { companyId, userId } = await requirePermissions(request, {});
-  const serviceRole = getCarbonServiceRole();
-
-  const result = await serviceRole.functions.invoke("demand-forecast", {
-    body: {
-      type: "company",
-      companyId,
-      userId,
-    },
-  });
-
-  console.log(result);
-  return null;
-}
 
 export default function AppIndexRoute() {
   const user = useUser();

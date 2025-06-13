@@ -115,6 +115,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+  } else {
+    const recalculateResult = await recalculateJobMakeMethodRequirements(
+      client,
+      {
+        id: validation.data.jobMakeMethodId,
+        companyId,
+        userId,
+      }
+    );
+
+    if (recalculateResult.error) {
+      return json(
+        { id: jobMaterialId },
+        await flash(
+          request,
+          error(
+            recalculateResult.error,
+            "Failed to recalculate job make method requirements"
+          )
+        )
+      );
+    }
   }
 
   return json({

@@ -31,13 +31,19 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
-    type: z.literal("salesOrder"),
+    type: z.literal("job"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
   }),
   z.object({
-    type: z.literal("job"),
+    type: z.literal("purchaseOrder"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("salesOrder"),
     id: z.string(),
     companyId: z.string(),
     userId: z.string(),
@@ -50,10 +56,11 @@ serve(async (req: Request) => {
   }
   const payload = await req.json();
 
-  const { type, companyId, userId } = payloadValidator.parse(payload);
+  const parsedPayload = payloadValidator.parse(payload);
+  const { type, companyId, userId } = parsedPayload;
 
   console.log({
-    function: "demand-forecast",
+    function: "mrp",
     type,
     companyId,
     userId,
@@ -124,19 +131,6 @@ serve(async (req: Request) => {
   try {
     switch (type) {
       case "company": {
-        // Get existing demand actuals
-        const { data: existingDemandActuals, error: demandActualsError } =
-          await client
-            .from("demandActual")
-            .select("*")
-
-            .in(
-              "demandPeriodId",
-              demandPeriods.map((p) => p.id ?? "")
-            );
-
-        if (demandActualsError) throw demandActualsError;
-
         const [salesOrderLines, jobMaterialLines] = await Promise.all([
           client
             .from("openSalesOrderLines")
@@ -245,6 +239,19 @@ serve(async (req: Request) => {
           Database["public"]["Tables"]["demandActual"]["Insert"]
         >();
 
+        // Get existing demand actuals
+        const { data: existingDemandActuals, error: demandActualsError } =
+          await client
+            .from("demandActual")
+            .select("*")
+
+            .in(
+              "demandPeriodId",
+              demandPeriods.map((p) => p.id ?? "")
+            );
+
+        if (demandActualsError) throw demandActualsError;
+
         // First add all existing records with quantity 0
         if (existingDemandActuals) {
           for (const existing of existingDemandActuals) {
@@ -344,16 +351,323 @@ serve(async (req: Request) => {
         }
       }
       case "salesOrder": {
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 201,
-        });
+        const { id } = parsedPayload;
+
+        const [salesOrderLines] = await Promise.all([
+          client
+            .from("openSalesOrderLines")
+            .select("*")
+            .eq("salesOrderId", id)
+            .eq("companyId", companyId),
+        ]);
+
+        if (salesOrderLines.error) {
+          throw new Error("No sales order lines found");
+        }
+
+        // Group sales order lines into demand periods
+        for (const line of salesOrderLines.data) {
+          if (!line.itemId || !line.quantityToSend) continue;
+
+          const promiseDate = line.promisedDate
+            ? parseDate(line.promisedDate)
+            : today;
+          const requiredDate = promiseDate.add({
+            days: -(line?.leadTime ?? 7),
+          });
+
+          // If promised date is before today, use first period
+          let period;
+          if (requiredDate.compare(today) < 0) {
+            period = demandPeriods[0];
+          } else {
+            // Find matching period for promised date
+            period = demandPeriods.find((p) => {
+              return (
+                p.startDate?.compare(requiredDate) <= 0 &&
+                p.endDate?.compare(requiredDate) >= 0
+              );
+            });
+          }
+
+          if (period) {
+            const locationDemand = salesDemandByLocationAndPeriod.get(
+              line.locationId ?? ""
+            );
+            if (locationDemand) {
+              const periodDemand = locationDemand.get(period.id ?? "");
+              if (periodDemand) {
+                const currentDemand = periodDemand.get(line.itemId) ?? 0;
+                periodDemand.set(
+                  line.itemId,
+                  currentDemand + line.quantityToSend
+                );
+              }
+            }
+          }
+        }
+
+        const demandActualUpserts: Database["public"]["Tables"]["demandActual"]["Insert"][] =
+          [];
+
+        // Create a Map to store unique demand actuals by composite key
+        const demandActualsMap = new Map<
+          string,
+          Database["public"]["Tables"]["demandActual"]["Insert"]
+        >();
+
+        // Get existing demand actuals
+        const { data: existingDemandActuals, error: demandActualsError } =
+          await client
+            .from("demandActual")
+            .select("*")
+            .in(
+              "itemId",
+              salesOrderLines.data.map((line) => line.itemId)
+            )
+            .in(
+              "demandPeriodId",
+              demandPeriods.map((p) => p.id ?? "")
+            );
+
+        if (demandActualsError) throw demandActualsError;
+
+        // First add all existing records with quantity 0
+        if (existingDemandActuals) {
+          for (const existing of existingDemandActuals) {
+            const key = `${existing.itemId}-${existing.locationId}-${existing.demandPeriodId}-${existing.sourceType}`;
+            demandActualsMap.set(key, {
+              itemId: existing.itemId,
+              locationId: existing.locationId,
+              demandPeriodId: existing.demandPeriodId,
+              actualQuantity: 0,
+              sourceType: existing.sourceType,
+              createdBy: userId,
+              updatedBy: userId,
+            });
+          }
+        }
+
+        // Then add/update current demand for sales order lines
+        for (const [locationId, periodMap] of salesDemandByLocationAndPeriod) {
+          for (const [periodId, itemMap] of periodMap) {
+            for (const [itemId, quantity] of itemMap) {
+              if (quantity > 0) {
+                const key = `${itemId}-${locationId}-${periodId}-Sales Order`;
+                demandActualsMap.set(key, {
+                  itemId,
+                  locationId,
+                  demandPeriodId: periodId,
+                  actualQuantity: quantity,
+                  sourceType: "Sales Order",
+                  createdBy: userId,
+                  updatedBy: userId,
+                });
+              }
+            }
+          }
+        }
+
+        // Convert Map values to array for upsert
+        demandActualUpserts.push(...demandActualsMap.values());
+
+        try {
+          await db.transaction().execute(async (trx) => {
+            if (demandActualUpserts.length > 0) {
+              await trx
+                .insertInto("demandActual")
+                .values(demandActualUpserts)
+                .onConflict((oc) =>
+                  oc
+                    .columns([
+                      "itemId",
+                      "locationId",
+                      "demandPeriodId",
+                      "sourceType",
+                    ])
+                    .doUpdateSet({
+                      actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                      updatedAt: new Date().toISOString(),
+                      updatedBy: userId,
+                    })
+                )
+                .execute();
+            }
+          });
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          });
+        } catch (err) {
+          console.error(err);
+          return new Response(JSON.stringify(err), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          });
+        }
       }
       case "job": {
-        return new Response(JSON.stringify({ success: true }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 201,
-        });
+        const { id } = parsedPayload;
+
+        const [job, jobMaterialLines] = await Promise.all([
+          client
+            .from("job")
+            .select("itemId")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("openJobMaterialLines")
+            .select("*")
+            .eq("jobId", id)
+            .eq("companyId", companyId),
+        ]);
+
+        if (job.error) {
+          throw new Error("No job found");
+        }
+
+        if (jobMaterialLines.error) {
+          throw new Error("No job material lines found");
+        }
+
+        // Group job material lines into demand periods
+        for (const line of jobMaterialLines.data) {
+          if (!line.itemId || !line.quantityToIssue) continue;
+
+          const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
+          const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
+
+          // If required date is before today, use first period
+          let period;
+          if (requiredDate.compare(today) < 0) {
+            period = demandPeriods[0];
+          } else {
+            // Find matching period for required date
+            period = demandPeriods.find((p) => {
+              return (
+                p.startDate?.compare(requiredDate) <= 0 &&
+                p.endDate?.compare(requiredDate) >= 0
+              );
+            });
+          }
+
+          if (period) {
+            const locationDemand = jobMaterialDemandByLocationAndPeriod.get(
+              line.locationId ?? ""
+            );
+            if (locationDemand) {
+              const periodDemand = locationDemand.get(period.id ?? "");
+              if (periodDemand) {
+                const currentDemand = periodDemand.get(line.itemId) ?? 0;
+                periodDemand.set(
+                  line.itemId,
+                  currentDemand + line.quantityToIssue
+                );
+              }
+            }
+          }
+        }
+
+        const demandActualUpserts: Database["public"]["Tables"]["demandActual"]["Insert"][] =
+          [];
+
+        // Create a Map to store unique demand actuals by composite key
+        const demandActualsMap = new Map<
+          string,
+          Database["public"]["Tables"]["demandActual"]["Insert"]
+        >();
+
+        // Get existing demand actuals
+        const { data: existingDemandActuals, error: demandActualsError } =
+          await client
+            .from("demandActual")
+            .select("*")
+            .eq("itemId", job.data.itemId)
+            .in(
+              "demandPeriodId",
+              demandPeriods.map((p) => p.id ?? "")
+            );
+
+        if (demandActualsError) throw demandActualsError;
+
+        // First add all existing records with quantity 0
+        if (existingDemandActuals) {
+          for (const existing of existingDemandActuals) {
+            const key = `${existing.itemId}-${existing.locationId}-${existing.demandPeriodId}-${existing.sourceType}`;
+            demandActualsMap.set(key, {
+              itemId: existing.itemId,
+              locationId: existing.locationId,
+              demandPeriodId: existing.demandPeriodId,
+              actualQuantity: 0,
+              sourceType: existing.sourceType,
+              createdBy: userId,
+              updatedBy: userId,
+            });
+          }
+        }
+
+        // Then add/update current demand for job material lines
+        for (const [
+          locationId,
+          periodMap,
+        ] of jobMaterialDemandByLocationAndPeriod) {
+          for (const [periodId, itemMap] of periodMap) {
+            for (const [itemId, quantity] of itemMap) {
+              if (quantity > 0) {
+                const key = `${itemId}-${locationId}-${periodId}-Job Material`;
+                demandActualsMap.set(key, {
+                  itemId,
+                  locationId,
+                  demandPeriodId: periodId,
+                  actualQuantity: quantity,
+                  sourceType: "Job Material",
+                  createdBy: userId,
+                  updatedBy: userId,
+                });
+              }
+            }
+          }
+        }
+
+        // Convert Map values to array for upsert
+        demandActualUpserts.push(...demandActualsMap.values());
+
+        try {
+          await db.transaction().execute(async (trx) => {
+            if (demandActualUpserts.length > 0) {
+              await trx
+                .insertInto("demandActual")
+                .values(demandActualUpserts)
+                .onConflict((oc) =>
+                  oc
+                    .columns([
+                      "itemId",
+                      "locationId",
+                      "demandPeriodId",
+                      "sourceType",
+                    ])
+                    .doUpdateSet({
+                      actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                      updatedAt: new Date().toISOString(),
+                      updatedBy: userId,
+                    })
+                )
+                .execute();
+            }
+          });
+
+          return new Response(JSON.stringify({ success: true }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 201,
+          });
+        } catch (err) {
+          console.error(err);
+          return new Response(JSON.stringify(err), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 500,
+          });
+        }
       }
       default: {
         throw new Error("Invalid type");

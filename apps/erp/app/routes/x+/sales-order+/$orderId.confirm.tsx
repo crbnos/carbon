@@ -9,6 +9,7 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { runMRP } from "~/modules/production/production.service";
 import {
   getCustomerContact,
   getSalesOrder,
@@ -282,6 +283,13 @@ export async function action(args: ActionFunctionArgs) {
         message: "Failed to confirm sales order",
       });
     }
+
+    await runMRP(getCarbonServiceRole(), {
+      type: "salesOrder",
+      id: orderId,
+      companyId: companyId,
+      userId: userId,
+    });
 
     return json({
       success: true,

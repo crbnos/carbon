@@ -140,7 +140,7 @@ verify_jwt = true
 # static_files = [ "./functions/post-sales-invoice/*.html" ]
 
 
-[functions.demand-forecast]
+[functions.mrp]
 enabled = true
 verify_jwt = true
 

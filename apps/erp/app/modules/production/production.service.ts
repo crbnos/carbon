@@ -816,11 +816,21 @@ export async function recalculateJobRequirements(
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
+  const recalculateResult = await client.functions.invoke("recalculate", {
     body: {
       type: "jobRequirements",
       ...params,
     },
+  });
+  if (recalculateResult.error) {
+    return recalculateResult;
+  }
+
+  return runMRP(client, {
+    type: "job",
+    id: params.id,
+    companyId: params.companyId,
+    userId: params.userId,
   });
 }
 
@@ -835,6 +845,22 @@ export async function recalculateJobMakeMethodRequirements(
   return client.functions.invoke("recalculate", {
     body: {
       type: "jobMakeMethodRequirements",
+      ...params,
+    },
+  });
+}
+
+export async function runMRP(
+  client: SupabaseClient<Database>,
+  params: {
+    type: "company" | "job" | "salesOrder";
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("mrp", {
+    body: {
       ...params,
     },
   });
@@ -1235,11 +1261,19 @@ export async function upsertJobMethod(
     configuration?: any;
   }
 ) {
-  return client.functions.invoke("get-method", {
+  const getMethodResult = await client.functions.invoke("get-method", {
     body: {
       type,
       ...jobMethod,
     },
+  });
+  if (getMethodResult.error) {
+    return getMethodResult;
+  }
+  return recalculateJobRequirements(client, {
+    id: jobMethod.targetId,
+    companyId: jobMethod.companyId,
+    userId: jobMethod.userId,
   });
 }
 
