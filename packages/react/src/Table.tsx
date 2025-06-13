@@ -11,15 +11,12 @@ const Table = forwardRef<
     <div className="w-full">
       <table
         ref={ref}
-        className={cn(
-          "w-full border-b border-border caption-bottom text-sm",
-          className
-        )}
+        className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
     </div>
   ) : (
-    <div className="rounded-md border w-full overflow-hidden">
+    <div className="rounded-md w-full overflow-hidden">
       <div className="relative w-full overflow-auto">
         <table
           ref={ref}

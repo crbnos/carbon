@@ -119,7 +119,7 @@ export function UsedInTree({
     });
 
   return (
-    <VStack>
+    <VStack className="w-full p-2">
       <HStack className="w-full py">
         <InputGroup size="sm" className="flex flex-grow">
           <InputLeftElement>

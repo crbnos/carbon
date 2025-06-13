@@ -1,4 +1,4 @@
-import { error } from "@carbon/auth";
+import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { Outlet } from "@remix-run/react";
@@ -6,15 +6,12 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { defer, redirect } from "@vercel/remix";
 import {
   getItemFiles,
+  getMakeMethods,
   getMaterial,
   getPickMethods,
   getSupplierParts,
 } from "~/modules/items";
-import {
-  MaterialHeader,
-  MaterialProperties,
-} from "~/modules/items/ui/Materials";
-
+import { MaterialHeader } from "~/modules/items/ui/Materials";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -26,26 +23,26 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { companyId } = await requirePermissions(request, {
     view: "parts",
-    bypassRls: true,
   });
 
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const serviceRole = await getCarbonServiceRole();
   const [materialSummary, supplierParts, pickMethods, tags] = await Promise.all(
     [
-      getMaterial(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getPickMethods(client, itemId, companyId),
-      getTagsList(client, companyId, "material"),
+      getMaterial(serviceRole, itemId, companyId),
+      getSupplierParts(serviceRole, itemId, companyId),
+      getPickMethods(serviceRole, itemId, companyId),
+      getTagsList(serviceRole, companyId, "material"),
     ]
   );
 
   if (materialSummary.error) {
     throw redirect(
-      path.to.materials,
+      path.to.items,
       await flash(
         request,
         error(materialSummary.error, "Failed to load material summary")
@@ -55,9 +52,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return defer({
     materialSummary: materialSummary.data,
-    files: getItemFiles(client, itemId, companyId),
+    files: getItemFiles(serviceRole, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
+    makeMethods: getMakeMethods(serviceRole, itemId, companyId),
     tags: tags.data ?? [],
   });
 }
@@ -66,12 +64,7 @@ export default function MaterialRoute() {
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <MaterialHeader />
-      <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
-          <Outlet />
-        </div>
-        <MaterialProperties />
-      </div>
+      <Outlet />
     </div>
   );
 }

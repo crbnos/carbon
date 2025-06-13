@@ -1,10 +1,4 @@
-import type { JSONContent } from "@carbon/react";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-  ScrollArea,
-} from "@carbon/react";
+import { VStack, type JSONContent } from "@carbon/react";
 
 import {
   Outlet,
@@ -18,6 +12,7 @@ import type { LoaderFunctionArgs } from "@vercel/remix";
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { ResizablePanels } from "~/components/Layout";
 import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
@@ -31,6 +26,7 @@ import {
   getMethodTree,
 } from "~/modules/items";
 import { BoMExplorer } from "~/modules/items/ui/Item";
+import { PartProperties } from "~/modules/items/ui/Parts";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { path } from "~/utils/path";
 
@@ -145,16 +141,11 @@ export default function PartManufacturing() {
   if (!itemId) throw new Error("Could not find itemId");
 
   return (
-    <div className="flex flex-grow overflow-hidden">
-      <ResizablePanelGroup direction="horizontal">
-        <ResizablePanel
-          order={1}
-          minSize={10}
-          defaultSize={20}
-          className="bg-card"
-        >
-          <ScrollArea className="h-[calc(100dvh-99px)]">
-            <div className="grid h-full overflow-hidden p-2">
+    <div className="flex h-[calc(100dvh-99px)] overflow-hidden w-full">
+      <div className="flex flex-grow overflow-hidden">
+        <ResizablePanels
+          explorer={
+            <VStack className="w-full p-2">
               <BoMExplorer
                 itemType="Part"
                 makeMethod={makeMethod}
@@ -162,16 +153,16 @@ export default function PartManufacturing() {
                 // @ts-ignore
                 methods={methods}
               />
+            </VStack>
+          }
+          content={
+            <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+              <Outlet />
             </div>
-          </ScrollArea>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel order={2} minSize={40} defaultSize={60}>
-          <ScrollArea className="h-[calc(100dvh-99px)]">
-            <Outlet key={JSON.stringify(params)} />
-          </ScrollArea>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+          }
+          properties={<PartProperties />}
+        />
+      </div>
     </div>
   );
 }

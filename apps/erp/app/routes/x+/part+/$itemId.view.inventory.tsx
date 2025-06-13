@@ -8,7 +8,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { useRouteData } from "~/hooks";
 import { InventoryDetails } from "~/modules/inventory";
-import type { ToolSummary, UnitOfMeasureListItem } from "~/modules/items";
+import type { PartSummary, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getItemQuantities,
   getItemShelfQuantities,
@@ -17,10 +17,9 @@ import {
   upsertPickMethod,
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
-import { useItems } from "~/stores/items";
+import { useItems } from "~/stores";
 import type { ListItem } from "~/types";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -41,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.tool(itemId),
+        path.to.part(itemId),
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -56,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.tool(itemId),
+        path.to.part(itemId),
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -66,11 +65,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  let [toolInventory] = await Promise.all([
+  let [partInventory] = await Promise.all([
     getPickMethod(client, itemId, companyId, locationId),
   ]);
 
-  if (toolInventory.error || !toolInventory.data) {
+  if (partInventory.error || !partInventory.data) {
     const insertPickMethod = await upsertPickMethod(client, {
       itemId,
       companyId,
@@ -81,21 +80,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     if (insertPickMethod.error) {
       throw redirect(
-        path.to.tool(itemId),
+        path.to.part(itemId),
         await flash(
           request,
-          error(insertPickMethod.error, "Failed to insert tool inventory")
+          error(insertPickMethod.error, "Failed to insert part inventory")
         )
       );
     }
 
-    toolInventory = await getPickMethod(client, itemId, companyId, locationId);
-    if (toolInventory.error || !toolInventory.data) {
+    partInventory = await getPickMethod(client, itemId, companyId, locationId);
+    if (partInventory.error || !partInventory.data) {
       throw redirect(
-        path.to.tool(itemId),
+        path.to.part(itemId),
         await flash(
           request,
-          error(toolInventory.error, "Failed to load tool inventory")
+          error(partInventory.error, "Failed to load part inventory")
         )
       );
     }
@@ -110,7 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (quantities.error) {
     throw redirect(
       path.to.items,
-      await flash(request, error(quantities, "Failed to load tool quantities"))
+      await flash(request, error(quantities, "Failed to load part quantities"))
     );
   }
 
@@ -125,13 +124,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.items,
       await flash(
         request,
-        error(itemShelfQuantities, "Failed to load tool quantities")
+        error(itemShelfQuantities, "Failed to load part quantities")
       )
     );
   }
 
   return json({
-    toolInventory: toolInventory.data,
+    partInventory: partInventory.data,
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
@@ -149,7 +148,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
-  // validate with toolsValidator
+  // validate with partsValidator
   const validation = await validator(pickMethodValidator).validate(formData);
 
   if (validation.error) {
@@ -166,40 +165,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (updatePickMethod.error) {
     throw redirect(
-      path.to.tool(itemId),
+      path.to.part(itemId),
       await flash(
         request,
-        error(updatePickMethod.error, "Failed to update tool inventory")
+        error(updatePickMethod.error, "Failed to update part inventory")
       )
     );
   }
 
   throw redirect(
-    path.to.toolInventoryLocation(itemId, update.locationId),
-    await flash(request, success("Updated tool inventory"))
+    path.to.partInventoryLocation(itemId, update.locationId),
+    await flash(request, success("Updated part inventory"))
   );
 }
 
-export default function ToolInventoryRoute() {
-  const sharedToolsData = useRouteData<{
+export default function PartInventoryRoute() {
+  const sharedPartsData = useRouteData<{
     locations: ListItem[];
     shelves: ListItem[];
     unitOfMeasures: UnitOfMeasureListItem[];
-  }>(path.to.toolRoot);
+  }>(path.to.partRoot);
 
-  const { toolInventory, itemShelfQuantities, quantities, itemId, locationId } =
+  const { partInventory, itemShelfQuantities, quantities, itemId } =
     useLoaderData<typeof loader>();
 
-  const toolData = useRouteData<{
-    toolSummary: ToolSummary;
-  }>(path.to.tool(itemId));
-  if (!toolData) throw new Error("Could not find tool data");
-  const itemUnitOfMeasureCode = toolData?.toolSummary?.unitOfMeasureCode;
+  const partData = useRouteData<{
+    partSummary: PartSummary;
+  }>(path.to.part(itemId));
+  if (!partData) throw new Error("Could not find part data");
+  const itemUnitOfMeasureCode = partData?.partSummary?.unitOfMeasureCode;
 
   const initialValues = {
-    ...toolInventory,
-    defaultShelfId: toolInventory.defaultShelfId ?? undefined,
-    ...getCustomFields(toolInventory.customFields ?? {}),
+    ...partInventory,
+    defaultShelfId: partInventory.defaultShelfId ?? undefined,
+    ...getCustomFields(partInventory.customFields ?? {}),
   };
 
   const [items] = useItems();
@@ -210,8 +209,8 @@ export default function ToolInventoryRoute() {
       <PickMethodForm
         key={initialValues.itemId}
         initialValues={initialValues}
-        locations={sharedToolsData?.locations ?? []}
-        shelves={sharedToolsData?.shelves ?? []}
+        locations={sharedPartsData?.locations ?? []}
+        shelves={sharedPartsData?.shelves ?? []}
         type="Part"
       />
       <InventoryDetails
@@ -220,11 +219,7 @@ export default function ToolInventoryRoute() {
         itemTrackingType={itemTrackingType ?? "Inventory"}
         pickMethod={initialValues}
         quantities={quantities}
-        shelves={sharedToolsData?.shelves ?? []}
-      />
-      <ItemPlanningChart
-        itemId={toolInventory.itemId}
-        locationId={locationId}
+        shelves={sharedPartsData?.shelves ?? []}
       />
     </VStack>
   );

@@ -18,7 +18,6 @@ import {
   upsertPickMethod,
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
-import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { useItems } from "~/stores/items";
@@ -199,13 +198,8 @@ export default function ConsumableInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.consumableRoot);
 
-  const {
-    consumableInventory,
-    itemShelfQuantities,
-    quantities,
-    itemId,
-    locationId,
-  } = useLoaderData<typeof loader>();
+  const { consumableInventory, itemShelfQuantities, quantities, itemId } =
+    useLoaderData<typeof loader>();
 
   const consumableData = useRouteData<{
     consumableSummary: Consumable;
@@ -239,10 +233,6 @@ export default function ConsumableInventoryRoute() {
         pickMethod={initialValues}
         quantities={quantities}
         shelves={sharedConsumablesData?.shelves ?? []}
-      />
-      <ItemPlanningChart
-        itemId={consumableInventory.itemId}
-        locationId={locationId}
       />
     </VStack>
   );

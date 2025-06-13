@@ -12,11 +12,13 @@ import { getBatchProperties } from "~/modules/inventory";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
 import type { SupplierPart } from "~/modules/items";
 import {
+  getItemCostHistory,
   getItemReplenishment,
   itemPurchasingValidator,
   upsertItemPurchasing,
 } from "~/modules/items";
 import { ItemPurchasingForm, SupplierParts } from "~/modules/items/ui/Item";
+import { ItemCostHistoryChart } from "~/modules/items/ui/Item/ItemCostHistoryChart";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -27,8 +29,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partPurchasingResult] = await Promise.all([
+  const [partPurchasingResult, itemCostHistory] = await Promise.all([
     getItemReplenishment(client, itemId, companyId),
+    getItemCostHistory(client, itemId, companyId),
   ]);
 
   if (partPurchasingResult.error) {
@@ -44,6 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return defer({
     partPurchasing: partPurchasingResult.data,
     batchProperties: getBatchProperties(client, [itemId], companyId),
+    itemCostHistory: itemCostHistory.data ?? [],
   });
 }
 
@@ -87,7 +91,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartPurchasingRoute() {
-  const { partPurchasing, batchProperties } = useLoaderData<typeof loader>();
+  const { partPurchasing, batchProperties, itemCostHistory } =
+    useLoaderData<typeof loader>();
 
   const { itemId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
@@ -97,7 +102,7 @@ export default function PartPurchasingRoute() {
   const supplierParts = routeData?.supplierParts ?? [];
 
   const partData = useRouteData<{
-    partSummary: { itemTrackingType?: string };
+    partSummary: { itemTrackingType?: string; readableIdWithRevision?: string };
   }>(path.to.part(itemId));
 
   const initialValues = {
@@ -135,6 +140,10 @@ export default function PartPurchasingRoute() {
           </Await>
         </Suspense>
       )}
+      <ItemCostHistoryChart
+        readableId={partData?.partSummary?.readableIdWithRevision ?? ""}
+        itemCostHistory={itemCostHistory}
+      />
     </VStack>
   );
 }

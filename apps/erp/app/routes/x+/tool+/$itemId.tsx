@@ -11,7 +11,7 @@ import {
   getSupplierParts,
   getTool,
 } from "~/modules/items";
-import { ToolHeader, ToolProperties } from "~/modules/items/ui/Tools";
+import { ToolHeader } from "~/modules/items/ui/Tools";
 import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -62,12 +62,7 @@ export default function ToolRoute() {
   return (
     <div className="flex flex-col h-[calc(100dvh-49px)] overflow-hidden w-full">
       <ToolHeader />
-      <div className="flex h-[calc(100dvh-99px)] w-full">
-        <div className="flex h-full w-full overflow-y-auto scrollbar-hide">
-          <Outlet />
-        </div>
-        <ToolProperties />
-      </div>
+      <Outlet />
     </div>
   );
 }

@@ -19,14 +19,15 @@ type DetailTopbarProps = {
     icon?: IconType;
     count?: number;
     shortcut?: string;
+    isActive?: (pathname: string) => boolean;
   }[];
-  matchRouteParts?: number;
+
   preserveParams?: boolean;
 };
 
 const DetailTopbar = ({
   links,
-  matchRouteParts,
+
   preserveParams = false,
 }: DetailTopbarProps) => {
   const navigate = useNavigate();
@@ -50,13 +51,8 @@ const DetailTopbar = ({
   return (
     <div className="inline-flex h-8 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
       {links.map((route) => {
-        const isActive = matchRouteParts
-          ? location.pathname.includes(
-              route.to
-                .split("/")
-                .slice(1, matchRouteParts + 1)
-                .join("/")
-            )
+        const isActive = route.isActive
+          ? route.isActive(location.pathname)
           : location.pathname.includes(route.to);
 
         const linkTo = preserveParams

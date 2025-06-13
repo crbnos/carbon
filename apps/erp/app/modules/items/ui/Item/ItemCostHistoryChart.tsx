@@ -3,7 +3,6 @@ import {
   Card,
   CardAction,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -161,8 +160,7 @@ export function ItemCostHistoryChart({
       <Tabs defaultValue="chart">
         <HStack className="w-full justify-between">
           <CardHeader>
-            <CardTitle>Purchase History</CardTitle>
-            <CardDescription>Purchase cost over the last year</CardDescription>
+            <CardTitle>Cost History</CardTitle>
           </CardHeader>
           <CardAction className="flex-row-reverse items-center gap-2">
             <DropdownMenu>
