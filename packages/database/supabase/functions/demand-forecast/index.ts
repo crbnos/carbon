@@ -51,6 +51,14 @@ serve(async (req: Request) => {
   const payload = await req.json();
 
   const { type, companyId, userId } = payloadValidator.parse(payload);
+
+  console.log({
+    function: "demand-forecast",
+    type,
+    companyId,
+    userId,
+  });
+
   const today = getToday(getLocalTimeZone());
   const periods = getStartAndEndDates(today, "Week");
   const demandPeriods = await getOrCreateDemandPeriods(db, periods, "Week");
@@ -129,14 +137,6 @@ serve(async (req: Request) => {
 
         if (demandActualsError) throw demandActualsError;
 
-        const existingSalesOrderDemandActuals = existingDemandActuals.filter(
-          (da) => da.sourceType === "Sales Order"
-        );
-
-        const existingJobMaterialDemandActuals = existingDemandActuals.filter(
-          (da) => da.sourceType === "Job Material"
-        );
-
         const [salesOrderLines, jobMaterialLines] = await Promise.all([
           client
             .from("openSalesOrderLines")
@@ -163,24 +163,27 @@ serve(async (req: Request) => {
           const promiseDate = line.promisedDate
             ? parseDate(line.promisedDate)
             : today;
+          const requiredDate = promiseDate.add({
+            days: -(line?.leadTime ?? 7),
+          });
 
           // If promised date is before today, use first period
           let period;
-          if (promiseDate.compare(today) < 0) {
+          if (requiredDate.compare(today) < 0) {
             period = demandPeriods[0];
           } else {
             // Find matching period for promised date
             period = demandPeriods.find((p) => {
               return (
-                p.startDate?.compare(promiseDate) <= 0 &&
-                p.endDate?.compare(promiseDate) >= 0
+                p.startDate?.compare(requiredDate) <= 0 &&
+                p.endDate?.compare(requiredDate) >= 0
               );
             });
           }
 
           if (period) {
             const locationDemand = salesDemandByLocationAndPeriod.get(
-              line.locationId
+              line.locationId ?? ""
             );
             if (locationDemand) {
               const periodDemand = locationDemand.get(period.id ?? "");
@@ -195,7 +198,45 @@ serve(async (req: Request) => {
           }
         }
 
-        const salesDemandActualUpserts: Database["public"]["Tables"]["demandActual"]["Insert"][] =
+        // Group job material lines into demand periods
+        for (const line of jobMaterialLines.data) {
+          if (!line.itemId || !line.quantityToIssue) continue;
+
+          const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
+          const requiredDate = dueDate.add({ days: -(line.leadTime ?? 7) });
+
+          // If required date is before today, use first period
+          let period;
+          if (requiredDate.compare(today) < 0) {
+            period = demandPeriods[0];
+          } else {
+            // Find matching period for required date
+            period = demandPeriods.find((p) => {
+              return (
+                p.startDate?.compare(requiredDate) <= 0 &&
+                p.endDate?.compare(requiredDate) >= 0
+              );
+            });
+          }
+
+          if (period) {
+            const locationDemand = jobMaterialDemandByLocationAndPeriod.get(
+              line.locationId ?? ""
+            );
+            if (locationDemand) {
+              const periodDemand = locationDemand.get(period.id ?? "");
+              if (periodDemand) {
+                const currentDemand = periodDemand.get(line.itemId) ?? 0;
+                periodDemand.set(
+                  line.itemId,
+                  currentDemand + line.quantityToIssue
+                );
+              }
+            }
+          }
+        }
+
+        const demandActualUpserts: Database["public"]["Tables"]["demandActual"]["Insert"][] =
           [];
 
         // Create a Map to store unique demand actuals by composite key
@@ -205,8 +246,8 @@ serve(async (req: Request) => {
         >();
 
         // First add all existing records with quantity 0
-        if (existingSalesOrderDemandActuals) {
-          for (const existing of existingSalesOrderDemandActuals) {
+        if (existingDemandActuals) {
+          for (const existing of existingDemandActuals) {
             const key = `${existing.itemId}-${existing.locationId}-${existing.demandPeriodId}-${existing.sourceType}`;
             demandActualsMap.set(key, {
               itemId: existing.itemId,
@@ -220,7 +261,7 @@ serve(async (req: Request) => {
           }
         }
 
-        // Then add/update current demand
+        // Then add/update current demand for sales order lines
         for (const [locationId, periodMap] of salesDemandByLocationAndPeriod) {
           for (const [periodId, itemMap] of periodMap) {
             for (const [itemId, quantity] of itemMap) {
@@ -240,15 +281,38 @@ serve(async (req: Request) => {
           }
         }
 
+        // Then add/update current demand for job material lines
+        for (const [
+          locationId,
+          periodMap,
+        ] of jobMaterialDemandByLocationAndPeriod) {
+          for (const [periodId, itemMap] of periodMap) {
+            for (const [itemId, quantity] of itemMap) {
+              if (quantity > 0) {
+                const key = `${itemId}-${locationId}-${periodId}-Job Material`;
+                demandActualsMap.set(key, {
+                  itemId,
+                  locationId,
+                  demandPeriodId: periodId,
+                  actualQuantity: quantity,
+                  sourceType: "Job Material",
+                  createdBy: userId,
+                  updatedBy: userId,
+                });
+              }
+            }
+          }
+        }
+
         // Convert Map values to array for upsert
-        salesDemandActualUpserts.push(...demandActualsMap.values());
+        demandActualUpserts.push(...demandActualsMap.values());
 
         try {
           await db.transaction().execute(async (trx) => {
-            if (salesDemandActualUpserts.length > 0) {
+            if (demandActualUpserts.length > 0) {
               await trx
                 .insertInto("demandActual")
-                .values(salesDemandActualUpserts)
+                .values(demandActualUpserts)
                 .onConflict((oc) =>
                   oc
                     .columns([

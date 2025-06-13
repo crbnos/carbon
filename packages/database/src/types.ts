@@ -8519,11 +8519,11 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           itemId: string
+          leadTime: number
           lotSize: number | null
           manufacturingBlocked: boolean
           preferredSupplierId: string | null
           purchasingBlocked: boolean
-          purchasingLeadTime: number
           purchasingUnitOfMeasureCode: string | null
           requiresConfiguration: boolean
           scrapPercentage: number
@@ -8538,11 +8538,11 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           itemId: string
+          leadTime?: number
           lotSize?: number | null
           manufacturingBlocked?: boolean
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
-          purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
           scrapPercentage?: number
@@ -8557,11 +8557,11 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           itemId?: string
+          leadTime?: number
           lotSize?: number | null
           manufacturingBlocked?: boolean
           preferredSupplierId?: string | null
           purchasingBlocked?: boolean
-          purchasingLeadTime?: number
           purchasingUnitOfMeasureCode?: string | null
           requiresConfiguration?: boolean
           scrapPercentage?: number
@@ -9579,6 +9579,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "openJobMaterialLines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "jobMakeMethod_trackedEntityId_fkey"
             columns: ["trackedEntityId"]
             isOneToOne: false
@@ -9920,6 +9927,7 @@ export type Database = {
           createdBy: string
           customFields: Json | null
           description: string | null
+          dueDate: string | null
           id: string
           jobId: string
           jobMakeMethodId: string | null
@@ -9946,6 +9954,7 @@ export type Database = {
           quantityScrapped: number | null
           setupTime: number
           setupUnit: Database["public"]["Enums"]["factor"]
+          startDate: string | null
           status: Database["public"]["Enums"]["jobOperationStatus"]
           tags: string[] | null
           updatedAt: string | null
@@ -9960,6 +9969,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
+          dueDate?: string | null
           id?: string
           jobId: string
           jobMakeMethodId?: string | null
@@ -9986,6 +9996,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobOperationStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -10000,6 +10011,7 @@ export type Database = {
           createdBy?: string
           customFields?: Json | null
           description?: string | null
+          dueDate?: string | null
           id?: string
           jobId?: string
           jobMakeMethodId?: string | null
@@ -10026,6 +10038,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number
           setupUnit?: Database["public"]["Enums"]["factor"]
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobOperationStatus"]
           tags?: string[] | null
           updatedAt?: string | null
@@ -37017,6 +37030,118 @@ export type Database = {
         }
         Relationships: []
       }
+      openJobMaterialLines: {
+        Row: {
+          companyId: string | null
+          dueDate: string | null
+          id: string | null
+          itemId: string | null
+          itemTrackingType:
+            | Database["public"]["Enums"]["itemTrackingType"]
+            | null
+          jobId: string | null
+          leadTime: number | null
+          locationId: string | null
+          quantityToIssue: number | null
+          replenishmentSystem:
+            | Database["public"]["Enums"]["itemReplenishmentSystem"]
+            | null
+          unitOfMeasureCode: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "consumables"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "parts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_itemId_fkey"
+            columns: ["itemId"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "job"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobId_fkey"
+            columns: ["jobId"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_unitOfMeasureCode_fkey"
+            columns: ["unitOfMeasureCode", "companyId"]
+            isOneToOne: false
+            referencedRelation: "unitOfMeasure"
+            referencedColumns: ["code", "companyId"]
+          },
+        ]
+      }
       openSalesOrderLines: {
         Row: {
           companyId: string | null
@@ -37025,6 +37150,7 @@ export type Database = {
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          leadTime: number | null
           locationId: string | null
           methodType: Database["public"]["Enums"]["methodType"] | null
           promisedDate: string | null
@@ -41305,14 +41431,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -102,7 +102,7 @@ CREATE OR REPLACE VIEW "openSalesOrderLines" AS (
     COALESCE(sol."locationId", so."locationId") AS "locationId",
     i."replenishmentSystem", 
     i."itemTrackingType",
-    ir."leadTime"
+    ir."leadTime" AS "leadTime"
   FROM "salesOrderLine" sol
   INNER JOIN "salesOrder" so ON sol."salesOrderId" = so."id"
   INNER JOIN "item" i ON sol."itemId" = i."id"
@@ -118,13 +118,14 @@ CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
     jm."id",
     jm."jobId",
     jm."itemId",
-    jm."quantity",
+    jm."quantityToIssue",
     jm."unitOfMeasureCode",
     jm."companyId",
     i1."replenishmentSystem", 
     i1."itemTrackingType",
     ir1."leadTime" + ir2."leadTime" AS "leadTime",
-    j."locationId"
+    j."locationId",
+    j."dueDate"
   FROM "jobMaterial" jm
   INNER JOIN "job" j ON jm."jobId" = j."id"
   INNER JOIN "item" i1 ON jm."itemId" = i1."id"
