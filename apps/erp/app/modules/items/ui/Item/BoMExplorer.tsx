@@ -112,14 +112,16 @@ const BoMExplorer = ({
       const node = methods.find(
         (m) => m.data.methodMaterialId === selectedMaterialId
       );
-      selectNode(node?.id ?? methods[0].id);
+      if (node) {
+        selectNode(node.id);
+      }
     } else if (params.makeMethodId) {
       const node = methods.find(
         (m) => m.data.materialMakeMethodId === params.makeMethodId
       );
-      selectNode(node?.id ?? methods[0].id);
-    } else if (methods?.length > 0) {
-      selectNode(methods[0].id);
+      if (node) {
+        selectNode(node.id);
+      }
     }
   });
 

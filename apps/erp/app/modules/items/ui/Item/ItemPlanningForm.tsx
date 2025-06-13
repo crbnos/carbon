@@ -121,15 +121,6 @@ const ItemPlanningForm = ({
                   label="Demand Accumulation Period (Days)"
                   minValue={0}
                 />
-                <Number
-                  name="demandReschedulingPeriod"
-                  label="Rescheduling Period (Days)"
-                  minValue={0}
-                />
-                <Boolean
-                  name="demandAccumulationIncludesInventory"
-                  label="Demand Includes Inventory"
-                />
               </>
             )}
             {policy === "Fixed Reorder Quantity" && (
@@ -150,6 +141,14 @@ const ItemPlanningForm = ({
 
             <Number name="orderMultiple" label="Order Multiple" minValue={0} />
             <Boolean name="critical" label="Critical" />
+            {policy === "Demand-Based Reorder" && (
+              <>
+                <Boolean
+                  name="demandAccumulationIncludesInventory"
+                  label="Demand Includes Inventory"
+                />
+              </>
+            )}
             <CustomFormFields table="partPlanning" />
           </div>
         </CardContent>

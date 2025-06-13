@@ -103,7 +103,7 @@ export default function ToolPurchasingRoute() {
   const initialValues = {
     ...toolPurchasing,
     preferredSupplierId: toolPurchasing?.preferredSupplierId ?? undefined,
-    purchasingLeadTime: toolPurchasing?.purchasingLeadTime ?? "",
+    leadTime: toolPurchasing?.leadTime ?? "",
     purchasingBlocked: toolPurchasing?.purchasingBlocked ?? false,
     purchasingUnitOfMeasureCode:
       toolPurchasing?.purchasingUnitOfMeasureCode ?? "",

@@ -21,7 +21,7 @@ import type {
   PartSummary,
 } from "~/modules/items";
 import {
-  partManufacturingValidator,
+  itemManufacturingValidator,
   upsertItemManufacturing,
 } from "~/modules/items";
 import {
@@ -29,10 +29,8 @@ import {
   BillOfProcess,
   MakeMethodTools,
 } from "~/modules/items/ui/Item";
-import {
-  ConfigurationParametersForm,
-  PartManufacturingForm,
-} from "~/modules/items/ui/Parts";
+import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm";
+import { ConfigurationParametersForm } from "~/modules/items/ui/Parts";
 import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -49,7 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts",
   });
 
@@ -58,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!methodId) throw new Error("Could not find methodId");
 
   const formData = await request.formData();
-  const validation = await validator(partManufacturingValidator).validate(
+  const validation = await validator(itemManufacturingValidator).validate(
     formData
   );
 
@@ -105,7 +103,7 @@ export default function MakeMethodRoute() {
   }>(path.to.part(itemId));
 
   const manufacturingRouteData = useRouteData<{
-    partManufacturing: z.infer<typeof partManufacturingValidator> & {
+    partManufacturing: z.infer<typeof itemManufacturingValidator> & {
       customFields: Record<string, string>;
     };
     configurationParametersAndGroups: {
@@ -142,7 +140,7 @@ export default function MakeMethodRoute() {
           )}
         </Await>
       </Suspense>
-      <PartManufacturingForm
+      <ItemManufacturingForm
         key={itemId}
         // @ts-ignore
         initialValues={manufacturingInitialValues}

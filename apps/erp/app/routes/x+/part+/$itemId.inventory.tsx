@@ -17,6 +17,7 @@ import {
   upsertPickMethod,
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
+import { ItemDemandChart } from "~/modules/items/ui/Item/ItemDemandChart";
 import { getLocationsList } from "~/modules/resources";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { useItems } from "~/stores";
@@ -134,6 +135,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemShelfQuantities: itemShelfQuantities.data,
     quantities: quantities.data,
     itemId,
+    locationId,
   });
 }
 
@@ -185,7 +187,7 @@ export default function PartInventoryRoute() {
     unitOfMeasures: UnitOfMeasureListItem[];
   }>(path.to.partRoot);
 
-  const { partInventory, itemShelfQuantities, quantities, itemId } =
+  const { partInventory, itemShelfQuantities, quantities, itemId, locationId } =
     useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
@@ -220,6 +222,7 @@ export default function PartInventoryRoute() {
         quantities={quantities}
         shelves={sharedPartsData?.shelves ?? []}
       />
+      <ItemDemandChart itemId={itemId} locationId={locationId} />
     </VStack>
   );
 }

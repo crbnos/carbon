@@ -2,6 +2,7 @@ import { useParams } from "@remix-run/react";
 
 import {
   LuBox,
+  LuChartLine,
   LuFactory,
   LuFileText,
   LuReceipt,
@@ -69,13 +70,13 @@ export function usePartNavigation() {
       icon: LuTags,
       shortcut: "Command+Shift+a",
     },
-    // {
-    //   name: "Planning",
-    //   to: path.to.partPlanning(itemId),
-    //   role: ["employee"],
-    //   icon: LuFileBarChart,
-    //   shortcut: "Command+Shift+p",
-    // },
+    {
+      name: "Planning",
+      to: path.to.partPlanning(itemId),
+      role: ["employee"],
+      icon: LuChartLine,
+      shortcut: "Command+Shift+p",
+    },
     {
       name: "Sales",
       to: path.to.partSales(itemId),

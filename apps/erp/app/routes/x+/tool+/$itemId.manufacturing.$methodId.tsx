@@ -22,6 +22,7 @@ import type { FlatTreeItem } from "~/components/TreeView";
 import { flattenTree } from "~/components/TreeView";
 import type { Method } from "~/modules/items";
 import {
+  getItemManufacturing,
   getMakeMethodById,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
@@ -60,12 +61,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [methodTree, methodMaterials, methodOperations] = await Promise.all([
-    getMethodTree(client, makeMethod.data.id),
-    getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
-    getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
-    // getItemManufacturing(client, itemId, companyId),
-  ]);
+  const [methodTree, methodMaterials, methodOperations, toolManufacturing] =
+    await Promise.all([
+      getMethodTree(client, makeMethod.data.id),
+      getMethodMaterialsByMakeMethod(client, makeMethod.data.id),
+      getMethodOperationsByMakeMethodId(client, makeMethod.data.id),
+      getItemManufacturing(client, itemId, companyId),
+    ]);
   if (methodTree?.error) {
     throw redirect(
       path.to.partDetails(itemId),
@@ -115,7 +117,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     methods: (methodTree.data.length > 0
       ? flattenTree(methodTree.data[0])
       : []) satisfies FlatTreeItem<Method>[],
-    // toolManufacturing: toolManufacturing.data,
+    toolManufacturing: toolManufacturing.data,
     // configurationParametersAndGroups: toolManufacturing.data
     //   ?.requiresConfiguration
     //   ? await getConfigurationParameters(client, itemId, companyId)

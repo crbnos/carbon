@@ -6,6 +6,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { useLocale } from "@react-aria/i18n";
+import { LuMoveDown, LuMoveUp } from "react-icons/lu";
 import type { z } from "zod";
 import type {
   ItemQuantities,
@@ -78,10 +79,20 @@ const InventoryDetails = ({
             <CardDescription>
               <VStack>Quantity on Production Order</VStack>
             </CardDescription>
-            <CardTitle className="text-4xl">
-              {`${formatter.format(
-                quantities?.quantityOnProductionOrder ?? 0
-              )}`}
+            <CardTitle className="text-4xl flex items-start justify-start gap-2">
+              <div className="flex justify-start items-center gap-1">
+                <span>{`${formatter.format(
+                  quantities?.quantityOnProductionOrder ?? 0
+                )}`}</span>
+                <LuMoveUp className="text-emerald-500 text-lg" />
+              </div>
+
+              <div className="flex justify-start items-center gap-1">
+                <span>{`${formatter.format(
+                  quantities?.quantityOnProductionDemand ?? 0
+                )}`}</span>
+                <LuMoveDown className="text-red-500 text-lg" />
+              </div>
             </CardTitle>
           </CardHeader>
         </Card>

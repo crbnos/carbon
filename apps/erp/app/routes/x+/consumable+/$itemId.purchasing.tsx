@@ -110,7 +110,7 @@ export default function ConsumablePurchasingRoute() {
   const initialValues = {
     ...consumablePurchasing,
     preferredSupplierId: consumablePurchasing?.preferredSupplierId ?? undefined,
-    purchasingLeadTime: consumablePurchasing?.purchasingLeadTime ?? "",
+    leadTime: consumablePurchasing?.leadTime ?? "",
     purchasingBlocked: consumablePurchasing?.purchasingBlocked ?? false,
     purchasingUnitOfMeasureCode:
       consumablePurchasing?.purchasingUnitOfMeasureCode ?? "",

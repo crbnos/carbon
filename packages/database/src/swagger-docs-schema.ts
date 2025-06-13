@@ -9532,7 +9532,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecast.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandForecast.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandForecast.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.forecastQuantity",
@@ -9545,6 +9545,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandForecast.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.createdBy",
@@ -9624,7 +9627,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecast.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandForecast.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandForecast.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.forecastQuantity",
@@ -9637,6 +9640,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandForecast.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.createdBy",
@@ -9670,7 +9676,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandForecast.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandForecast.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandForecast.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.forecastQuantity",
@@ -9683,6 +9689,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandForecast.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandForecast.createdBy",
@@ -14461,7 +14470,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandActual.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandActual.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandActual.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.actualQuantity",
@@ -14471,6 +14480,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandActual.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.createdBy",
@@ -14550,7 +14562,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandActual.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandActual.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandActual.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.actualQuantity",
@@ -14560,6 +14572,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandActual.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.createdBy",
@@ -14593,7 +14608,7 @@ export default {
             $ref: "#/parameters/rowFilter.demandActual.locationId",
           },
           {
-            $ref: "#/parameters/rowFilter.demandActual.demandPeriodId",
+            $ref: "#/parameters/rowFilter.demandActual.periodId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.actualQuantity",
@@ -14603,6 +14618,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.demandActual.companyId",
           },
           {
             $ref: "#/parameters/rowFilter.demandActual.createdBy",
@@ -18900,6 +18918,141 @@ export default {
         tags: ["shifts"],
       },
     },
+    "/period": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.period.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.periodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/period",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["period"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.period",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["period"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.period.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.periodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["period"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.period.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.endDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.periodType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.period.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.period",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["period"],
+      },
+    },
     "/jobOperationDependency": {
       get: {
         parameters: [
@@ -19888,141 +20041,6 @@ export default {
           },
         },
         tags: ["salesOrderFavorite"],
-      },
-    },
-    "/demandPeriod": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.startDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.endDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.periodType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.createdAt",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/order",
-          },
-          {
-            $ref: "#/parameters/range",
-          },
-          {
-            $ref: "#/parameters/rangeUnit",
-          },
-          {
-            $ref: "#/parameters/offset",
-          },
-          {
-            $ref: "#/parameters/limit",
-          },
-          {
-            $ref: "#/parameters/preferCount",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/demandPeriod",
-              },
-              type: "array",
-            },
-          },
-          "206": {
-            description: "Partial Content",
-          },
-        },
-        tags: ["demandPeriod"],
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.demandPeriod",
-          },
-          {
-            $ref: "#/parameters/select",
-          },
-          {
-            $ref: "#/parameters/preferPost",
-          },
-        ],
-        responses: {
-          "201": {
-            description: "Created",
-          },
-        },
-        tags: ["demandPeriod"],
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.startDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.endDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.periodType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.createdAt",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["demandPeriod"],
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.id",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.startDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.endDate",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.periodType",
-          },
-          {
-            $ref: "#/parameters/rowFilter.demandPeriod.createdAt",
-          },
-          {
-            $ref: "#/parameters/body.demandPeriod",
-          },
-          {
-            $ref: "#/parameters/preferReturn",
-          },
-        ],
-        responses: {
-          "204": {
-            description: "No Content",
-          },
-        },
-        tags: ["demandPeriod"],
       },
     },
     "/purchaseOrderLine": {
@@ -60147,8 +60165,9 @@ export default {
       required: [
         "itemId",
         "locationId",
-        "demandPeriodId",
+        "periodId",
         "forecastQuantity",
+        "companyId",
         "createdBy",
         "createdAt",
         "updatedAt",
@@ -60167,9 +60186,9 @@ export default {
           format: "text",
           type: "string",
         },
-        demandPeriodId: {
+        periodId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `period.id`.<fk table='period' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60187,6 +60206,12 @@ export default {
           type: "number",
         },
         notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62560,9 +62585,10 @@ export default {
       required: [
         "itemId",
         "locationId",
-        "demandPeriodId",
+        "periodId",
         "actualQuantity",
         "sourceType",
+        "companyId",
         "createdBy",
         "createdAt",
         "updatedAt",
@@ -62581,9 +62607,9 @@ export default {
           format: "text",
           type: "string",
         },
-        demandPeriodId: {
+        periodId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `demandPeriod.id`.<fk table='demandPeriod' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `period.id`.<fk table='period' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62599,6 +62625,12 @@ export default {
           type: "string",
         },
         notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -64562,6 +64594,36 @@ export default {
       },
       type: "object",
     },
+    period: {
+      required: ["id", "startDate", "endDate", "periodType", "createdAt"],
+      properties: {
+        id: {
+          default: "public.xid()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        startDate: {
+          format: "date",
+          type: "string",
+        },
+        endDate: {
+          format: "date",
+          type: "string",
+        },
+        periodType: {
+          enum: ["Week", "Day", "Month"],
+          format: 'public."periodType"',
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     jobOperationDependency: {
       required: [
         "operationId",
@@ -64890,36 +64952,6 @@ export default {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
-          type: "string",
-        },
-      },
-      type: "object",
-    },
-    demandPeriod: {
-      required: ["id", "startDate", "endDate", "periodType", "createdAt"],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string",
-        },
-        startDate: {
-          format: "date",
-          type: "string",
-        },
-        endDate: {
-          format: "date",
-          type: "string",
-        },
-        periodType: {
-          enum: ["Week", "Day", "Month"],
-          format: 'public."demandPeriodType"',
-          type: "string",
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -75192,7 +75224,7 @@ export default {
           type: "integer",
         },
         demandAccumulationPeriod: {
-          default: 0,
+          default: 30,
           format: "integer",
           type: "integer",
         },
@@ -84869,8 +84901,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.demandForecast.demandPeriodId": {
-      name: "demandPeriodId",
+    "rowFilter.demandForecast.periodId": {
+      name: "periodId",
       required: false,
       in: "query",
       type: "string",
@@ -84895,6 +84927,12 @@ export default {
     },
     "rowFilter.demandForecast.notes": {
       name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.demandForecast.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -87521,8 +87559,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.demandActual.demandPeriodId": {
-      name: "demandPeriodId",
+    "rowFilter.demandActual.periodId": {
+      name: "periodId",
       required: false,
       in: "query",
       type: "string",
@@ -87541,6 +87579,12 @@ export default {
     },
     "rowFilter.demandActual.notes": {
       name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.demandActual.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string",
@@ -89816,6 +89860,45 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.period": {
+      name: "period",
+      description: "period",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/period",
+      },
+    },
+    "rowFilter.period.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.period.startDate": {
+      name: "startDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.period.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.period.periodType": {
+      name: "periodType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.period.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.jobOperationDependency": {
       name: "jobOperationDependency",
       description: "jobOperationDependency",
@@ -90166,45 +90249,6 @@ export default {
     },
     "rowFilter.salesOrderFavorite.userId": {
       name: "userId",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "body.demandPeriod": {
-      name: "demandPeriod",
-      description: "demandPeriod",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/demandPeriod",
-      },
-    },
-    "rowFilter.demandPeriod.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.demandPeriod.startDate": {
-      name: "startDate",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.demandPeriod.endDate": {
-      name: "endDate",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.demandPeriod.periodType": {
-      name: "periodType",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.demandPeriod.createdAt": {
-      name: "createdAt",
       required: false,
       in: "query",
       type: "string",
