@@ -1,17 +1,27 @@
-import { Checkbox, Combobox, HStack, VStack } from "@carbon/react";
+import {
+  Button,
+  Checkbox,
+  Combobox,
+  HStack,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  VStack,
+} from "@carbon/react";
+import { useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuBox,
   LuCheck,
-  LuFactory,
+  LuCirclePlay,
   LuGlassWater,
+  LuMoveDown,
+  LuMoveUp,
   LuPackage,
   LuRuler,
   LuShapes,
-  LuShoppingBag,
-  LuShoppingCart,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -23,6 +33,7 @@ import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useUrlParams } from "~/hooks";
+import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { itemTypes } from "../../inventory.models";
@@ -88,7 +99,7 @@ const InventoryTable = memo(
           header: "On Purchase Order",
           cell: ({ row }) => row.original.quantityOnPurchaseOrder,
           meta: {
-            icon: <LuShoppingCart />,
+            icon: <LuMoveUp className="text-emerald-500" />,
           },
         },
         {
@@ -96,7 +107,15 @@ const InventoryTable = memo(
           header: "On Jobs",
           cell: ({ row }) => row.original.quantityOnProductionOrder,
           meta: {
-            icon: <LuFactory />,
+            icon: <LuMoveUp className="text-emerald-500" />,
+          },
+        },
+        {
+          accessorKey: "quantityOnProductionDemand",
+          header: "On Jobs",
+          cell: ({ row }) => row.original.quantityOnProductionDemand,
+          meta: {
+            icon: <LuMoveDown className="text-red-500" />,
           },
         },
         {
@@ -104,7 +123,7 @@ const InventoryTable = memo(
           header: "On Sales Order",
           cell: ({ row }) => row.original.quantityOnSalesOrder,
           meta: {
-            icon: <LuShoppingBag />,
+            icon: <LuMoveDown className="text-red-500" />,
           },
         },
         {
@@ -218,6 +237,8 @@ const InventoryTable = memo(
       left: ["readableIdWithRevision"],
     };
 
+    const mrpFetcher = useFetcher<typeof mrpAction>();
+
     return (
       <Table<InventoryItem>
         count={count}
@@ -226,17 +247,37 @@ const InventoryTable = memo(
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
         primaryAction={
-          <Combobox
-            asButton
-            size="sm"
-            value={locationId}
-            options={locations}
-            onChange={(selected) => {
-              // hard refresh because initialValues update has no effect otherwise
-              window.location.href = getLocationPath(selected);
-            }}
-            className="w-64"
-          />
+          <div className="flex items-center gap-2">
+            <Combobox
+              asButton
+              size="sm"
+              value={locationId}
+              options={locations}
+              onChange={(selected) => {
+                // hard refresh because initialValues update has no effect otherwise
+                window.location.href = getLocationPath(selected);
+              }}
+            />
+            <mrpFetcher.Form method="post" action={path.to.api.mrp}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    rightIcon={<LuCirclePlay />}
+                    isDisabled={mrpFetcher.state !== "idle"}
+                    isLoading={mrpFetcher.state !== "idle"}
+                  >
+                    MRP
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  MRP runs automatically every 3 hours, but you can run it
+                  manually here.
+                </TooltipContent>
+              </Tooltip>
+            </mrpFetcher.Form>
+          </div>
         }
         title="Inventory"
         table="inventory"

@@ -15903,6 +15903,81 @@ export default {
         tags: ["methodOperationParameter"],
       },
     },
+    "/openJobMaterialLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.jobId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.quantityToIssue",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.leadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.dueDate",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/openJobMaterialLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["openJobMaterialLines"],
+      },
+    },
     "/sequence": {
       get: {
         parameters: [
@@ -23758,6 +23833,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.procedureId",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.dueDate",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -23931,6 +24012,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.procedureId",
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperation.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.dueDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -24056,6 +24143,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.procedureId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.startDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperation.dueDate",
           },
           {
             $ref: "#/parameters/body.jobOperation",
@@ -34213,9 +34306,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.preferredSupplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemReplenishment.purchasingLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemReplenishment.purchasingUnitOfMeasureCode",
           },
           {
@@ -34256,6 +34346,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemReplenishment.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemReplenishment.leadTime",
           },
           {
             $ref: "#/parameters/select",
@@ -34323,9 +34416,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.preferredSupplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemReplenishment.purchasingLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemReplenishment.purchasingUnitOfMeasureCode",
           },
           {
@@ -34366,6 +34456,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemReplenishment.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemReplenishment.leadTime",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -34387,9 +34480,6 @@ export default {
             $ref: "#/parameters/rowFilter.itemReplenishment.preferredSupplierId",
           },
           {
-            $ref: "#/parameters/rowFilter.itemReplenishment.purchasingLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemReplenishment.purchasingUnitOfMeasureCode",
           },
           {
@@ -34430,6 +34520,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemReplenishment.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemReplenishment.leadTime",
           },
           {
             $ref: "#/parameters/body.itemReplenishment",
@@ -45422,6 +45515,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openSalesOrderLines.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openSalesOrderLines.leadTime",
           },
           {
             $ref: "#/parameters/select",
@@ -63251,6 +63347,66 @@ export default {
       },
       type: "object",
     },
+    openJobMaterialLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        jobId: {
+          description:
+            "Note:\nThis is a Foreign Key to `job.id`.<fk table='job' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantityToIssue: {
+          format: "numeric",
+          type: "number",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        leadTime: {
+          format: "integer",
+          type: "integer",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        dueDate: {
+          format: "date",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     sequence: {
       required: ["id", "table", "name", "next", "size", "step", "companyId"],
       properties: {
@@ -66713,6 +66869,14 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `procedure.id`.<fk table='procedure' column='id'/>",
           format: "text",
+          type: "string",
+        },
+        startDate: {
+          format: "date",
+          type: "string",
+        },
+        dueDate: {
+          format: "date",
           type: "string",
         },
       },
@@ -71500,7 +71664,6 @@ export default {
     itemReplenishment: {
       required: [
         "itemId",
-        "purchasingLeadTime",
         "conversionFactor",
         "purchasingBlocked",
         "manufacturingBlocked",
@@ -71509,6 +71672,7 @@ export default {
         "createdBy",
         "createdAt",
         "scrapPercentage",
+        "leadTime",
       ],
       properties: {
         itemId: {
@@ -71522,11 +71686,6 @@ export default {
             "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
           format: "text",
           type: "string",
-        },
-        purchasingLeadTime: {
-          default: 0,
-          format: "integer",
-          type: "integer",
         },
         purchasingUnitOfMeasureCode: {
           format: "text",
@@ -71598,6 +71757,11 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        leadTime: {
+          default: 7,
+          format: "integer",
+          type: "integer",
         },
       },
       type: "object",
@@ -77028,6 +77192,10 @@ export default {
           enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
           format: 'public."itemTrackingType"',
           type: "string",
+        },
+        leadTime: {
+          format: "integer",
+          type: "integer",
         },
       },
       type: "object",
@@ -88232,6 +88400,81 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.openJobMaterialLines": {
+      name: "openJobMaterialLines",
+      description: "openJobMaterialLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/openJobMaterialLines",
+      },
+    },
+    "rowFilter.openJobMaterialLines.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.quantityToIssue": {
+      name: "quantityToIssue",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.leadTime": {
+      name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.sequence": {
       name: "sequence",
       description: "sequence",
@@ -92065,6 +92308,18 @@ export default {
     },
     "rowFilter.jobOperation.procedureId": {
       name: "procedureId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperation.startDate": {
+      name: "startDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobOperation.dueDate": {
+      name: "dueDate",
       required: false,
       in: "query",
       type: "string",
@@ -97673,12 +97928,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.itemReplenishment.purchasingLeadTime": {
-      name: "purchasingLeadTime",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.itemReplenishment.purchasingUnitOfMeasureCode": {
       name: "purchasingUnitOfMeasureCode",
       required: false,
@@ -97759,6 +98008,12 @@ export default {
     },
     "rowFilter.itemReplenishment.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemReplenishment.leadTime": {
+      name: "leadTime",
       required: false,
       in: "query",
       type: "string",
@@ -103864,6 +104119,12 @@ export default {
     },
     "rowFilter.openSalesOrderLines.itemTrackingType": {
       name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openSalesOrderLines.leadTime": {
+      name: "leadTime",
       required: false,
       in: "query",
       type: "string",
