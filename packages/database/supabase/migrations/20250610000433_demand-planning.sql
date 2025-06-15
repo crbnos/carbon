@@ -11,19 +11,16 @@ ALTER TABLE "itemPlanning" ALTER COLUMN "demandAccumulationPeriod" SET DEFAULT 3
 UPDATE "itemPlanning" SET "demandAccumulationPeriod" = 30;
 
 
+-- Replace purchasingLeadTime column with leadTime
 ALTER TABLE "itemReplenishment" ADD COLUMN "leadTime" INTEGER NOT NULL DEFAULT 7;
 UPDATE "itemReplenishment" 
 SET "leadTime" = "purchasingLeadTime"
 WHERE "purchasingLeadTime" IS NOT NULL;
-
--- Drop purchasingLeadTime column
 ALTER TABLE "itemReplenishment" DROP COLUMN "purchasingLeadTime";
 
-
-
--- Enum types
 CREATE TYPE "periodType" AS ENUM ('Week', 'Day', 'Month');
 CREATE TYPE "demandSourceType" AS ENUM ('Sales Order', 'Job Material');
+CREATE TYPE "supplySourceType" AS ENUM ('Purchase Order', 'Production Order');
 
 -- Time periods table for flexible bucketing (weeks initially, days in future)
 CREATE TABLE "period" (
@@ -34,6 +31,13 @@ CREATE TABLE "period" (
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   
   CONSTRAINT "period_pkey" PRIMARY KEY ("id")
+);
+
+ALTER TABLE "period" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."period"
+FOR SELECT USING (
+  (SELECT auth.role()) = 'authenticated'
 );
 
 -- Demand forecasts table for estimates
@@ -60,6 +64,49 @@ CREATE TABLE "demandForecast" (
   CONSTRAINT "demandForecast_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
 
+ALTER TABLE "demandForecast" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."demandForecast"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_permission ('inventory_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."demandForecast"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."demandForecast"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."demandForecast"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_delete')
+    )::text[]
+  )
+);
+
+
 -- Demand actuals table for historical data
 CREATE TABLE "demandActual" (
   "itemId" TEXT NOT NULL,
@@ -81,6 +128,50 @@ CREATE TABLE "demandActual" (
   CONSTRAINT "demandActual_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "demandActual_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "demandActual_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
+);
+
+ALTER TABLE "demandActual" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."demandActual"
+FOR SELECT USING (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_permission('parts_view'))
+      UNION
+      SELECT unnest(get_companies_with_permission('inventory_view'))
+    ))
+  )
+);
+
+
+CREATE POLICY "INSERT" ON "public"."demandActual"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."demandActual"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."demandActual"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_delete')
+    )::text[]
+  )
 );
 
   -- Supply forecasts table for estimates
@@ -107,7 +198,49 @@ CREATE TABLE "supplyForecast" (
   CONSTRAINT "supplyForecast_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
 
-CREATE TYPE "supplySourceType" AS ENUM ('Purchase Order', 'Production Order');
+
+ALTER TABLE "supplyForecast" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."supplyForecast"
+FOR SELECT USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_permission ('inventory_view')
+    )::text[]
+  )
+);
+
+CREATE POLICY "INSERT" ON "public"."supplyForecast"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."supplyForecast"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."supplyForecast"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_delete')
+    )::text[]
+  )
+);
+
 
 -- Supply actuals table for historical data
 CREATE TABLE "supplyActual" (
@@ -130,6 +263,50 @@ CREATE TABLE "supplyActual" (
   CONSTRAINT "supplyActual_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
   CONSTRAINT "supplyActual_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
   CONSTRAINT "supplyActual_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
+);
+
+ALTER TABLE "supplyActual" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "SELECT" ON "public"."supplyActual"
+FOR SELECT USING (
+  "companyId" = ANY (
+    SELECT DISTINCT unnest(ARRAY(
+      SELECT unnest(get_companies_with_permission('parts_view'))
+      UNION
+      SELECT unnest(get_companies_with_permission('inventory_view'))
+    ))
+  )
+);
+
+
+CREATE POLICY "INSERT" ON "public"."supplyActual"
+FOR INSERT WITH CHECK (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_create')
+    )::text[]
+  )
+);
+
+CREATE POLICY "UPDATE" ON "public"."supplyActual"
+FOR UPDATE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_update')
+    )::text[]
+  )
+);
+
+CREATE POLICY "DELETE" ON "public"."supplyActual"
+FOR DELETE USING (
+  "companyId" = ANY (
+    (
+      SELECT
+        get_companies_with_employee_permission ('inventory_delete')
+    )::text[]
+  )
 );
 
 -- Indexes for performance
