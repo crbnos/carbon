@@ -14,6 +14,7 @@ import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import { runMRP } from "~/modules/production/production.service";
 import {
   finalizePurchaseOrder,
   getPurchaseOrder,
@@ -61,6 +62,12 @@ export async function action(args: ActionFunctionArgs) {
 
   const [purchaseOrder] = await Promise.all([
     getPurchaseOrder(serviceRole, orderId),
+    runMRP(serviceRole, {
+      type: "purchaseOrder",
+      id: orderId,
+      companyId,
+      userId,
+    }),
   ]);
   if (purchaseOrder.error) {
     throw redirect(
@@ -212,20 +219,22 @@ export async function action(args: ActionFunctionArgs) {
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
 
-        await tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
-          to: [buyer.data.email, supplier.data.contact.email],
-          from: buyer.data.email,
-          subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
-          html,
-          text,
-          attachments: [
-            {
-              content: Buffer.from(file).toString("base64"),
-              filename: fileName,
-            },
-          ],
-          companyId,
-        });
+        await Promise.all([
+          tasks.trigger<typeof sendEmailResendTask>("send-email-resend", {
+            to: [buyer.data.email, supplier.data.contact.email],
+            from: buyer.data.email,
+            subject: `Purchase Order ${purchaseOrder.data.purchaseOrderId} from ${company.data.name}`,
+            html,
+            text,
+            attachments: [
+              {
+                content: Buffer.from(file).toString("base64"),
+                filename: fileName,
+              },
+            ],
+            companyId,
+          }),
+        ]);
       } catch (err) {
         throw redirect(
           path.to.purchaseOrder(orderId),

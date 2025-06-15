@@ -1,5 +1,5 @@
-import { LuChevronDown } from "react-icons/lu";
 import { forwardRef } from "react";
+import { LuChevronDown } from "react-icons/lu";
 import { Button } from "./Button";
 import {
   DropdownMenu,
@@ -12,12 +12,14 @@ import { cn } from "./utils/cn";
 
 interface SplitButtonProps {
   children: React.ReactNode;
-  onClick?: () => void;
   leftIcon?: React.ReactElement;
   variant?: "primary" | "secondary" | "ghost" | "destructive";
   size?: "sm" | "md" | "lg";
   disabled?: boolean;
   className?: string;
+  isLoading?: boolean;
+  isDisabled?: boolean;
+  onClick?: () => void;
   dropdownItems: {
     label: string;
     onClick: () => void;
@@ -33,7 +35,8 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
       leftIcon,
       variant = "primary",
       size,
-      disabled,
+      isLoading,
+      isDisabled,
       className,
       dropdownItems,
     },
@@ -47,7 +50,8 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
           leftIcon={leftIcon}
           variant={variant}
           size={size}
-          disabled={disabled}
+          isLoading={isLoading}
+          isDisabled={isDisabled}
           className={`rounded-r-none before:rounded-r-none ${className || ""}`}
         >
           {children}
@@ -57,11 +61,11 @@ const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
             <Button
               variant={variant}
               size={size}
-              disabled={disabled}
+              isDisabled={isDisabled}
               className={cn(
-                "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none hover:shadow-button-base",
+                "rounded-l-none border-l px-1 before:rounded-l-none border-none shadow-none",
                 variant === "primary" &&
-                  "shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)]"
+                  "dark:shadow-[inset_0px_0.5px_0px_rgb(255_255_255_/_0.32)] dark:hover:shadow-button-primary"
               )}
             >
               <LuChevronDown />

@@ -8,7 +8,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import { jobStatus, updateJobStatus } from "~/modules/production";
+import {
+  jobStatus,
+  recalculateJobRequirements,
+  runMRP,
+  updateJobStatus,
+} from "~/modules/production";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -51,7 +56,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  if (status === "Ready" && shouldSchedule) {
+  if (["Planned", "Ready"].includes(status)) {
+    const serviceRole = getCarbonServiceRole();
+    await recalculateJobRequirements(serviceRole, {
+      id,
+      companyId,
+      userId,
+    });
+    await runMRP(getCarbonServiceRole(), {
+      type: "job",
+      id,
+      companyId,
+      userId,
+    });
+  }
+
+  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
@@ -85,12 +105,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
 
-      await client
-        .from("job")
-        .update({
-          releasedDate: new Date().toISOString(),
-        })
-        .eq("id", id);
+      if (status === "Ready") {
+        await client
+          .from("job")
+          .update({
+            releasedDate: new Date().toISOString(),
+          })
+          .eq("id", id);
+      }
     } catch (err) {
       console.error(err);
       throw redirect(

@@ -579,6 +579,29 @@ export async function getItemShelfQuantities(
   });
 }
 
+export async function getItemSupply(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    locationId,
+    periods,
+    companyId,
+  }: {
+    itemId: string;
+    locationId: string;
+    periods: string[];
+    companyId: string;
+  }
+) {
+  return client
+    .from("supplyActual")
+    .select("*")
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId)
+    .in("periodId", periods);
+}
+
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,

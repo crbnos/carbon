@@ -715,7 +715,8 @@ function MaterialForm({
       method="post"
       defaultValues={item.data}
       validator={
-        job?.status === "Draft" || jobOperations?.length === 0
+        ["Draft", "Planned"].includes(job?.status ?? "") ||
+        jobOperations?.length === 0
           ? jobMaterialValidator
           : jobMaterialValidatorForReleasedJob
       }

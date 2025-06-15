@@ -1,6 +1,11 @@
+ALTER TABLE "purchaseOrderLine" ADD COLUMN "promisedDate" DATE;
 
 ALTER TABLE "jobOperation" ADD COLUMN "startDate" DATE;
 ALTER TABLE "jobOperation" ADD COLUMN "dueDate" DATE;
+
+ALTER TYPE "jobStatus" ADD VALUE 'Planned';
+ALTER TYPE "purchaseOrderStatus" ADD VALUE 'Planned';
+COMMIT;
 
 ALTER TABLE "itemPlanning" ALTER COLUMN "demandAccumulationPeriod" SET DEFAULT 30;
 UPDATE "itemPlanning" SET "demandAccumulationPeriod" = 30;
@@ -15,7 +20,6 @@ WHERE "purchasingLeadTime" IS NOT NULL;
 ALTER TABLE "itemReplenishment" DROP COLUMN "purchasingLeadTime";
 
 
--- Demand Planning Tables
 
 -- Enum types
 CREATE TYPE "periodType" AS ENUM ('Week', 'Day', 'Month');
@@ -37,7 +41,7 @@ CREATE TABLE "demandForecast" (
   "itemId" TEXT NOT NULL,
   "locationId" TEXT,
   "periodId" TEXT NOT NULL,
-  "forecastQuantity" NUMERIC(15,5) NOT NULL DEFAULT 0,
+  "forecastQuantity" NUMERIC NOT NULL DEFAULT 0,
   "forecastMethod" TEXT, -- 'manual', 'statistical', 'ml', etc.
   "confidence" NUMERIC(3,2), -- 0.00 to 1.00
   "notes" TEXT,
@@ -61,7 +65,7 @@ CREATE TABLE "demandActual" (
   "itemId" TEXT NOT NULL,
   "locationId" TEXT,
   "periodId" TEXT NOT NULL,
-  "actualQuantity" NUMERIC(15,5) NOT NULL DEFAULT 0,
+  "actualQuantity" NUMERIC NOT NULL DEFAULT 0,
   "sourceType" "demandSourceType" NOT NULL,
   "notes" TEXT,
   "companyId" TEXT NOT NULL,
@@ -79,6 +83,55 @@ CREATE TABLE "demandActual" (
   CONSTRAINT "demandActual_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
 );
 
+  -- Supply forecasts table for estimates
+CREATE TABLE "supplyForecast" (
+  "itemId" TEXT NOT NULL,
+  "locationId" TEXT,
+  "periodId" TEXT NOT NULL,
+  "forecastQuantity" NUMERIC NOT NULL DEFAULT 0,
+  "forecastMethod" TEXT, -- 'manual', 'statistical', 'ml', etc.
+  "confidence" NUMERIC(3,2), -- 0.00 to 1.00
+  "notes" TEXT,
+  "companyId" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT NOT NULL,
+  
+  CONSTRAINT "supplyForecast_pkey" PRIMARY KEY ("itemId", "locationId", "periodId"),
+  CONSTRAINT "supplyForecast_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyForecast_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyForecast_periodId_fkey" FOREIGN KEY ("periodId") REFERENCES "period"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyForecast_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyForecast_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
+  CONSTRAINT "supplyForecast_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
+);
+
+CREATE TYPE "supplySourceType" AS ENUM ('Purchase Order', 'Production Order');
+
+-- Supply actuals table for historical data
+CREATE TABLE "supplyActual" (
+  "itemId" TEXT NOT NULL,
+  "locationId" TEXT,
+  "periodId" TEXT NOT NULL,
+  "actualQuantity" NUMERIC NOT NULL DEFAULT 0,
+  "sourceType" "supplySourceType" NOT NULL,
+  "notes" TEXT,
+  "companyId" TEXT NOT NULL,
+  "createdBy" TEXT NOT NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  "updatedBy" TEXT NOT NULL,
+
+  CONSTRAINT "supplyActual_pkey" PRIMARY KEY ("itemId", "locationId", "periodId", "sourceType"),
+  CONSTRAINT "supplyActual_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "item"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyActual_locationId_fkey" FOREIGN KEY ("locationId") REFERENCES "location"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyActual_periodId_fkey" FOREIGN KEY ("periodId") REFERENCES "period"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyActual_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE,
+  CONSTRAINT "supplyActual_createdBy_fkey" FOREIGN KEY ("createdBy") REFERENCES "user"("id") ON DELETE RESTRICT,
+  CONSTRAINT "supplyActual_updatedBy_fkey" FOREIGN KEY ("updatedBy") REFERENCES "user"("id") ON DELETE RESTRICT
+);
+
 -- Indexes for performance
 CREATE INDEX "period_startDate_endDate_idx" ON "period" ("periodType", "startDate", "endDate");
 
@@ -86,14 +139,19 @@ CREATE INDEX "period_startDate_idx" ON "period" ("periodType","startDate");
 CREATE INDEX "period_endDate_idx" ON "period" ("periodType", "endDate");
 
 CREATE INDEX "demandForecast_itemId_locationId_periodId_idx" ON "demandForecast" ("itemId", "locationId", "periodId");
-CREATE INDEX "demandForecast_createdAt_idx" ON "demandForecast" ("createdAt");
+
+CREATE INDEX "demandForecast_companyId_idx" ON "demandForecast" ("companyId");
 
 CREATE INDEX "demandActual_itemId_locationId_periodId_idx" ON "demandActual" ("itemId", "locationId", "periodId");
-CREATE INDEX "demandActual_createdAt_idx" ON "demandActual" ("createdAt");
+CREATE INDEX "demandActual_companyId_idx" ON "demandActual" ("companyId");
 
--- Unique constraints to prevent duplicate forecasts/actuals for same item/location/period
-CREATE UNIQUE INDEX "demandForecast_unique_item_location_period_idx" ON "demandForecast" ("itemId", COALESCE("locationId", ''), "periodId");
+CREATE INDEX "supplyForecast_itemId_locationId_periodId_idx" ON "supplyForecast" ("itemId", "locationId", "periodId");
+CREATE INDEX "supplyForecast_companyId_idx" ON "supplyForecast" ("companyId");
 
+CREATE INDEX "supplyActual_itemId_locationId_periodId_idx" ON "supplyActual" ("itemId", "locationId", "periodId");
+CREATE INDEX "supplyActual_companyId_idx" ON "supplyActual" ("companyId");
+
+DROP VIEW IF EXISTS "openSalesOrderLines";
 CREATE OR REPLACE VIEW "openSalesOrderLines" AS (
   SELECT 
     sol."id",
@@ -119,6 +177,7 @@ CREATE OR REPLACE VIEW "openSalesOrderLines" AS (
     AND so."status" IN ('To Ship', 'To Ship and Invoice')
 );
 
+DROP VIEW IF EXISTS "openJobMaterialLines";
 CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
   SELECT 
     jm."id",
@@ -138,7 +197,7 @@ CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
   INNER JOIN "item" i2 ON j."itemId" = i2."id"
   INNER JOIN "itemReplenishment" ir ON i2."id" = ir."itemId"
   WHERE j."status" IN (
-      'Draft',
+      'Planned',
       'Ready',
       'In Progress',
       'Paused'
@@ -146,6 +205,56 @@ CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
   AND jm."methodType" != 'Make'
 );
 
+DROP VIEW IF EXISTS "openProductionOrders";
+CREATE OR REPLACE VIEW "openProductionOrders" AS (
+  SELECT 
+    j."id",
+    j."itemId",
+    j."productionQuantity" - j."quantityReceivedToInventory" AS "quantityToReceive",
+    j."unitOfMeasureCode",
+    j."companyId",
+    i."replenishmentSystem", 
+    i."itemTrackingType",
+    ir."leadTime" AS "leadTime",
+    j."locationId",
+    j."dueDate"
+  FROM "job" j
+  INNER JOIN "item" i ON j."itemId" = i."id"
+  INNER JOIN "itemReplenishment" ir ON i."id" = ir."itemId"
+  WHERE j."status" IN (
+      'Planned',
+      'Ready',
+      'In Progress',
+      'Paused'
+    )
+  AND j."salesOrderId" IS NULL
+);
+
+DROP VIEW IF EXISTS "openPurchaseOrderLines";
+CREATE OR REPLACE VIEW "openPurchaseOrderLines" AS (
+  SELECT 
+    pol."id",
+    pol."purchaseOrderId",
+    pol."itemId", 
+    pol."quantityToReceive" * pol."conversionFactor" AS "quantityToReceive",
+    i."unitOfMeasureCode",
+    pol."purchaseOrderLineType",
+    pol."companyId",
+    pol."locationId",
+    po."orderDate",
+    COALESCE(pol."promisedDate", pod."receiptPromisedDate") AS "promisedDate",
+    i."replenishmentSystem",
+    i."itemTrackingType",
+    ir."leadTime" AS "leadTime"
+  FROM "purchaseOrderLine" pol
+  INNER JOIN "purchaseOrder" po ON pol."purchaseOrderId" = po."id"
+  INNER JOIN "purchaseOrderDelivery" pod ON pod."id" = po."id"
+  INNER JOIN "item" i ON pol."itemId" = i."id"
+  INNER JOIN "itemReplenishment" ir ON i."id" = ir."itemId"
+  WHERE
+    pol."purchaseOrderLineType" != 'Service'
+    AND po."status" IN ('To Receive', 'To Receive and Invoice', 'Planned')
+);
 
 DROP FUNCTION IF EXISTS get_inventory_quantities;
 CREATE OR REPLACE FUNCTION get_inventory_quantities(company_id TEXT, location_id TEXT)
@@ -182,6 +291,7 @@ WITH
         ON pol."purchaseOrderId" = po."id"
     WHERE
       po."status" IN (
+        'Planned',
         'To Receive',
         'To Receive and Invoice'
       )
@@ -216,7 +326,7 @@ WITH
     FROM "jobMaterial" jm
     INNER JOIN "job" j ON jm."jobId" = j."id"
     WHERE j."status" IN (
-        'Draft',
+        'Planned',
         'Ready',
         'In Progress',
         'Paused'
@@ -230,7 +340,7 @@ WITH
       SUM(j."productionQuantity" + j."scrapQuantity" - j."quantityReceivedToInventory" - j."quantityShipped") AS "quantityOnProductionOrder"
     FROM job j
     WHERE j."status" IN (
-      'Draft',
+      'Planned',
       'Ready',
       'In Progress',
       'Paused'
