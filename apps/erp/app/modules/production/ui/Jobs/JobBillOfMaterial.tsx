@@ -23,11 +23,16 @@ import {
   useDebounce,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useFetchers, useParams } from "@remix-run/react";
+import { Link, useFetcher, useFetchers, useParams } from "@remix-run/react";
 import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { LuChevronDown, LuSettings2, LuX } from "react-icons/lu";
+import {
+  LuChevronDown,
+  LuExternalLink,
+  LuSettings2,
+  LuX,
+} from "react-icons/lu";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon, TrackingTypeIcon } from "~/components";
 import {
@@ -47,6 +52,7 @@ import type {
 } from "~/components/SortableList";
 import { SortableList, SortableListItem } from "~/components/SortableList";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import { useBom } from "~/stores";
 import { path } from "~/utils/path";
@@ -109,7 +115,14 @@ function makeItem(
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
-        <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+        <div className="flex items-center gap-2 group">
+          <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+          {material.itemId && material.itemType && (
+            <Link to={getLinkToItemDetails(material.itemType, material.itemId)}>
+              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
+            </Link>
+          )}
+        </div>
         {material?.description && (
           <span className="text-xs text-muted-foreground">
             {material.description}{" "}
@@ -461,7 +474,7 @@ const JobBillOfMaterial = ({
                     duration: 0.95,
                   }}
                 >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
+                  <LuSettings2 className="stroke-1 mt-3.5 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
                 </motion.span>
               )}
             </motion.button>

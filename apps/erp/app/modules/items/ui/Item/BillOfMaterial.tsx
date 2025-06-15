@@ -26,6 +26,7 @@ import {
   VStack,
 } from "@carbon/react";
 import {
+  Link,
   useFetcher,
   useFetchers,
   useParams,
@@ -37,6 +38,7 @@ import { useCallback, useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuChevronDown,
+  LuExternalLink,
   LuLock,
   LuSettings2,
   LuSquareFunction,
@@ -79,6 +81,7 @@ import type {
   ConfigurationRule,
   MakeMethod,
 } from "../../types";
+import { getLinkToItemDetails } from "./ItemForm";
 
 type Material = z.infer<typeof methodMaterialValidator> & {
   description: string;
@@ -373,7 +376,7 @@ const BillOfMaterial = ({
                     duration: 0.95,
                   }}
                 >
-                  <LuSettings2 className="stroke-1 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
+                  <LuSettings2 className="stroke-1 mt-3.5 h-5 w-5 text-foreground/80  hover:stroke-primary/70 " />
                 </motion.span>
               )}
             </motion.button>
@@ -862,7 +865,9 @@ function MaterialForm({
               <div />
             )}
 
-            <Submit isDisabled={isReadOnly}>Save</Submit>
+            <div className="flex items-center gap-2">
+              <Submit isDisabled={isReadOnly}>Save</Submit>
+            </div>
           </motion.div>
         </motion.div>
       </VStack>
@@ -893,7 +898,14 @@ function makeItem(
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
-        <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+        <div className="flex items-center gap-2 group">
+          <h3 className="font-semibold truncate">{material.itemReadableId}</h3>
+          {material.itemId && material.itemType && (
+            <Link to={getLinkToItemDetails(material.itemType, material.itemId)}>
+              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
+            </Link>
+          )}
+        </div>
         {material?.description && (
           <span className="text-xs text-muted-foreground">
             {material.description}{" "}
