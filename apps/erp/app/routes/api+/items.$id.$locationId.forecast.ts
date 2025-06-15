@@ -3,13 +3,21 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { json, type LoaderFunctionArgs } from "@vercel/remix";
-import { getItemDemand, getPeriods } from "~/modules/items/items.service";
+import {
+  getItemDemand,
+  getItemQuantities,
+  getItemSupply,
+  getPeriods,
+} from "~/modules/items/items.service";
 
 const defaultResponse = {
   demand: [],
+  supply: [],
   periods: [],
-  forecast: 0,
+  quantityOnHand: 0,
 };
+
+const WEEKS_TO_FORECAST = 12 * 4;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -21,7 +29,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!locationId) throw new Error("Could not find locationId");
 
   const startDate = startOfWeek(today(getLocalTimeZone()), "en-US");
-  const endDate = startDate.add({ weeks: 18 * 4 });
+  const endDate = startDate.add({ weeks: WEEKS_TO_FORECAST });
   const periods = await getPeriods(client, {
     startDate: startDate.toString(),
     endDate: endDate.toString(),
@@ -34,13 +42,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [demand] = await Promise.all([
+  const [demand, supply, quantities] = await Promise.all([
     getItemDemand(client, {
       itemId,
       locationId,
       periods: periods.data.map((p) => p.id ?? ""),
       companyId,
     }),
+    getItemSupply(client, {
+      itemId,
+      locationId,
+      periods: periods.data.map((p) => p.id ?? ""),
+      companyId,
+    }),
+    getItemQuantities(client, itemId, companyId, locationId),
   ]);
 
   if (demand.error) {
@@ -50,5 +65,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return json({ demand: demand.data, periods: periods.data, forecast: 10 });
+  if (supply.error) {
+    return json(
+      defaultResponse,
+      await flash(request, error(supply.error, "Failed to load supply"))
+    );
+  }
+
+  return json({
+    demand: demand.data,
+    supply: supply.data,
+    periods: periods.data,
+    quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+  });
 }

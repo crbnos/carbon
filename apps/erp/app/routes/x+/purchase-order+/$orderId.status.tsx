@@ -1,8 +1,14 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import {
+  assertIsPost,
+  error,
+  getCarbonServiceRole,
+  success,
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { runMRP } from "~/modules/production";
 import {
   purchaseOrderStatusType,
   updatePurchaseOrderStatus,
@@ -11,7 +17,7 @@ import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "purchasing",
   });
 
@@ -46,6 +52,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(update.error, "Failed to update purchasing order status")
       )
     );
+  }
+
+  if (status === "Planned") {
+    await runMRP(getCarbonServiceRole(), {
+      type: "purchaseOrder",
+      id,
+      companyId,
+      userId,
+    });
   }
 
   throw redirect(

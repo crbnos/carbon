@@ -49,6 +49,7 @@ export const purchaseOrderTypeType = [
 
 export const purchaseOrderStatusType = [
   "Draft",
+  "Planned",
   "To Review",
   "To Receive",
   "To Receive and Invoice",
@@ -129,19 +130,20 @@ export const purchaseOrderLineValidator = z
     itemReadableId: zfd.text(z.string().optional()),
     accountNumber: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
-    description: zfd.text(z.string().optional()),
-    purchaseQuantity: zfd.numeric(z.number().optional()),
-    purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
-    inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().optional()),
-    supplierUnitPrice: zfd.numeric(z.number().optional()),
-    supplierShippingCost: zfd.numeric(z.number().optional()),
-    supplierTaxAmount: zfd.numeric(z.number().optional()),
-    locationId: zfd.text(z.string().optional()),
-    shelfId: zfd.text(z.string().optional()),
+    description: zfd.text(z.string().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
+    inventoryUnitOfMeasureCode: zfd.text(z.string().optional()),
     jobId: zfd.text(z.string().optional()),
     jobOperationId: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional()),
+    locationId: zfd.text(z.string().optional()),
+    promisedDate: zfd.text(z.string().optional()),
+    purchaseQuantity: zfd.numeric(z.number().optional()),
+    purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
+    shelfId: zfd.text(z.string().optional()),
+    supplierShippingCost: zfd.numeric(z.number().optional()),
+    supplierTaxAmount: zfd.numeric(z.number().optional()),
+    supplierUnitPrice: zfd.numeric(z.number().optional()),
   })
   .refine(
     (data) =>

@@ -8814,6 +8814,87 @@ export default {
         tags: ["holidayYears"],
       },
     },
+    "/openPurchaseOrderLines": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.purchaseOrderId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.quantityToReceive",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.purchaseOrderLineType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.orderDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.promisedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.leadTime",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/openPurchaseOrderLines",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["openPurchaseOrderLines"],
+      },
+    },
     "/supplierPart": {
       get: {
         parameters: [
@@ -9961,6 +10042,204 @@ export default {
           },
         },
         tags: ["quoteOperationAttribute"],
+      },
+    },
+    "/supplyForecast": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastMethod",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.confidence",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/supplyForecast",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["supplyForecast"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.supplyForecast",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["supplyForecast"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastMethod",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.confidence",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["supplyForecast"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.forecastMethod",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.confidence",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.supplyForecast",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["supplyForecast"],
       },
     },
     "/jobs": {
@@ -20043,6 +20322,78 @@ export default {
         tags: ["salesOrderFavorite"],
       },
     },
+    "/openProductionOrders": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.quantityToReceive",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.unitOfMeasureCode",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.replenishmentSystem",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.itemTrackingType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.leadTime",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.dueDate",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/openProductionOrders",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["openProductionOrders"],
+      },
+    },
     "/purchaseOrderLine": {
       get: {
         parameters: [
@@ -20180,6 +20531,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate",
           },
           {
             $ref: "#/parameters/select",
@@ -20376,6 +20730,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -20522,6 +20879,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseOrderLine.quantityShipped",
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseOrderLine.promisedDate",
           },
           {
             $ref: "#/parameters/body.purchaseOrderLine",
@@ -44379,6 +44739,195 @@ export default {
         tags: ["purchaseOrderPayment"],
       },
     },
+    "/supplyActual": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.actualQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.sourceType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedBy",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/supplyActual",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["supplyActual"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.supplyActual",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["supplyActual"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.actualQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.sourceType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedBy",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["supplyActual"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.itemId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.locationId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.periodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.actualQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.sourceType",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.notes",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.createdAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedAt",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyActual.updatedBy",
+          },
+          {
+            $ref: "#/parameters/body.supplyActual",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["supplyActual"],
+      },
+    },
     "/apiKey": {
       get: {
         parameters: [
@@ -59882,6 +60431,81 @@ export default {
       },
       type: "object",
     },
+    openPurchaseOrderLines: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        purchaseOrderId: {
+          description:
+            "Note:\nThis is a Foreign Key to `purchaseOrder.id`.<fk table='purchaseOrder' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantityToReceive: {
+          format: "numeric",
+          type: "number",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        purchaseOrderLineType: {
+          enum: [
+            "Comment",
+            "G/L Account",
+            "Fixed Asset",
+            "Part",
+            "Material",
+            "Tool",
+            "Service",
+            "Consumable",
+            "Fixture",
+          ],
+          format: 'public."purchaseOrderLineType"',
+          type: "string",
+        },
+        companyId: {
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          format: "text",
+          type: "string",
+        },
+        orderDate: {
+          format: "date",
+          type: "string",
+        },
+        promisedDate: {
+          format: "date",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        leadTime: {
+          format: "integer",
+          type: "integer",
+        },
+      },
+      type: "object",
+    },
     supplierPart: {
       required: [
         "id",
@@ -60349,6 +60973,85 @@ export default {
       },
       type: "object",
     },
+    supplyForecast: {
+      required: [
+        "itemId",
+        "locationId",
+        "periodId",
+        "forecastQuantity",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedAt",
+        "updatedBy",
+      ],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        periodId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `period.id`.<fk table='period' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        forecastQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        forecastMethod: {
+          format: "text",
+          type: "string",
+        },
+        confidence: {
+          format: "numeric",
+          type: "number",
+        },
+        notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     jobs: {
       properties: {
         id: {
@@ -60392,6 +61095,7 @@ export default {
             "Cancelled",
             "Overdue",
             "Due Today",
+            "Planned",
           ],
           format: 'public."jobStatus"',
           type: "string",
@@ -60533,6 +61237,7 @@ export default {
             "Cancelled",
             "Overdue",
             "Due Today",
+            "Planned",
           ],
           format: 'public."jobStatus"',
           type: "string",
@@ -64294,6 +64999,7 @@ export default {
             "Cancelled",
             "Overdue",
             "Due Today",
+            "Planned",
           ],
           format: 'public."jobStatus"',
           type: "string",
@@ -64690,6 +65396,7 @@ export default {
             "To Invoice",
             "Completed",
             "Closed",
+            "Planned",
           ],
           format: 'public."purchaseOrderStatus"',
           type: "string",
@@ -64957,6 +65664,60 @@ export default {
       },
       type: "object",
     },
+    openProductionOrders: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        quantityToReceive: {
+          format: "numeric",
+          type: "number",
+        },
+        unitOfMeasureCode: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        replenishmentSystem: {
+          enum: ["Buy", "Make", "Buy and Make"],
+          format: 'public."itemReplenishmentSystem"',
+          type: "string",
+        },
+        itemTrackingType: {
+          enum: ["Inventory", "Non-Inventory", "Serial", "Batch"],
+          format: 'public."itemTrackingType"',
+          type: "string",
+        },
+        leadTime: {
+          format: "integer",
+          type: "integer",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        dueDate: {
+          format: "date",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     purchaseOrderLine: {
       required: [
         "id",
@@ -65192,6 +65953,10 @@ export default {
         quantityShipped: {
           format: "numeric",
           type: "number",
+        },
+        promisedDate: {
+          format: "date",
+          type: "string",
         },
       },
       type: "object",
@@ -70175,6 +70940,7 @@ export default {
             "To Invoice",
             "Completed",
             "Closed",
+            "Planned",
           ],
           format: 'public."purchaseOrderStatus"',
           type: "string",
@@ -76605,6 +77371,84 @@ export default {
       },
       type: "object",
     },
+    supplyActual: {
+      required: [
+        "itemId",
+        "locationId",
+        "periodId",
+        "actualQuantity",
+        "sourceType",
+        "companyId",
+        "createdBy",
+        "createdAt",
+        "updatedAt",
+        "updatedBy",
+      ],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        periodId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `period.id`.<fk table='period' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        actualQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        sourceType: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          enum: ["Purchase Order", "Production Order"],
+          format: 'public."supplySourceType"',
+          type: "string",
+        },
+        notes: {
+          format: "text",
+          type: "string",
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     apiKey: {
       required: ["id", "name", "key", "companyId", "createdBy", "createdAt"],
       properties: {
@@ -76967,6 +77811,7 @@ export default {
             "To Invoice",
             "Completed",
             "Closed",
+            "Planned",
           ],
           format: 'public."purchaseOrderStatus"',
           type: "string",
@@ -84568,6 +85413,93 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.openPurchaseOrderLines": {
+      name: "openPurchaseOrderLines",
+      description: "openPurchaseOrderLines",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/openPurchaseOrderLines",
+      },
+    },
+    "rowFilter.openPurchaseOrderLines.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.purchaseOrderId": {
+      name: "purchaseOrderId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.quantityToReceive": {
+      name: "quantityToReceive",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.purchaseOrderLineType": {
+      name: "purchaseOrderLineType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.orderDate": {
+      name: "orderDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.promisedDate": {
+      name: "promisedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.leadTime": {
+      name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.supplierPart": {
       name: "supplierPart",
       description: "supplierPart",
@@ -85068,6 +86000,87 @@ export default {
     },
     "rowFilter.quoteOperationAttribute.description": {
       name: "description",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.supplyForecast": {
+      name: "supplyForecast",
+      description: "supplyForecast",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/supplyForecast",
+      },
+    },
+    "rowFilter.supplyForecast.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.periodId": {
+      name: "periodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.forecastQuantity": {
+      name: "forecastQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.forecastMethod": {
+      name: "forecastMethod",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.confidence": {
+      name: "confidence",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyForecast.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",
@@ -90253,6 +91266,75 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.openProductionOrders": {
+      name: "openProductionOrders",
+      description: "openProductionOrders",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/openProductionOrders",
+      },
+    },
+    "rowFilter.openProductionOrders.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.quantityToReceive": {
+      name: "quantityToReceive",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.unitOfMeasureCode": {
+      name: "unitOfMeasureCode",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.replenishmentSystem": {
+      name: "replenishmentSystem",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.itemTrackingType": {
+      name: "itemTrackingType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.leadTime": {
+      name: "leadTime",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.purchaseOrderLine": {
       name: "purchaseOrderLine",
       description: "purchaseOrderLine",
@@ -90528,6 +91610,12 @@ export default {
     },
     "rowFilter.purchaseOrderLine.quantityShipped": {
       name: "quantityShipped",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.purchaseOrderLine.promisedDate": {
+      name: "promisedDate",
       required: false,
       in: "query",
       type: "string",
@@ -103452,6 +104540,81 @@ export default {
     },
     "rowFilter.purchaseOrderPayment.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.supplyActual": {
+      name: "supplyActual",
+      description: "supplyActual",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/supplyActual",
+      },
+    },
+    "rowFilter.supplyActual.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.periodId": {
+      name: "periodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.actualQuantity": {
+      name: "actualQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.sourceType": {
+      name: "sourceType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplyActual.updatedBy": {
+      name: "updatedBy",
       required: false,
       in: "query",
       type: "string",

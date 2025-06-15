@@ -23,6 +23,7 @@ export const deadlineTypes = [
 
 export const jobStatus = [
   "Draft",
+  "Planned",
   "Ready",
   "In Progress",
   "Paused",

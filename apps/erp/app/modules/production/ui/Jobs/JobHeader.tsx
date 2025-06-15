@@ -21,6 +21,7 @@ import {
   ModalHeader,
   ModalTitle,
   Spinner,
+  SplitButton,
   VStack,
   useDisclosure,
   useMount,
@@ -33,6 +34,7 @@ import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import {
+  LuCheckCheck,
   LuChevronDown,
   LuCircleCheck,
   LuCirclePause,
@@ -93,6 +95,15 @@ const JobHeader = () => {
   };
 
   const currentValue = getOptionFromPath(jobId);
+
+  const markAsPlanned = () => {
+    statusFetcher.submit(
+      {
+        status: "Planned",
+      },
+      { method: "post", action: path.to.jobStatus(jobId) }
+    );
+  };
 
   return (
     <>
@@ -203,24 +214,35 @@ const JobHeader = () => {
             </statusFetcher.Form>
           )}
 
-          <Button
+          <SplitButton
             onClick={releaseModal.onOpen}
             isLoading={
               statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
+              ["Ready", "Planned"].includes(status ?? "")
             }
             isDisabled={
-              status !== "Draft" ||
+              !["Draft", "Planned"].includes(status ?? "") ||
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "production") ||
               (routeData?.job?.quantity === 0 &&
                 routeData?.job?.scrapQuantity === 0)
             }
             leftIcon={<LuCirclePlay />}
-            variant={status === "Draft" ? "primary" : "secondary"}
+            variant={
+              ["Draft", "Planned"].includes(status ?? "")
+                ? "primary"
+                : "secondary"
+            }
+            dropdownItems={[
+              {
+                label: "Mark as Planned",
+                icon: <LuCheckCheck />,
+                onClick: markAsPlanned,
+              },
+            ]}
           >
             Release
-          </Button>
+          </SplitButton>
 
           <Button
             onClick={completeModal.onOpen}
@@ -229,7 +251,9 @@ const JobHeader = () => {
               statusFetcher.formAction === path.to.jobComplete(jobId)
             }
             isDisabled={
-              ["Completed", "Cancelled", "Draft"].includes(status ?? "") ||
+              ["Completed", "Cancelled", "Draft", "Planned"].includes(
+                status ?? ""
+              ) ||
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "production")
             }
@@ -263,7 +287,7 @@ const JobHeader = () => {
             <Button
               isLoading={
                 statusFetcher.state !== "idle" &&
-                ["Draft", "In Progress"].includes(
+                ["Draft", "Planned", "In Progress"].includes(
                   (statusFetcher.formData?.get("status") as string) ?? ""
                 )
               }

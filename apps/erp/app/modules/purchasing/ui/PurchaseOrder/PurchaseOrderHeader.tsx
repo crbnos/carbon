@@ -10,6 +10,7 @@ import {
   HStack,
   Heading,
   IconButton,
+  SplitButton,
   useDisclosure,
 } from "@carbon/react";
 
@@ -18,6 +19,7 @@ import {
   LuCheckCheck,
   LuChevronDown,
   LuCirclePlus,
+  LuCircleStop,
   LuCreditCard,
   LuEye,
   LuFile,
@@ -73,6 +75,13 @@ const PurchaseOrderHeader = () => {
   const hasShipments = shipments.length > 0;
   const requiresShipment = isOutsideProcessing && !hasShipments;
 
+  const markAsPlanned = () => {
+    statusFetcher.submit(
+      { status: "Planned" },
+      { method: "post", action: path.to.purchaseOrderStatus(orderId) }
+    );
+  };
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b border-border h-[50px] overflow-x-auto scrollbar-hide dark:border-none dark:shadow-[inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]">
@@ -122,21 +131,31 @@ const PurchaseOrderHeader = () => {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Button
+            <SplitButton
               leftIcon={<LuCheckCheck />}
               variant={
-                routeData?.purchaseOrder?.status === "Draft"
+                ["Draft", "Planned"].includes(
+                  routeData?.purchaseOrder?.status ?? ""
+                )
                   ? "primary"
                   : "secondary"
               }
               onClick={finalizeDisclosure.onOpen}
               isDisabled={
-                routeData?.purchaseOrder?.status !== "Draft" ||
-                routeData?.lines.length === 0
+                !["Draft", "Planned"].includes(
+                  routeData?.purchaseOrder?.status ?? ""
+                ) || routeData?.lines.length === 0
               }
+              dropdownItems={[
+                {
+                  label: "Mark as Planned",
+                  icon: <LuCheckCheck />,
+                  onClick: markAsPlanned,
+                },
+              ]}
             >
               Finalize
-            </Button>
+            </SplitButton>
             {routeData?.purchaseOrder?.purchaseOrderType ===
               "Outside Processing" &&
               (shipments.length > 0 ? (
@@ -339,7 +358,30 @@ const PurchaseOrderHeader = () => {
                 Invoice
               </Button>
             )}
-
+            <statusFetcher.Form
+              method="post"
+              action={path.to.purchaseOrderStatus(orderId)}
+            >
+              <input type="hidden" name="status" value="Closed" />
+              <Button
+                type="submit"
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Closed"
+                }
+                isDisabled={
+                  ["Closed", "Completed"].includes(
+                    routeData?.purchaseOrder?.status ?? ""
+                  ) ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuCircleStop />}
+                variant="secondary"
+              >
+                Cancel
+              </Button>
+            </statusFetcher.Form>
             <statusFetcher.Form
               method="post"
               action={path.to.purchaseOrderStatus(orderId)}
@@ -350,11 +392,9 @@ const PurchaseOrderHeader = () => {
                 variant="secondary"
                 leftIcon={<LuLoaderCircle />}
                 isDisabled={
-                  ["Draft", "Cancelled", "Closed", "Completed"].includes(
-                    routeData?.purchaseOrder?.status ?? ""
-                  ) ||
+                  ["Draft"].includes(routeData?.purchaseOrder?.status ?? "") ||
                   statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "sales")
+                  !permissions.can("update", "purchasing")
                 }
                 isLoading={
                   statusFetcher.state !== "idle" &&

@@ -62,10 +62,34 @@ export async function action({ request }: ActionFunctionArgs) {
           })
           .in("id", ids as string[])
       );
+    case "receiptRequestedDate":
     case "locationId":
     case "deliveryDate":
+      return json(
+        await client
+          .from("purchaseOrderDelivery")
+          .update({
+            [field]: value ?? undefined,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString(),
+          })
+          .in("id", ids as string[])
+      );
     case "receiptPromisedDate":
-    case "receiptRequestedDate":
+      const lineUpdates = await client
+        .from("purchaseOrderLine")
+        .update({
+          promisedDate: value ?? undefined,
+          updatedBy: userId,
+          updatedAt: new Date().toISOString(),
+        })
+        .in("purchaseOrderId", ids as string[])
+        .is("promisedDate", null);
+
+      if (lineUpdates.error) {
+        return json(lineUpdates);
+      }
+
       return json(
         await client
           .from("purchaseOrderDelivery")

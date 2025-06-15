@@ -2004,7 +2004,7 @@ function OperationForm({
       method="post"
       defaultValues={item.data}
       validator={
-        job?.status === "Draft"
+        ["Draft", "Planned"].includes(job?.status ?? "")
           ? jobOperationValidator
           : jobOperationValidatorForReleasedJob
       }
@@ -2133,7 +2133,7 @@ function OperationForm({
             label="Work Center"
             autoSelectSingleOption={Boolean(processData.processId)}
             locationId={locationId}
-            isOptional={job?.status === "Draft"}
+            isOptional={["Draft", "Planned"].includes(job?.status ?? "")}
             processId={processData.processId}
             onChange={(value) => {
               if (value) {

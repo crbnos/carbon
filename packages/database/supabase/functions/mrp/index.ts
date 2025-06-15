@@ -101,6 +101,16 @@ serve(async (req: Request) => {
     Map<string, Map<string, number>>
   >();
 
+  const jobSupplyByLocationAndPeriod = new Map<
+    string,
+    Map<string, Map<string, number>>
+  >();
+
+  const purchaseOrderSupplyByLocationAndPeriod = new Map<
+    string,
+    Map<string, Map<string, number>>
+  >();
+
   // Initialize locations in map
   for (const location of locations.data) {
     salesDemandByLocationAndPeriod.set(
@@ -109,6 +119,16 @@ serve(async (req: Request) => {
     );
 
     jobMaterialDemandByLocationAndPeriod.set(
+      location.id,
+      new Map<string, Map<string, number>>()
+    );
+
+    jobSupplyByLocationAndPeriod.set(
+      location.id,
+      new Map<string, Map<string, number>>()
+    );
+
+    purchaseOrderSupplyByLocationAndPeriod.set(
       location.id,
       new Map<string, Map<string, number>>()
     );
@@ -134,13 +154,49 @@ serve(async (req: Request) => {
         );
       }
     }
+
+    const jobSupplyLocationPeriods = jobSupplyByLocationAndPeriod.get(
+      location.id
+    );
+    if (jobSupplyLocationPeriods) {
+      for (const period of periods) {
+        jobSupplyLocationPeriods.set(
+          period.id ?? "",
+          new Map<string, number>()
+        );
+      }
+    }
+
+    const purchaseOrderSupplyLocationPeriods =
+      purchaseOrderSupplyByLocationAndPeriod.get(location.id);
+    if (purchaseOrderSupplyLocationPeriods) {
+      for (const period of periods) {
+        purchaseOrderSupplyLocationPeriods.set(
+          period.id ?? "",
+          new Map<string, number>()
+        );
+      }
+    }
   }
 
   try {
-    const [salesOrderLines, jobMaterialLines] = await Promise.all([
+    const [
+      salesOrderLines,
+      jobMaterialLines,
+      productionLines,
+      purchaseOrderLines,
+    ] = await Promise.all([
       client.from("openSalesOrderLines").select("*").eq("companyId", companyId),
       client
         .from("openJobMaterialLines")
+        .select("*")
+        .eq("companyId", companyId),
+      client
+        .from("openProductionOrders")
+        .select("*")
+        .eq("companyId", companyId),
+      client
+        .from("openPurchaseOrderLines")
         .select("*")
         .eq("companyId", companyId),
     ]);
@@ -151,6 +207,14 @@ serve(async (req: Request) => {
 
     if (jobMaterialLines.error) {
       throw new Error("No job material lines found");
+    }
+
+    if (productionLines.error) {
+      throw new Error("No job lines found");
+    }
+
+    if (purchaseOrderLines.error) {
+      throw new Error("No purchase order lines found");
     }
 
     // Group sales order lines into demand periods
@@ -225,27 +289,123 @@ serve(async (req: Request) => {
       }
     }
 
+    // Group job lines into supply periods
+    for (const line of productionLines.data) {
+      if (!line.itemId || !line.quantityToReceive) continue;
+
+      const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
+
+      // If required date is before today, use first period
+      let period;
+      if (dueDate.compare(today) < 0) {
+        period = periods[0];
+      } else {
+        // Find matching period for required date
+        period = periods.find((p) => {
+          return (
+            p.startDate?.compare(dueDate) <= 0 &&
+            p.endDate?.compare(dueDate) >= 0
+          );
+        });
+      }
+
+      if (period) {
+        const locationDemand = jobSupplyByLocationAndPeriod.get(
+          line.locationId ?? ""
+        );
+        if (locationDemand) {
+          const periodDemand = locationDemand.get(period.id ?? "");
+          if (periodDemand) {
+            const currentDemand = periodDemand.get(line.itemId) ?? 0;
+            periodDemand.set(
+              line.itemId,
+              currentDemand + line.quantityToReceive
+            );
+          }
+        }
+      }
+    }
+
+    // Group job lines into supply periods
+    for (const line of purchaseOrderLines.data) {
+      if (!line.itemId || !line.quantityToReceive) continue;
+
+      const dueDate = line.promisedDate
+        ? parseDate(line.promisedDate)
+        : line.orderDate
+        ? parseDate(line.orderDate).add({ days: line.leadTime ?? 7 })
+        : today.add({ days: line.leadTime ?? 7 });
+
+      // If required date is before today, use first period
+      let period;
+      if (dueDate.compare(today) < 0) {
+        period = periods[0];
+      } else {
+        // Find matching period for required date
+        period = periods.find((p) => {
+          return (
+            p.startDate?.compare(dueDate) <= 0 &&
+            p.endDate?.compare(dueDate) >= 0
+          );
+        });
+      }
+
+      if (period) {
+        const locationDemand = purchaseOrderSupplyByLocationAndPeriod.get(
+          line.locationId ?? ""
+        );
+        if (locationDemand) {
+          const periodDemand = locationDemand.get(period.id ?? "");
+          if (periodDemand) {
+            const currentDemand = periodDemand.get(line.itemId) ?? 0;
+            periodDemand.set(
+              line.itemId,
+              currentDemand + line.quantityToReceive
+            );
+          }
+        }
+      }
+    }
+
     const demandActualUpserts: Database["public"]["Tables"]["demandActual"]["Insert"][] =
       [];
-
     // Create a Map to store unique demand actuals by composite key
     const demandActualsMap = new Map<
       string,
       Database["public"]["Tables"]["demandActual"]["Insert"]
     >();
 
+    const supplyActualUpserts: Database["public"]["Tables"]["supplyActual"]["Insert"][] =
+      [];
+    const supplyActualsMap = new Map<
+      string,
+      Database["public"]["Tables"]["supplyActual"]["Insert"]
+    >();
+
     // Get existing demand actuals
-    const { data: existingDemandActuals, error: demandActualsError } =
-      await client
+    const [
+      { data: existingDemandActuals, error: demandActualsError },
+      { data: existingSupplyActuals, error: supplyActualsError },
+    ] = await Promise.all([
+      client
         .from("demandActual")
         .select("*")
 
         .in(
           "periodId",
           periods.map((p) => p.id ?? "")
-        );
+        ),
+      client
+        .from("supplyActual")
+        .select("*")
+        .in(
+          "periodId",
+          periods.map((p) => p.id ?? "")
+        ),
+    ]);
 
     if (demandActualsError) throw demandActualsError;
+    if (supplyActualsError) throw supplyActualsError;
 
     // First add all existing records with quantity 0
     if (existingDemandActuals) {
@@ -309,8 +469,72 @@ serve(async (req: Request) => {
       }
     }
 
+    if (existingSupplyActuals) {
+      for (const existing of existingSupplyActuals) {
+        const key = `${existing.itemId}-${existing.locationId}-${existing.periodId}-${existing.sourceType}`;
+        supplyActualsMap.set(key, {
+          itemId: existing.itemId,
+          locationId: existing.locationId,
+          periodId: existing.periodId,
+          actualQuantity: 0,
+          sourceType: existing.sourceType,
+          companyId,
+          createdBy: userId,
+          updatedBy: userId,
+        });
+      }
+    }
+
+    // Then add/update current demand for sales order lines
+    for (const [locationId, periodMap] of jobSupplyByLocationAndPeriod) {
+      for (const [periodId, itemMap] of periodMap) {
+        for (const [itemId, quantity] of itemMap) {
+          if (quantity > 0) {
+            const key = `${itemId}-${locationId}-${periodId}-Production Order`;
+            supplyActualsMap.set(key, {
+              itemId,
+              locationId,
+              periodId: periodId,
+              actualQuantity: quantity,
+              sourceType: "Production Order",
+              companyId,
+              createdBy: userId,
+              updatedBy: userId,
+            });
+          }
+        }
+      }
+    }
+
+    // Then add/update current demand for job material lines
+    for (const [
+      locationId,
+      periodMap,
+    ] of purchaseOrderSupplyByLocationAndPeriod) {
+      for (const [periodId, itemMap] of periodMap) {
+        for (const [itemId, quantity] of itemMap) {
+          if (quantity > 0) {
+            const key = `${itemId}-${locationId}-${periodId}-Purchase Order`;
+            supplyActualsMap.set(key, {
+              itemId,
+              locationId,
+              periodId: periodId,
+              actualQuantity: quantity,
+              sourceType: "Purchase Order",
+              companyId,
+              createdBy: userId,
+              updatedBy: userId,
+            });
+          }
+        }
+      }
+    }
+
+    // Then add/update current supply for job lines
+
     // Convert Map values to array for upsert
     demandActualUpserts.push(...demandActualsMap.values());
+    supplyActualUpserts.push(...supplyActualsMap.values());
 
     try {
       await db.transaction().execute(async (trx) => {
@@ -318,6 +542,22 @@ serve(async (req: Request) => {
           await trx
             .insertInto("demandActual")
             .values(demandActualUpserts)
+            .onConflict((oc) =>
+              oc
+                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .doUpdateSet({
+                  actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
+                  updatedAt: new Date().toISOString(),
+                  updatedBy: userId,
+                })
+            )
+            .execute();
+        }
+
+        if (supplyActualUpserts.length > 0) {
+          await trx
+            .insertInto("supplyActual")
+            .values(supplyActualUpserts)
             .onConflict((oc) =>
               oc
                 .columns(["itemId", "locationId", "periodId", "sourceType"])

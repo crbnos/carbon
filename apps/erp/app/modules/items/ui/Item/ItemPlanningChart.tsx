@@ -17,12 +17,21 @@ import { useDateFormatter } from "@react-aria/i18n";
 import { useFetcher } from "@remix-run/react";
 
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, Line, XAxis, YAxis } from "recharts";
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Legend,
+  Line,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Empty } from "~/components";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
 
-interface DemandData {
+interface Data {
   actualQuantity: number;
   companyId: string;
   createdAt: string;
@@ -31,9 +40,18 @@ interface DemandData {
   locationId: string;
   notes: string | null;
   periodId: string;
-  sourceType: "Sales Order" | "Job Material";
   updatedAt: string;
   updatedBy: string;
+}
+const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
+const demandSourceTypes = ["Sales Order", "Job Material"] as const;
+
+interface DemandData extends Data {
+  sourceType: (typeof demandSourceTypes)[number];
+}
+
+interface SupplyData extends Data {
+  sourceType: (typeof supplySourceTypes)[number];
 }
 
 interface ChartDataPoint {
@@ -41,7 +59,9 @@ interface ChartDataPoint {
   period: string;
   "Sales Order": number;
   "Job Material": number;
-  forecast: number;
+  "Purchase Order": number;
+  "Production Order": number;
+  Projection: number;
 }
 
 export const ItemPlanningChart = ({
@@ -69,7 +89,8 @@ export const ItemPlanningChart = ({
 
     const periods = forecastFetcher.data.periods;
     const demand = forecastFetcher.data.demand;
-    const forecast = forecastFetcher.data?.forecast ?? 5;
+    const supply = forecastFetcher.data.supply;
+    let currentQuantity = forecastFetcher.data.quantityOnHand ?? 0;
 
     // Initialize all periods with zero values
     const groupedData = periods.reduce(
@@ -79,7 +100,9 @@ export const ItemPlanningChart = ({
           startDate: period.startDate,
           "Sales Order": 0,
           "Job Material": 0,
-          forecast,
+          "Purchase Order": 0,
+          "Production Order": 0,
+          Projection: currentQuantity, // Initialize with current quantity
         };
         return acc;
       },
@@ -89,39 +112,49 @@ export const ItemPlanningChart = ({
     // Add demand data
     demand.forEach((curr: DemandData) => {
       if (groupedData[curr.periodId]) {
+        groupedData[curr.periodId][curr.sourceType] -= curr.actualQuantity;
+      }
+    });
+
+    // Add supply data
+    supply.forEach((curr: SupplyData) => {
+      if (groupedData[curr.periodId]) {
         groupedData[curr.periodId][curr.sourceType] += curr.actualQuantity;
       }
     });
 
-    return Object.values(groupedData).sort(
+    // Calculate running projection
+    let runningProjection = currentQuantity;
+    const sortedData = Object.values(groupedData).sort(
       (a, b) =>
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     );
-  }, [
-    forecastFetcher.data?.demand,
-    forecastFetcher.data?.periods,
-    forecastFetcher.data?.forecast,
-  ]);
 
-  const sourceTypes = useMemo(() => {
-    if (!forecastFetcher.data?.demand) return [];
-    return [
-      ...new Set(
-        forecastFetcher.data.demand.map((item: DemandData) => item.sourceType)
-      ),
-    ];
-  }, [forecastFetcher.data?.demand]);
+    return sortedData.map((period) => {
+      // Add supply
+      runningProjection +=
+        period["Purchase Order"] + period["Production Order"];
+      // Subtract demand
+      runningProjection += period["Sales Order"] + period["Job Material"];
+      // Update projection
+      period.Projection = runningProjection;
+      return period;
+    });
+  }, [forecastFetcher.data]);
 
   const chartConfig = {} satisfies ChartConfig;
 
-  if (forecastFetcher.data?.demand.length === 0) {
+  if (
+    forecastFetcher.data?.demand.length === 0 &&
+    forecastFetcher.data?.supply.length === 0
+  ) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Demand</CardTitle>
+          <CardTitle>Projections</CardTitle>
         </CardHeader>
         <CardContent className="min-h-[360px] flex items-center justify-center">
-          <Empty>No demand data</Empty>
+          <Empty>No planning data</Empty>
         </CardContent>
       </Card>
     );
@@ -131,13 +164,13 @@ export const ItemPlanningChart = ({
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Demand</CardTitle>
+          <CardTitle>Projections</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="w-full h-[360px]">
             <Loading isLoading={isFetching}>
               <ChartContainer config={chartConfig} className="w-full h-full">
-                <BarChart data={chartData}>
+                <ComposedChart data={chartData} stackOffset="sign">
                   <CartesianGrid vertical={false} />
                   <XAxis
                     dataKey="startDate"
@@ -150,6 +183,18 @@ export const ItemPlanningChart = ({
                     }
                   />
                   <YAxis tickLine={false} axisLine={false} />
+                  <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
+                  <Legend
+                    payload={[
+                      { value: "Demand", type: "rect", color: "#14b8a6" },
+                      { value: "Supply", type: "rect", color: "#2563eb" },
+                      {
+                        value: "Projection",
+                        type: "line",
+                        color: "#7c3aed",
+                      },
+                    ]}
+                  />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
@@ -161,25 +206,35 @@ export const ItemPlanningChart = ({
                       />
                     }
                   />
-                  {sourceTypes.map((sourceType: string, index: number) => (
-                    <Bar
-                      key={sourceType}
-                      dataKey={sourceType}
-                      stackId="demand"
-                      className={
-                        sourceType === "Sales Order"
-                          ? "fill-violet-600"
-                          : "fill-teal-500"
-                      }
-                    />
-                  ))}
+                  {demandSourceTypes.map(
+                    (sourceType: string, index: number) => (
+                      <Bar
+                        key={sourceType}
+                        dataKey={sourceType}
+                        stackId="stack"
+                        className="fill-teal-500"
+                      />
+                    )
+                  )}
+                  {supplySourceTypes.map(
+                    (sourceType: string, index: number) => (
+                      <Bar
+                        key={sourceType}
+                        dataKey={sourceType}
+                        stackId="stack"
+                        className="fill-blue-600"
+                      />
+                    )
+                  )}
                   <Line
                     type="monotone"
-                    dataKey="forecast"
-                    stroke="#ff7300"
+                    dataKey="Projection"
                     strokeWidth={2}
+                    dot={false}
+                    stroke="#7c3aed"
+                    isAnimationActive={false}
                   />
-                </BarChart>
+                </ComposedChart>
               </ChartContainer>
             </Loading>
           </div>

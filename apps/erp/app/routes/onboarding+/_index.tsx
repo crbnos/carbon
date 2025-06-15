@@ -1,9 +1,10 @@
-import { Heading as _Heading, Button, VStack } from "@carbon/react";
-import { Link } from "@remix-run/react";
+import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
+import { useNavigate } from "@remix-run/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { onboardingSequence } from "~/utils/path";
 
 const Heading = motion(_Heading);
+const Button = motion(_Button);
 
 const fade = {
   initial: { opacity: 0 },
@@ -11,6 +12,8 @@ const fade = {
 };
 
 export default function GetStarted() {
+  const navigate = useNavigate();
+
   return (
     <AnimatePresence>
       <VStack spacing={4} className="max-w-lg p-4 items-center text-center">
@@ -40,8 +43,13 @@ export default function GetStarted() {
           Carbon is the operational system for manufacturing
         </motion.p>
 
-        <Button size="lg" asChild>
-          <Link to={onboardingSequence[0]}>Get Started</Link>
+        <Button
+          {...fade}
+          transition={{ duration: 0.8, ease: "easeInOut", delay: 0.7 }}
+          size="lg"
+          onClick={() => navigate(onboardingSequence[0])}
+        >
+          Get Started
         </Button>
       </VStack>
     </AnimatePresence>
