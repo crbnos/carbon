@@ -7,8 +7,8 @@ import {
   getItemDemand,
   getItemQuantities,
   getItemSupply,
-  getPeriods,
 } from "~/modules/items/items.service";
+import { getPeriods } from "~/modules/shared/shared.service";
 
 const defaultResponse = {
   demand: [],

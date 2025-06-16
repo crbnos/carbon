@@ -146,6 +146,18 @@ export async function getNotes(
     .order("createdAt");
 }
 
+export async function getPeriods(
+  client: SupabaseClient<Database>,
+  { startDate, endDate }: { startDate: string; endDate: string }
+) {
+  const endWithTime = endDate.includes("T") ? endDate : `${endDate}T23:59:59`;
+  return client
+    .from("period")
+    .select("*")
+    .gte("startDate", startDate)
+    .lte("endDate", endWithTime);
+}
+
 export async function getSavedViews(
   client: SupabaseClient<Database>,
   userId: string,

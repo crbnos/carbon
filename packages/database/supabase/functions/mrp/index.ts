@@ -293,7 +293,11 @@ serve(async (req: Request) => {
     for (const line of productionLines.data) {
       if (!line.itemId || !line.quantityToReceive) continue;
 
-      const dueDate = line.dueDate ? parseDate(line.dueDate) : today;
+      const dueDate = line.dueDate
+        ? parseDate(line.dueDate)
+        : line.deadlineType === "No Deadline"
+        ? today
+        : today.add({ days: 30 });
 
       // If required date is before today, use first period
       let period;

@@ -11,6 +11,7 @@ import type {
   getProcedureParameters,
   getProcedures,
   getProductionEvents,
+  getProductionPlanning,
   getProductionQuantities,
   getScrapReasons,
 } from "./production.service";
@@ -64,6 +65,10 @@ export type ProcedureParameter = NonNullable<
 export type Procedure = NonNullable<
   Awaited<ReturnType<typeof getProcedure>>["data"]
 >;
+
+export type ProductionPlanningItem = NonNullable<
+  Awaited<ReturnType<typeof getProductionPlanning>>["data"]
+>[number];
 
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
