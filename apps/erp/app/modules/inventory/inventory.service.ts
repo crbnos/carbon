@@ -104,10 +104,16 @@ export async function getInventoryItems(
     search: string | null;
   }
 ) {
-  let query = client.rpc("get_inventory_quantities", {
-    location_id: locationId,
-    company_id: companyId,
-  });
+  let query = client.rpc(
+    "get_inventory_quantities",
+    {
+      location_id: locationId,
+      company_id: companyId,
+    },
+    {
+      count: "exact",
+    }
+  );
 
   if (args?.search) {
     query = query.or(

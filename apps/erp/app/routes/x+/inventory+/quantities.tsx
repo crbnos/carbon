@@ -6,7 +6,7 @@ import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import type { InventoryItem } from "~/modules/inventory";
-import { getInventoryItems, getInventoryItemsCount } from "~/modules/inventory";
+import { getInventoryItems } from "~/modules/inventory";
 import InventoryTable from "~/modules/inventory/ui/Inventory/InventoryTable";
 import {
   getMaterialFormsList,
@@ -61,25 +61,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     locationId = locations.data?.[0].id as string;
   }
 
-  const [inventoryItems, inventoryItemsCount, forms, substances] =
-    await Promise.all([
-      getInventoryItems(client, locationId, companyId, {
-        search,
-        limit,
-        offset,
-        sorts,
-        filters,
-      }),
-      getInventoryItemsCount(client, locationId, companyId, {
-        search,
-        limit,
-        offset,
-        sorts,
-        filters,
-      }),
-      getMaterialFormsList(client, companyId),
-      getMaterialSubstancesList(client, companyId),
-    ]);
+  const [inventoryItems, forms, substances] = await Promise.all([
+    getInventoryItems(client, locationId, companyId, {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters,
+    }),
+
+    getMaterialFormsList(client, companyId),
+    getMaterialSubstancesList(client, companyId),
+  ]);
 
   if (inventoryItems.error) {
     redirect(
@@ -92,7 +85,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   return json({
-    count: inventoryItemsCount.count ?? 0,
+    count: inventoryItems.count ?? 0,
     inventoryItems: (inventoryItems.data ?? []) as InventoryItem[],
     locationId,
     forms: forms.data ?? [],
