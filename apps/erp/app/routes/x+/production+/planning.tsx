@@ -12,10 +12,16 @@ import PlanningTable from "~/modules/production/ui/Planning/PlanningTable";
 import { getLocationsList } from "~/modules/resources";
 import { getPeriods } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.server";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 const WEEKS_TO_PLAN = 12 * 4;
+
+export const handle: Handle = {
+  breadcrumb: "Planning",
+  to: path.to.productionPlanning,
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

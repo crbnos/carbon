@@ -258,7 +258,7 @@ const InventoryTable = memo(
                 window.location.href = getLocationPath(selected);
               }}
             />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp}>
+            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
               <Tooltip>
                 <TooltipTrigger>
                   <Button

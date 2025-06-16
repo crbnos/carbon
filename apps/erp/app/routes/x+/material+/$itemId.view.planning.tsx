@@ -69,41 +69,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (materialPlanning.error || !materialPlanning.data) {
-    const insertMateriallanning = await upsertItemPlanning(client, {
-      itemId,
-      companyId,
-      locationId,
-      createdBy: userId,
-    });
-
-    if (insertMateriallanning.error) {
-      throw redirect(
-        path.to.material(itemId),
-        await flash(
-          request,
-          error(
-            insertMateriallanning.error,
-            "Failed to insert material planning"
-          )
-        )
-      );
-    }
-
-    materialPlanning = await getItemPlanning(
-      client,
-      itemId,
-      companyId,
-      locationId
+    throw redirect(
+      path.to.material(itemId),
+      await flash(
+        request,
+        error(materialPlanning.error, "Failed to load material planning")
+      )
     );
-    if (materialPlanning.error || !materialPlanning.data) {
-      throw redirect(
-        path.to.material(itemId),
-        await flash(
-          request,
-          error(materialPlanning.error, "Failed to load material planning")
-        )
-      );
-    }
   }
 
   return json({

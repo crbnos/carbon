@@ -69,33 +69,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (toolPlanning.error || !toolPlanning.data) {
-    const insertToolPlanning = await upsertItemPlanning(client, {
-      itemId,
-      companyId,
-      locationId,
-      createdBy: userId,
-    });
-
-    if (insertToolPlanning.error) {
-      throw redirect(
-        path.to.tool(itemId),
-        await flash(
-          request,
-          error(insertToolPlanning.error, "Failed to insert tool planning")
-        )
-      );
-    }
-
-    toolPlanning = await getItemPlanning(client, itemId, companyId, locationId);
-    if (toolPlanning.error || !toolPlanning.data) {
-      throw redirect(
-        path.to.tool(itemId),
-        await flash(
-          request,
-          error(toolPlanning.error, "Failed to load tool planning")
-        )
-      );
-    }
+    throw redirect(
+      path.to.tool(itemId),
+      await flash(
+        request,
+        error(toolPlanning.error, "Failed to load tool planning")
+      )
+    );
   }
 
   return json({

@@ -68,7 +68,10 @@ export const path = {
       materialForms: `${api}/items/forms`,
       materialSubstances: `${api}/items/substances`,
       messagingNotify: `${api}/messaging/notify`,
-      mrp: `${api}/mrp`,
+      mrp: (locationId?: string) =>
+        generatePath(
+          `${api}/mrp${locationId ? `?location=${locationId}` : ""}`
+        ),
       modelUpload: `${api}/model/upload`,
       onShapeBom: (documentId: string, versionId: string, elementId: string) =>
         generatePath(

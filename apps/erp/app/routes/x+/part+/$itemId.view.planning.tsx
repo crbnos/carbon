@@ -69,33 +69,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (partPlanning.error || !partPlanning.data) {
-    const insertPartPlanning = await upsertItemPlanning(client, {
-      itemId,
-      companyId,
-      locationId,
-      createdBy: userId,
-    });
-
-    if (insertPartPlanning.error) {
-      throw redirect(
-        path.to.part(itemId),
-        await flash(
-          request,
-          error(insertPartPlanning.error, "Failed to insert part planning")
-        )
-      );
-    }
-
-    partPlanning = await getItemPlanning(client, itemId, companyId, locationId);
-    if (partPlanning.error || !partPlanning.data) {
-      throw redirect(
-        path.to.part(itemId),
-        await flash(
-          request,
-          error(partPlanning.error, "Failed to load part planning")
-        )
-      );
-    }
+    throw redirect(
+      path.to.part(itemId),
+      await flash(
+        request,
+        error(partPlanning.error, "Failed to load part planning")
+      )
+    );
   }
 
   return json({

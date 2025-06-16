@@ -887,7 +887,13 @@ export async function recalculateJobMakeMethodRequirements(
 export async function runMRP(
   client: SupabaseClient<Database>,
   params: {
-    type: "company" | "job" | "salesOrder" | "item" | "purchaseOrder";
+    type:
+      | "company"
+      | "location"
+      | "job"
+      | "salesOrder"
+      | "item"
+      | "purchaseOrder";
     id: string;
     companyId: string;
     userId: string;
