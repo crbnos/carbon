@@ -1,7 +1,12 @@
 import { $ } from "execa";
 
 import { client } from "./client";
-import { SUPABASE_ACCESS_TOKEN } from "./env";
+import {
+  SUPABASE_ACCESS_TOKEN,
+  SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+  SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
+  SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
+} from "./env";
 
 export type Customer = {
   id: number;
@@ -67,6 +72,9 @@ async function migrate(): Promise<void> {
           SUPABASE_DB_PASSWORD: decrypted_database_password,
           SUPABASE_PROJECT_ID: project_id,
           SUPABASE_SERVICE_ROLE_KEY: decrypted_service_role_key,
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET,
+          SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
         },
         cwd: "supabase",
       });
