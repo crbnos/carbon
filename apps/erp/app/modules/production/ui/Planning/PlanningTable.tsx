@@ -26,7 +26,9 @@ import {
   MethodItemTypeIcon,
   Table,
 } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
+import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useUrlParams } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
 import type { action as mrpAction } from "~/routes/api+/mrp";
@@ -37,12 +39,7 @@ type PlanningTableProps = {
   data: ProductionPlanningItem[];
   count: number;
   locationId: string;
-  periods: { id: string; startDate: string }[];
-};
-
-type PeriodQuantity = {
-  periodId: string;
-  quantity: number;
+  periods: { id: string; startDate: string; endDate: string }[];
 };
 
 const PlanningTable = memo(
@@ -53,83 +50,44 @@ const PlanningTable = memo(
       day: "numeric",
     });
 
-    console.log({ data });
-
     const numberFormatter = useNumberFormatter();
-
     const locations = useLocations();
-
-    // Pre-calculate projections for each item
-    const projectionsByItem = useMemo(() => {
-      const projections = new Map<string, Map<string, number>>();
-
-      data.forEach((item) => {
-        const itemProjections = new Map<string, number>();
-
-        // Convert arrays to maps for efficient lookups
-        const demandActuals = new Map(
-          ((item.demandActuals as PeriodQuantity[]) || []).map((d) => [
-            d.periodId,
-            d.quantity,
-          ])
-        );
-        const supplyActuals = new Map(
-          ((item.supplyActuals as PeriodQuantity[]) || []).map((s) => [
-            s.periodId,
-            s.quantity,
-          ])
-        );
-        const demandForecasts = new Map(
-          ((item.demandForecasts as PeriodQuantity[]) || []).map((d) => [
-            d.periodId,
-            d.quantity,
-          ])
-        );
-        const supplyForecasts = new Map(
-          ((item.supplyForecasts as PeriodQuantity[]) || []).map((s) => [
-            s.periodId,
-            s.quantity,
-          ])
-        );
-
-        let runningProjection = item.quantityOnHand;
-
-        periods.forEach((period) => {
-          runningProjection +=
-            (supplyActuals.get(period.id) || 0) +
-            (supplyForecasts.get(period.id) || 0);
-          runningProjection -=
-            (demandActuals.get(period.id) || 0) +
-            (demandForecasts.get(period.id) || 0);
-          itemProjections.set(period.id, runningProjection);
-        });
-
-        projections.set(item.id!, itemProjections);
-      });
-
-      return projections;
-    }, [data, periods]);
+    const unitOfMeasures = useUnitOfMeasure();
 
     const columns = useMemo<ColumnDef<ProductionPlanningItem>[]>(() => {
       const periodColumns: ColumnDef<ProductionPlanningItem>[] = periods.map(
         (period, index) => {
           const isCurrentWeek = index === 0;
-          const header = isCurrentWeek
-            ? "Present Week"
-            : `Week of ${dateFormatter.format(
-                parseDate(period.startDate).toDate(getLocalTimeZone())
-              )}`;
+          const weekNumber = index + 1;
+          const weekKey = `week${weekNumber}` as keyof ProductionPlanningItem;
+          const startDate = parseDate(period.startDate).toDate(
+            getLocalTimeZone()
+          );
+          const endDate = parseDate(period.endDate).toDate(getLocalTimeZone());
 
           return {
-            accessorKey: `period.${period.id}`,
-            header,
+            accessorKey: weekKey,
+            header: () => (
+              <VStack spacing={0}>
+                <div>
+                  {isCurrentWeek ? "Present Week" : `Week ${weekNumber}`}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {dateFormatter.format(startDate)} -{" "}
+                  {dateFormatter.format(endDate)}
+                </div>
+              </VStack>
+            ),
             cell: ({ row }) => {
-              const projection = projectionsByItem
-                .get(row.original.id!)
-                ?.get(period.id);
-              return projection !== undefined
-                ? numberFormatter.format(projection)
-                : "-";
+              const value = row.getValue<number>(weekKey);
+              if (value === undefined) return "-";
+              return (
+                <span
+                  className={value < 0 ? "text-red-500 font-bold" : undefined}
+                >
+                  {numberFormatter.format(value)}
+                </span>
+              );
             },
           };
         }
@@ -158,6 +116,13 @@ const PlanningTable = memo(
                   </div>
                 </VStack>
               </Hyperlink>
+              <Enumerable
+                value={
+                  unitOfMeasures.find(
+                    (uom) => uom.value === row.original.unitOfMeasureCode
+                  )?.label ?? null
+                }
+              />
             </HStack>
           ),
           meta: {
@@ -217,7 +182,7 @@ const PlanningTable = memo(
           },
         },
       ];
-    }, [params, periods, dateFormatter, numberFormatter, projectionsByItem]);
+    }, [periods, dateFormatter, numberFormatter, params, unitOfMeasures]);
 
     const defaultColumnVisibility = {
       active: false,
@@ -249,7 +214,7 @@ const PlanningTable = memo(
                 window.location.href = getLocationPath(selected);
               }}
             />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp}>
+            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
               <Tooltip>
                 <TooltipTrigger>
                   <Button
@@ -283,5 +248,5 @@ PlanningTable.displayName = "PlanningTable";
 export default PlanningTable;
 
 function getLocationPath(locationId: string) {
-  return `${path.to.inventory}?location=${locationId}`;
+  return `${path.to.productionPlanning}?location=${locationId}`;
 }

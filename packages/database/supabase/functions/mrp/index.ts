@@ -31,6 +31,12 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string(),
   }),
   z.object({
+    type: z.literal("location"),
+    id: z.string(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
     type: z.literal("item"),
     id: z.string(),
     companyId: z.string(),
@@ -296,8 +302,8 @@ serve(async (req: Request) => {
       const dueDate = line.dueDate
         ? parseDate(line.dueDate)
         : line.deadlineType === "No Deadline"
-        ? today
-        : today.add({ days: 30 });
+        ? today.add({ days: 30 })
+        : today;
 
       // If required date is before today, use first period
       let period;

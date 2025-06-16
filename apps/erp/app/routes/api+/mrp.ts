@@ -7,13 +7,16 @@ import { runMRP } from "~/modules/production/production.service";
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
+  const url = new URL(request.url);
+  const locationId = url.searchParams.get("location");
+
   const { companyId, userId } = await requirePermissions(request, {
     update: "inventory",
   });
 
   const result = await runMRP(getCarbonServiceRole(), {
-    type: "company",
-    id: companyId,
+    type: locationId ? "location" : "company",
+    id: locationId ?? companyId,
     companyId,
     userId,
   });

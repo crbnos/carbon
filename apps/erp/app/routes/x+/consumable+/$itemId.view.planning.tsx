@@ -69,41 +69,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (consumablePlanning.error || !consumablePlanning.data) {
-    const insertConsumablePlanning = await upsertItemPlanning(client, {
-      itemId,
-      companyId,
-      locationId,
-      createdBy: userId,
-    });
-
-    if (insertConsumablePlanning.error) {
-      throw redirect(
-        path.to.consumable(itemId),
-        await flash(
-          request,
-          error(
-            insertConsumablePlanning.error,
-            "Failed to insert consumable planning"
-          )
-        )
-      );
-    }
-
-    consumablePlanning = await getItemPlanning(
-      client,
-      itemId,
-      companyId,
-      locationId
+    throw redirect(
+      path.to.consumable(itemId),
+      await flash(
+        request,
+        error(consumablePlanning.error, "Failed to load consumable planning")
+      )
     );
-    if (consumablePlanning.error || !consumablePlanning.data) {
-      throw redirect(
-        path.to.consumable(itemId),
-        await flash(
-          request,
-          error(consumablePlanning.error, "Failed to load consumable planning")
-        )
-      );
-    }
   }
 
   return json({
