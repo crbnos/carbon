@@ -78,8 +78,6 @@ export async function action({ request }: ActionFunctionArgs) {
         return json({ error: { message: "No materials found" }, data: null });
       }
 
-      console.log({ materialIds, field, value });
-
       return json(
         await client
           .from("material")

@@ -72,8 +72,6 @@ const PurchaseOrderPDF = ({
     customerCountryName,
   } = purchaseOrderLocations;
 
-  console.log({ purchaseOrderLines });
-
   const formatter = getCurrencyFormatter(
     purchaseOrder.currencyCode ?? company.baseCurrencyCode ?? "USD",
     locale

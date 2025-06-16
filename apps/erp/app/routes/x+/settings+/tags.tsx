@@ -9,8 +9,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const table = formData.get("table");
   const value = formData.getAll("value");
 
-  console.log({ ids, table, value, field: getIdField(table as string) });
-
   const result = await client
     // @ts-expect-error
     .from(table as string)
