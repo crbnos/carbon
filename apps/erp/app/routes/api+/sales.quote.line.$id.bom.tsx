@@ -76,8 +76,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   }
 
-  console.log({ withOperations, operationsByMakeMethodId });
-
   const bomIds = generateBomIds(flattenedMethods);
 
   const result = flattenedMethods.map((node, index) => {
