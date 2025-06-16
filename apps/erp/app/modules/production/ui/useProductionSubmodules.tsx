@@ -1,5 +1,6 @@
 import {
   LuHardHat,
+  LuSquareChartGantt,
   LuSquareKanban,
   LuTrash,
   LuWaypoints,
@@ -18,6 +19,11 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.jobs,
         icon: <LuHardHat />,
         table: "job",
+      },
+      {
+        name: "Planning",
+        to: path.to.productionPlanning,
+        icon: <LuSquareChartGantt />,
       },
       {
         name: "Schedule",
