@@ -161,10 +161,7 @@ const Table = <T extends object>({
       "right" in defaultColumnPinning &&
       Array.isArray(defaultColumnPinning.right)
     ) {
-      console.log("adding right");
       right.push(...defaultColumnPinning.right);
-    } else {
-      console.log("no right");
     }
 
     return {

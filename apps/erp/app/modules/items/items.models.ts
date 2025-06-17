@@ -442,7 +442,7 @@ export const itemPlanningValidator = z.object({
   maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
   maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-  orderMultiple: zfd.numeric(z.number().min(1)),
+  orderMultiple: zfd.numeric(z.number().min(1)).optional(),
   // critical: zfd.checkbox(),
 });
 

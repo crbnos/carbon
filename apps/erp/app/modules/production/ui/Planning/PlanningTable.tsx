@@ -30,7 +30,9 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useUrlParams } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
+import { itemReorderingPolicies } from "~/modules/items/items.models";
 import {
+  getOrdersFromProductionPlanning,
   getReorderPolicyDescription,
   ItemReorderPolicy,
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
@@ -149,6 +151,16 @@ const PlanningTable = memo(
               </TooltipContent>
             </Tooltip>
           ),
+          meta: {
+            filter: {
+              type: "static",
+              options: itemReorderingPolicies.map((policy) => ({
+                label: <ItemReorderPolicy reorderingPolicy={policy} />,
+                value: policy,
+              })),
+            },
+            icon: <LuCircleCheck />,
+          },
         },
         {
           accessorKey: "quantityOnHand",
@@ -193,7 +205,15 @@ const PlanningTable = memo(
           header: "",
           cell: ({ row }) => (
             <HStack>
-              <Button variant="secondary" leftIcon={<LuCircleCheck />}>
+              <Button
+                variant="secondary"
+                leftIcon={<LuCircleCheck />}
+                onClick={() => {
+                  console.log(
+                    getOrdersFromProductionPlanning(row.original, periods)
+                  );
+                }}
+              >
                 Order
               </Button>
             </HStack>

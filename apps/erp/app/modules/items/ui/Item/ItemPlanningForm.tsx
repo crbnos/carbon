@@ -94,10 +94,15 @@ const ItemPlanningForm = ({
             {policy === "Maximum Quantity" && (
               <>
                 <Number
+                  name="reorderPoint"
+                  label="Reorder Point"
+                  minValue={0}
+                />
+                <Number
                   name="maximumInventoryQuantity"
                   label="Maximum Inventory Quantity"
+                  minValue={0}
                 />
-                <div />
               </>
             )}
 
@@ -116,7 +121,11 @@ const ItemPlanningForm = ({
             )}
             {policy === "Fixed Reorder Quantity" && (
               <>
-                <Number name="reorderPoint" label="Reorder Point" />
+                <Number
+                  name="reorderPoint"
+                  label="Reorder Point"
+                  minValue={0}
+                />
                 <Number
                   name="reorderQuantity"
                   label="Reorder Quantity"
@@ -124,18 +133,25 @@ const ItemPlanningForm = ({
                 />
               </>
             )}
-
-            <Number name="orderMultiple" label="Order Multiple" minValue={0} />
-            <Number
-              name="minimumOrderQuantity"
-              label="Minimum Order Quantity"
-              minValue={0}
-            />
-            <Number
-              name="maximumOrderQuantity"
-              label="Maximum Order Quantity"
-              minValue={0}
-            />
+            {policy !== "Fixed Reorder Quantity" && (
+              <>
+                <Number
+                  name="orderMultiple"
+                  label="Order Multiple"
+                  minValue={0}
+                />
+                <Number
+                  name="minimumOrderQuantity"
+                  label="Minimum Order Quantity"
+                  minValue={0}
+                />
+                <Number
+                  name="maximumOrderQuantity"
+                  label="Maximum Order Quantity"
+                  minValue={0}
+                />
+              </>
+            )}
             {/* <Boolean name="critical" label="Critical" /> */}
 
             <CustomFormFields table="partPlanning" />
