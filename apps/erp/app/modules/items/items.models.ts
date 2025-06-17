@@ -435,17 +435,15 @@ export const itemPlanningValidator = z.object({
       message: "Reordering policy is required",
     }),
   }),
-  critical: zfd.checkbox(),
-  safetyStockQuantity: zfd.numeric(z.number().min(0).optional()),
-  safetyStockLeadTime: zfd.numeric(z.number().min(0).optional()),
   demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
   demandAccumulationIncludesInventory: zfd.checkbox().optional(),
   reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
   reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
-  reorderMaximumInventory: zfd.numeric(z.number().min(0)).optional(),
+  maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
   minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
   maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
   orderMultiple: zfd.numeric(z.number().min(1)),
+  // critical: zfd.checkbox(),
 });
 
 export const itemPurchasingValidator = z.object({

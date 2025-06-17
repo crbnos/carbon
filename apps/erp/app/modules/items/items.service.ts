@@ -1023,6 +1023,78 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
   return rootItems.map((item) => traverseAndRenameIds(item));
 }
 
+export async function getOpenJobMaterials(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    companyId,
+    locationId,
+  }: { itemId: string; companyId: string; locationId: string }
+) {
+  return client
+    .from("openJobMaterialLines")
+    .select(
+      "id, parentMaterialId, jobMakeMethodId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+    )
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId);
+}
+
+export async function getOpenProductionOrders(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    companyId,
+    locationId,
+  }: { itemId: string; companyId: string; locationId: string }
+) {
+  return client
+    .from("openProductionOrders")
+    .select(
+      "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate"
+    )
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId);
+}
+
+export async function getOpenPurchaseOrderLines(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    companyId,
+    locationId,
+  }: { itemId: string; companyId: string; locationId: string }
+) {
+  return client
+    .from("openPurchaseOrderLines")
+    .select(
+      "id, quantity:quantityToReceive, dueDate:promisedDate, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+    )
+    .eq("itemId", itemId)
+    .eq("locationId", locationId)
+    .eq("companyId", companyId);
+}
+
+export async function getOpenSalesOrderLines(
+  client: SupabaseClient<Database>,
+  {
+    itemId,
+    companyId,
+    locationId,
+  }: { itemId: string; companyId: string; locationId: string }
+) {
+  return client
+    .from("openSalesOrderLines")
+    .select(
+      "id, quantity:quantityToSend, dueDate:promisedDate, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
+    )
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .eq("locationId", locationId);
+}
+
 export async function getPart(
   client: SupabaseClient<Database>,
   itemId: string,
