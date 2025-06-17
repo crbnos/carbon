@@ -5,29 +5,17 @@ import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { Spinner, VStack } from "@carbon/react";
 import { Await, useParams } from "@remix-run/react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { defer, redirect } from "@vercel/remix";
+import type { ActionFunctionArgs } from "@vercel/remix";
+import { redirect } from "@vercel/remix";
 import { Suspense } from "react";
 import { CadModel } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, PartSummary } from "~/modules/items";
-import { getPartUsedIn, partValidator, upsertPart } from "~/modules/items";
+import { partValidator, upsertPart } from "~/modules/items";
 import { ItemDocuments, ItemNotes } from "~/modules/items/ui/Item";
 
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "parts",
-    bypassRls: true,
-  });
-
-  const { itemId } = params;
-  if (!itemId) throw new Error("Could not find itemId");
-
-  return defer({ usedIn: getPartUsedIn(client, itemId, companyId) });
-}
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);

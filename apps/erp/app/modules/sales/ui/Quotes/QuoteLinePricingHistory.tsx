@@ -27,9 +27,9 @@ import { Link } from "@remix-run/react";
 import { Empty } from "~/components";
 import { path } from "~/utils/path";
 
-import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
 import { formatDate } from "@carbon/utils";
 import { useCustomers } from "~/stores/customers";
+import type { HistoricalQuotationPrice, SalesOrderLine } from "../../types";
 
 const QuoteLinePricingHistory = ({
   baseCurrency,
@@ -106,26 +106,19 @@ const QuoteLinePricingHistory = ({
                           key={line.id}
                           className="pl-4 basis-full lg:basis-1/2 xl:basis-1/3"
                         >
-                          <Card className="w-full p-0">
+                          <Card className="w-full p-0 bg-gradient-to-b from-card to-card via-card dark:from-card dark:to-card dark:via-card">
                             <CardContent className="p-4">
                               <HStack className="flex justify-between">
-                                <Link
-                                  to={path.to.salesOrderLine(
-                                    line.salesOrderId!,
-                                    line.id!
-                                  )}
-                                  className="text-sm font-medium hover:underline"
-                                >
-                                  {line.salesOrderReadableId}
-                                </Link>
-                                <div>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDate(line.orderDate!)}
-                                  </span>
-                                </div>
-                              </HStack>
-                              <div className="space-y-4">
-                                <div className="flex justify-between">
+                                <div className="flex flex-col gap-1">
+                                  <Link
+                                    to={path.to.salesOrderLine(
+                                      line.salesOrderId!,
+                                      line.id!
+                                    )}
+                                    className="text-sm font-medium hover:underline"
+                                  >
+                                    {line.salesOrderReadableId}
+                                  </Link>
                                   <span className="text-sm text-muted-foreground">
                                     {
                                       customers.find(
@@ -135,7 +128,16 @@ const QuoteLinePricingHistory = ({
                                     }
                                   </span>
                                 </div>
-
+                                <div className="flex flex-col gap-1 items-end">
+                                  <span className="text-xs text-muted-foreground">
+                                    {formatDate(line.orderDate!)}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {line.itemReadableId}
+                                  </span>
+                                </div>
+                              </HStack>
+                              <div className="my-4">
                                 <Table>
                                   <Thead>
                                     <Tr className="border-b border-border">
@@ -190,36 +192,42 @@ const QuoteLinePricingHistory = ({
                           key={line.id}
                           className="pl-4 basis-full lg:basis-1/2 xl:basis-1/3"
                         >
-                          <Card className="w-full p-0">
+                          <Card className="w-full p-0 bg-gradient-to-b from-card to-card via-card dark:from-card dark:to-card dark:via-card">
                             <CardContent className="p-4">
-                              <HStack className="flex justify-between">
-                                <Link
-                                  to={path.to.quoteLine(
-                                    line.quoteId!,
-                                    line.id!
-                                  )}
-                                  className="text-sm font-medium hover:underline"
-                                >
-                                  {line.quoteReadableId}
-                                </Link>
-                                <div>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDate(line.quoteCreatedAt!)}
-                                  </span>
-                                </div>
-                              </HStack>
-                              <div className="space-y-4">
-                                <div className="flex justify-between">
-                                  <span className="text-sm text-muted-foreground">
-                                    {
-                                      customers.find(
-                                        (customer) =>
-                                          customer.id === line.customerId
-                                      )?.name
-                                    }
-                                  </span>
-                                </div>
+                              <div className="flex flex-col gap-4">
+                                <HStack className="flex justify-between">
+                                  <div className="flex flex-col gap-1">
+                                    <Link
+                                      to={path.to.quoteLine(
+                                        line.quoteId!,
+                                        line.id!
+                                      )}
+                                      className="text-sm font-medium hover:underline"
+                                    >
+                                      {line.quoteReadableId}
+                                    </Link>
 
+                                    <span className="text-sm text-muted-foreground">
+                                      {
+                                        customers.find(
+                                          (customer) =>
+                                            customer.id === line.customerId
+                                        )?.name
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-col gap-1 items-end">
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatDate(line.quoteCreatedAt!)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {line.itemReadableId}
+                                    </span>
+                                  </div>
+                                </HStack>
+                              </div>
+
+                              <div className="my-4">
                                 <Table>
                                   <Thead>
                                     <Tr>

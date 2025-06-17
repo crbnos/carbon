@@ -931,6 +931,20 @@ export async function getQuoteLinePricesByItemId(
     .order("qty", { ascending: true });
 }
 
+export async function getQuoteLinePricesByItemIds(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  currentQuoteId: string
+) {
+  return client
+    .from("quoteLinePrices")
+    .select("*")
+    .in("itemId", itemIds)
+    .neq("quoteId", currentQuoteId)
+    .order("quoteCreatedAt", { ascending: false })
+    .order("qty", { ascending: true });
+}
+
 export async function getQuoteMaterials(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -1040,10 +1054,20 @@ export async function getRelatedPricesForQuoteLine(
   itemId: string,
   quoteId: string
 ) {
+  const item = await client
+    .rpc("get_part_details", {
+      item_id: itemId,
+    })
+    .single();
+
+  const itemIds = (item.data?.revisions as { id: string }[])?.map(
+    (revision) => revision.id
+  ) ?? [itemId];
+
   const [historicalQuoteLinePrices, relatedSalesOrderLines] = await Promise.all(
     [
-      getQuoteLinePricesByItemId(client, itemId, quoteId),
-      getSalesOrderLinesByItemId(client, itemId),
+      getQuoteLinePricesByItemIds(client, itemIds, quoteId),
+      getSalesOrderLinesByItemIds(client, itemIds),
     ]
   );
 
@@ -1232,6 +1256,18 @@ export async function getSalesOrderLinesByItemId(
     .from("salesOrderLines")
     .select("*")
     .eq("itemId", itemId)
+    .order("orderDate", { ascending: false })
+    .order("createdAt", { ascending: false });
+}
+
+export async function getSalesOrderLinesByItemIds(
+  client: SupabaseClient<Database>,
+  itemIds: string[]
+) {
+  return client
+    .from("salesOrderLines")
+    .select("*")
+    .in("itemId", itemIds)
     .order("orderDate", { ascending: false })
     .order("createdAt", { ascending: false });
 }
