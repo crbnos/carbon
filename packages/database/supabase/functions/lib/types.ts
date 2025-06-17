@@ -8215,8 +8215,8 @@ export type Database = {
           createdBy: string;
           critical: boolean;
           customFields: Json | null;
+          demandAccumulationIncludesInventory: boolean;
           demandAccumulationPeriod: number;
-          demandAccumulationSafetyStock: number;
           itemId: string;
           locationId: string;
           maximumInventoryQuantity: number;
@@ -8236,8 +8236,8 @@ export type Database = {
           createdBy: string;
           critical?: boolean;
           customFields?: Json | null;
+          demandAccumulationIncludesInventory?: boolean;
           demandAccumulationPeriod?: number;
-          demandAccumulationSafetyStock?: number;
           itemId: string;
           locationId: string;
           maximumInventoryQuantity?: number;
@@ -8257,8 +8257,8 @@ export type Database = {
           createdBy?: string;
           critical?: boolean;
           customFields?: Json | null;
+          demandAccumulationIncludesInventory?: boolean;
           demandAccumulationPeriod?: number;
-          demandAccumulationSafetyStock?: number;
           itemId?: string;
           locationId?: string;
           maximumInventoryQuantity?: number;
@@ -37638,6 +37638,27 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey";
+            columns: ["parentMaterialId"];
+            isOneToOne: false;
+            referencedRelation: "jobMaterialWithMakeMethodId";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey";
+            columns: ["parentMaterialId"];
+            isOneToOne: false;
+            referencedRelation: "openJobMaterialLines";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobMaterial_companyId_fkey";
+            columns: ["companyId"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "jobMaterial_companyId_fkey";
             columns: ["companyId"];
             isOneToOne: false;
@@ -37694,11 +37715,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "jobMaterial_jobId_fkey";
-            columns: ["jobId"];
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey";
+            columns: ["jobMakeMethodId"];
             isOneToOne: false;
-            referencedRelation: "job";
+            referencedRelation: "jobMakeMethod";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey";
+            columns: ["jobMakeMethodId"];
+            isOneToOne: false;
+            referencedRelation: "jobMaterialWithMakeMethodId";
+            referencedColumns: ["jobMaterialMakeMethodId"];
+          },
+          {
+            foreignKeyName: "jobMaterial_unitOfMeasureCode_fkey";
+            columns: ["unitOfMeasureCode", "companyId"];
+            isOneToOne: false;
+            referencedRelation: "unitOfMeasure";
+            referencedColumns: ["code", "companyId"];
           },
           {
             foreignKeyName: "jobMaterial_jobId_fkey";
@@ -38097,14 +38132,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["supplierLocationId"];
+            columns: ["id"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
           },
           {
             foreignKeyName: "partner_id_fkey";
-            columns: ["id"];
+            columns: ["supplierLocationId"];
             isOneToOne: false;
             referencedRelation: "supplierLocation";
             referencedColumns: ["id"];
@@ -39444,14 +39479,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["supplierCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["supplierCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -41686,14 +41721,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["invoiceCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["invoiceCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -42229,14 +42264,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["customerCountryCode"];
+            columns: ["paymentCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
           },
           {
             foreignKeyName: "address_countryCode_fkey";
-            columns: ["paymentCountryCode"];
+            columns: ["customerCountryCode"];
             isOneToOne: false;
             referencedRelation: "country";
             referencedColumns: ["alpha2"];
@@ -45139,17 +45174,15 @@ export type Database = {
           manufacturingBlocked: boolean;
           lotSize: number;
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"];
-          safetyStockQuantity: number;
-          safetyStockLeadTime: number;
           demandAccumulationPeriod: number;
           demandAccumulationIncludesInventory: boolean;
           reorderPoint: number;
           reorderQuantity: number;
-          reorderMaximumInventory: number;
           minimumOrderQuantity: number;
           maximumOrderQuantity: number;
           orderMultiple: number;
           quantityOnHand: number;
+          maximumInventoryQuantity: number;
           week1: number;
           week2: number;
           week3: number;

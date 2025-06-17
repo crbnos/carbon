@@ -20,6 +20,11 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuHardHat />,
         table: "job",
       },
+    ],
+  },
+  {
+    name: "Plan",
+    routes: [
       {
         name: "Planning",
         to: path.to.productionPlanning,

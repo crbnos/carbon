@@ -44,6 +44,7 @@ import type {
   EditableTableCellComponent,
   Position,
 } from "~/components/Editable";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared";
 import {
   IndeterminateCheckbox,
@@ -57,7 +58,6 @@ import type { ColumnFilter } from "./components/Filter/types";
 import { useFilters } from "./components/Filter/useFilters";
 import type { ColumnSizeMap } from "./types";
 import { getAccessorKey, updateNestedProperty } from "./utils";
-import { useSavedViews } from "~/hooks/useSavedViews";
 
 interface TableProps<T extends object> {
   columns: ColumnDef<T>[];
@@ -134,6 +134,7 @@ const Table = <T extends object>({
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(
     currentView?.columnOrder ?? defaultColumnOrder ?? []
   );
+
   const [columnPinning, setColumnPinning] = useState<ColumnPinningState>(() => {
     const left: string[] = [];
     const right: string[] = [];
@@ -143,6 +144,7 @@ const Table = <T extends object>({
     if (renderContextMenu) {
       right.push("Actions");
     }
+
     if (currentView?.columnPinning) {
       return currentView.columnPinning;
     }
@@ -152,6 +154,17 @@ const Table = <T extends object>({
       Array.isArray(defaultColumnPinning.left)
     ) {
       left.push(...defaultColumnPinning.left);
+    }
+
+    if (
+      defaultColumnPinning &&
+      "right" in defaultColumnPinning &&
+      Array.isArray(defaultColumnPinning.right)
+    ) {
+      console.log("adding right");
+      right.push(...defaultColumnPinning.right);
+    } else {
+      console.log("no right");
     }
 
     return {
@@ -184,6 +197,14 @@ const Table = <T extends object>({
           Array.isArray(defaultColumnPinning.left)
         ) {
           left.push(...defaultColumnPinning.left);
+        }
+
+        if (
+          defaultColumnPinning &&
+          "right" in defaultColumnPinning &&
+          Array.isArray(defaultColumnPinning.right)
+        ) {
+          right.push(...defaultColumnPinning.right);
         }
 
         return {
@@ -620,7 +641,11 @@ const Table = <T extends object>({
       left: isPinned === "left" ? startX : undefined,
       right: isPinned === "right" ? 0 : undefined,
       zIndex: 2,
-      maxWidth: isPinned === "right" ? 60 : undefined,
+      maxWidth:
+        isPinned === "right" &&
+        column.columnDef.header?.toString() === "Actions"
+          ? 60
+          : undefined,
     };
   };
 

@@ -1,6 +1,5 @@
 import {
   Button,
-  Checkbox,
   Combobox,
   HStack,
   Tooltip,
@@ -16,7 +15,7 @@ import { memo, useMemo } from "react";
 import {
   LuBookMarked,
   LuBox,
-  LuCheck,
+  LuCircleCheck,
   LuCirclePlay,
   LuPackage,
 } from "react-icons/lu";
@@ -31,6 +30,10 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { useUrlParams } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
+import {
+  getReorderPolicyDescription,
+  ItemReorderPolicy,
+} from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
@@ -107,7 +110,9 @@ const PlanningTable = memo(
               />
 
               <Hyperlink
-                to={`${path.to.inventoryItem(row.original.id!)}/?${params}`}
+                to={`${path.to.productionPlanningItem(
+                  row.original.id!
+                )}?${params.toString()}`}
               >
                 <VStack spacing={0}>
                   {row.original.readableIdWithRevision}
@@ -128,6 +133,22 @@ const PlanningTable = memo(
           meta: {
             icon: <LuBookMarked />,
           },
+        },
+        {
+          accessorKey: "reorderingPolicy",
+          header: "Reorder Policy",
+          cell: ({ row }) => (
+            <Tooltip>
+              <TooltipTrigger>
+                <ItemReorderPolicy
+                  reorderingPolicy={row.original.reorderingPolicy}
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                {getReorderPolicyDescription(row.original)}
+              </TooltipContent>
+            </Tooltip>
+          ),
         },
         {
           accessorKey: "quantityOnHand",
@@ -152,34 +173,31 @@ const PlanningTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: itemTypes.map((type) => ({
-                label: (
-                  <HStack spacing={2}>
-                    <MethodItemTypeIcon type={type} />
-                    <span>{type}</span>
-                  </HStack>
-                ),
-                value: type,
-              })),
+              options: itemTypes
+                .filter((t) => ["Part", "Tool"].includes(t))
+                .map((type) => ({
+                  label: (
+                    <HStack spacing={2}>
+                      <MethodItemTypeIcon type={type} />
+                      <span>{type}</span>
+                    </HStack>
+                  ),
+                  value: type,
+                })),
             },
             icon: <LuBox />,
           },
         },
         {
-          accessorKey: "active",
-          header: "Active",
-          cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
-          meta: {
-            filter: {
-              type: "static",
-              options: [
-                { value: "true", label: "Active" },
-                { value: "false", label: "Inactive" },
-              ],
-            },
-            pluralHeader: "Active Statuses",
-            icon: <LuCheck />,
-          },
+          id: "Order",
+          header: "",
+          cell: ({ row }) => (
+            <HStack>
+              <Button variant="secondary" leftIcon={<LuCircleCheck />}>
+                Order
+              </Button>
+            </HStack>
+          ),
         },
       ];
     }, [periods, dateFormatter, numberFormatter, params, unitOfMeasures]);
@@ -191,6 +209,7 @@ const PlanningTable = memo(
 
     const defaultColumnPinning = {
       left: ["readableIdWithRevision"],
+      right: ["Order"],
     };
 
     const mrpFetcher = useFetcher<typeof mrpAction>();

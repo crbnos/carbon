@@ -94,23 +94,10 @@ const ItemPlanningForm = ({
             {policy === "Maximum Quantity" && (
               <>
                 <Number
-                  name="safetyStockQuantity"
-                  label="Safety Stock Quantity"
+                  name="maximumInventoryQuantity"
+                  label="Maximum Inventory Quantity"
                 />
-                <Number
-                  name="safetyStockLeadTime"
-                  label="Safety Stock Lead Time (Days)"
-                />
-                <Number
-                  name="minimumOrderQuantity"
-                  label="Minimum Order Quantity"
-                  minValue={0}
-                />
-                <Number
-                  name="maximumOrderQuantity"
-                  label="Maximum Order Quantity"
-                  minValue={0}
-                />
+                <div />
               </>
             )}
 
@@ -120,6 +107,10 @@ const ItemPlanningForm = ({
                   name="demandAccumulationPeriod"
                   label="Demand Accumulation Period (Days)"
                   minValue={0}
+                />
+                <Boolean
+                  name="demandAccumulationIncludesInventory"
+                  label="Demand Includes Inventory"
                 />
               </>
             )}
@@ -131,24 +122,22 @@ const ItemPlanningForm = ({
                   label="Reorder Quantity"
                   minValue={0}
                 />
-                <Number
-                  name="reorderMaximumInventory"
-                  label="Reorder Maximum Inventory"
-                  minValue={0}
-                />
               </>
             )}
 
             <Number name="orderMultiple" label="Order Multiple" minValue={0} />
-            <Boolean name="critical" label="Critical" />
-            {policy === "Demand-Based Reorder" && (
-              <>
-                <Boolean
-                  name="demandAccumulationIncludesInventory"
-                  label="Demand Includes Inventory"
-                />
-              </>
-            )}
+            <Number
+              name="minimumOrderQuantity"
+              label="Minimum Order Quantity"
+              minValue={0}
+            />
+            <Number
+              name="maximumOrderQuantity"
+              label="Maximum Order Quantity"
+              minValue={0}
+            />
+            {/* <Boolean name="critical" label="Critical" /> */}
+
             <CustomFormFields table="partPlanning" />
           </div>
         </CardContent>

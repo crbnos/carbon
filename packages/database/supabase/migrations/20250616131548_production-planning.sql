@@ -1,4 +1,9 @@
-DROP FUNCTION IF EXISTS get_production_planning;
+ALTER TABLE "itemPlanning" DROP COLUMN "demandReschedulingPeriod";
+ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockQuantity";
+ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockLeadTime";
+ALTER TABLE "itemPlanning" DROP COLUMN "reorderMaximumInventory";
+ALTER TABLE "itemPlanning" ADD COLUMN "maximumInventoryQuantity" NUMERIC NOT NULL DEFAULT 0;
+
 
 -- Add indexes for supply and demand tables
 CREATE INDEX IF NOT EXISTS "supplyActual_companyId_locationId_idx" ON "supplyActual" ("companyId", "locationId");
@@ -6,6 +11,7 @@ CREATE INDEX IF NOT EXISTS "supplyForecast_companyId_locationId_idx" ON "supplyF
 CREATE INDEX IF NOT EXISTS "demandActual_companyId_locationId_idx" ON "demandActual" ("companyId", "locationId");
 CREATE INDEX IF NOT EXISTS "demandForecast_companyId_locationId_idx" ON "demandForecast" ("companyId", "locationId");
 
+DROP FUNCTION IF EXISTS get_production_planning;
 CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id TEXT, periods TEXT[])
   RETURNS TABLE (
     "id" TEXT,
@@ -21,17 +27,15 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     "manufacturingBlocked" BOOLEAN,
     "lotSize" INTEGER,
     "reorderingPolicy" "itemReorderingPolicy",
-    "safetyStockQuantity" INTEGER,
-    "safetyStockLeadTime" INTEGER,
     "demandAccumulationPeriod" INTEGER,
     "demandAccumulationIncludesInventory" BOOLEAN,
     "reorderPoint" INTEGER,
     "reorderQuantity" INTEGER,
-    "reorderMaximumInventory" INTEGER,
     "minimumOrderQuantity" INTEGER,
     "maximumOrderQuantity" INTEGER,
     "orderMultiple" INTEGER,
     "quantityOnHand" NUMERIC,
+    "maximumInventoryQuantity" NUMERIC,
     "week1" NUMERIC,
     "week2" NUMERIC,
     "week3" NUMERIC,
@@ -129,7 +133,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
   ),
   -- Base data for items with early filtering
   base_items AS (
-    SELECT
+    SELECT DISTINCT ON (i."id")
       i."id",
       i."readableIdWithRevision",
       i."name",
@@ -146,16 +150,14 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
       ir."manufacturingBlocked",
       ir."lotSize",
       ip."reorderingPolicy",
-      ip."safetyStockQuantity",
-      ip."safetyStockLeadTime",
       ip."demandAccumulationPeriod",
       ip."demandAccumulationIncludesInventory",
       ip."reorderPoint",
       ip."reorderQuantity",
-      ip."reorderMaximumInventory",
       ip."minimumOrderQuantity",
       ip."maximumOrderQuantity",
       ip."orderMultiple",
+      ip."maximumInventoryQuantity",
       COALESCE((
         SELECT SUM("quantity")
         FROM "itemLedger"
@@ -170,6 +172,17 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     WHERE i."companyId" = company_id
       AND i."replenishmentSystem" = 'Make'
       AND i."active" = TRUE
+      AND EXISTS (
+        SELECT 1 FROM demand_data d 
+        WHERE d."itemId" = i."id"
+      )
+      AND COALESCE((
+        SELECT SUM("quantity")
+        FROM "itemLedger"
+        WHERE "companyId" = company_id
+          AND "locationId" = location_id
+          AND "itemId" = i."id"
+      ), 0) >= 0
   ),
   -- Recursive calculation of projections with optimized joins
   projections AS (
@@ -200,16 +213,14 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
       p."manufacturingBlocked",
       p."lotSize",
       p."reorderingPolicy",
-      p."safetyStockQuantity",
-      p."safetyStockLeadTime",
       p."demandAccumulationPeriod",
       p."demandAccumulationIncludesInventory",
       p."reorderPoint",
       p."reorderQuantity",
-      p."reorderMaximumInventory",
       p."minimumOrderQuantity",
       p."maximumOrderQuantity",
       p."orderMultiple",
+      p."maximumInventoryQuantity",
       p."quantityOnHand",
       periods[p.period_index + 1] as "periodId",
       p."projection" + COALESCE(s."supply", 0) - COALESCE(d."demand", 0) AS "projection",
@@ -220,7 +231,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     WHERE p.period_index < array_length(periods, 1)
   )
   -- Final result with optimized pivot
-  SELECT
+  SELECT DISTINCT ON (p."id")
     p."id",
     p."readableIdWithRevision",
     p."name",
@@ -234,17 +245,15 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     p."manufacturingBlocked",
     p."lotSize",
     p."reorderingPolicy",
-    p."safetyStockQuantity",
-    p."safetyStockLeadTime",
     p."demandAccumulationPeriod",
     p."demandAccumulationIncludesInventory",
     p."reorderPoint",
     p."reorderQuantity",
-    p."reorderMaximumInventory",
     p."minimumOrderQuantity",
     p."maximumOrderQuantity",
     p."orderMultiple",
     p."quantityOnHand",
+    p."maximumInventoryQuantity",
     MAX(CASE WHEN p."periodId" = periods[1] THEN p."projection" END) AS "week1",
     MAX(CASE WHEN p."periodId" = periods[2] THEN p."projection" END) AS "week2",
     MAX(CASE WHEN p."periodId" = periods[3] THEN p."projection" END) AS "week3",
@@ -312,26 +321,24 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     p."manufacturingBlocked",
     p."lotSize",
     p."reorderingPolicy",
-    p."safetyStockQuantity",
-    p."safetyStockLeadTime",
     p."demandAccumulationPeriod",
     p."demandAccumulationIncludesInventory",
     p."reorderPoint",
     p."reorderQuantity",
-    p."reorderMaximumInventory",
     p."minimumOrderQuantity",
     p."maximumOrderQuantity",
     p."orderMultiple",
-    p."quantityOnHand";
+    p."quantityOnHand",
+    p."maximumInventoryQuantity";
 $$ LANGUAGE sql SECURITY DEFINER;
 
-
--- add deadlineType to openProductionOrders
+-- add deadlineType and jobId to openProductionOrders
 DROP VIEW IF EXISTS "openProductionOrders";
 CREATE OR REPLACE VIEW "openProductionOrders" AS (
   SELECT 
     j."id",
     j."itemId",
+    j."jobId",
     j."productionQuantity" - j."quantityReceivedToInventory" AS "quantityToReceive",
     j."unitOfMeasureCode",
     j."companyId",
@@ -353,8 +360,38 @@ CREATE OR REPLACE VIEW "openProductionOrders" AS (
   AND j."salesOrderId" IS NULL
 );
 
-
-
+-- add parentMaterialId, jobMakeMethodId, and jobReadableId to openJobMaterialLines
+DROP VIEW IF EXISTS "openJobMaterialLines";
+CREATE OR REPLACE VIEW "openJobMaterialLines" AS (
+  SELECT 
+    jm."id",
+    jm."jobId",
+    jmm."parentMaterialId",
+    jm."jobMakeMethodId",
+    j."jobId" as "jobReadableId",
+    jm."itemId",
+    jm."quantityToIssue",
+    jm."unitOfMeasureCode",
+    jm."companyId",
+    i1."replenishmentSystem", 
+    i1."itemTrackingType",
+    ir."leadTime" AS "leadTime",
+    j."locationId",
+    j."dueDate"
+  FROM "jobMaterial" jm
+  INNER JOIN "job" j ON jm."jobId" = j."id"
+  INNER JOIN "jobMakeMethod" jmm ON jm."jobMakeMethodId" = jmm."id"
+  INNER JOIN "item" i1 ON jm."itemId" = i1."id"
+  INNER JOIN "item" i2 ON j."itemId" = i2."id"
+  INNER JOIN "itemReplenishment" ir ON i2."id" = ir."itemId"
+  WHERE j."status" IN (
+      'Planned',
+      'Ready',
+      'In Progress',
+      'Paused'
+    )
+  AND jm."methodType" != 'Make'
+);
 
 
 CREATE OR REPLACE FUNCTION public.create_item_related_records()

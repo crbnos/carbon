@@ -14,7 +14,7 @@ import { path } from "~/utils/path";
 
 const itemsRoutes: AuthenticatedRouteGroup[] = [
   {
-    name: "Items",
+    name: "Manage",
     routes: [
       {
         name: "Parts",

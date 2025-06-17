@@ -7,6 +7,10 @@ import {
   getItemDemand,
   getItemQuantities,
   getItemSupply,
+  getOpenJobMaterials,
+  getOpenProductionOrders,
+  getOpenPurchaseOrderLines,
+  getOpenSalesOrderLines,
 } from "~/modules/items/items.service";
 import { getPeriods } from "~/modules/shared/shared.service";
 
@@ -15,6 +19,10 @@ const defaultResponse = {
   supply: [],
   periods: [],
   quantityOnHand: 0,
+  openSalesOrderLines: [],
+  openJobMaterials: [],
+  openProductionOrders: [],
+  openPurchaseOrderLines: [],
 };
 
 const WEEKS_TO_FORECAST = 12 * 4;
@@ -42,7 +50,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [demand, supply, quantities] = await Promise.all([
+  const [
+    demand,
+    supply,
+    quantities,
+    openSalesOrderLines,
+    openJobMaterials,
+    openProductionOrders,
+    openPurchaseOrderLines,
+  ] = await Promise.all([
     getItemDemand(client, {
       itemId,
       locationId,
@@ -56,6 +72,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
     }),
     getItemQuantities(client, itemId, companyId, locationId),
+    getOpenSalesOrderLines(client, { itemId, companyId, locationId }),
+    getOpenJobMaterials(client, { itemId, companyId, locationId }),
+    getOpenProductionOrders(client, { itemId, companyId, locationId }),
+    getOpenPurchaseOrderLines(client, { itemId, companyId, locationId }),
   ]);
 
   if (demand.error) {
@@ -77,5 +97,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     supply: supply.data,
     periods: periods.data,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
+    openSalesOrderLines: openSalesOrderLines.data ?? [],
+    openJobMaterials: openJobMaterials.data ?? [],
+    openProductionOrders: openProductionOrders.data ?? [],
+    openPurchaseOrderLines: openPurchaseOrderLines.data ?? [],
   });
 }

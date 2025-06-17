@@ -3,7 +3,7 @@ import { Badge } from "./Badge";
 import { cn } from "./utils/cn";
 
 type StatusProps = ComponentProps<"div"> & {
-  color?: "green" | "orange" | "red" | "yellow" | "blue" | "gray";
+  color?: "green" | "orange" | "red" | "yellow" | "blue" | "gray" | "purple";
 };
 
 const Status = ({
