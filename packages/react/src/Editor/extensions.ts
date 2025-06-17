@@ -18,8 +18,10 @@ import {
 } from "novel/extensions";
 import { UploadImagesPlugin } from "novel/plugins";
 
-// Loom video regex pattern
+// Video regex patterns
 const LOOM_REGEX = /https:\/\/www\.loom\.com\/share\/([a-zA-Z0-9]+)/;
+const YOUTUBE_REGEX =
+  /https:\/\/(?:www\.youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9]+)/;
 
 // Custom node for HTML content
 const HTMLContent = Node.create({
@@ -34,20 +36,23 @@ const HTMLContent = Node.create({
       html: {
         default: "",
       },
+      type: {
+        default: "loom", // or "youtube"
+      },
     };
   },
 
   parseHTML() {
     return [
       {
-        tag: "div[data-loom-video]",
+        tag: "div[data-video-embed]",
       },
     ];
   },
 
   renderHTML({ node }) {
     const container = document.createElement("div");
-    container.setAttribute("data-loom-video", "true");
+    container.setAttribute("data-video-embed", node.attrs.type);
     container.setAttribute("tabindex", "0");
     container.className =
       "focus:ring-2 focus:ring-primary hover:bg-zinc-200 dark:hover:bg-zinc-800 p-2 border bg-zinc-100 dark:bg-zinc-900 cursor-move rounded-lg";
@@ -56,27 +61,40 @@ const HTMLContent = Node.create({
   },
 });
 
-const LoomEmbed = Extension.create({
-  name: "loomEmbed",
+const VideoEmbed = Extension.create({
+  name: "videoEmbed",
 
   addProseMirrorPlugins() {
     return [
       new Plugin({
-        key: new PluginKey("loomEmbed"),
+        key: new PluginKey("videoEmbed"),
         props: {
           handlePaste: (view, event) => {
             const text = event.clipboardData?.getData("text/plain");
             if (!text) return false;
 
-            const match = text.match(LOOM_REGEX);
-            if (!match) return false;
+            const loomMatch = text.match(LOOM_REGEX);
+            const youtubeMatch = text.match(YOUTUBE_REGEX);
 
-            const [, videoId] = match;
-            const embedHtml = `<div><div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/${videoId}" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
+            if (!loomMatch && !youtubeMatch) return false;
+
+            let embedHtml = "";
+            let videoType = "";
+
+            if (loomMatch) {
+              const [, videoId] = loomMatch;
+              videoType = "loom";
+              embedHtml = `<div><div style="position: relative; padding-bottom: 62.5%; height: 0;"><iframe src="https://www.loom.com/embed/${videoId}" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
+            } else if (youtubeMatch) {
+              const [, videoId] = youtubeMatch;
+              videoType = "youtube";
+              embedHtml = `<div><div style="position: relative; padding-bottom: 56.25%; height: 0;"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div></div>`;
+            }
 
             // Create an HTML content node
             const node = view.state.schema.nodes.htmlContent.create({
               html: embedHtml,
+              type: videoType,
             });
             const transaction = view.state.tr.replaceSelectionWith(node);
             view.dispatch(transaction);
@@ -210,7 +228,7 @@ export const defaultExtensions = [
   taskItem,
   horizontalRule,
   aiHighlight,
-  LoomEmbed,
+  VideoEmbed,
   HTMLContent,
   Table,
   TableCell,

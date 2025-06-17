@@ -103,7 +103,7 @@ p.is-editor-empty:first-child:before {
   pointer-events: none;
 }
 
-.tiptap.ProseMirror-focused div[data-loom-video],
-.tiptap.ProseMirror-selectedNode div[data-loom-video] {
+.tiptap.ProseMirror-focused div[data-video-embed],
+.tiptap.ProseMirror-selectedNode div[data-video-embed] {
   @apply ring-2 ring-primary cursor-move p-2 rounded-lg;
 }

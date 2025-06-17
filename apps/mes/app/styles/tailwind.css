@@ -115,3 +115,8 @@ p.is-editor-empty:first-child:before {
 .loading-dot:nth-child(3) {
   animation-delay: 0.4s;
 }
+
+.tiptap.ProseMirror-focused div[data-video-embed],
+.tiptap.ProseMirror-selectedNode div[data-video-embed] {
+  @apply ring-2 ring-primary cursor-move p-2 rounded-lg;
+}
