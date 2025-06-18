@@ -6,12 +6,14 @@ export enum NotificationWorkflow {
   Assignment = "assignment",
   DigitalQuoteResponse = "digital-quote-response",
   Expiration = "expiration",
+  JobCompleted = "job-completed",
   Message = "message",
 }
 
 export enum NotificationEvent {
   DigitalQuoteResponse = "digital-quote-response",
   JobAssignment = "job-assignment",
+  JobCompleted = "job-completed",
   JobOperationAssignment = "job-operation-assignment",
   JobOperationMessage = "job-operation-message",
   NonConformanceAssignment = "non-conformance-assignment",
@@ -29,6 +31,7 @@ export enum NotificationEvent {
 export enum NotificationType {
   AssignmentInApp = "assignment-in-app",
   DigitalQuoteResponseInApp = "digital-quote-response-in-app",
+  JobCompletedInApp = "job-completed-in-app",
   ExpirationInApp = "expiration-in-app",
   MessageInApp = "message-in-app",
 }

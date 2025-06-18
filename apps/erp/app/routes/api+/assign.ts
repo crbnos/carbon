@@ -99,6 +99,8 @@ function getNotificationEvent(table: string): NotificationEvent | null {
       return NotificationEvent.SalesOrderAssignment;
     case "job":
       return NotificationEvent.JobAssignment;
+    case "jobCompleted":
+      return NotificationEvent.JobCompleted;
     case "jobOperation":
       return NotificationEvent.JobOperationAssignment;
     case "nonConformanceInvestigationTask":

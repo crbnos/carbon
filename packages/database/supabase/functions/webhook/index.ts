@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.33.1";
+import { z } from "npm:zod@^3.24.1";
 import { corsHeaders } from "../lib/headers.ts";
 import type { Database } from "../lib/types.ts";
 

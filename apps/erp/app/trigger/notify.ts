@@ -59,6 +59,8 @@ export const notifyTask = task({
         case NotificationEvent.SalesRfqReady:
         case NotificationEvent.SupplierQuoteAssignment:
           return NotificationWorkflow.Assignment;
+        case NotificationEvent.JobCompleted:
+          return NotificationWorkflow.JobCompleted;
         case NotificationEvent.DigitalQuoteResponse:
           return NotificationWorkflow.DigitalQuoteResponse;
         case NotificationEvent.JobOperationMessage:
@@ -141,7 +143,19 @@ export const notifyTask = task({
           }
 
           return `Job ${job?.data?.jobId} assigned to you`;
+        case NotificationEvent.JobCompleted:
+          const completedJob = await client
+            .from("job")
+            .select("*")
+            .eq("id", documentId)
+            .single();
 
+          if (completedJob.error) {
+            console.error("Failed to get job", completedJob.error);
+            throw completedJob.error;
+          }
+
+          return `Job ${completedJob?.data?.jobId} is complete!`;
         case NotificationEvent.JobOperationAssignment:
         case NotificationEvent.JobOperationMessage:
           const [, operationId] = documentId.split(":");
