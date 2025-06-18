@@ -2092,8 +2092,11 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders: boolean
           digitalQuoteNotificationGroup: string[]
           id: string
+          inventoryJobCompletedNotificationGroup: string[]
+          jobCompletedNotificationGroup: string[]
           productLabelSize: string | null
           rfqReadyNotificationGroup: string[]
+          salesJobCompletedNotificationGroup: string[]
           shelfLabelSize: string | null
         }
         Insert: {
@@ -2101,8 +2104,11 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id: string
+          inventoryJobCompletedNotificationGroup?: string[]
+          jobCompletedNotificationGroup?: string[]
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
+          salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
         }
         Update: {
@@ -2110,8 +2116,11 @@ export type Database = {
           digitalQuoteIncludesPurchaseOrders?: boolean
           digitalQuoteNotificationGroup?: string[]
           id?: string
+          inventoryJobCompletedNotificationGroup?: string[]
+          jobCompletedNotificationGroup?: string[]
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
+          salesJobCompletedNotificationGroup?: string[]
           shelfLabelSize?: string | null
         }
         Relationships: [
@@ -8206,20 +8215,17 @@ export type Database = {
           createdBy: string
           critical: boolean
           customFields: Json | null
-          demandAccumulationIncludesInventory: boolean
           demandAccumulationPeriod: number
-          demandReschedulingPeriod: number
+          demandAccumulationSafetyStock: number
           itemId: string
           locationId: string
+          maximumInventoryQuantity: number
           maximumOrderQuantity: number
           minimumOrderQuantity: number
           orderMultiple: number
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
-          reorderMaximumInventory: number
           reorderPoint: number
           reorderQuantity: number
-          safetyStockLeadTime: number
-          safetyStockQuantity: number
           tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
@@ -8230,20 +8236,17 @@ export type Database = {
           createdBy: string
           critical?: boolean
           customFields?: Json | null
-          demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
-          demandReschedulingPeriod?: number
+          demandAccumulationSafetyStock?: number
           itemId: string
           locationId: string
+          maximumInventoryQuantity?: number
           maximumOrderQuantity?: number
           minimumOrderQuantity?: number
           orderMultiple?: number
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
-          reorderMaximumInventory?: number
           reorderPoint?: number
           reorderQuantity?: number
-          safetyStockLeadTime?: number
-          safetyStockQuantity?: number
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -8254,20 +8257,17 @@ export type Database = {
           createdBy?: string
           critical?: boolean
           customFields?: Json | null
-          demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
-          demandReschedulingPeriod?: number
+          demandAccumulationSafetyStock?: number
           itemId?: string
           locationId?: string
+          maximumInventoryQuantity?: number
           maximumOrderQuantity?: number
           minimumOrderQuantity?: number
           orderMultiple?: number
           reorderingPolicy?: Database["public"]["Enums"]["itemReorderingPolicy"]
-          reorderMaximumInventory?: number
           reorderPoint?: number
           reorderQuantity?: number
-          safetyStockLeadTime?: number
-          safetyStockQuantity?: number
           tags?: string[] | null
           updatedAt?: string | null
           updatedBy?: string | null
@@ -37586,8 +37586,11 @@ export type Database = {
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
           jobId: string | null
+          jobMakeMethodId: string | null
+          jobReadableId: string | null
           leadTime: number | null
           locationId: string | null
+          parentMaterialId: string | null
           quantityToIssue: number | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
@@ -37600,6 +37603,27 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterial"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMakeMethod_parentMaterialId_fkey"
+            columns: ["parentMaterialId"]
+            isOneToOne: false
+            referencedRelation: "openJobMaterialLines"
             referencedColumns: ["id"]
           },
           {
@@ -37687,6 +37711,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMakeMethod"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobMaterial_jobMakeMethodId_fkey"
+            columns: ["jobMakeMethodId"]
+            isOneToOne: false
+            referencedRelation: "jobMaterialWithMakeMethodId"
+            referencedColumns: ["jobMaterialMakeMethodId"]
+          },
+          {
             foreignKeyName: "jobMaterial_unitOfMeasureCode_fkey"
             columns: ["unitOfMeasureCode", "companyId"]
             isOneToOne: false
@@ -37698,12 +37736,14 @@ export type Database = {
       openProductionOrders: {
         Row: {
           companyId: string | null
+          deadlineType: Database["public"]["Enums"]["deadlineType"] | null
           dueDate: string | null
           id: string | null
           itemId: string | null
           itemTrackingType:
             | Database["public"]["Enums"]["itemTrackingType"]
             | null
+          jobId: string | null
           leadTime: number | null
           locationId: string | null
           quantityToReceive: number | null
@@ -41640,14 +41680,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -45073,6 +45113,89 @@ export type Database = {
         }
         Returns: string[]
       }
+      get_production_planning: {
+        Args: {
+          company_id: string
+          location_id: string
+          periods: string[]
+        }
+        Returns: {
+          id: string
+          readableIdWithRevision: string
+          name: string
+          active: boolean
+          type: Database["public"]["Enums"]["itemType"]
+          itemTrackingType: Database["public"]["Enums"]["itemTrackingType"]
+          replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"]
+          thumbnailPath: string
+          unitOfMeasureCode: string
+          leadTime: number
+          manufacturingBlocked: boolean
+          lotSize: number
+          reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"]
+          demandAccumulationPeriod: number
+          demandAccumulationSafetyStock: number
+          reorderPoint: number
+          reorderQuantity: number
+          minimumOrderQuantity: number
+          maximumOrderQuantity: number
+          orderMultiple: number
+          quantityOnHand: number
+          maximumInventoryQuantity: number
+          week1: number
+          week2: number
+          week3: number
+          week4: number
+          week5: number
+          week6: number
+          week7: number
+          week8: number
+          week9: number
+          week10: number
+          week11: number
+          week12: number
+          week13: number
+          week14: number
+          week15: number
+          week16: number
+          week17: number
+          week18: number
+          week19: number
+          week20: number
+          week21: number
+          week22: number
+          week23: number
+          week24: number
+          week25: number
+          week26: number
+          week27: number
+          week28: number
+          week29: number
+          week30: number
+          week31: number
+          week32: number
+          week33: number
+          week34: number
+          week35: number
+          week36: number
+          week37: number
+          week38: number
+          week39: number
+          week40: number
+          week41: number
+          week42: number
+          week43: number
+          week44: number
+          week45: number
+          week46: number
+          week47: number
+          week48: number
+          week49: number
+          week50: number
+          week51: number
+          week52: number
+        }[]
+      }
       get_quote_methods: {
         Args: {
           qid: string
@@ -45270,6 +45393,12 @@ export type Database = {
       }
       is_claims_admin: {
         Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_last_job_operation: {
+        Args: {
+          operation_id: string
+        }
         Returns: boolean
       }
       items_search: {

@@ -965,6 +965,7 @@ export const path = {
     process: (id: string) => generatePath(`${x}/resources/processes/${id}`),
     processes: `${x}/resources/processes`,
     production: `${x}/production`,
+    productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),

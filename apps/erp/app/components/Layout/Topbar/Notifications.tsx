@@ -134,6 +134,7 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.JobCompleted:
     case NotificationEvent.JobAssignment:
       return (
         <Notification
@@ -146,7 +147,7 @@ function GenericNotification({
     case NotificationEvent.JobOperationMessage:
       const [jobId, operationId, makeMethodId, materialId] = id.split(":");
       const link = materialId
-        ? path.to.jobMakeMethod(jobId, makeMethodId, materialId)
+        ? path.to.jobMakeMethod(jobId, makeMethodId)
         : path.to.jobMethod(jobId, makeMethodId);
 
       return (

@@ -1,10 +1,9 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
 import { tasks } from "npm:@trigger.dev/sdk@3.0.0/v3";
+import { z } from "npm:zod@^3.24.1";
 import type { notifyTask } from "../../../../../apps/erp/app/trigger/notify.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
 
 const recipientValidator = z.discriminatedUnion("type", [
   z.object({
@@ -25,6 +24,7 @@ const payloadValidator = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("notify"),
     event: z.enum([
+      "job-completed",
       "quote-assignment",
       "sales-rfq-assignment",
       "sales-order-assignment",
@@ -51,13 +51,6 @@ serve(async (req: Request) => {
       type,
       ...data,
     });
-
-    // verify that the request is authorized by an API key or service role
-    await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      data.companyId
-    );
 
     switch (type) {
       case "notify": {

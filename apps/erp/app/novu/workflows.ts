@@ -12,6 +12,7 @@ const payloadSchema = z.object({
   event: z.enum([
     NotificationEvent.DigitalQuoteResponse,
     NotificationEvent.JobAssignment,
+    NotificationEvent.JobCompleted,
     NotificationEvent.JobOperationAssignment,
     NotificationEvent.JobOperationMessage,
     NotificationEvent.NonConformanceAssignment,
@@ -59,6 +60,17 @@ export const expirationWorkflow = workflow(
   async ({ payload, step }) => {
     await step.inApp(NotificationType.ExpirationInApp, () => ({
       body: "Expired",
+      payload,
+    }));
+  },
+  { payloadSchema }
+);
+
+export const jobCompletedWorkflow = workflow(
+  NotificationWorkflow.JobCompleted,
+  async ({ payload, step }) => {
+    await step.inApp(NotificationType.JobCompletedInApp, () => ({
+      body: "Job Completed",
       payload,
     }));
   },

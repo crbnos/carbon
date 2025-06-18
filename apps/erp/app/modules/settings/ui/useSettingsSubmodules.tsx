@@ -41,16 +41,22 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
     name: "Modules",
     routes: [
       {
-        name: "Sales",
-        to: path.to.salesSettings,
-        role: "employee",
-        icon: <LuCrown />,
-      },
-      {
         name: "Purchasing",
         to: path.to.purchasingSettings,
         role: "employee",
         icon: <LuShoppingCart />,
+      },
+      {
+        name: "Production",
+        to: path.to.productionSettings,
+        role: "employee",
+        icon: <LuFactory />,
+      },
+      {
+        name: "Sales",
+        to: path.to.salesSettings,
+        role: "employee",
+        icon: <LuCrown />,
       },
     ],
   },
