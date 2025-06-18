@@ -146,6 +146,11 @@ export default function MateriallanningRoute() {
       <ItemPlanningChart
         itemId={materialPlanning.itemId}
         locationId={locationId}
+        safetyStock={
+          materialPlanning.reorderingPolicy === "Demand-Based Reorder"
+            ? materialPlanning.demandAccumulationSafetyStock ?? 0
+            : undefined
+        }
       />
     </VStack>
   );

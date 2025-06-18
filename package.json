@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "csv-parse": "^5.5.0",
     "eslint": "^8.23.1",
     "eslint-config-carbon": "*",
     "husky": "^8.0.3",

@@ -427,24 +427,41 @@ export const itemPostingGroupValidator = z.object({
   description: z.string().optional(),
 });
 
-export const itemPlanningValidator = z.object({
-  itemId: z.string().min(1, { message: "Item ID is required" }),
-  locationId: z.string().min(20, { message: "Location is required" }),
-  reorderingPolicy: z.enum(itemReorderingPolicies, {
-    errorMap: (issue, ctx) => ({
-      message: "Reordering policy is required",
+export const itemPlanningValidator = z
+  .object({
+    itemId: z.string().min(1, { message: "Item ID is required" }),
+    locationId: z.string().min(20, { message: "Location is required" }),
+    reorderingPolicy: z.enum(itemReorderingPolicies, {
+      errorMap: (issue, ctx) => ({
+        message: "Reordering policy is required",
+      }),
     }),
-  }),
-  demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
-  demandAccumulationIncludesInventory: zfd.checkbox().optional(),
-  reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
-  reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
-  maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
-  minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-  maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
-  orderMultiple: zfd.numeric(z.number().min(1)).optional(),
-  // critical: zfd.checkbox(),
-});
+    demandAccumulationPeriod: zfd.numeric(z.number().min(0).optional()),
+    demandAccumulationSafetyStock: zfd.numeric(z.number().min(0).optional()),
+    reorderPoint: zfd.numeric(z.number().min(0).optional()).optional(),
+    reorderQuantity: zfd.numeric(z.number().min(0)).optional(),
+    maximumInventoryQuantity: zfd.numeric(z.number().min(0)).optional(),
+    minimumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
+    maximumOrderQuantity: zfd.numeric(z.number().min(0)).optional(),
+    orderMultiple: zfd.numeric(z.number().min(1)).optional(),
+    // critical: zfd.checkbox(),
+  })
+  .refine(
+    (data) => {
+      if (data.reorderingPolicy === "Maximum Quantity") {
+        return (
+          data.maximumInventoryQuantity &&
+          data.reorderPoint &&
+          data.maximumInventoryQuantity > data.reorderPoint
+        );
+      }
+      return true;
+    },
+    {
+      message: "Maximum inventory quantity must be greater than reorder point",
+      path: ["maximumInventoryQuantity"],
+    }
+  );
 
 export const itemPurchasingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),

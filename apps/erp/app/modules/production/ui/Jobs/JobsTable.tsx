@@ -226,19 +226,18 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         cell: ({ row }) => {
           const dueDate = row.original.dueDate!;
           const deadlineType = row.original.deadlineType!;
-          const isOverdue = new Date(dueDate) < new Date();
 
           if (!dueDate)
             return (
               <div className="flex gap-1 items-center">
-                {getDeadlineIcon(deadlineType, false)}
+                {getDeadlineIcon(deadlineType)}
                 <span>{getDeadlineText(deadlineType)}</span>
               </div>
             );
 
           return (
             <div className="flex items-center gap-1">
-              {getDeadlineIcon(deadlineType, isOverdue)}
+              {getDeadlineIcon(deadlineType)}
               <span>{getDeadlineText(deadlineType)}</span>
             </div>
           );
@@ -250,7 +249,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
               value: type,
               label: (
                 <div className="flex gap-1 items-center">
-                  {getDeadlineIcon(type, false)}
+                  {getDeadlineIcon(type)}
                   <span>{getDeadlineText(type)}</span>
                 </div>
               ),

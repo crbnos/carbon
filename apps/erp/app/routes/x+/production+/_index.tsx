@@ -923,7 +923,7 @@ function WorkCenterCards({
 
                   {deadlineType && (
                     <HStack className="justify-start space-x-2">
-                      {getDeadlineIcon(deadlineType, isOverdue)}
+                      {getDeadlineIcon(deadlineType)}
                       <Tooltip>
                         <TooltipTrigger>
                           <span

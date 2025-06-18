@@ -355,7 +355,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                           value: d,
                           label: (
                             <div className="flex gap-1 items-center">
-                              {getDeadlineIcon(d, false)}
+                              {getDeadlineIcon(d)}
                               <span>{getDeadlineText(d)}</span>
                             </div>
                           ),
@@ -520,7 +520,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                             value: d,
                             label: (
                               <div className="flex gap-1 items-center">
-                                {getDeadlineIcon(d, false)}
+                                {getDeadlineIcon(d)}
                                 <span>{getDeadlineText(d)}</span>
                               </div>
                             ),

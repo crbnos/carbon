@@ -387,7 +387,7 @@ const JobProperties = () => {
             const deadlineType = value as (typeof deadlineTypes)[number];
             return (
               <div className="flex gap-1 items-center">
-                {getDeadlineIcon(deadlineType, false)}
+                {getDeadlineIcon(deadlineType)}
                 <span>{getDeadlineText(deadlineType)}</span>
               </div>
             );

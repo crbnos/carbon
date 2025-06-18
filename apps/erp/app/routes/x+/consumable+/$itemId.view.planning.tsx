@@ -149,6 +149,11 @@ export default function ConsumablePlanningRoute() {
       <ItemPlanningChart
         itemId={consumablePlanning.itemId}
         locationId={locationId}
+        safetyStock={
+          consumablePlanning.reorderingPolicy === "Demand-Based Reorder"
+            ? consumablePlanning.demandAccumulationSafetyStock ?? 0
+            : undefined
+        }
       />
     </VStack>
   );
