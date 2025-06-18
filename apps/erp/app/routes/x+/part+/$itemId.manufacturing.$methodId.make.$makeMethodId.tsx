@@ -125,8 +125,9 @@ export default function MethodMaterialMakePage() {
   const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
     loaderData;
 
-  const { itemId, makeMethodId } = useParams();
+  const { itemId, methodId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   const routeData = useRouteData<{
@@ -138,7 +139,7 @@ export default function MethodMaterialMakePage() {
       parameters: ConfigurationParameter[];
     };
     configurationRules: ConfigurationRule[];
-  }>(path.to.partManufacturing(itemId));
+  }>(path.to.partMethod(itemId, methodId));
 
   return (
     <VStack spacing={2} className="p-2">

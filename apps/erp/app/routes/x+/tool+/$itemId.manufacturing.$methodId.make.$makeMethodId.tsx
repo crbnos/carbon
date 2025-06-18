@@ -117,8 +117,9 @@ export default function MethodMaterialMakePage() {
   const { makeMethod, makeMethods, methodMaterials, methodOperations, tags } =
     loaderData;
 
-  const { itemId, makeMethodId } = useParams();
+  const { itemId, methodId, makeMethodId } = useParams();
   if (!itemId) throw new Error("Could not find itemId");
+  if (!methodId) throw new Error("Could not find methodId");
   if (!makeMethodId) throw new Error("Could not find makeMethodId");
 
   return (
