@@ -90,7 +90,7 @@ export function ColumnCard({
     >
       <div className="p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 bg-card z-1 border-b">
         <div className="flex flex-grow items-start space-x-2">
-          <PulsingDot inactive={!column.active} />
+          <PulsingDot inactive={!column.active} className="mt-2" />
           <div className="flex flex-col flex-grow">
             <span className="mr-auto truncate"> {column.title}</span>
             {totalDuration > 0 ? (

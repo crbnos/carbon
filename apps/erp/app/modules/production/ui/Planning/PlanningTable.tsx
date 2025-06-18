@@ -2,6 +2,7 @@ import {
   Button,
   Combobox,
   HStack,
+  PulsingDot,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -139,18 +140,28 @@ const PlanningTable = memo(
         {
           accessorKey: "reorderingPolicy",
           header: "Reorder Policy",
-          cell: ({ row }) => (
-            <Tooltip>
-              <TooltipTrigger>
-                <ItemReorderPolicy
-                  reorderingPolicy={row.original.reorderingPolicy}
-                />
-              </TooltipTrigger>
-              <TooltipContent>
-                {getReorderPolicyDescription(row.original)}
-              </TooltipContent>
-            </Tooltip>
-          ),
+          cell: ({ row }) => {
+            const orders = getOrdersFromProductionPlanning(
+              row.original,
+              periods
+            );
+            return (
+              <HStack>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <ItemReorderPolicy
+                      reorderingPolicy={row.original.reorderingPolicy}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {getReorderPolicyDescription(row.original)}
+                  </TooltipContent>
+                </Tooltip>
+
+                {orders.length > 0 && <PulsingDot />}
+              </HStack>
+            );
+          },
           meta: {
             filter: {
               type: "static",
@@ -203,21 +214,24 @@ const PlanningTable = memo(
         {
           id: "Order",
           header: "",
-          cell: ({ row }) => (
-            <HStack>
+          cell: ({ row }) => {
+            const orders = getOrdersFromProductionPlanning(
+              row.original,
+              periods
+            );
+            return (
               <Button
+                isDisabled={orders.length === 0}
                 variant="secondary"
                 leftIcon={<LuCircleCheck />}
                 onClick={() => {
-                  console.log(
-                    getOrdersFromProductionPlanning(row.original, periods)
-                  );
+                  console.log(orders);
                 }}
               >
                 Order
               </Button>
-            </HStack>
-          ),
+            );
+          },
         },
       ];
     }, [periods, dateFormatter, numberFormatter, params, unitOfMeasures]);
