@@ -11,6 +11,8 @@ export function formatAddressLines(
   } else if (addressLine2) {
     return addressLine2;
   }
+
+  return "";
 }
 
 export function formatCityStatePostalCode(
