@@ -857,7 +857,7 @@ function WorkCenterCards({
                 </CardTitle>
               </CardHeader>
               <CardAction className="pt-2">
-                <PulsingDot inactive={!hasEvents} />
+                <PulsingDot inactive={!hasEvents} className="mt-2" />
               </CardAction>
             </HStack>
             <CardContent className="flex items-start justify-start p-6 pt-3 border-t">
