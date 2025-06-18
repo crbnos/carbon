@@ -8215,8 +8215,8 @@ export type Database = {
           createdBy: string;
           critical: boolean;
           customFields: Json | null;
-          demandAccumulationIncludesInventory: boolean;
           demandAccumulationPeriod: number;
+          demandAccumulationSafetyStock: number;
           itemId: string;
           locationId: string;
           maximumInventoryQuantity: number;
@@ -8236,8 +8236,8 @@ export type Database = {
           createdBy: string;
           critical?: boolean;
           customFields?: Json | null;
-          demandAccumulationIncludesInventory?: boolean;
           demandAccumulationPeriod?: number;
+          demandAccumulationSafetyStock?: number;
           itemId: string;
           locationId: string;
           maximumInventoryQuantity?: number;
@@ -8257,8 +8257,8 @@ export type Database = {
           createdBy?: string;
           critical?: boolean;
           customFields?: Json | null;
-          demandAccumulationIncludesInventory?: boolean;
           demandAccumulationPeriod?: number;
+          demandAccumulationSafetyStock?: number;
           itemId?: string;
           locationId?: string;
           maximumInventoryQuantity?: number;
@@ -45175,7 +45175,7 @@ export type Database = {
           lotSize: number;
           reorderingPolicy: Database["public"]["Enums"]["itemReorderingPolicy"];
           demandAccumulationPeriod: number;
-          demandAccumulationIncludesInventory: boolean;
+          demandAccumulationSafetyStock: number;
           reorderPoint: number;
           reorderQuantity: number;
           minimumOrderQuantity: number;

@@ -335,7 +335,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
         )}
         {displaySettings.showDueDate && item.deadlineType && (
           <HStack className="justify-start space-x-2">
-            {getDeadlineIcon(item.deadlineType, isOverdue)}
+            {getDeadlineIcon(item.deadlineType)}
             <Tooltip>
               <TooltipTrigger>
                 <span

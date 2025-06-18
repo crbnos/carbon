@@ -142,7 +142,15 @@ export default function PartPlanningRoute() {
         locations={sharedPartsData.locations ?? []}
         type="Part"
       />
-      <ItemPlanningChart itemId={partPlanning.itemId} locationId={locationId} />
+      <ItemPlanningChart
+        itemId={partPlanning.itemId}
+        locationId={locationId}
+        safetyStock={
+          partPlanning.reorderingPolicy === "Demand-Based Reorder"
+            ? partPlanning.demandAccumulationSafetyStock ?? 0
+            : undefined
+        }
+      />
     </VStack>
   );
 }

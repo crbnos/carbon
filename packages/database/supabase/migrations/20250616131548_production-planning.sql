@@ -1,8 +1,14 @@
 ALTER TABLE "itemPlanning" DROP COLUMN "demandReschedulingPeriod";
+ALTER TABLE "itemPlanning" DROP COLUMN "demandAccumulationSafetyStock";
 ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockQuantity";
 ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockLeadTime";
 ALTER TABLE "itemPlanning" DROP COLUMN "reorderMaximumInventory";
 ALTER TABLE "itemPlanning" ADD COLUMN "maximumInventoryQuantity" NUMERIC NOT NULL DEFAULT 0;
+ALTER TABLE "itemPlanning" ADD COLUMN "demandAccumulationSafetyStock" NUMERIC NOT NULL DEFAULT 0;
+
+
+ALTER TABLE "itemPlanning" ALTER COLUMN "demandAccumulationPeriod" SET DEFAULT 4;
+UPDATE "itemPlanning" SET "demandAccumulationPeriod" = 4;
 
 
 -- Add indexes for supply and demand tables
@@ -28,7 +34,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     "lotSize" INTEGER,
     "reorderingPolicy" "itemReorderingPolicy",
     "demandAccumulationPeriod" INTEGER,
-    "demandAccumulationIncludesInventory" BOOLEAN,
+    "demandAccumulationSafetyStock" NUMERIC,
     "reorderPoint" INTEGER,
     "reorderQuantity" INTEGER,
     "minimumOrderQuantity" INTEGER,
@@ -151,7 +157,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
       ir."lotSize",
       ip."reorderingPolicy",
       ip."demandAccumulationPeriod",
-      ip."demandAccumulationIncludesInventory",
+      ip."demandAccumulationSafetyStock",
       ip."reorderPoint",
       ip."reorderQuantity",
       ip."minimumOrderQuantity",
@@ -214,7 +220,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
       p."lotSize",
       p."reorderingPolicy",
       p."demandAccumulationPeriod",
-      p."demandAccumulationIncludesInventory",
+      p."demandAccumulationSafetyStock",
       p."reorderPoint",
       p."reorderQuantity",
       p."minimumOrderQuantity",
@@ -246,7 +252,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     p."lotSize",
     p."reorderingPolicy",
     p."demandAccumulationPeriod",
-    p."demandAccumulationIncludesInventory",
+    p."demandAccumulationSafetyStock",
     p."reorderPoint",
     p."reorderQuantity",
     p."minimumOrderQuantity",
@@ -322,7 +328,7 @@ CREATE OR REPLACE FUNCTION get_production_planning(company_id TEXT, location_id 
     p."lotSize",
     p."reorderingPolicy",
     p."demandAccumulationPeriod",
-    p."demandAccumulationIncludesInventory",
+    p."demandAccumulationSafetyStock",
     p."reorderPoint",
     p."reorderQuantity",
     p."minimumOrderQuantity",

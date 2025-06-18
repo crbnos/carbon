@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import {
   Button,
   ResizableHandle,
@@ -9,16 +10,20 @@ import {
 import { useRouteData, useUrlParams } from "@carbon/remix";
 import { Link, useLoaderData, useNavigate, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { json } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { LuExternalLink, LuX } from "react-icons/lu";
 import { useUser } from "~/hooks/useUser";
-import { getItem } from "~/modules/items/items.service";
+import { getItem, getItemPlanning } from "~/modules/items/items.service";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
+import type { ProductionPlanningItem } from "~/modules/production/types";
+import { getLocationsList } from "~/modules/resources/resources.service";
+import { getUserDefaults } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+import { error } from "../../../../../../packages/auth/src/utils/result";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     view: "parts",
   });
 
@@ -27,9 +32,45 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("itemId not found");
   }
 
-  const item = await getItem(client, itemId);
+  const searchParams = new URL(request.url).searchParams;
 
-  return json({ item: item.data });
+  let locationId = searchParams.get("location");
+
+  if (!locationId) {
+    const userDefaults = await getUserDefaults(client, userId, companyId);
+    if (userDefaults.error) {
+      throw redirect(
+        path.to.productionPlanning,
+        await flash(
+          request,
+          error(userDefaults.error, "Failed to load default location")
+        )
+      );
+    }
+
+    locationId = userDefaults.data?.locationId ?? null;
+  }
+
+  if (!locationId) {
+    const locations = await getLocationsList(client, companyId);
+    if (locations.error || !locations.data?.length) {
+      throw redirect(
+        path.to.inventory,
+        await flash(
+          request,
+          error(locations.error, "Failed to load any locations")
+        )
+      );
+    }
+    locationId = locations.data?.[0].id as string;
+  }
+
+  const [item, itemPlanning] = await Promise.all([
+    getItem(client, itemId),
+    getItemPlanning(client, itemId, companyId, locationId),
+  ]);
+
+  return json({ item: item.data, itemPlanning: itemPlanning.data });
 }
 
 export default function ProductionPlanningDetailsRoute() {
@@ -38,11 +79,12 @@ export default function ProductionPlanningDetailsRoute() {
     throw new Error("itemId not found");
   }
 
-  const { item } = useLoaderData<typeof loader>();
+  const { item, itemPlanning } = useLoaderData<typeof loader>();
 
-  const routeData = useRouteData<{ locationId: string }>(
-    path.to.productionPlanning
-  );
+  const routeData = useRouteData<{
+    locationId: string;
+    itemPlanning: ProductionPlanningItem;
+  }>(path.to.productionPlanning);
 
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -88,6 +130,11 @@ export default function ProductionPlanningDetailsRoute() {
               key={itemId}
               itemId={itemId}
               locationId={routeData?.locationId ?? defaults.locationId ?? ""}
+              safetyStock={
+                itemPlanning?.reorderingPolicy === "Demand-Based Reorder"
+                  ? itemPlanning.demandAccumulationSafetyStock
+                  : undefined
+              }
             />
           </VStack>
         </ScrollArea>

@@ -47,35 +47,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Empty } from "~/components";
+import { Empty, Hyperlink } from "~/components";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
 
-interface Data {
-  quantity: number;
-  companyId: string;
-  createdAt: string;
-  createdBy: string;
-  itemId: string;
-  locationId: string;
-  notes: string | null;
-  periodId: string;
-  updatedAt: string;
-  updatedBy: string;
-  documentReadableId: string;
-  dueDate: string;
-}
-
 const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
 const demandSourceTypes = ["Sales Order", "Job Material"] as const;
-
-interface DemandData extends Data {
-  sourceType: (typeof demandSourceTypes)[number];
-}
-
-interface SupplyData extends Data {
-  sourceType: (typeof supplySourceTypes)[number];
-}
 
 interface ChartDataPoint {
   startDate: string;
@@ -92,9 +69,11 @@ const chartConfig = {} satisfies ChartConfig;
 export const ItemPlanningChart = ({
   itemId,
   locationId,
+  safetyStock,
 }: {
   itemId: string;
   locationId: string;
+  safetyStock?: number;
 }) => {
   const forecastFetcher = useFetcher<typeof forecastLoader>();
   const isFetching = forecastFetcher.state !== "idle" || !forecastFetcher.data;
@@ -277,6 +256,13 @@ export const ItemPlanningChart = ({
                   />
                   <YAxis tickLine={false} axisLine={false} />
                   <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
+                  {safetyStock && safetyStock > 0 && (
+                    <ReferenceLine
+                      y={safetyStock}
+                      stroke="#f43f5e"
+                      strokeDasharray="3 3"
+                    />
+                  )}
                   <Legend
                     payload={[
                       { value: "Demand", type: "rect", color: "#14b8a6" },
@@ -286,6 +272,15 @@ export const ItemPlanningChart = ({
                         type: "line",
                         color: "#7c3aed",
                       },
+                      ...(safetyStock && safetyStock > 0
+                        ? [
+                            {
+                              value: "Safety Stock",
+                              type: "line" as const,
+                              color: "#f43f5e",
+                            },
+                          ]
+                        : []),
                     ]}
                   />
                   <ChartTooltip
@@ -414,7 +409,7 @@ export const ItemPlanningChart = ({
 
             <TabsContent value="all" className="border rounded-lg">
               {combinedSupplyAndDemand.map((item, index) => (
-                <SupplyDemandListItem key={index} item={item} />
+                <SupplyDemandPlanningItem key={index} item={item} />
               ))}
             </TabsContent>
 
@@ -426,7 +421,7 @@ export const ItemPlanningChart = ({
                   )
                 )
                 .map((item, index) => (
-                  <SupplyDemandListItem key={index} item={item} />
+                  <SupplyDemandPlanningItem key={index} item={item} />
                 ))}
             </TabsContent>
 
@@ -438,7 +433,7 @@ export const ItemPlanningChart = ({
                   )
                 )
                 .map((item, index) => (
-                  <SupplyDemandListItem key={index} item={item} />
+                  <SupplyDemandPlanningItem key={index} item={item} />
                 ))}
             </TabsContent>
           </CardContent>
@@ -448,7 +443,7 @@ export const ItemPlanningChart = ({
   );
 };
 
-interface ListItem {
+interface PlanningItem {
   sourceType: string;
   id: string | null;
   dueDate: string | null;
@@ -456,6 +451,9 @@ interface ListItem {
   documentId: string | null;
   quantity: number;
   projectedQuantity: number;
+  parentMaterialId?: string | null;
+  jobId?: string | null;
+  jobMakeMethodId?: string | null;
 }
 
 const sourceTypeIcons = {
@@ -465,7 +463,7 @@ const sourceTypeIcons = {
   "Production Order": <LuFactory className="h-4 w-4 text-blue-600" />,
 };
 
-function SupplyDemandListItem({ item }: { item: ListItem }) {
+function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
   const numberFormatter = useNumberFormatter();
 
   return (
@@ -476,9 +474,12 @@ function SupplyDemandListItem({ item }: { item: ListItem }) {
             {sourceTypeIcons[item.sourceType as keyof typeof sourceTypeIcons]}
           </div>
           <VStack spacing={0}>
-            <span className="text-sm font-medium">
+            <Hyperlink
+              to={getPathToDocument(item)}
+              className="text-sm font-medium"
+            >
               {item.documentReadableId}
-            </span>
+            </Hyperlink>
             <span className="text-xs text-muted-foreground">
               {item.dueDate ? formatDate(item.dueDate) : "No due date"}
             </span>
@@ -502,4 +503,23 @@ function SupplyDemandListItem({ item }: { item: ListItem }) {
       </span>
     </div>
   );
+}
+
+function getPathToDocument(item: PlanningItem) {
+  switch (item.sourceType) {
+    case "Sales Order":
+      return path.to.salesOrder(item.documentId ?? "");
+    case "Job Material":
+      if (!item.jobId) return "#";
+      if (!item.jobMakeMethodId) return "#";
+      return item.parentMaterialId
+        ? path.to.jobMakeMethod(item.jobId, item.jobMakeMethodId)
+        : path.to.jobMethod(item.jobId, item.jobMakeMethodId);
+    case "Purchase Order":
+      return path.to.purchaseOrder(item.documentId ?? "");
+    case "Production Order":
+      return path.to.job(item.documentId ?? "");
+    default:
+      return "";
+  }
 }

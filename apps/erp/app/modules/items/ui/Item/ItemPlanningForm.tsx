@@ -13,7 +13,6 @@ import { useState } from "react";
 import type { z } from "zod";
 
 import {
-  Boolean,
   CustomFormFields,
   Hidden,
   Number,
@@ -110,12 +109,13 @@ const ItemPlanningForm = ({
               <>
                 <Number
                   name="demandAccumulationPeriod"
-                  label="Demand Accumulation Period (Days)"
+                  label="Accumulation Period (Weeks)"
                   minValue={0}
                 />
-                <Boolean
-                  name="demandAccumulationIncludesInventory"
-                  label="Demand Includes Inventory"
+                <Number
+                  name="demandAccumulationSafetyStock"
+                  label="Safety Stock"
+                  minValue={0}
                 />
               </>
             )}

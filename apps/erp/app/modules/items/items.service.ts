@@ -1034,7 +1034,7 @@ export async function getOpenJobMaterials(
   return client
     .from("openJobMaterialLines")
     .select(
-      "id, parentMaterialId, jobMakeMethodId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
