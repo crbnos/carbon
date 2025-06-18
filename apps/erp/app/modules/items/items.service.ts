@@ -1684,16 +1684,12 @@ export async function upsertConsumable(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const consumableInsert = await client
-      .from("consumable")
-      .insert({
-        id: consumable.id,
-        companyId: consumable.companyId,
-        createdBy: consumable.createdBy,
-        customFields: consumable.customFields,
-      })
-      .select("*")
-      .single();
+    const consumableInsert = await client.from("consumable").upsert({
+      id: consumable.id,
+      companyId: consumable.companyId,
+      createdBy: consumable.createdBy,
+      customFields: consumable.customFields,
+    });
 
     if (consumableInsert.error) return consumableInsert;
 
@@ -1784,7 +1780,7 @@ export async function upsertPart(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const partInsert = await client.from("part").insert({
+    const partInsert = await client.from("part").upsert({
       id: part.id,
       companyId: part.companyId,
       createdBy: part.createdBy,
@@ -2300,21 +2296,17 @@ export async function upsertMaterial(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const materialInsert = await client
-      .from("material")
-      .insert({
-        id: material.id,
-        materialFormId: material.materialFormId,
-        materialSubstanceId: material.materialSubstanceId,
-        finish: material.finish,
-        grade: material.grade,
-        dimensions: material.dimensions,
-        companyId: material.companyId,
-        createdBy: material.createdBy,
-        customFields: material.customFields,
-      })
-      .select("*")
-      .single();
+    const materialInsert = await client.from("material").upsert({
+      id: material.id,
+      materialFormId: material.materialFormId,
+      materialSubstanceId: material.materialSubstanceId,
+      finish: material.finish,
+      grade: material.grade,
+      dimensions: material.dimensions,
+      companyId: material.companyId,
+      createdBy: material.createdBy,
+      customFields: material.customFields,
+    });
 
     if (materialInsert.error) return materialInsert;
 
@@ -2609,16 +2601,12 @@ export async function upsertTool(
     if (itemInsert.error) return itemInsert;
     const itemId = itemInsert.data?.id;
 
-    const toolInsert = await client
-      .from("tool")
-      .insert({
-        id: tool.id,
-        companyId: tool.companyId,
-        createdBy: tool.createdBy,
-        customFields: tool.customFields,
-      })
-      .select("*")
-      .single();
+    const toolInsert = await client.from("tool").upsert({
+      id: tool.id,
+      companyId: tool.companyId,
+      createdBy: tool.createdBy,
+      customFields: tool.customFields,
+    });
 
     if (toolInsert.error) return toolInsert;
 
