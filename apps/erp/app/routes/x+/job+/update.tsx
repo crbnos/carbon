@@ -58,7 +58,6 @@ export async function action({ request }: ActionFunctionArgs) {
           .from("job")
           .update({
             itemId: value,
-            itemReadableId: item.data?.readableIdWithRevision ?? "",
             unitOfMeasureCode: item.data?.unitOfMeasureCode ?? "EA",
             quantity:
               (manufacturing?.data?.lotSize ?? 0) === 0
