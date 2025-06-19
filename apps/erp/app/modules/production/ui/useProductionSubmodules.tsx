@@ -29,6 +29,7 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
         name: "Planning",
         to: path.to.productionPlanning,
         icon: <LuSquareChartGantt />,
+        table: "planning",
       },
       {
         name: "Schedule",
