@@ -13,7 +13,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
-  return [{ title: "Carbon | Accounting" }];
+  return [{ title: "Carbon | Finance" }];
 };
 
 export const config = {
@@ -21,7 +21,7 @@ export const config = {
 };
 
 export const handle: Handle = {
-  breadcrumb: "Accounting",
+  breadcrumb: "Finance",
   to: path.to.currencies,
   module: "accounting",
 };

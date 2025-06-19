@@ -57,15 +57,17 @@ export function getReorderPolicyDescription(
   }
 }
 
-export function getOrdersFromProductionPlanning(
-  itemPlanning: ProductionPlanningItem,
-  periods: { startDate: string; id: string }[]
-): {
+export type Order = {
   startDate: string;
   dueDate: string;
   quantity: number;
   isASAP: boolean;
-}[] {
+};
+
+export function getOrdersFromProductionPlanning(
+  itemPlanning: ProductionPlanningItem,
+  periods: { startDate: string; id: string }[]
+): Order[] {
   if (itemPlanning.reorderingPolicy === "Manual Reorder") {
     return [];
   }

@@ -1,24 +1,53 @@
 import {
   Button,
   Combobox,
+  DatePicker,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   HStack,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+  NumberDecrementStepper,
+  NumberField,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputGroup,
+  NumberInputStepper,
   PulsingDot,
+  Table as TableBase,
+  Tbody,
+  Td,
+  Th,
+  Thead,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  Tr,
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import { useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuBox,
+  LuCalendar,
+  LuChevronDown,
+  LuChevronUp,
   LuCircleCheck,
   LuCirclePlay,
   LuPackage,
+  LuSquareChartGantt,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -29,15 +58,17 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
+import type { Order } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import {
   getOrdersFromProductionPlanning,
   getReorderPolicyDescription,
   ItemReorderPolicy,
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { action as mrpAction } from "~/routes/api+/mrp";
+import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
 
@@ -48,8 +79,118 @@ type PlanningTableProps = {
   periods: { id: string; startDate: string; endDate: string }[];
 };
 
+const OrderModal = memo(
+  ({
+    row,
+    orders,
+    setOrders,
+    isOpen,
+    onClose,
+  }: {
+    row: ProductionPlanningItem;
+    orders: Order[];
+    setOrders: (item: ProductionPlanningItem, orders: Order[]) => void;
+    isOpen: boolean;
+    onClose: () => void;
+  }) => {
+    return (
+      <Modal open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <ModalContent>
+          <ModalHeader>
+            <ModalTitle>{row.readableIdWithRevision}</ModalTitle>
+            <ModalDescription>{row.name}</ModalDescription>
+          </ModalHeader>
+          <ModalBody>
+            <TableBase full>
+              <Thead>
+                <Th className="pl-0">
+                  <div className="flex items-center gap-2">
+                    <LuPackage />
+                    <span>Quantity</span>
+                  </div>
+                </Th>
+                <Th className="pr-0">
+                  <div className="justify-end flex items-center gap-2">
+                    <LuCalendar />
+                    <span>Due Date</span>
+                  </div>
+                </Th>
+              </Thead>
+              <Tbody>
+                {orders.map((order, index) => (
+                  <Tr key={index}>
+                    <Td className="pl-0 pr-1">
+                      <NumberField
+                        value={order.quantity}
+                        onChange={(value) => {
+                          if (row.id && value) {
+                            const newOrders = [...orders];
+                            newOrders[index] = {
+                              ...order,
+                              quantity: value,
+                            };
+                            setOrders(row, newOrders);
+                          }
+                        }}
+                      >
+                        <NumberInputGroup className="relative">
+                          <NumberInput />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper>
+                              <LuChevronUp size="1em" strokeWidth="3" />
+                            </NumberIncrementStepper>
+                            <NumberDecrementStepper>
+                              <LuChevronDown size="1em" strokeWidth="3" />
+                            </NumberDecrementStepper>
+                          </NumberInputStepper>
+                        </NumberInputGroup>
+                      </NumberField>
+                    </Td>
+                    <Td className="text-right pr-0 pl-1">
+                      <HStack className="justify-end">
+                        <DatePicker
+                          value={parseDate(order.dueDate)}
+                          onChange={(date) => {
+                            if (row.id) {
+                              const newOrders = [...orders];
+                              newOrders[index] = {
+                                ...order,
+                                dueDate: date ? date.toString() : order.dueDate,
+                              };
+                              setOrders(row, newOrders);
+                            }
+                          }}
+                        />
+                      </HStack>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </TableBase>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              Close
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => console.log(row.id, orders)}
+            >
+              Order
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+    );
+  }
+);
+
+OrderModal.displayName = "OrderModal";
+
 const PlanningTable = memo(
   ({ data, count, locationId, periods }: PlanningTableProps) => {
+    const permissions = usePermissions();
+    const isDisabled = !permissions.can("create", "production");
     const [params] = useUrlParams();
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -59,6 +200,57 @@ const PlanningTable = memo(
     const numberFormatter = useNumberFormatter();
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
+
+    const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+
+    // Store orders in a map keyed by item id
+    const [ordersMap, setOrderssMap] = useState<Record<string, Order[]>>(() => {
+      const initialMap: Record<string, Order[]> = {};
+      data.forEach((item) => {
+        if (item.id) {
+          initialMap[item.id] = getOrdersFromProductionPlanning(item, periods);
+        }
+      });
+      return initialMap;
+    });
+
+    const onBulkUpdate = useCallback(
+      (selectedRows: typeof data, action: "order") => {
+        const payload = {
+          locationId,
+          items: selectedRows
+            .filter((row) => row.id)
+            .map((row) => {
+              return {
+                id: row.id,
+                orders: ordersMap[row.id!] || [],
+              };
+            }),
+          action: action,
+        };
+        bulkUpdateFetcher.submit(payload, {
+          method: "post",
+          action: path.to.bulkUpdateProductionPlanning,
+          encType: "application/json",
+        });
+      },
+      [bulkUpdateFetcher, locationId, ordersMap]
+    );
+
+    const [selectedItem, setSelectedItem] =
+      useState<ProductionPlanningItem | null>(null);
+
+    const setOrders = useCallback(
+      (item: ProductionPlanningItem, orders: Order[]) => {
+        if (item.id) {
+          setOrderssMap((prev) => ({
+            ...prev,
+            [item.id!]: orders,
+          }));
+        }
+      },
+      []
+    );
 
     const columns = useMemo<ColumnDef<ProductionPlanningItem>[]>(() => {
       const periodColumns: ColumnDef<ProductionPlanningItem>[] = periods.map(
@@ -102,7 +294,7 @@ const PlanningTable = memo(
       return [
         {
           accessorKey: "readableIdWithRevision",
-          header: "Item ID",
+          header: "Part ID",
           cell: ({ row }) => (
             <HStack className="py-1">
               <ItemThumbnail
@@ -141,10 +333,6 @@ const PlanningTable = memo(
           accessorKey: "reorderingPolicy",
           header: "Reorder Policy",
           cell: ({ row }) => {
-            const orders = getOrdersFromProductionPlanning(
-              row.original,
-              periods
-            );
             return (
               <HStack>
                 <Tooltip>
@@ -157,8 +345,6 @@ const PlanningTable = memo(
                     {getReorderPolicyDescription(row.original)}
                   </TooltipContent>
                 </Tooltip>
-
-                {orders.length > 0 && <PulsingDot />}
               </HStack>
             );
           },
@@ -215,26 +401,67 @@ const PlanningTable = memo(
           id: "Order",
           header: "",
           cell: ({ row }) => {
-            const orders = getOrdersFromProductionPlanning(
-              row.original,
-              periods
+            const orders = row.original.id
+              ? ordersMap[row.original.id] || []
+              : [];
+            const hasOrders = orders.length > 0;
+            const orderQuantity = orders.reduce(
+              (acc, order) => acc + order.quantity,
+              0
             );
             return (
-              <Button
-                isDisabled={orders.length === 0}
-                variant="secondary"
-                leftIcon={<LuCircleCheck />}
-                onClick={() => {
-                  console.log(orders);
-                }}
-              >
-                Order
-              </Button>
+              <div className="flex justify-end">
+                <Button
+                  variant="secondary"
+                  leftIcon={hasOrders ? undefined : <LuCircleCheck />}
+                  isDisabled={isDisabled}
+                  onClick={() => {
+                    setSelectedItem(row.original);
+                  }}
+                >
+                  {hasOrders ? (
+                    <HStack>
+                      <PulsingDot />
+                      <span>Order {orderQuantity}</span>
+                    </HStack>
+                  ) : (
+                    "Order"
+                  )}
+                </Button>
+              </div>
             );
           },
         },
       ];
-    }, [periods, dateFormatter, numberFormatter, params, unitOfMeasures]);
+    }, [
+      periods,
+      dateFormatter,
+      numberFormatter,
+      params,
+      unitOfMeasures,
+      isDisabled,
+      ordersMap,
+    ]);
+
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        return (
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuLabel>Bulk Update</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+
+            <DropdownMenuItem
+              onSelect={() => onBulkUpdate(data, "order")}
+              disabled={bulkUpdateFetcher.state !== "idle"}
+            >
+              <DropdownMenuIcon icon={<LuSquareChartGantt />} />
+              Order Parts
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        );
+      },
+      [bulkUpdateFetcher.state, onBulkUpdate, data]
+    );
 
     const defaultColumnVisibility = {
       active: false,
@@ -249,49 +476,66 @@ const PlanningTable = memo(
     const mrpFetcher = useFetcher<typeof mrpAction>();
 
     return (
-      <Table<ProductionPlanningItem>
-        count={count}
-        columns={columns}
-        data={data}
-        defaultColumnVisibility={defaultColumnVisibility}
-        defaultColumnPinning={defaultColumnPinning}
-        primaryAction={
-          <div className="flex items-center gap-2">
-            <Combobox
-              asButton
-              size="sm"
-              value={locationId}
-              options={locations}
-              onChange={(selected) => {
-                // hard refresh because initialValues update has no effect otherwise
-                window.location.href = getLocationPath(selected);
-              }}
-            />
-            <mrpFetcher.Form method="post" action={path.to.api.mrp(locationId)}>
-              <Tooltip>
-                <TooltipTrigger>
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    rightIcon={<LuCirclePlay />}
-                    isDisabled={mrpFetcher.state !== "idle"}
-                    isLoading={mrpFetcher.state !== "idle"}
-                  >
-                    Recalculate
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  MRP runs automatically every 3 hours, but you can run it
-                  manually here.
-                </TooltipContent>
-              </Tooltip>
-            </mrpFetcher.Form>
-          </div>
-        }
-        title="Planning"
-        table="inventory"
-        withSavedView
-      />
+      <>
+        <Table<ProductionPlanningItem>
+          count={count}
+          columns={columns}
+          data={data}
+          defaultColumnVisibility={defaultColumnVisibility}
+          defaultColumnPinning={defaultColumnPinning}
+          primaryAction={
+            <div className="flex items-center gap-2">
+              <Combobox
+                asButton
+                size="sm"
+                value={locationId}
+                options={locations}
+                onChange={(selected) => {
+                  // hard refresh because initialValues update has no effect otherwise
+                  window.location.href = getLocationPath(selected);
+                }}
+              />
+              <mrpFetcher.Form
+                method="post"
+                action={path.to.api.mrp(locationId)}
+              >
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      rightIcon={<LuCirclePlay />}
+                      isDisabled={mrpFetcher.state !== "idle"}
+                      isLoading={mrpFetcher.state !== "idle"}
+                    >
+                      Recalculate
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    MRP runs automatically every 3 hours, but you can run it
+                    manually here.
+                  </TooltipContent>
+                </Tooltip>
+              </mrpFetcher.Form>
+            </div>
+          }
+          renderActions={renderActions}
+          title="Planning"
+          table="planning"
+          withSavedView
+          withSelectableRows
+        />
+
+        {selectedItem && (
+          <OrderModal
+            row={selectedItem}
+            orders={selectedItem.id ? ordersMap[selectedItem.id] || [] : []}
+            setOrders={setOrders}
+            isOpen={!!selectedItem}
+            onClose={() => setSelectedItem(null)}
+          />
+        )}
+      </>
     );
   }
 );

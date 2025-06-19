@@ -9,6 +9,10 @@ const mes = SUPABASE_URL.includes("localhost")
   ? "http://localhost:3001"
   : "https://mes.carbonos.dev";
 
+const mes = SUPABASE_URL.includes("localhost")
+  ? "http://localhost:3001"
+  : "https://mes.carbonos.dev";
+
 export const path = {
   to: {
     api: {
@@ -318,6 +322,7 @@ export const path = {
       generatePath(`${x}/inventory/batch-property/${itemId}/property/order`),
     bulkEditPermissions: `${x}/users/bulk-edit-permissions`,
     bulkUpdateItems: `${x}/items/update`,
+    bulkUpdateProductionPlanning: `${x}/production/planning/update`,
     bulkUpdateProcedure: `${x}/procedure/update`,
     bulkUpdateJob: `${x}/job/update`,
     bulkUpdateNonConformance: `${x}/non-conformance/update`,

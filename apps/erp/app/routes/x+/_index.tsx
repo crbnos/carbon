@@ -61,7 +61,7 @@ const ModuleCard = ({ module }: { module: Authenticated<NavItem> }) => (
   <Link
     to={module.to}
     prefetch="intent"
-    className="aspect-video flex flex-col gap-3 items-center justify-center py-8  shadow-button-base bg-gradient-to-bl from-card from-50% to-background rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer"
+    className="aspect-video flex flex-col gap-3 items-center justify-center py-8  shadow-button-base bg-gradient-to-bl from-card from-50% to-background rounded-lg text-center group ring-2 ring-transparent hover:ring-white/10 cursor-pointer hover:scale-105 transition-all duration-300"
   >
     <div className="p-4 rounded-full border">
       <module.icon className="text-2xl" />
