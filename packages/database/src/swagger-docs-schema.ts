@@ -16210,6 +16210,15 @@ export default {
             $ref: "#/parameters/rowFilter.openJobMaterialLines.jobId",
           },
           {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.parentMaterialId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.jobMakeMethodId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.jobReadableId",
+          },
+          {
             $ref: "#/parameters/rowFilter.openJobMaterialLines.itemId",
           },
           {
@@ -20332,6 +20341,9 @@ export default {
             $ref: "#/parameters/rowFilter.openProductionOrders.itemId",
           },
           {
+            $ref: "#/parameters/rowFilter.openProductionOrders.jobId",
+          },
+          {
             $ref: "#/parameters/rowFilter.openProductionOrders.quantityToReceive",
           },
           {
@@ -20354,6 +20366,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openProductionOrders.dueDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openProductionOrders.deadlineType",
           },
           {
             $ref: "#/parameters/select",
@@ -41857,16 +41872,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.critical",
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationPeriod",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.demandReschedulingPeriod",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationIncludesInventory",
@@ -41876,9 +41882,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.reorderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.reorderMaximumInventory",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumOrderQuantity",
@@ -41909,6 +41912,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.maximumInventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationSafetyStock",
           },
           {
             $ref: "#/parameters/select",
@@ -41982,16 +41991,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.critical",
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationPeriod",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.demandReschedulingPeriod",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationIncludesInventory",
@@ -42001,9 +42001,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.reorderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.reorderMaximumInventory",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumOrderQuantity",
@@ -42034,6 +42031,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.maximumInventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationSafetyStock",
           },
           {
             $ref: "#/parameters/preferReturn",
@@ -42061,16 +42064,7 @@ export default {
             $ref: "#/parameters/rowFilter.itemPlanning.critical",
           },
           {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.safetyStockLeadTime",
-          },
-          {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationPeriod",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.demandReschedulingPeriod",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationIncludesInventory",
@@ -42080,9 +42074,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.reorderQuantity",
-          },
-          {
-            $ref: "#/parameters/rowFilter.itemPlanning.reorderMaximumInventory",
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.minimumOrderQuantity",
@@ -42113,6 +42104,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.itemPlanning.tags",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.maximumInventoryQuantity",
+          },
+          {
+            $ref: "#/parameters/rowFilter.itemPlanning.demandAccumulationSafetyStock",
           },
           {
             $ref: "#/parameters/body.itemPlanning",
@@ -56088,6 +56085,88 @@ export default {
         tags: ["(rpc) xid_counter"],
       },
     },
+    "/rpc/get_production_planning": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "periods",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_production_planning"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string",
+                  },
+                  type: "array",
+                },
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_production_planning"],
+      },
+    },
     "/rpc/update_receipt_line_batch_tracking": {
       get: {
         parameters: [
@@ -64172,6 +64251,22 @@ export default {
           format: "text",
           type: "string",
         },
+        parentMaterialId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMaterial.id`.<fk table='jobMaterial' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobMakeMethodId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobMakeMethod.id`.<fk table='jobMakeMethod' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        jobReadableId: {
+          format: "text",
+          type: "string",
+        },
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
@@ -65752,6 +65847,10 @@ export default {
           format: "text",
           type: "string",
         },
+        jobId: {
+          format: "text",
+          type: "string",
+        },
         quantityToReceive: {
           format: "numeric",
           type: "number",
@@ -65788,6 +65887,11 @@ export default {
         },
         dueDate: {
           format: "date",
+          type: "string",
+        },
+        deadlineType: {
+          enum: ["No Deadline", "ASAP", "Soft Deadline", "Hard Deadline"],
+          format: 'public."deadlineType"',
           type: "string",
         },
       },
@@ -76010,20 +76114,18 @@ export default {
         "locationId",
         "reorderingPolicy",
         "critical",
-        "safetyStockQuantity",
-        "safetyStockLeadTime",
         "demandAccumulationPeriod",
-        "demandReschedulingPeriod",
         "demandAccumulationIncludesInventory",
         "reorderPoint",
         "reorderQuantity",
-        "reorderMaximumInventory",
         "minimumOrderQuantity",
         "maximumOrderQuantity",
         "orderMultiple",
         "companyId",
         "createdBy",
         "createdAt",
+        "maximumInventoryQuantity",
+        "demandAccumulationSafetyStock",
       ],
       properties: {
         itemId: {
@@ -76054,23 +76156,8 @@ export default {
           format: "boolean",
           type: "boolean",
         },
-        safetyStockQuantity: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
-        safetyStockLeadTime: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
         demandAccumulationPeriod: {
-          default: 30,
-          format: "integer",
-          type: "integer",
-        },
-        demandReschedulingPeriod: {
-          default: 0,
+          default: 4,
           format: "integer",
           type: "integer",
         },
@@ -76085,11 +76172,6 @@ export default {
           type: "integer",
         },
         reorderQuantity: {
-          default: 0,
-          format: "integer",
-          type: "integer",
-        },
-        reorderMaximumInventory: {
           default: 0,
           format: "integer",
           type: "integer",
@@ -76145,6 +76227,16 @@ export default {
             type: "string",
           },
           type: "array",
+        },
+        maximumInventoryQuantity: {
+          default: 0,
+          format: "numeric",
+          type: "number",
+        },
+        demandAccumulationSafetyStock: {
+          default: 0,
+          format: "numeric",
+          type: "number",
         },
       },
       type: "object",
@@ -89569,6 +89661,24 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.openJobMaterialLines.parentMaterialId": {
+      name: "parentMaterialId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.jobMakeMethodId": {
+      name: "jobMakeMethodId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openJobMaterialLines.jobReadableId": {
+      name: "jobReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.openJobMaterialLines.itemId": {
       name: "itemId",
       required: false,
@@ -91378,6 +91488,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.openProductionOrders.jobId": {
+      name: "jobId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.openProductionOrders.quantityToReceive": {
       name: "quantityToReceive",
       required: false,
@@ -91422,6 +91538,12 @@ export default {
     },
     "rowFilter.openProductionOrders.dueDate": {
       name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openProductionOrders.deadlineType": {
+      name: "deadlineType",
       required: false,
       in: "query",
       type: "string",
@@ -103072,26 +103194,8 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.itemPlanning.safetyStockQuantity": {
-      name: "safetyStockQuantity",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemPlanning.safetyStockLeadTime": {
-      name: "safetyStockLeadTime",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.itemPlanning.demandAccumulationPeriod": {
       name: "demandAccumulationPeriod",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemPlanning.demandReschedulingPeriod": {
-      name: "demandReschedulingPeriod",
       required: false,
       in: "query",
       type: "string",
@@ -103110,12 +103214,6 @@ export default {
     },
     "rowFilter.itemPlanning.reorderQuantity": {
       name: "reorderQuantity",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.itemPlanning.reorderMaximumInventory": {
-      name: "reorderMaximumInventory",
       required: false,
       in: "query",
       type: "string",
@@ -103176,6 +103274,18 @@ export default {
     },
     "rowFilter.itemPlanning.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemPlanning.maximumInventoryQuantity": {
+      name: "maximumInventoryQuantity",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.itemPlanning.demandAccumulationSafetyStock": {
+      name: "demandAccumulationSafetyStock",
       required: false,
       in: "query",
       type: "string",

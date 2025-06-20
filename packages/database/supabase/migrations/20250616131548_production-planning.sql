@@ -1,5 +1,4 @@
 ALTER TABLE "itemPlanning" DROP COLUMN "demandReschedulingPeriod";
-ALTER TABLE "itemPlanning" DROP COLUMN "demandAccumulationSafetyStock";
 ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockQuantity";
 ALTER TABLE "itemPlanning" DROP COLUMN "safetyStockLeadTime";
 ALTER TABLE "itemPlanning" DROP COLUMN "reorderMaximumInventory";
