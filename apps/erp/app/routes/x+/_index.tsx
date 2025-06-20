@@ -3,7 +3,6 @@ import { getLocalTimeZone } from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { Link } from "@remix-run/react";
 import { useMemo, type ComponentProps } from "react";
-import { LuHardHat } from "react-icons/lu";
 import { useModules, useUser } from "~/hooks";
 import type { Authenticated, NavItem } from "~/types";
 
@@ -43,13 +42,6 @@ export default function AppIndexRoute() {
           .map((module) => (
             <ModuleCard key={module.name} module={module} />
           ))}
-        <ModuleCard
-          module={{
-            name: "MES",
-            to: "https://mes.carbonos.dev",
-            icon: LuHardHat,
-          }}
-        />
       </div>
     </div>
   );

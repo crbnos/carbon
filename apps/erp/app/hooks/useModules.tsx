@@ -9,6 +9,7 @@ import {
   LuShield,
   LuShoppingCart,
   LuSquareStack,
+  LuTvMinimalPlay,
   LuUsers,
   LuWrench,
 } from "react-icons/lu";
@@ -20,6 +21,11 @@ export function useModules() {
   const permissions = usePermissions();
 
   const modules: Authenticated<NavItem>[] = [
+    {
+      name: "Shop Floor",
+      to: path.to.external.mes,
+      icon: LuTvMinimalPlay,
+    },
     {
       permission: "sales",
       name: "Sales",

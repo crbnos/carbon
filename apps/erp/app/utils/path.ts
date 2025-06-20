@@ -5,6 +5,9 @@ const x = "/x"; // from ~/routes/x+ folder
 const api = "/api"; // from ~/routes/api+ folder
 const file = "/file"; // from ~/routes/file+ folder
 const onboarding = "/onboarding"; // from ~/routes/onboarding+ folder
+const mes = SUPABASE_URL.includes("localhost")
+  ? "http://localhost:3001"
+  : "https://mes.carbonos.dev";
 
 export const path = {
   to: {
@@ -140,8 +143,8 @@ export const path = {
       shippingMethods: `${api}/inventory/shipping-methods`,
     },
     external: {
-      mesJobOperation: (id: string) =>
-        `https://mes.carbonos.dev/x/operation/${id}`,
+      mes: mes,
+      mesJobOperation: (id: string) => `${mes}/x/operation/${id}`,
     },
     file: {
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
