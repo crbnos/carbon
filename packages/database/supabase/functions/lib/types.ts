@@ -2093,7 +2093,6 @@ export type Database = {
           digitalQuoteNotificationGroup: string[]
           id: string
           inventoryJobCompletedNotificationGroup: string[]
-          jobCompletedNotificationGroup: string[]
           productLabelSize: string | null
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
@@ -2105,7 +2104,6 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id: string
           inventoryJobCompletedNotificationGroup?: string[]
-          jobCompletedNotificationGroup?: string[]
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
@@ -2117,7 +2115,6 @@ export type Database = {
           digitalQuoteNotificationGroup?: string[]
           id?: string
           inventoryJobCompletedNotificationGroup?: string[]
-          jobCompletedNotificationGroup?: string[]
           productLabelSize?: string | null
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
@@ -8215,6 +8212,7 @@ export type Database = {
           createdBy: string
           critical: boolean
           customFields: Json | null
+          demandAccumulationIncludesInventory: boolean
           demandAccumulationPeriod: number
           demandAccumulationSafetyStock: number
           itemId: string
@@ -8236,6 +8234,7 @@ export type Database = {
           createdBy: string
           critical?: boolean
           customFields?: Json | null
+          demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
           demandAccumulationSafetyStock?: number
           itemId: string
@@ -8257,6 +8256,7 @@ export type Database = {
           createdBy?: string
           critical?: boolean
           customFields?: Json | null
+          demandAccumulationIncludesInventory?: boolean
           demandAccumulationPeriod?: number
           demandAccumulationSafetyStock?: number
           itemId?: string
@@ -41680,14 +41680,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]

@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -33,7 +34,7 @@ import {
   Tr,
   VStack,
 } from "@carbon/react";
-import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import { useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -47,7 +48,9 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuPackage,
+  LuPlus,
   LuSquareChartGantt,
+  LuTrash2,
 } from "react-icons/lu";
 import {
   Hyperlink,
@@ -93,6 +96,23 @@ const OrderModal = memo(
     isOpen: boolean;
     onClose: () => void;
   }) => {
+    const handleAddOrder = () => {
+      if (row.id) {
+        const newOrder: Order = {
+          quantity: 0,
+          dueDate: today(getLocalTimeZone()).toString(),
+        };
+        setOrders(row, [...orders, newOrder]);
+      }
+    };
+
+    const handleRemoveOrder = (index: number) => {
+      if (row.id) {
+        const newOrders = orders.filter((_, i) => i !== index);
+        setOrders(row, newOrders);
+      }
+    };
+
     return (
       <Modal open={isOpen} onOpenChange={(open) => !open && onClose()}>
         <ModalContent>
@@ -109,17 +129,18 @@ const OrderModal = memo(
                     <span>Quantity</span>
                   </div>
                 </Th>
-                <Th className="pr-0">
+                <Th>
                   <div className="justify-end flex items-center gap-2">
                     <LuCalendar />
                     <span>Due Date</span>
                   </div>
                 </Th>
+                <Th className="w-[50px]"></Th>
               </Thead>
               <Tbody>
                 {orders.map((order, index) => (
                   <Tr key={index}>
-                    <Td className="pl-0 pr-1">
+                    <Td className="pl-0 pr-1 group-hover:bg-inherit">
                       <NumberField
                         value={order.quantity}
                         onChange={(value) => {
@@ -133,7 +154,7 @@ const OrderModal = memo(
                           }
                         }}
                       >
-                        <NumberInputGroup className="relative">
+                        <NumberInputGroup className="relative group-hover:bg-inherit">
                           <NumberInput />
                           <NumberInputStepper>
                             <NumberIncrementStepper>
@@ -146,7 +167,7 @@ const OrderModal = memo(
                         </NumberInputGroup>
                       </NumberField>
                     </Td>
-                    <Td className="text-right pr-0 pl-1">
+                    <Td className="text-right px-1 group-hover:bg-inherit">
                       <HStack className="justify-end">
                         <DatePicker
                           value={parseDate(order.dueDate)}
@@ -163,10 +184,28 @@ const OrderModal = memo(
                         />
                       </HStack>
                     </Td>
+                    <Td className="pl-1 pr-0 group-hover:bg-inherit">
+                      <IconButton
+                        aria-label="Remove order"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveOrder(index)}
+                        icon={<LuTrash2 className="text-destructive" />}
+                      />
+                    </Td>
                   </Tr>
                 ))}
               </Tbody>
             </TableBase>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="mt-4"
+              leftIcon={<LuPlus />}
+              onClick={handleAddOrder}
+            >
+              Add Order
+            </Button>
           </ModalBody>
           <ModalFooter>
             <Button variant="secondary" onClick={onClose}>
