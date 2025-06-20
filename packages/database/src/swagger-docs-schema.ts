@@ -51178,6 +51178,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.shelfLabelSize",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -51258,6 +51264,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.shelfLabelSize",
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -51290,6 +51302,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.shelfLabelSize",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.inventoryJobCompletedNotificationGroup",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesJobCompletedNotificationGroup",
           },
           {
             $ref: "#/parameters/body.companySettings",
@@ -55287,6 +55305,63 @@ export default {
           },
         },
         tags: ["(rpc) increment_webhook_success"],
+      },
+    },
+    "/rpc/is_last_job_operation": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "operation_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) is_last_job_operation"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                operation_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["operation_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) is_last_job_operation"],
       },
     },
     "/rpc/get_next_sequence": {
@@ -80565,6 +80640,8 @@ export default {
         "digitalQuoteNotificationGroup",
         "digitalQuoteIncludesPurchaseOrders",
         "rfqReadyNotificationGroup",
+        "inventoryJobCompletedNotificationGroup",
+        "salesJobCompletedNotificationGroup",
       ],
       properties: {
         id: {
@@ -80606,6 +80683,20 @@ export default {
           default: "avery5160",
           format: "text",
           type: "string",
+        },
+        inventoryJobCompletedNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
+        },
+        salesJobCompletedNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string",
+          },
+          type: "array",
         },
       },
       type: "object",
@@ -108119,6 +108210,18 @@ export default {
     },
     "rowFilter.companySettings.shelfLabelSize": {
       name: "shelfLabelSize",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.inventoryJobCompletedNotificationGroup": {
+      name: "inventoryJobCompletedNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companySettings.salesJobCompletedNotificationGroup": {
+      name: "salesJobCompletedNotificationGroup",
       required: false,
       in: "query",
       type: "string",
