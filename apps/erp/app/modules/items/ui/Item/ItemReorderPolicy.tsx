@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ProductionPlanningItem } from "~/modules/production";
+import type { Order } from "../../items.models";
 
 export function ItemReorderPolicy({
   reorderingPolicy,
@@ -57,13 +58,6 @@ export function getReorderPolicyDescription(
   }
 }
 
-export type Order = {
-  startDate: string;
-  dueDate: string;
-  quantity: number;
-  isASAP: boolean;
-};
-
 export function getOrdersFromProductionPlanning(
   itemPlanning: ProductionPlanningItem,
   periods: { startDate: string; id: string }[]
@@ -72,12 +66,7 @@ export function getOrdersFromProductionPlanning(
     return [];
   }
 
-  const orders: {
-    startDate: string;
-    dueDate: string;
-    quantity: number;
-    isASAP: boolean;
-  }[] = [];
+  const orders: Order[] = [];
 
   const {
     demandAccumulationPeriod,
@@ -143,6 +132,7 @@ export function getOrdersFromProductionPlanning(
               startDate: startDate.toString(),
               dueDate: dueDate.toString(),
               quantity: orderQuantity,
+
               isASAP: startDate.compare(todaysDate) < 0,
             });
 
@@ -175,6 +165,7 @@ export function getOrdersFromProductionPlanning(
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),
             quantity: reorderQuantity,
+
             isASAP: startDate.compare(todaysDate) < 0,
           });
           day++;
@@ -229,6 +220,7 @@ export function getOrdersFromProductionPlanning(
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),
             quantity: orderQuantity,
+
             isASAP:
               startDate.compare(todaysDate) < 0 &&
               projectedQuantity + orderedQuantity < 0,

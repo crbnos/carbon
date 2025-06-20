@@ -50,9 +50,15 @@ import {
 import { Empty, Hyperlink } from "~/components";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
+import type { Order } from "../../items.models";
 
 const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
 const demandSourceTypes = ["Sales Order", "Job Material"] as const;
+
+type SourceType =
+  | (typeof supplySourceTypes)[number]
+  | (typeof demandSourceTypes)[number]
+  | "Planned";
 
 interface ChartDataPoint {
   startDate: string;
@@ -61,18 +67,23 @@ interface ChartDataPoint {
   "Job Material": number;
   "Purchase Order": number;
   "Production Order": number;
+  Planned: number;
   Projection: number;
 }
 
 const chartConfig = {} satisfies ChartConfig;
 
 export const ItemPlanningChart = ({
+  compact = false,
   itemId,
   locationId,
+  plannedOrders = [],
   safetyStock,
 }: {
+  compact?: boolean;
   itemId: string;
   locationId: string;
+  plannedOrders?: Order[];
   safetyStock?: number;
 }) => {
   const forecastFetcher = useFetcher<typeof forecastLoader>();
@@ -109,12 +120,32 @@ export const ItemPlanningChart = ({
           "Job Material": 0,
           "Purchase Order": 0,
           "Production Order": 0,
+          Planned: 0,
           Projection: currentQuantity, // Initialize with current quantity
         };
         return acc;
       },
       {}
     );
+
+    // Add projected orders
+    plannedOrders.forEach((order) => {
+      let periodId = periods.find(
+        (p) =>
+          new Date(p.startDate) <= new Date(order.dueDate ?? "") &&
+          new Date(p.endDate) >= new Date(order.dueDate ?? "")
+      )?.id;
+
+      // If no period found or order date is before first period, use first period
+      if (!periodId || !order.dueDate) {
+        periodId = periods[0].id;
+      }
+
+      if (groupedData[periodId]) {
+        groupedData[periodId]["Planned"] +=
+          (order.quantity ?? 0) - (order.existingQuantity ?? 0);
+      }
+    });
 
     // Add demand data
     demand.forEach((curr) => {
@@ -157,14 +188,16 @@ export const ItemPlanningChart = ({
     return sortedData.map((period) => {
       // Add supply
       runningProjection +=
-        period["Purchase Order"] + period["Production Order"];
+        period["Purchase Order"] +
+        period["Production Order"] +
+        period["Planned"];
       // Subtract demand
       runningProjection += period["Sales Order"] + period["Job Material"];
       // Update projection
       period.Projection = runningProjection;
       return period;
     });
-  }, [forecastFetcher.data]);
+  }, [forecastFetcher.data, plannedOrders]);
 
   const combinedSupplyAndDemand = useMemo(() => {
     let projectedQuantity = forecastFetcher.data?.quantityOnHand ?? 0;
@@ -172,23 +205,31 @@ export const ItemPlanningChart = ({
     const combined = [
       ...(forecastFetcher.data?.openSalesOrderLines ?? []).map((line) => ({
         ...line,
-        sourceType: "Sales Order",
+        sourceType: "Sales Order" as SourceType,
         quantity: line.quantity ?? 0,
       })),
       ...(forecastFetcher.data?.openJobMaterials ?? []).map((line) => ({
         ...line,
-        sourceType: "Job Material",
+        sourceType: "Job Material" as SourceType,
         quantity: line.quantity ?? 0,
       })),
       ...(forecastFetcher.data?.openPurchaseOrderLines ?? []).map((line) => ({
         ...line,
-        sourceType: "Purchase Order",
+        sourceType: "Purchase Order" as SourceType,
         quantity: line.quantity ?? 0,
       })),
       ...(forecastFetcher.data?.openProductionOrders ?? []).map((line) => ({
         ...line,
-        sourceType: "Production Order",
+        sourceType: "Production Order" as SourceType,
         quantity: line.quantity ?? 0,
+      })),
+      ...plannedOrders.map((order) => ({
+        ...order,
+        sourceType: "Planned" as SourceType,
+        quantity: order.quantity ?? 0,
+        documentReadableId: order?.existingReadableId ?? "Planned",
+        documentId: order?.existingId ?? null,
+        id: order?.existingId ?? null,
       })),
     ]
       .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
@@ -214,7 +255,7 @@ export const ItemPlanningChart = ({
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
     );
-  }, [forecastFetcher.data, searchTerm]);
+  }, [forecastFetcher.data, searchTerm, plannedOrders]);
 
   if (
     forecastFetcher.data?.demand.length === 0 &&
@@ -234,11 +275,11 @@ export const ItemPlanningChart = ({
 
   return (
     <>
-      <Card>
-        <CardHeader>
+      <Card className={cn(compact && "border-none p-0")}>
+        <CardHeader className={cn(compact && "px-0")}>
           <CardTitle>Projections</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className={cn(compact && "px-0")}>
           <div className="w-full h-[360px]">
             <Loading isLoading={isFetching}>
               <ChartContainer config={chartConfig} className="w-full h-full">
@@ -267,6 +308,7 @@ export const ItemPlanningChart = ({
                     payload={[
                       { value: "Demand", type: "rect", color: "#14b8a6" },
                       { value: "Supply", type: "rect", color: "#2563eb" },
+                      { value: "Planned", type: "rect", color: "#4f46e5" },
                       {
                         value: "Projection",
                         type: "line",
@@ -303,26 +345,27 @@ export const ItemPlanningChart = ({
                     fill="#7c3aedcc"
                     isAnimationActive={false}
                   />
-                  {demandSourceTypes.map(
-                    (sourceType: string, index: number) => (
-                      <Bar
-                        key={sourceType}
-                        dataKey={sourceType}
-                        stackId="stack"
-                        className="fill-teal-500"
-                      />
-                    )
-                  )}
-                  {supplySourceTypes.map(
-                    (sourceType: string, index: number) => (
-                      <Bar
-                        key={sourceType}
-                        dataKey={sourceType}
-                        stackId="stack"
-                        className="fill-blue-600"
-                      />
-                    )
-                  )}
+                  {demandSourceTypes.map((sourceType) => (
+                    <Bar
+                      key={sourceType}
+                      dataKey={sourceType}
+                      stackId="stack"
+                      className="fill-teal-500"
+                    />
+                  ))}
+                  {supplySourceTypes.map((sourceType) => (
+                    <Bar
+                      key={sourceType}
+                      dataKey={sourceType}
+                      stackId="stack"
+                      className="fill-blue-600"
+                    />
+                  ))}
+                  <Bar
+                    dataKey="Planned"
+                    stackId="stack"
+                    className="fill-indigo-600"
+                  />
                 </ComposedChart>
               </ChartContainer>
             </Loading>
@@ -330,9 +373,9 @@ export const ItemPlanningChart = ({
         </CardContent>
       </Card>
       <Tabs defaultValue="all" className="w-full">
-        <Card>
+        <Card className={cn(compact && "border-none p-0")}>
           <HStack className="w-full justify-between">
-            <CardHeader>
+            <CardHeader className={cn(compact && "px-0")}>
               <CardTitle>Supply & Demand</CardTitle>
             </CardHeader>
             <CardAction className="flex items-center gap-2">
@@ -343,7 +386,7 @@ export const ItemPlanningChart = ({
               </TabsList>
             </CardAction>
           </HStack>
-          <CardContent>
+          <CardContent className={cn(compact && "px-0")}>
             <div className="w-full grid grid-cols-1 lg:grid-cols-3 gap-4 py-4">
               <Card>
                 <CardHeader className="pb-8">
@@ -444,7 +487,7 @@ export const ItemPlanningChart = ({
 };
 
 interface PlanningItem {
-  sourceType: string;
+  sourceType: SourceType;
   id: string | null;
   dueDate: string | null;
   documentReadableId: string | null;
@@ -454,13 +497,15 @@ interface PlanningItem {
   parentMaterialId?: string | null;
   jobId?: string | null;
   jobMakeMethodId?: string | null;
+  existingOrderReadableId?: string | null;
 }
 
-const sourceTypeIcons = {
+const sourceTypeIcons: Record<SourceType, JSX.Element> = {
   "Sales Order": <LuCrown className="h-4 w-4 text-teal-500" />,
   "Job Material": <LuClipboardList className="h-4 w-4 text-teal-500" />,
   "Purchase Order": <LuShoppingCart className="h-4 w-4 text-blue-600" />,
   "Production Order": <LuFactory className="h-4 w-4 text-blue-600" />,
+  Planned: <LuMoveUp className="h-4 w-4 text-teal-500" />,
 };
 
 function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
@@ -471,7 +516,7 @@ function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
       <HStack spacing={4} className="w-1/2">
         <HStack spacing={4} className="flex-1">
           <div className="bg-muted border rounded-full flex items-center justify-center p-2">
-            {sourceTypeIcons[item.sourceType as keyof typeof sourceTypeIcons]}
+            {sourceTypeIcons[item.sourceType]}
           </div>
           <VStack spacing={0}>
             <Hyperlink
@@ -519,6 +564,8 @@ function getPathToDocument(item: PlanningItem) {
       return path.to.purchaseOrder(item.documentId ?? "");
     case "Production Order":
       return path.to.job(item.documentId ?? "");
+    case "Planned":
+      return "#";
     default:
       return "";
   }

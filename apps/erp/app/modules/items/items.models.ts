@@ -560,3 +560,14 @@ export const unitOfMeasureValidator = z.object({
   code: z.string().min(1, { message: "Code is required" }).max(10),
   name: z.string().min(1, { message: "Name is required" }).max(50),
 });
+
+export type Order = {
+  startDate: string | null;
+  dueDate: string | null;
+  quantity: number;
+  existingId?: string;
+  existingQuantity?: number;
+  existingReadableId?: string;
+  existingStatus?: string;
+  isASAP: boolean;
+};

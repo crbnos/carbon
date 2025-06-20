@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError } from "@carbon/form";
+import { validationError, validator } from "@carbon/form";
 import { Menubar, VStack } from "@carbon/react";
 import { Await, useLoaderData, useParams } from "@remix-run/react";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -28,7 +28,6 @@ import ItemManufacturingForm from "~/modules/items/ui/Item/ItemManufacturingForm
 import { getTagsList } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { validator } from "../../../../../../packages/form/src/zod";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
