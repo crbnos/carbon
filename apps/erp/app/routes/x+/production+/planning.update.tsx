@@ -9,13 +9,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const { items, action, locationId } = await request.json();
 
   if (typeof action !== "string") {
-    return json({ error: { message: "Invalid form data" }, data: null });
+    return json({ success: false, message: "Invalid form data" });
   }
 
   switch (action) {
     case "order":
       console.log({ items, action, locationId });
+
+      return json({ success: true, message: "Orders submitted" });
     default:
-      return json({ error: { message: "Invalid field" }, data: null });
+      return json({ success: false, message: "Invalid field" });
   }
 }

@@ -10,7 +10,7 @@ const COMPANY_ID = "cs868u84gfk07v78v9e0";
 const PROD: boolean = true;
 const READ_ONLY: boolean = false;
 
-const sourceFile = resolve(homedir(), "Desktop/black-cat-renames.csv");
+const sourceFile = resolve(homedir(), "Desktop/black-cat-renames-2.csv");
 const columns = ["ID", "OLD", "NEW", "REVISION"];
 
 const parser = parse({

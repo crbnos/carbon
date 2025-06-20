@@ -9030,6 +9030,7 @@ export type Database = {
           salesOrderLineId: string | null
           scrapQuantity: number
           secondsToComplete: number | null
+          startDate: string | null
           status: Database["public"]["Enums"]["jobStatus"]
           tags: string[] | null
           unitOfMeasureCode: string
@@ -9067,6 +9068,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
           unitOfMeasureCode: string
@@ -9104,6 +9106,7 @@ export type Database = {
           salesOrderLineId?: string | null
           scrapQuantity?: number
           secondsToComplete?: number | null
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobStatus"]
           tags?: string[] | null
           unitOfMeasureCode?: string
@@ -38093,14 +38096,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]

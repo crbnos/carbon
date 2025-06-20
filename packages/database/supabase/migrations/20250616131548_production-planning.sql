@@ -9,6 +9,7 @@ ALTER TABLE "itemPlanning" ADD COLUMN "demandAccumulationSafetyStock" NUMERIC NO
 ALTER TABLE "itemPlanning" ALTER COLUMN "demandAccumulationPeriod" SET DEFAULT 4;
 UPDATE "itemPlanning" SET "demandAccumulationPeriod" = 4;
 
+ALTER TABLE "job" ADD COLUMN "startDate" DATE;
 
 -- Add indexes for supply and demand tables
 CREATE INDEX IF NOT EXISTS "supplyActual_companyId_locationId_idx" ON "supplyActual" ("companyId", "locationId");

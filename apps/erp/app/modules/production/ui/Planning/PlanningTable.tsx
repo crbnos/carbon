@@ -1,7 +1,15 @@
+import { useCarbon } from "@carbon/auth";
 import {
   Button,
   Combobox,
   DatePicker,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
@@ -9,13 +17,6 @@ import {
   DropdownMenuSeparator,
   HStack,
   IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
@@ -23,22 +24,26 @@ import {
   NumberInputGroup,
   NumberInputStepper,
   PulsingDot,
+  Separator,
   Table as TableBase,
   Tbody,
   Td,
   Th,
   Thead,
+  toast,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   Tr,
+  useMount,
   VStack,
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
-import { useFetcher } from "@remix-run/react";
+import type { FetcherWithComponents } from "@remix-run/react";
+import { Link, useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuBox,
@@ -47,24 +52,23 @@ import {
   LuChevronUp,
   LuCircleCheck,
   LuCirclePlay,
+  LuExternalLink,
+  LuHardHat,
   LuPackage,
   LuPlus,
   LuSquareChartGantt,
   LuTrash2,
 } from "react-icons/lu";
-import {
-  Hyperlink,
-  ItemThumbnail,
-  MethodItemTypeIcon,
-  Table,
-} from "~/components";
+import { ItemThumbnail, MethodItemTypeIcon, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions, useUrlParams } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
+import type { Order } from "~/modules/items/items.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
-import type { Order } from "~/modules/items/ui/Item/ItemReorderPolicy";
+import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
   getOrdersFromProductionPlanning,
   getReorderPolicyDescription,
@@ -74,6 +78,7 @@ import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
+import { getDeadlineIcon, JobStatus } from "../Jobs";
 
 type PlanningTableProps = {
   data: ProductionPlanningItem[];
@@ -82,155 +87,375 @@ type PlanningTableProps = {
   periods: { id: string; startDate: string; endDate: string }[];
 };
 
-const OrderModal = memo(
+const OrderDrawer = memo(
   ({
+    fetcher,
     row,
     orders,
     setOrders,
+    locationId,
     isOpen,
     onClose,
   }: {
+    fetcher: FetcherWithComponents<typeof bulkUpdateAction>;
     row: ProductionPlanningItem;
     orders: Order[];
     setOrders: (item: ProductionPlanningItem, orders: Order[]) => void;
+    locationId: string;
     isOpen: boolean;
     onClose: () => void;
   }) => {
-    const handleAddOrder = () => {
+    const { carbon } = useCarbon();
+    const getExistingOrders = useCallback(async () => {
+      if (!carbon || !row.id) return;
+
+      const { data: existingOrderData } = await carbon
+        ?.from("job")
+        .select("*")
+        .eq("itemId", row.id)
+        .in("status", ["Draft", "Planned"]);
+
+      if (existingOrderData) {
+        const existingOrders: Order[] = existingOrderData
+          .filter(
+            (order) =>
+              !orders.some((existing) => existing.existingId === order.id)
+          )
+          .map((order) => ({
+            existingId: order.id,
+            existingReadableId: order.jobId,
+            existingQuantity: order.quantity,
+            existingStatus: order.status,
+            startDate: order.startDate ?? null,
+            dueDate: order.dueDate ?? null,
+            quantity: order.quantity,
+            isASAP: order.deadlineType === "ASAP",
+          }));
+
+        setOrders(
+          row,
+          [...orders, ...existingOrders].sort((a, b) => {
+            return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
+          })
+        );
+      }
+    }, [carbon, orders, row, setOrders]);
+
+    useMount(() => {
+      if (row.id) {
+        getExistingOrders();
+      }
+    });
+    console.log({ orders });
+
+    const onAddOrder = () => {
       if (row.id) {
         const newOrder: Order = {
-          quantity: 0,
-          dueDate: today(getLocalTimeZone()).toString(),
+          quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
+          dueDate: today(getLocalTimeZone())
+            .add({ days: row.leadTime ?? 0 })
+            .toString(),
+          startDate: today(getLocalTimeZone()).toString(),
+          isASAP: false,
         };
         setOrders(row, [...orders, newOrder]);
       }
     };
 
-    const handleRemoveOrder = (index: number) => {
+    const onRemoveOrder = (index: number) => {
       if (row.id) {
         const newOrders = orders.filter((_, i) => i !== index);
         setOrders(row, newOrders);
       }
     };
 
+    const onSubmit = useCallback(
+      (id: string, orders: Order[]) => {
+        const payload = {
+          locationId,
+          items: [
+            {
+              id: id,
+              orders: orders,
+            },
+          ],
+          action: "order" as const,
+        };
+        fetcher.submit(payload, {
+          method: "post",
+          action: path.to.bulkUpdateProductionPlanning,
+          encType: "application/json",
+        });
+      },
+      [fetcher, locationId]
+    );
+
+    useEffect(() => {
+      if (fetcher.data?.success === false && fetcher?.data?.message) {
+        toast.error(fetcher.data.message);
+      }
+
+      if (fetcher.data?.success === true) {
+        toast.success("Orders submitted");
+        onClose();
+      }
+    }, [fetcher.data, fetcher.state]);
+
     return (
-      <Modal open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <ModalContent>
-          <ModalHeader>
-            <ModalTitle>{row.readableIdWithRevision}</ModalTitle>
-            <ModalDescription>{row.name}</ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <TableBase full>
-              <Thead>
-                <Th className="pl-0">
-                  <div className="flex items-center gap-2">
-                    <LuPackage />
-                    <span>Quantity</span>
-                  </div>
-                </Th>
-                <Th>
-                  <div className="justify-end flex items-center gap-2">
-                    <LuCalendar />
-                    <span>Due Date</span>
-                  </div>
-                </Th>
-                <Th className="w-[50px]"></Th>
-              </Thead>
-              <Tbody>
-                {orders.map((order, index) => (
-                  <Tr key={index}>
-                    <Td className="pl-0 pr-1 group-hover:bg-inherit">
-                      <NumberField
-                        value={order.quantity}
-                        onChange={(value) => {
-                          if (row.id && value) {
-                            const newOrders = [...orders];
-                            newOrders[index] = {
-                              ...order,
-                              quantity: value,
-                            };
-                            setOrders(row, newOrders);
-                          }
-                        }}
-                      >
-                        <NumberInputGroup className="relative group-hover:bg-inherit">
-                          <NumberInput />
-                          <NumberInputStepper>
-                            <NumberIncrementStepper>
-                              <LuChevronUp size="1em" strokeWidth="3" />
-                            </NumberIncrementStepper>
-                            <NumberDecrementStepper>
-                              <LuChevronDown size="1em" strokeWidth="3" />
-                            </NumberDecrementStepper>
-                          </NumberInputStepper>
-                        </NumberInputGroup>
-                      </NumberField>
-                    </Td>
-                    <Td className="text-right px-1 group-hover:bg-inherit">
-                      <HStack className="justify-end">
-                        <DatePicker
-                          value={parseDate(order.dueDate)}
-                          onChange={(date) => {
-                            if (row.id) {
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DrawerContent size="lg">
+          <DrawerHeader>
+            <DrawerTitle className="flex items-center gap-2">
+              <span>{row.readableIdWithRevision}</span>
+              <Link
+                // @ts-ignore
+                to={getLinkToItemDetails(row.type, row.id)}
+              >
+                <LuExternalLink />
+              </Link>
+            </DrawerTitle>
+            <DrawerDescription>{row.name}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody>
+            <div className="flex flex-col gap-4  w-full">
+              {(row.lotSize ||
+                row.minimumOrderQuantity ||
+                row.maximumOrderQuantity) && (
+                <VStack spacing={2} className="text-sm border rounded-lg p-4">
+                  <HStack className="justify-between w-full">
+                    <span className="text-muted-foreground">
+                      Reorder Policy:
+                    </span>
+                    <ItemReorderPolicy
+                      reorderingPolicy={row.reorderingPolicy}
+                    />
+                  </HStack>
+                  <Separator />
+                  {row.reorderingPolicy === "Maximum Quantity" && (
+                    <>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Reorder Point:
+                        </span>
+                        <span>{row.reorderPoint}</span>
+                      </HStack>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Maximum Inventory:
+                        </span>
+                        <span>{row.maximumInventoryQuantity}</span>
+                      </HStack>
+                    </>
+                  )}
+
+                  {row.reorderingPolicy === "Demand-Based Reorder" && (
+                    <>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Accumulation Period:
+                        </span>
+                        <span>{row.demandAccumulationPeriod} weeks</span>
+                      </HStack>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Safety Stock:
+                        </span>
+                        <span>{row.demandAccumulationSafetyStock}</span>
+                      </HStack>
+                    </>
+                  )}
+
+                  {row.reorderingPolicy === "Fixed Reorder Quantity" && (
+                    <>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Reorder Point:
+                        </span>
+                        <span>{row.reorderPoint}</span>
+                      </HStack>
+                      <HStack className="justify-between w-full">
+                        <span className="text-muted-foreground">
+                          Reorder Quantity:
+                        </span>
+                        <span>{row.reorderQuantity}</span>
+                      </HStack>
+                    </>
+                  )}
+                  {(row.lotSize > 0 ||
+                    row.minimumOrderQuantity > 0 ||
+                    row.maximumOrderQuantity > 0) && <Separator />}
+                  {row.lotSize > 0 && (
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">Lot Size:</span>
+                      <span>{row.lotSize}</span>
+                    </HStack>
+                  )}
+                  {row.minimumOrderQuantity > 0 && (
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Minimum Order:
+                      </span>
+                      <span>{row.minimumOrderQuantity}</span>
+                    </HStack>
+                  )}
+                  {row.maximumOrderQuantity > 0 && (
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Maximum Order:
+                      </span>
+                      <span>{row.maximumOrderQuantity}</span>
+                    </HStack>
+                  )}
+                </VStack>
+              )}
+
+              <TableBase full>
+                <Thead>
+                  <Th className="pl-0">
+                    <div className="flex items-center gap-2">
+                      <LuHardHat />
+                      <span>Job</span>
+                    </div>
+                  </Th>
+                  <Th>
+                    <div className="px-1 flex items-center gap-2 text-right">
+                      <LuPackage />
+                      <span>Quantity</span>
+                    </div>
+                  </Th>
+                  <Th>
+                    <div className="justify-end flex items-center gap-2">
+                      <LuCalendar />
+                      <span>Due Date</span>
+                    </div>
+                  </Th>
+                  <Th className="w-[50px]"></Th>
+                </Thead>
+                <Tbody>
+                  {orders.map((order, index) => (
+                    <Tr key={index}>
+                      <Td className="flex flex-row items-center gap-1 pl-0 pr-1 group-hover:bg-inherit justify-between">
+                        {order.existingReadableId && order.existingId ? (
+                          <VStack spacing={0}>
+                            <Link to={path.to.job(order.existingId)}>
+                              {order.existingReadableId}
+                            </Link>
+                            {/* @ts-expect-error - status is a string because we have a general type for purchase orders and jobs */}
+                            <JobStatus status={order.existingStatus} />
+                          </VStack>
+                        ) : (
+                          "New Job"
+                        )}
+                        {order.isASAP && getDeadlineIcon("ASAP")}
+                      </Td>
+                      <Td className="text-right px-1 group-hover:bg-inherit">
+                        <NumberField
+                          value={order.quantity}
+                          onChange={(value) => {
+                            if (row.id && value) {
                               const newOrders = [...orders];
                               newOrders[index] = {
                                 ...order,
-                                dueDate: date ? date.toString() : order.dueDate,
+                                quantity: value,
                               };
                               setOrders(row, newOrders);
                             }
                           }}
+                        >
+                          <NumberInputGroup className="relative group-hover:bg-inherit">
+                            <NumberInput />
+                            <NumberInputStepper>
+                              <NumberIncrementStepper>
+                                <LuChevronUp size="1em" strokeWidth="3" />
+                              </NumberIncrementStepper>
+                              <NumberDecrementStepper>
+                                <LuChevronDown size="1em" strokeWidth="3" />
+                              </NumberDecrementStepper>
+                            </NumberInputStepper>
+                          </NumberInputGroup>
+                        </NumberField>
+                      </Td>
+                      <Td className="text-right px-1 group-hover:bg-inherit">
+                        <HStack className="justify-end">
+                          <DatePicker
+                            value={
+                              order.dueDate ? parseDate(order.dueDate) : null
+                            }
+                            onChange={(date) => {
+                              if (row.id) {
+                                const newOrders = [...orders];
+                                newOrders[index] = {
+                                  ...order,
+                                  dueDate: date ? date.toString() : null,
+                                };
+                                setOrders(row, newOrders);
+                              }
+                            }}
+                          />
+                        </HStack>
+                      </Td>
+                      <Td className="pl-1 pr-0 group-hover:bg-inherit">
+                        <IconButton
+                          aria-label="Remove order"
+                          variant="ghost"
+                          size="sm"
+                          isDisabled={!!order.existingId}
+                          onClick={() => onRemoveOrder(index)}
+                          icon={<LuTrash2 className="text-destructive" />}
                         />
-                      </HStack>
-                    </Td>
-                    <Td className="pl-1 pr-0 group-hover:bg-inherit">
-                      <IconButton
-                        aria-label="Remove order"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveOrder(index)}
-                        icon={<LuTrash2 className="text-destructive" />}
-                      />
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </TableBase>
-            <Button
-              variant="secondary"
-              size="sm"
-              className="mt-4"
-              leftIcon={<LuPlus />}
-              onClick={handleAddOrder}
-            >
-              Add Order
-            </Button>
-          </ModalBody>
-          <ModalFooter>
+                      </Td>
+                    </Tr>
+                  ))}
+                </Tbody>
+              </TableBase>
+
+              <div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="mt-4"
+                  leftIcon={<LuPlus />}
+                  onClick={onAddOrder}
+                >
+                  Add Order
+                </Button>
+              </div>
+
+              <ItemPlanningChart
+                compact
+                itemId={row.id}
+                locationId={locationId}
+                safetyStock={row.demandAccumulationSafetyStock}
+                plannedOrders={orders}
+              />
+            </div>
+          </DrawerBody>
+          <DrawerFooter>
             <Button variant="secondary" onClick={onClose}>
               Close
             </Button>
             <Button
               variant="primary"
-              onClick={() => console.log(row.id, orders)}
+              onClick={() => onSubmit(row.id, orders)}
+              isDisabled={fetcher.state !== "idle"}
+              isLoading={fetcher.state !== "idle"}
             >
               Order
             </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     );
   }
 );
 
-OrderModal.displayName = "OrderModal";
+OrderDrawer.displayName = "OrderDrawer";
 
 const PlanningTable = memo(
   ({ data, count, locationId, periods }: PlanningTableProps) => {
     const permissions = usePermissions();
     const isDisabled = !permissions.can("create", "production");
-    const [params] = useUrlParams();
+
     const dateFormatter = useDateFormatter({
       month: "short",
       day: "numeric",
@@ -243,7 +468,7 @@ const PlanningTable = memo(
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
     // Store orders in a map keyed by item id
-    const [ordersMap, setOrderssMap] = useState<Record<string, Order[]>>(() => {
+    const [ordersMap, setOrdersMap] = useState<Record<string, Order[]>>(() => {
       const initialMap: Record<string, Order[]> = {};
       data.forEach((item) => {
         if (item.id) {
@@ -282,7 +507,7 @@ const PlanningTable = memo(
     const setOrders = useCallback(
       (item: ProductionPlanningItem, orders: Order[]) => {
         if (item.id) {
-          setOrderssMap((prev) => ({
+          setOrdersMap((prev) => ({
             ...prev,
             [item.id!]: orders,
           }));
@@ -335,7 +560,12 @@ const PlanningTable = memo(
           accessorKey: "readableIdWithRevision",
           header: "Part ID",
           cell: ({ row }) => (
-            <HStack className="py-1">
+            <HStack
+              className="py-1 cursor-pointer"
+              onClick={() => {
+                setSelectedItem(row.original);
+              }}
+            >
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
@@ -343,30 +573,30 @@ const PlanningTable = memo(
                 type={row.original.type}
               />
 
-              <Hyperlink
-                to={`${path.to.productionPlanningItem(
-                  row.original.id!
-                )}?${params.toString()}`}
-              >
-                <VStack spacing={0}>
-                  {row.original.readableIdWithRevision}
-                  <div className="w-full truncate text-muted-foreground text-xs">
-                    {row.original.name}
-                  </div>
-                </VStack>
-              </Hyperlink>
-              <Enumerable
-                value={
-                  unitOfMeasures.find(
-                    (uom) => uom.value === row.original.unitOfMeasureCode
-                  )?.label ?? null
-                }
-              />
+              <VStack spacing={0} className="font-medium">
+                {row.original.readableIdWithRevision}
+                <div className="w-full truncate text-muted-foreground text-xs">
+                  {row.original.name}
+                </div>
+              </VStack>
             </HStack>
           ),
           meta: {
             icon: <LuBookMarked />,
           },
+        },
+        {
+          accessorKey: "unitOfMeasureCode",
+          header: "",
+          cell: ({ row }) => (
+            <Enumerable
+              value={
+                unitOfMeasures.find(
+                  (uom) => uom.value === row.original.unitOfMeasureCode
+                )?.label ?? null
+              }
+            />
+          ),
         },
         {
           accessorKey: "reorderingPolicy",
@@ -445,7 +675,8 @@ const PlanningTable = memo(
               : [];
             const hasOrders = orders.length > 0;
             const orderQuantity = orders.reduce(
-              (acc, order) => acc + order.quantity,
+              (acc, order) =>
+                acc + (order.quantity - (order.existingQuantity ?? 0)),
               0
             );
             return (
@@ -476,7 +707,6 @@ const PlanningTable = memo(
       periods,
       dateFormatter,
       numberFormatter,
-      params,
       unitOfMeasures,
       isDisabled,
       ordersMap,
@@ -566,7 +796,10 @@ const PlanningTable = memo(
         />
 
         {selectedItem && (
-          <OrderModal
+          <OrderDrawer
+            // @ts-ignore
+            fetcher={bulkUpdateFetcher}
+            locationId={locationId}
             row={selectedItem}
             orders={selectedItem.id ? ordersMap[selectedItem.id] || [] : []}
             setOrders={setOrders}
