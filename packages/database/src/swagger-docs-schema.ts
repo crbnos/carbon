@@ -10084,6 +10084,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplyForecast.sourceType",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -10179,6 +10182,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
           },
           {
+            $ref: "#/parameters/rowFilter.supplyForecast.sourceType",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -10226,6 +10232,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplyForecast.updatedBy",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplyForecast.sourceType",
           },
           {
             $ref: "#/parameters/body.supplyForecast",
@@ -10349,6 +10358,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.secondsToComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobs.startDate",
           },
           {
             $ref: "#/parameters/rowFilter.jobs.statusWithDueDate",
@@ -18592,6 +18604,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.secondsToComplete",
           },
           {
+            $ref: "#/parameters/rowFilter.job.startDate",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -18756,6 +18771,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.secondsToComplete",
           },
           {
+            $ref: "#/parameters/rowFilter.job.startDate",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -18872,6 +18890,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.secondsToComplete",
+          },
+          {
+            $ref: "#/parameters/rowFilter.job.startDate",
           },
           {
             $ref: "#/parameters/body.job",
@@ -61203,6 +61224,11 @@ export default {
           format: "text",
           type: "string",
         },
+        sourceType: {
+          enum: ["Purchase Order", "Production Order"],
+          format: 'public."supplySourceType"',
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -61380,6 +61406,10 @@ export default {
         secondsToComplete: {
           format: "numeric",
           type: "number",
+        },
+        startDate: {
+          format: "date",
+          type: "string",
         },
         statusWithDueDate: {
           enum: [
@@ -65307,6 +65337,10 @@ export default {
         secondsToComplete: {
           format: "numeric",
           type: "number",
+        },
+        startDate: {
+          format: "date",
+          type: "string",
         },
       },
       type: "object",
@@ -86268,6 +86302,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.supplyForecast.sourceType": {
+      name: "sourceType",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.jobs": {
       name: "jobs",
       description: "jobs",
@@ -86483,6 +86523,12 @@ export default {
     },
     "rowFilter.jobs.secondsToComplete": {
       name: "secondsToComplete",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.jobs.startDate": {
+      name: "startDate",
       required: false,
       in: "query",
       type: "string",
@@ -90848,6 +90894,12 @@ export default {
     },
     "rowFilter.job.secondsToComplete": {
       name: "secondsToComplete",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.job.startDate": {
+      name: "startDate",
       required: false,
       in: "query",
       type: "string",
