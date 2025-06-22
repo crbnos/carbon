@@ -50,10 +50,7 @@ import { FaTasks } from "react-icons/fa";
 import { z } from "zod";
 import { Tags } from "~/components/Form";
 import { useTags } from "~/hooks/useTags";
-import {
-  getDeadlineIcon,
-  getDeadlineText,
-} from "~/modules/production/ui/Jobs/Deadline";
+import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { useKanban } from "../context/KanbanContext";
@@ -342,7 +339,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                   className={cn("text-sm", isOverdue ? "text-red-500" : "")}
                 >
                   {["ASAP", "No Deadline"].includes(item.deadlineType)
-                    ? getDeadlineText(item.deadlineType)
+                    ? item.deadlineType
                     : item.dueDate
                     ? `Due ${formatRelativeTime(
                         convertDateStringToIsoString(item.dueDate)
@@ -350,9 +347,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
                     : "–"}
                 </span>
               </TooltipTrigger>
-              <TooltipContent side="right">
-                {getDeadlineText(item.deadlineType)}
-              </TooltipContent>
+              <TooltipContent side="right">{item.deadlineType}</TooltipContent>
             </Tooltip>
           </HStack>
         )}

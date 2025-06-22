@@ -82,7 +82,7 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { flushSync } from "react-dom";
 import { RiProgress8Line } from "react-icons/ri";
-import { getDeadlineIcon, getDeadlineText } from "~/modules/production/ui/Jobs";
+import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersList } from "~/modules/resources";
 
@@ -933,7 +933,7 @@ function WorkCenterCards({
                             )}
                           >
                             {["ASAP", "No Deadline"].includes(deadlineType)
-                              ? getDeadlineText(deadlineType)
+                              ? deadlineType
                               : dueDate
                               ? `Due ${formatRelativeTime(
                                   convertDateStringToIsoString(dueDate)
@@ -942,7 +942,7 @@ function WorkCenterCards({
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="right">
-                          {getDeadlineText(deadlineType)}
+                          {deadlineType}
                         </TooltipContent>
                       </Tooltip>
                     </HStack>

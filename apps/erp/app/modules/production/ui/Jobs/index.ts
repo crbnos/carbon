@@ -1,4 +1,4 @@
-import { getDeadlineIcon, getDeadlineText } from "./Deadline";
+import { getDeadlineIcon } from "./Deadline";
 import JobBillOfMaterial from "./JobBillOfMaterial";
 import JobBillOfProcess from "./JobBillOfProcess";
 import JobBoMExplorer from "./JobBoMExplorer";
@@ -19,7 +19,6 @@ import ProductionQuantityForm from "./ProductionQuantityForm";
 
 export {
   getDeadlineIcon,
-  getDeadlineText,
   JobBillOfMaterial,
   JobBillOfProcess,
   JobBoMExplorer,
