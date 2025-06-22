@@ -850,21 +850,11 @@ export async function recalculateJobRequirements(
     userId: string;
   }
 ) {
-  const recalculateResult = await client.functions.invoke("recalculate", {
+  return client.functions.invoke("recalculate", {
     body: {
       type: "jobRequirements",
       ...params,
     },
-  });
-  if (recalculateResult.error) {
-    return recalculateResult;
-  }
-
-  return runMRP(client, {
-    type: "job",
-    id: params.id,
-    companyId: params.companyId,
-    userId: params.userId,
   });
 }
 
@@ -1085,6 +1075,7 @@ export async function upsertJob(
   job:
     | (Omit<z.infer<typeof jobValidator>, "id" | "jobId"> & {
         jobId: string;
+        startDate?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1094,17 +1085,30 @@ export async function upsertJob(
         jobId: string;
         updatedBy: string;
         customFields?: Json;
-      })
+      }),
+  status?: (typeof jobStatus)[number]
 ) {
   if ("updatedBy" in job) {
     return client
       .from("job")
-      .update(sanitize(job))
+      .update({
+        ...sanitize(job),
+        ...(status && { status }),
+      })
       .eq("id", job.id)
       .select("id")
       .single();
   } else {
-    return client.from("job").insert([job]).select("id").single();
+    return client
+      .from("job")
+      .insert([
+        {
+          ...job,
+          ...(status && { status }),
+        },
+      ])
+      .select("id")
+      .single();
   }
 }
 

@@ -132,7 +132,7 @@ export function getOrdersFromProductionPlanning(
               startDate: startDate.toString(),
               dueDate: dueDate.toString(),
               quantity: orderQuantity,
-
+              periodId: currentPeriod.id,
               isASAP: startDate.compare(todaysDate) < 0,
             });
 
@@ -165,7 +165,7 @@ export function getOrdersFromProductionPlanning(
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),
             quantity: reorderQuantity,
-
+            periodId: period.id,
             isASAP: startDate.compare(todaysDate) < 0,
           });
           day++;
@@ -220,7 +220,7 @@ export function getOrdersFromProductionPlanning(
             startDate: startDate.toString(),
             dueDate: dueDate.toString(),
             quantity: orderQuantity,
-
+            periodId: period.id,
             isASAP:
               startDate.compare(todaysDate) < 0 &&
               projectedQuantity + orderedQuantity < 0,

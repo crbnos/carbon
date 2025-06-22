@@ -40,7 +40,6 @@ import {
 } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
-import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -57,6 +56,7 @@ import {
   LuPackage,
   LuPlus,
   LuSquareChartGantt,
+  LuStar,
   LuTrash2,
 } from "react-icons/lu";
 import { ItemThumbnail, MethodItemTypeIcon, Table } from "~/components";
@@ -78,7 +78,7 @@ import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
-import { getDeadlineIcon, JobStatus } from "../Jobs";
+import { JobStatus } from "../Jobs";
 
 type PlanningTableProps = {
   data: ProductionPlanningItem[];
@@ -89,23 +89,26 @@ type PlanningTableProps = {
 
 const OrderDrawer = memo(
   ({
-    fetcher,
     row,
     orders,
     setOrders,
     locationId,
+    periods,
     isOpen,
     onClose,
   }: {
-    fetcher: FetcherWithComponents<typeof bulkUpdateAction>;
     row: ProductionPlanningItem;
     orders: Order[];
     setOrders: (item: ProductionPlanningItem, orders: Order[]) => void;
     locationId: string;
+    periods: { id: string; startDate: string; endDate: string }[];
     isOpen: boolean;
     onClose: () => void;
   }) => {
+    const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
+
+    // Memoize getExistingOrders callback
     const getExistingOrders = useCallback(async () => {
       if (!carbon || !row.id) return;
 
@@ -113,6 +116,8 @@ const OrderDrawer = memo(
         ?.from("job")
         .select("*")
         .eq("itemId", row.id)
+        .is("salesOrderId", null)
+        .is("salesOrderLineId", null)
         .in("status", ["Draft", "Planned"]);
 
       if (existingOrderData) {
@@ -121,16 +126,46 @@ const OrderDrawer = memo(
             (order) =>
               !orders.some((existing) => existing.existingId === order.id)
           )
-          .map((order) => ({
-            existingId: order.id,
-            existingReadableId: order.jobId,
-            existingQuantity: order.quantity,
-            existingStatus: order.status,
-            startDate: order.startDate ?? null,
-            dueDate: order.dueDate ?? null,
-            quantity: order.quantity,
-            isASAP: order.deadlineType === "ASAP",
-          }));
+          .map((order) => {
+            // If no due date or due date is before first period, use first period
+            if (
+              !order.dueDate ||
+              parseDate(order.dueDate) < parseDate(periods[0].startDate)
+            ) {
+              return {
+                existingId: order.id,
+                existingReadableId: order.jobId,
+                existingQuantity: order.status === "Draft" ? 0 : order.quantity,
+                existingStatus: order.status,
+                startDate: order.startDate ?? null,
+                dueDate: order.dueDate ?? null,
+                quantity: order.quantity,
+                isASAP: order.deadlineType === "ASAP",
+                periodId: periods[0].id,
+              };
+            }
+
+            // Find matching period based on due date
+            const period = periods.find((p) => {
+              const dueDate = parseDate(order.dueDate!);
+              const startDate = parseDate(p.startDate);
+              const endDate = parseDate(p.endDate);
+              return dueDate >= startDate && dueDate <= endDate;
+            });
+
+            // If no matching period found (date is after last period), use last period
+            return {
+              existingId: order.id,
+              existingReadableId: order.jobId,
+              existingQuantity: order.status === "Draft" ? 0 : order.quantity,
+              existingStatus: order.status,
+              startDate: order.startDate ?? null,
+              dueDate: order.dueDate ?? null,
+              quantity: order.quantity,
+              isASAP: order.deadlineType === "ASAP",
+              periodId: period?.id ?? periods[periods.length - 1].id,
+            };
+          });
 
         setOrders(
           row,
@@ -139,16 +174,16 @@ const OrderDrawer = memo(
           })
         );
       }
-    }, [carbon, orders, row, setOrders]);
+    }, [carbon, orders, row, setOrders, periods]);
 
     useMount(() => {
       if (row.id) {
         getExistingOrders();
       }
     });
-    console.log({ orders });
 
-    const onAddOrder = () => {
+    // Memoize handlers
+    const onAddOrder = useCallback(() => {
       if (row.id) {
         const newOrder: Order = {
           quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
@@ -157,26 +192,57 @@ const OrderDrawer = memo(
             .toString(),
           startDate: today(getLocalTimeZone()).toString(),
           isASAP: false,
+          periodId: periods[0].id,
         };
         setOrders(row, [...orders, newOrder]);
       }
-    };
+    }, [row, orders, setOrders, periods]);
 
-    const onRemoveOrder = (index: number) => {
-      if (row.id) {
-        const newOrders = orders.filter((_, i) => i !== index);
-        setOrders(row, newOrders);
-      }
-    };
+    const onRemoveOrder = useCallback(
+      (index: number) => {
+        if (row.id) {
+          const newOrders = orders.filter((_, i) => i !== index);
+          setOrders(row, newOrders);
+        }
+      },
+      [row, orders, setOrders]
+    );
 
     const onSubmit = useCallback(
       (id: string, orders: Order[]) => {
+        const ordersWithPeriods = orders.map((order) => {
+          // If no due date or due date is before first period, use first period
+          if (
+            !order.dueDate ||
+            parseDate(order.dueDate) < parseDate(periods[0].startDate)
+          ) {
+            return {
+              ...order,
+              periodId: periods[0].id,
+            };
+          }
+
+          // Find matching period based on due date
+          const period = periods.find((p) => {
+            const dueDate = parseDate(order.dueDate!);
+            const startDate = parseDate(p.startDate);
+            const endDate = parseDate(p.endDate);
+            return dueDate >= startDate && dueDate <= endDate;
+          });
+
+          // If no matching period found (date is after last period), use last period
+          return {
+            ...order,
+            periodId: period?.id ?? periods[periods.length - 1].id,
+          };
+        });
+
         const payload = {
           locationId,
           items: [
             {
               id: id,
-              orders: orders,
+              orders: ordersWithPeriods,
             },
           ],
           action: "order" as const,
@@ -187,7 +253,22 @@ const OrderDrawer = memo(
           encType: "application/json",
         });
       },
-      [fetcher, locationId]
+      [fetcher, locationId, periods]
+    );
+
+    // Memoize order update handler
+    const handleOrderUpdate = useCallback(
+      (index: number, updates: Partial<Order>) => {
+        if (row.id) {
+          const newOrders = [...orders];
+          newOrders[index] = {
+            ...orders[index],
+            ...updates,
+          };
+          setOrders(row, newOrders);
+        }
+      },
+      [row, orders, setOrders]
     );
 
     useEffect(() => {
@@ -197,13 +278,15 @@ const OrderDrawer = memo(
 
       if (fetcher.data?.success === true) {
         toast.success("Orders submitted");
+        setOrders(row, []);
         onClose();
       }
-    }, [fetcher.data, fetcher.state]);
+    }, [fetcher.data, onClose, row, setOrders]);
 
-    return (
-      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DrawerContent size="lg">
+    // Memoize drawer content
+    const drawerContent = useMemo(
+      () => (
+        <DrawerContent size="md">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <span>{row.readableIdWithRevision}</span>
@@ -311,20 +394,26 @@ const OrderDrawer = memo(
 
               <TableBase full>
                 <Thead>
-                  <Th className="pl-0">
+                  <Th className="pl-0 pr-1">
                     <div className="flex items-center gap-2">
                       <LuHardHat />
                       <span>Job</span>
                     </div>
                   </Th>
-                  <Th>
-                    <div className="px-1 flex items-center gap-2 text-right">
+                  <Th className="px-1">
+                    <div className="flex items-center gap-2 text-left">
+                      <LuStar />
+                      <span>Status</span>
+                    </div>
+                  </Th>
+                  <Th className="px-1">
+                    <div className="flex items-center gap-2 text-right">
                       <LuPackage />
                       <span>Quantity</span>
                     </div>
                   </Th>
-                  <Th>
-                    <div className="justify-end flex items-center gap-2">
+                  <Th className="pr-1">
+                    <div className="flex items-center gap-2">
                       <LuCalendar />
                       <span>Due Date</span>
                     </div>
@@ -334,31 +423,35 @@ const OrderDrawer = memo(
                 <Tbody>
                   {orders.map((order, index) => (
                     <Tr key={index}>
-                      <Td className="flex flex-row items-center gap-1 pl-0 pr-1 group-hover:bg-inherit justify-between">
+                      <Td className="pl-0 pr-1 group-hover:bg-inherit justify-between">
                         {order.existingReadableId && order.existingId ? (
-                          <VStack spacing={0}>
-                            <Link to={path.to.job(order.existingId)}>
-                              {order.existingReadableId}
-                            </Link>
-                            {/* @ts-expect-error - status is a string because we have a general type for purchase orders and jobs */}
-                            <JobStatus status={order.existingStatus} />
-                          </VStack>
+                          <Link to={path.to.job(order.existingId)}>
+                            {order.existingReadableId}
+                          </Link>
                         ) : (
                           "New Job"
                         )}
-                        {order.isASAP && getDeadlineIcon("ASAP")}
+                      </Td>
+                      <Td className="flex flex-row items-center gap-1 px-1 group-hover:bg-inherit">
+                        {/* @ts-expect-error - status is a string because we have a general type for purchase orders and jobs */}
+                        <JobStatus status={order.existingStatus} />
                       </Td>
                       <Td className="text-right px-1 group-hover:bg-inherit">
                         <NumberField
                           value={order.quantity}
+                          onBlur={(e) => {
+                            const datePickerInput = e.target
+                              .closest("tr")
+                              ?.querySelector(
+                                '[role="textbox"]'
+                              ) as HTMLElement;
+                            if (datePickerInput) {
+                              datePickerInput.focus();
+                            }
+                          }}
                           onChange={(value) => {
-                            if (row.id && value) {
-                              const newOrders = [...orders];
-                              newOrders[index] = {
-                                ...order,
-                                quantity: value,
-                              };
-                              setOrders(row, newOrders);
+                            if (value) {
+                              handleOrderUpdate(index, { quantity: value });
                             }
                           }}
                         >
@@ -382,14 +475,9 @@ const OrderDrawer = memo(
                               order.dueDate ? parseDate(order.dueDate) : null
                             }
                             onChange={(date) => {
-                              if (row.id) {
-                                const newOrders = [...orders];
-                                newOrders[index] = {
-                                  ...order,
-                                  dueDate: date ? date.toString() : null,
-                                };
-                                setOrders(row, newOrders);
-                              }
+                              handleOrderUpdate(index, {
+                                dueDate: date ? date.toString() : null,
+                              });
                             }}
                           />
                         </HStack>
@@ -444,6 +532,23 @@ const OrderDrawer = memo(
             </Button>
           </DrawerFooter>
         </DrawerContent>
+      ),
+      [
+        row,
+        orders,
+        locationId,
+        fetcher.state,
+        onClose,
+        onAddOrder,
+        onRemoveOrder,
+        onSubmit,
+        handleOrderUpdate,
+      ]
+    );
+
+    return (
+      <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        {drawerContent}
       </Drawer>
     );
   }
@@ -467,8 +572,7 @@ const PlanningTable = memo(
 
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
 
-    // Store orders in a map keyed by item id
-    const [ordersMap, setOrdersMap] = useState<Record<string, Order[]>>(() => {
+    const getOrders = useCallback(() => {
       const initialMap: Record<string, Order[]> = {};
       data.forEach((item) => {
         if (item.id) {
@@ -476,7 +580,15 @@ const PlanningTable = memo(
         }
       });
       return initialMap;
-    });
+    }, [data, periods]);
+
+    // Store orders in a map keyed by item id
+    const [ordersMap, setOrdersMap] =
+      useState<Record<string, Order[]>>(getOrders);
+
+    useEffect(() => {
+      setOrdersMap(getOrders());
+    }, [data, periods, getOrders]);
 
     const onBulkUpdate = useCallback(
       (selectedRows: typeof data, action: "order") => {
@@ -485,9 +597,38 @@ const PlanningTable = memo(
           items: selectedRows
             .filter((row) => row.id)
             .map((row) => {
+              const ordersWithPeriods = (ordersMap[row.id!] || []).map(
+                (order) => {
+                  // If no due date or due date is before first period, use first period
+                  if (
+                    !order.dueDate ||
+                    parseDate(order.dueDate) < parseDate(periods[0].startDate)
+                  ) {
+                    return {
+                      ...order,
+                      periodId: periods[0].id,
+                    };
+                  }
+
+                  // Find matching period based on due date
+                  const period = periods.find((p) => {
+                    const dueDate = parseDate(order.dueDate!);
+                    const startDate = parseDate(p.startDate);
+                    const endDate = parseDate(p.endDate);
+                    return dueDate >= startDate && dueDate <= endDate;
+                  });
+
+                  // If no matching period found (date is after last period), use last period
+                  return {
+                    ...order,
+                    periodId: period?.id ?? periods[periods.length - 1].id,
+                  };
+                }
+              );
+
               return {
                 id: row.id,
-                orders: ordersMap[row.id!] || [],
+                orders: ordersWithPeriods,
               };
             }),
           action: action,
@@ -498,7 +639,7 @@ const PlanningTable = memo(
           encType: "application/json",
         });
       },
-      [bulkUpdateFetcher, locationId, ordersMap]
+      [bulkUpdateFetcher, locationId, ordersMap, periods]
     );
 
     const [selectedItem, setSelectedItem] =
@@ -673,12 +814,12 @@ const PlanningTable = memo(
             const orders = row.original.id
               ? ordersMap[row.original.id] || []
               : [];
-            const hasOrders = orders.length > 0;
             const orderQuantity = orders.reduce(
               (acc, order) =>
                 acc + (order.quantity - (order.existingQuantity ?? 0)),
               0
             );
+            const hasOrders = orders.length > 0 && orderQuantity > 0;
             return (
               <div className="flex justify-end">
                 <Button
@@ -720,7 +861,7 @@ const PlanningTable = memo(
             <DropdownMenuSeparator />
 
             <DropdownMenuItem
-              onSelect={() => onBulkUpdate(data, "order")}
+              onSelect={() => onBulkUpdate(selectedRows, "order")}
               disabled={bulkUpdateFetcher.state !== "idle"}
             >
               <DropdownMenuIcon icon={<LuSquareChartGantt />} />
@@ -729,7 +870,7 @@ const PlanningTable = memo(
           </DropdownMenuContent>
         );
       },
-      [bulkUpdateFetcher.state, onBulkUpdate, data]
+      [bulkUpdateFetcher.state, onBulkUpdate]
     );
 
     const defaultColumnVisibility = {
@@ -797,12 +938,11 @@ const PlanningTable = memo(
 
         {selectedItem && (
           <OrderDrawer
-            // @ts-ignore
-            fetcher={bulkUpdateFetcher}
             locationId={locationId}
             row={selectedItem}
             orders={selectedItem.id ? ordersMap[selectedItem.id] || [] : []}
             setOrders={setOrders}
+            periods={periods}
             isOpen={!!selectedItem}
             onClose={() => setSelectedItem(null)}
           />

@@ -2,9 +2,11 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { parseDate } from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import { getItemReplenishment } from "~/modules/items";
 import {
   salesOrderToJobValidator,
   upsertJob,
@@ -41,8 +43,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   let jobId = validation.data.jobId;
   const useNextSequence = !jobId;
+  let leadTime = 7;
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(serviceRole, "job", companyId);
+    const [nextSequence, manufacturing] = await Promise.all([
+      getNextSequence(serviceRole, "job", companyId),
+      getItemReplenishment(serviceRole, validation.data.itemId, companyId),
+    ]);
     if (nextSequence.error) {
       throw redirect(
         path.to.newJob,
@@ -53,6 +59,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
     jobId = nextSequence.data;
+    leadTime = manufacturing.data?.leadTime ?? 7;
+  } else {
+    const manufacturing = await getItemReplenishment(
+      serviceRole,
+      validation.data.itemId,
+      companyId
+    );
+    leadTime = manufacturing.data?.leadTime ?? 7;
   }
 
   if (!jobId) throw new Error("jobId is not defined");
@@ -61,6 +75,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const createJob = await upsertJob(serviceRole, {
     ...data,
     jobId,
+    startDate: data.dueDate
+      ? parseDate(data.dueDate).subtract({ days: leadTime }).toString()
+      : undefined,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

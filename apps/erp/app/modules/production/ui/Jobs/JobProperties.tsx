@@ -351,6 +351,26 @@ const JobProperties = () => {
 
       <ValidatedForm
         defaultValues={{
+          startDate: routeData?.job?.startDate ?? "",
+        }}
+        validator={z.object({
+          startDate: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <DatePicker
+          name="startDate"
+          label="Start Date"
+          inline
+          isDisabled={isDisabled}
+          onChange={(date) => {
+            onUpdate("startDate", date);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
           dueDate: routeData?.job?.dueDate ?? "",
         }}
         validator={z.object({

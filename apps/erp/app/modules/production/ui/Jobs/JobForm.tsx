@@ -139,7 +139,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
   const onItemChange = async (itemId: string) => {
     if (!itemId) return;
     if (!carbon || !company.id) return;
-    const [item, manufacturing, itemReplenishment] = await Promise.all([
+    const [item, manufacturing] = await Promise.all([
       carbon
         .from("item")
         .select(
@@ -150,14 +150,9 @@ const JobForm = ({ initialValues }: JobFormProps) => {
         .single(),
       carbon
         .from("itemReplenishment")
-        .select("lotSize, scrapPercentage, requiresConfiguration")
+        .select("lotSize, leadTime, scrapPercentage, requiresConfiguration")
         .eq("itemId", itemId)
         .single(),
-      carbon
-        .from("itemReplenishment")
-        .select("requiresConfiguration")
-        .eq("itemId", itemId)
-        .maybeSingle(),
     ]);
 
     setItemData((current) => ({
@@ -184,7 +179,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
       setType(item.data.type as MethodItemType);
     }
 
-    if (itemReplenishment.data?.requiresConfiguration) {
+    if (manufacturing.data?.requiresConfiguration) {
       setRequiresConfiguration(true);
       const [parameters, groups] = await Promise.all([
         carbon

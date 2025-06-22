@@ -70,6 +70,7 @@ const baseJobValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   quantity: zfd.numeric(z.number().min(0)),
   scrapQuantity: zfd.numeric(z.number().min(0)),
+  startDate: zfd.text(z.string().optional()),
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of measure is required" }),

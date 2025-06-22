@@ -67,6 +67,7 @@ import {
   LuEllipsisVertical,
   LuHammer,
   LuInfo,
+  LuListChecks,
   LuMaximize2,
   LuMinimize2,
   LuPaperclip,
@@ -74,7 +75,6 @@ import {
   LuSend,
   LuSettings2,
   LuTriangleAlert,
-  LuWaypoints,
   LuX,
 } from "react-icons/lu";
 import type { z } from "zod";
@@ -2473,13 +2473,13 @@ function OperationForm({
               onClick={procedureDisclosure.onToggle}
             >
               <HStack>
-                <LuWaypoints />
+                <LuListChecks />
                 <Label>Procedure</Label>
               </HStack>
               <HStack>
                 {processData.procedureId && (
                   <Badge variant="secondary">
-                    <LuWaypoints className="h-3 w-3 mr-1" />
+                    <LuListChecks className="h-3 w-3 mr-1" />
                     Procedure
                   </Badge>
                 )}

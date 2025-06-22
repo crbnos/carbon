@@ -1,6 +1,8 @@
 import { getCarbonServiceRole } from "@carbon/auth";
+import { parseDate } from "@internationalized/date";
 import { task, tasks } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
+import { getItemManufacturing, getItemReplenishment } from "~/modules/items";
 import {
   getOpportunity,
   getSalesOrder,
@@ -12,7 +14,6 @@ import {
   upsertJobMethod,
 } from "../modules/production/production.service";
 import type { recalculateTask } from "./recalculate";
-import { getItemManufacturing } from "~/modules/items";
 
 const salesOrderToJobsSchema = z.object({
   orderId: z.string(),
@@ -79,11 +80,10 @@ export const salesOrderToJobsTask = task({
         const jobsToCreate = Math.max(1, totalJobs);
 
         for await (const index of Array.from({ length: jobsToCreate }).keys()) {
-          const nextSequence = await getNextSequence(
-            serviceRole,
-            "job",
-            companyId
-          );
+          const [nextSequence, manufacturing] = await Promise.all([
+            getNextSequence(serviceRole, "job", companyId),
+            getItemReplenishment(serviceRole, line.itemId, companyId),
+          ]);
           if (!nextSequence.data) {
             console.error("Failed to get next job id");
             continue;
@@ -98,10 +98,17 @@ export const salesOrderToJobsTask = task({
                 : lotSize
               : totalQuantity; // If no lotSize, use total quantity
 
+          const dueDate = line.promisedDate ?? undefined;
+
           const data = {
             customerId: salesOrder.data?.customerId ?? undefined,
             deadlineType: "Hard Deadline" as const,
-            dueDate: line.promisedDate ?? undefined,
+            dueDate,
+            startDate: dueDate
+              ? parseDate(dueDate)
+                  .subtract({ days: manufacturing.data?.leadTime ?? 7 })
+                  .toString()
+              : undefined,
             itemId: line.itemId,
             locationId: line.locationId ?? "",
             modelUploadId: line.modelUploadId ?? undefined,

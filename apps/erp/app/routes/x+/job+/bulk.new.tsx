@@ -7,9 +7,14 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
+import {
+  parseDate,
+  parseDateTime,
+  toCalendarDateTime,
+} from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
+import { getItemReplenishment } from "~/modules/items";
 import {
   bulkJobValidator,
   upsertJob,
@@ -61,6 +66,12 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const manufacturing = await getItemReplenishment(
+    serviceRole,
+    jobData.itemId,
+    companyId
+  );
+
   // Calculate due date distribution if both dates are provided
   let dueDateDistribution: string[] = [];
   if (dueDateOfFirstJob && dueDateOfLastJob) {
@@ -107,6 +118,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     let jobId = nextSequence.data;
+    const dueDate = dueDateDistribution[i] || dueDateOfFirstJob;
 
     const createJob = await upsertJob(serviceRole, {
       jobId,
@@ -118,7 +130,12 @@ export async function action({ request }: ActionFunctionArgs) {
               quantityOfLastJob * (scrapQuantityPerJob / quantityPerJob)
             )
           : scrapQuantityPerJob,
-      dueDate: dueDateDistribution[i] || dueDateOfFirstJob,
+      dueDate,
+      startDate: dueDate
+        ? parseDate(dueDate)
+            .subtract({ days: manufacturing.data?.leadTime ?? 7 })
+            .toString()
+        : undefined,
       configuration,
       companyId,
       createdBy: userId,

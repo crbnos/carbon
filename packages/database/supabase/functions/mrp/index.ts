@@ -392,7 +392,6 @@ serve(async (req: Request) => {
       Database["public"]["Tables"]["supplyActual"]["Insert"]
     >();
 
-    // Get existing demand actuals
     const [
       { data: existingDemandActuals, error: demandActualsError },
       { data: existingSupplyActuals, error: supplyActualsError },
@@ -540,14 +539,21 @@ serve(async (req: Request) => {
       }
     }
 
-    // Then add/update current supply for job lines
-
-    // Convert Map values to array for upsert
     demandActualUpserts.push(...demandActualsMap.values());
     supplyActualUpserts.push(...supplyActualsMap.values());
 
     try {
       await db.transaction().execute(async (trx) => {
+        await trx
+          .deleteFrom("supplyForecast")
+          .where(
+            "locationId",
+            "in",
+            locations.data.map((l) => l.id)
+          )
+          .where("companyId", "=", companyId)
+          .execute();
+
         if (demandActualUpserts.length > 0) {
           await trx
             .insertInto("demandActual")
