@@ -301,96 +301,88 @@ const OrderDrawer = memo(
           </DrawerHeader>
           <DrawerBody>
             <div className="flex flex-col gap-4  w-full">
-              {(row.lotSize ||
-                row.minimumOrderQuantity ||
-                row.maximumOrderQuantity) && (
-                <VStack spacing={2} className="text-sm border rounded-lg p-4">
+              <VStack spacing={2} className="text-sm border rounded-lg p-4">
+                <HStack className="justify-between w-full">
+                  <span className="text-muted-foreground">Reorder Policy:</span>
+                  <ItemReorderPolicy reorderingPolicy={row.reorderingPolicy} />
+                </HStack>
+                <Separator />
+                {row.reorderingPolicy === "Maximum Quantity" && (
+                  <>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Reorder Point:
+                      </span>
+                      <span>{row.reorderPoint}</span>
+                    </HStack>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Maximum Inventory:
+                      </span>
+                      <span>{row.maximumInventoryQuantity}</span>
+                    </HStack>
+                  </>
+                )}
+
+                {row.reorderingPolicy === "Demand-Based Reorder" && (
+                  <>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Accumulation Period:
+                      </span>
+                      <span>{row.demandAccumulationPeriod} weeks</span>
+                    </HStack>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Safety Stock:
+                      </span>
+                      <span>{row.demandAccumulationSafetyStock}</span>
+                    </HStack>
+                  </>
+                )}
+
+                {row.reorderingPolicy === "Fixed Reorder Quantity" && (
+                  <>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Reorder Point:
+                      </span>
+                      <span>{row.reorderPoint}</span>
+                    </HStack>
+                    <HStack className="justify-between w-full">
+                      <span className="text-muted-foreground">
+                        Reorder Quantity:
+                      </span>
+                      <span>{row.reorderQuantity}</span>
+                    </HStack>
+                  </>
+                )}
+                {(row.lotSize > 0 ||
+                  row.minimumOrderQuantity > 0 ||
+                  row.maximumOrderQuantity > 0) && <Separator />}
+                {row.lotSize > 0 && (
+                  <HStack className="justify-between w-full">
+                    <span className="text-muted-foreground">Lot Size:</span>
+                    <span>{row.lotSize}</span>
+                  </HStack>
+                )}
+                {row.minimumOrderQuantity > 0 && (
                   <HStack className="justify-between w-full">
                     <span className="text-muted-foreground">
-                      Reorder Policy:
+                      Minimum Order:
                     </span>
-                    <ItemReorderPolicy
-                      reorderingPolicy={row.reorderingPolicy}
-                    />
+                    <span>{row.minimumOrderQuantity}</span>
                   </HStack>
-                  <Separator />
-                  {row.reorderingPolicy === "Maximum Quantity" && (
-                    <>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Reorder Point:
-                        </span>
-                        <span>{row.reorderPoint}</span>
-                      </HStack>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Maximum Inventory:
-                        </span>
-                        <span>{row.maximumInventoryQuantity}</span>
-                      </HStack>
-                    </>
-                  )}
-
-                  {row.reorderingPolicy === "Demand-Based Reorder" && (
-                    <>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Accumulation Period:
-                        </span>
-                        <span>{row.demandAccumulationPeriod} weeks</span>
-                      </HStack>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Safety Stock:
-                        </span>
-                        <span>{row.demandAccumulationSafetyStock}</span>
-                      </HStack>
-                    </>
-                  )}
-
-                  {row.reorderingPolicy === "Fixed Reorder Quantity" && (
-                    <>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Reorder Point:
-                        </span>
-                        <span>{row.reorderPoint}</span>
-                      </HStack>
-                      <HStack className="justify-between w-full">
-                        <span className="text-muted-foreground">
-                          Reorder Quantity:
-                        </span>
-                        <span>{row.reorderQuantity}</span>
-                      </HStack>
-                    </>
-                  )}
-                  {(row.lotSize > 0 ||
-                    row.minimumOrderQuantity > 0 ||
-                    row.maximumOrderQuantity > 0) && <Separator />}
-                  {row.lotSize > 0 && (
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">Lot Size:</span>
-                      <span>{row.lotSize}</span>
-                    </HStack>
-                  )}
-                  {row.minimumOrderQuantity > 0 && (
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        Minimum Order:
-                      </span>
-                      <span>{row.minimumOrderQuantity}</span>
-                    </HStack>
-                  )}
-                  {row.maximumOrderQuantity > 0 && (
-                    <HStack className="justify-between w-full">
-                      <span className="text-muted-foreground">
-                        Maximum Order:
-                      </span>
-                      <span>{row.maximumOrderQuantity}</span>
-                    </HStack>
-                  )}
-                </VStack>
-              )}
+                )}
+                {row.maximumOrderQuantity > 0 && (
+                  <HStack className="justify-between w-full">
+                    <span className="text-muted-foreground">
+                      Maximum Order:
+                    </span>
+                    <span>{row.maximumOrderQuantity}</span>
+                  </HStack>
+                )}
+              </VStack>
 
               <TableBase full>
                 <Thead>
