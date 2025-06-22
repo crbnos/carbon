@@ -593,13 +593,29 @@ export async function getItemSupply(
     companyId: string;
   }
 ) {
-  return client
-    .from("supplyActual")
-    .select("*")
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId)
-    .in("periodId", periods);
+  const [actuals, forecasts] = await Promise.all([
+    client
+      .from("supplyActual")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId)
+      .in("periodId", periods)
+      .order("periodId"),
+    client
+      .from("supplyForecast")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId)
+      .in("periodId", periods)
+      .order("periodId"),
+  ]);
+
+  return {
+    actuals: actuals.data ?? [],
+    forecasts: forecasts.data ?? [],
+  };
 }
 
 export async function getItemUnitSalePrice(

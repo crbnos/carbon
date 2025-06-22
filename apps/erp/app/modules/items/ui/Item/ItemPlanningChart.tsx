@@ -202,7 +202,8 @@ export const ItemPlanningChart = ({
   const combinedSupplyAndDemand = useMemo(() => {
     let projectedQuantity = forecastFetcher.data?.quantityOnHand ?? 0;
 
-    const combined = [
+    // First get all forecast data
+    const forecastData = [
       ...(forecastFetcher.data?.openSalesOrderLines ?? []).map((line) => ({
         ...line,
         sourceType: "Sales Order" as SourceType,
@@ -223,13 +224,36 @@ export const ItemPlanningChart = ({
         sourceType: "Production Order" as SourceType,
         quantity: line.quantity ?? 0,
       })),
-      ...plannedOrders.map((order) => ({
+    ];
+
+    // Filter out planned orders that have matching existing IDs in forecast data
+    const filteredPlannedOrders = plannedOrders.filter((order) => {
+      if (!order.existingId) return true;
+      return !forecastData.some((item) => item.id === order.existingId);
+    });
+
+    // For planned orders with existing IDs, update the quantity in forecast data
+    plannedOrders.forEach((order) => {
+      if (order.existingId) {
+        const existingIndex = forecastData.findIndex(
+          (item) => item.id === order.existingId
+        );
+        if (existingIndex >= 0) {
+          forecastData[existingIndex].quantity = order.quantity ?? 0;
+        }
+      }
+    });
+
+    // Add remaining planned orders
+    const combined = [
+      ...forecastData,
+      ...filteredPlannedOrders.map((order) => ({
         ...order,
         sourceType: "Planned" as SourceType,
         quantity: order.quantity ?? 0,
-        documentReadableId: order?.existingReadableId ?? "Planned",
-        documentId: order?.existingId ?? null,
-        id: order?.existingId ?? null,
+        documentReadableId: "Planned",
+        documentId: null,
+        id: null,
       })),
     ]
       .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
@@ -275,7 +299,7 @@ export const ItemPlanningChart = ({
 
   return (
     <>
-      <Card className={cn(compact && "border-none p-0")}>
+      <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
         <CardHeader className={cn(compact && "px-0")}>
           <CardTitle>Projections</CardTitle>
         </CardHeader>
@@ -373,7 +397,7 @@ export const ItemPlanningChart = ({
         </CardContent>
       </Card>
       <Tabs defaultValue="all" className="w-full">
-        <Card className={cn(compact && "border-none p-0")}>
+        <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
           <HStack className="w-full justify-between">
             <CardHeader className={cn(compact && "px-0")}>
               <CardTitle>Supply & Demand</CardTitle>
@@ -415,7 +439,7 @@ export const ItemPlanningChart = ({
                           0
                         ) ?? 0
                       )}`}
-                      <LuMoveUp className="text-emerald-500 text-lg" />
+                      <LuMoveUp className="text-teal-500 text-lg" />
                     </div>
                   </CardTitle>
                 </CardHeader>
@@ -505,7 +529,7 @@ const sourceTypeIcons: Record<SourceType, JSX.Element> = {
   "Job Material": <LuClipboardList className="h-4 w-4 text-teal-500" />,
   "Purchase Order": <LuShoppingCart className="h-4 w-4 text-blue-600" />,
   "Production Order": <LuFactory className="h-4 w-4 text-blue-600" />,
-  Planned: <LuMoveUp className="h-4 w-4 text-teal-500" />,
+  Planned: <LuMoveUp className="h-4 w-4 text-indigo-600" />,
 };
 
 function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
@@ -535,7 +559,7 @@ function SupplyDemandPlanningItem({ item }: { item: PlanningItem }) {
             item.sourceType === "Job Material" ? (
               <LuMoveDown className="text-red-500" />
             ) : (
-              <LuMoveUp className="text-emerald-500" />
+              <LuMoveUp className="text-teal-500" />
             )}
           </div>
         </HStack>

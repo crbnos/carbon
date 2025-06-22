@@ -85,16 +85,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (supply.error) {
-    return json(
-      defaultResponse,
-      await flash(request, error(supply.error, "Failed to load supply"))
-    );
-  }
-
   return json({
     demand: demand.data,
-    supply: supply.data,
+    supply: [
+      ...supply.actuals,
+      ...supply.forecasts.map((f) => ({
+        ...f,
+        actualQuantity: f.forecastQuantity,
+      })),
+    ],
     periods: periods.data,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     openSalesOrderLines: openSalesOrderLines.data ?? [],

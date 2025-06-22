@@ -213,6 +213,14 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         },
       },
       {
+        accessorKey: "startDate",
+        header: "Start Date",
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />,
+        },
+      },
+      {
         accessorKey: "dueDate",
         header: "Due Date",
         cell: (item) => formatDate(item.getValue<string>()),

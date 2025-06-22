@@ -2,10 +2,12 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { parseDate } from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { useUrlParams, useUser } from "~/hooks";
+import { getItemReplenishment } from "~/modules/items";
 import { jobValidator, upsertJob, upsertJobMethod } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import { getNextSequence } from "~/modules/settings";
@@ -25,11 +27,10 @@ export const config = { runtime: "nodejs" };
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "production",
-    bypassRls: true,
+    role: "employee",
   });
-  const serviceRole = getCarbonServiceRole();
 
   const formData = await request.formData();
   const validation = await validator(jobValidator).validate(formData);
@@ -40,8 +41,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let jobId = validation.data.jobId;
   const useNextSequence = !jobId;
+  let leadTime = 7;
+
   if (useNextSequence) {
-    const nextSequence = await getNextSequence(serviceRole, "job", companyId);
+    const [nextSequence, manufacturing] = await Promise.all([
+      getNextSequence(client, "job", companyId),
+      getItemReplenishment(client, validation.data.itemId, companyId),
+    ]);
     if (nextSequence.error) {
       throw redirect(
         path.to.newJob,
@@ -52,6 +58,14 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     jobId = nextSequence.data;
+    leadTime = manufacturing.data?.leadTime ?? 7;
+  } else {
+    const manufacturing = await getItemReplenishment(
+      client,
+      validation.data.itemId,
+      companyId
+    );
+    leadTime = manufacturing.data?.leadTime ?? 7;
   }
 
   if (!jobId) throw new Error("jobId is not defined");
@@ -66,10 +80,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const createJob = await upsertJob(serviceRole, {
+  const createJob = await upsertJob(client, {
     ...data,
     jobId,
     configuration,
+    startDate: data.dueDate
+      ? parseDate(data.dueDate).subtract({ days: leadTime }).toString()
+      : undefined,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),
@@ -83,13 +100,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const upsertMethod = await upsertJobMethod(serviceRole, "itemToJob", {
-    sourceId: data.itemId,
-    targetId: id,
-    companyId,
-    userId,
-    configuration,
-  });
+  const upsertMethod = await upsertJobMethod(
+    getCarbonServiceRole(),
+    "itemToJob",
+    {
+      sourceId: data.itemId,
+      targetId: id,
+      companyId,
+      userId,
+      configuration,
+    }
+  );
 
   if (upsertMethod.error) {
     throw redirect(

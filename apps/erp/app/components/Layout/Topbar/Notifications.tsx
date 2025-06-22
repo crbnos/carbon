@@ -23,11 +23,11 @@ import {
   LuHammer,
   LuHardHat,
   LuInbox,
+  LuListChecks,
   LuMailCheck,
   LuMessageSquare,
   LuShieldX,
   LuShoppingCart,
-  LuWaypoints,
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -174,7 +174,7 @@ function GenericNotification({
     case NotificationEvent.ProcedureAssignment:
       return (
         <Notification
-          icon={<LuWaypoints />}
+          icon={<LuListChecks />}
           to={path.to.procedure(id)}
           {...props}
         />

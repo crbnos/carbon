@@ -50,11 +50,11 @@ import {
   LuHammer,
   LuInfo,
   LuList,
+  LuListChecks,
   LuMaximize2,
   LuMinimize2,
   LuSettings2,
   LuTriangleAlert,
-  LuWaypoints,
   LuX,
 } from "react-icons/lu";
 import type { z } from "zod";
@@ -539,7 +539,7 @@ const QuoteBillOfProcess = ({
               <Tooltip>
                 <TooltipTrigger>
                   <Badge variant="secondary">
-                    <LuWaypoints />
+                    <LuListChecks />
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="opacity-100">
@@ -593,7 +593,7 @@ const QuoteBillOfProcess = ({
               <Tooltip>
                 <TooltipTrigger>
                   <Badge variant="secondary">
-                    <LuWaypoints />
+                    <LuListChecks />
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="opacity-100">
@@ -628,7 +628,7 @@ const QuoteBillOfProcess = ({
               <Tooltip>
                 <TooltipTrigger>
                   <Badge variant="secondary">
-                    <LuWaypoints />
+                    <LuListChecks />
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="opacity-100">
@@ -2242,13 +2242,13 @@ function OperationForm({
               onClick={procedureDisclosure.onToggle}
             >
               <HStack>
-                <LuWaypoints />
+                <LuListChecks />
                 <Label>Procedure</Label>
               </HStack>
               <HStack>
                 {processData.procedureId && (
                   <Badge variant="secondary">
-                    <LuWaypoints className="h-3 w-3 mr-1" />
+                    <LuListChecks className="h-3 w-3 mr-1" />
                     Procedure
                   </Badge>
                 )}

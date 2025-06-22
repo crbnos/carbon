@@ -9,10 +9,6 @@ const mes = SUPABASE_URL.includes("localhost")
   ? "http://localhost:3001"
   : "https://mes.carbonos.dev";
 
-const mes = SUPABASE_URL.includes("localhost")
-  ? "http://localhost:3001"
-  : "https://mes.carbonos.dev";
-
 export const path = {
   to: {
     api: {

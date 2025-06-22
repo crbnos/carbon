@@ -1,9 +1,15 @@
 import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { upsertJobMethod } from "~/modules/production";
+import type { recalculateTask } from "~/trigger/recalculate";
 import { path, requestReferrer } from "~/utils/path";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -57,6 +63,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error("Failed to update job method"))
       );
     }
+
+    await tasks.trigger<typeof recalculateTask>("recalculate", {
+      type: "jobRequirements",
+      id: jobId,
+      companyId,
+      userId,
+    });
   } else {
     throw new Error("No configuration provided");
   }

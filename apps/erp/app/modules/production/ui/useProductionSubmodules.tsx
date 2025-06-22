@@ -1,9 +1,9 @@
 import {
   LuHardHat,
+  LuListChecks,
   LuSquareChartGantt,
   LuSquareKanban,
   LuTrash,
-  LuWaypoints,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -44,7 +44,7 @@ const productionRoutes: AuthenticatedRouteGroup[] = [
       {
         name: "Procedures",
         to: path.to.procedures,
-        icon: <LuWaypoints />,
+        icon: <LuListChecks />,
         table: "procedure",
         role: "employee",
       },
