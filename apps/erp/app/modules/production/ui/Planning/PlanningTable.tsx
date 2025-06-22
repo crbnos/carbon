@@ -559,7 +559,6 @@ OrderDrawer.displayName = "OrderDrawer";
 const PlanningTable = memo(
   ({ data, count, locationId, periods }: PlanningTableProps) => {
     const permissions = usePermissions();
-    const isDisabled = !permissions.can("create", "production");
 
     const dateFormatter = useDateFormatter({
       month: "short",
@@ -570,7 +569,26 @@ const PlanningTable = memo(
     const locations = useLocations();
     const unitOfMeasures = useUnitOfMeasure();
 
+    const mrpFetcher = useFetcher<typeof mrpAction>();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+
+    useEffect(() => {
+      if (
+        bulkUpdateFetcher.data?.success === false &&
+        bulkUpdateFetcher?.data?.message
+      ) {
+        toast.error(bulkUpdateFetcher.data.message);
+      }
+
+      if (bulkUpdateFetcher.data?.success === true) {
+        toast.success("Orders submitted");
+      }
+    }, [bulkUpdateFetcher.data]);
+
+    const isDisabled =
+      !permissions.can("create", "production") ||
+      bulkUpdateFetcher.state !== "idle" ||
+      mrpFetcher.state !== "idle";
 
     const getOrders = useCallback(() => {
       const initialMap: Record<string, Order[]> = {};
@@ -882,8 +900,6 @@ const PlanningTable = memo(
       left: ["readableIdWithRevision"],
       right: ["Order"],
     };
-
-    const mrpFetcher = useFetcher<typeof mrpAction>();
 
     return (
       <>

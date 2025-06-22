@@ -4,6 +4,7 @@ import {
   MenuIcon,
   MenuItem,
   useDisclosure,
+  VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { useNavigate } from "@remix-run/react";
@@ -112,7 +113,16 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       {
         accessorKey: "itemReadableIdWithRevision",
         header: "Item",
-        cell: (item) => item.getValue(),
+        cell: ({ row }) => {
+          return (
+            <VStack spacing={0}>
+              {row.original.itemReadableIdWithRevision}
+              <div className="w-full truncate text-muted-foreground text-xs">
+                {row.original.name}
+              </div>
+            </VStack>
+          );
+        },
         meta: {
           filter: {
             type: "static",
@@ -132,6 +142,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           icon: <LuHash />,
         },
       },
+
       {
         id: "customerId",
         header: "Customer",

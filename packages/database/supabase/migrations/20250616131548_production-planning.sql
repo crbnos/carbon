@@ -607,3 +607,4 @@ LEFT JOIN job_model jm ON j.id = jm.job_id AND j."companyId" = jm."companyId"
 LEFT JOIN "modelUpload" mu ON mu.id = jm.model_upload_id
 LEFT JOIN "salesOrder" so on j."salesOrderId" = so.id AND j."companyId" = so."companyId"
 LEFT JOIN "quote" qo ON j."quoteId" = qo.id AND j."companyId" = qo."companyId";
+
