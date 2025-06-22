@@ -48,7 +48,7 @@ import {
   deadlineTypes,
   jobValidator,
 } from "../../production.models";
-import { getDeadlineIcon, getDeadlineText } from "./Deadline";
+import { getDeadlineIcon } from "./Deadline";
 
 type JobFormValues = z.infer<typeof jobValidator> & {
   description: string;
@@ -351,7 +351,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                           label: (
                             <div className="flex gap-1 items-center">
                               {getDeadlineIcon(d)}
-                              <span>{getDeadlineText(d)}</span>
+                              <span>{d}</span>
                             </div>
                           ),
                         }))}
@@ -516,7 +516,7 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                             label: (
                               <div className="flex gap-1 items-center">
                                 {getDeadlineIcon(d)}
-                                <span>{getDeadlineText(d)}</span>
+                                <span>{d}</span>
                               </div>
                             ),
                           }))}

@@ -16,16 +16,3 @@ export function getDeadlineIcon(deadlineType: (typeof deadlineTypes)[number]) {
       return <LowPriorityIcon />;
   }
 }
-
-export function getDeadlineText(deadlineType: (typeof deadlineTypes)[number]) {
-  switch (deadlineType) {
-    case "ASAP":
-      return "ASAP";
-    case "Hard Deadline":
-      return "Hard deadline";
-    case "Soft Deadline":
-      return "Soft deadline";
-    case "No Deadline":
-      return "No deadline";
-  }
-}

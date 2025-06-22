@@ -41,7 +41,7 @@ import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import { deadlineTypes } from "../../production.models";
 import type { Job } from "../../types";
-import { getDeadlineIcon, getDeadlineText } from "./Deadline";
+import { getDeadlineIcon } from "./Deadline";
 
 const JobProperties = () => {
   const { jobId } = useParams();
@@ -408,7 +408,7 @@ const JobProperties = () => {
             return (
               <div className="flex gap-1 items-center">
                 {getDeadlineIcon(deadlineType)}
-                <span>{getDeadlineText(deadlineType)}</span>
+                <span>{deadlineType}</span>
               </div>
             );
           }}

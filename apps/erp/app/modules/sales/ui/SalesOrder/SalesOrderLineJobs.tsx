@@ -54,10 +54,7 @@ import {
   salesOrderToJobValidator,
 } from "~/modules/production/production.models";
 import type { Job, JobOperation } from "~/modules/production/types";
-import {
-  getDeadlineIcon,
-  getDeadlineText,
-} from "~/modules/production/ui/Jobs/Deadline";
+import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobStartModal } from "~/modules/production/ui/Jobs/JobHeader";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
@@ -234,8 +231,8 @@ export function SalesOrderLineJobs({
                       value: d,
                       label: (
                         <div className="flex gap-1 items-center">
-                          {getDeadlineIcon(d, false)}
-                          <span>{getDeadlineText(d)}</span>
+                          {getDeadlineIcon(d)}
+                          <span>{d}</span>
                         </div>
                       ),
                     }))}
@@ -467,8 +464,7 @@ function JobDetails({ job }: { job: Job }) {
                           operation.jobMakeMethod?.parentMaterialId
                             ? path.to.jobMakeMethod(
                                 operation.jobId,
-                                operation.jobMakeMethodId ?? "",
-                                operation.jobMakeMethod?.parentMaterialId
+                                operation.jobMakeMethodId ?? ""
                               )
                             : path.to.jobMethod(
                                 operation.jobId,

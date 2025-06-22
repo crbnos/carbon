@@ -37,7 +37,7 @@ import { useCustomers, useParts, usePeople, useTools } from "~/stores";
 import { path } from "~/utils/path";
 import { deadlineTypes, jobStatus } from "../../production.models";
 import type { Job } from "../../types";
-import { getDeadlineIcon, getDeadlineText } from "./Deadline";
+import { getDeadlineIcon } from "./Deadline";
 import JobStatus from "./JobStatus";
 
 type JobsTableProps = {
@@ -239,14 +239,14 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
             return (
               <div className="flex gap-1 items-center">
                 {getDeadlineIcon(deadlineType)}
-                <span>{getDeadlineText(deadlineType)}</span>
+                <span>{deadlineType}</span>
               </div>
             );
 
           return (
             <div className="flex items-center gap-1">
               {getDeadlineIcon(deadlineType)}
-              <span>{getDeadlineText(deadlineType)}</span>
+              <span>{deadlineType}</span>
             </div>
           );
         },
@@ -258,7 +258,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
               label: (
                 <div className="flex gap-1 items-center">
                   {getDeadlineIcon(type)}
-                  <span>{getDeadlineText(type)}</span>
+                  <span>{type}</span>
                 </div>
               ),
             })),
