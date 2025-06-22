@@ -1,15 +1,21 @@
 import {
   Badge,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   HStack,
   MenuIcon,
   MenuItem,
+  toast,
   useDisclosure,
   VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
-import { useNavigate } from "@remix-run/react";
+import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import {
   LuBookMarked,
@@ -34,6 +40,7 @@ import {
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
+import type { action } from "~/routes/x+/job+/update";
 import { useCustomers, useParts, usePeople, useTools } from "~/stores";
 import { path } from "~/utils/path";
 import { deadlineTypes, jobStatus } from "../../production.models";
@@ -412,6 +419,64 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params, customColumns]);
 
+  const fetcher = useFetcher<typeof action>();
+  useEffect(() => {
+    if (fetcher.data?.error) {
+      toast.error(fetcher.data.error.message);
+    }
+  }, [fetcher.data]);
+
+  const onBulkUpdate = useCallback(
+    (selectedRows: typeof data, field: "delete", value?: string) => {
+      const formData = new FormData();
+      selectedRows.forEach((row) => {
+        if (row.id) formData.append("ids", row.id);
+      });
+      formData.append("field", field);
+      if (value) formData.append("value", value);
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateJob,
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const renderActions = useCallback(
+    (selectedRows: typeof data) => {
+      return (
+        <DropdownMenuContent align="end" className="min-w-[200px]">
+          <DropdownMenuLabel>Update</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem
+              disabled={
+                !permissions.can("delete", "production") ||
+                selectedRows.some(
+                  (row) =>
+                    ![
+                      "Draft",
+                      "Planned",
+                      "Due Today",
+                      "Overdue",
+                      "Draft",
+                    ].includes(row.status ?? "")
+                )
+              }
+              destructive
+              onClick={() => onBulkUpdate(selectedRows, "delete")}
+            >
+              <MenuIcon icon={<LuTrash />} />
+              Delete Jobs
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      );
+    },
+    [onBulkUpdate, permissions]
+  );
+
   const renderContextMenu = useCallback<(row: Job) => JSX.Element>(
     (row) => (
       <>
@@ -452,10 +517,12 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
             <New label="Job" to={path.to.newJob} />
           )
         }
+        renderActions={renderActions}
         renderContextMenu={renderContextMenu}
         title="Jobs"
         table="job"
         withSavedView
+        withSelectableRows
       />
 
       {selectedJob && selectedJob.id && (
