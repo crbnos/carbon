@@ -22,14 +22,28 @@ export async function action({ request }: ActionFunctionArgs) {
   const field = formData.get("field");
   const value = formData.get("value");
 
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
+  if (typeof field !== "string") {
     return json({ error: { message: "Invalid form data" }, data: null });
   }
 
   const serviceRole = await getCarbonServiceRole();
+
+  console.log({
+    field,
+    ids,
+  });
+
+  if (field === "delete") {
+    return json(
+      await client
+        .from("job")
+        .delete()
+        .in("id", ids as string[])
+    );
+  }
+  if (typeof value !== "string" && value !== null) {
+    return json({ error: { message: "Invalid form data" }, data: null });
+  }
 
   switch (field) {
     case "itemId":

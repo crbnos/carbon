@@ -355,7 +355,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
     (selectedRows: typeof data) => {
       return (
         <DropdownMenuContent align="end" className="min-w-[200px]">
-          <DropdownMenuLabel>Bulk Update</DropdownMenuLabel>
+          <DropdownMenuLabel>Update</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuSub>

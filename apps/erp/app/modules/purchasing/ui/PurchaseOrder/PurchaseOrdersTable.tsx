@@ -1,14 +1,21 @@
 import {
   Checkbox,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   HStack,
   MenuIcon,
   MenuItem,
+  toast,
   useDisclosure,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
+import { useFetcher } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBookMarked,
   LuCalendar,
@@ -39,6 +46,7 @@ import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseOrder } from "~/modules/purchasing";
 import { purchaseOrderStatusType } from "~/modules/purchasing";
+import type { action } from "~/routes/x+/purchase-order+/update";
 import { usePeople, useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import PurchasingStatus from "./PurchasingStatus";
@@ -65,8 +73,6 @@ const PurchaseOrdersTable = memo(
     const [suppliers] = useSuppliers();
     const shippingMethods = useShippingMethod();
     const paymentTerms = usePaymentTerm();
-
-    // const optimisticFavorite = useOptimisticFavorite();
 
     const { edit, receive } = usePurchaseOrder();
 
@@ -157,9 +163,7 @@ const PurchaseOrdersTable = memo(
               row.original.deliveryDate <= row.original.receiptPromisedDate;
 
             const isOverdue =
-              ["To Receive", "To Receive and Invoice", "Draft"].includes(
-                row.original.status ?? ""
-              ) &&
+              ["Cancelled", "Draft"].includes(row.original.status ?? "") &&
               row.original.receiptPromisedDate &&
               row.original.receiptPromisedDate <
                 today(getLocalTimeZone()).toString();
@@ -317,9 +321,59 @@ const PurchaseOrdersTable = memo(
       paymentTerms,
     ]);
 
-    const renderContextMenu = useMemo(() => {
-      // eslint-disable-next-line react/display-name
-      return (row: PurchaseOrder) => (
+    const fetcher = useFetcher<typeof action>();
+    useEffect(() => {
+      if (fetcher.data?.error) {
+        toast.error(fetcher.data.error.message);
+      }
+    }, [fetcher.data]);
+
+    const onBulkUpdate = useCallback(
+      (selectedRows: typeof data, field: "delete", value?: string) => {
+        const formData = new FormData();
+        selectedRows.forEach((row) => {
+          if (row.id) formData.append("ids", row.id);
+        });
+        formData.append("field", field);
+        if (value) formData.append("value", value);
+        fetcher.submit(formData, {
+          method: "post",
+          action: path.to.bulkUpdatePurchaseOrder,
+        });
+      },
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      []
+    );
+
+    const renderActions = useCallback(
+      (selectedRows: typeof data) => {
+        return (
+          <DropdownMenuContent align="end" className="min-w-[200px]">
+            <DropdownMenuLabel>Update</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                disabled={
+                  !permissions.can("delete", "purchasing") ||
+                  selectedRows.some(
+                    (row) => !["Draft"].includes(row.status ?? "")
+                  )
+                }
+                destructive
+                onClick={() => onBulkUpdate(selectedRows, "delete")}
+              >
+                <MenuIcon icon={<LuTrash />} />
+                Delete Purchase Orders
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        );
+      },
+      [onBulkUpdate, permissions]
+    );
+
+    const renderContextMenu = useCallback(
+      (row: PurchaseOrder) => (
         <>
           <MenuItem
             disabled={!permissions.can("view", "purchasing")}
@@ -357,8 +411,9 @@ const PurchaseOrdersTable = memo(
             Delete
           </MenuItem>
         </>
-      );
-    }, [deletePurchaseOrderModal, edit, permissions, receive]);
+      ),
+      [deletePurchaseOrderModal, edit, permissions, receive]
+    );
 
     return (
       <>
@@ -371,7 +426,6 @@ const PurchaseOrdersTable = memo(
           }}
           defaultColumnVisibility={{
             shippingMethodName: false,
-            // shippingTermName: false,
             paymentTermName: false,
             dropShipment: false,
             createdBy: false,
@@ -385,9 +439,11 @@ const PurchaseOrdersTable = memo(
             )
           }
           renderContextMenu={renderContextMenu}
+          renderActions={renderActions}
           title="Purchase Orders"
           table="purchaseOrder"
           withSavedView
+          withSelectableRows
         />
 
         {selectedPurchaseOrder && selectedPurchaseOrder.id && (

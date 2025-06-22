@@ -4,7 +4,7 @@ import { getCurrencyByCode } from "~/modules/accounting";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "sales",
+    update: "purchasing",
   });
 
   const formData = await request.formData();
@@ -12,10 +12,20 @@ export async function action({ request }: ActionFunctionArgs) {
   const field = formData.get("field");
   const value = formData.get("value");
 
-  if (
-    typeof field !== "string" ||
-    (typeof value !== "string" && value !== null)
-  ) {
+  if (typeof field !== "string") {
+    return json({ error: { message: "Invalid form data" }, data: null });
+  }
+
+  if (field === "delete") {
+    return json(
+      await client
+        .from("purchaseOrder")
+        .delete()
+        .in("id", ids as string[])
+    );
+  }
+
+  if (typeof value !== "string" && value !== null) {
     return json({ error: { message: "Invalid form data" }, data: null });
   }
 
@@ -126,7 +136,6 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierLocationId":
     case "supplierReference":
     case "exchangeRate":
-
     case "orderDate":
       return json(
         await client
