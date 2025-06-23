@@ -90,56 +90,49 @@ export function getOrdersFromProductionPlanning(
       for (let i = 0; i < periods.length; i += demandAccumulationPeriod) {
         const currentPeriod = periods[i];
 
-        // Get the projection for this period
-        const periodKey = `week${i + 1}` as keyof ProductionPlanningItem;
-        const projection = (itemPlanning[periodKey] as number) || 0;
+        // Calculate total demand for accumulation period
 
-        // If projection plus ordered quantity is below safety stock, create order
-        if (projection + orderedQuantity < demandAccumulationSafetyStock) {
-          let remainingQuantityNeeded =
-            demandAccumulationSafetyStock - (projection + orderedQuantity);
-          let dayOffset = 0;
+        let projectedStock = 0;
+        for (
+          let j = i;
+          j < Math.min(i + demandAccumulationPeriod, periods.length);
+          j++
+        ) {
+          const periodKey = `week${j + 1}` as "week1";
+          const periodProjection = (itemPlanning[periodKey] as number) || 0;
+          projectedStock = periodProjection + orderedQuantity;
+        }
 
-          while (remainingQuantityNeeded > 0) {
-            // Apply lot sizing rules
-            let orderQuantity = Math.max(
-              Math.min(
-                remainingQuantityNeeded,
-                lotSize > 0
-                  ? lotSize // If lotSize exists, use it as maximum
-                  : maximumOrderQuantity > 0
-                  ? maximumOrderQuantity
-                  : Infinity
-              ),
-              minimumOrderQuantity
-            );
+        // If projected stock is below safety stock, create order
+        if (projectedStock < demandAccumulationSafetyStock) {
+          let orderQuantity = demandAccumulationSafetyStock - projectedStock;
 
-            if (orderMultiple > 0) {
-              orderQuantity =
-                Math.ceil(orderQuantity / orderMultiple) * orderMultiple;
-            }
-
-            if (lotSize > 0) {
-              orderQuantity = Math.min(lotSize, orderQuantity);
-            }
-
-            const dueDate = parseDate(currentPeriod.startDate).add({
-              days: dayOffset,
-            });
-            const startDate = dueDate.subtract({ days: leadTime });
-
-            orders.push({
-              startDate: startDate.toString(),
-              dueDate: dueDate.toString(),
-              quantity: orderQuantity,
-              periodId: currentPeriod.id,
-              isASAP: startDate.compare(todaysDate) < 0,
-            });
-
-            orderedQuantity += orderQuantity;
-            remainingQuantityNeeded -= orderQuantity;
-            dayOffset++;
+          // Apply lot sizing rules
+          if (lotSize > 0) {
+            orderQuantity = Math.min(orderQuantity, lotSize);
           }
+          if (maximumOrderQuantity > 0) {
+            orderQuantity = Math.min(orderQuantity, maximumOrderQuantity);
+          }
+          orderQuantity = Math.max(orderQuantity, minimumOrderQuantity);
+
+          if (orderMultiple > 0) {
+            orderQuantity =
+              Math.ceil(orderQuantity / orderMultiple) * orderMultiple;
+          }
+
+          const dueDate = parseDate(currentPeriod.startDate);
+          const startDate = dueDate.subtract({ days: leadTime });
+
+          orders.push({
+            startDate: startDate.toString(),
+            dueDate: dueDate.toString(),
+            quantity: orderQuantity,
+            periodId: currentPeriod.id,
+            isASAP: startDate.compare(todaysDate) < 0,
+          });
+
+          orderedQuantity += orderQuantity;
         }
       }
 
