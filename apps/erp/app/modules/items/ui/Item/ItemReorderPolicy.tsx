@@ -2,6 +2,7 @@ import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import type { ProductionPlanningItem } from "~/modules/production";
+import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import type { Order } from "../../items.models";
 
 export function ItemReorderPolicy({
@@ -40,7 +41,7 @@ export function ItemReorderPolicy({
 }
 
 export function getReorderPolicyDescription(
-  itemPlanning: ProductionPlanningItem
+  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem
 ) {
   const reorderPoint = itemPlanning.reorderPoint;
   switch (itemPlanning.reorderingPolicy) {
@@ -58,8 +59,8 @@ export function getReorderPolicyDescription(
   }
 }
 
-export function getOrdersFromProductionPlanning(
-  itemPlanning: ProductionPlanningItem,
+export function getOrdersFromPlanning(
+  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem,
   periods: { startDate: string; id: string }[]
 ): Order[] {
   if (itemPlanning.reorderingPolicy === "Manual Reorder") {
@@ -140,7 +141,7 @@ export function getOrdersFromProductionPlanning(
     case "Fixed Reorder Quantity":
       for (let i = 0; i < periods.length; i++) {
         const period = periods[i];
-        const periodKey = `week${i + 1}` as keyof ProductionPlanningItem;
+        const periodKey = `week${i + 1}` as "week1";
         const projectedQuantity = (itemPlanning[periodKey] as number) || 0;
 
         // Check if we need to order based on reorder point
@@ -172,7 +173,7 @@ export function getOrdersFromProductionPlanning(
     case "Maximum Quantity":
       for (let i = 0; i < periods.length; i++) {
         const period = periods[i];
-        const periodKey = `week${i + 1}` as keyof ProductionPlanningItem;
+        const periodKey = `week${i + 1}` as "week1";
         const projectedQuantity = (itemPlanning[periodKey] as number) || 0;
 
         // Check if we need to order based on reorder point
