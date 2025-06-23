@@ -314,6 +314,40 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
+export async function getPurchasingPlanning(
+  client: SupabaseClient<Database>,
+  locationId: string,
+  companyId: string,
+  periods: string[],
+  args: GenericQueryFilters & {
+    search: string | null;
+  }
+) {
+  let query = client.rpc(
+    "get_purchasing_planning",
+    {
+      location_id: locationId,
+      company_id: companyId,
+      periods,
+    },
+    {
+      count: "exact",
+    }
+  );
+
+  if (args?.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "readableIdWithRevision", ascending: true },
+  ]);
+
+  return query;
+}
+
 export async function getPurchasingTerms(
   client: SupabaseClient<Database>,
   companyId: string

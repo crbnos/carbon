@@ -118,7 +118,9 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     let jobId = nextSequence.data;
-    const dueDate = dueDateDistribution[i] || dueDateOfFirstJob;
+    const dueDate = (dueDateDistribution[i] || dueDateOfFirstJob)?.split(
+      "T"
+    )[0];
 
     const createJob = await upsertJob(serviceRole, {
       jobId,

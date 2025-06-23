@@ -4,6 +4,7 @@ import {
   LuLayoutList,
   LuPackageSearch,
   LuShapes,
+  LuSquareChartGantt,
   LuStar,
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
@@ -39,6 +40,17 @@ const purchasingRoutes: AuthenticatedRouteGroup[] = [
         icon: <LuCreditCard />,
         table: "purchaseInvoice",
         permission: "invoicing",
+      },
+    ],
+  },
+  {
+    name: "Plan",
+    routes: [
+      {
+        name: "Planning",
+        to: path.to.purchasingPlanning,
+        icon: <LuSquareChartGantt />,
+        table: "purchase-planning",
       },
     ],
   },

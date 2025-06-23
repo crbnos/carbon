@@ -6,9 +6,9 @@ import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import type { ProductionPlanningItem } from "~/modules/production";
-import { getProductionPlanning } from "~/modules/production";
-import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
+import type { PurchasingPlanningItem } from "~/modules/purchasing";
+import { getPurchasingPlanning } from "~/modules/purchasing";
+import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
 import { getLocationsList } from "~/modules/resources";
 import { getPeriods } from "~/modules/shared/shared.service";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -20,12 +20,12 @@ const WEEKS_TO_PLAN = 12 * 4;
 
 export const handle: Handle = {
   breadcrumb: "Planning",
-  to: path.to.productionPlanning,
+  to: path.to.purchasingPlanning,
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
-    view: "production",
+    view: "purchasing",
     bypassRls: true,
   });
 
@@ -42,7 +42,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const userDefaults = await getUserDefaults(client, userId, companyId);
     if (userDefaults.error) {
       throw redirect(
-        path.to.production,
+        path.to.inventory,
         await flash(
           request,
           error(userDefaults.error, "Failed to load default location")
@@ -57,7 +57,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const locations = await getLocationsList(client, companyId);
     if (locations.error || !locations.data?.length) {
       throw redirect(
-        path.to.inventory,
+        path.to.purchasing,
         await flash(
           request,
           error(locations.error, "Failed to load any locations")
@@ -82,7 +82,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [items] = await Promise.all([
-    getProductionPlanning(
+    getPurchasingPlanning(
       client,
       locationId,
       companyId,
@@ -99,19 +99,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   if (items.error) {
     redirect(
-      path.to.production,
+      path.to.purchasing,
       await flash(request, error(items.error, "Failed to fetch planning items"))
     );
   }
 
   return json({
-    items: (items.data ?? []) as ProductionPlanningItem[],
+    items: (items.data ?? []) as PurchasingPlanningItem[],
     periods: periods.data ?? [],
     locationId,
   });
 }
 
-export default function ProductionPlanningRoute() {
+export default function PurchasingPlanningRoute() {
   const { items, locationId, periods } = useLoaderData<typeof loader>();
 
   return (
@@ -123,7 +123,7 @@ export default function ProductionPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <ProductionPlanningTable
+          <PurchasingPlanningTable
             data={items}
             count={items.length}
             locationId={locationId}

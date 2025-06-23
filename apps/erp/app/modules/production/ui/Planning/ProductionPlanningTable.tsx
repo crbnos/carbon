@@ -70,7 +70,7 @@ import { itemReorderingPolicies } from "~/modules/items/items.models";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
-  getOrdersFromProductionPlanning,
+  getOrdersFromPlanning,
   getReorderPolicyDescription,
   ItemReorderPolicy,
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
@@ -80,7 +80,7 @@ import { path } from "~/utils/path";
 import type { ProductionPlanningItem } from "../../types";
 import { JobStatus } from "../Jobs";
 
-type PlanningTableProps = {
+type ProductionPlanningTableProps = {
   data: ProductionPlanningItem[];
   count: number;
   locationId: string;
@@ -286,7 +286,7 @@ const OrderDrawer = memo(
     // Memoize drawer content
     const drawerContent = useMemo(
       () => (
-        <DrawerContent size="md">
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               <span>{row.readableIdWithRevision}</span>
@@ -548,8 +548,8 @@ const OrderDrawer = memo(
 
 OrderDrawer.displayName = "OrderDrawer";
 
-const PlanningTable = memo(
-  ({ data, count, locationId, periods }: PlanningTableProps) => {
+const ProductionPlanningTable = memo(
+  ({ data, count, locationId, periods }: ProductionPlanningTableProps) => {
     const permissions = usePermissions();
 
     const dateFormatter = useDateFormatter({
@@ -586,7 +586,7 @@ const PlanningTable = memo(
       const initialMap: Record<string, Order[]> = {};
       data.forEach((item) => {
         if (item.id) {
-          initialMap[item.id] = getOrdersFromProductionPlanning(item, periods);
+          initialMap[item.id] = getOrdersFromPlanning(item, periods);
         }
       });
       return initialMap;
@@ -939,7 +939,7 @@ const PlanningTable = memo(
           }
           renderActions={renderActions}
           title="Planning"
-          table="planning"
+          table="production-planning"
           withSavedView
           withSelectableRows
         />
@@ -960,9 +960,9 @@ const PlanningTable = memo(
   }
 );
 
-PlanningTable.displayName = "PlanningTable";
+ProductionPlanningTable.displayName = "ProductionPlanningTable";
 
-export default PlanningTable;
+export default ProductionPlanningTable;
 
 function getLocationPath(locationId: string) {
   return `${path.to.productionPlanning}?location=${locationId}`;

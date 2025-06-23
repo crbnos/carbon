@@ -4,6 +4,7 @@ import type {
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
   getPurchaseOrders,
+  getPurchasingPlanning,
   getSupplier,
   getSupplierContacts,
   getSupplierInteraction,
@@ -42,6 +43,10 @@ export type PurchaseOrderType =
 
 export type PurchaseOrderTransactionType =
   Database["public"]["Enums"]["purchaseOrderTransactionType"];
+
+export type PurchasingPlanningItem = NonNullable<
+  Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
+>[number];
 
 export type Supplier = NonNullable<
   Awaited<ReturnType<typeof getSuppliers>>["data"]
