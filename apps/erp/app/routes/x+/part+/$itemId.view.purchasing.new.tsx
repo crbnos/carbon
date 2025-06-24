@@ -1,11 +1,10 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/remix";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import type { PartSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -25,7 +24,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(supplierPartValidator).validate(formData);
 
   if (validation.error) {
-    return validationError(validation.error);
+    return json({
+      success: false,
+      message: "Invalid form data",
+    });
   }
 
   const { id, ...data } = validation.data;
@@ -38,16 +40,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (createPartSupplier.error) {
-    throw redirect(
-      path.to.partPurchasing(itemId),
-      await flash(
-        request,
-        error(createPartSupplier.error, "Failed to create part supplier")
-      )
-    );
+    return json({
+      success: false,
+      message: "Failed to create part supplier",
+    });
   }
 
-  throw redirect(path.to.partPurchasing(itemId));
+  return json({
+    success: true,
+    message: "Part supplier created",
+  });
 }
 
 export default function NewPartSupplierRoute() {
@@ -69,11 +71,15 @@ export default function NewPartSupplierRoute() {
     conversionFactor: 1,
   };
 
+  const navigate = useNavigate();
+  const onClose = () => navigate(path.to.partPurchasing(itemId));
+
   return (
     <SupplierPartForm
       type="Part"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.partSummary?.unitOfMeasureCode ?? ""}
+      onClose={onClose}
     />
   );
 }

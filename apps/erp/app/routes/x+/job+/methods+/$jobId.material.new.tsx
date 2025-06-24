@@ -7,7 +7,6 @@ import {
   jobMaterialValidator,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
-  runMRP,
   upsertJobMaterial,
   upsertJobMaterialMakeMethod,
 } from "~/modules/production";
@@ -149,13 +148,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-
-    await runMRP(serviceRole, {
-      type: "item",
-      id: validation.data.itemId,
-      companyId,
-      userId,
-    });
   }
 
   return json({ id: jobMaterialId });

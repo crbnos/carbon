@@ -1,11 +1,10 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/remix";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import type { MaterialSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -38,19 +37,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (createMaterialSupplier.error) {
-    throw redirect(
-      path.to.materialPurchasing(itemId),
-      await flash(
-        request,
-        error(
-          createMaterialSupplier.error,
-          "Failed to create material supplier"
-        )
-      )
-    );
+    return json({
+      success: false,
+      message: "Failed to create material supplier",
+    });
   }
 
-  throw redirect(path.to.materialPurchasing(itemId));
+  return json({
+    success: true,
+    message: "Material supplier created successfully",
+  });
 }
 
 export default function NewMaterialSupplierRoute() {
@@ -71,11 +67,15 @@ export default function NewMaterialSupplierRoute() {
     conversionFactor: 1,
   };
 
+  const navigate = useNavigate();
+  const onClose = () => navigate(path.to.materialPurchasing(itemId));
+
   return (
     <SupplierPartForm
       type="Material"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.materialSummary?.unitOfMeasureCode ?? ""}
+      onClose={onClose}
     />
   );
 }

@@ -1,15 +1,13 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/remix";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import type { ConsumableSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
-
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -39,19 +37,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (createConsumableSupplier.error) {
-    throw redirect(
-      path.to.consumablePurchasing(itemId),
-      await flash(
-        request,
-        error(
-          createConsumableSupplier.error,
-          "Failed to create consumable supplier"
-        )
-      )
-    );
+    return json({
+      success: false,
+      message: "Failed to create consumable supplier",
+    });
   }
 
-  throw redirect(path.to.consumablePurchasing(itemId));
+  return json({
+    success: true,
+    message: "Consumable supplier created successfully",
+  });
 }
 
 export default function NewConsumableSupplierRoute() {
@@ -62,6 +57,9 @@ export default function NewConsumableSupplierRoute() {
   const routeData = useRouteData<{ consumableSummary: ConsumableSummary }>(
     path.to.consumable(itemId)
   );
+
+  const navigate = useNavigate();
+  const onClose = () => navigate(path.to.consumablePurchasing(itemId));
 
   const initialValues = {
     itemId: itemId,
@@ -78,6 +76,7 @@ export default function NewConsumableSupplierRoute() {
       type="Consumable"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.consumableSummary?.unitOfMeasureCode ?? ""}
+      onClose={onClose}
     />
   );
 }

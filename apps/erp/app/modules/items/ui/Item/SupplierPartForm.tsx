@@ -8,10 +8,11 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  toast,
   VStack,
 } from "@carbon/react";
-import { useNavigate, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useFetcher, useParams } from "@remix-run/react";
+import { useEffect, useState } from "react";
 import type { z } from "zod";
 import {
   ConversionFactor,
@@ -31,21 +32,25 @@ type SupplierPartFormProps = {
   initialValues: z.infer<typeof supplierPartValidator>;
   type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
   unitOfMeasureCode: string;
+  onClose: () => void;
 };
 
 const SupplierPartForm = ({
   initialValues,
   type,
   unitOfMeasureCode,
+  onClose,
 }: SupplierPartFormProps) => {
   const permissions = usePermissions();
-  const navigate = useNavigate();
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
 
-  const { itemId } = useParams();
-  if (!itemId) throw new Error("itemId not found");
+  let { itemId } = useParams();
+
+  if (!itemId) {
+    itemId = initialValues.itemId;
+  }
 
   const [purchaseUnitOfMeasure, setPurchaseUnitOfMeasure] = useState<
     string | undefined
@@ -56,9 +61,16 @@ const SupplierPartForm = ({
     ? !permissions.can("update", "parts")
     : !permissions.can("create", "parts");
 
-  const onClose = () => navigate(-1);
-
   const action = getAction(isEditing, type, itemId, initialValues.id);
+  const fetcher = useFetcher<{ success: boolean; message: string }>();
+
+  useEffect(() => {
+    if (fetcher.data?.success) {
+      onClose();
+    } else if (fetcher.data?.message) {
+      toast.error(fetcher.data.message);
+    }
+  }, [fetcher.data?.success, fetcher.data?.message, onClose]);
 
   return (
     <Drawer
@@ -74,6 +86,7 @@ const SupplierPartForm = ({
           method="post"
           action={action}
           className="flex flex-col h-full"
+          fetcher={fetcher}
         >
           <DrawerHeader>
             <DrawerTitle>
@@ -119,7 +132,13 @@ const SupplierPartForm = ({
           </DrawerBody>
           <DrawerFooter>
             <HStack>
-              <Submit isDisabled={isDisabled}>Save</Submit>
+              <Submit
+                isDisabled={isDisabled || fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+                withBlocker={false}
+              >
+                Save
+              </Submit>
               <Button size="md" variant="solid" onClick={onClose}>
                 Cancel
               </Button>

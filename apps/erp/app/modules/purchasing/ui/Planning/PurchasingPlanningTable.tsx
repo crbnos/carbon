@@ -25,6 +25,7 @@ import {
   NumberInputStepper,
   PulsingDot,
   Separator,
+  Status,
   Table as TableBase,
   Tabs,
   TabsContent,
@@ -39,6 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   Tr,
+  useDisclosure,
   useMount,
   VStack,
 } from "@carbon/react";
@@ -55,6 +57,7 @@ import {
   LuChevronUp,
   LuCircleCheck,
   LuCirclePlay,
+  LuCirclePlus,
   LuContainer,
   LuExternalLink,
   LuHardHat,
@@ -77,6 +80,7 @@ import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
+import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
@@ -101,7 +105,8 @@ type PlanningTableProps = {
 
 const OrderDrawer = memo(
   ({
-    row,
+    selectedItem,
+    setSelectedItem,
     orders,
     setOrders,
     locationId,
@@ -111,7 +116,8 @@ const OrderDrawer = memo(
     onClose,
     onSupplierChange,
   }: {
-    row: PurchasingPlanningItem;
+    selectedItem: PurchasingPlanningItem;
+    setSelectedItem: (item: PurchasingPlanningItem) => void;
     orders: PlannedOrder[];
     setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
     locationId: string;
@@ -132,12 +138,12 @@ const OrderDrawer = memo(
 
     // Memoize getExistingOrders callback
     const getExistingOrders = useCallback(async () => {
-      if (!carbon || !row.id) return;
+      if (!carbon || !selectedItem.id) return;
 
       const { data: existingOrderData } = await carbon
         ?.from("openPurchaseOrderLines")
         .select("*")
-        .eq("itemId", row.id)
+        .eq("itemId", selectedItem.id)
         .in("status", ["Draft", "Planned"]);
 
       if (existingOrderData) {
@@ -196,44 +202,45 @@ const OrderDrawer = memo(
         console.log({ existingOrders });
 
         setOrders(
-          row,
+          selectedItem,
           [...orders, ...existingOrders].sort((a, b) => {
             return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
           })
         );
       }
-    }, [carbon, orders, row, setOrders, periods]);
+    }, [carbon, orders, selectedItem, setOrders, periods]);
 
     useMount(() => {
-      if (row.id) {
+      if (selectedItem.id) {
         getExistingOrders();
       }
     });
 
     // Memoize handlers
     const onAddOrder = useCallback(() => {
-      if (row.id) {
+      if (selectedItem.id) {
         const newOrder: PlannedOrder = {
-          quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
+          quantity:
+            selectedItem.lotSize ?? selectedItem.minimumOrderQuantity ?? 0,
           dueDate: today(getLocalTimeZone())
-            .add({ days: row.leadTime ?? 0 })
+            .add({ days: selectedItem.leadTime ?? 0 })
             .toString(),
           startDate: today(getLocalTimeZone()).toString(),
-          supplierId: row.preferredSupplierId,
+          supplierId: selectedItem.preferredSupplierId,
           periodId: periods[0].id,
         };
-        setOrders(row, [...orders, newOrder]);
+        setOrders(selectedItem, [...orders, newOrder]);
       }
-    }, [row, orders, setOrders, periods]);
+    }, [selectedItem, orders, setOrders, periods]);
 
     const onRemoveOrder = useCallback(
       (index: number) => {
-        if (row.id) {
+        if (selectedItem.id) {
           const newOrders = orders.filter((_, i) => i !== index);
-          setOrders(row, newOrders);
+          setOrders(selectedItem, newOrders);
         }
       },
-      [row, orders, setOrders]
+      [selectedItem, orders, setOrders]
     );
 
     const onSubmit = useCallback(
@@ -287,16 +294,16 @@ const OrderDrawer = memo(
     // Memoize order update handler
     const handleOrderUpdate = useCallback(
       (index: number, updates: Partial<PlannedOrder>) => {
-        if (row.id) {
+        if (selectedItem.id) {
           const newOrders = [...orders];
           newOrders[index] = {
             ...orders[index],
             ...updates,
           };
-          setOrders(row, newOrders);
+          setOrders(selectedItem, newOrders);
         }
       },
-      [row, orders, setOrders]
+      [selectedItem, orders, setOrders]
     );
 
     useEffect(() => {
@@ -306,10 +313,12 @@ const OrderDrawer = memo(
 
       if (fetcher.data?.success === true) {
         toast.success("Orders submitted");
-        setOrders(row, []);
+        setOrders(selectedItem, []);
         onClose();
       }
-    }, [fetcher.data, onClose, row, setOrders]);
+    }, [fetcher.data, onClose, selectedItem, setOrders]);
+
+    const supplierDisclosure = useDisclosure();
 
     return (
       <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -317,15 +326,15 @@ const OrderDrawer = memo(
           <DrawerContent size="lg">
             <DrawerHeader className="relative">
               <DrawerTitle className="flex items-center gap-2">
-                <span>{row.readableIdWithRevision}</span>
+                <span>{selectedItem.readableIdWithRevision}</span>
                 <Link
                   // @ts-ignore
-                  to={getLinkToItemDetails(row.type, row.id)}
+                  to={getLinkToItemDetails(selectedItem.type, selectedItem.id)}
                 >
                   <LuExternalLink />
                 </Link>
               </DrawerTitle>
-              <DrawerDescription>{row.name}</DrawerDescription>
+              <DrawerDescription>{selectedItem.name}</DrawerDescription>
               <div className="absolute top-8 right-16">
                 <TabsList>
                   <TabsTrigger value="ordering">Ordering</TabsTrigger>
@@ -335,62 +344,118 @@ const OrderDrawer = memo(
             </DrawerHeader>
             <DrawerBody>
               <div className="flex flex-col gap-4  w-full">
-                <TabsContent value="suppliers">
+                <TabsContent value="suppliers" className="flex flex-col gap-4">
                   <TableBase>
                     <Thead>
                       <Tr>
                         <Th>Supplier</Th>
-                        <Th>UoM</Th>
+                        <Th>Unit</Th>
                         <Th>Conversion</Th>
                         <Th>Unit Price</Th>
                         <Th />
                       </Tr>
                     </Thead>
                     <Tbody>
-                      {(row.suppliers as SupplierPart[])?.map((part) => (
-                        <Tr key={part.id}>
-                          <Td>
-                            <SupplierAvatar supplierId={part.supplierId} />
-                          </Td>
-                          <Td>
-                            {
-                              unitOfMeasureOptions.find(
-                                (uom) =>
-                                  uom.value === part.supplierUnitOfMeasureCode
-                              )?.label
-                            }
-                          </Td>
-                          <Td>{part.conversionFactor}</Td>
-                          <Td>{formatter.format(part.unitPrice ?? 0)}</Td>
-                          <Td className="text-end">
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              isDisabled={selectedSupplier === part.supplierId}
-                              onClick={() => {
-                                if (row.id) {
-                                  onSupplierChange(row.id, part.supplierId);
-
-                                  // Update all orders with new supplier
-                                  const updatedOrders = orders.map((order) => ({
-                                    ...order,
-                                    supplierId: part.supplierId,
-                                  }));
-                                  setOrders(row, updatedOrders);
-
-                                  // Show toast and switch tab
-                                  toast.success("Supplier updated");
-                                  setActiveTab("ordering");
+                      {(selectedItem.suppliers as SupplierPart[])?.map(
+                        (part) => (
+                          <Tr key={part.id}>
+                            <Td>
+                              <SupplierAvatar supplierId={part.supplierId} />
+                            </Td>
+                            <Td>
+                              {
+                                unitOfMeasureOptions.find(
+                                  (uom) =>
+                                    uom.value === part.supplierUnitOfMeasureCode
+                                )?.label
+                              }
+                            </Td>
+                            <Td>{part.conversionFactor}</Td>
+                            <Td>{formatter.format(part.unitPrice ?? 0)}</Td>
+                            <Td className="text-end">
+                              <Button
+                                variant="secondary"
+                                isDisabled={
+                                  selectedSupplier === part.supplierId
                                 }
-                              }}
-                            >
-                              Select
-                            </Button>
-                          </Td>
-                        </Tr>
-                      ))}
+                                leftIcon={<LuCircleCheck />}
+                                onClick={() => {
+                                  if (selectedItem.id) {
+                                    onSupplierChange(
+                                      selectedItem.id,
+                                      part.supplierId
+                                    );
+
+                                    // Update all orders with new supplier
+                                    const updatedOrders = orders.map(
+                                      (order) => ({
+                                        ...order,
+                                        supplierId: part.supplierId,
+                                      })
+                                    );
+                                    setOrders(selectedItem, updatedOrders);
+
+                                    // Show toast and switch tab
+                                    toast.success("Supplier updated");
+                                    setActiveTab("ordering");
+                                  }
+                                }}
+                              >
+                                Select
+                              </Button>
+                            </Td>
+                          </Tr>
+                        )
+                      )}
                     </Tbody>
                   </TableBase>
+                  <div>
+                    <Button
+                      variant="secondary"
+                      leftIcon={<LuCirclePlus />}
+                      onClick={supplierDisclosure.onOpen}
+                    >
+                      Add Supplier
+                    </Button>
+                    {supplierDisclosure.isOpen && (
+                      <SupplierPartForm
+                        type="Part"
+                        initialValues={{
+                          itemId: selectedItem.id,
+                          supplierId: "",
+                          supplierPartId: "",
+                          unitPrice: 0,
+                          supplierUnitOfMeasureCode: "EA",
+                          minimumOrderQuantity: 1,
+                          conversionFactor: 1,
+                        }}
+                        unitOfMeasureCode={selectedItem.unitOfMeasureCode ?? ""}
+                        onClose={() => {
+                          // Refresh the row data to get updated suppliers
+                          if (carbon && selectedItem.id) {
+                            carbon
+                              ?.from("supplierPart")
+                              .select("*")
+                              .eq("itemId", selectedItem.id)
+                              .then(({ data }) => {
+                                if (data) {
+                                  setSelectedItem(
+                                    // @ts-ignore
+                                    (prev: PurchasingPlanningItem) => {
+                                      return {
+                                        ...prev,
+                                        suppliers: data as SupplierPart[],
+                                      };
+                                    }
+                                  );
+                                }
+                              });
+                          }
+                          supplierDisclosure.onClose();
+                        }}
+                      />
+                    )}
+                  </div>
                 </TabsContent>
                 <TabsContent value="ordering" className="flex flex-col gap-4">
                   <VStack spacing={2} className="text-sm border rounded-lg p-4">
@@ -399,7 +464,7 @@ const OrderDrawer = memo(
                         Reorder Policy:
                       </span>
                       <ItemReorderPolicy
-                        reorderingPolicy={row.reorderingPolicy}
+                        reorderingPolicy={selectedItem.reorderingPolicy}
                       />
                     </HStack>
                     <Separator />
@@ -408,79 +473,85 @@ const OrderDrawer = memo(
                       <SupplierAvatar supplierId={selectedSupplier} />
                     </HStack>
                     <Separator />
-                    {row.reorderingPolicy === "Maximum Quantity" && (
+                    {selectedItem.reorderingPolicy === "Maximum Quantity" && (
                       <>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Reorder Point:
                           </span>
-                          <span>{row.reorderPoint}</span>
+                          <span>{selectedItem.reorderPoint}</span>
                         </HStack>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Maximum Inventory:
                           </span>
-                          <span>{row.maximumInventoryQuantity}</span>
+                          <span>{selectedItem.maximumInventoryQuantity}</span>
                         </HStack>
                       </>
                     )}
 
-                    {row.reorderingPolicy === "Demand-Based Reorder" && (
+                    {selectedItem.reorderingPolicy ===
+                      "Demand-Based Reorder" && (
                       <>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Accumulation Period:
                           </span>
-                          <span>{row.demandAccumulationPeriod} weeks</span>
+                          <span>
+                            {selectedItem.demandAccumulationPeriod} weeks
+                          </span>
                         </HStack>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Safety Stock:
                           </span>
-                          <span>{row.demandAccumulationSafetyStock}</span>
+                          <span>
+                            {selectedItem.demandAccumulationSafetyStock}
+                          </span>
                         </HStack>
                       </>
                     )}
 
-                    {row.reorderingPolicy === "Fixed Reorder Quantity" && (
+                    {selectedItem.reorderingPolicy ===
+                      "Fixed Reorder Quantity" && (
                       <>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Reorder Point:
                           </span>
-                          <span>{row.reorderPoint}</span>
+                          <span>{selectedItem.reorderPoint}</span>
                         </HStack>
                         <HStack className="justify-between w-full">
                           <span className="text-muted-foreground">
                             Reorder Quantity:
                           </span>
-                          <span>{row.reorderQuantity}</span>
+                          <span>{selectedItem.reorderQuantity}</span>
                         </HStack>
                       </>
                     )}
-                    {(row.lotSize > 0 ||
-                      row.minimumOrderQuantity > 0 ||
-                      row.maximumOrderQuantity > 0) && <Separator />}
-                    {row.lotSize > 0 && (
+                    {(selectedItem.lotSize > 0 ||
+                      selectedItem.minimumOrderQuantity > 0 ||
+                      selectedItem.maximumOrderQuantity > 0) && <Separator />}
+                    {selectedItem.lotSize > 0 && (
                       <HStack className="justify-between w-full">
                         <span className="text-muted-foreground">Lot Size:</span>
-                        <span>{row.lotSize}</span>
+                        <span>{selectedItem.lotSize}</span>
                       </HStack>
                     )}
-                    {row.minimumOrderQuantity > 0 && (
+                    {selectedItem.minimumOrderQuantity > 0 && (
                       <HStack className="justify-between w-full">
                         <span className="text-muted-foreground">
                           Minimum Order:
                         </span>
-                        <span>{row.minimumOrderQuantity}</span>
+                        <span>{selectedItem.minimumOrderQuantity}</span>
                       </HStack>
                     )}
-                    {row.maximumOrderQuantity > 0 && (
+                    {selectedItem.maximumOrderQuantity > 0 && (
                       <HStack className="justify-between w-full">
                         <span className="text-muted-foreground">
                           Maximum Order:
                         </span>
-                        <span>{row.maximumOrderQuantity}</span>
+                        <span>{selectedItem.maximumOrderQuantity}</span>
                       </HStack>
                     )}
                   </VStack>
@@ -608,9 +679,9 @@ const OrderDrawer = memo(
 
                   <ItemPlanningChart
                     compact
-                    itemId={row.id}
+                    itemId={selectedItem.id}
                     locationId={locationId}
-                    safetyStock={row.demandAccumulationSafetyStock}
+                    safetyStock={selectedItem.demandAccumulationSafetyStock}
                     plannedOrders={orders}
                   />
                 </TabsContent>
@@ -622,7 +693,7 @@ const OrderDrawer = memo(
               </Button>
               <Button
                 variant="primary"
-                onClick={() => onSubmit(row.id, orders)}
+                onClick={() => onSubmit(selectedItem.id, orders)}
                 isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state !== "idle"}
               >
@@ -659,7 +730,9 @@ const PlanningTable = memo(
       () => {
         const initial: Record<string, string> = {};
         data.forEach((item) => {
-          initial[item.id] = item.preferredSupplierId;
+          initial[item.id] =
+            // @ts-ignore
+            item.preferredSupplierId ?? item.suppliers?.[0]?.supplierId;
         });
         return initial;
       }
@@ -687,7 +760,6 @@ const PlanningTable = memo(
       const initialMap: Record<string, PlannedOrder[]> = {};
       data.forEach((item) => {
         if (item.id) {
-          // TODO: pass supplier override
           initialMap[item.id] = getPurchaseOrdersFromPlanning(
             item,
             periods,
@@ -858,10 +930,11 @@ const PlanningTable = memo(
         {
           accessorKey: "preferredSupplierId",
           header: "Supplier",
-          cell: (item) => {
-            return (
-              <SupplierAvatar supplierId={suppliersMap[item.row.original.id]} />
-            );
+          cell: ({ row }) => {
+            const supplierId = suppliersMap[row.original.id];
+            if (!supplierId) return <Status color="red">No Supplier</Status>;
+
+            return <SupplierAvatar supplierId={supplierId} />;
           },
           meta: {
             filter: {
@@ -1077,7 +1150,8 @@ const PlanningTable = memo(
         {selectedItem && (
           <OrderDrawer
             locationId={locationId}
-            row={selectedItem}
+            selectedItem={selectedItem}
+            setSelectedItem={setSelectedItem}
             selectedSupplier={suppliersMap[selectedItem.id]}
             orders={selectedItem.id ? ordersMap[selectedItem.id] || [] : []}
             setOrders={setOrders}

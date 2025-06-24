@@ -30,6 +30,7 @@ import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
+import { useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -137,6 +138,8 @@ const MaterialProperties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [routeData?.materialSummary?.readableId]
   );
+
+  const [suppliers] = useSuppliers();
 
   return (
     <VStack
@@ -404,7 +407,9 @@ const MaterialProperties = () => {
             <MethodBadge
               key={method.id}
               type="Buy"
-              text={method?.supplier?.name ?? ""}
+              text={
+                suppliers.find((s) => s.id === method.supplierId)?.name ?? ""
+              }
               to={path.to.partPurchasing(itemId)}
             />
           ))}
