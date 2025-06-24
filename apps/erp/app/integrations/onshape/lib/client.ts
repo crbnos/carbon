@@ -31,7 +31,9 @@ export class OnshapeClient {
     return {
       "Content-Type": "application/json",
       Accept: "application/json;charset=UTF-8; qs=0.09",
-      Authorization: `Basic ${btoa(`${this.accessKey}:${this.secretKey}`)}`,
+      Authorization: `Basic ${Buffer.from(
+        `${this.accessKey}:${this.secretKey}`
+      ).toString("base64")}`,
     };
   }
 
@@ -54,6 +56,7 @@ export class OnshapeClient {
 
     if (!response.ok) {
       const errorText = await response.text();
+      console.log("Onshape API error headers:", headers);
       throw new Error(`Onshape API error (${response.status}): ${errorText}`);
     }
 
