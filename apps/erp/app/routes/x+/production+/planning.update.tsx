@@ -4,7 +4,6 @@ import { z } from "zod";
 import {
   productionOrderValidator,
   recalculateJobRequirements,
-  runMRP,
   upsertJob,
   upsertJobMethod,
 } from "~/modules/production";
@@ -250,13 +249,6 @@ export async function action({ request }: ActionFunctionArgs) {
               userId,
             });
           }
-
-          await runMRP(client, {
-            type: "company",
-            id: companyId,
-            companyId,
-            userId,
-          });
         }
 
         return json({

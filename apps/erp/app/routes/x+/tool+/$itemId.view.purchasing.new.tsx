@@ -1,11 +1,10 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
+import { validator } from "@carbon/form";
 import { useRouteData } from "@carbon/remix";
-import { useParams } from "@remix-run/react";
+import { useNavigate, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { redirect } from "@vercel/remix";
+import { json } from "@vercel/remix";
 import type { ToolSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
@@ -25,7 +24,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(supplierPartValidator).validate(formData);
 
   if (validation.error) {
-    return validationError(validation.error);
+    return json({
+      success: false,
+      message: "Invalid form data",
+    });
   }
 
   const { id, ...data } = validation.data;
@@ -38,16 +40,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (createToolSupplier.error) {
-    throw redirect(
-      path.to.toolPurchasing(itemId),
-      await flash(
-        request,
-        error(createToolSupplier.error, "Failed to create tool supplier")
-      )
-    );
+    return json({
+      success: false,
+      message: "Failed to create tool supplier",
+    });
   }
 
-  throw redirect(path.to.toolPurchasing(itemId));
+  return json({
+    success: true,
+    message: "Tool supplier created",
+  });
 }
 
 export default function NewToolSupplierRoute() {
@@ -58,6 +60,9 @@ export default function NewToolSupplierRoute() {
   const routeData = useRouteData<{ toolSummary: ToolSummary }>(
     path.to.tool(itemId)
   );
+
+  const navigate = useNavigate();
+  const onClose = () => navigate(path.to.toolPurchasing(itemId));
 
   const initialValues = {
     itemId: itemId,
@@ -74,6 +79,7 @@ export default function NewToolSupplierRoute() {
       type="Tool"
       initialValues={initialValues}
       unitOfMeasureCode={routeData?.toolSummary?.unitOfMeasureCode ?? ""}
+      onClose={onClose}
     />
   );
 }

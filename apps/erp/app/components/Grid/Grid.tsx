@@ -403,8 +403,9 @@ const Grid = <T extends object>({
                 className="cursor-pointer h-10 hover:bg-muted/50 border-t"
               >
                 <Td colSpan={24}>
-                  <HStack className="items-start h-6">
-                    <LuCirclePlus className="text-muted-foreground h-6 w-6" />
+                  <HStack className="items-center h-6">
+                    <LuCirclePlus className="text-muted-foreground h-4 w-4" />
+                    <span>New</span>
                   </HStack>
                 </Td>
               </Tr>

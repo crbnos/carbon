@@ -121,7 +121,7 @@ export default function ToolPurchasingRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
         allowedSuppliers={
-          supplierParts.map((s) => s.supplier?.id).filter(Boolean) as string[]
+          supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
       />
       <SupplierParts supplierParts={supplierParts} />

@@ -1,13 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
-import { orderValidator } from "~/modules/items/items.models";
 import {
   recalculateJobRequirements,
-  runMRP,
   upsertJob,
   upsertJobMethod,
 } from "~/modules/production";
+import { plannedOrderValidator } from "~/modules/purchasing/purchasing.models";
 import { getNextSequence } from "~/modules/settings/settings.service";
 
 export const config = {
@@ -17,7 +16,7 @@ export const config = {
 const itemsValidator = z
   .object({
     id: z.string(),
-    orders: z.array(orderValidator),
+    orders: z.array(plannedOrderValidator),
   })
   .array();
 
@@ -250,13 +249,6 @@ export async function action({ request }: ActionFunctionArgs) {
               userId,
             });
           }
-
-          await runMRP(client, {
-            type: "company",
-            id: companyId,
-            companyId,
-            userId,
-          });
         }
 
         return json({

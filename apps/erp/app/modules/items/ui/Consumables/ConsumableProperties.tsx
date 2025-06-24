@@ -29,6 +29,7 @@ import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
+import { useSuppliers } from "~/stores";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -135,6 +136,8 @@ const ConsumableProperties = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [routeData?.consumableSummary?.readableId]
   );
+
+  const [suppliers] = useSuppliers();
 
   return (
     <VStack
@@ -308,7 +311,9 @@ const ConsumableProperties = () => {
             <MethodBadge
               key={method.id}
               type="Buy"
-              text={method?.supplier?.name ?? ""}
+              text={
+                suppliers.find((s) => s.id === method.supplierId)?.name ?? ""
+              }
               to={path.to.consumablePurchasing(itemId)}
             />
           ))}
