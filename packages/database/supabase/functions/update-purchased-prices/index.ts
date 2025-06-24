@@ -68,6 +68,8 @@ serve(async (req: Request) => {
 
     const itemCostUpdates: Database["public"]["Tables"]["itemCost"]["Update"][] =
       [];
+    const itemReplenishmentUpdates: Database["public"]["Tables"]["itemReplenishment"]["Update"][] =
+      [];
     const supplierPartInserts: Database["public"]["Tables"]["supplierPart"]["Insert"][] =
       [];
     const supplierPartUpdates: Database["public"]["Tables"]["supplierPart"]["Update"][] =
@@ -134,6 +136,14 @@ serve(async (req: Request) => {
             companyId,
           });
         }
+
+        itemReplenishmentUpdates.push({
+          itemId: line.itemId,
+          preferredSupplierId: purchaseInvoice.data?.supplierId!,
+          purchasingUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+          conversionFactor: line.conversionFactor ?? 1,
+          updatedBy: "system",
+        });
       }
 
       if (line.jobOperationId) {
@@ -191,6 +201,16 @@ serve(async (req: Request) => {
             .updateTable("supplierPart")
             .set(supplierPartUpdate)
             .where("id", "=", supplierPartUpdate.id!)
+            .execute();
+        }
+      }
+
+      if (itemReplenishmentUpdates.length > 0) {
+        for await (const itemReplenishmentUpdate of itemReplenishmentUpdates) {
+          await trx
+            .updateTable("itemReplenishment")
+            .set(itemReplenishmentUpdate)
+            .where("itemId", "=", itemReplenishmentUpdate.itemId!)
             .execute();
         }
       }

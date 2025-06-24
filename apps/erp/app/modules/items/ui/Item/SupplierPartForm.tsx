@@ -23,17 +23,21 @@ import {
   Supplier,
   UnitOfMeasure,
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import { supplierPartValidator } from "../../items.models";
-import type { PartSummary } from "../../types";
 
 type SupplierPartFormProps = {
   initialValues: z.infer<typeof supplierPartValidator>;
   type: "Part" | "Service" | "Tool" | "Consumable" | "Material";
+  unitOfMeasureCode: string;
 };
 
-const SupplierPartForm = ({ initialValues, type }: SupplierPartFormProps) => {
+const SupplierPartForm = ({
+  initialValues,
+  type,
+  unitOfMeasureCode,
+}: SupplierPartFormProps) => {
   const permissions = usePermissions();
   const navigate = useNavigate();
 
@@ -43,9 +47,6 @@ const SupplierPartForm = ({ initialValues, type }: SupplierPartFormProps) => {
   const { itemId } = useParams();
   if (!itemId) throw new Error("itemId not found");
 
-  const routeData = useRouteData<{ partSummary: PartSummary }>(
-    path.to.part(itemId)
-  );
   const [purchaseUnitOfMeasure, setPurchaseUnitOfMeasure] = useState<
     string | undefined
   >(initialValues.supplierUnitOfMeasureCode);
@@ -105,9 +106,7 @@ const SupplierPartForm = ({ initialValues, type }: SupplierPartFormProps) => {
               <ConversionFactor
                 name="conversionFactor"
                 label="Conversion Factor"
-                inventoryCode={
-                  routeData?.partSummary?.unitOfMeasureCode ?? undefined
-                }
+                inventoryCode={unitOfMeasureCode ?? undefined}
                 purchasingCode={purchaseUnitOfMeasure}
               />
               <Number

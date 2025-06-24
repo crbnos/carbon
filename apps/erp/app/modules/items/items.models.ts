@@ -560,17 +560,3 @@ export const unitOfMeasureValidator = z.object({
   code: z.string().min(1, { message: "Code is required" }).max(10),
   name: z.string().min(1, { message: "Name is required" }).max(50),
 });
-
-export const orderValidator = z.object({
-  startDate: zfd.text(z.string().nullable()),
-  dueDate: zfd.text(z.string().nullable()),
-  periodId: z.string().min(1, { message: "Period is required" }),
-  quantity: zfd.numeric(z.number().min(0)),
-  existingId: zfd.text(z.string().optional()),
-  existingQuantity: zfd.numeric(z.number().optional()),
-  existingReadableId: zfd.text(z.string().optional()),
-  existingStatus: zfd.text(z.string().optional()),
-  isASAP: z.boolean().optional(),
-});
-
-export type Order = z.infer<typeof orderValidator>;

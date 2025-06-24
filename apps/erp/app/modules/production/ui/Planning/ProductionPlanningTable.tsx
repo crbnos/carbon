@@ -65,15 +65,15 @@ import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { usePermissions } from "~/hooks";
 import { itemTypes } from "~/modules/inventory/inventory.models";
-import type { Order } from "~/modules/items/items.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { ItemPlanningChart } from "~/modules/items/ui/Item/ItemPlanningChart";
 import {
-  getOrdersFromPlanning,
+  getProductionOrdersFromPlanning,
   getReorderPolicyDescription,
   ItemReorderPolicy,
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
+import type { ProductionOrder } from "~/modules/production";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
 import { path } from "~/utils/path";
@@ -98,8 +98,11 @@ const OrderDrawer = memo(
     onClose,
   }: {
     row: ProductionPlanningItem;
-    orders: Order[];
-    setOrders: (item: ProductionPlanningItem, orders: Order[]) => void;
+    orders: ProductionOrder[];
+    setOrders: (
+      item: ProductionPlanningItem,
+      orders: ProductionOrder[]
+    ) => void;
     locationId: string;
     periods: { id: string; startDate: string; endDate: string }[];
     isOpen: boolean;
@@ -121,7 +124,7 @@ const OrderDrawer = memo(
         .in("status", ["Draft", "Planned"]);
 
       if (existingOrderData) {
-        const existingOrders: Order[] = existingOrderData
+        const existingOrders: ProductionOrder[] = existingOrderData
           .filter(
             (order) =>
               !orders.some((existing) => existing.existingId === order.id)
@@ -185,7 +188,7 @@ const OrderDrawer = memo(
     // Memoize handlers
     const onAddOrder = useCallback(() => {
       if (row.id) {
-        const newOrder: Order = {
+        const newOrder: ProductionOrder = {
           quantity: row.lotSize ?? row.minimumOrderQuantity ?? 0,
           dueDate: today(getLocalTimeZone())
             .add({ days: row.leadTime ?? 0 })
@@ -209,7 +212,7 @@ const OrderDrawer = memo(
     );
 
     const onSubmit = useCallback(
-      (id: string, orders: Order[]) => {
+      (id: string, orders: ProductionOrder[]) => {
         const ordersWithPeriods = orders.map((order) => {
           // If no due date or due date is before first period, use first period
           if (
@@ -258,7 +261,7 @@ const OrderDrawer = memo(
 
     // Memoize order update handler
     const handleOrderUpdate = useCallback(
-      (index: number, updates: Partial<Order>) => {
+      (index: number, updates: Partial<ProductionOrder>) => {
         if (row.id) {
           const newOrders = [...orders];
           newOrders[index] = {
@@ -425,8 +428,7 @@ const OrderDrawer = memo(
                         )}
                       </Td>
                       <Td className="flex flex-row items-center gap-1 px-1 group-hover:bg-inherit">
-                        {/* @ts-expect-error - status is a string because we have a general type for purchase orders and jobs */}
-                        <JobStatus status={order.existingStatus} />
+                        <JobStatus status={order.existingStatus as "Draft"} />
                       </Td>
                       <Td className="text-right px-1 group-hover:bg-inherit">
                         <NumberField
@@ -583,10 +585,10 @@ const ProductionPlanningTable = memo(
       mrpFetcher.state !== "idle";
 
     const getOrders = useCallback(() => {
-      const initialMap: Record<string, Order[]> = {};
+      const initialMap: Record<string, ProductionOrder[]> = {};
       data.forEach((item) => {
         if (item.id) {
-          initialMap[item.id] = getOrdersFromPlanning(item, periods);
+          initialMap[item.id] = getProductionOrdersFromPlanning(item, periods);
         }
       });
       return initialMap;
@@ -594,7 +596,7 @@ const ProductionPlanningTable = memo(
 
     // Store orders in a map keyed by item id
     const [ordersMap, setOrdersMap] =
-      useState<Record<string, Order[]>>(getOrders);
+      useState<Record<string, ProductionOrder[]>>(getOrders);
 
     useEffect(() => {
       setOrdersMap(getOrders());
@@ -656,7 +658,7 @@ const ProductionPlanningTable = memo(
       useState<ProductionPlanningItem | null>(null);
 
     const setOrders = useCallback(
-      (item: ProductionPlanningItem, orders: Order[]) => {
+      (item: ProductionPlanningItem, orders: ProductionOrder[]) => {
         if (item.id) {
           setOrdersMap((prev) => ({
             ...prev,
@@ -829,18 +831,21 @@ const ProductionPlanningTable = memo(
                 acc + (order.quantity - (order.existingQuantity ?? 0)),
               0
             );
+            const isBlocked = row.original.manufacturingBlocked;
             const hasOrders = orders.length > 0 && orderQuantity > 0;
             return (
               <div className="flex justify-end">
                 <Button
                   variant="secondary"
                   leftIcon={hasOrders ? undefined : <LuCircleCheck />}
-                  isDisabled={isDisabled}
+                  isDisabled={isDisabled || isBlocked}
                   onClick={() => {
                     setSelectedItem(row.original);
                   }}
                 >
-                  {hasOrders ? (
+                  {isBlocked ? (
+                    "Blocked"
+                  ) : hasOrders ? (
                     <HStack>
                       <PulsingDot />
                       <span>Order {orderQuantity}</span>

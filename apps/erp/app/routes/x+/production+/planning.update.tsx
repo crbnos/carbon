@@ -1,8 +1,8 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
-import { orderValidator } from "~/modules/items/items.models";
 import {
+  productionOrderValidator,
   recalculateJobRequirements,
   runMRP,
   upsertJob,
@@ -17,7 +17,7 @@ export const config = {
 const itemsValidator = z
   .object({
     id: z.string(),
-    orders: z.array(orderValidator),
+    orders: z.array(productionOrderValidator),
   })
   .array();
 
