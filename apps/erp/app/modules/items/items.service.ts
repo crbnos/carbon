@@ -1369,15 +1369,7 @@ export async function getSupplierParts(
 ) {
   return client
     .from("supplierPart")
-    .select(
-      `
-      id, supplier(id, name),
-      supplierPartId, supplierUnitOfMeasureCode,
-      minimumOrderQuantity, conversionFactor,
-      unitPrice,
-      customFields
-    `
-    )
+    .select("*")
     .eq("active", true)
     .eq("itemId", id)
     .eq("companyId", companyId);

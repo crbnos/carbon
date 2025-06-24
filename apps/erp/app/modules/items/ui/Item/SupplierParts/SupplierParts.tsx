@@ -1,15 +1,8 @@
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  HStack,
-} from "@carbon/react";
+import { Card, CardContent, CardHeader, CardTitle, cn } from "@carbon/react";
 import { Outlet, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
-import { New } from "~/components";
+import { SupplierAvatar } from "~/components";
 import {
   EditableList,
   EditableNumber,
@@ -22,44 +15,41 @@ import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { SupplierPart } from "../../../types";
 import useSupplierParts from "./useSupplierParts";
 
+type Part = Pick<
+  SupplierPart,
+  | "id"
+  | "supplierId"
+  | "supplierPartId"
+  | "unitPrice"
+  | "supplierUnitOfMeasureCode"
+  | "minimumOrderQuantity"
+  | "conversionFactor"
+  | "customFields"
+>;
+
 type SupplierPartsProps = {
-  supplierParts: SupplierPart[];
+  supplierParts: Part[];
+  compact?: boolean;
 };
 
-const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
+const SupplierParts = ({
+  supplierParts,
+  compact = false,
+}: SupplierPartsProps) => {
   const navigate = useNavigate();
   const { canEdit, onCellEdit } = useSupplierParts();
 
   const formatter = useCurrencyFormatter();
   const unitOfMeasureOptions = useUnitOfMeasure();
-  const customColumns = useCustomColumns<SupplierPart>("supplierPart");
+  const customColumns = useCustomColumns<Part>("supplierPart");
 
-  const columns = useMemo<ColumnDef<SupplierPart>[]>(() => {
-    const defaultColumns: ColumnDef<SupplierPart>[] = [
+  const columns = useMemo<ColumnDef<Part>[]>(() => {
+    const defaultColumns: ColumnDef<Part>[] = [
       {
-        accessorKey: "supplier.id",
+        accessorKey: "supplierId",
         header: "Supplier",
         cell: ({ row }) => (
-          <HStack className="justify-between">
-            {/* @ts-ignore */}
-            <span>{row.original.supplier.name}</span>
-            {/* {canEdit && (
-              <div className="relative w-6 h-5">
-                <Button
-                  asChild
-                  isIcon
-                  variant="ghost"
-                  className="absolute right-[-3px] top-[-3px] outline-none border-none active:outline-none focus-visible:outline-none"
-                  aria-label="Edit part supplier"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Link to={`${row.original.id}`}>
-                    <MdMoreHoriz />
-                  </Link>
-                </Button>
-              </div>
-            )} */}
-          </HStack>
+          <SupplierAvatar supplierId={row.original.supplierId} />
         ),
       },
       {
@@ -104,15 +94,12 @@ const SupplierParts = ({ supplierParts }: SupplierPartsProps) => {
 
   return (
     <>
-      <Card className="w-full">
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>Supplier Parts</CardTitle>
-          </CardHeader>
-          <CardAction>{canEdit && <New to="new" />}</CardAction>
-        </HStack>
-        <CardContent>
-          <Grid<SupplierPart>
+      <Card className={cn(compact && "border-none p-0 dark:shadow-none")}>
+        <CardHeader className={cn(compact && "px-0")}>
+          <CardTitle>Supplier Parts</CardTitle>
+        </CardHeader>
+        <CardContent className={cn(compact && "px-0")}>
+          <Grid<Part>
             contained={false}
             data={supplierParts}
             columns={columns}

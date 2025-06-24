@@ -50,7 +50,7 @@ import {
 import { Empty, Hyperlink } from "~/components";
 import type { loader as forecastLoader } from "~/routes/api+/items.$id.$locationId.forecast";
 import { path } from "~/utils/path";
-import type { Order } from "../../items.models";
+import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 
 const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
 const demandSourceTypes = ["Sales Order", "Job Material"] as const;
@@ -83,7 +83,7 @@ export const ItemPlanningChart = ({
   compact?: boolean;
   itemId: string;
   locationId: string;
-  plannedOrders?: Order[];
+  plannedOrders?: PlannedOrder[];
   safetyStock?: number;
 }) => {
   const forecastFetcher = useFetcher<typeof forecastLoader>();

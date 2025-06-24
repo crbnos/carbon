@@ -59,6 +59,21 @@ export const purchaseOrderStatusType = [
   "Closed",
 ] as const;
 
+export const plannedOrderValidator = z.object({
+  startDate: zfd.text(z.string().nullable()),
+  dueDate: zfd.text(z.string().nullable()),
+  periodId: z.string().min(1, { message: "Period is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  existingId: zfd.text(z.string().optional()),
+  existingLineId: zfd.text(z.string().optional()),
+  existingQuantity: zfd.numeric(z.number().optional()),
+  existingReadableId: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.string().optional()),
+  supplierId: zfd.text(z.string().optional()),
+});
+
+export type PlannedOrder = z.infer<typeof plannedOrderValidator>;
+
 export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),

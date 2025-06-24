@@ -23,6 +23,10 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
     "orderMultiple" INTEGER,
     "quantityOnHand" NUMERIC,
     "maximumInventoryQuantity" NUMERIC,
+    "suppliers" jsonb,
+    "preferredSupplierId" TEXT,
+    "purchasingUnitOfMeasureCode" TEXT,
+    "conversionFactor" NUMERIC,
     "week1" NUMERIC,
     "week2" NUMERIC,
     "week3" NUMERIC,
@@ -136,6 +140,9 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
       ir."leadTime",
       ir."purchasingBlocked",
       ir."lotSize",
+      ir."preferredSupplierId",
+      ir."purchasingUnitOfMeasureCode",
+      ir."conversionFactor",
       ip."reorderingPolicy",
       ip."demandAccumulationPeriod",
       ip."demandAccumulationSafetyStock",
@@ -145,6 +152,7 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
       ip."maximumOrderQuantity",
       ip."orderMultiple",
       ip."maximumInventoryQuantity",
+      COALESCE(ps."suppliers", '[]'::jsonb) as "suppliers",
       COALESCE((
         SELECT SUM("quantity")
         FROM "itemLedger"
@@ -156,6 +164,25 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
     INNER JOIN "itemReplenishment" ir ON i."id" = ir."itemId"
     INNER JOIN "itemPlanning" ip ON i."id" = ip."itemId"
     LEFT JOIN "modelUpload" mu ON mu."id" = i."modelUploadId"
+    LEFT JOIN (
+      SELECT 
+        ps."itemId",
+        jsonb_agg(
+          jsonb_build_object(
+            'id', ps."id",
+            'minimumOrderQuantity', ps."minimumOrderQuantity",
+            'supplierUnitOfMeasureCode', ps."supplierUnitOfMeasureCode",
+            'conversionFactor', ps."conversionFactor",
+            'unitPrice', ps."unitPrice",
+            'supplierId', ps."supplierId",
+            'supplierPartId', ps."supplierPartId"
+          )
+        ) AS "suppliers"
+      FROM "supplierPart" ps
+      WHERE ps."companyId" = company_id
+        AND ps.active = true
+      GROUP BY ps."itemId"
+    ) ps ON ps."itemId" = i."id"
     WHERE i."companyId" = company_id
       AND i."replenishmentSystem" != 'Make'
       AND i."active" = TRUE
@@ -199,6 +226,9 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
       p."leadTime",
       p."purchasingBlocked",
       p."lotSize",
+      p."preferredSupplierId",
+      p."purchasingUnitOfMeasureCode",
+      p."conversionFactor",
       p."reorderingPolicy",
       p."demandAccumulationPeriod",
       p."demandAccumulationSafetyStock",
@@ -208,6 +238,7 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
       p."maximumOrderQuantity",
       p."orderMultiple",
       p."maximumInventoryQuantity",
+      p."suppliers",
       p."quantityOnHand",
       periods[p.period_index + 1] as "periodId",
       p."projection" + COALESCE(s."supply", 0) - COALESCE(d."demand", 0) AS "projection",
@@ -241,6 +272,10 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
     p."orderMultiple",
     p."quantityOnHand",
     p."maximumInventoryQuantity",
+    p."suppliers",
+    p."preferredSupplierId",
+    p."purchasingUnitOfMeasureCode",
+    p."conversionFactor",
     MAX(CASE WHEN p."periodId" = periods[1] THEN p."projection" END) AS "week1",
     MAX(CASE WHEN p."periodId" = periods[2] THEN p."projection" END) AS "week2",
     MAX(CASE WHEN p."periodId" = periods[3] THEN p."projection" END) AS "week3",
@@ -316,5 +351,39 @@ CREATE OR REPLACE FUNCTION get_purchasing_planning(company_id TEXT, location_id 
     p."maximumOrderQuantity",
     p."orderMultiple",
     p."quantityOnHand",
-    p."maximumInventoryQuantity";
+    p."maximumInventoryQuantity",
+    p."suppliers",
+    p."preferredSupplierId",
+    p."purchasingUnitOfMeasureCode",
+    p."conversionFactor";
 $$ LANGUAGE sql SECURITY DEFINER;
+
+
+DROP VIEW IF EXISTS "openPurchaseOrderLines";
+CREATE OR REPLACE VIEW "openPurchaseOrderLines" WITH (security_invoker=true) AS (
+  SELECT 
+    pol."id",
+    pol."purchaseOrderId",
+    po."purchaseOrderId" as "purchaseOrderReadableId",
+    pol."itemId", 
+    pol."quantityToReceive" * pol."conversionFactor" AS "quantityToReceive",
+    i."unitOfMeasureCode",
+    pol."purchaseOrderLineType",
+    COALESCE(pod."receiptRequestedDate", pod."receiptPromisedDate", po."orderDate") AS "dueDate",
+    pol."companyId",
+    pol."locationId",
+    po."orderDate",
+    po."status",
+    COALESCE(pol."promisedDate", pod."receiptPromisedDate") AS "promisedDate",
+    i."replenishmentSystem",
+    i."itemTrackingType",
+    ir."leadTime" AS "leadTime"
+  FROM "purchaseOrderLine" pol
+  INNER JOIN "purchaseOrder" po ON pol."purchaseOrderId" = po."id"
+  INNER JOIN "purchaseOrderDelivery" pod ON pod."id" = po."id"
+  INNER JOIN "item" i ON pol."itemId" = i."id"
+  INNER JOIN "itemReplenishment" ir ON i."id" = ir."itemId"
+  WHERE
+    pol."purchaseOrderLineType" != 'Service'
+    AND po."status" IN ('To Receive', 'To Receive and Invoice', 'Planned')
+);

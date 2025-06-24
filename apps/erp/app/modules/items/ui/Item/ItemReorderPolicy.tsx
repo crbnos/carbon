@@ -1,9 +1,14 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
-import type { ProductionPlanningItem } from "~/modules/production";
-import type { PurchasingPlanningItem } from "~/modules/purchasing";
-import type { Order } from "../../items.models";
+import type {
+  ProductionOrder,
+  ProductionPlanningItem,
+} from "~/modules/production";
+import type {
+  PlannedOrder,
+  PurchasingPlanningItem,
+} from "~/modules/purchasing";
 
 export function ItemReorderPolicy({
   reorderingPolicy,
@@ -59,15 +64,29 @@ export function getReorderPolicyDescription(
   }
 }
 
-export function getOrdersFromPlanning(
-  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem,
-  periods: { startDate: string; id: string }[]
-): Order[] {
+type BaseOrderParams = {
+  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem;
+  periods: { startDate: string; id: string }[];
+};
+
+function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
+  startDate: string;
+  dueDate: string;
+  quantity: number;
+  periodId: string;
+  isASAP: boolean;
+}[] {
   if (itemPlanning.reorderingPolicy === "Manual Reorder") {
     return [];
   }
 
-  const orders: Order[] = [];
+  const orders: {
+    startDate: string;
+    dueDate: string;
+    quantity: number;
+    periodId: string;
+    isASAP: boolean;
+  }[] = [];
 
   const {
     demandAccumulationPeriod,
@@ -92,7 +111,6 @@ export function getOrdersFromPlanning(
         const currentPeriod = periods[i];
 
         // Calculate total demand for accumulation period
-
         let projectedStock = 0;
         for (
           let j = i;
@@ -229,4 +247,22 @@ export function getOrdersFromPlanning(
     default:
       return orders;
   }
+}
+
+export function getProductionOrdersFromPlanning(
+  itemPlanning: ProductionPlanningItem,
+  periods: { startDate: string; id: string }[]
+): ProductionOrder[] {
+  return calculateOrders({ itemPlanning, periods });
+}
+
+export function getPurchaseOrdersFromPlanning(
+  itemPlanning: PurchasingPlanningItem,
+  periods: { startDate: string; id: string }[],
+  supplierId?: string
+): PlannedOrder[] {
+  return calculateOrders({ itemPlanning, periods }).map((order) => ({
+    ...order,
+    supplierId: supplierId ?? itemPlanning.preferredSupplierId,
+  }));
 }

@@ -805,6 +805,20 @@ export const productionEventValidator = z
     }
   );
 
+export const productionOrderValidator = z.object({
+  startDate: zfd.text(z.string().nullable()),
+  dueDate: zfd.text(z.string().nullable()),
+  periodId: z.string().min(1, { message: "Period is required" }),
+  quantity: zfd.numeric(z.number().min(0)),
+  existingId: zfd.text(z.string().optional()),
+  existingQuantity: zfd.numeric(z.number().optional()),
+  existingReadableId: zfd.text(z.string().optional()),
+  existingStatus: zfd.text(z.string().optional()),
+  isASAP: z.boolean().optional(),
+});
+
+export type ProductionOrder = z.infer<typeof productionOrderValidator>;
+
 export const productionQuantityValidator = z.object({
   id: z.string().min(0, { message: "ID is required" }),
   jobOperationId: z.string().min(1, { message: "Operation is required" }),

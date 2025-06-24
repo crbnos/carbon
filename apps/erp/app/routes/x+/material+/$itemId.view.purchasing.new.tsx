@@ -2,9 +2,11 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRouteData } from "@carbon/remix";
 import { useParams } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
+import type { MaterialSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { setCustomFields } from "~/utils/form";
@@ -55,6 +57,9 @@ export default function NewMaterialSupplierRoute() {
   const { itemId } = useParams();
 
   if (!itemId) throw new Error("itemId not found");
+  const routeData = useRouteData<{ materialSummary: MaterialSummary }>(
+    path.to.material(itemId)
+  );
 
   const initialValues = {
     itemId: itemId,
@@ -66,5 +71,11 @@ export default function NewMaterialSupplierRoute() {
     conversionFactor: 1,
   };
 
-  return <SupplierPartForm type="Material" initialValues={initialValues} />;
+  return (
+    <SupplierPartForm
+      type="Material"
+      initialValues={initialValues}
+      unitOfMeasureCode={routeData?.materialSummary?.unitOfMeasureCode ?? ""}
+    />
+  );
 }

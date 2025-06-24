@@ -20678,6 +20678,7 @@ export type Database = {
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity: number | null
           purchaseUnitOfMeasureCode: string | null
+          quantity: number | null
           quantityInvoiced: number | null
           quantityReceived: number | null
           quantityShipped: number | null
@@ -20726,6 +20727,7 @@ export type Database = {
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
           purchaseUnitOfMeasureCode?: string | null
+          quantity?: number | null
           quantityInvoiced?: number | null
           quantityReceived?: number | null
           quantityShipped?: number | null
@@ -20774,6 +20776,7 @@ export type Database = {
           purchaseOrderLineType?: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
           purchaseUnitOfMeasureCode?: string | null
+          quantity?: number | null
           quantityInvoiced?: number | null
           quantityReceived?: number | null
           quantityShipped?: number | null
@@ -37842,6 +37845,7 @@ export type Database = {
       openPurchaseOrderLines: {
         Row: {
           companyId: string | null
+          dueDate: string | null
           id: string | null
           itemId: string | null
           itemTrackingType:
@@ -37855,10 +37859,12 @@ export type Database = {
           purchaseOrderLineType:
             | Database["public"]["Enums"]["purchaseOrderLineType"]
             | null
+          purchaseOrderReadableId: string | null
           quantityToReceive: number | null
           replenishmentSystem:
             | Database["public"]["Enums"]["itemReplenishmentSystem"]
             | null
+          status: Database["public"]["Enums"]["purchaseOrderStatus"] | null
           unitOfMeasureCode: string | null
         }
         Relationships: [
@@ -38100,14 +38106,14 @@ export type Database = {
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["supplierLocationId"]
+            columns: ["id"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "partner_id_fkey"
-            columns: ["id"]
+            columns: ["supplierLocationId"]
             isOneToOne: false
             referencedRelation: "supplierLocation"
             referencedColumns: ["id"]
@@ -39445,14 +39451,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["supplierCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["supplierCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -41687,14 +41693,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -45232,6 +45238,10 @@ export type Database = {
           orderMultiple: number
           quantityOnHand: number
           maximumInventoryQuantity: number
+          suppliers: Json
+          preferredSupplierId: string
+          purchasingUnitOfMeasureCode: string
+          conversionFactor: number
           week1: number
           week2: number
           week3: number
