@@ -1782,6 +1782,7 @@ export async function upsertConsumable(
       .from("consumables")
       .select("id")
       .eq("readableId", consumable.id)
+      .eq("companyId", consumable.companyId)
       .single();
 
     return newConsumable;
@@ -1887,6 +1888,7 @@ export async function upsertPart(
       .from("parts")
       .select("id")
       .eq("readableId", part.id)
+      .eq("companyId", part.companyId)
       .single();
 
     return newPart;
@@ -2399,6 +2401,7 @@ export async function upsertMaterial(
       .from("materials")
       .select("*")
       .eq("readableId", material.id)
+      .eq("companyId", material.companyId)
       .single();
 
     return newMaterial;
@@ -2699,6 +2702,7 @@ export async function upsertTool(
       .from("tools")
       .select("*")
       .eq("readableId", tool.id)
+      .eq("companyId", tool.companyId)
       .single();
 
     return newTool;
