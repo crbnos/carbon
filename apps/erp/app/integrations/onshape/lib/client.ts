@@ -28,12 +28,14 @@ export class OnshapeClient {
    * Generate the authorization headers for Onshape API requests
    */
   private getAuthHeaders(): Record<string, string> {
+    const auth = Buffer.from(`${this.accessKey}:${this.secretKey}`).toString(
+      "base64"
+    );
+    console.log("onshapedauth", auth);
     return {
       "Content-Type": "application/json",
       Accept: "application/json;charset=UTF-8; qs=0.09",
-      Authorization: `Basic ${Buffer.from(
-        `${this.accessKey}:${this.secretKey}`
-      ).toString("base64")}`,
+      Authorization: `Basic ${auth}`,
     };
   }
 
@@ -47,6 +49,7 @@ export class OnshapeClient {
   ): Promise<T> {
     const headers = this.getAuthHeaders();
     const url = `${this.baseUrl}${path}`;
+    console.log("onshapedurl", url);
 
     const response = await fetch(url, {
       method,
