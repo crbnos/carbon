@@ -4,7 +4,8 @@ import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { onShapeDataValidator } from "~/integrations/onshape/lib/data";
 
 export const config = {
-  maxDuration: 90,
+  runtime: "nodejs",
+  maxDuration: 300,
 };
 
 export async function action({ request }: ActionFunctionArgs) {

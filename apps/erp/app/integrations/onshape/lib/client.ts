@@ -1,3 +1,5 @@
+import axios from "axios";
+
 interface OnshapeClientConfig {
   baseUrl: string;
   accessKey: string;
@@ -17,11 +19,17 @@ export class OnshapeClient {
   private baseUrl: string;
   private accessKey: string;
   private secretKey: string;
+  private axiosInstance: ReturnType<typeof axios.create>;
 
   constructor(config: OnshapeClientConfig) {
     this.baseUrl = config.baseUrl;
     this.accessKey = config.accessKey;
     this.secretKey = config.secretKey;
+
+    this.axiosInstance = axios.create({
+      baseURL: this.baseUrl,
+      headers: this.getAuthHeaders(),
+    });
   }
 
   /**
@@ -31,7 +39,7 @@ export class OnshapeClient {
     const auth = Buffer.from(`${this.accessKey}:${this.secretKey}`).toString(
       "base64"
     );
-    console.log("onshapedauth", auth);
+
     return {
       "Content-Type": "application/json",
       Accept: "application/json;charset=UTF-8; qs=0.09",
@@ -47,23 +55,22 @@ export class OnshapeClient {
     path: string,
     body?: Record<string, unknown>
   ): Promise<T> {
-    const headers = this.getAuthHeaders();
-    const url = `${this.baseUrl}${path}`;
-    console.log("onshapedurl", url);
-
-    const response = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("Onshape API error headers:", headers);
-      throw new Error(`Onshape API error (${response.status}): ${errorText}`);
+    try {
+      const response = await this.axiosInstance.request<T>({
+        method,
+        url: path,
+        data: body,
+      });
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        console.log("Onshape API error headers:", error.config?.headers);
+        throw new Error(
+          `Onshape API error (${error.response?.status}): ${error.response?.data}`
+        );
+      }
+      throw error;
     }
-
-    return response.json();
   }
 
   /**
