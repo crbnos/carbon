@@ -1835,8 +1835,8 @@ export const JobOperation = ({
         <DeleteAttributeRecordModal
           onClose={onDeselectAttribute}
           id={selectedAttribute.id}
-          title="Delete Attribute Record"
-          description="Are you sure you want to delete this attribute record?"
+          title="Delete Step"
+          description="Are you sure you want to delete this step?"
         />
       )}
     </>
@@ -2895,10 +2895,9 @@ function QuantityModal({
               {type === "finish" && !allAttributesRecorded && (
                 <Alert variant="destructive">
                   <LuTriangleAlert className="h-4 w-4" />
-                  <AlertTitle>Attributes are missing</AlertTitle>
+                  <AlertTitle>Steps are missing</AlertTitle>
                   <AlertDescription>
-                    Please record all attributes for this operation before
-                    closing.
+                    Please record all steps for this operation before closing.
                   </AlertDescription>
                 </Alert>
               )}

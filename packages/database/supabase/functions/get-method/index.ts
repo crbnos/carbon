@@ -3643,7 +3643,7 @@ serve(async (req: Request) => {
                     quoteOperationAttribute.length > 0
                   ) {
                     await trx
-                      .insertInto("quoteOperationAttribute")
+                      .insertInto("jobOperationAttribute")
                       .values(
                         quoteOperationAttribute.map(
                           ({ id: _id, ...attribute }) => ({

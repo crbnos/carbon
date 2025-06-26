@@ -33,13 +33,13 @@ export async function action({ params, request }: ActionFunctionArgs) {
       { success: false },
       await flash(
         request,
-        error(attributeDelete.error, "Failed to delete attribute")
+        error(attributeDelete.error, "Failed to delete step")
       )
     );
   }
 
   return json(
     { success: true },
-    await flash(request, success("Attribute record deleted successfully"))
+    await flash(request, success("Step deleted successfully"))
   );
 }
