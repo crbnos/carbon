@@ -364,7 +364,7 @@ const PurchaseOrdersTable = memo(
                 disabled={
                   !permissions.can("delete", "purchasing") ||
                   selectedRows.some(
-                    (row) => !["Draft"].includes(row.status ?? "")
+                    (row) => !["Draft", "Planned"].includes(row.status ?? "")
                   )
                 }
                 destructive
@@ -407,7 +407,7 @@ const PurchaseOrdersTable = memo(
           <MenuItem
             disabled={
               !permissions.can("delete", "purchasing") ||
-              !["Draft"].includes(row.status ?? "")
+              !["Draft", "Planned"].includes(row.status ?? "")
             }
             destructive
             onClick={() => {
