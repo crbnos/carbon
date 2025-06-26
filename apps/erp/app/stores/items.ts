@@ -8,6 +8,7 @@ export type Item = ListItem & {
   readableIdWithRevision: string;
   replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"];
   itemTrackingType: Database["public"]["Enums"]["itemTrackingType"];
+  unitOfMeasureCode: string;
   type: Database["public"]["Enums"]["itemType"];
   active: boolean;
 };

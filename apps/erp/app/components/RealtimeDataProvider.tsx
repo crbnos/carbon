@@ -52,7 +52,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       carbon
         .from("item")
         .select(
-          "id, readableIdWithRevision, name, type, replenishmentSystem, active, itemTrackingType"
+          "id, readableIdWithRevision, unitOfMeasureCode, name, type, replenishmentSystem, active, itemTrackingType"
         )
         .eq("companyId", companyId)
         .order("readableId", { ascending: true })
@@ -141,6 +141,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                       description: inserted.description,
                       replenishmentSystem: inserted.replenishmentSystem,
                       itemTrackingType: inserted.itemTrackingType,
+                      unitOfMeasureCode: inserted.unitOfMeasureCode,
                       type: inserted.type,
                       active: inserted.active,
                     },
@@ -165,6 +166,7 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
                             updated.readableIdWithRevision,
                           name: updated.name,
                           replenishmentSystem: updated.replenishmentSystem,
+                          unitOfMeasureCode: updated.unitOfMeasureCode,
                           type: updated.type,
                           active: updated.active,
                         };

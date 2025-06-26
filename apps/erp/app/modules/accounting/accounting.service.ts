@@ -328,7 +328,7 @@ export async function getChartOfAccounts(
   companyId: string,
   args: Omit<GenericQueryFilters, "limit" | "offset"> & {
     name: string | null;
-    incomeBalance: string | null;
+    incomeBalance: "Income Statement" | "Balance Sheet" | null;
     startDate: string | null;
     endDate: string | null;
   }

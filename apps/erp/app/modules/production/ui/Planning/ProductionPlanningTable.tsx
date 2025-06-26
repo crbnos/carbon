@@ -389,25 +389,25 @@ const OrderDrawer = memo(
 
               <TableBase full>
                 <Thead>
-                  <Th className="pl-0 pr-1">
+                  <Th>
                     <div className="flex items-center gap-2">
                       <LuHardHat />
                       <span>Job</span>
                     </div>
                   </Th>
-                  <Th className="px-1">
+                  <Th>
                     <div className="flex items-center gap-2 text-left">
                       <LuStar />
                       <span>Status</span>
                     </div>
                   </Th>
-                  <Th className="px-1">
+                  <Th>
                     <div className="flex items-center gap-2 text-right">
                       <LuPackage />
                       <span>Quantity</span>
                     </div>
                   </Th>
-                  <Th className="pr-1">
+                  <Th>
                     <div className="flex items-center gap-2">
                       <LuCalendar />
                       <span>Due Date</span>
@@ -418,7 +418,7 @@ const OrderDrawer = memo(
                 <Tbody>
                   {orders.map((order, index) => (
                     <Tr key={index}>
-                      <Td className="pl-0 pr-1 group-hover:bg-inherit justify-between">
+                      <Td className="group-hover:bg-inherit justify-between">
                         {order.existingReadableId && order.existingId ? (
                           <Link to={path.to.job(order.existingId)}>
                             {order.existingReadableId}
@@ -427,10 +427,10 @@ const OrderDrawer = memo(
                           "New Job"
                         )}
                       </Td>
-                      <Td className="flex flex-row items-center gap-1 px-1 group-hover:bg-inherit">
+                      <Td className="flex flex-row items-center gap-1 group-hover:bg-inherit">
                         <JobStatus status={order.existingStatus as "Draft"} />
                       </Td>
-                      <Td className="text-right px-1 group-hover:bg-inherit">
+                      <Td className="text-right group-hover:bg-inherit">
                         <NumberField
                           value={order.quantity}
                           onBlur={(e) => {
@@ -462,7 +462,7 @@ const OrderDrawer = memo(
                           </NumberInputGroup>
                         </NumberField>
                       </Td>
-                      <Td className="text-right px-1 group-hover:bg-inherit">
+                      <Td className="text-right group-hover:bg-inherit">
                         <HStack className="justify-end">
                           <DatePicker
                             value={
@@ -476,7 +476,7 @@ const OrderDrawer = memo(
                           />
                         </HStack>
                       </Td>
-                      <Td className="pl-1 pr-0 group-hover:bg-inherit">
+                      <Td className="group-hover:bg-inherit">
                         <IconButton
                           aria-label="Remove order"
                           variant="ghost"

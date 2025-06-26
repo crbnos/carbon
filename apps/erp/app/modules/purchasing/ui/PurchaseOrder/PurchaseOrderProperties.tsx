@@ -320,6 +320,26 @@ const PurchaseOrderProperties = () => {
 
       <ValidatedForm
         defaultValues={{
+          receiptRequestedDate:
+            routeData?.purchaseOrder?.receiptRequestedDate ?? "",
+        }}
+        validator={z.object({
+          receiptRequestedDate: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <DatePicker
+          name="receiptRequestedDate"
+          label="Receipt Requested Date"
+          inline
+          onChange={(date) => {
+            onUpdate("receiptRequestedDate", date);
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
           receiptPromisedDate:
             routeData?.purchaseOrder?.receiptPromisedDate ?? "",
         }}

@@ -62,6 +62,7 @@ export const purchaseOrderStatusType = [
 export const plannedOrderValidator = z.object({
   startDate: zfd.text(z.string().nullable()),
   dueDate: zfd.text(z.string().nullable()),
+  description: zfd.text(z.string().optional()),
   periodId: z.string().min(1, { message: "Period is required" }),
   quantity: zfd.numeric(z.number().min(0)),
   existingId: zfd.text(z.string().optional()),
@@ -70,6 +71,9 @@ export const plannedOrderValidator = z.object({
   existingReadableId: zfd.text(z.string().optional()),
   existingStatus: zfd.text(z.string().optional()),
   supplierId: zfd.text(z.string().optional()),
+  itemReadableId: zfd.text(z.string().optional()),
+  unitPrice: zfd.numeric(z.number().optional()),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
 });
 
 export type PlannedOrder = z.infer<typeof plannedOrderValidator>;
