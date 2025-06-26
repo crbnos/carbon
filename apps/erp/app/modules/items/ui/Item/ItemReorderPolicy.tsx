@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import { z } from "zod";
 import type {
   ProductionOrder,
   ProductionPlanningItem,
@@ -9,6 +10,7 @@ import type {
   PlannedOrder,
   PurchasingPlanningItem,
 } from "~/modules/purchasing";
+import type { Item } from "~/stores";
 
 export function ItemReorderPolicy({
   reorderingPolicy,
@@ -256,13 +258,34 @@ export function getProductionOrdersFromPlanning(
   return calculateOrders({ itemPlanning, periods });
 }
 
+const supplierPartValidator = z.array(
+  z.object({
+    id: z.string(),
+    supplierId: z.string(),
+    supplierUnitOfMeasureCode: z.string(),
+    conversionFactor: z.number(),
+    unitPrice: z.number(),
+  })
+);
+
 export function getPurchaseOrdersFromPlanning(
   itemPlanning: PurchasingPlanningItem,
   periods: { startDate: string; id: string }[],
+  items: Item[],
   supplierId?: string
 ): PlannedOrder[] {
+  const suppliers = supplierPartValidator.safeParse(itemPlanning.suppliers);
+  const supplier = suppliers.data?.find(
+    (supplier) => supplier.id === supplierId
+  );
+
+  const item = items.find((item) => item.id === itemPlanning.id);
+
   return calculateOrders({ itemPlanning, periods }).map((order) => ({
     ...order,
-    supplierId: supplierId ?? itemPlanning.preferredSupplierId,
+    supplierId: supplier?.supplierId ?? itemPlanning.preferredSupplierId,
+    itemReadableId: item?.readableIdWithRevision,
+    description: item?.name,
+    unitOfMeasureCode: item?.unitOfMeasureCode,
   }));
 }

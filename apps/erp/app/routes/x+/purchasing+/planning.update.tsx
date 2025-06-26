@@ -1,12 +1,13 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
+import { getCurrencyByCode } from "~/modules/accounting/accounting.service";
 import {
-  recalculateJobRequirements,
-  upsertJob,
-  upsertJobMethod,
-} from "~/modules/production";
-import { plannedOrderValidator } from "~/modules/purchasing/purchasing.models";
+  plannedOrderValidator,
+  updatePurchaseOrder,
+  upsertPurchaseOrder,
+  upsertPurchaseOrderLine,
+} from "~/modules/purchasing";
 import { getNextSequence } from "~/modules/settings/settings.service";
 
 export const config = {
@@ -22,12 +23,13 @@ const itemsValidator = z
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
-    create: "production",
+    create: "purchasing",
     role: "employee",
     bypassRls: true,
   });
 
   const { items, action, locationId } = await request.json();
+
   if (typeof locationId !== "string") {
     return json({ success: false, message: "Location is required" });
   }
@@ -41,6 +43,9 @@ export async function action({ request }: ActionFunctionArgs) {
       const parsedItems = itemsValidator.safeParse(items);
 
       if (!parsedItems.success) {
+        parsedItems.error.errors.forEach((error) => {
+          console.error(error);
+        });
         return json({ success: false, message: "Invalid form data" });
       }
 
@@ -50,11 +55,13 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       try {
-        const allJobIds: string[] = [];
+        const supplierIds: Set<string> = new Set();
+        const itemIds: Set<string> = new Set();
+        const periodIds: Set<string> = new Set();
         const allSupplyForecasts: Array<{
           itemId: string;
           locationId: string;
-          sourceType: "Production Order";
+          sourceType: "Purchase Order";
           forecastQuantity: number;
           periodId: string;
           companyId: string;
@@ -63,46 +70,128 @@ export async function action({ request }: ActionFunctionArgs) {
         }> = [];
 
         for (const item of itemsToOrder) {
+          itemIds.add(item.id);
+          for (const order of item.orders) {
+            if (order.supplierId) {
+              supplierIds.add(order.supplierId);
+            }
+            if (order.periodId) {
+              periodIds.add(order.periodId);
+            }
+          }
+        }
+
+        const [suppliers, supplierParts, periods, company] = await Promise.all([
+          client
+            .from("supplier")
+            .select("id, name, taxPercent, currencyCode")
+            .in("id", Array.from(supplierIds)),
+          client
+            .from("supplierPart")
+            .select("*")
+            .in("itemId", Array.from(itemIds)),
+          client.from("period").select("*").in("id", Array.from(periodIds)),
+          client
+            .from("company")
+            .select("id, baseCurrencyCode")
+            .eq("id", companyId)
+            .single(),
+        ]);
+
+        const suppliersById = new Map(
+          suppliers.data?.map((supplier) => [supplier.id, supplier]) ?? []
+        );
+
+        const baseCurrencyCode = company.data?.baseCurrencyCode ?? "USD";
+
+        for (const item of itemsToOrder) {
           const orders = item.orders;
-          const jobIds: string[] = [];
+          const supplier = suppliersById.get(orders[0]?.supplierId ?? "");
+          const supplierPart =
+            supplierParts?.data?.find(
+              (sp) => sp.itemId === item.id && sp.supplierId === supplier?.id
+            ) ?? undefined;
+
           const supplyForecastByPeriod: Record<string, number> = {};
 
-          // Get manufacturing data for this item
-          const manufacturing = await client
+          const purchasing = await client
             .from("itemReplenishment")
-            .select(
-              "manufacturingBlocked, scrapPercentage, requiresConfiguration"
-            )
+            .select("purchasingBlocked")
             .eq("itemId", item.id)
             .single();
 
-          if (manufacturing.error) {
+          if (purchasing.error) {
             console.error(
-              `Failed to get manufacturing data for item ${item.id}:`,
-              manufacturing.error
+              `Failed to get purchasing data for item ${item.id}:`,
+              purchasing.error
             );
             continue;
           }
 
-          if (manufacturing.data?.manufacturingBlocked) {
-            console.warn(`Manufacturing is blocked for item ${item.id}`);
+          if (purchasing.data?.purchasingBlocked) {
+            console.warn(`Purchasing is blocked for item ${item.id}`);
             continue;
           }
 
-          if (manufacturing.data?.requiresConfiguration) {
-            console.warn(
-              `Manufacturing requires configuration for item ${item.id}`
-            );
-            continue;
-          }
+          // Get existing purchase orders for this supplier
+          const { data: existingPurchaseOrders } = await client
+            .from("purchaseOrder")
+            .select(
+              "id, purchaseOrderId, orderDate, status, purchaseOrderDelivery(receiptRequestedDate, receiptPromisedDate)"
+            )
+            .eq("supplierId", supplier?.id ?? "")
+            .in("status", ["Draft", "Planned"]);
 
-          // Process each order for this item
-          for (const order of orders) {
+          const existingPOs =
+            existingPurchaseOrders?.map((order) => {
+              const dueDate =
+                order?.purchaseOrderDelivery?.receiptPromisedDate ??
+                order?.purchaseOrderDelivery?.receiptRequestedDate;
+              return {
+                id: order.id,
+                readableId: order.purchaseOrderId,
+                status: order.status,
+                dueDate,
+              };
+            }) ?? [];
+
+          // Map orders to existing POs in the same period
+          const ordersMappedToExistingPOs = orders.map((order) => {
+            const period = periods?.data?.find((p) => p.id === order.periodId);
+            if (period) {
+              const firstPOInPeriod = existingPOs.find((po) => {
+                const dueDate = po?.dueDate ? new Date(po.dueDate) : null;
+                return (
+                  dueDate !== null &&
+                  new Date(period.startDate) <= dueDate &&
+                  new Date(period.endDate) >= dueDate
+                );
+              });
+
+              if (firstPOInPeriod) {
+                return {
+                  ...order,
+                  existingId: firstPOInPeriod.id,
+                  existingLineId: undefined,
+                  existingReadableId: firstPOInPeriod.readableId,
+                  existingStatus: firstPOInPeriod.status,
+                };
+              }
+            }
+
+            return order;
+          });
+
+          for (const order of ordersMappedToExistingPOs) {
+            if (!order.supplierId) {
+              console.error(`Supplier ID is required for item ${item.id}`);
+              continue;
+            }
+
             if (!order.existingId) {
-              // Create new job
               const nextSequence = await getNextSequence(
                 client,
-                "job",
+                "purchaseOrder",
                 companyId
               );
               if (nextSequence.error) {
@@ -113,109 +202,181 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
-              const jobId = nextSequence.data;
-              if (!jobId) {
-                console.error(`Failed to get job ID for item ${item.id}`);
+              const purchaseOrderId = nextSequence.data;
+              if (!purchaseOrderId) {
+                console.error(
+                  `Failed to get purchase order ID for item ${item.id}`
+                );
                 continue;
               }
 
-              const createJob = await upsertJob(
+              let exchangeRate = 1;
+              if (supplier?.currencyCode !== baseCurrencyCode) {
+                const currency = await getCurrencyByCode(
+                  client,
+                  companyId,
+                  supplier?.currencyCode ?? baseCurrencyCode
+                );
+
+                if (currency.data) {
+                  exchangeRate = currency.data.exchangeRate ?? 1;
+                }
+              }
+
+              const createPurchaseOrder = await upsertPurchaseOrder(
                 client,
                 {
+                  purchaseOrderId,
+                  status: "Planned" as const,
+                  supplierId: order.supplierId,
+                  purchaseOrderType: "Purchase",
+                  currencyCode: supplier?.currencyCode ?? baseCurrencyCode,
+                  exchangeRate: exchangeRate,
+                  companyId,
+                  createdBy: userId,
+                },
+                order.dueDate ?? undefined
+              );
+
+              if (createPurchaseOrder.error) {
+                console.error(
+                  `Failed to create purchase order for item ${item.id}:`,
+                  createPurchaseOrder.error
+                );
+                continue;
+              }
+
+              const purchaseOrder = createPurchaseOrder.data?.[0];
+              if (!purchaseOrder) {
+                console.error(
+                  `Failed to get created purchase order for item ${item.id}`
+                );
+                continue;
+              }
+
+              const createPurchaseOrderLine = await upsertPurchaseOrderLine(
+                client,
+                {
+                  purchaseOrderId: purchaseOrder.id,
                   itemId: item.id,
-                  jobId,
-                  quantity: order.quantity,
-                  scrapQuantity: Math.ceil(
-                    order.quantity * (manufacturing.data?.scrapPercentage ?? 0)
-                  ),
-                  startDate: order.startDate ?? undefined,
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
+                  itemReadableId: order.itemReadableId,
+                  description: order.description,
+                  purchaseOrderLineType: "Part",
+                  purchaseQuantity: order.quantity,
+                  purchaseUnitOfMeasureCode:
+                    supplierPart?.supplierUnitOfMeasureCode ??
+                    order.unitOfMeasureCode,
+                  inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
+                  conversionFactor: supplierPart?.conversionFactor ?? 1,
+                  supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+                  supplierTaxAmount:
+                    ((order.unitPrice ?? 0) * (supplier?.taxPercent ?? 0)) /
+                    100,
+                  supplierShippingCost: 0,
+                  promisedDate: order.dueDate ?? undefined,
                   locationId,
                   companyId,
                   createdBy: userId,
-                  unitOfMeasureCode: "EA",
-                },
-                "Planned"
+                }
               );
 
-              if (createJob.error) {
+              if (createPurchaseOrderLine.error) {
                 console.error(
-                  `Failed to create job for item ${item.id}:`,
-                  createJob.error
+                  `Failed to create purchase order line for item ${item.id}:`,
+                  createPurchaseOrderLine.error
                 );
                 continue;
               }
-
-              const id = createJob.data?.id;
-              if (!id) {
-                console.error(
-                  `Failed to get created job ID for item ${item.id}`
-                );
-                continue;
-              }
-
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
-                sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId,
-              });
-
-              if (upsertMethod.error) {
-                console.error(
-                  `Failed to create job method for item ${item.id}:`,
-                  upsertMethod.error
-                );
-                continue;
-              }
-
-              jobIds.push(id);
             } else {
-              // Update existing job
-              jobIds.push(order.existingId);
-              const updateJob = await client
-                .from("job")
-                .update({
-                  dueDate: order.dueDate ?? undefined,
-                  deadlineType: order.isASAP ? "ASAP" : "Soft Deadline",
-                  quantity: order.quantity,
-                  scrapQuantity: Math.ceil(
-                    order.quantity * (manufacturing.data?.scrapPercentage ?? 0)
-                  ),
-                  startDate: order.startDate ?? undefined,
-                  status: "Planned",
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
-                })
-                .eq("id", order.existingId);
-
-              if (updateJob.error) {
-                console.error(
-                  `Failed to update job ${order.existingId}:`,
-                  updateJob.error
+              if (order.existingLineId) {
+                const updatePurchaseOrderLine = await upsertPurchaseOrderLine(
+                  client,
+                  {
+                    id: order.existingLineId,
+                    purchaseOrderId: order.existingId,
+                    itemId: item.id,
+                    itemReadableId: order.itemReadableId,
+                    description: order.description,
+                    purchaseOrderLineType: "Part",
+                    purchaseQuantity: order.quantity,
+                    purchaseUnitOfMeasureCode:
+                      supplierPart?.supplierUnitOfMeasureCode ??
+                      order.unitOfMeasureCode,
+                    inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
+                    conversionFactor: supplierPart?.conversionFactor ?? 1,
+                    supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+                    supplierTaxAmount:
+                      ((order.unitPrice ?? 0) * (supplier?.taxPercent ?? 0)) /
+                      100,
+                    supplierShippingCost: 0,
+                    promisedDate: order.dueDate ?? undefined,
+                    locationId,
+                    companyId,
+                    createdBy: userId,
+                  }
                 );
-                continue;
+
+                if (updatePurchaseOrderLine.error) {
+                  console.error(
+                    `Failed to update purchase order line ${order.existingLineId}:`,
+                    updatePurchaseOrderLine.error
+                  );
+                  continue;
+                }
+              } else {
+                const insertPurchaseOrderLine = await upsertPurchaseOrderLine(
+                  client,
+                  {
+                    purchaseOrderId: order.existingId,
+                    itemId: item.id,
+                    itemReadableId: order.itemReadableId,
+                    description: order.description,
+                    purchaseOrderLineType: "Part",
+                    purchaseQuantity: order.quantity,
+                    purchaseUnitOfMeasureCode:
+                      supplierPart?.supplierUnitOfMeasureCode ??
+                      order.unitOfMeasureCode,
+                    inventoryUnitOfMeasureCode: order.unitOfMeasureCode,
+                    conversionFactor: supplierPart?.conversionFactor ?? 1,
+                    supplierUnitPrice: supplierPart?.unitPrice ?? 0,
+                    supplierTaxAmount:
+                      ((order.unitPrice ?? 0) * (supplier?.taxPercent ?? 0)) /
+                      100,
+                    supplierShippingCost: 0,
+                    promisedDate: order.dueDate ?? undefined,
+                    locationId,
+                    companyId,
+                    createdBy: userId,
+                  }
+                );
+
+                if (insertPurchaseOrderLine.error) {
+                  console.error(
+                    `Failed to insert purchase order line for item ${item.id}:`,
+                    insertPurchaseOrderLine.error
+                  );
+                }
               }
+
+              await updatePurchaseOrder(client, {
+                id: order.existingId,
+                status: "Planned" as const,
+                updatedBy: userId,
+              });
             }
 
-            // Track supply forecast by period
             const periodId = order.periodId;
             supplyForecastByPeriod[periodId] =
               (supplyForecastByPeriod[periodId] || 0) +
               (order.quantity - (order.existingQuantity ?? 0));
           }
 
-          // Add job IDs to the overall list
-          allJobIds.push(...jobIds);
-
-          // Add supply forecasts for this item
           Object.entries(supplyForecastByPeriod).forEach(
             ([periodId, quantity]) => {
               allSupplyForecasts.push({
                 itemId: item.id,
                 locationId,
-                sourceType: "Production Order" as const,
+                sourceType: "Purchase Order" as const,
                 forecastQuantity: quantity,
                 periodId,
                 companyId,
@@ -226,7 +387,6 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
 
-        // Insert all supply forecasts
         if (allSupplyForecasts.length > 0) {
           const insertForecasts = await client
             .from("supplyForecast")
@@ -240,26 +400,15 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
-        // Trigger recalculation for all jobs
-        if (allJobIds.length > 0) {
-          for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
-              id: jobId,
-              companyId,
-              userId,
-            });
-          }
-        }
-
         return json({
           success: true,
-          message: `Successfully processed ${itemsToOrder.length} items with ${allJobIds.length} jobs`,
+          message: `Successfully processed ${itemsToOrder.length} items`,
         });
       } catch (error) {
-        console.error("Error processing production orders:", error);
+        console.error("Error processing purchase orders:", error);
         return json({
           success: false,
-          message: `Error processing production orders: ${
+          message: `Error processing purchase orders: ${
             error instanceof Error ? error.message : "Unknown error"
           }`,
         });

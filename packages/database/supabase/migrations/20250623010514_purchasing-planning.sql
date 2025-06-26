@@ -365,6 +365,7 @@ CREATE OR REPLACE VIEW "openPurchaseOrderLines" WITH (security_invoker=true) AS 
     pol."id",
     pol."purchaseOrderId",
     po."purchaseOrderId" as "purchaseOrderReadableId",
+    po."supplierId",
     pol."itemId", 
     pol."quantityToReceive" * pol."conversionFactor" AS "quantityToReceive",
     i."unitOfMeasureCode",

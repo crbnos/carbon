@@ -58,6 +58,7 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuCirclePlus,
+  LuClock,
   LuContainer,
   LuExternalLink,
   LuHardHat,
@@ -90,6 +91,7 @@ import {
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/production+/planning.update";
+import { useItems } from "~/stores";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../purchasing.models";
@@ -116,16 +118,16 @@ const OrderDrawer = memo(
     onClose,
     onSupplierChange,
   }: {
-    selectedItem: PurchasingPlanningItem;
-    setSelectedItem: (item: PurchasingPlanningItem) => void;
-    orders: PlannedOrder[];
-    setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
-    locationId: string;
-    selectedSupplier: string;
-    periods: { id: string; startDate: string; endDate: string }[];
     isOpen: boolean;
+    locationId: string;
+    orders: PlannedOrder[];
+    periods: { id: string; startDate: string; endDate: string }[];
+    selectedItem: PurchasingPlanningItem;
+    selectedSupplier: string;
     onClose: () => void;
     onSupplierChange: (itemId: string, supplierId: string) => void;
+    setOrders: (item: PurchasingPlanningItem, orders: PlannedOrder[]) => void;
+    setSelectedItem: (item: PurchasingPlanningItem) => void;
   }) => {
     const fetcher = useFetcher<typeof bulkUpdateAction>();
     const { carbon } = useCarbon();
@@ -133,10 +135,8 @@ const OrderDrawer = memo(
     const formatter = useCurrencyFormatter();
     const unitOfMeasureOptions = useUnitOfMeasure();
 
-    // Add state for active tab
     const [activeTab, setActiveTab] = useState("ordering");
 
-    // Memoize getExistingOrders callback
     const getExistingOrders = useCallback(async () => {
       if (!carbon || !selectedItem.id) return;
 
@@ -147,7 +147,6 @@ const OrderDrawer = memo(
         .in("status", ["Draft", "Planned"]);
 
       if (existingOrderData) {
-        console.log({ existingOrderData, orders });
         const existingOrders: PlannedOrder[] = existingOrderData
           .filter(
             (order) =>
@@ -155,7 +154,7 @@ const OrderDrawer = memo(
           )
           .map((order) => {
             const dueDate = order.dueDate;
-            // If no due date or due date is before first period, use first period
+
             if (
               !dueDate ||
               parseDate(dueDate) < parseDate(periods[0].startDate)
@@ -170,12 +169,11 @@ const OrderDrawer = memo(
                 startDate: order.orderDate ?? null,
                 dueDate: null,
                 quantity: order.quantityToReceive ?? 0,
-                isASAP: false,
                 periodId: periods[0].id,
+                supplierId: order.supplierId ?? undefined,
               };
             }
 
-            // Find matching period based on due date
             const period = periods.find((p) => {
               const d = parseDate(dueDate!);
               const startDate = parseDate(p.startDate);
@@ -183,7 +181,6 @@ const OrderDrawer = memo(
               return d >= startDate && d <= endDate;
             });
 
-            // If no matching period found (date is after last period), use last period
             return {
               existingId: order.purchaseOrderId ?? undefined,
               existingLineId: order.id ?? undefined,
@@ -196,27 +193,89 @@ const OrderDrawer = memo(
               quantity: order.quantityToReceive ?? 0,
               isASAP: false,
               periodId: period?.id ?? periods[periods.length - 1].id,
+              supplierId: order.supplierId ?? undefined,
             };
           });
 
-        console.log({ existingOrders });
+        if (selectedSupplier) {
+          const { data: existingPurchaseOrders } = await carbon
+            ?.from("purchaseOrder")
+            .select(
+              "id, purchaseOrderId, orderDate, status, purchaseOrderDelivery(receiptRequestedDate, receiptPromisedDate)"
+            )
+            .eq("supplierId", selectedSupplier)
+            .in("status", ["Draft", "Planned"]);
 
-        setOrders(
-          selectedItem,
-          [...orders, ...existingOrders].sort((a, b) => {
-            return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
-          })
-        );
+          const existingPOs =
+            existingPurchaseOrders?.map((order) => {
+              const dueDate =
+                order?.purchaseOrderDelivery?.receiptPromisedDate ??
+                order?.purchaseOrderDelivery?.receiptRequestedDate;
+              return {
+                id: order.id,
+                readableId: order.purchaseOrderId,
+                status: order.status,
+                dueDate,
+              };
+            }) ?? [];
+
+          const ordersMappedToExistingPOs = orders.map((order) => {
+            const period = periods.find((p) => p.id === order.periodId);
+
+            if (period) {
+              const firstPOInPeriod = existingPOs.find((po) => {
+                const dueDate = po?.dueDate ? parseDate(po.dueDate) : null;
+                return (
+                  dueDate !== null &&
+                  parseDate(period.startDate) <= dueDate &&
+                  parseDate(period.endDate) >= dueDate
+                );
+              });
+
+              if (firstPOInPeriod) {
+                return {
+                  ...order,
+                  existingId: firstPOInPeriod.id,
+                  existingLineId: undefined,
+                  existingReadableId: firstPOInPeriod.readableId,
+                  existingStatus: firstPOInPeriod.status,
+                };
+              }
+            }
+
+            return order;
+          });
+
+          setOrders(
+            selectedItem,
+            [...ordersMappedToExistingPOs, ...existingOrders].sort((a, b) => {
+              return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
+            })
+          );
+        } else {
+          setOrders(
+            selectedItem,
+            [...orders, ...existingOrders].sort((a, b) => {
+              return a.dueDate?.localeCompare(b.dueDate ?? "") ?? 0;
+            })
+          );
+        }
       }
-    }, [carbon, orders, selectedItem, setOrders, periods]);
+    }, [carbon, selectedItem, selectedSupplier, orders, periods, setOrders]);
 
-    useMount(() => {
+    useMount(async () => {
       if (selectedItem.id) {
         getExistingOrders();
       }
     });
 
-    // Memoize handlers
+    useEffect(() => {
+      if (selectedItem.id) {
+        getExistingOrders();
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedSupplier]);
+
     const onAddOrder = useCallback(() => {
       if (selectedItem.id) {
         const newOrder: PlannedOrder = {
@@ -227,6 +286,8 @@ const OrderDrawer = memo(
             .toString(),
           startDate: today(getLocalTimeZone()).toString(),
           supplierId: selectedItem.preferredSupplierId,
+          itemReadableId: selectedItem.readableIdWithRevision,
+          description: selectedItem.name,
           periodId: periods[0].id,
         };
         setOrders(selectedItem, [...orders, newOrder]);
@@ -246,7 +307,6 @@ const OrderDrawer = memo(
     const onSubmit = useCallback(
       (id: string, orders: PlannedOrder[]) => {
         const ordersWithPeriods = orders.map((order) => {
-          // If no due date or due date is before first period, use first period
           if (
             !order.dueDate ||
             parseDate(order.dueDate) < parseDate(periods[0].startDate)
@@ -257,7 +317,6 @@ const OrderDrawer = memo(
             };
           }
 
-          // Find matching period based on due date
           const period = periods.find((p) => {
             const dueDate = parseDate(order.dueDate!);
             const startDate = parseDate(p.startDate);
@@ -265,7 +324,6 @@ const OrderDrawer = memo(
             return dueDate >= startDate && dueDate <= endDate;
           });
 
-          // If no matching period found (date is after last period), use last period
           return {
             ...order,
             periodId: period?.id ?? periods[periods.length - 1].id,
@@ -291,8 +349,7 @@ const OrderDrawer = memo(
       [fetcher, locationId, periods]
     );
 
-    // Memoize order update handler
-    const handleOrderUpdate = useCallback(
+    const onOrderUpdate = useCallback(
       (index: number, updates: Partial<PlannedOrder>) => {
         if (selectedItem.id) {
           const newOrders = [...orders];
@@ -328,8 +385,10 @@ const OrderDrawer = memo(
               <DrawerTitle className="flex items-center gap-2">
                 <span>{selectedItem.readableIdWithRevision}</span>
                 <Link
-                  // @ts-ignore
-                  to={getLinkToItemDetails(selectedItem.type, selectedItem.id)}
+                  to={getLinkToItemDetails(
+                    selectedItem.type as "Part",
+                    selectedItem.id
+                  )}
                 >
                   <LuExternalLink />
                 </Link>
@@ -386,7 +445,6 @@ const OrderDrawer = memo(
                                       part.supplierId
                                     );
 
-                                    // Update all orders with new supplier
                                     const updatedOrders = orders.map(
                                       (order) => ({
                                         ...order,
@@ -395,7 +453,6 @@ const OrderDrawer = memo(
                                     );
                                     setOrders(selectedItem, updatedOrders);
 
-                                    // Show toast and switch tab
                                     toast.success("Supplier updated");
                                     setActiveTab("ordering");
                                   }
@@ -431,7 +488,6 @@ const OrderDrawer = memo(
                         }}
                         unitOfMeasureCode={selectedItem.unitOfMeasureCode ?? ""}
                         onClose={() => {
-                          // Refresh the row data to get updated suppliers
                           if (carbon && selectedItem.id) {
                             carbon
                               ?.from("supplierPart")
@@ -440,7 +496,7 @@ const OrderDrawer = memo(
                               .then(({ data }) => {
                                 if (data) {
                                   setSelectedItem(
-                                    // @ts-ignore
+                                    // @ts-expect-error
                                     (prev: PurchasingPlanningItem) => {
                                       return {
                                         ...prev,
@@ -558,110 +614,118 @@ const OrderDrawer = memo(
 
                   <TableBase full>
                     <Thead>
-                      <Th className="pl-0 pr-1">
-                        <div className="flex items-center gap-2">
-                          <LuHardHat />
-                          <span>PO</span>
-                        </div>
-                      </Th>
-                      <Th className="px-1">
-                        <div className="flex items-center gap-2 text-left">
-                          <LuStar />
-                          <span>Status</span>
-                        </div>
-                      </Th>
-                      <Th className="px-1">
-                        <div className="flex items-center gap-2 text-right">
-                          <LuPackage />
-                          <span>Quantity</span>
-                        </div>
-                      </Th>
-                      <Th className="pr-1">
-                        <div className="flex items-center gap-2">
-                          <LuCalendar />
-                          <span>Due Date</span>
-                        </div>
-                      </Th>
-                      <Th className="w-[50px]"></Th>
+                      <Tr>
+                        <Th>
+                          <div className="flex items-center gap-2">
+                            <LuHardHat />
+                            <span>PO</span>
+                          </div>
+                        </Th>
+                        <Th>
+                          <div className="flex items-center gap-2 text-left">
+                            <LuStar />
+                            <span>Status</span>
+                          </div>
+                        </Th>
+                        <Th>
+                          <div className="flex items-center gap-2 text-right">
+                            <LuPackage />
+                            <span>Quantity</span>
+                          </div>
+                        </Th>
+                        <Th>
+                          <div className="flex items-center gap-2">
+                            <LuCalendar />
+                            <span>Due Date</span>
+                          </div>
+                        </Th>
+                        <Th className="w-[50px]"></Th>
+                      </Tr>
                     </Thead>
                     <Tbody>
-                      {orders.map((order, index) => (
-                        <Tr key={index}>
-                          <Td className="pl-0 pr-1 group-hover:bg-inherit justify-between">
-                            {order.existingReadableId && order.existingId ? (
-                              <Link
-                                to={path.to.purchaseOrder(order.existingId)}
-                              >
-                                {order.existingReadableId}
-                              </Link>
-                            ) : (
-                              "New PO"
-                            )}
-                          </Td>
-                          <Td className="flex flex-row items-center gap-1 px-1 group-hover:bg-inherit">
-                            {/* @ts-expect-error - status is a string because we have a general type for purchase orders and purchaseOrderLines */}
-                            <PurchasingStatus status={order.existingStatus} />
-                          </Td>
-                          <Td className="text-right px-1 group-hover:bg-inherit">
-                            <NumberField
-                              value={order.quantity}
-                              onBlur={(e) => {
-                                const datePickerInput = e.target
-                                  .closest("tr")
-                                  ?.querySelector(
-                                    '[role="textbox"]'
-                                  ) as HTMLElement;
-                                if (datePickerInput) {
-                                  datePickerInput.focus();
-                                }
-                              }}
-                              onChange={(value) => {
-                                if (value) {
-                                  handleOrderUpdate(index, { quantity: value });
-                                }
-                              }}
-                            >
-                              <NumberInputGroup className="relative group-hover:bg-inherit">
-                                <NumberInput />
-                                <NumberInputStepper>
-                                  <NumberIncrementStepper>
-                                    <LuChevronUp size="1em" strokeWidth="3" />
-                                  </NumberIncrementStepper>
-                                  <NumberDecrementStepper>
-                                    <LuChevronDown size="1em" strokeWidth="3" />
-                                  </NumberDecrementStepper>
-                                </NumberInputStepper>
-                              </NumberInputGroup>
-                            </NumberField>
-                          </Td>
-                          <Td className="text-right px-1 group-hover:bg-inherit">
-                            <HStack className="justify-end">
-                              <DatePicker
+                      {orders.map((order, index) => {
+                        const isDisabled =
+                          selectedSupplier !== order.supplierId &&
+                          !!order.existingId;
+
+                        return (
+                          <Tr key={index}>
+                            <Td className="group-hover:bg-inherit justify-between">
+                              {order.existingReadableId && order.existingId ? (
+                                <Link
+                                  to={path.to.purchaseOrder(order.existingId)}
+                                >
+                                  {order.existingReadableId}
+                                </Link>
+                              ) : (
+                                "New PO"
+                              )}
+                            </Td>
+                            <Td className="flex flex-row items-center gap-1 group-hover:bg-inherit">
+                              {/* @ts-expect-error - status is a string because we have a general type for purchase orders and purchaseOrderLines */}
+                              <PurchasingStatus status={order.existingStatus} />
+                            </Td>
+                            <Td className="text-right group-hover:bg-inherit">
+                              <NumberField
                                 value={
-                                  order.dueDate
-                                    ? parseDate(order.dueDate)
-                                    : null
+                                  isDisabled
+                                    ? order.existingQuantity
+                                    : order.quantity
                                 }
-                                onChange={(date) => {
-                                  handleOrderUpdate(index, {
-                                    dueDate: date ? date.toString() : null,
-                                  });
+                                isDisabled={isDisabled}
+                                onChange={(value) => {
+                                  if (value) {
+                                    onOrderUpdate(index, {
+                                      quantity: value,
+                                    });
+                                  }
                                 }}
+                              >
+                                <NumberInputGroup className="relative group-hover:bg-inherit">
+                                  <NumberInput />
+                                  <NumberInputStepper>
+                                    <NumberIncrementStepper>
+                                      <LuChevronUp size="1em" strokeWidth="3" />
+                                    </NumberIncrementStepper>
+                                    <NumberDecrementStepper>
+                                      <LuChevronDown
+                                        size="1em"
+                                        strokeWidth="3"
+                                      />
+                                    </NumberDecrementStepper>
+                                  </NumberInputStepper>
+                                </NumberInputGroup>
+                              </NumberField>
+                            </Td>
+                            <Td className="text-right group-hover:bg-inherit">
+                              <HStack className="justify-end">
+                                <DatePicker
+                                  value={
+                                    order.dueDate
+                                      ? parseDate(order.dueDate)
+                                      : null
+                                  }
+                                  onChange={(date) => {
+                                    onOrderUpdate(index, {
+                                      dueDate: date ? date.toString() : null,
+                                    });
+                                  }}
+                                />
+                              </HStack>
+                            </Td>
+                            <Td className="group-hover:bg-inherit">
+                              <IconButton
+                                aria-label="Remove order"
+                                variant="ghost"
+                                size="sm"
+                                isDisabled={!!order.existingId}
+                                onClick={() => onRemoveOrder(index)}
+                                icon={<LuTrash2 className="text-destructive" />}
                               />
-                            </HStack>
-                          </Td>
-                          <Td className="pl-1 pr-0 group-hover:bg-inherit">
-                            <IconButton
-                              aria-label="Remove order"
-                              variant="ghost"
-                              size="sm"
-                              isDisabled={!!order.existingId}
-                              onClick={() => onRemoveOrder(index)}
-                              icon={<LuTrash2 className="text-destructive" />}
-                            />
-                          </Td>
-                        </Tr>
-                      ))}
+                            </Td>
+                          </Tr>
+                        );
+                      })}
                     </Tbody>
                   </TableBase>
 
@@ -731,7 +795,7 @@ const PlanningTable = memo(
         const initial: Record<string, string> = {};
         data.forEach((item) => {
           initial[item.id] =
-            // @ts-ignore
+            // @ts-expect-error
             item.preferredSupplierId ?? item.suppliers?.[0]?.supplierId;
         });
         return initial;
@@ -756,6 +820,8 @@ const PlanningTable = memo(
       bulkUpdateFetcher.state !== "idle" ||
       mrpFetcher.state !== "idle";
 
+    const [items] = useItems();
+
     const getOrders = useCallback(() => {
       const initialMap: Record<string, PlannedOrder[]> = {};
       data.forEach((item) => {
@@ -763,20 +829,21 @@ const PlanningTable = memo(
           initialMap[item.id] = getPurchaseOrdersFromPlanning(
             item,
             periods,
+            items,
             suppliersMap[item.id]
           );
         }
       });
       return initialMap;
-    }, [data, periods, suppliersMap]);
+    }, [data, periods, suppliersMap, items]);
 
-    // Store orders in a map keyed by item id
     const [ordersMap, setOrdersMap] =
       useState<Record<string, PlannedOrder[]>>(getOrders);
 
     useEffect(() => {
       setOrdersMap(getOrders());
-    }, [data, periods, getOrders]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
 
     const onBulkUpdate = useCallback(
       (selectedRows: typeof data, action: "order") => {
@@ -787,7 +854,6 @@ const PlanningTable = memo(
             .map((row) => {
               const ordersWithPeriods = (ordersMap[row.id!] || []).map(
                 (order) => {
-                  // If no due date or due date is before first period, use first period
                   if (
                     !order.dueDate ||
                     parseDate(order.dueDate) < parseDate(periods[0].startDate)
@@ -798,7 +864,6 @@ const PlanningTable = memo(
                     };
                   }
 
-                  // Find matching period based on due date
                   const period = periods.find((p) => {
                     const dueDate = parseDate(order.dueDate!);
                     const startDate = parseDate(p.startDate);
@@ -806,9 +871,9 @@ const PlanningTable = memo(
                     return dueDate >= startDate && dueDate <= endDate;
                   });
 
-                  // If no matching period found (date is after last period), use last period
                   return {
                     ...order,
+                    supplierId: suppliersMap[row.id!],
                     periodId: period?.id ?? periods[periods.length - 1].id,
                   };
                 }
@@ -827,7 +892,7 @@ const PlanningTable = memo(
           encType: "application/json",
         });
       },
-      [bulkUpdateFetcher, locationId, ordersMap, periods]
+      [bulkUpdateFetcher, locationId, ordersMap, periods, suppliersMap]
     );
 
     const [selectedItem, setSelectedItem] =
@@ -898,8 +963,7 @@ const PlanningTable = memo(
               <ItemThumbnail
                 size="sm"
                 thumbnailPath={row.original.thumbnailPath}
-                // @ts-ignore
-                type={row.original.type}
+                type={row.original.type as "Part"}
               />
 
               <VStack spacing={0} className="font-medium">
@@ -945,6 +1009,22 @@ const PlanningTable = memo(
               })),
             },
             icon: <LuContainer />,
+          },
+        },
+        {
+          accessorKey: "leadTime",
+          header: "Lead Time",
+          cell: ({ row }) => {
+            const leadTime = row.original.leadTime;
+            const weeks = Math.ceil(leadTime / 7);
+            return (
+              <span>
+                {weeks} week{weeks > 1 ? "s" : ""}
+              </span>
+            );
+          },
+          meta: {
+            icon: <LuClock />,
           },
         },
         {
@@ -1112,7 +1192,6 @@ const PlanningTable = memo(
                 value={locationId}
                 options={locations}
                 onChange={(selected) => {
-                  // hard refresh because initialValues update has no effect otherwise
                   window.location.href = getLocationPath(selected);
                 }}
               />

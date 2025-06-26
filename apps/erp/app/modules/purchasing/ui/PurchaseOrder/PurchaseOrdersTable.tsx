@@ -154,6 +154,14 @@ const PurchaseOrdersTable = memo(
           },
         },
         {
+          accessorKey: "receiptRequestedDate",
+          header: "Requested Date",
+          cell: (item) => formatDate(item.getValue<string>()),
+          meta: {
+            icon: <LuCalendar />,
+          },
+        },
+        {
           accessorKey: "receiptPromisedDate",
           header: "Promised Date",
           cell: ({ row }) => {

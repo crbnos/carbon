@@ -869,6 +869,20 @@ export async function finalizePurchaseOrder(
     .eq("id", purchaseOrderId);
 }
 
+export async function updatePurchaseOrder(
+  client: SupabaseClient<Database>,
+  purchaseOrder: {
+    id: string;
+    status: (typeof purchaseOrderStatusType)[number];
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("purchaseOrder")
+    .update(purchaseOrder)
+    .eq("id", purchaseOrder.id);
+}
+
 export async function updatePurchaseOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -1082,6 +1096,7 @@ export async function upsertPurchaseOrder(
         "id" | "purchaseOrderId"
       > & {
         purchaseOrderId: string;
+        status?: (typeof purchaseOrderStatusType)[number];
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -1094,7 +1109,8 @@ export async function upsertPurchaseOrder(
         purchaseOrderId: string;
         updatedBy: string;
         customFields?: Json;
-      })
+      }),
+  receiptRequestedDate?: string
 ) {
   if ("id" in purchaseOrder) {
     return client
@@ -1145,7 +1161,11 @@ export async function upsertPurchaseOrder(
   const order = await client
     .from("purchaseOrder")
     .insert([
-      { ...purchaseOrder, supplierInteractionId: supplierInteraction.data?.id },
+      {
+        ...purchaseOrder,
+        supplierInteractionId: supplierInteraction.data?.id,
+        status: purchaseOrder.status ?? "Draft",
+      },
     ])
     .select("id, purchaseOrderId");
 
@@ -1157,6 +1177,7 @@ export async function upsertPurchaseOrder(
     client.from("purchaseOrderDelivery").insert([
       {
         id: purchaseOrderId,
+        receiptRequestedDate: receiptRequestedDate ?? null,
         locationId: locationId,
         shippingMethodId: shippingMethodId,
         shippingTermId: shippingTermId,
