@@ -78,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
       authSession,
     });
     const companyIdCookie = setCompanyId(authSession.companyId);
-    return redirect(path.to.authenticatedRoot, {
+    return redirect(path.to.root, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", companyIdCookie],
