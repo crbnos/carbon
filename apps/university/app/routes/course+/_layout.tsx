@@ -3,45 +3,51 @@ import { Link, Outlet } from "@remix-run/react";
 import { LuBookOpen, LuCirclePlay } from "react-icons/lu";
 import { Hero } from "~/components/Hero";
 import { sections } from "~/config";
+import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
 
 export default function CourseLayout() {
+  const user = useOptionalUser();
   return (
     <div className="w-full flex flex-col">
-      <Hero>
-        <Heading
-          size="h1"
-          className="font-display text-[#212578] dark:text-white max-w-xl"
-        >
-          Your Journey Starts Here
-        </Heading>
-        <p className="text-base max-w-xl">
-          Learn the basics of Carbon and start your journey to becoming an
-          expert in Carbon. All for free.
-        </p>
-        <div className="flex items-center gap-2">
-          <Button
-            size="lg"
-            variant="secondary"
-            leftIcon={<LuCirclePlay />}
-            asChild
+      {user === null && (
+        <Hero>
+          <Heading
+            size="h1"
+            className="font-display text-[#212578] dark:text-white max-w-xl"
           >
-            <Link
-              to={path.to.video(sections[0].courses[0].topics[0].videos[0].id)}
+            Your Journey Starts Here
+          </Heading>
+          <p className="text-muted-foreground dark:text-foreground text-balance text-left font-medium tracking-tighter text-lg max-w-xl">
+            Learn the basics of Carbon and start your journey to becoming an
+            expert in Carbon. All for free.
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              size="lg"
+              variant="secondary"
+              leftIcon={<LuCirclePlay />}
+              asChild
             >
-              Begin your first lesson
-            </Link>
-          </Button>
-          <Button
-            size="lg"
-            variant="secondary"
-            leftIcon={<LuBookOpen />}
-            asChild
-          >
-            <Link to={path.to.about}>See how it works</Link>
-          </Button>
-        </div>
-      </Hero>
+              <Link
+                to={path.to.video(
+                  sections[0].courses[0].topics[0].videos[0].id
+                )}
+              >
+                Begin your first lesson
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="secondary"
+              leftIcon={<LuBookOpen />}
+              asChild
+            >
+              <Link to={path.to.about}>See how it works</Link>
+            </Button>
+          </div>
+        </Hero>
+      )}
       <div className="w-full px-4 max-w-6xl mx-auto my-16">
         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
           <nav className="space-y-4">

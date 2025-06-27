@@ -5,8 +5,6 @@ import {
 } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, IconButton, toast, Toaster } from "@carbon/react";
-import type { Theme } from "@carbon/utils";
-import { themes } from "@carbon/utils";
 import {
   isRouteErrorResponse,
   Link,
@@ -137,40 +135,8 @@ function Document({
   mode?: "light" | "dark";
   theme?: string;
 }) {
-  const selectedTheme = themes.find((t) => t.name === theme) as
-    | Theme
-    | undefined;
-
-  // Create style objects for both light and dark modes
-  const lightVars: Record<string, string> = {};
-  const darkVars: Record<string, string> = {};
-
-  if (selectedTheme) {
-    // Set light mode variables
-    Object.entries(selectedTheme.cssVars.light).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      lightVars[cssKey] = `${value}`;
-    });
-
-    // Set dark mode variables
-    Object.entries(selectedTheme.cssVars.dark).forEach(([key, value]) => {
-      const cssKey = `--${key}`;
-      darkVars[cssKey] = `${value}`;
-    });
-  }
-
-  // Combine the styles with proper selectors
-  const themeStyle = {
-    ...(mode === "dark" ? darkVars : lightVars),
-    "--radius": "0.5rem",
-  } as React.CSSProperties;
-
   return (
-    <html
-      lang="en"
-      className={`${mode} h-full overflow-x-hidden`}
-      style={themeStyle}
-    >
+    <html lang="en" className={`${mode} h-full overflow-x-hidden`}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -230,10 +196,10 @@ export default function App() {
             />
           </Link>
           <div className="flex items-center">
-            <Button variant="ghost" asChild>
-              <NavLink to={path.to.about}>About</NavLink>
-            </Button>
             <div className="items-center gap-1 hidden md:flex">
+              <Button variant="ghost" asChild>
+                <NavLink to={path.to.about}>About</NavLink>
+              </Button>
               {user ? (
                 <AvatarMenu />
               ) : (

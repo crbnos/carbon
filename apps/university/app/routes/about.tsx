@@ -15,9 +15,9 @@ export default function AboutRoute() {
         >
           What do you want to learn?
         </Heading>
-        <p className="text-base max-w-2xl">
+        <p className="text-muted-foreground text-balance text-left font-medium tracking-tighter text-lg max-w-2xl">
           Want to take command of your business? Need a quick answer to a
-          problem? Test your knowledge and track your progress
+          problem? Test your knowledge and track your progress.
         </p>
         <div className="flex items-center gap-2">
           <Button
@@ -26,23 +26,73 @@ export default function AboutRoute() {
             leftIcon={<LuCirclePlay />}
             asChild
           >
-            <Link
-              to={path.to.video(sections[0].courses[0].topics[0].videos[0].id)}
-            >
-              Begin your first lesson
-            </Link>
-          </Button>
-          <Button
-            size="lg"
-            variant="secondary"
-            leftIcon={<LuBookOpen />}
-            asChild
-          >
-            <Link to={path.to.about}>See how it works</Link>
+            <Link to={path.to.login}>Sign up to register</Link>
           </Button>
         </div>
       </Hero>
-      <div className="w-full px-4 max-w-6xl mx-auto my-16"></div>
+      <section className="border-b">
+        <div className="flex flex-row gap-8 w-full px-4 max-w-6xl mx-auto my-24">
+          <div className="flex flex-col max-w-2xl gap-6">
+            <h3 className="text-muted-foreground uppercase text-sm font-display leading-[140%] tracking-tighter">
+              How it works
+            </h3>
+            <Heading size="h1" className="font-display max-w-2xl">
+              Register and Track Your Progress
+            </Heading>
+            <p className="text-muted-foreground text-balance text-left font-medium tracking-tighter text-lg">
+              Sign up to track your progress. Then join a course! All courses
+              are free, and you can earn your credential(s) for free too.
+              Courses in Carbon University are designed to build off of each
+              other as you follow the recommended path. You can also jump around
+              if you'd like to skip ahead on anything.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section>
+        <div className="flex flex-row gap-8 w-full px-4 max-w-6xl mx-auto my-24">
+          <div className="flex flex-col max-w-2xl gap-6">
+            <h3 className="text-muted-foreground uppercase text-sm font-display leading-[140%] tracking-tighter">
+              Challenges
+            </h3>
+            <Heading
+              size="h1"
+              className="font-display text-[#212578] dark:text-white max-w-2xl"
+            >
+              Take Challenges
+            </Heading>
+            <p className="text-muted-foreground text-balance text-left font-medium tracking-tighter text-lg">
+              Put your new Carbon knowledge to the test by taking challenges.
+              You'll need to score 100% to pass a challenge, but there is no
+              limit on the number of attempts.
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                size="lg"
+                variant="secondary"
+                leftIcon={<LuCirclePlay />}
+                asChild
+              >
+                <Link
+                  to={path.to.video(
+                    sections[0].courses[0].topics[0].videos[0].id
+                  )}
+                >
+                  Begin your first lesson
+                </Link>
+              </Button>
+              <Button
+                size="lg"
+                variant="secondary"
+                leftIcon={<LuBookOpen />}
+                asChild
+              >
+                <Link to={path.to.about}>See how it works</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
