@@ -12,7 +12,9 @@ export default function CourseRoute() {
 
   const totalDuration =
     course?.topics.reduce((acc, topic) => {
-      return acc + topic.videos.reduce((acc, video) => acc + video.duration, 0);
+      return (
+        acc + topic.lessons.reduce((acc, lesson) => acc + lesson.duration, 0)
+      );
     }, 0) ?? 0;
 
   const totalChallenges =
@@ -113,18 +115,18 @@ export default function CourseRoute() {
                 </div>
                 <div className="flex flex-col gap-8 py-8 w-full text-sm">
                   <div className="flex flex-col gap-0">
-                    {topic.videos.map((video) => (
+                    {topic.lessons.map((lesson) => (
                       <Link
-                        key={video.id}
-                        to={path.to.video(video.id)}
+                        key={lesson.id}
+                        to={path.to.lesson(lesson.id)}
                         className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
                       >
                         <div className="flex items-center gap-2">
                           <LuCirclePlay className="size-4 text-muted-foreground" />
-                          <span>{video.name}</span>
+                          <span>{lesson.name}</span>
                         </div>
                         <span className="text-muted-foreground text-xs">
-                          {formatDuration(video.duration)}
+                          {formatDuration(lesson.duration)}
                         </span>
                       </Link>
                     ))}
@@ -133,8 +135,11 @@ export default function CourseRoute() {
                     <Button
                       leftIcon={<LuFlag className="size-4" />}
                       variant="secondary"
+                      asChild
                     >
-                      Take Topic Challenge
+                      <Link to={path.to.challenge(topic.id)}>
+                        Take Topic Challenge
+                      </Link>
                     </Button>
                   )}
                 </div>

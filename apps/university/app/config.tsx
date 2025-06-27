@@ -30,14 +30,15 @@ type Topic = {
   id: string;
   description: string;
   challenge: Question[];
-  videos: Video[];
+  lessons: Lesson[];
 };
 
 type Question = any;
 
-type Video = {
+type Lesson = {
   name: string;
   id: string;
+  videoId: string;
   description: string;
   duration: number;
 };
@@ -62,21 +63,25 @@ export const sections: Config = [
             description:
               "This topic covers the basics of Carbon. Here you will learn what it is, how the platform and modules work, and the architecture.",
             challenge: [],
-            videos: [
+            lessons: [
               {
                 id: "what-is-carbon",
+                videoId: "1234567890",
                 name: "What is Carbon?",
-                description: "",
+                description:
+                  "Meet Carbon, the next generation of accessible, scalable, and data-centric ERP/MES/QMS software. Carbon was designed from the ground up to be approachable and easy to get started with, but highly flexible and capable of scaling up to the largest projects.",
                 duration: 100,
               },
               {
                 id: "about-carbon-modules",
+                videoId: "1234567890",
                 name: "About Carbon's Modules",
                 description: "",
                 duration: 100,
               },
               {
                 id: "carbon-architecture",
+                videoId: "1234567890",
                 name: "Carbon's Architecture",
                 description: "",
                 duration: 100,
@@ -96,10 +101,11 @@ export const sections: Config = [
             description:
               "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences. This is the first step to getting your organization ready to use Carbon.",
             challenge: [],
-            videos: [
+            lessons: [
               {
                 id: "company-setup",
                 name: "Company Setup",
+                videoId: "1234567890",
                 description:
                   "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences. This is the first step to getting your organization ready to use Carbon.",
                 duration: 100,
@@ -107,6 +113,7 @@ export const sections: Config = [
               {
                 id: "users-setup",
                 name: "Users & Permissions",
+                videoId: "1234567890",
                 description:
                   "Learn how to setup your users in Carbon. This includes creating your users, adding users, and setting up your users' preferences.",
                 duration: 100,
@@ -114,6 +121,7 @@ export const sections: Config = [
               {
                 id: "resources-setup",
                 name: "Resources",
+                videoId: "1234567890",
                 description:
                   "Learn how to setup your work centers, machines, and processes in Carbon. This is the first step to getting your organization ready to use Carbon.",
                 duration: 100,
@@ -121,6 +129,7 @@ export const sections: Config = [
               {
                 id: "integrations-setup",
                 name: "Integrations",
+                videoId: "1234567890",
                 description: "Learn how to setup your integrations in Carbon.",
                 duration: 100,
               },
@@ -131,7 +140,7 @@ export const sections: Config = [
     ],
   },
   {
-    name: "Bill of Materials",
+    name: "Parts & Materials",
     background: "#4AA99D",
     foreground: "#fff",
     id: "bom",
@@ -163,7 +172,7 @@ export const sections: Config = [
     courses: [],
   },
   {
-    name: "Quality",
+    name: "Shipping & Receiving",
     background: "#EF8729",
     foreground: "#fff",
     id: "quality",
@@ -171,7 +180,7 @@ export const sections: Config = [
     courses: [],
   },
   {
-    name: "Developing",
+    name: "Quality",
     background: "#DD6444",
     foreground: "#fff",
     id: "developing",
@@ -179,19 +188,19 @@ export const sections: Config = [
     courses: [],
   },
   {
-    name: "Example",
-    background: "#AB7DB3",
+    name: "Developing",
+    background: "#8487C5", // "#AB7DB3",
     foreground: "#fff",
     id: "example-1",
     icon: <LuCrown />,
     courses: [],
   },
-  {
-    name: "Example",
-    background: "#8487C5",
-    foreground: "#fff",
-    id: "example-2",
-    icon: <LuCrown />,
-    courses: [],
-  },
+  // {
+  //   name: "Example",
+  //   background: "#8487C5",
+  //   foreground: "#fff",
+  //   id: "example-2",
+  //   icon: <LuCrown />,
+  //   courses: [],
+  // },
 ];

@@ -295,6 +295,7 @@ import type {
   ShortcutDefinition,
 } from "./hooks/useShortcutKeys";
 import { cn } from "./utils/cn";
+import { copyToClipboard } from "./utils/dom";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 
 export * from "./hooks";
@@ -551,6 +552,7 @@ export {
   VStack,
   buttonVariants,
   cn,
+  copyToClipboard,
   getValidChildren,
   multiSelectTriggerVariants,
   reactNodeToString,
