@@ -23,7 +23,7 @@ export async function getBase64ImageFromSupabase(
 ) {
   function arrayBufferToBase64(buffer: ArrayBuffer): string {
     const binary = String.fromCharCode(...new Uint8Array(buffer));
-    return Buffer.from(binary).toString("base64");
+    return btoa(binary);
   }
 
   const { data, error } = await client.storage.from("private").download(path);
