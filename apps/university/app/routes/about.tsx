@@ -74,8 +74,8 @@ export default function AboutRoute() {
                 asChild
               >
                 <Link
-                  to={path.to.video(
-                    sections[0].courses[0].topics[0].videos[0].id
+                  to={path.to.lesson(
+                    sections[0].courses[0].topics[0].lessons[0].id
                   )}
                 >
                   Begin your first lesson

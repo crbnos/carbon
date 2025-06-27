@@ -1,8 +1,9 @@
 import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
+const challenge = "/challenge"; // from ~/routes/challenge+ folder
 const course = "/course"; // from ~/routes/course+ folder
-const video = "/video"; // from ~/routes/video+ folder
+const lesson = "/lesson"; // from ~/routes/lesson+ folder
 
 const ERP_URL = getAppUrl();
 
@@ -11,6 +12,7 @@ export const path = {
     about: "/about",
     accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
+    challenge: (topicId: string) => generatePath(`${challenge}/${topicId}`),
     course: (sectionId: string, courseId: string) =>
       generatePath(`${course}/${sectionId}/${courseId}`),
     dashboard: `${ERP_URL}/x`,
@@ -19,7 +21,7 @@ export const path = {
     logout: "/logout",
     refreshSession: "/refresh-session",
     root: "/",
-    video: (id: string) => generatePath(`${video}/${id}`),
+    lesson: (id: string) => generatePath(`${lesson}/${id}`),
   },
 } as const;
 

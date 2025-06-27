@@ -4,7 +4,14 @@ import {
   getSessionFlash,
 } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { Button, Heading, IconButton, toast, Toaster } from "@carbon/react";
+import {
+  Button,
+  Heading,
+  IconButton,
+  toast,
+  Toaster,
+  TooltipProvider,
+} from "@carbon/react";
 import {
   isRouteErrorResponse,
   Link,
@@ -145,7 +152,7 @@ function Document({
         <Links />
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
         <Scripts />
