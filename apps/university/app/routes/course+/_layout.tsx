@@ -1,0 +1,77 @@
+import { Button, Heading } from "@carbon/react";
+import { Link, Outlet } from "@remix-run/react";
+import { LuBookOpen, LuCirclePlay } from "react-icons/lu";
+import { Hero } from "~/components/Hero";
+import { sections } from "~/config";
+import { path } from "~/utils/path";
+
+export default function CourseLayout() {
+  return (
+    <div className="w-full flex flex-col">
+      <Hero>
+        <Heading
+          size="h1"
+          className="font-display text-[#212578] dark:text-white max-w-xl"
+        >
+          Your Journey Starts Here
+        </Heading>
+        <p className="text-base max-w-xl">
+          Learn the basics of Carbon and start your journey to becoming an
+          expert in Carbon. All for free.
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            size="lg"
+            variant="secondary"
+            leftIcon={<LuCirclePlay />}
+            asChild
+          >
+            <Link
+              to={path.to.video(sections[0].courses[0].topics[0].videos[0].id)}
+            >
+              Begin your first lesson
+            </Link>
+          </Button>
+          <Button
+            size="lg"
+            variant="secondary"
+            leftIcon={<LuBookOpen />}
+            asChild
+          >
+            <Link to={path.to.about}>See how it works</Link>
+          </Button>
+        </div>
+      </Hero>
+      <div className="w-full px-4 max-w-6xl mx-auto my-16">
+        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
+          <nav className="space-y-4">
+            {sections.map((section) => (
+              <div key={section.id} className="space-y-2">
+                <h3
+                  className="font-display font-bold uppercase text-xs"
+                  style={{ color: section.background }}
+                >
+                  {section.name}
+                </h3>
+                <div className="space-y-0">
+                  {section.courses.map((course) => (
+                    <Link
+                      key={course.id}
+                      to={path.to.course(section.id, course.id)}
+                      className="block py-1 text-sm hover:underline"
+                    >
+                      {course.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+          <main>
+            <Outlet />
+          </main>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,16 +1,22 @@
-import { error, getBrowserEnv } from "@carbon/auth";
-import { getSessionFlash } from "@carbon/auth/session.server";
+import { error, getBrowserEnv, getCarbon } from "@carbon/auth";
+import {
+  getOrRefreshAuthSession,
+  getSessionFlash,
+} from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { Button, Heading, toast, Toaster } from "@carbon/react";
+import { Button, Heading, IconButton, toast, Toaster } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { themes } from "@carbon/utils";
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
+  NavLink,
   Outlet,
   Scripts,
   ScrollRestoration,
+  useFetcher,
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
@@ -27,9 +33,13 @@ import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
+import { LuFingerprint, LuMoon, LuSun } from "react-icons/lu";
+import AvatarMenu from "./components/AvatarMenu";
 import { useMode } from "./hooks/useMode";
+import { useOptionalUser } from "./hooks/useUser";
 import { getTheme } from "./services/theme.server";
 import { modeValidator } from "./types/validators";
+import { path } from "./utils/path";
 
 export const config = { runtime: "edge", regions: ["iad1"] };
 
@@ -44,7 +54,7 @@ export function links() {
 export const meta: MetaFunction = () => {
   return [
     {
-      title: "Carbon | Starter",
+      title: "Carbon University",
     },
   ];
 };
@@ -56,6 +66,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
   } = getBrowserEnv();
+
+  let session = await getOrRefreshAuthSession(request);
+
+  let user = null;
+
+  if (session) {
+    const client = getCarbon(session.accessToken);
+
+    const authUser = await client
+      .from("user")
+      .select("*")
+      .eq("id", session.userId)
+      .single();
+
+    if (authUser.data) {
+      user = authUser.data;
+    }
+  }
 
   const sessionFlash = await getSessionFlash(request);
 
@@ -70,6 +98,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       mode: getMode(request),
       theme: getTheme(request),
       result: sessionFlash?.result,
+      user,
+      session,
     },
     {
       headers: sessionFlash?.headers,
@@ -177,8 +207,65 @@ export default function App() {
   /* Dark/Light Mode */
   const mode = useMode();
 
+  const fetcher = useFetcher<typeof action>();
+  const user = useOptionalUser();
+
   return (
     <Document mode={mode} theme={theme}>
+      <header className="flex select-none items-center py-4 pl-5 pr-2 h-[var(--header-height)]">
+        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-2 z-logo text-foreground w-full">
+          <Link
+            to="/"
+            className="cursor-pointer flex flex-row items-end gap-2 flex-shrink-0 font-display"
+          >
+            <img
+              src="/carbon-word-light.svg"
+              alt="Carbon"
+              className="h-7 w-auto block dark:hidden"
+            />
+            <img
+              src="/carbon-word-dark.svg"
+              alt="Carbon"
+              className="h-7 w-auto hidden dark:block"
+            />
+          </Link>
+          <div className="flex items-center">
+            <Button variant="ghost" asChild>
+              <NavLink to={path.to.about}>About</NavLink>
+            </Button>
+            <div className="items-center gap-1 hidden md:flex">
+              {user ? (
+                <AvatarMenu />
+              ) : (
+                <>
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer"
+                    rightIcon={<LuFingerprint className="size-4" />}
+                    asChild
+                  >
+                    <NavLink to={path.to.login}>Login</NavLink>
+                  </Button>
+                  <fetcher.Form action={path.to.root} method="post">
+                    <input
+                      type="hidden"
+                      name="mode"
+                      value={mode === "light" ? "dark" : "light"}
+                    />
+                    <IconButton
+                      aria-label="Toggle Light Mode and Dark Mode"
+                      type="submit"
+                      variant="ghost"
+                      icon={mode === "light" ? <LuMoon /> : <LuSun />}
+                      className="cursor-pointer"
+                    />
+                  </fetcher.Form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </header>
       <Outlet />
       <script
         dangerouslySetInnerHTML={{

@@ -93,6 +93,19 @@ export async function getAuthSession(
   return session.get(SESSION_KEY);
 }
 
+export async function getOrRefreshAuthSession(
+  request: Request
+): Promise<AuthSession | null> {
+  const session = await getAuthSession(request);
+  if (!session) return null;
+
+  if (isExpiringSoon(session.expiresAt)) {
+    return refreshAuthSession(request);
+  }
+
+  return session;
+}
+
 export async function getSessionFlash(request: Request) {
   const session = await getSession(request);
 

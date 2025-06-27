@@ -1,20 +1,25 @@
 import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
+import { generatePath } from "@remix-run/react";
 
-const x = "/x"; // from ~/routes/x+ folder
+const course = "/course"; // from ~/routes/course+ folder
+const video = "/video"; // from ~/routes/video+ folder
 
 const ERP_URL = getAppUrl();
 
 export const path = {
   to: {
-    authenticatedRoot: x,
+    about: "/about",
     accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
+    course: (sectionId: string, courseId: string) =>
+      generatePath(`${course}/${sectionId}/${courseId}`),
     dashboard: `${ERP_URL}/x`,
     healthcheck: "/healthcheck",
     login: "/login",
     logout: "/logout",
     refreshSession: "/refresh-session",
     root: "/",
+    video: (id: string) => generatePath(`${video}/${id}`),
   },
 } as const;
 

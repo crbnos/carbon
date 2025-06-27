@@ -25,7 +25,7 @@ type User = PersonalData & {
 export function useUser(): User {
   const data = useRouteData<{
     user: unknown;
-  }>(path.to.authenticatedRoot);
+  }>(path.to.root);
 
   if (data?.user && isUser(data.user)) {
     return data.user;
@@ -50,9 +50,7 @@ function isUser(value: any): value is User {
 export function useOptionalUser() {
   const data = useRouteData<{
     user: unknown;
-  }>(path.to.authenticatedRoot);
-
-  console.log(data);
+  }>(path.to.root);
 
   if (data?.user && isUser(data.user)) {
     return data.user;
