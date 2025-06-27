@@ -1,4 +1,11 @@
-import { LuBookOpen } from "react-icons/lu";
+import {
+  LuBookOpen,
+  LuCode,
+  LuCrown,
+  LuShield,
+  LuShoppingCart,
+  LuSquareStack,
+} from "react-icons/lu";
 
 type Config = Section[];
 
@@ -38,7 +45,7 @@ type Video = {
 export const sections: Config = [
   {
     name: "Getting Started",
-    background: "#00bba7",
+    background: "#6041d0",
     foreground: "#fff",
     id: "getting-started",
     icon: <LuBookOpen />,
@@ -78,19 +85,113 @@ export const sections: Config = [
           },
         ],
       },
-      // {
-      //   name: "Setup",
-      //   id: "setup",
-      //   description: "Learn about Carbon's architecture and how it works.",
-      // },
+      {
+        name: "Getting Setup",
+        id: "getting-setup",
+        description: "Learn how to setup your organization to use Carbon.",
+        topics: [
+          {
+            name: "Setting Up Your Company",
+            id: "company-setup",
+            description:
+              "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences. This is the first step to getting your organization ready to use Carbon.",
+            challenge: [],
+            videos: [
+              {
+                id: "company-setup",
+                name: "Company Setup",
+                description:
+                  "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences. This is the first step to getting your organization ready to use Carbon.",
+                duration: 100,
+              },
+              {
+                id: "users-setup",
+                name: "Users & Permissions",
+                description:
+                  "Learn how to setup your users in Carbon. This includes creating your users, adding users, and setting up your users' preferences.",
+                duration: 100,
+              },
+              {
+                id: "resources-setup",
+                name: "Resources",
+                description:
+                  "Learn how to setup your work centers, machines, and processes in Carbon. This is the first step to getting your organization ready to use Carbon.",
+                duration: 100,
+              },
+              {
+                id: "integrations-setup",
+                name: "Integrations",
+                description: "Learn how to setup your integrations in Carbon.",
+                duration: 100,
+              },
+            ],
+          },
+        ],
+      },
     ],
   },
-  // {
-  //   name: "Selling",
-  //   background: "#6041d0",
-  //   foreground: "#fff",
-  //   id: "selling",
-  //   icon: <LuCrown />,
-  //   courses: [],
-  // },
+  {
+    name: "Bill of Materials",
+    background: "#4AA99D",
+    foreground: "#fff",
+    id: "bom",
+    icon: <LuSquareStack />,
+    courses: [],
+  },
+  {
+    name: "Selling",
+    background: "#488FB9",
+    foreground: "#fff",
+    id: "selling",
+    icon: <LuCrown />,
+    courses: [],
+  },
+  {
+    name: "Manufacturing",
+    background: "#78B2C4",
+    foreground: "#fff",
+    id: "selling",
+    icon: <LuCrown />,
+    courses: [],
+  },
+  {
+    name: "Buying",
+    background: "#EFB655",
+    foreground: "#fff",
+    id: "buying",
+    icon: <LuShoppingCart />,
+    courses: [],
+  },
+  {
+    name: "Quality",
+    background: "#EF8729",
+    foreground: "#fff",
+    id: "quality",
+    icon: <LuShield />,
+    courses: [],
+  },
+  {
+    name: "Developing",
+    background: "#DD6444",
+    foreground: "#fff",
+    id: "developing",
+    icon: <LuCode />,
+    courses: [],
+  },
+  {
+    name: "Example",
+    background: "#AB7DB3",
+    foreground: "#fff",
+    id: "example-1",
+    icon: <LuCrown />,
+    courses: [],
+  },
+  {
+    name: "Example",
+    background: "#8487C5",
+    foreground: "#fff",
+    id: "example-2",
+    icon: <LuCrown />,
+    courses: [],
+  },
 ];

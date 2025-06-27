@@ -25,8 +25,8 @@ export default function CourseRoute() {
   }
 
   return (
-    <VStack spacing={4}>
-      <div className="flex flex-col">
+    <VStack spacing={4} className="w-full">
+      <div className="flex flex-col w-full">
         <div
           className="border rounded rounded-b-none px-8 py-3"
           style={{
@@ -86,61 +86,63 @@ export default function CourseRoute() {
         </div>
       </div>
 
-      {course.topics.map((topic, index) => {
-        const isFirst = index === 0;
-        const isLast = index === course.topics.length - 1;
-        return (
-          <div
-            key={topic.id}
-            className={cn(
-              "border p-8 w-full",
-              isFirst && "rounded-t",
-              isLast && "rounded-b",
-              isFirst && !isLast && "border-b-0 rounded-b-none",
-              isLast && !isFirst && "border-t-0 rounded-t-none"
-            )}
-          >
-            <div className="grid grid-cols-2 gap-12">
-              <div className="flex flex-col gap-1">
-                <h3 className="text-[10px] uppercase font-display font-bold text-muted-foreground">
-                  Topic
-                </h3>
-                <h2 className="text-xl font-display tracking-tight">
-                  {topic.name}
-                </h2>
-                <p className="text-sm">{topic.description}</p>
-              </div>
-              <div className="flex flex-col gap-8 py-8 w-full text-sm">
-                <div className="flex flex-col gap-0">
-                  {topic.videos.map((video) => (
-                    <Link
-                      key={video.id}
-                      to={path.to.video(video.id)}
-                      className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
-                    >
-                      <div className="flex items-center gap-2">
-                        <LuCirclePlay className="size-4 text-muted-foreground" />
-                        <span>{video.name}</span>
-                      </div>
-                      <span className="text-muted-foreground text-xs">
-                        {formatDuration(video.duration)}
-                      </span>
-                    </Link>
-                  ))}
+      <div className="flex flex-col w-full">
+        {course.topics.map((topic, index) => {
+          const isFirst = index === 0;
+          const isLast = index === course.topics.length - 1;
+          return (
+            <div
+              key={topic.id}
+              className={cn(
+                "border p-8 w-full",
+                isFirst && "rounded-t",
+                isLast && "rounded-b",
+                isFirst && !isLast && "rounded-b-none",
+                isLast && !isFirst && "border-t-0 rounded-t-none"
+              )}
+            >
+              <div className="grid grid-cols-2 gap-12">
+                <div className="flex flex-col gap-1">
+                  <h3 className="text-[10px] uppercase font-display font-bold text-muted-foreground">
+                    Topic
+                  </h3>
+                  <h2 className="text-xl font-display tracking-tight">
+                    {topic.name}
+                  </h2>
+                  <p className="text-sm">{topic.description}</p>
                 </div>
-                {topic.challenge && (
-                  <Button
-                    leftIcon={<LuFlag className="size-4" />}
-                    variant="secondary"
-                  >
-                    Take Topic Challenge
-                  </Button>
-                )}
+                <div className="flex flex-col gap-8 py-8 w-full text-sm">
+                  <div className="flex flex-col gap-0">
+                    {topic.videos.map((video) => (
+                      <Link
+                        key={video.id}
+                        to={path.to.video(video.id)}
+                        className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
+                      >
+                        <div className="flex items-center gap-2">
+                          <LuCirclePlay className="size-4 text-muted-foreground" />
+                          <span>{video.name}</span>
+                        </div>
+                        <span className="text-muted-foreground text-xs">
+                          {formatDuration(video.duration)}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                  {topic.challenge && (
+                    <Button
+                      leftIcon={<LuFlag className="size-4" />}
+                      variant="secondary"
+                    >
+                      Take Topic Challenge
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </VStack>
   );
 }
