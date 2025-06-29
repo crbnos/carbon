@@ -38,7 +38,7 @@ import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
 import { sections } from "~/config";
 import { getMode, setMode } from "~/services/mode.server";
-import Background from "~/styles/background.css?url";
+
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
@@ -46,7 +46,6 @@ import { LuChevronDown, LuFingerprint, LuMoon, LuSun } from "react-icons/lu";
 import AvatarMenu from "./components/AvatarMenu";
 import { useMode } from "./hooks/useMode";
 import { useOptionalUser } from "./hooks/useUser";
-import { getTheme } from "./services/theme.server";
 import { modeValidator } from "./types/validators";
 import { path } from "./utils/path";
 
@@ -55,7 +54,6 @@ export const config = { runtime: "edge", regions: ["iad1"] };
 export function links() {
   return [
     { rel: "stylesheet", href: Tailwind },
-    { rel: "stylesheet", href: Background },
     { rel: "stylesheet", href: NProgress },
   ];
 }
@@ -125,7 +123,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         SUPABASE_ANON_KEY,
       },
       mode: getMode(request),
-      theme: getTheme(request),
       result: sessionFlash?.result,
       user,
       session,
@@ -159,7 +156,6 @@ function Document({
   children,
   title = "Carbon",
   mode = "light",
-  theme = "blue",
 }: {
   children: React.ReactNode;
   title?: string;
@@ -190,7 +186,7 @@ export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const result = loaderData?.result;
-  const theme = loaderData?.theme ?? "zinc";
+  const theme = "blue";
 
   const challengeAttempts = loaderData?.challengeAttempts ?? [];
 

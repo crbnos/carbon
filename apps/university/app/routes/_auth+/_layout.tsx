@@ -10,7 +10,6 @@ export default function PublicRoute() {
       >
         <Outlet />
       </VStack>
-      {/* <Background /> */}
     </div>
   );
 }
