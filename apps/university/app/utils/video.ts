@@ -6,7 +6,25 @@ export function formatDuration(duration: number) {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
-export function findLessonContext(lessonId: string) {
+export function findTopicContext(topicId: string) {
+  for (const section of sections) {
+    for (const course of section.courses) {
+      const topic = course.topics.find(
+        (topic: { id: string }) => topic.id === topicId
+      );
+      if (topic) {
+        return {
+          section,
+          course,
+          topic,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+export function getLessonContext(lessonId: string) {
   for (const section of sections) {
     for (const course of section.courses) {
       for (const topic of course.topics) {
@@ -27,8 +45,8 @@ export function findLessonContext(lessonId: string) {
   return null;
 }
 
-export function findNextLesson(lessonId: string) {
-  const context = findLessonContext(lessonId);
+export function getNextLesson(lessonId: string) {
+  const context = getLessonContext(lessonId);
   if (!context) return null;
 
   const { topic } = context;
@@ -43,8 +61,8 @@ export function findNextLesson(lessonId: string) {
   return topic.lessons[currentIndex + 1];
 }
 
-export function findPreviousLesson(lessonId: string) {
-  const context = findLessonContext(lessonId);
+export function getPreviousLesson(lessonId: string) {
+  const context = getLessonContext(lessonId);
   if (!context) return null;
 
   const { topic } = context;

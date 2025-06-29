@@ -1,11 +1,57 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, cn, Progress, VStack } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
-import { LuCirclePlay, LuFlag } from "react-icons/lu";
+import { json, Link, useLoaderData, useParams } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "@vercel/remix";
+import { LuCircleCheck, LuCirclePlay, LuRotateCcw } from "react-icons/lu";
 import { sections } from "~/config";
 import { path } from "~/utils/path";
 import { formatDuration } from "~/utils/video";
 
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const { client, userId } = await requirePermissions(request, {});
+  const { courseId } = params;
+
+  if (!courseId) {
+    throw new Error("Course ID is required");
+  }
+
+  const [lessonCompletions, challengeAttempts] = await Promise.all([
+    client
+      .from("lessonCompletion")
+      .select("lessonId")
+      .eq("userId", userId)
+      .eq("courseId", courseId),
+    client
+      .from("challengeAttempt")
+      .select("topicId, passed")
+      .eq("userId", userId)
+      .eq("courseId", courseId),
+  ]);
+
+  const completedLessons =
+    lessonCompletions.data?.map((completion) => completion.lessonId) ?? [];
+
+  const completedChallenges = Array.from(
+    new Set(
+      challengeAttempts.data
+        ?.filter((completion) => completion.passed)
+        .map((completion) => completion.topicId) ?? []
+    )
+  );
+
+  const attemptsByTopic =
+    challengeAttempts.data?.reduce<Record<string, number>>((acc, attempt) => {
+      acc[attempt.topicId] = (acc[attempt.topicId] ?? 0) + 1;
+      return acc;
+    }, {}) ?? {};
+
+  return json({ completedLessons, completedChallenges, attemptsByTopic });
+};
+
 export default function CourseRoute() {
+  const { completedLessons, completedChallenges, attemptsByTopic } =
+    useLoaderData<typeof loader>();
+
   const { sectionId, courseId } = useParams();
   const section = sections.find((section) => section.id === sectionId);
   const course = section?.courses.find((course) => course.id === courseId);
@@ -26,11 +72,15 @@ export default function CourseRoute() {
     throw new Error("Course not found");
   }
 
+  const completionPercentage = Math.round(
+    (completedChallenges.length / totalChallenges) * 100
+  );
+
   return (
     <VStack spacing={4} className="w-full">
       <div className="flex flex-col w-full">
         <div
-          className="border rounded rounded-b-none px-8 py-3"
+          className="border rounded-lg rounded-b-none px-8 py-3"
           style={{
             backgroundColor: section?.background,
             color: section?.foreground,
@@ -66,7 +116,7 @@ export default function CourseRoute() {
             <p className="text-sm">{course.description}</p>
           </div>
         </div>
-        <div className="border rounded rounded-t-none px-8 py-3">
+        <div className="border rounded-lg rounded-t-none px-8 py-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1">
@@ -81,8 +131,10 @@ export default function CourseRoute() {
               </div>
             </div>
             <div className="flex items-center gap-1 text-xs">
-              <span className="font-bold text-emerald-500">0%</span>
-              <Progress value={0} />
+              <span className="font-bold text-emerald-500">
+                {completionPercentage}%
+              </span>
+              <Progress value={completionPercentage} />
             </div>
           </div>
         </div>
@@ -90,6 +142,12 @@ export default function CourseRoute() {
 
       <div className="flex flex-col w-full">
         {course.topics.map((topic, index) => {
+          const hasChallenge = topic.challenge && topic.challenge.length > 0;
+          const isChallengeCompleted =
+            hasChallenge && completedChallenges.includes(topic.id);
+          const isChallengeAttempted =
+            hasChallenge && attemptsByTopic[topic.id];
+          const challengeAttempts = attemptsByTopic[topic.id] ?? 0;
           const isFirst = index === 0;
           const isLast = index === course.topics.length - 1;
           return (
@@ -97,8 +155,8 @@ export default function CourseRoute() {
               key={topic.id}
               className={cn(
                 "border p-8 w-full",
-                isFirst && "rounded-t",
-                isLast && "rounded-b",
+                isFirst && "rounded-t-lg",
+                isLast && "rounded-b-lg",
                 isFirst && !isLast && "rounded-b-none",
                 isLast && !isFirst && "border-t-0 rounded-t-none"
               )}
@@ -115,33 +173,60 @@ export default function CourseRoute() {
                 </div>
                 <div className="flex flex-col gap-8 py-8 w-full text-sm">
                   <div className="flex flex-col gap-0">
-                    {topic.lessons.map((lesson) => (
-                      <Link
-                        key={lesson.id}
-                        to={path.to.lesson(lesson.id)}
-                        className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
-                      >
-                        <div className="flex items-center gap-2">
-                          <LuCirclePlay className="size-4 text-muted-foreground" />
-                          <span>{lesson.name}</span>
-                        </div>
-                        <span className="text-muted-foreground text-xs">
-                          {formatDuration(lesson.duration)}
-                        </span>
-                      </Link>
-                    ))}
+                    {topic.lessons.map((lesson) => {
+                      const isCompleted = completedLessons.includes(lesson.id);
+                      return (
+                        <Link
+                          key={lesson.id}
+                          to={path.to.lesson(lesson.id)}
+                          className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
+                        >
+                          <div className="flex items-center gap-2">
+                            {isCompleted ? (
+                              <LuCircleCheck className="size-4 text-emerald-500" />
+                            ) : (
+                              <LuCirclePlay className="size-4 text-muted-foreground" />
+                            )}
+                            <span>{lesson.name}</span>
+                          </div>
+                          <span className="text-muted-foreground text-xs">
+                            {formatDuration(lesson.duration)}
+                          </span>
+                        </Link>
+                      );
+                    })}
                   </div>
-                  {topic.challenge && (
-                    <Button
-                      leftIcon={<LuFlag className="size-4" />}
-                      variant="secondary"
-                      asChild
-                    >
-                      <Link to={path.to.challenge(topic.id)}>
-                        Take Topic Challenge
-                      </Link>
-                    </Button>
-                  )}
+                  {hasChallenge ? (
+                    isChallengeCompleted ? (
+                      <Button
+                        variant="primary"
+                        leftIcon={
+                          <LuCircleCheck className="size-4 text-emerald-500" />
+                        }
+                      >
+                        Topic Challenge Completed
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        leftIcon={<LuRotateCcw className="size-4" />}
+                        asChild
+                      >
+                        <Link to={path.to.challenge(topic.id)}>
+                          {isChallengeAttempted ? (
+                            <span>
+                              Retake Topic Challenge{" "}
+                              <span className="text-xs text-muted-foreground italic">
+                                {challengeAttempts} attempt made
+                              </span>
+                            </span>
+                          ) : (
+                            "Take Topic Challenge"
+                          )}
+                        </Link>
+                      </Button>
+                    )
+                  ) : null}
                 </div>
               </div>
             </div>

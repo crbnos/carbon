@@ -8,6 +8,7 @@ import {
   Button,
   Heading,
   IconButton,
+  Progress,
   toast,
   Toaster,
   TooltipProvider,
@@ -33,6 +34,7 @@ import type {
 } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
+import { sections } from "~/config";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -75,25 +77,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let session = await getOrRefreshAuthSession(request);
 
   let user = null;
+  let completedChallenges: {
+    courseId: string;
+    topicId: string;
+  }[] = [];
 
   if (session) {
     const client = getCarbon(session.accessToken);
 
-    const authUser = await client
-      .from("user")
-      .select("*")
-      .eq("id", session.userId)
-      .single();
+    const [authUser, challengeAttempts] = await Promise.all([
+      client.from("user").select("*").eq("id", session.userId).single(),
+      client
+        .from("challengeAttempt")
+        .select("courseId, topicId")
+        .eq("userId", session.userId)
+        .eq("passed", true),
+    ]);
 
     if (authUser.data) {
       user = authUser.data;
     }
+
+    completedChallenges = challengeAttempts.data ?? [];
   }
 
   const sessionFlash = await getSessionFlash(request);
 
   return json(
     {
+      completedChallenges,
       env: {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
@@ -167,6 +179,7 @@ export default function App() {
   const env = loaderData?.env ?? {};
   const result = loaderData?.result;
   const theme = loaderData?.theme ?? "zinc";
+  const completedChallenges = loaderData?.completedChallenges ?? [];
 
   /* Toast Messages */
   useEffect(() => {
@@ -183,10 +196,29 @@ export default function App() {
   const fetcher = useFetcher<typeof action>();
   const user = useOptionalUser();
 
+  // Calculate total challenges from sections config
+  const totalChallenges = sections.reduce((total, section) => {
+    return (
+      total +
+      section.courses.reduce((courseTotal, course) => {
+        return (
+          courseTotal +
+          course.topics.reduce((topicTotal, topic) => {
+            return topicTotal + (topic.challenge ? 1 : 0);
+          }, 0)
+        );
+      }, 0)
+    );
+  }, 0);
+
+  const completionPercentage = Math.round(
+    (completedChallenges.length / totalChallenges) * 100
+  );
+
   return (
     <Document mode={mode} theme={theme}>
       <header className="flex select-none items-center py-4 pl-5 pr-2 h-[var(--header-height)]">
-        <div className="max-w-6xl mx-auto px-4 flex items-center justify-between gap-2 z-logo text-foreground w-full">
+        <div className="max-w-5xl mx-auto px-4 flex items-center justify-between gap-2 z-logo text-foreground w-full">
           <Link
             to="/"
             className="cursor-pointer flex flex-row items-end gap-2 flex-shrink-0 font-display"
@@ -239,6 +271,13 @@ export default function App() {
           </div>
         </div>
       </header>
+      {user && (
+        <div className="w-full bg-primary dark:bg-[#6041d0]">
+          <div className="max-w-5xl mx-auto px-3 py-4 flex flex-col gap-2 z-logo text-white w-full">
+            <Progress value={completionPercentage} />
+          </div>
+        </div>
+      )}
       <Outlet />
       <script
         dangerouslySetInnerHTML={{

@@ -1,41 +1,154 @@
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button } from "@carbon/react";
-import { Link, useParams } from "@remix-run/react";
 import {
+  json,
+  Link,
+  useFetcher,
+  useLoaderData,
+  useParams,
+} from "@remix-run/react";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import {
+  LuCheck,
   LuChevronLeft,
   LuChevronRight,
+  LuCircleCheck,
   LuCirclePlay,
   LuFlag,
 } from "react-icons/lu";
 import Share from "~/components/Share";
 import { path } from "~/utils/path";
 import {
-  findLessonContext,
-  findNextLesson,
-  findPreviousLesson,
   formatDuration,
+  getLessonContext,
+  getNextLesson,
+  getPreviousLesson,
 } from "~/utils/video";
 
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  const { client, userId } = await requirePermissions(request, {});
+  const { id: lessonId } = params;
+
+  if (!lessonId) {
+    throw new Error("Lesson ID is required");
+  }
+  const context = getLessonContext(lessonId);
+
+  if (!context) {
+    throw new Error("Lesson not found");
+  }
+
+  const { course, topic } = context;
+
+  const [lessonCompletions, challengeAttempts] = await Promise.all([
+    client
+      .from("lessonCompletion")
+      .select("lessonId")
+      .eq("userId", userId)
+      .eq("courseId", course.id),
+    client
+      .from("challengeAttempt")
+      .select("topicId, passed")
+      .eq("userId", userId)
+      .eq("topicId", topic.id),
+  ]);
+
+  const completedLessons =
+    lessonCompletions.data?.map((completion) => completion.lessonId) ?? [];
+  const completedChallenges =
+    challengeAttempts.data
+      ?.filter((completion) => completion.passed)
+      .map((completion) => completion.topicId) ?? [];
+  const attemptsByTopic =
+    challengeAttempts.data?.reduce<Record<string, number>>(
+      (acc, completion) => {
+        acc[completion.topicId] = (acc[completion.topicId] ?? 0) + 1;
+        return acc;
+      },
+      {}
+    ) ?? {};
+
+  return json({ completedLessons, completedChallenges, attemptsByTopic });
+};
+
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  const { client, userId } = await requirePermissions(request, {});
+  const { id: lessonId } = params;
+
+  if (!lessonId) {
+    return json(
+      { success: false, message: "Lesson ID is required" },
+      { status: 400 }
+    );
+  }
+
+  const context = getLessonContext(lessonId);
+  if (!context) {
+    return json(
+      { success: false, message: "Lesson not found" },
+      { status: 404 }
+    );
+  }
+  const { course } = context;
+
+  const insert = await client.from("lessonCompletion").insert({
+    userId,
+    courseId: course.id,
+    lessonId,
+  });
+
+  if (insert.error) {
+    return json(
+      { success: false, message: "Failed to complete lesson" },
+      { status: 500 }
+    );
+  }
+
+  return json({ success: true });
+};
+
 export default function LessonRoute() {
+  const { completedLessons, completedChallenges, attemptsByTopic } =
+    useLoaderData<typeof loader>();
   const { id } = useParams();
 
   if (!id) {
     throw new Error("Lesson ID is required");
   }
 
-  const context = findLessonContext(id);
+  const context = getLessonContext(id);
 
   if (!context) {
     throw new Error("Lesson not found");
   }
 
   const { section, course, topic, lesson } = context;
-  const nextLesson = findNextLesson(id);
-  const previousLesson = findPreviousLesson(id);
+  const nextLesson = getNextLesson(id);
+  const previousLesson = getPreviousLesson(id);
+  const hasChallenge = topic.challenge && topic.challenge.length > 0;
+  const isChallengeCompleted =
+    hasChallenge && completedChallenges.includes(topic.id);
+  const isChallengeAttempted = hasChallenge && attemptsByTopic[topic.id];
+  const challengeAttempts = attemptsByTopic[topic.id] ?? 0;
+
+  const fetcher = useFetcher<typeof action>();
+
+  const onComplete = async () => {
+    fetcher.submit(null, {
+      method: "POST",
+      action: path.to.lesson(id),
+    });
+  };
 
   return (
-    <div className="w-full px-4 max-w-6xl mx-auto mt-4 pb-24 flex flex-col gap-8">
+    <div className="w-full px-4 max-w-5xl mx-auto mt-4 pb-24 flex flex-col gap-8">
       <div className="flex items-center gap-2">
-        <Button variant="primary" leftIcon={<LuChevronLeft />} asChild>
+        <Button
+          variant="primary"
+          leftIcon={<LuChevronLeft />}
+          className="mr-2"
+          asChild
+        >
           <Link to={path.to.course(section.id, course.id)}>Back to course</Link>
         </Button>
 
@@ -64,11 +177,20 @@ export default function LessonRoute() {
           />
         </div>
         <div
-          className="w-full h-12 rounded-b-lg flex items-center justify-end px-3"
+          className="w-full h-12 rounded-b-lg flex items-center justify-end gap-2 px-3"
           style={{
             backgroundColor: section.background,
           }}
         >
+          <Button
+            variant="secondary"
+            leftIcon={<LuCheck className="size-4" />}
+            onClick={onComplete}
+            isDisabled={fetcher.state !== "idle"}
+            isLoading={fetcher.state !== "idle"}
+          >
+            Complete Lesson
+          </Button>
           <Share
             text={typeof window !== "undefined" ? window.location.href : ""}
           />
@@ -78,7 +200,7 @@ export default function LessonRoute() {
       <div className="grid grid-cols-1 md:grid-cols-[1fr_360px] gap-6">
         <div className="flex flex-col w-full">
           <div
-            className="border rounded rounded-b-none p-4"
+            className="border rounded-lg rounded-b-none p-4"
             style={{
               backgroundColor: section?.background,
               color: section?.foreground,
@@ -107,7 +229,7 @@ export default function LessonRoute() {
               </div>
             </div>
           </div>
-          <div className="flex flex-col gap-4 border rounded-b border-t-0 px-6 py-4">
+          <div className="flex flex-col gap-4 border rounded-b-lg border-t-0 px-6 py-4">
             <h4 className="text-lg font-display font-bold">Description</h4>
             <p className="text-base text-muted-foreground">
               {lesson.description}
@@ -156,42 +278,64 @@ export default function LessonRoute() {
               Lessons in this topic
             </h3>
             <div className="flex flex-col gap-1">
-              {topic.lessons.map((topicLesson) => (
-                <Link
-                  key={topicLesson.id}
-                  to={path.to.lesson(topicLesson.id)}
-                  className={`flex items-center justify-between gap-2 w-full rounded-md py-2 px-3 text-sm transition-colors ${
-                    topicLesson.id === lesson.id
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <LuCirclePlay className="size-4 text-muted-foreground" />
-                    <span
-                      className={
-                        topicLesson.id === lesson.id ? "font-medium" : ""
-                      }
-                    >
-                      {topicLesson.name}
+              {topic.lessons.map((topicLesson) => {
+                const isCompleted = completedLessons.includes(topicLesson.id);
+                return (
+                  <Link
+                    key={topicLesson.id}
+                    to={path.to.lesson(topicLesson.id)}
+                    className={`flex items-center justify-between gap-2 w-full rounded-md py-2 px-3 text-sm transition-colors ${
+                      topicLesson.id === lesson.id
+                        ? "bg-accent text-accent-foreground"
+                        : "hover:bg-accent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isCompleted ? (
+                        <LuCircleCheck className="size-4 text-emerald-500" />
+                      ) : (
+                        <LuCirclePlay className="size-4 text-muted-foreground" />
+                      )}
+                      <span
+                        className={
+                          topicLesson.id === lesson.id ? "font-medium" : ""
+                        }
+                      >
+                        {topicLesson.name}
+                      </span>
+                    </div>
+                    <span className="text-muted-foreground text-xs">
+                      {formatDuration(topicLesson.duration)}
                     </span>
-                  </div>
-                  <span className="text-muted-foreground text-xs">
-                    {formatDuration(topicLesson.duration)}
-                  </span>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </div>
-          {topic.challenge && (
-            <Button
-              variant={!nextLesson ? "primary" : "secondary"}
-              leftIcon={<LuFlag className="size-4" />}
-              asChild
-            >
-              <Link to={path.to.challenge(topic.id)}>Take Topic Challenge</Link>
-            </Button>
-          )}
+          {hasChallenge ? (
+            isChallengeCompleted ? (
+              <Button
+                variant="primary"
+                leftIcon={<LuCircleCheck className="size-4 text-emerald-500" />}
+              >
+                Topic Challenge Completed
+              </Button>
+            ) : (
+              <Button
+                variant="secondary"
+                leftIcon={<LuFlag className="size-4" />}
+                asChild
+              >
+                <Link to={path.to.challenge(topic.id)}>
+                  {isChallengeAttempted
+                    ? `Retake Topic Challenge (${challengeAttempts} attempt${
+                        challengeAttempts === 1 ? "" : "s"
+                      })`
+                    : "Take Topic Challenge"}
+                </Link>
+              </Button>
+            )
+          ) : null}
         </div>
       </div>
     </div>

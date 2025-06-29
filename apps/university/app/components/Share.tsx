@@ -20,7 +20,7 @@ const Share = ({
 }) => {
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = () => {
+  const onCopy = () => {
     copyToClipboard(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 1500);
@@ -32,7 +32,6 @@ const Share = ({
         <Button
           variant="secondary"
           aria-label="Copy"
-          size="sm"
           className={cn(
             isCopied && "text-emerald-500 hover:text-emerald-500",
             className
@@ -44,7 +43,7 @@ const Share = ({
               <LuCopy className="w-3 h-3" />
             )
           }
-          onClick={handleCopy}
+          onClick={onCopy}
         >
           Share
         </Button>

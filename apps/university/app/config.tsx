@@ -33,7 +33,12 @@ type Topic = {
   lessons: Lesson[];
 };
 
-type Question = any;
+interface Question {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number; // index of the correct option
+}
 
 type Lesson = {
   name: string;
@@ -55,14 +60,48 @@ export const sections: Config = [
         name: "Carbon Overview",
         id: "carbon-overview",
         description:
-          "Welcome to Carbon, a powerful ERP/MES/QMS software that uses web technology and a modular platform to offer a wide variety of configurations based on the customer’s needs. Learn about Carbon's architecture and setup in this first course.",
+          "Welcome to Carbon, a powerful ERP/MES/QMS software that uses web technology and a modular platform to offer a wide variety of configurations based on the customer's needs. Learn about Carbon's architecture and setup in this first course.",
         topics: [
           {
             name: "Introducing Carbon",
             id: "introduction",
             description:
               "This topic covers the basics of Carbon. Here you will learn what it is, how the platform and modules work, and the architecture.",
-            challenge: [],
+            challenge: [
+              {
+                id: "q1",
+                question: "What is Carbon?",
+                options: [
+                  "A programming language",
+                  "A powerful ERP/MES/QMS software",
+                  "A database management system",
+                  "A web framework",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q2",
+                question: "What technology does Carbon primarily use?",
+                options: [
+                  "Mobile apps",
+                  "Desktop software",
+                  "Web technology",
+                  "Cloud computing only",
+                ],
+                correctAnswer: 2,
+              },
+              {
+                id: "q3",
+                question: "How is Carbon designed to be?",
+                options: [
+                  "Complex and difficult to use",
+                  "Approachable and easy to get started with",
+                  "Only for large enterprises",
+                  "Limited in functionality",
+                ],
+                correctAnswer: 1,
+              },
+            ],
             lessons: [
               {
                 id: "what-is-carbon",
@@ -100,7 +139,32 @@ export const sections: Config = [
             id: "company-setup",
             description:
               "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences. This is the first step to getting your organization ready to use Carbon.",
-            challenge: [],
+            challenge: [
+              {
+                id: "q1",
+                question:
+                  "What is the first step to getting your organization ready to use Carbon?",
+                options: [
+                  "Setting up integrations",
+                  "Creating your company",
+                  "Adding users",
+                  "Setting up resources",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q2",
+                question:
+                  "Which of the following is NOT part of company setup?",
+                options: [
+                  "Creating your company",
+                  "Adding users",
+                  "Setting up preferences",
+                  "Installing software",
+                ],
+                correctAnswer: 3,
+              },
+            ],
             lessons: [
               {
                 id: "company-setup",
