@@ -1,12 +1,7 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbon } from "@carbon/auth";
+import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { Button } from "@carbon/react";
-import {
-  json,
-  Link,
-  useFetcher,
-  useLoaderData,
-  useParams,
-} from "@remix-run/react";
+import { json, Link, useFetcher, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import {
   LuCheck,
@@ -17,6 +12,7 @@ import {
   LuFlag,
 } from "react-icons/lu";
 import Share from "~/components/Share";
+import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   formatDuration,
@@ -26,7 +22,6 @@ import {
 } from "~/utils/video";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, userId } = await requirePermissions(request, {});
   const { id: lessonId } = params;
 
   if (!lessonId) {
@@ -38,41 +33,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     throw new Error("Lesson not found");
   }
 
-  const { course, topic } = context;
-
-  const [lessonCompletions, challengeAttempts] = await Promise.all([
-    client
-      .from("lessonCompletion")
-      .select("lessonId")
-      .eq("userId", userId)
-      .eq("courseId", course.id),
-    client
-      .from("challengeAttempt")
-      .select("topicId, passed")
-      .eq("userId", userId)
-      .eq("topicId", topic.id),
-  ]);
-
-  const completedLessons =
-    lessonCompletions.data?.map((completion) => completion.lessonId) ?? [];
-  const completedChallenges =
-    challengeAttempts.data
-      ?.filter((completion) => completion.passed)
-      .map((completion) => completion.topicId) ?? [];
-  const attemptsByTopic =
-    challengeAttempts.data?.reduce<Record<string, number>>(
-      (acc, completion) => {
-        acc[completion.topicId] = (acc[completion.topicId] ?? 0) + 1;
-        return acc;
-      },
-      {}
-    ) ?? {};
-
-  return json({ completedLessons, completedChallenges, attemptsByTopic });
+  return json({});
 };
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  const { client, userId } = await requirePermissions(request, {});
   const { id: lessonId } = params;
 
   if (!lessonId) {
@@ -89,10 +53,21 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       { status: 404 }
     );
   }
+
+  // Check if user is authenticated
+  const session = await getOrRefreshAuthSession(request);
+  if (!session) {
+    return json(
+      { success: false, message: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
   const { course } = context;
+  const client = getCarbon(session.accessToken);
 
   const insert = await client.from("lessonCompletion").insert({
-    userId,
+    userId: session.userId,
     courseId: course.id,
     lessonId,
   });
@@ -108,8 +83,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function LessonRoute() {
-  const { completedLessons, completedChallenges, attemptsByTopic } =
-    useLoaderData<typeof loader>();
+  const { lessonCompletions, challengeAttempts } = useProgress();
   const { id } = useParams();
 
   if (!id) {
@@ -126,10 +100,27 @@ export default function LessonRoute() {
   const nextLesson = getNextLesson(id);
   const previousLesson = getPreviousLesson(id);
   const hasChallenge = topic.challenge && topic.challenge.length > 0;
+
+  // Filter data for current course/topic
+  const completedLessons = lessonCompletions
+    .filter((completion) => completion.courseId === course.id)
+    .map((completion) => completion.lessonId);
+
+  const completedChallenges = challengeAttempts
+    .filter((attempt) => attempt.courseId === course.id && attempt.passed)
+    .map((attempt) => attempt.topicId);
+
+  const attemptsByTopic = challengeAttempts
+    .filter((attempt) => attempt.courseId === course.id)
+    .reduce<Record<string, number>>((acc, attempt) => {
+      acc[attempt.topicId] = (acc[attempt.topicId] ?? 0) + 1;
+      return acc;
+    }, {});
+
   const isChallengeCompleted =
     hasChallenge && completedChallenges.includes(topic.id);
   const isChallengeAttempted = hasChallenge && attemptsByTopic[topic.id];
-  const challengeAttempts = attemptsByTopic[topic.id] ?? 0;
+  const challengeAttemptCount = attemptsByTopic[topic.id] ?? 0;
 
   const fetcher = useFetcher<typeof action>();
 
@@ -209,14 +200,12 @@ export default function LessonRoute() {
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-4">
                 <div
-                  className="flex-shrink-0 size-12 text-2xl p-3 rounded-full border"
+                  className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg bg-black/20"
                   style={{
-                    backgroundColor: section?.background,
-                    borderColor: section?.foreground,
                     color: section?.foreground,
                   }}
                 >
-                  {section?.icon}
+                  {course.icon}
                 </div>
                 <div className="flex flex-col">
                   <h1 className="uppercase text-[10px] font-display font-bold">
@@ -328,8 +317,8 @@ export default function LessonRoute() {
               >
                 <Link to={path.to.challenge(topic.id)}>
                   {isChallengeAttempted
-                    ? `Retake Topic Challenge (${challengeAttempts} attempt${
-                        challengeAttempts === 1 ? "" : "s"
+                    ? `Retake Topic Challenge (${challengeAttemptCount} attempt${
+                        challengeAttemptCount === 1 ? "" : "s"
                       })`
                     : "Take Topic Challenge"}
                 </Link>

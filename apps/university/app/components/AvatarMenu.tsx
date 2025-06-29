@@ -1,4 +1,5 @@
 import {
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -17,7 +18,7 @@ import { useMode } from "~/hooks/useMode";
 import type { action } from "~/root";
 import { path } from "~/utils/path";
 
-const AvatarMenu = () => {
+const AvatarMenu = ({ className }: { className?: string }) => {
   const user = useUser();
   const name = `${user.firstName} ${user.lastName}`;
 
@@ -31,7 +32,12 @@ const AvatarMenu = () => {
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger className="outline-none focus-visible:outline-none">
+      <DropdownMenuTrigger
+        className={cn(
+          "outline-none focus-visible:outline-none cursor-pointer",
+          className
+        )}
+      >
         <Avatar path={user.avatarUrl} name={name} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
