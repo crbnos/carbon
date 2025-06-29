@@ -1,11 +1,4 @@
-import {
-  LuBookOpen,
-  LuCode,
-  LuCrown,
-  LuShield,
-  LuShoppingCart,
-  LuSquareStack,
-} from "react-icons/lu";
+import { LuCirclePlay, LuHexagon } from "react-icons/lu";
 
 type Config = Section[];
 
@@ -14,7 +7,6 @@ type Section = {
   id: string;
   background: string;
   foreground: string;
-  icon: React.ReactNode;
   courses: Course[];
 };
 
@@ -22,6 +14,7 @@ type Course = {
   name: string;
   id: string;
   description: string;
+  icon: React.ReactNode;
   topics: Topic[];
 };
 
@@ -54,13 +47,13 @@ export const sections: Config = [
     background: "#6041d0",
     foreground: "#fff",
     id: "getting-started",
-    icon: <LuBookOpen />,
     courses: [
       {
         name: "Carbon Overview",
         id: "carbon-overview",
         description:
           "Welcome to Carbon, a powerful ERP/MES/QMS software that uses web technology and a modular platform to offer a wide variety of configurations based on the customer's needs. Learn about Carbon's architecture and setup in this first course.",
+        icon: <LuHexagon />,
         topics: [
           {
             name: "Introducing Carbon",
@@ -133,6 +126,7 @@ export const sections: Config = [
         name: "Getting Setup",
         id: "getting-setup",
         description: "Learn how to setup your organization to use Carbon.",
+        icon: <LuCirclePlay />,
         topics: [
           {
             name: "Setting Up Your Company",
@@ -208,7 +202,6 @@ export const sections: Config = [
     background: "#4AA99D",
     foreground: "#fff",
     id: "bom",
-    icon: <LuSquareStack />,
     courses: [],
   },
   {
@@ -216,7 +209,6 @@ export const sections: Config = [
     background: "#488FB9",
     foreground: "#fff",
     id: "selling",
-    icon: <LuCrown />,
     courses: [],
   },
   {
@@ -224,7 +216,6 @@ export const sections: Config = [
     background: "#78B2C4",
     foreground: "#fff",
     id: "selling",
-    icon: <LuCrown />,
     courses: [],
   },
   {
@@ -232,7 +223,6 @@ export const sections: Config = [
     background: "#EFB655",
     foreground: "#fff",
     id: "buying",
-    icon: <LuShoppingCart />,
     courses: [],
   },
   {
@@ -240,7 +230,6 @@ export const sections: Config = [
     background: "#EF8729",
     foreground: "#fff",
     id: "quality",
-    icon: <LuShield />,
     courses: [],
   },
   {
@@ -248,7 +237,6 @@ export const sections: Config = [
     background: "#DD6444",
     foreground: "#fff",
     id: "developing",
-    icon: <LuCode />,
     courses: [],
   },
   {
@@ -256,7 +244,6 @@ export const sections: Config = [
     background: "#8487C5", // "#AB7DB3",
     foreground: "#fff",
     id: "example-1",
-    icon: <LuCrown />,
     courses: [],
   },
   // {
@@ -264,7 +251,6 @@ export const sections: Config = [
   //   background: "#8487C5",
   //   foreground: "#fff",
   //   id: "example-2",
-  //   icon: <LuCrown />,
   //   courses: [],
   // },
 ];

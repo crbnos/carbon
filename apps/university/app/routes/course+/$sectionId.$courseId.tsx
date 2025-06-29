@@ -1,56 +1,29 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { Button, cn, Progress, VStack } from "@carbon/react";
-import { json, Link, useLoaderData, useParams } from "@remix-run/react";
+import { json, Link, useParams } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
-import { LuCircleCheck, LuCirclePlay, LuRotateCcw } from "react-icons/lu";
+import {
+  LuCircleCheck,
+  LuCirclePlay,
+  LuFlag,
+  LuRotateCcw,
+} from "react-icons/lu";
 import { sections } from "~/config";
+import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
 import { formatDuration } from "~/utils/video";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { client, userId } = await requirePermissions(request, {});
   const { courseId } = params;
 
   if (!courseId) {
     throw new Error("Course ID is required");
   }
 
-  const [lessonCompletions, challengeAttempts] = await Promise.all([
-    client
-      .from("lessonCompletion")
-      .select("lessonId")
-      .eq("userId", userId)
-      .eq("courseId", courseId),
-    client
-      .from("challengeAttempt")
-      .select("topicId, passed")
-      .eq("userId", userId)
-      .eq("courseId", courseId),
-  ]);
-
-  const completedLessons =
-    lessonCompletions.data?.map((completion) => completion.lessonId) ?? [];
-
-  const completedChallenges = Array.from(
-    new Set(
-      challengeAttempts.data
-        ?.filter((completion) => completion.passed)
-        .map((completion) => completion.topicId) ?? []
-    )
-  );
-
-  const attemptsByTopic =
-    challengeAttempts.data?.reduce<Record<string, number>>((acc, attempt) => {
-      acc[attempt.topicId] = (acc[attempt.topicId] ?? 0) + 1;
-      return acc;
-    }, {}) ?? {};
-
-  return json({ completedLessons, completedChallenges, attemptsByTopic });
+  return json({});
 };
 
 export default function CourseRoute() {
-  const { completedLessons, completedChallenges, attemptsByTopic } =
-    useLoaderData<typeof loader>();
+  const { lessonCompletions, challengeAttempts } = useProgress();
 
   const { sectionId, courseId } = useParams();
   const section = sections.find((section) => section.id === sectionId);
@@ -72,8 +45,29 @@ export default function CourseRoute() {
     throw new Error("Course not found");
   }
 
-  const completionPercentage = Math.round(
-    (completedChallenges.length / totalChallenges) * 100
+  // Filter data for current course
+  const completedLessons = lessonCompletions
+    .filter((completion) => completion.courseId === course.id)
+    .map((completion) => completion.lessonId);
+
+  const completedChallenges = Array.from(
+    new Set(
+      challengeAttempts
+        .filter((attempt) => attempt.courseId === course.id && attempt.passed)
+        .map((attempt) => attempt.topicId)
+    )
+  );
+
+  const attemptsByTopic = challengeAttempts
+    .filter((attempt) => attempt.courseId === course.id)
+    .reduce<Record<string, number>>((acc, attempt) => {
+      acc[attempt.topicId] = (acc[attempt.topicId] ?? 0) + 1;
+      return acc;
+    }, {});
+
+  const completionPercentage = Math.min(
+    Math.round((completedChallenges.length / totalChallenges) * 100),
+    100
   );
 
   return (
@@ -96,13 +90,13 @@ export default function CourseRoute() {
           <div className="flex flex-col gap-4">
             <div className="flex items-start gap-4">
               <div
-                className="flex-shrink-0 size-12 text-2xl p-3 rounded-full"
+                className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg"
                 style={{
                   backgroundColor: section?.background,
                   color: section?.foreground,
                 }}
               >
-                {section?.icon}
+                {course.icon}
               </div>
               <div className="flex flex-col">
                 <h1 className="uppercase text-[10px] font-display font-bold text-muted-foreground">
@@ -209,7 +203,9 @@ export default function CourseRoute() {
                     ) : (
                       <Button
                         variant="secondary"
-                        leftIcon={<LuRotateCcw className="size-4" />}
+                        leftIcon={
+                          isChallengeAttempted ? <LuRotateCcw /> : <LuFlag />
+                        }
                         asChild
                       >
                         <Link to={path.to.challenge(topic.id)}>
@@ -217,7 +213,8 @@ export default function CourseRoute() {
                             <span>
                               Retake Topic Challenge{" "}
                               <span className="text-xs text-muted-foreground italic">
-                                {challengeAttempts} attempt made
+                                {challengeAttempts} attempt
+                                {challengeAttempts === 1 ? "" : "s"} made
                               </span>
                             </span>
                           ) : (

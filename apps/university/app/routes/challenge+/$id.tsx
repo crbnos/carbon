@@ -174,9 +174,9 @@ export default function ChallengeRoute() {
   const getAnswerStyles = (status: string | null) => {
     switch (status) {
       case "correct":
-        return "bg-green-100 border-green-500 text-green-800";
+        return "bg-emerald-100 border-emerald-500 text-emerald-800 dark:bg-emerald-900 dark:border-emerald-500 dark:text-emerald-500";
       case "incorrect":
-        return "bg-red-100 border-red-500 text-red-800";
+        return "bg-red-100 border-red-500 text-red-800 dark:bg-red-900 dark:border-red-500 dark:text-red-500";
       default:
         return "hover:bg-accent";
     }

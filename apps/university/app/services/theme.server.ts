@@ -6,7 +6,7 @@ const themes = [
   "neutral",
   "red",
   "rose",
-  "green",
+  "emerald",
   "blue",
   "yellow",
   "orange",

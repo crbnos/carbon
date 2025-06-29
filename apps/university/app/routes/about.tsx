@@ -1,6 +1,6 @@
 import { Button, Heading } from "@carbon/react";
 import { Link } from "@remix-run/react";
-import { LuBookOpen, LuCirclePlay } from "react-icons/lu";
+import { LuCirclePlay } from "react-icons/lu";
 import { Hero } from "~/components/Hero";
 import { sections } from "~/config";
 import { path } from "~/utils/path";
@@ -36,7 +36,10 @@ export default function AboutRoute() {
             <h3 className="text-muted-foreground uppercase text-sm font-display leading-[140%] tracking-tighter">
               How it works
             </h3>
-            <Heading size="h1" className="font-display max-w-2xl">
+            <Heading
+              size="h1"
+              className="font-display text-[#212578] dark:text-white max-w-2xl"
+            >
               Register and Track Your Progress
             </Heading>
             <p className="text-muted-foreground text-balance text-left font-medium tracking-tighter text-lg">
@@ -84,10 +87,10 @@ export default function AboutRoute() {
               <Button
                 size="lg"
                 variant="secondary"
-                leftIcon={<LuBookOpen />}
+                leftIcon={<LuCirclePlay />}
                 asChild
               >
-                <Link to={path.to.about}>See how it works</Link>
+                <Link to={path.to.login}>Sign up to take challenges</Link>
               </Button>
             </div>
           </div>
