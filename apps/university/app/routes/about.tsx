@@ -31,7 +31,7 @@ export default function AboutRoute() {
         </div>
       </Hero>
       <section className="border-b">
-        <div className="flex flex-row gap-8 w-full px-4 max-w-6xl mx-auto my-24">
+        <div className="flex flex-row gap-8 w-full px-4 max-w-5xl mx-auto my-24">
           <div className="flex flex-col max-w-2xl gap-6">
             <h3 className="text-muted-foreground uppercase text-sm font-display leading-[140%] tracking-tighter">
               How it works
@@ -50,7 +50,7 @@ export default function AboutRoute() {
         </div>
       </section>
       <section>
-        <div className="flex flex-row gap-8 w-full px-4 max-w-6xl mx-auto my-24">
+        <div className="flex flex-row gap-8 w-full px-4 max-w-5xl mx-auto my-24">
           <div className="flex flex-col max-w-2xl gap-6">
             <h3 className="text-muted-foreground uppercase text-sm font-display leading-[140%] tracking-tighter">
               Challenges

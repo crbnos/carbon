@@ -48,7 +48,7 @@ export default function CourseLayout() {
           </div>
         </Hero>
       )}
-      <div className="w-full px-4 max-w-6xl mx-auto my-16">
+      <div className="w-full px-4 max-w-5xl mx-auto my-16">
         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
           <nav className="space-y-4">
             {sections.map((section) => (

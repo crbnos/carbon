@@ -1904,6 +1904,126 @@ export type Database = {
           },
         ]
       }
+      challengeAttempt: {
+        Row: {
+          courseId: string
+          createdAt: string
+          id: number
+          passed: boolean
+          topicId: string
+          userId: string
+        }
+        Insert: {
+          courseId: string
+          createdAt?: string
+          id?: number
+          passed?: boolean
+          topicId: string
+          userId: string
+        }
+        Update: {
+          courseId?: string
+          createdAt?: string
+          id?: number
+          passed?: boolean
+          topicId?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challengeAttempt_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeAttempt_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeAttempt_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeAttempt_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeAttempt_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
+      challengeCompletion: {
+        Row: {
+          courseId: string
+          createdAt: string
+          topicId: string
+          userId: string
+        }
+        Insert: {
+          courseId: string
+          createdAt?: string
+          topicId: string
+          userId: string
+        }
+        Update: {
+          courseId?: string
+          createdAt?: string
+          topicId?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challengeCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challengeCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+        ]
+      }
       company: {
         Row: {
           addressLine1: string | null
@@ -11409,6 +11529,63 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+        ]
+      }
+      lessonCompletion: {
+        Row: {
+          courseId: string
+          createdAt: string
+          lessonId: string
+          userId: string
+        }
+        Insert: {
+          courseId: string
+          createdAt?: string
+          lessonId: string
+          userId: string
+        }
+        Update: {
+          courseId?: string
+          createdAt?: string
+          lessonId?: string
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessonCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessonCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessonCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessonCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessonCompletion_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
