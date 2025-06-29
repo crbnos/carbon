@@ -278,7 +278,7 @@ export default function ChallengeRoute() {
                 You can continue by returning to the course listing or you can
                 retry this challenge and try for 100%.
               </p>
-              <div className="flex items-center gap-4 w-full justify-center">
+              <div className="flex items-center gap-4 w-full justify-between">
                 <Button
                   size="lg"
                   variant="secondary"
