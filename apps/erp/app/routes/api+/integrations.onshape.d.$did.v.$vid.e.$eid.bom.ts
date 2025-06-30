@@ -124,7 +124,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select(
             "id, readableId, readableIdWithRevision, defaultMethodType, replenishmentSystem"
           )
-          .in("readableIdWithRevision", Array.from(uniquePartNumbers));
+          .in("readableIdWithRevision", Array.from(uniquePartNumbers))
+          .eq("companyId", companyId);
 
         itemsMap = new Map(
           items.data?.map((item) => [
