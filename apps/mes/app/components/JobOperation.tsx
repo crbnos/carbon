@@ -2101,10 +2101,10 @@ function useOperation(
     if (operation.setupDuration > 0) {
       return "Setup";
     }
-    if (operation.laborDuration > 0) {
-      return "Labor";
+    if (operation.machineDuration > 0) {
+      return "Machine";
     }
-    return "Machine";
+    return "Labor";
   });
 
   const [operationState, setOperationState] = useState(operation);
@@ -2638,6 +2638,7 @@ function StartStopButton({
   trackedEntityId: string | undefined;
 }) {
   const fetcher = useFetcher<ProductionEvent>();
+
   const isActive = useMemo(() => {
     if (fetcher.formData?.get("action") === "End") {
       return false;

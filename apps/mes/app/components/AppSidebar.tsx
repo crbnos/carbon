@@ -231,6 +231,7 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
   ];
 
   const { pathname } = useLocation();
+  const { isMobile, setOpenMobile } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -253,7 +254,10 @@ export function OperationsNav({ activeEvents }: { activeEvents: number }) {
                 isActive={isActive}
                 asChild
               >
-                <Link to={item.to}>
+                <Link
+                  to={item.to}
+                  onClick={() => isMobile && setOpenMobile(false)}
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
                   {item.label && (

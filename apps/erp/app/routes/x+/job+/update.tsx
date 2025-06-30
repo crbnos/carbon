@@ -132,6 +132,7 @@ export async function action({ request }: ActionFunctionArgs) {
     case "dueDate":
     case "jobId":
     case "locationId":
+    case "startDate":
     case "unitOfMeasureCode":
       return json(
         await client
