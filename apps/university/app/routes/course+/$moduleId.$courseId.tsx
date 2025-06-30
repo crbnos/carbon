@@ -7,7 +7,7 @@ import {
   LuFlag,
   LuRotateCcw,
 } from "react-icons/lu";
-import { sections } from "~/config";
+import { modules } from "~/config";
 import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
 import { formatDuration } from "~/utils/video";
@@ -25,9 +25,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 export default function CourseRoute() {
   const { lessonCompletions, challengeAttempts } = useProgress();
 
-  const { sectionId, courseId } = useParams();
-  const section = sections.find((section) => section.id === sectionId);
-  const course = section?.courses.find((course) => course.id === courseId);
+  const { moduleId, courseId } = useParams();
+  const module = modules.find((module) => module.id === moduleId);
+  const course = module?.courses.find((course) => course.id === courseId);
 
   const totalDuration =
     course?.topics.reduce((acc, topic) => {
@@ -76,13 +76,16 @@ export default function CourseRoute() {
         <div
           className="border rounded-lg rounded-b-none px-8 py-3"
           style={{
-            backgroundColor: section?.background,
-            color: section?.foreground,
+            backgroundColor: module?.background,
+            color: module?.foreground,
           }}
         >
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col items-start">
+            <span className="text-[10px] uppercase font-display font-bold opacity-80">
+              Section
+            </span>
             <span className="uppercase text-sm font-display font-bold">
-              {section?.name}
+              {module?.name}
             </span>
           </div>
         </div>
@@ -92,8 +95,8 @@ export default function CourseRoute() {
               <div
                 className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg"
                 style={{
-                  backgroundColor: section?.background,
-                  color: section?.foreground,
+                  backgroundColor: module?.background,
+                  color: module?.foreground,
                 }}
               >
                 {course.icon}
@@ -165,7 +168,7 @@ export default function CourseRoute() {
                   </h2>
                   <p className="text-sm">{topic.description}</p>
                 </div>
-                <div className="flex flex-col gap-8 py-8 w-full text-sm">
+                <div className="flex flex-col gap-4 py-8 w-full text-sm">
                   <div className="flex flex-col gap-0">
                     {topic.lessons.map((lesson) => {
                       const isCompleted = completedLessons.includes(lesson.id);
@@ -177,9 +180,9 @@ export default function CourseRoute() {
                         >
                           <div className="flex items-center gap-2">
                             {isCompleted ? (
-                              <LuCircleCheck className="size-4 text-emerald-500" />
+                              <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
                             ) : (
-                              <LuCirclePlay className="size-4 text-muted-foreground" />
+                              <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
                             )}
                             <span>{lesson.name}</span>
                           </div>
@@ -195,7 +198,7 @@ export default function CourseRoute() {
                       <Button
                         variant="primary"
                         leftIcon={
-                          <LuCircleCheck className="size-4 text-emerald-500" />
+                          <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
                         }
                       >
                         Topic Challenge Completed
@@ -224,6 +227,37 @@ export default function CourseRoute() {
                       </Button>
                     )
                   ) : null}
+                  {topic.supplemental && topic.supplemental.length > 0 && (
+                    <div className="flex flex-col gap-0">
+                      <h3 className="text-[10px] uppercase font-display font-bold text-muted-foreground">
+                        Supplemental Videos
+                      </h3>
+                      {topic.supplemental?.map((lesson) => {
+                        const isCompleted = completedLessons.includes(
+                          lesson.id
+                        );
+                        return (
+                          <Link
+                            key={lesson.id}
+                            to={path.to.lesson(lesson.id)}
+                            className="flex items-center justify-between gap-2 w-full rounded-md py-1.5 px-3 hover:bg-accent"
+                          >
+                            <div className="flex items-center gap-2">
+                              {isCompleted ? (
+                                <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
+                              ) : (
+                                <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
+                              )}
+                              <span>{lesson.name}</span>
+                            </div>
+                            <span className="text-muted-foreground text-xs">
+                              {formatDuration(lesson.duration)}
+                            </span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
