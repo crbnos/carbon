@@ -3,7 +3,6 @@ import {
   LuCalculator,
   LuCirclePlay,
   LuCodeXml,
-  LuCreditCard,
   LuFactory,
   LuFolderCheck,
   LuHexagon,
@@ -13,7 +12,6 @@ import {
   LuTruck,
   LuTvMinimalPlay,
   LuUpload,
-  LuWebhook,
 } from "react-icons/lu";
 
 type Config = Module[];
@@ -708,10 +706,10 @@ export const modules: Config = [
         icon: <LuFactory />,
         topics: [
           {
-            name: "Job Overview",
-            id: "job-overview",
+            name: "Managing Production",
+            id: "managing-production",
             description:
-              "Understand the fundamentals of job management and how jobs drive production in Carbon.",
+              "Master the complete production management process including job creation, scheduling, planning, and closing.",
             challenge: [
               {
                 id: "q1",
@@ -724,26 +722,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "job-overview",
-                videoId: "1234567890",
-                name: "Job Overview",
-                description:
-                  "Learn the fundamentals of job management and how jobs drive production in Carbon.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Scheduling",
-            id: "scheduling",
-            description:
-              "Master the art of scheduling jobs and managing production timelines effectively.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q2",
                 question: "What is the primary goal of production scheduling?",
                 options: [
                   "To maximize inventory levels",
@@ -753,26 +733,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "scheduling",
-                videoId: "1234567890",
-                name: "Scheduling",
-                description:
-                  "Learn how to schedule jobs and manage production timelines effectively.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Production Planning",
-            id: "production-planning",
-            description:
-              "Understand how to plan production activities and coordinate resources.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q3",
                 question: "What does production planning help determine?",
                 options: [
                   "Customer preferences",
@@ -782,26 +744,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "production-planning",
-                videoId: "1234567890",
-                name: "Production Planning",
-                description:
-                  "Learn how to plan production activities and coordinate resources effectively.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Closing a Job",
-            id: "closing-job",
-            description:
-              "Master the process of completing and closing jobs in the production system.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q4",
                 question: "What is the final step in job management?",
                 options: [
                   "Starting the job",
@@ -813,6 +757,30 @@ export const modules: Config = [
               },
             ],
             lessons: [
+              {
+                id: "job-overview",
+                videoId: "1234567890",
+                name: "Job Overview",
+                description:
+                  "Learn the fundamentals of job management and how jobs drive production in Carbon.",
+                duration: 100,
+              },
+              {
+                id: "scheduling",
+                videoId: "1234567890",
+                name: "Scheduling",
+                description:
+                  "Learn how to schedule jobs and manage production timelines effectively.",
+                duration: 100,
+              },
+              {
+                id: "production-planning",
+                videoId: "1234567890",
+                name: "Production Planning",
+                description:
+                  "Learn how to plan production activities and coordinate resources effectively.",
+                duration: 100,
+              },
               {
                 id: "closing-job",
                 videoId: "1234567890",
@@ -833,10 +801,10 @@ export const modules: Config = [
         icon: <LuTvMinimalPlay />,
         topics: [
           {
-            name: "MES Overview",
-            id: "mes-overview",
+            name: "Shop Floor",
+            id: "shop-floor",
             description:
-              "Understand Manufacturing Execution Systems and how Carbon implements MES functionality.",
+              "Master shop floor operations including MES functionality, time tracking, batch/serial tracking, part issuing, and job travelers.",
             challenge: [
               {
                 id: "q1",
@@ -849,26 +817,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 0,
               },
-            ],
-            lessons: [
               {
-                id: "mes-overview",
-                videoId: "1234567890",
-                name: "MES Overview",
-                description:
-                  "Learn about Manufacturing Execution Systems and how Carbon implements MES functionality.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Tracking Time and Quantities",
-            id: "tracking-time-quantities",
-            description:
-              "Master the tracking of production time and quantities for accurate job costing.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q2",
                 question: "Why is tracking time and quantities important?",
                 options: [
                   "For inventory management only",
@@ -878,26 +828,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "tracking-time-quantities",
-                videoId: "1234567890",
-                name: "Tracking Time and Quantities",
-                description:
-                  "Learn how to track production time and quantities for accurate job costing and efficiency analysis.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Tracking Batch and Serial Parts",
-            id: "tracking-batch-serial",
-            description:
-              "Learn how to track batch and serial numbered parts for traceability.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q3",
                 question:
                   "What is the purpose of tracking batch and serial parts?",
                 options: [
@@ -908,26 +840,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "tracking-batch-serial",
-                videoId: "1234567890",
-                name: "Tracking Batch and Serial Parts",
-                description:
-                  "Learn how to track batch and serial numbered parts for traceability and quality control.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Issuing Parts",
-            id: "issuing-parts",
-            description:
-              "Understand how to issue parts to jobs and track material consumption.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q4",
                 question: "What happens when parts are issued to a job?",
                 options: [
                   "Inventory levels increase",
@@ -937,26 +851,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "issuing-parts",
-                videoId: "1234567890",
-                name: "Issuing Parts",
-                description:
-                  "Learn how to issue parts to jobs and track material consumption accurately.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Job Traveler",
-            id: "job-traveler",
-            description:
-              "Master the job traveler system for guiding production processes.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q5",
                 question: "What is a job traveler used for?",
                 options: [
                   "Customer communication",
@@ -968,6 +864,38 @@ export const modules: Config = [
               },
             ],
             lessons: [
+              {
+                id: "mes-overview",
+                videoId: "1234567890",
+                name: "MES Overview",
+                description:
+                  "Learn about Manufacturing Execution Systems and how Carbon implements MES functionality.",
+                duration: 100,
+              },
+              {
+                id: "tracking-time-quantities",
+                videoId: "1234567890",
+                name: "Tracking Time and Quantities",
+                description:
+                  "Learn how to track production time and quantities for accurate job costing and efficiency analysis.",
+                duration: 100,
+              },
+              {
+                id: "tracking-batch-serial",
+                videoId: "1234567890",
+                name: "Tracking Batch and Serial Parts",
+                description:
+                  "Learn how to track batch and serial numbered parts for traceability and quality control.",
+                duration: 100,
+              },
+              {
+                id: "issuing-parts",
+                videoId: "1234567890",
+                name: "Issuing Parts",
+                description:
+                  "Learn how to issue parts to jobs and track material consumption accurately.",
+                duration: 100,
+              },
               {
                 id: "job-traveler",
                 videoId: "1234567890",
@@ -991,15 +919,14 @@ export const modules: Config = [
       {
         name: "Purchasing Basics",
         id: "purchasing-basics",
-        description:
-          "Learn the fundamentals of purchasing and procurement in Carbon.",
+        description: "Learn the fundamentals of purchasing in Carbon.",
         icon: <LuShoppingCart />,
         topics: [
           {
-            name: "Purchasing Overview",
-            id: "purchasing-overview",
+            name: "Purchasing Basics",
+            id: "purchasing-basics",
             description:
-              "Understand the complete purchasing process from supplier selection to payment.",
+              "Master the fundamental purchasing processes including overview, supplier quotes, purchase orders, and receiving.",
             challenge: [
               {
                 id: "q1",
@@ -1012,26 +939,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 2,
               },
-            ],
-            lessons: [
               {
-                id: "purchasing-overview",
-                videoId: "1234567890",
-                name: "Purchasing Overview",
-                description:
-                  "Learn about the complete purchasing process from supplier selection to payment.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Supplier Quotes",
-            id: "supplier-quotes",
-            description:
-              "Learn how to manage supplier quotes and compare pricing effectively.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q2",
                 question: "Why are supplier quotes important?",
                 options: [
                   "To increase inventory",
@@ -1041,26 +950,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "supplier-quotes",
-                videoId: "1234567890",
-                name: "Supplier Quotes",
-                description:
-                  "Learn how to manage supplier quotes and compare pricing effectively.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Purchase Orders",
-            id: "purchase-orders",
-            description:
-              "Master the creation and management of purchase orders.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q3",
                 question: "What is a purchase order?",
                 options: [
                   "A customer order",
@@ -1070,26 +961,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "purchase-orders",
-                videoId: "1234567890",
-                name: "Purchase Orders",
-                description:
-                  "Learn how to create and manage purchase orders effectively.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Receiving a Purchase Order",
-            id: "receiving-purchase-order",
-            description:
-              "Understand how to receive and inspect purchased goods.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q4",
                 question:
                   "What should be done when receiving a purchase order?",
                 options: [
@@ -1103,6 +976,30 @@ export const modules: Config = [
             ],
             lessons: [
               {
+                id: "purchasing-overview",
+                videoId: "1234567890",
+                name: "Purchasing Overview",
+                description:
+                  "Learn about the complete purchasing process from supplier selection to payment.",
+                duration: 100,
+              },
+              {
+                id: "supplier-quotes",
+                videoId: "1234567890",
+                name: "Supplier Quotes",
+                description:
+                  "Learn how to manage supplier quotes and compare pricing effectively.",
+                duration: 100,
+              },
+              {
+                id: "purchase-orders",
+                videoId: "1234567890",
+                name: "Purchase Orders",
+                description:
+                  "Learn how to create and manage purchase orders effectively.",
+                duration: 100,
+              },
+              {
                 id: "receiving-purchase-order",
                 videoId: "1234567890",
                 name: "Receiving a Purchase Order",
@@ -1112,11 +1009,20 @@ export const modules: Config = [
               },
             ],
           },
+        ],
+      },
+      {
+        name: "Advanced Purchasing",
+        id: "advanced-purchasing",
+        description:
+          "Master advanced purchasing techniques including planning, cost analysis, and supplier management.",
+        icon: <LuShoppingCart />,
+        topics: [
           {
-            name: "Purchase Invoices",
-            id: "purchase-invoices",
+            name: "Advanced Purchasing",
+            id: "advanced-purchasing",
             description:
-              "Learn how to process and manage purchase invoices for payment.",
+              "Master advanced purchasing concepts including purchase invoices, planning, historical costs, and supplier pricing analysis.",
             challenge: [
               {
                 id: "q1",
@@ -1129,35 +1035,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 2,
               },
-            ],
-            lessons: [
               {
-                id: "purchase-invoices",
-                videoId: "1234567890",
-                name: "Purchase Invoices",
-                description:
-                  "Learn how to process and manage purchase invoices for payment.",
-                duration: 100,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        name: "Advanced Purchasing",
-        id: "advanced-purchasing",
-        description:
-          "Master advanced purchasing techniques and strategic procurement.",
-        icon: <LuCreditCard />,
-        topics: [
-          {
-            name: "Purchasing Planning",
-            id: "purchasing-planning",
-            description:
-              "Learn how to plan purchasing activities based on demand and inventory levels.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q2",
                 question: "What is purchasing planning based on?",
                 options: [
                   "Supplier preferences only",
@@ -1167,26 +1046,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "purchasing-planning",
-                videoId: "1234567890",
-                name: "Purchasing Planning",
-                description:
-                  "Learn how to plan purchasing activities based on demand and inventory levels.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Historical Costs",
-            id: "historical-costs",
-            description:
-              "Understand how to analyze historical costs for better purchasing decisions.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q3",
                 question: "Why are historical costs important?",
                 options: [
                   "To increase inventory levels",
@@ -1196,26 +1057,8 @@ export const modules: Config = [
                 ],
                 correctAnswer: 1,
               },
-            ],
-            lessons: [
               {
-                id: "historical-costs",
-                videoId: "1234567890",
-                name: "Historical Costs",
-                description:
-                  "Learn how to analyze historical costs for better purchasing decisions.",
-                duration: 100,
-              },
-            ],
-          },
-          {
-            name: "Supplier Pricing",
-            id: "supplier-pricing",
-            description:
-              "Master supplier pricing analysis and negotiation strategies.",
-            challenge: [
-              {
-                id: "q1",
+                id: "q4",
                 question: "What is the goal of supplier pricing analysis?",
                 options: [
                   "To increase costs",
@@ -1227,6 +1070,30 @@ export const modules: Config = [
               },
             ],
             lessons: [
+              {
+                id: "purchase-invoices",
+                videoId: "1234567890",
+                name: "Purchase Invoices",
+                description:
+                  "Learn how to process and manage purchase invoices for payment.",
+                duration: 100,
+              },
+              {
+                id: "purchasing-planning",
+                videoId: "1234567890",
+                name: "Purchasing Planning",
+                description:
+                  "Learn how to plan purchasing activities based on demand and inventory levels.",
+                duration: 100,
+              },
+              {
+                id: "historical-costs",
+                videoId: "1234567890",
+                name: "Historical Costs",
+                description:
+                  "Learn how to analyze historical costs for better purchasing decisions.",
+                duration: 100,
+              },
               {
                 id: "supplier-pricing",
                 videoId: "1234567890",
@@ -1255,10 +1122,10 @@ export const modules: Config = [
         icon: <LuFolderCheck />,
         topics: [
           {
-            name: "Non-Conformances",
-            id: "non-conformances",
+            name: "Tracking Quality",
+            id: "tracking-quality",
             description:
-              "Understand how to track and manage non-conforming materials and products.",
+              "Master quality control processes including non-conformances and gauge management.",
             challenge: [
               {
                 id: "q1",
@@ -1268,6 +1135,17 @@ export const modules: Config = [
                   "A product or material that doesn't meet specifications",
                   "A customer order",
                   "A supplier invoice",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q2",
+                question: "Why is gauge calibration important?",
+                options: [
+                  "To increase costs",
+                  "To ensure measurement accuracy and quality control",
+                  "To reduce inventory",
+                  "To speed up production",
                 ],
                 correctAnswer: 1,
               },
@@ -1281,27 +1159,6 @@ export const modules: Config = [
                   "Learn how to track and manage non-conforming materials and products.",
                 duration: 100,
               },
-            ],
-          },
-          {
-            name: "Gauges and Calibrations",
-            id: "gauges-calibrations",
-            description:
-              "Master the management of measurement equipment and calibration schedules.",
-            challenge: [
-              {
-                id: "q1",
-                question: "Why is gauge calibration important?",
-                options: [
-                  "To increase costs",
-                  "To ensure measurement accuracy and quality control",
-                  "To reduce inventory",
-                  "To speed up production",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "gauges-calibrations",
                 videoId: "1234567890",
@@ -1326,14 +1183,14 @@ export const modules: Config = [
         name: "Using the API",
         id: "using-api",
         description:
-          "Learn how to integrate with Carbon using its powerful API capabilities.",
+          "Learn how to use Carbon's API for integration and automation.",
         icon: <LuCodeXml />,
         topics: [
           {
-            name: "API Keys",
-            id: "api-keys",
+            name: "Using the API",
+            id: "using-api",
             description:
-              "Understand how to create and manage API keys for secure access to Carbon's API.",
+              "Master API usage including API keys, TypeScript client, C# client, Python client, and webhooks.",
             challenge: [
               {
                 id: "q1",
@@ -1341,6 +1198,52 @@ export const modules: Config = [
                 options: [
                   "To increase costs",
                   "To provide secure access to Carbon's API",
+                  "To reduce quality",
+                  "To slow down performance",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q2",
+                question:
+                  "What is the advantage of using the TypeScript API client?",
+                options: [
+                  "To increase costs",
+                  "To provide type safety and better development experience",
+                  "To reduce quality",
+                  "To slow down performance",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q3",
+                question: "What platform is the C# API client designed for?",
+                options: [
+                  "Web browsers",
+                  ".NET applications",
+                  "Mobile apps",
+                  "Linux systems",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q4",
+                question:
+                  "What is Python commonly used for in API integration?",
+                options: [
+                  "Web development only",
+                  "Data analysis, automation, and integration",
+                  "Mobile development",
+                  "Database management only",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q5",
+                question: "What is the primary benefit of webhooks?",
+                options: [
+                  "To increase costs",
+                  "To receive real-time event notifications",
                   "To reduce quality",
                   "To slow down performance",
                 ],
@@ -1356,28 +1259,6 @@ export const modules: Config = [
                   "Learn how to create and manage API keys for secure access to Carbon's API.",
                 duration: 100,
               },
-            ],
-          },
-          {
-            name: "TypeScript API Client",
-            id: "typescript-api-client",
-            description:
-              "Learn how to use Carbon's TypeScript API client for seamless integration.",
-            challenge: [
-              {
-                id: "q1",
-                question:
-                  "What is the advantage of using the TypeScript API client?",
-                options: [
-                  "To increase costs",
-                  "To provide type safety and better development experience",
-                  "To reduce quality",
-                  "To slow down performance",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "typescript-api-client",
                 videoId: "1234567890",
@@ -1386,27 +1267,6 @@ export const modules: Config = [
                   "Learn how to use Carbon's TypeScript API client for seamless integration.",
                 duration: 100,
               },
-            ],
-          },
-          {
-            name: "C# API Client",
-            id: "csharp-api-client",
-            description:
-              "Master the C# API client for .NET applications and integrations.",
-            challenge: [
-              {
-                id: "q1",
-                question: "What platform is the C# API client designed for?",
-                options: [
-                  "Web browsers",
-                  ".NET applications",
-                  "Mobile apps",
-                  "Linux systems",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "csharp-api-client",
                 videoId: "1234567890",
@@ -1415,28 +1275,6 @@ export const modules: Config = [
                   "Learn how to use Carbon's C# API client for .NET applications.",
                 duration: 100,
               },
-            ],
-          },
-          {
-            name: "Python API Client",
-            id: "python-api-client",
-            description:
-              "Learn how to integrate with Carbon using the Python API client.",
-            challenge: [
-              {
-                id: "q1",
-                question:
-                  "What is Python commonly used for in API integration?",
-                options: [
-                  "Web development only",
-                  "Data analysis, automation, and integration",
-                  "Mobile development",
-                  "Database management only",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "python-api-client",
                 videoId: "1234567890",
@@ -1445,36 +1283,6 @@ export const modules: Config = [
                   "Learn how to integrate with Carbon using the Python API client.",
                 duration: 100,
               },
-            ],
-          },
-        ],
-      },
-      {
-        name: "Integrating with Carbon",
-        id: "integrating-carbon",
-        description:
-          "Learn advanced integration techniques and best practices for connecting with Carbon.",
-        icon: <LuWebhook />,
-        topics: [
-          {
-            name: "Webhooks",
-            id: "webhooks",
-            description:
-              "Understand how to use webhooks for real-time event notifications from Carbon.",
-            challenge: [
-              {
-                id: "q1",
-                question: "What is the primary benefit of webhooks?",
-                options: [
-                  "To increase costs",
-                  "To receive real-time event notifications",
-                  "To reduce quality",
-                  "To slow down performance",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "webhooks",
                 videoId: "1234567890",
@@ -1485,11 +1293,20 @@ export const modules: Config = [
               },
             ],
           },
+        ],
+      },
+      {
+        name: "Integrating with Carbon",
+        id: "integrating-carbon",
+        description:
+          "Learn how to build integrations and custom applications with Carbon.",
+        icon: <LuCodeXml />,
+        topics: [
           {
-            name: "Integrations",
-            id: "integrations",
+            name: "Integrating with Carbon",
+            id: "integrating-carbon",
             description:
-              "Master the process of integrating Carbon with other business systems and tools.",
+              "Master integration techniques including system integrations and custom application development.",
             challenge: [
               {
                 id: "q1",
@@ -1499,6 +1316,17 @@ export const modules: Config = [
                   "To streamline workflows and improve efficiency",
                   "To reduce functionality",
                   "To slow down processes",
+                ],
+                correctAnswer: 1,
+              },
+              {
+                id: "q2",
+                question: "What can you build with Carbon's API?",
+                options: [
+                  "Only mobile apps",
+                  "Custom applications, dashboards, and tools",
+                  "Only web applications",
+                  "Only desktop software",
                 ],
                 correctAnswer: 1,
               },
@@ -1512,27 +1340,6 @@ export const modules: Config = [
                   "Learn how to integrate Carbon with other business systems and tools.",
                 duration: 100,
               },
-            ],
-          },
-          {
-            name: "Applications",
-            id: "applications",
-            description:
-              "Learn how to build custom applications that integrate with Carbon's platform.",
-            challenge: [
-              {
-                id: "q1",
-                question: "What can you build with Carbon's API?",
-                options: [
-                  "Only mobile apps",
-                  "Custom applications, dashboards, and tools",
-                  "Only web applications",
-                  "Only desktop software",
-                ],
-                correctAnswer: 1,
-              },
-            ],
-            lessons: [
               {
                 id: "applications",
                 videoId: "1234567890",
