@@ -151,7 +151,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="min-w-[260px] w-[--radix-popover-trigger-width] p-0"
+              className="min-w-[--radix-popover-trigger-width] p-0"
             >
               <Command id="assignee-options">
                 <CommandInput placeholder="Search..." className="h-9" />

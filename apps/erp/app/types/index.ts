@@ -41,7 +41,8 @@ export type ModelUpload = {
 
 export type NavItem = Omit<Route, "icon"> & {
   icon: IconType;
-  color?: string;
+  backgroundColor?: string;
+  foregroundColor?: string;
 };
 
 export type Result = {

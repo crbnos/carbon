@@ -123,7 +123,7 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
           </PopoverTrigger>
           <PopoverContent
             align="start"
-            className="min-w-[260px] w-[--radix-popover-trigger-width] p-1"
+            className="min-w-[--radix-popover-trigger-width] max-w-[400px] p-1"
           >
             <VirtualizedCommand
               label={label}
@@ -274,28 +274,29 @@ function VirtualizedCommand({
                   height: `${itemHeight}px`,
                   transform: `translateY(${virtualRow.start}px)`,
                 }}
+                className="flex items-center justify-between min-w-0"
               >
                 {isCreateOption ? (
-                  <>
+                  <div className="flex items-center min-w-0 flex-1">
                     <span>Create</span>
-                    <span className="ml-1 font-bold line-clamp-1">
+                    <span className="ml-1 font-bold truncate">
                       {search.trim() === "" ? label : search}
                     </span>
-                  </>
+                  </div>
                 ) : item.helper ? (
-                  <div className="flex flex-col">
-                    <p className="line-clamp-1">{item.label}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <p className="truncate">{item.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">
                       {item.helper}
                     </p>
                   </div>
                 ) : (
-                  <span className="line-clamp-1">{item.label}</span>
+                  <span className="truncate flex-1">{item.label}</span>
                 )}
                 {!isCreateOption && (
                   <LuCheck
                     className={cn(
-                      "ml-auto h-4 w-4",
+                      "ml-auto h-4 w-4 flex-shrink-0",
                       isSelected || item.value === value
                         ? "opacity-100"
                         : "opacity-0"

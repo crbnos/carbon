@@ -169,7 +169,7 @@ const CreatableMultiSelect = forwardRef<
           </PopoverTrigger>
           <PopoverContent
             align="end"
-            className="min-w-[260px] w-[--radix-popover-trigger-width] p-1"
+            className="min-w-[--radix-popover-trigger-width] p-1"
           >
             <VirtualizedCommand
               options={options}

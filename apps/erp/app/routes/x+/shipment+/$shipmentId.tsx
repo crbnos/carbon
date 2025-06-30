@@ -51,7 +51,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shipment: shipment.data,
     shipmentLines: shipmentLines.data ?? [],
     shipmentLineTracking: shipmentLineTracking.data ?? [],
-    relatedItems: getShipmentRelatedItems(client, shipmentId),
+    relatedItems: getShipmentRelatedItems(
+      client,
+      shipmentId,
+      shipment.data?.sourceDocumentId ?? ""
+    ),
   });
 }
 

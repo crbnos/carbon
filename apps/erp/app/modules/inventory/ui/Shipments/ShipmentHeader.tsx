@@ -159,7 +159,8 @@ const ShipmentHeader = () => {
                       {(relatedItems) => {
                         const invoices = relatedItems?.invoices || [];
                         return invoices.length > 0 ? (
-                          invoices.length === 1 ? (
+                          invoices.length === 1 &&
+                          invoices[0].shipmentId === shipmentId ? (
                             <Button
                               leftIcon={<LuCreditCard />}
                               variant={"secondary"}

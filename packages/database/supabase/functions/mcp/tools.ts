@@ -412,11 +412,11 @@ async function getSuppliersForParts(
   const [supplierParts, preferredSuppliers] = await Promise.all([
     client
       .from("supplierPart")
-      .select("itemId, supplierId")
+      .select("itemId, supplierId, unitPrice, supplierUnitOfMeasureCode")
       .in("itemId", partIds)
       .eq("companyId", context.companyId),
     client
-      .from("itemRelationship")
+      .from("itemReplenishment")
       .select("itemId, preferredSupplierId")
       .in("itemId", partIds)
       .eq("companyId", context.companyId),
@@ -492,8 +492,13 @@ async function getSuppliersForParts(
 
   // Return the most frequent supplier if found
   if (mostFrequentSupplierId) {
+    const supplier = supplierParts.data?.find(
+      (p) => p.supplierId === mostFrequentSupplierId
+    );
     return {
       id: mostFrequentSupplierId,
+      unitPrice: supplier?.unitPrice,
+      supplierUnitOfMeasureCode: supplier?.supplierUnitOfMeasureCode,
     };
   }
 

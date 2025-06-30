@@ -410,12 +410,23 @@ export async function getShipmentFiles(
 
 export async function getShipmentRelatedItems(
   client: SupabaseClient<Database>,
-  shipmentId: string
+  shipmentId: string,
+  sourceDocumentId: string
 ) {
+  const salesOrder = await client
+    .from("salesOrder")
+    .select("*")
+    .eq("id", sourceDocumentId)
+    .single();
+
   const invoices = await client
     .from("salesInvoice")
     .select("*")
-    .eq("shipmentId", shipmentId);
+    .or(
+      `shipmentId.eq.${shipmentId},opportunityId.eq.${
+        salesOrder.data?.opportunityId ?? ""
+      }`
+    );
 
   return {
     invoices: invoices.data ?? [],

@@ -2847,6 +2847,132 @@ export default {
         tags: ["nonConformanceShipmentLine"],
       },
     },
+    "/lessonCompletion": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.lessonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/lessonCompletion",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["lessonCompletion"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.lessonCompletion",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["lessonCompletion"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.lessonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["lessonCompletion"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.lessonId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.lessonCompletion.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.lessonCompletion",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["lessonCompletion"],
+      },
+    },
     "/groups": {
       get: {
         parameters: [
@@ -8824,6 +8950,12 @@ export default {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.purchaseOrderId",
           },
           {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.purchaseOrderReadableId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.supplierId",
+          },
+          {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.itemId",
           },
           {
@@ -8836,6 +8968,9 @@ export default {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.purchaseOrderLineType",
           },
           {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.dueDate",
+          },
+          {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.companyId",
           },
           {
@@ -8843,6 +8978,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.orderDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.openPurchaseOrderLines.status",
           },
           {
             $ref: "#/parameters/rowFilter.openPurchaseOrderLines.promisedDate",
@@ -42489,6 +42627,150 @@ export default {
         tags: ["modules"],
       },
     },
+    "/challengeAttempt": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.passed",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.topicId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.createdAt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/order",
+          },
+          {
+            $ref: "#/parameters/range",
+          },
+          {
+            $ref: "#/parameters/rangeUnit",
+          },
+          {
+            $ref: "#/parameters/offset",
+          },
+          {
+            $ref: "#/parameters/limit",
+          },
+          {
+            $ref: "#/parameters/preferCount",
+          },
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/challengeAttempt",
+              },
+              type: "array",
+            },
+          },
+          "206": {
+            description: "Partial Content",
+          },
+        },
+        tags: ["challengeAttempt"],
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.challengeAttempt",
+          },
+          {
+            $ref: "#/parameters/select",
+          },
+          {
+            $ref: "#/parameters/preferPost",
+          },
+        ],
+        responses: {
+          "201": {
+            description: "Created",
+          },
+        },
+        tags: ["challengeAttempt"],
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.passed",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.topicId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.createdAt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["challengeAttempt"],
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.id",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.userId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.courseId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.passed",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.topicId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.challengeAttempt.createdAt",
+          },
+          {
+            $ref: "#/parameters/body.challengeAttempt",
+          },
+          {
+            $ref: "#/parameters/preferReturn",
+          },
+        ],
+        responses: {
+          "204": {
+            description: "No Content",
+          },
+        },
+        tags: ["challengeAttempt"],
+      },
+    },
     "/search": {
       get: {
         parameters: [
@@ -56304,6 +56586,88 @@ export default {
         tags: ["(rpc) update_receipt_line_batch_tracking"],
       },
     },
+    "/rpc/get_purchasing_planning": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string",
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "periods",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_purchasing_planning"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string",
+                },
+                location_id: {
+                  format: "text",
+                  type: "string",
+                },
+                periods: {
+                  format: "text[]",
+                  items: {
+                    type: "string",
+                  },
+                  type: "array",
+                },
+              },
+              required: ["company_id", "location_id", "periods"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_purchasing_planning"],
+      },
+    },
     "/rpc/get_custom_field_unique_values": {
       get: {
         parameters: [
@@ -57789,6 +58153,33 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
+    lessonCompletion: {
+      required: ["userId", "courseId", "lessonId", "createdAt"],
+      properties: {
+        userId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        courseId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        lessonId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
           type: "string",
         },
       },
@@ -60619,6 +61010,16 @@ export default {
           format: "text",
           type: "string",
         },
+        purchaseOrderReadableId: {
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         itemId: {
           description:
             "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
@@ -60648,6 +61049,10 @@ export default {
           format: 'public."purchaseOrderLineType"',
           type: "string",
         },
+        dueDate: {
+          format: "date",
+          type: "string",
+        },
         companyId: {
           format: "text",
           type: "string",
@@ -60658,6 +61063,21 @@ export default {
         },
         orderDate: {
           format: "date",
+          type: "string",
+        },
+        status: {
+          enum: [
+            "Draft",
+            "To Review",
+            "Rejected",
+            "To Receive",
+            "To Receive and Invoice",
+            "To Invoice",
+            "Completed",
+            "Closed",
+            "Planned",
+          ],
+          format: 'public."purchaseOrderStatus"',
           type: "string",
         },
         promisedDate: {
@@ -76388,6 +76808,41 @@ export default {
       },
       type: "object",
     },
+    challengeAttempt: {
+      required: ["id", "userId", "courseId", "passed", "topicId", "createdAt"],
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "integer",
+          type: "integer",
+        },
+        userId: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        courseId: {
+          format: "text",
+          type: "string",
+        },
+        passed: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        topicId: {
+          format: "text",
+          type: "string",
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string",
+        },
+      },
+      type: "object",
+    },
     search: {
       required: ["id", "name", "link"],
       properties: {
@@ -82447,6 +82902,39 @@ export default {
       in: "query",
       type: "string",
     },
+    "body.lessonCompletion": {
+      name: "lessonCompletion",
+      description: "lessonCompletion",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/lessonCompletion",
+      },
+    },
+    "rowFilter.lessonCompletion.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.lessonCompletion.courseId": {
+      name: "courseId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.lessonCompletion.lessonId": {
+      name: "lessonId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.lessonCompletion.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.groups": {
       name: "groups",
       description: "groups",
@@ -85651,6 +86139,18 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.openPurchaseOrderLines.purchaseOrderReadableId": {
+      name: "purchaseOrderReadableId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.openPurchaseOrderLines.itemId": {
       name: "itemId",
       required: false,
@@ -85675,6 +86175,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.openPurchaseOrderLines.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.openPurchaseOrderLines.companyId": {
       name: "companyId",
       required: false,
@@ -85689,6 +86195,12 @@ export default {
     },
     "rowFilter.openPurchaseOrderLines.orderDate": {
       name: "orderDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.openPurchaseOrderLines.status": {
+      name: "status",
       required: false,
       in: "query",
       type: "string",
@@ -103449,6 +103961,51 @@ export default {
     },
     "rowFilter.modules.name": {
       name: "name",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "body.challengeAttempt": {
+      name: "challengeAttempt",
+      description: "challengeAttempt",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/challengeAttempt",
+      },
+    },
+    "rowFilter.challengeAttempt.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.challengeAttempt.userId": {
+      name: "userId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.challengeAttempt.courseId": {
+      name: "courseId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.challengeAttempt.passed": {
+      name: "passed",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.challengeAttempt.topicId": {
+      name: "topicId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.challengeAttempt.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string",

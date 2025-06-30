@@ -1967,63 +1967,6 @@ export type Database = {
           },
         ]
       }
-      challengeCompletion: {
-        Row: {
-          courseId: string
-          createdAt: string
-          topicId: string
-          userId: string
-        }
-        Insert: {
-          courseId: string
-          createdAt?: string
-          topicId: string
-          userId: string
-        }
-        Update: {
-          courseId?: string
-          createdAt?: string
-          topicId?: string
-          userId?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "challengeCompletion_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challengeCompletion_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challengeCompletion_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challengeCompletion_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "challengeCompletion_userId_fkey"
-            columns: ["userId"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       company: {
         Row: {
           addressLine1: string | null
@@ -20855,7 +20798,6 @@ export type Database = {
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity: number | null
           purchaseUnitOfMeasureCode: string | null
-          quantity: number | null
           quantityInvoiced: number | null
           quantityReceived: number | null
           quantityShipped: number | null
@@ -20904,7 +20846,6 @@ export type Database = {
           purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
           purchaseUnitOfMeasureCode?: string | null
-          quantity?: number | null
           quantityInvoiced?: number | null
           quantityReceived?: number | null
           quantityShipped?: number | null
@@ -20953,7 +20894,6 @@ export type Database = {
           purchaseOrderLineType?: Database["public"]["Enums"]["purchaseOrderLineType"]
           purchaseQuantity?: number | null
           purchaseUnitOfMeasureCode?: string | null
-          quantity?: number | null
           quantityInvoiced?: number | null
           quantityReceived?: number | null
           quantityShipped?: number | null
@@ -42449,14 +42389,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
