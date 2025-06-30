@@ -78,7 +78,7 @@ export function TreeView<TData>({
         }
       }}
       className={cn(
-        "w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 focus-within:outline-none",
+        "flex flex-1 w-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-600 focus-within:outline-none",
         parentClassName
       )}
       layoutScroll

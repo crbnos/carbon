@@ -109,7 +109,7 @@ const QuoteBoMExplorer = ({
   }, [selectedMaterialId, params.methodId]);
 
   return (
-    <VStack>
+    <VStack className="flex flex-1 w-full">
       {isLoading ? (
         <div className="flex items-center justify-center py-8 w-full">
           <Spinner className="w-4 h-4" />

@@ -1,4 +1,4 @@
-import { VStack, type JSONContent } from "@carbon/react";
+import { type JSONContent } from "@carbon/react";
 
 import {
   Outlet,
@@ -145,7 +145,7 @@ export default function PartManufacturing() {
       <div className="flex flex-grow overflow-hidden">
         <ResizablePanels
           explorer={
-            <VStack className="w-full p-2">
+            <div className="w-full h-full p-2">
               <BoMExplorer
                 itemType="Part"
                 makeMethod={makeMethod}
@@ -153,7 +153,7 @@ export default function PartManufacturing() {
                 // @ts-ignore
                 methods={methods}
               />
-            </VStack>
+            </div>
           }
           content={
             <div className="h-[calc(100dvh-99px)] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">

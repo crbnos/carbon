@@ -62,18 +62,14 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
     nodes,
     getTreeProps,
     getNodeProps,
-    // toggleNodeSelection,
     toggleExpandNode,
     expandAllBelowDepth,
-    // toggleExpandLevel,
     selectNode,
     collapseAllBelowDepth,
     scrollToNode,
     virtualizer,
   } = useTree({
     tree: method,
-    // selectedId,
-    // collapsedIds,
     onSelectedIdChanged: () => {},
     estimatedRowHeight: () => 32,
     parentRef,
@@ -113,14 +109,14 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
   }, [selectedMaterialId, methodId]);
 
   return (
-    <VStack>
+    <VStack className="flex-1 h-full w-full">
       {isLoading ? (
         <div className="flex items-center justify-center py-8 w-full">
           <Spinner className="w-4 h-4" />
         </div>
       ) : (
         <>
-          <HStack className="w-full">
+          <HStack className="w-full flex-shrink-0">
             <InputGroup size="sm" className="flex flex-grow">
               <InputLeftElement>
                 <LuSearch className="h-4 w-4" />
@@ -205,101 +201,100 @@ const JobBoMExplorer = ({ method }: JobBoMExplorerProps) => {
               </DropdownMenu>
             )}
           </HStack>
-          <TreeView
-            parentRef={parentRef}
-            virtualizer={virtualizer}
-            autoFocus
-            tree={method}
-            nodes={nodes}
-            getNodeProps={getNodeProps}
-            getTreeProps={getTreeProps}
-            renderNode={({ node, state }) => (
-              <HoverCard>
-                <HoverCardTrigger asChild>
-                  <div
-                    key={node.id}
-                    className={cn(
-                      "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
-                      state.selected
-                        ? "bg-muted hover:bg-muted/90"
-                        : "bg-transparent hover:bg-muted/90"
-                    )}
-                    onClick={(e) => {
-                      selectNode(node.id);
-                      setSelectedMaterialId(node.data.methodMaterialId);
-                      if (location.pathname !== getNodePath(node)) {
-                        navigate(getNodePath(node));
-                      }
-                    }}
-                  >
-                    <div className="flex h-8 items-center">
-                      {Array.from({ length: node.level }).map((_, index) => (
-                        <LevelLine
-                          key={index}
-                          isSelected={getNodePath(node) === location.pathname}
-                        />
-                      ))}
-                      <div
-                        className={cn(
-                          "flex h-8 w-4 items-center",
-                          node.hasChildren && "hover:bg-accent"
-                        )}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (e.altKey) {
-                            if (state.expanded) {
-                              collapseAllBelowDepth(node.level);
+          <div className="flex flex-1 min-h-0 w-full">
+            <TreeView
+              parentRef={parentRef}
+              virtualizer={virtualizer}
+              autoFocus
+              tree={method}
+              nodes={nodes}
+              getNodeProps={getNodeProps}
+              getTreeProps={getTreeProps}
+              renderNode={({ node, state }) => (
+                <HoverCard>
+                  <HoverCardTrigger asChild>
+                    <div
+                      key={node.id}
+                      className={cn(
+                        "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1",
+                        state.selected
+                          ? "bg-muted hover:bg-muted/90"
+                          : "bg-transparent hover:bg-muted/90"
+                      )}
+                      onClick={(e) => {
+                        selectNode(node.id);
+                        setSelectedMaterialId(node.data.methodMaterialId);
+                        if (location.pathname !== getNodePath(node)) {
+                          navigate(getNodePath(node));
+                        }
+                      }}
+                    >
+                      <div className="flex h-8 items-center">
+                        {Array.from({ length: node.level }).map((_, index) => (
+                          <LevelLine
+                            key={index}
+                            isSelected={getNodePath(node) === location.pathname}
+                          />
+                        ))}
+                        <div
+                          className={cn(
+                            "flex h-8 w-4 items-center",
+                            node.hasChildren && "hover:bg-accent"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (e.altKey) {
+                              if (state.expanded) {
+                                collapseAllBelowDepth(node.level);
+                              } else {
+                                expandAllBelowDepth(node.level);
+                              }
                             } else {
-                              expandAllBelowDepth(node.level);
+                              toggleExpandNode(node.id);
                             }
-                          } else {
-                            toggleExpandNode(node.id);
-                          }
-                          scrollToNode(node.id);
-                        }}
-                      >
-                        {node.hasChildren ? (
-                          state.expanded ? (
-                            <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                            scrollToNode(node.id);
+                          }}
+                        >
+                          {node.hasChildren ? (
+                            state.expanded ? (
+                              <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                            ) : (
+                              <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                            )
                           ) : (
-                            <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                          )
-                        ) : (
-                          <div className="h-8 w-4" />
-                        )}
+                            <div className="h-8 w-4" />
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex w-full items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 overflow-x-hidden">
-                        <MethodIcon
-                          type={
-                            // node.data.isRoot ? "Method" :
-                            node.data.methodType
-                          }
-                          isKit={node.data.kit}
-                          className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                        />
-                        <NodeText node={node} />
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {node.data.isRoot ? (
-                          <Badge variant="outline" className="text-xs">
-                            V{node.data.version}
-                          </Badge>
-                        ) : (
-                          <NodeData node={node} />
-                        )}
+                      <div className="flex w-full items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 overflow-x-hidden">
+                          <MethodIcon
+                            type={node.data.methodType}
+                            isKit={node.data.kit}
+                            className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
+                          />
+                          <NodeText node={node} />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {node.data.isRoot ? (
+                            <Badge variant="outline" className="text-xs">
+                              V{node.data.version}
+                            </Badge>
+                          ) : (
+                            <NodeData node={node} />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </HoverCardTrigger>
-                <HoverCardContent side="right">
-                  <NodePreview node={node} />
-                </HoverCardContent>
-              </HoverCard>
-            )}
-          />
+                  </HoverCardTrigger>
+                  <HoverCardContent side="right">
+                    <NodePreview node={node} />
+                  </HoverCardContent>
+                </HoverCard>
+              )}
+            />
+          </div>
         </>
       )}
     </VStack>

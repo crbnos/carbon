@@ -91,7 +91,7 @@ export default function JobRoute() {
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={
-                <div className="grid w-full h-[calc(100dvh-99px)] overflow-hidden p-2">
+                <div className="w-full h-full p-2">
                   <Suspense fallback={<ExplorerSkeleton />}>
                     <Await
                       resolve={method}

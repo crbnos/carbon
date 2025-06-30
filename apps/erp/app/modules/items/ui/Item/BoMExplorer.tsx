@@ -126,8 +126,8 @@ const BoMExplorer = ({
   });
 
   return (
-    <VStack>
-      <HStack className="w-full justify-between">
+    <VStack className="h-full">
+      <HStack className="w-full justify-between flex-shrink-0">
         <InputGroup size="sm" className="flex flex-grow">
           <InputLeftElement>
             <LuSearch className="h-4 w-4" />
@@ -212,55 +212,49 @@ const BoMExplorer = ({
         </DropdownMenu>
       </HStack>
       {integrations.has("onshape") && (
-        <OnshapeSync
-          makeMethodId={makeMethodId}
-          itemId={itemId}
-          isDisabled={makeMethodStatus !== "Draft"}
-        />
+        <div className="flex flex-shrink-0 w-full">
+          <OnshapeSync
+            makeMethodId={makeMethodId}
+            itemId={itemId}
+            isDisabled={makeMethodStatus !== "Draft"}
+          />
+        </div>
       )}
-      <TreeView
-        parentRef={parentRef}
-        virtualizer={virtualizer}
-        autoFocus
-        tree={methods}
-        nodes={nodes}
-        getNodeProps={getNodeProps}
-        getTreeProps={getTreeProps}
-        renderNode={({ node, state }) => {
-          return (
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <div
-                  key={node.id}
-                  className={cn(
-                    "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
-                    state.selected
-                      ? "bg-muted hover:bg-muted/90"
-                      : "bg-transparent hover:bg-muted/90"
-                  )}
-                  onClick={() => {
-                    selectNode(node.id);
-                    setSelectedMaterialId(node.data.methodMaterialId);
-                    if (node.data.isRoot) {
-                      if (
-                        location.pathname !==
-                        getRootLink(itemType, itemId, methodId)
-                      ) {
-                        navigate(getRootLink(itemType, itemId, methodId));
-                      }
-                    } else {
-                      if (
-                        location.pathname !==
-                        getMaterialLink(
-                          itemType,
-                          itemId,
-                          methodId,
-                          node.data.methodType === "Make"
-                            ? node.data.materialMakeMethodId
-                            : node.data.makeMethodId
-                        )
-                      ) {
-                        navigate(
+      <div className="flex flex-1 min-h-0 w-full">
+        <TreeView
+          parentRef={parentRef}
+          virtualizer={virtualizer}
+          autoFocus
+          tree={methods}
+          nodes={nodes}
+          getNodeProps={getNodeProps}
+          getTreeProps={getTreeProps}
+          parentClassName="h-full"
+          renderNode={({ node, state }) => {
+            return (
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <div
+                    key={node.id}
+                    className={cn(
+                      "flex h-8 cursor-pointer items-center overflow-hidden rounded-sm pr-2 gap-1 group/node",
+                      state.selected
+                        ? "bg-muted hover:bg-muted/90"
+                        : "bg-transparent hover:bg-muted/90"
+                    )}
+                    onClick={() => {
+                      selectNode(node.id);
+                      setSelectedMaterialId(node.data.methodMaterialId);
+                      if (node.data.isRoot) {
+                        if (
+                          location.pathname !==
+                          getRootLink(itemType, itemId, methodId)
+                        ) {
+                          navigate(getRootLink(itemType, itemId, methodId));
+                        }
+                      } else {
+                        if (
+                          location.pathname !==
                           getMaterialLink(
                             itemType,
                             itemId,
@@ -269,77 +263,88 @@ const BoMExplorer = ({
                               ? node.data.materialMakeMethodId
                               : node.data.makeMethodId
                           )
-                        );
+                        ) {
+                          navigate(
+                            getMaterialLink(
+                              itemType,
+                              itemId,
+                              methodId,
+                              node.data.methodType === "Make"
+                                ? node.data.materialMakeMethodId
+                                : node.data.makeMethodId
+                            )
+                          );
+                        }
                       }
-                    }
-                  }}
-                >
-                  <div className="flex h-8 items-center">
-                    {Array.from({ length: node.level }).map((_, index) => (
-                      <LevelLine key={index} isSelected={state.selected} />
-                    ))}
-                    <div
-                      className={cn(
-                        "flex h-8 w-4 items-center",
-                        node.hasChildren && "hover:bg-accent"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (e.altKey) {
-                          if (state.expanded) {
-                            collapseAllBelowDepth(node.level);
+                    }}
+                  >
+                    <div className="flex h-8 items-center">
+                      {Array.from({ length: node.level }).map((_, index) => (
+                        <LevelLine key={index} isSelected={state.selected} />
+                      ))}
+                      <div
+                        className={cn(
+                          "flex h-8 w-4 items-center",
+                          node.hasChildren && "hover:bg-accent"
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (e.altKey) {
+                            if (state.expanded) {
+                              collapseAllBelowDepth(node.level);
+                            } else {
+                              expandAllBelowDepth(node.level);
+                            }
                           } else {
-                            expandAllBelowDepth(node.level);
+                            toggleExpandNode(node.id);
                           }
-                        } else {
-                          toggleExpandNode(node.id);
-                        }
-                        scrollToNode(node.id);
-                      }}
-                    >
-                      {node.hasChildren ? (
-                        state.expanded ? (
-                          <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                          scrollToNode(node.id);
+                        }}
+                      >
+                        {node.hasChildren ? (
+                          state.expanded ? (
+                            <LuChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                          ) : (
+                            <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
+                          )
                         ) : (
-                          <LuChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0 ml-1" />
-                        )
-                      ) : (
-                        <div className="h-8 w-4" />
-                      )}
+                          <div className="h-8 w-4" />
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex w-full items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 overflow-x-hidden">
-                      <MethodIcon
-                        type={
-                          // node.data.isRoot ? "Method" :
-                          node.data.methodType
-                        }
-                        isKit={node.data.kit}
-                        className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
-                      />
-                      <NodeText node={node} />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {node.data.isRoot ? (
-                        <Badge variant="outline" className="text-xs">
-                          V{makeMethodVersion}
-                        </Badge>
-                      ) : (
-                        <NodeData node={node} />
-                      )}
+                    <div className="flex w-full items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 overflow-x-hidden">
+                        <MethodIcon
+                          type={
+                            // node.data.isRoot ? "Method" :
+                            node.data.methodType
+                          }
+                          isKit={node.data.kit}
+                          className="h-4 min-h-4 w-4 min-w-4 flex-shrink-0"
+                        />
+                        <NodeText node={node} />
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {node.data.isRoot ? (
+                          <Badge variant="outline" className="text-xs">
+                            V{makeMethodVersion}
+                          </Badge>
+                        ) : (
+                          <NodeData node={node} />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </HoverCardTrigger>
-              <HoverCardContent side="right">
-                <NodePreview node={node} />
-              </HoverCardContent>
-            </HoverCard>
-          );
-        }}
-      />
+                </HoverCardTrigger>
+                <HoverCardContent side="right">
+                  <NodePreview node={node} />
+                </HoverCardContent>
+              </HoverCard>
+            );
+          }}
+        />
+      </div>
     </VStack>
   );
 };
