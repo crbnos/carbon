@@ -36,12 +36,13 @@ import type {
 } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import React, { useEffect } from "react";
-import { sections } from "~/config";
+import { modules } from "~/config";
 import { getMode, setMode } from "~/services/mode.server";
 
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
+import { motion } from "framer-motion";
 import { LuChevronDown, LuFingerprint, LuMoon, LuSun } from "react-icons/lu";
 import AvatarMenu from "./components/AvatarMenu";
 import { useMode } from "./hooks/useMode";
@@ -207,28 +208,31 @@ export default function App() {
   const fetcher = useFetcher<typeof action>();
   const user = useOptionalUser();
 
-  // Calculate total challenges from sections config
-  const totalChallenges = sections.reduce((total, section) => {
+  // Calculate total challenges from modules config
+  const totalChallenges = modules.reduce((total, module) => {
     return (
       total +
-      section.courses.reduce((courseTotal, course) => {
+      module.courses.reduce((courseTotal, course) => {
         return (
           courseTotal +
           course.topics.reduce((topicTotal, topic) => {
-            return topicTotal + (topic.challenge ? 1 : 0);
+            const hasChallenge = topic.challenge && topic.challenge.length > 0;
+            return topicTotal + (hasChallenge ? 1 : 0);
           }, 0)
         );
       }, 0)
     );
   }, 0);
 
-  const completionPercentage = Math.min(
-    Math.round(
-      (challengeAttempts.filter((attempt) => attempt.passed).length /
-        totalChallenges) *
-        100
-    ),
-    100
+  const passedChallenges = challengeAttempts
+    .filter((attempt) => attempt.passed)
+    .filter(
+      (attempt, index, self) =>
+        index === self.findIndex((a) => a.topicId === attempt.topicId)
+    ).length;
+
+  const completionPercentage = Math.round(
+    (passedChallenges / totalChallenges) * 100
   );
 
   return (
@@ -315,20 +319,36 @@ export default function App() {
               {disclosure.isOpen ? "Less" : "More"}
             </Button>
           </div>
-          <div
+          <motion.div
             className={cn(
-              "w-full bg-black/20 transition-all duration-300 ease-in-out",
-              disclosure.isOpen
-                ? "h-auto opacity-100"
-                : "h-0 opacity-0 overflow-hidden"
+              "w-full bg-black/20",
+              disclosure.isOpen ? "overflow-visible" : "overflow-hidden"
             )}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{
+              height: disclosure.isOpen ? "auto" : 0,
+              opacity: disclosure.isOpen ? 1 : 0,
+            }}
+            transition={{
+              height: {
+                duration: 0.3,
+                ease: "easeInOut",
+              },
+              opacity: {
+                duration: 0.2,
+                delay: disclosure.isOpen ? 0.1 : 0,
+                ease: "easeInOut",
+              },
+            }}
           >
             <div className="max-w-5xl mx-auto px-3 py-4 flex gap-8 z-logo items-center text-white w-full">
               <div className="w-full bg-white/10 rounded-lg p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {sections.map((section) =>
-                  section.courses.map((course) => {
+                {modules.map((module) =>
+                  module.courses.map((course) => {
                     const totalChallenges = course.topics.reduce(
-                      (acc, topic) => acc + (topic.challenge ? 1 : 0),
+                      (acc, topic) =>
+                        acc +
+                        (topic.challenge && topic.challenge.length > 0 ? 1 : 0),
                       0
                     );
 
@@ -348,7 +368,7 @@ export default function App() {
 
                     return (
                       <Link
-                        to={path.to.course(section.id, course.id)}
+                        to={path.to.course(module.id, course.id)}
                         key={course.id}
                         className={cn(
                           "cursor-pointer flex items-center gap-2",
@@ -358,8 +378,8 @@ export default function App() {
                         <div
                           className="size-8 rounded-lg flex items-center justify-center"
                           style={{
-                            backgroundColor: section.background,
-                            color: section.foreground,
+                            backgroundColor: module.background,
+                            color: module.foreground,
                           }}
                         >
                           {course.icon}
@@ -377,7 +397,7 @@ export default function App() {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
       <Outlet />

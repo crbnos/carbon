@@ -2,32 +2,52 @@ import { Button, Heading } from "@carbon/react";
 import { Link } from "@remix-run/react";
 import { LuCirclePlay } from "react-icons/lu";
 import { Hero } from "~/components/Hero";
-import { sections } from "~/config";
+import { modules } from "~/config";
+import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
 
 export default function AboutRoute() {
+  const user = useOptionalUser();
   return (
     <div className="w-full flex flex-col">
       <Hero>
         <Heading
-          size="h1"
+          size="display"
           className="font-display text-[#212578] dark:text-white max-w-2xl"
         >
-          What do you want to learn?
+          Carbon University
         </Heading>
         <p className="text-muted-foreground text-balance text-left font-medium tracking-tighter text-lg max-w-2xl">
           Want to take command of your business? Need a quick answer to a
-          problem? Test your knowledge and track your progress.
+          problem or onboard a new employee? Test your knowledge and track your
+          progress.
         </p>
         <div className="flex items-center gap-2">
-          <Button
-            size="lg"
-            variant="secondary"
-            leftIcon={<LuCirclePlay />}
-            asChild
-          >
-            <Link to={path.to.login}>Sign up to register</Link>
-          </Button>
+          {user ? (
+            <Button
+              size="lg"
+              variant="secondary"
+              leftIcon={<LuCirclePlay />}
+              asChild
+            >
+              <Link
+                to={path.to.lesson(
+                  modules[0].courses[0].topics[0].lessons[0].id
+                )}
+              >
+                Begin your first lesson
+              </Link>
+            </Button>
+          ) : (
+            <Button
+              size="lg"
+              variant="secondary"
+              leftIcon={<LuCirclePlay />}
+              asChild
+            >
+              <Link to={path.to.login}>Sign up to register</Link>
+            </Button>
+          )}
         </div>
       </Hero>
       <section className="border-b">
@@ -78,7 +98,7 @@ export default function AboutRoute() {
               >
                 <Link
                   to={path.to.lesson(
-                    sections[0].courses[0].topics[0].lessons[0].id
+                    modules[0].courses[0].topics[0].lessons[0].id
                   )}
                 >
                   Begin your first lesson

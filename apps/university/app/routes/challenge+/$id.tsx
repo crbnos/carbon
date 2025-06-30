@@ -8,7 +8,7 @@ import {
   useParams,
   useSubmit,
 } from "@remix-run/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ConfettiExplosion from "react-confetti-explosion";
 import {
   LuChevronLeft,
@@ -92,6 +92,7 @@ export default function ChallengeRoute() {
   const { id } = useParams();
   const user = useOptionalUser();
   const actionData = useActionData<ActionData>();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const submit = useSubmit();
 
@@ -105,7 +106,7 @@ export default function ChallengeRoute() {
     throw new Error("Topic not found");
   }
 
-  const { section, course, topic } = context;
+  const { module, course, topic } = context;
 
   // Shuffle the questions
   const shuffledQuestions = useMemo(
@@ -119,6 +120,9 @@ export default function ChallengeRoute() {
   useEffect(() => {
     if (actionData) {
       setIsSubmitted(true);
+      if (actionData.passed && audioRef.current) {
+        audioRef.current.play();
+      }
     }
   }, [actionData]);
 
@@ -191,7 +195,7 @@ export default function ChallengeRoute() {
           className="mr-2"
           asChild
         >
-          <Link to={path.to.course(section.id, course.id)}>Back to course</Link>
+          <Link to={path.to.course(module.id, course.id)}>Back to course</Link>
         </Button>
 
         <Button
@@ -199,7 +203,7 @@ export default function ChallengeRoute() {
           className="text-sm text-muted-foreground"
           asChild
         >
-          <Link to={path.to.course(section.id, course.id)}>{course.name}</Link>
+          <Link to={path.to.course(module.id, course.id)}>{course.name}</Link>
         </Button>
 
         <span className="text-muted-foreground text-sm">/</span>
@@ -213,8 +217,8 @@ export default function ChallengeRoute() {
         <div
           className="border rounded-lg rounded-b-none p-4"
           style={{
-            backgroundColor: section?.background,
-            color: section?.foreground,
+            backgroundColor: module?.background,
+            color: module?.foreground,
           }}
         >
           <div className="flex flex-col gap-4">
@@ -222,9 +226,9 @@ export default function ChallengeRoute() {
               <div
                 className="flex-shrink-0 size-12 text-2xl p-3 rounded-full border"
                 style={{
-                  backgroundColor: section?.background,
-                  borderColor: section?.foreground,
-                  color: section?.foreground,
+                  backgroundColor: module?.background,
+                  borderColor: module?.foreground,
+                  color: module?.foreground,
                 }}
               >
                 <LuFlag />
@@ -285,7 +289,7 @@ export default function ChallengeRoute() {
                   leftIcon={<LuChevronLeft />}
                   asChild
                 >
-                  <Link to={path.to.course(section.id, course.id)}>
+                  <Link to={path.to.course(module.id, course.id)}>
                     Return to Course Page
                   </Link>
                 </Button>
@@ -409,14 +413,19 @@ export default function ChallengeRoute() {
       )}
 
       {actionData?.passed && (
-        <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-          <ConfettiExplosion
-            particleCount={200}
-            force={1}
-            duration={3000}
-            width={1600}
-          />
-        </div>
+        <>
+          <audio ref={audioRef} preload="auto">
+            <source src="/victory.mp3" type="audio/mpeg" />
+          </audio>
+          <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
+            <ConfettiExplosion
+              particleCount={200}
+              force={1}
+              duration={3000}
+              width={1600}
+            />
+          </div>
+        </>
       )}
     </div>
   );

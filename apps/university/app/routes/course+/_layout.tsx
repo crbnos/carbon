@@ -2,7 +2,7 @@ import { Button, Heading } from "@carbon/react";
 import { Link, Outlet } from "@remix-run/react";
 import { LuBookOpen, LuCirclePlay } from "react-icons/lu";
 import { Hero } from "~/components/Hero";
-import { sections } from "~/config";
+import { modules } from "~/config";
 import { useOptionalUser } from "~/hooks/useUser";
 import { path } from "~/utils/path";
 
@@ -31,7 +31,7 @@ export default function CourseLayout() {
             >
               <Link
                 to={path.to.lesson(
-                  sections[0].courses[0].topics[0].lessons[0].id
+                  modules[0].courses[0].topics[0].lessons[0].id
                 )}
               >
                 Begin your first lesson
@@ -49,21 +49,21 @@ export default function CourseLayout() {
         </Hero>
       )}
       <div className="w-full px-4 max-w-5xl mx-auto my-16">
-        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6">
           <nav className="space-y-4">
-            {sections.map((section) => (
-              <div key={section.id} className="space-y-2">
+            {modules.map((module) => (
+              <div key={module.id} className="space-y-2">
                 <h3
                   className="font-display font-bold uppercase text-xs"
-                  style={{ color: section.background }}
+                  style={{ color: module.background }}
                 >
-                  {section.name}
+                  {module.name}
                 </h3>
                 <div className="space-y-0">
-                  {section.courses.map((course) => (
+                  {module.courses.map((course) => (
                     <Link
                       key={course.id}
-                      to={path.to.course(section.id, course.id)}
+                      to={path.to.course(module.id, course.id)}
                       className="block py-1 text-sm hover:underline"
                     >
                       {course.name}

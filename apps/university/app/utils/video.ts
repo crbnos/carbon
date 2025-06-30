@@ -1,4 +1,4 @@
-import { sections } from "~/config";
+import { modules } from "~/config";
 
 export function formatDuration(duration: number) {
   const minutes = Math.floor(duration / 60);
@@ -7,14 +7,14 @@ export function formatDuration(duration: number) {
 }
 
 export function findTopicContext(topicId: string) {
-  for (const section of sections) {
-    for (const course of section.courses) {
+  for (const module of modules) {
+    for (const course of module.courses) {
       const topic = course.topics.find(
         (topic: { id: string }) => topic.id === topicId
       );
       if (topic) {
         return {
-          section,
+          module,
           course,
           topic,
         };
@@ -25,15 +25,15 @@ export function findTopicContext(topicId: string) {
 }
 
 export function getLessonContext(lessonId: string) {
-  for (const section of sections) {
-    for (const course of section.courses) {
+  for (const module of modules) {
+    for (const course of module.courses) {
       for (const topic of course.topics) {
         const lesson = topic.lessons.find(
           (lesson: { id: string }) => lesson.id === lessonId
         );
         if (lesson) {
           return {
-            section,
+            module,
             course,
             topic,
             lesson,

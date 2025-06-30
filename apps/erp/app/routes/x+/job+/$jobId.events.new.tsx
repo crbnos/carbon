@@ -11,29 +11,23 @@ import {
   upsertProductionEvent,
 } from "~/modules/production";
 import { ProductionEventForm } from "~/modules/production/ui/Jobs";
-import { getWorkCentersList } from "~/modules/resources";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     create: "production",
   });
 
   const { jobId } = params;
   if (!jobId) throw notFound("jobId not found");
 
-  const [jobOperations, workCenters] = await Promise.all([
-    getJobOperations(client, jobId),
-    getWorkCentersList(client, companyId),
-  ]);
+  const [jobOperations] = await Promise.all([getJobOperations(client, jobId)]);
 
-  const operationOptions = jobOperations.data?.map((operation) => ({
-    label: `${operation.description} - ${
-      workCenters.data?.find((center) => center.id === operation.workCenterId)
-        ?.name
-    }`,
-    value: operation.id,
-  }));
+  const operationOptions =
+    jobOperations.data?.map((operation) => ({
+      label: operation.description ?? "",
+      value: operation.id,
+    })) ?? [];
 
   return json({ operationOptions });
 }

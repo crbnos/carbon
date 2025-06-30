@@ -92,6 +92,11 @@ const ProductionEventForm = ({
                 options={operationOptions ?? []}
               />
               <Employee name="employeeId" label="Employee" />
+              <WorkCenter
+                name="workCenterId"
+                label="Work Center"
+                processId={initialValues.jobOperationId}
+              />
               <Select
                 name="type"
                 label="Event Type"
@@ -101,7 +106,6 @@ const ProductionEventForm = ({
                   { label: "Setup", value: "Setup" },
                 ]}
               />
-              <WorkCenter name="workCenterId" label="Work Center" />
               <DateTimePicker
                 name="startTime"
                 label="Start Time"

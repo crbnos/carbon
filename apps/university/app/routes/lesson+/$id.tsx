@@ -96,7 +96,7 @@ export default function LessonRoute() {
     throw new Error("Lesson not found");
   }
 
-  const { section, course, topic, lesson } = context;
+  const { module, course, topic, lesson } = context;
   const nextLesson = getNextLesson(id);
   const previousLesson = getPreviousLesson(id);
   const hasChallenge = topic.challenge && topic.challenge.length > 0;
@@ -140,7 +140,7 @@ export default function LessonRoute() {
           className="mr-2"
           asChild
         >
-          <Link to={path.to.course(section.id, course.id)}>Back to course</Link>
+          <Link to={path.to.course(module.id, course.id)}>Back to course</Link>
         </Button>
 
         <Button
@@ -148,7 +148,7 @@ export default function LessonRoute() {
           className="text-sm text-muted-foreground"
           asChild
         >
-          <Link to={path.to.course(section.id, course.id)}>{course.name}</Link>
+          <Link to={path.to.course(module.id, course.id)}>{course.name}</Link>
         </Button>
 
         <span className="text-muted-foreground text-sm">/</span>
@@ -170,7 +170,7 @@ export default function LessonRoute() {
         <div
           className="w-full h-12 rounded-b-lg flex items-center justify-end gap-2 px-3"
           style={{
-            backgroundColor: section.background,
+            backgroundColor: module.background,
           }}
         >
           <Button
@@ -193,8 +193,8 @@ export default function LessonRoute() {
           <div
             className="border rounded-lg rounded-b-none p-4"
             style={{
-              backgroundColor: section?.background,
-              color: section?.foreground,
+              backgroundColor: module?.background,
+              color: module?.foreground,
             }}
           >
             <div className="flex flex-col gap-4">
@@ -202,7 +202,7 @@ export default function LessonRoute() {
                 <div
                   className="flex-shrink-0 size-12 text-2xl p-3 rounded-lg bg-black/20"
                   style={{
-                    color: section?.foreground,
+                    color: module?.foreground,
                   }}
                 >
                   {course.icon}
@@ -281,9 +281,9 @@ export default function LessonRoute() {
                   >
                     <div className="flex items-center gap-2">
                       {isCompleted ? (
-                        <LuCircleCheck className="size-4 text-emerald-500" />
+                        <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
                       ) : (
-                        <LuCirclePlay className="size-4 text-muted-foreground" />
+                        <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
                       )}
                       <span
                         className={
@@ -305,7 +305,9 @@ export default function LessonRoute() {
             isChallengeCompleted ? (
               <Button
                 variant="primary"
-                leftIcon={<LuCircleCheck className="size-4 text-emerald-500" />}
+                leftIcon={
+                  <LuCircleCheck className="size-4 flex-shrink-0 text-emerald-500" />
+                }
               >
                 Topic Challenge Completed
               </Button>

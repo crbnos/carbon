@@ -13,8 +13,8 @@ export const path = {
     accountSettings: `${ERP_URL}/x/account`,
     callback: "/callback",
     challenge: (topicId: string) => generatePath(`${challenge}/${topicId}`),
-    course: (sectionId: string, courseId: string) =>
-      generatePath(`${course}/${sectionId}/${courseId}`),
+    course: (moduleId: string, courseId: string) =>
+      generatePath(`${course}/${moduleId}/${courseId}`),
     dashboard: `${ERP_URL}/x`,
     healthcheck: "/healthcheck",
     login: "/login",
