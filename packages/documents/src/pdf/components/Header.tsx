@@ -41,6 +41,45 @@ const styles = StyleSheet.create({
     fontWeight: 400,
     color: "gray",
   },
+  jobHeader: {
+    fontSize: 10,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 20,
+    gap: 20,
+  },
+  leftSection: {
+    flex: 1,
+  },
+  rightSection: {
+    flex: 1,
+  },
+  infoRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  label: {
+    fontSize: 9,
+    fontWeight: 600,
+    color: "#374151",
+  },
+  value: {
+    fontSize: 9,
+    fontWeight: 400,
+    color: "#111827",
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: 700,
+    marginBottom: 8,
+    color: "#111827",
+    borderBottom: "1px solid #d1d5db",
+    paddingBottom: 2,
+  },
 });
 
 const Header = ({ title, subtitle, tertiaryTitle, company }: HeaderProps) => {
@@ -66,4 +105,4 @@ const Header = ({ title, subtitle, tertiaryTitle, company }: HeaderProps) => {
   );
 };
 
-export default Header;
+export { Header };

@@ -140,7 +140,7 @@ const SidebarProvider = React.forwardRef<
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH,
-                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+                "--sidebar-width-icon": isMobile ? 0 : SIDEBAR_WIDTH_ICON,
                 ...style,
               } as React.CSSProperties
             }

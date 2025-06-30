@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
@@ -12,6 +12,7 @@ import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
+
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
 
@@ -19,6 +20,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
+
   const [jobOperation, productionQuantities] = await Promise.all([
     serviceRole
       .from("jobOperation")
@@ -106,7 +108,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         );
 
         if (trackedEntities.data && trackedEntities.data.length > 0) {
-          // Use the last tracked entity if available
           trackedEntityId =
             trackedEntities.data[trackedEntities.data.length - 1].id;
         }
@@ -198,5 +199,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.operations);
+  throw redirect(
+    path.to.operations,
+    await flash(request, success("Operation finished successfully"))
+  );
 }
