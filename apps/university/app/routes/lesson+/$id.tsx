@@ -3,6 +3,7 @@ import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { Button, Spinner } from "@carbon/react";
 import { json, Link, useFetcher, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { useEffect } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -122,12 +123,48 @@ export default function LessonRoute() {
   const isChallengeAttempted = hasChallenge && attemptsByTopic[topic.id];
   const challengeAttemptCount = attemptsByTopic[topic.id] ?? 0;
 
-  const onComplete = async () => {
+  const onComplete = async (lessonId: string) => {
     fetcher.submit(null, {
       method: "POST",
       action: path.to.lesson(id),
     });
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === "ready" && data.context === "player.js") {
+          const iframe = document.getElementById(
+            "loom-embed"
+          ) as HTMLIFrameElement;
+          if (iframe) {
+            iframe.contentWindow?.postMessage(
+              JSON.stringify({
+                method: "addEventListener",
+                value: "ended",
+                context: "player.js",
+              }),
+              "*"
+            );
+          }
+        }
+
+        if (data.event === "ended" && data.context === "player.js") {
+          onComplete(id);
+        }
+      } catch (error) {
+        console.error("Error parsing message data", error);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   return (
     <div className="w-full px-4 max-w-5xl mx-auto mt-4 pb-24 flex flex-col gap-8">
@@ -169,10 +206,12 @@ export default function LessonRoute() {
               <Spinner className="h-8 w-8" />
             </div>
             <iframe
+              key={id}
+              id="loom-embed"
               title={lesson.name}
               src={`https://www.loom.com/embed/${
                 lesson.loomUrl.split("share/")[1]
-              }`}
+              }&hideEmbedTopBar=true`}
               allowFullScreen
               style={{
                 position: "absolute",
