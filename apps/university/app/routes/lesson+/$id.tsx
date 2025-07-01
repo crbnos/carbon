@@ -3,7 +3,6 @@ import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { Button, Spinner } from "@carbon/react";
 import { json, Link, useFetcher, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { useEffect } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -130,29 +129,6 @@ export default function LessonRoute() {
     });
   };
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      console.log("xxx", event);
-      if (event.origin !== "https://www.loom.com") return;
-
-      if (event.data && typeof event.data === "object") {
-        // Alternative event format some Loom embeds use
-        if (event.data.event === "ended") {
-          console.log("Video ended (alternative format)");
-          onComplete();
-        }
-      }
-    };
-
-    // Add event listener
-    window.addEventListener("message", handleMessage);
-
-    // Cleanup function
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [id]); // Re-run when lesson ID changes
-
   return (
     <div className="w-full px-4 max-w-5xl mx-auto mt-4 pb-24 flex flex-col gap-8">
       <div className="flex items-center gap-2">
@@ -194,7 +170,9 @@ export default function LessonRoute() {
             </div>
             <iframe
               title={lesson.name}
-              src={`https://www.loom.com/embed/${lesson.videoId}`}
+              src={`https://www.loom.com/embed/${
+                lesson.loomUrl.split("share/")[1]
+              }`}
               allowFullScreen
               style={{
                 position: "absolute",
@@ -202,26 +180,6 @@ export default function LessonRoute() {
                 left: 0,
                 width: "100%",
                 height: "100%",
-              }}
-              onLoad={(e) => {
-                const iframe = e.currentTarget;
-
-                // Wait for ready message before adding event listener
-                const handleMessage = (event: MessageEvent) => {
-                  if (event.data?.type === "ready") {
-                    iframe.contentWindow?.postMessage(
-                      {
-                        method: "addEventListener",
-                        value: "ended",
-                        context: "player.js",
-                      },
-                      "*"
-                    );
-                    window.removeEventListener("message", handleMessage);
-                  }
-                };
-
-                window.addEventListener("message", handleMessage);
               }}
             />
           </div>

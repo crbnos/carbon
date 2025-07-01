@@ -51,7 +51,7 @@ interface Question {
 type Lesson = {
   name: string;
   id: string;
-  videoId: string;
+  loomUrl: string;
   description: string;
   duration: number;
 };
@@ -113,8 +113,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "what-is-carbon",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "What is Carbon?",
                 description:
                   "Meet Carbon, the next generation of accessible, scalable, and data-centric ERP/MES/QMS software. Carbon was designed from the ground up to be approachable and easy to get started with, but highly flexible and capable of scaling up to the largest projects.",
@@ -122,8 +122,8 @@ export const modules: Config = [
               },
               {
                 id: "carbon-modules",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Carbon's Modules",
                 description:
                   "Learn about Carbon's modular architecture and how different modules work together to provide comprehensive business management capabilities.",
@@ -131,8 +131,8 @@ export const modules: Config = [
               },
               {
                 id: "architecture-overview",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Architecture Overview",
                 description:
                   "Understand Carbon's technical architecture, including its web-based design, database structure, and API capabilities.",
@@ -173,26 +173,26 @@ export const modules: Config = [
             lessons: [
               {
                 id: "tables",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Tables",
+                loomUrl:
+                  "https://www.loom.com/share/215955b2b240439f875de13b47f91ac3?sid=0b256eef-13ef-4f43-9191-2b9a8f57aa14",
+                name: "Tables & Views",
                 description:
                   "Learn how to use tables to view, sort, filter, and manage your data effectively in Carbon.",
-                duration: 100,
+                duration: 151,
               },
               {
                 id: "forms",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/0559b51e4ce44cb9ae2b8c679fd4fed8?sid=0639aec8-55ba-4524-912c-63e16fb6e7da",
                 name: "Forms",
                 description:
                   "Master the art of creating and using forms to input and edit data in Carbon.",
-                duration: 100,
+                duration: 99,
               },
               {
                 id: "documents",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Documents",
                 description:
                   "Understand how to work with documents, including creation, editing, and sharing capabilities.",
@@ -200,8 +200,8 @@ export const modules: Config = [
               },
               {
                 id: "custom-fields",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Custom Fields",
                 description:
                   "Learn how to extend Carbon's functionality by creating custom fields to capture additional data.",
@@ -261,8 +261,8 @@ export const modules: Config = [
               {
                 id: "company-setup",
                 name: "Company Setup",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 description:
                   "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences.",
                 duration: 100,
@@ -270,8 +270,8 @@ export const modules: Config = [
               {
                 id: "users-permissions",
                 name: "Users and Permissions",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 description:
                   "Learn how to setup your users in Carbon. This includes creating users, setting permissions, and managing access levels.",
                 duration: 100,
@@ -279,8 +279,8 @@ export const modules: Config = [
               {
                 id: "locations-resources",
                 name: "Locations and Resources",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 description:
                   "Learn how to setup your work centers, machines, and processes in Carbon. This is essential for manufacturing and resource planning.",
                 duration: 100,
@@ -288,8 +288,8 @@ export const modules: Config = [
               {
                 id: "integrations",
                 name: "Integrations",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 description:
                   "Learn how to setup your integrations in Carbon to connect with other business systems and tools.",
                 duration: 100,
@@ -328,8 +328,8 @@ export const modules: Config = [
               {
                 id: "import-tools",
                 name: "Import Tools",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 description:
                   "Learn how to use Carbon's built-in import tools to efficiently migrate your data from other systems.",
                 duration: 100,
@@ -338,8 +338,8 @@ export const modules: Config = [
             supplemental: [
               {
                 id: "importing-data-api",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Importing Data with the API",
                 description:
                   "Learn how to use Carbon's API to programmatically import data and integrate with other systems.",
@@ -381,8 +381,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "parts-materials-consumables-tools",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Parts, Materials and Tools",
                 description:
                   "Learn the differences between various item types and when to use each one in your business processes.",
@@ -390,8 +390,8 @@ export const modules: Config = [
               },
               {
                 id: "method-types",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Method Types",
                 description:
                   "Understand the different method types available for items and how they affect manufacturing processes.",
@@ -399,8 +399,8 @@ export const modules: Config = [
               },
               {
                 id: "tracking-types",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Tracking Types",
                 description:
                   "Learn about different tracking types and how they help manage inventory and traceability.",
@@ -429,8 +429,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "methods",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Methods",
                 description:
                   "Learn how to create and manage manufacturing methods that define how items are produced.",
@@ -438,8 +438,8 @@ export const modules: Config = [
               },
               {
                 id: "bill-of-process",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Bill of Process",
                 description:
                   "Understand how to create and manage bills of process that define the manufacturing steps.",
@@ -447,8 +447,8 @@ export const modules: Config = [
               },
               {
                 id: "bill-of-materials",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Bill of Materials",
                 description:
                   "Learn how to create and manage bills of materials that define what components are needed.",
@@ -456,8 +456,8 @@ export const modules: Config = [
               },
               {
                 id: "revisions-versions",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Revisions and Versions",
                 description:
                   "Master the revision and version control system for managing changes to methods and bills.",
@@ -465,8 +465,8 @@ export const modules: Config = [
               },
               {
                 id: "get-method-save-method",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Get Method and Save Method",
                 description:
                   "Learn how to retrieve and save methods programmatically using Carbon's API.",
@@ -476,8 +476,8 @@ export const modules: Config = [
             supplemental: [
               {
                 id: "product-configurator",
-                videoId:
-                  "ec2f2c8607274c2cb35d3479ff97c86a?sid=6635bc72-1c9e-407a-ac6f-fded2726fbcb",
+                loomUrl:
+                  "https://www.loom.com/share/ec2f2c8607274c2cb35d3479ff97c86a?sid=6635bc72-1c9e-407a-ac6f-fded2726fbcb",
                 name: "Product Configurator",
                 description:
                   "Learn how to use Carbon's product configurator to create complex, configurable products.",
@@ -516,8 +516,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "planning",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Planning",
                 description:
                   "See how Carbon's planning tools help you forecast demand and generate replenishment requirements.",
@@ -525,8 +525,8 @@ export const modules: Config = [
               },
               {
                 id: "inventory-management",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Inventory Levels",
                 description:
                   "Learn how to monitor and manage inventory levels, set reorder points, and handle stock movements.",
@@ -572,8 +572,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "recording-rfq",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Recording an RFQ",
                 description:
                   "Learn how to record and manage Request for Quote (RFQ) documents from customers.",
@@ -581,8 +581,8 @@ export const modules: Config = [
               },
               {
                 id: "quote-overview",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Quote Overview",
                 description:
                   "Understand the structure and components of a quote in Carbon.",
@@ -591,8 +591,8 @@ export const modules: Config = [
 
               {
                 id: "digital-quotes",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Digital Quotes",
                 description:
                   "Create professional digital quotes that can be easily shared with customers.",
@@ -600,8 +600,8 @@ export const modules: Config = [
               },
               {
                 id: "quote-revisions",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Quote Revisions",
                 description:
                   "Learn how to manage quote revisions and track changes throughout the quoting process.",
@@ -609,8 +609,8 @@ export const modules: Config = [
               },
               {
                 id: "converting-quotes-orders",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Converting Quotes to Orders",
                 description:
                   "Master the process of converting approved quotes into sales orders.",
@@ -640,8 +640,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "quote-methods",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Quote Methods",
                 description:
                   "Learn how to use different quote methods to standardize your estimation process and ensure consistency.",
@@ -649,8 +649,8 @@ export const modules: Config = [
               },
               {
                 id: "quote-costing",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Quote Costing and Pricing",
                 description:
                   "Master the art of calculating accurate costs for quotes including materials, labor, and overhead.",
@@ -688,8 +688,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "sales-orders",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Sales Orders",
                 description:
                   "Learn how to create and manage sales orders in Carbon.",
@@ -697,8 +697,8 @@ export const modules: Config = [
               },
               {
                 id: "make-to-order-parts",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Make to Order Parts",
                 description:
                   "Understand how to handle make-to-order parts and production planning.",
@@ -706,16 +706,16 @@ export const modules: Config = [
               },
               {
                 id: "shipping-orders",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Shipping Orders",
                 description: "Learn how to process and track order shipments.",
                 duration: 100,
               },
               {
                 id: "sales-invoices",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Sales Invoices",
                 description:
                   "Master the creation and management of sales invoices.",
@@ -794,8 +794,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "job-overview",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Job Overview",
                 description:
                   "Learn the fundamentals of job management and how jobs drive production in Carbon.",
@@ -803,8 +803,8 @@ export const modules: Config = [
               },
               {
                 id: "scheduling",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Scheduling",
                 description:
                   "Learn how to schedule jobs and manage production timelines effectively.",
@@ -812,8 +812,8 @@ export const modules: Config = [
               },
               {
                 id: "production-planning",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Production Planning",
                 description:
                   "Learn how to plan production activities and coordinate resources effectively.",
@@ -821,8 +821,8 @@ export const modules: Config = [
               },
               {
                 id: "closing-job",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Closing a Job",
                 description:
                   "Learn the proper process for completing and closing jobs in the production system.",
@@ -905,8 +905,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "mes-overview",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "MES Overview",
                 description:
                   "Learn about Manufacturing Execution Systems and how Carbon implements MES functionality.",
@@ -914,8 +914,8 @@ export const modules: Config = [
               },
               {
                 id: "tracking-time-quantities",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Tracking Time and Quantities",
                 description:
                   "Learn how to track production time and quantities for accurate job costing and efficiency analysis.",
@@ -923,8 +923,8 @@ export const modules: Config = [
               },
               {
                 id: "tracking-batch-serial",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Tracking Batch and Serial Parts",
                 description:
                   "Learn how to track batch and serial numbered parts for traceability and quality control.",
@@ -932,8 +932,8 @@ export const modules: Config = [
               },
               {
                 id: "issuing-parts",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Issuing Parts",
                 description:
                   "Learn how to issue parts to jobs and track material consumption accurately.",
@@ -941,8 +941,8 @@ export const modules: Config = [
               },
               {
                 id: "job-traveler",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Job Traveler",
                 description:
                   "Learn how to use job travelers to guide production processes and provide instructions.",
@@ -1021,8 +1021,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "purchasing-overview",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Purchasing Overview",
                 description:
                   "Learn about the complete purchasing process from supplier selection to payment.",
@@ -1030,8 +1030,8 @@ export const modules: Config = [
               },
               {
                 id: "supplier-quotes",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Supplier Quotes",
                 description:
                   "Learn how to manage supplier quotes and compare pricing effectively.",
@@ -1039,8 +1039,8 @@ export const modules: Config = [
               },
               {
                 id: "purchase-orders",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Purchase Orders",
                 description:
                   "Learn how to create and manage purchase orders effectively.",
@@ -1048,8 +1048,8 @@ export const modules: Config = [
               },
               {
                 id: "receiving-purchase-order",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Receiving a Purchase Order",
                 description:
                   "Learn how to receive and inspect purchased goods properly.",
@@ -1120,8 +1120,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "purchase-invoices",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Purchase Invoices",
                 description:
                   "Learn how to process and manage purchase invoices for payment.",
@@ -1129,8 +1129,8 @@ export const modules: Config = [
               },
               {
                 id: "purchasing-planning",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Purchasing Planning",
                 description:
                   "Learn how to plan purchasing activities based on demand and inventory levels.",
@@ -1138,8 +1138,8 @@ export const modules: Config = [
               },
               {
                 id: "historical-costs",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Historical Costs",
                 description:
                   "Learn how to analyze historical costs for better purchasing decisions.",
@@ -1147,8 +1147,8 @@ export const modules: Config = [
               },
               {
                 id: "supplier-pricing",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Supplier Pricing",
                 description:
                   "Learn how to analyze supplier pricing and develop negotiation strategies.",
@@ -1205,8 +1205,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "non-conformances",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Non-Conformances",
                 description:
                   "Learn how to track and manage non-conforming materials and products.",
@@ -1214,8 +1214,8 @@ export const modules: Config = [
               },
               {
                 id: "gauges-calibrations",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Gauges and Calibrations",
                 description:
                   "Learn how to manage measurement equipment and calibration schedules.",
@@ -1307,8 +1307,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "api-keys",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "API Keys",
                 description:
                   "Learn how to create and manage API keys for secure access to Carbon's API.",
@@ -1316,8 +1316,8 @@ export const modules: Config = [
               },
               {
                 id: "typescript-api-client",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "TypeScript API Client",
                 description:
                   "Learn how to use Carbon's TypeScript API client for seamless integration.",
@@ -1325,8 +1325,8 @@ export const modules: Config = [
               },
               {
                 id: "csharp-api-client",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "C# API Client",
                 description:
                   "Learn how to use Carbon's C# API client for .NET applications.",
@@ -1334,8 +1334,8 @@ export const modules: Config = [
               },
               {
                 id: "python-api-client",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Python API Client",
                 description:
                   "Learn how to integrate with Carbon using the Python API client.",
@@ -1343,8 +1343,8 @@ export const modules: Config = [
               },
               {
                 id: "webhooks",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Webhooks",
                 description:
                   "Learn how to use webhooks for real-time event notifications from Carbon.",
@@ -1393,8 +1393,8 @@ export const modules: Config = [
             lessons: [
               {
                 id: "integrations",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Integrations",
                 description:
                   "Learn how to integrate Carbon with other business systems and tools.",
@@ -1402,8 +1402,8 @@ export const modules: Config = [
               },
               {
                 id: "applications",
-                videoId:
-                  "51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
                 name: "Applications",
                 description:
                   "Learn how to build custom applications that integrate with Carbon's platform.",
