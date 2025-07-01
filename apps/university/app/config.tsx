@@ -436,15 +436,7 @@ export const modules: Config = [
                   "Learn how to create and manage manufacturing methods that define how items are produced.",
                 duration: 100,
               },
-              {
-                id: "bill-of-process",
-                loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
-                name: "Bill of Process",
-                description:
-                  "Understand how to create and manage bills of process that define the manufacturing steps.",
-                duration: 100,
-              },
+
               {
                 id: "bill-of-materials",
                 loomUrl:
@@ -454,6 +446,16 @@ export const modules: Config = [
                   "Learn how to create and manage bills of materials that define what components are needed.",
                 duration: 100,
               },
+              {
+                id: "bill-of-process",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                name: "Bill of Process",
+                description:
+                  "Understand how to create and manage bills of process that define the manufacturing steps.",
+                duration: 100,
+              },
+
               {
                 id: "revisions-versions",
                 loomUrl:
@@ -473,7 +475,45 @@ export const modules: Config = [
                 duration: 100,
               },
             ],
-            supplemental: [
+          },
+          {
+            name: "Advanced Manufacturing",
+            id: "advanced-manufacturing",
+            description:
+              "Learn how to use Carbon's product configurator to create complex, configurable products.",
+            challenge: [
+              {
+                id: "q1",
+                question:
+                  "What is the primary purpose of procedures in Carbon?",
+                options: [
+                  "To track customer preferences",
+                  "To standardize the manufacturing process",
+                  "To manage inventory levels",
+                  "To create invoices",
+                ],
+                correctAnswer: 1,
+              },
+            ],
+            lessons: [
+              {
+                id: "procedures",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                name: "Procedures",
+                description:
+                  "Learn how to create and manage procedures that define the manufacturing steps.",
+                duration: 330,
+              },
+              {
+                id: "subassemblies-vs-kits",
+                loomUrl:
+                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                name: "Subassemblies vs Kits",
+                description:
+                  "Learn the difference between subassemblies and kits and when to use each one.",
+                duration: 330,
+              },
               {
                 id: "product-configurator",
                 loomUrl:
@@ -484,6 +524,7 @@ export const modules: Config = [
                 duration: 330,
               },
             ],
+            supplemental: [],
           },
         ],
       },
