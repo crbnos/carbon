@@ -1,10 +1,10 @@
 import { getCarbon } from "@carbon/auth";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
-import { Button } from "@carbon/react";
+import { Button, Spinner } from "@carbon/react";
 import { json, Link, useFetcher, useParams } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { useEffect } from "react";
 import {
-  LuCheck,
   LuChevronLeft,
   LuChevronRight,
   LuCircleCheck,
@@ -16,6 +16,7 @@ import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   formatDuration,
+  getAllLessonsForTopic,
   getLessonContext,
   getNextLesson,
   getPreviousLesson,
@@ -81,10 +82,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   return json({ success: true });
 };
-
 export default function LessonRoute() {
   const { lessonCompletions, challengeAttempts } = useProgress();
   const { id } = useParams();
+  const fetcher = useFetcher<typeof action>();
 
   if (!id) {
     throw new Error("Lesson ID is required");
@@ -122,14 +123,35 @@ export default function LessonRoute() {
   const isChallengeAttempted = hasChallenge && attemptsByTopic[topic.id];
   const challengeAttemptCount = attemptsByTopic[topic.id] ?? 0;
 
-  const fetcher = useFetcher<typeof action>();
-
   const onComplete = async () => {
     fetcher.submit(null, {
       method: "POST",
       action: path.to.lesson(id),
     });
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      console.log("xxx", event);
+      if (event.origin !== "https://www.loom.com") return;
+
+      if (event.data && typeof event.data === "object") {
+        // Alternative event format some Loom embeds use
+        if (event.data.event === "ended") {
+          console.log("Video ended (alternative format)");
+          onComplete();
+        }
+      }
+    };
+
+    // Add event listener
+    window.addEventListener("message", handleMessage);
+
+    // Cleanup function
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [id]); // Re-run when lesson ID changes
 
   return (
     <div className="w-full px-4 max-w-5xl mx-auto mt-4 pb-24 flex flex-col gap-8">
@@ -160,28 +182,56 @@ export default function LessonRoute() {
 
       <div className="flex flex-col w-full">
         <div className="w-full aspect-video bg-black rounded-t-lg overflow-hidden">
-          <iframe
-            src={`https://player.vimeo.com/video/${lesson.videoId}?h=00000000&badge=0&autopause=0&player_id=0&app_id=58479`}
-            allow="autoplay; fullscreen; picture-in-picture"
-            className="w-full h-full"
-            title={lesson.name}
-          />
+          <div
+            style={{
+              position: "relative",
+              paddingBottom: "56.25%",
+              height: "0",
+            }}
+          >
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Spinner className="h-8 w-8" />
+            </div>
+            <iframe
+              title={lesson.name}
+              src={`https://www.loom.com/embed/${lesson.videoId}`}
+              allowFullScreen
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+              }}
+              onLoad={(e) => {
+                const iframe = e.currentTarget;
+
+                // Wait for ready message before adding event listener
+                const handleMessage = (event: MessageEvent) => {
+                  if (event.data?.type === "ready") {
+                    iframe.contentWindow?.postMessage(
+                      {
+                        method: "addEventListener",
+                        value: "ended",
+                        context: "player.js",
+                      },
+                      "*"
+                    );
+                    window.removeEventListener("message", handleMessage);
+                  }
+                };
+
+                window.addEventListener("message", handleMessage);
+              }}
+            />
+          </div>
         </div>
         <div
-          className="w-full h-12 rounded-b-lg flex items-center justify-end gap-2 px-3"
+          className="dark w-full h-12 rounded-b-lg flex items-center justify-end gap-2 px-3"
           style={{
             backgroundColor: module.background,
           }}
         >
-          <Button
-            variant="secondary"
-            leftIcon={<LuCheck className="size-4" />}
-            onClick={onComplete}
-            isDisabled={fetcher.state !== "idle"}
-            isLoading={fetcher.state !== "idle"}
-          >
-            Complete Lesson
-          </Button>
           <Share
             text={typeof window !== "undefined" ? window.location.href : ""}
           />
@@ -267,8 +317,11 @@ export default function LessonRoute() {
               Lessons in this topic
             </h3>
             <div className="flex flex-col gap-1">
-              {topic.lessons.map((topicLesson) => {
+              {getAllLessonsForTopic(topic).map((topicLesson) => {
                 const isCompleted = completedLessons.includes(topicLesson.id);
+                const isSupplemental = topic.supplemental?.some(
+                  (lesson: any) => lesson.id === topicLesson.id
+                );
                 return (
                   <Link
                     key={topicLesson.id}
@@ -291,6 +344,11 @@ export default function LessonRoute() {
                         }
                       >
                         {topicLesson.name}
+                        {isSupplemental && (
+                          <span className="ml-1 text-xs text-muted-foreground">
+                            (Supplemental)
+                          </span>
+                        )}
                       </span>
                     </div>
                     <span className="text-muted-foreground text-xs">

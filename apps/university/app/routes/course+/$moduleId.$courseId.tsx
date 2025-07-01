@@ -10,7 +10,7 @@ import {
 import { modules } from "~/config";
 import { useProgress } from "~/hooks";
 import { path } from "~/utils/path";
-import { formatDuration } from "~/utils/video";
+import { formatDuration, getAllLessonsForTopic } from "~/utils/video";
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { courseId } = params;
@@ -32,7 +32,11 @@ export default function CourseRoute() {
   const totalDuration =
     course?.topics.reduce((acc, topic) => {
       return (
-        acc + topic.lessons.reduce((acc, lesson) => acc + lesson.duration, 0)
+        acc +
+        getAllLessonsForTopic(topic).reduce(
+          (acc, lesson) => acc + lesson.duration,
+          0
+        )
       );
     }, 0) ?? 0;
 
@@ -170,8 +174,12 @@ export default function CourseRoute() {
                 </div>
                 <div className="flex flex-col gap-4 py-8 w-full text-sm">
                   <div className="flex flex-col gap-0">
-                    {topic.lessons.map((lesson) => {
+                    {getAllLessonsForTopic(topic).map((lesson) => {
                       const isCompleted = completedLessons.includes(lesson.id);
+                      const isSupplemental = topic.supplemental?.some(
+                        (supplementalLesson: any) =>
+                          supplementalLesson.id === lesson.id
+                      );
                       return (
                         <Link
                           key={lesson.id}
@@ -184,7 +192,14 @@ export default function CourseRoute() {
                             ) : (
                               <LuCirclePlay className="size-4 flex-shrink-0 text-muted-foreground" />
                             )}
-                            <span>{lesson.name}</span>
+                            <span>
+                              {lesson.name}
+                              {isSupplemental && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  (Supplemental)
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <span className="text-muted-foreground text-xs">
                             {formatDuration(lesson.duration)}

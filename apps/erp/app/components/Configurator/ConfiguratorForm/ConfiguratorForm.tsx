@@ -471,6 +471,8 @@ function ConfiguratorProgress() {
   const { currentStep, totalSteps } = useConfigurator();
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
+  if (totalSteps <= 1) return null;
+
   return (
     <div className="w-full space-y-2">
       <Progress value={progress} className="h-2" />

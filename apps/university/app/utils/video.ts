@@ -28,6 +28,7 @@ export function getLessonContext(lessonId: string) {
   for (const module of modules) {
     for (const course of module.courses) {
       for (const topic of course.topics) {
+        // Search in regular lessons
         const lesson = topic.lessons.find(
           (lesson: { id: string }) => lesson.id === lessonId
         );
@@ -37,7 +38,24 @@ export function getLessonContext(lessonId: string) {
             course,
             topic,
             lesson,
+            lessonType: "regular" as const,
           };
+        }
+
+        // Search in supplemental lessons
+        if (topic.supplemental) {
+          const supplementalLesson = topic.supplemental.find(
+            (lesson: { id: string }) => lesson.id === lessonId
+          );
+          if (supplementalLesson) {
+            return {
+              module,
+              course,
+              topic,
+              lesson: supplementalLesson,
+              lessonType: "supplemental" as const,
+            };
+          }
         }
       }
     }
@@ -45,20 +63,27 @@ export function getLessonContext(lessonId: string) {
   return null;
 }
 
+export function getAllLessonsForTopic(topic: any) {
+  const allLessons = [...topic.lessons];
+  if (topic.supplemental) {
+    allLessons.push(...topic.supplemental);
+  }
+  return allLessons;
+}
+
 export function getNextLesson(lessonId: string) {
   const context = getLessonContext(lessonId);
   if (!context) return null;
 
   const { topic } = context;
-  const currentIndex = topic.lessons.findIndex(
-    (lesson) => lesson.id === lessonId
-  );
+  const allLessons = getAllLessonsForTopic(topic);
+  const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
 
-  if (currentIndex === -1 || currentIndex === topic.lessons.length - 1) {
+  if (currentIndex === -1 || currentIndex === allLessons.length - 1) {
     return null;
   }
 
-  return topic.lessons[currentIndex + 1];
+  return allLessons[currentIndex + 1];
 }
 
 export function getPreviousLesson(lessonId: string) {
@@ -66,13 +91,12 @@ export function getPreviousLesson(lessonId: string) {
   if (!context) return null;
 
   const { topic } = context;
-  const currentIndex = topic.lessons.findIndex(
-    (lesson) => lesson.id === lessonId
-  );
+  const allLessons = getAllLessonsForTopic(topic);
+  const currentIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
 
   if (currentIndex <= 0) {
     return null;
   }
 
-  return topic.lessons[currentIndex - 1];
+  return allLessons[currentIndex - 1];
 }
