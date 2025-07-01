@@ -136,6 +136,12 @@ import {
   InputRightAddon,
   InputRightElement,
 } from "./Input";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "./InputOTP";
 import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { Loading } from "./Loading";
@@ -410,6 +416,10 @@ export {
   InputGroup,
   InputLeftAddon,
   InputLeftElement,
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
   InputRightAddon,
   InputRightElement,
   Kbd,

@@ -11,8 +11,8 @@ import {
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { forwardRef } from "react";
-import { useField } from "../hooks";
 import type { ValidationBehaviorOptions } from "src/internal/getInputProps";
+import { useField } from "../hooks";
 
 type FormInputProps = InputProps & {
   name: string;
@@ -47,7 +47,7 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
 
     return (
       <FormControl isInvalid={!!error} isRequired={isRequired}>
-        {label && (
+        {label ? (
           <FormLabel
             htmlFor={name}
             isOptional={isOptional}
@@ -56,6 +56,10 @@ const Input = forwardRef<HTMLInputElement, FormInputProps>(
           >
             {label}
           </FormLabel>
+        ) : (
+          <label htmlFor={name} className="sr-only">
+            {rest.placeholder ?? name}
+          </label>
         )}
         {prefix || suffix ? (
           <InputGroup>

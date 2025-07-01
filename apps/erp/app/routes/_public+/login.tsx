@@ -14,11 +14,12 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
+  Heading,
   Separator,
   toast,
   VStack,
 } from "@carbon/react";
-import { useFetcher, useSearchParams } from "@remix-run/react";
+import { Link, useFetcher, useSearchParams } from "@remix-run/react";
 import { Ratelimit } from "@upstash/ratelimit";
 import type {
   ActionFunctionArgs,
@@ -26,7 +27,7 @@ import type {
   MetaFunction,
 } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
-import { LuCircleAlert, LuMailCheck } from "react-icons/lu";
+import { LuCircleAlert } from "react-icons/lu";
 
 import { Hidden, Input, Submit } from "~/components/Form";
 
@@ -124,12 +125,8 @@ export default function LoginRoute() {
         {fetcher.data?.success === true ? (
           <>
             <VStack spacing={4} className="items-center justify-center">
-              <LuMailCheck className="size-24" />
-
-              <h2 className="text-2xl font-semibold tracking-tight mb-2">
-                Check your email
-              </h2>
-              <p className="text-muted-foreground text-center text-balance">
+              <Heading size="h3">Check your email</Heading>
+              <p className="text-muted-foreground tracking-tight text-sm">
                 We've sent you a magic link to sign in to your account.
               </p>
             </VStack>
@@ -178,6 +175,19 @@ export default function LoginRoute() {
           </ValidatedForm>
         )}
       </div>
+
+      <div className="text-center mt-4">
+        <p className="text-sm text-muted-foreground">
+          Don't have an account?{" "}
+          <Link
+            to={`/signup${redirectTo ? `?redirectTo=${redirectTo}` : ""}`}
+            className="text-primary hover:underline"
+          >
+            Sign up for free
+          </Link>
+        </p>
+      </div>
+
       <div className="text-sm text-center text-balance text-muted-foreground w-[380px] mt-4">
         <p>
           By signing in, you agree to the{" "}

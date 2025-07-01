@@ -40,3 +40,23 @@ export const callbackValidator = z.object({
   refreshToken: z.string(),
   userId: z.string(),
 });
+
+export const selfSignupValidator = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email("Must be a valid email"),
+  firstName: z.string().min(1, { message: "First name is required" }),
+  lastName: z.string().min(1, { message: "Last name is required" }),
+});
+
+export const verifySignupValidator = z.object({
+  email: z
+    .string()
+    .min(1, { message: "Email is required" })
+    .email("Must be a valid email"),
+  verificationCode: z
+    .string()
+    .min(1, { message: "Verification code is required" })
+    .length(6, { message: "Verification code must be 6 characters" }),
+});

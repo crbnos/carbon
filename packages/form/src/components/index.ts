@@ -12,6 +12,7 @@ import DateTimePicker from "./DateTimePicker";
 import Hidden from "./Hidden";
 import Input from "./Input";
 import InputControlled from "./InputControlled";
+import InputOTP from "./InputOTP";
 import type { MultiSelectProps } from "./MultiSelect";
 import MultiSelect from "./MultiSelect";
 import Number from "./Number";
@@ -40,6 +41,7 @@ export {
   Hidden,
   Input,
   InputControlled,
+  InputOTP,
   MultiSelect,
   Number,
   NumberControlled,
