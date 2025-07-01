@@ -25,6 +25,7 @@ export function useModules() {
       name: "Shop Floor",
       to: path.to.external.mes,
       icon: LuTvMinimalPlay,
+      role: "employee",
     },
     {
       permission: "sales",
@@ -109,6 +110,8 @@ export function useModules() {
   return modules.filter((item) => {
     if (item.permission) {
       return permissions.can("view", item.permission);
+    } else if (item.role) {
+      return permissions.is(item.role);
     } else {
       return true;
     }
