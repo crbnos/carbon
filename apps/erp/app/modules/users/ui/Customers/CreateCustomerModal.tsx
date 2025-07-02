@@ -102,7 +102,9 @@ const CreateCustomerModal = () => {
             </VStack>
             <ModalFooter>
               <HStack>
-                <Submit>Create User</Submit>
+                <Submit isLoading={formFetcher.state !== "idle"}>
+                  Create User
+                </Submit>
               </HStack>
             </ModalFooter>
           </ModalBody>

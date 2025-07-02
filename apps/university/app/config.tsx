@@ -123,20 +123,20 @@ export const modules: Config = [
               {
                 id: "carbon-modules",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/6d0edd4106e4440a9df253a711b1fc85?sid=d84101c2-7673-495f-a97c-e662d46ed974",
                 name: "Carbon's Modules",
                 description:
                   "Learn about Carbon's modular architecture and how different modules work together to provide comprehensive business management capabilities.",
-                duration: 100,
+                duration: 205,
               },
               {
                 id: "architecture-overview",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/0dcb2952495f41a3931d30ce30ecf60b?sid=a6901e78-ee3d-4b9d-8beb-349d5900f025",
                 name: "Architecture Overview",
                 description:
                   "Understand Carbon's technical architecture, including its web-based design, database structure, and API capabilities.",
-                duration: 100,
+                duration: 123,
               },
             ],
           },
@@ -192,11 +192,11 @@ export const modules: Config = [
               {
                 id: "documents",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/8ec23411c1b24404ba2d427c64d3ff2c?sid=2727efcb-2c3e-4560-ae3d-9865ec673a1b",
                 name: "Documents",
                 description:
                   "Understand how to work with documents, including creation, editing, and sharing capabilities.",
-                duration: 100,
+                duration: 109,
               },
               {
                 id: "custom-fields",

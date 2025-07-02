@@ -80,7 +80,7 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
             </VStack>
             <ModalFooter>
               <HStack>
-                <Submit>Invite</Submit>
+                <Submit isLoading={formFetcher.state !== "idle"}>Invite</Submit>
               </HStack>
             </ModalFooter>
           </ModalBody>
