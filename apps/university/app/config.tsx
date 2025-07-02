@@ -201,11 +201,11 @@ export const modules: Config = [
               {
                 id: "custom-fields",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/2ae2dd19c507426dbca78f0b3f071e17?sid=0d2b0dab-287b-4155-8b65-aeed58e5eba9",
                 name: "Custom Fields",
                 description:
                   "Learn how to extend Carbon's functionality by creating custom fields to capture additional data.",
-                duration: 100,
+                duration: 166,
               },
             ],
           },
