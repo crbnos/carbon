@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Outlet } from "@remix-run/react";
+import { Outlet, useLoaderData } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
@@ -19,12 +19,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     update: "settings",
   });
 
-  const [company, locations] = await Promise.all([
+  const [company, plan, locations] = await Promise.all([
     getCompany(client, companyId),
+    getCompanyPlan(client, companyId),
     getLocationsList(client, companyId),
   ]);
+
   // we don't need to do onboarding if we have a company name or locations
   if (company.data?.name && locations.data?.length) {
+    if (!plan.data?.planId) {
+      throw redirect(path.to.onboarding.plan);
+    }
     throw redirect(path.to.authenticatedRoot);
   }
 
@@ -48,6 +53,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function OnboardingLayout() {
+  const loaderData = useLoaderData<typeof loader>();
+  console.log(loaderData);
   return (
     <VStack
       spacing={4}

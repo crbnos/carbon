@@ -270,6 +270,7 @@ export const path = {
     onboarding: {
       company: `${onboarding}/company`,
       location: `${onboarding}/location`,
+      plan: `${onboarding}/plan`,
       root: `${onboarding}`,
       theme: `${onboarding}/theme`,
       user: `${onboarding}/user`,
@@ -1282,6 +1283,7 @@ export const onboardingSequence = [
   path.to.onboarding.theme,
   path.to.onboarding.user,
   path.to.onboarding.company,
+  path.to.onboarding.plan,
 ] as const;
 
 export const getStoragePath = (bucket: string, path: string) => {

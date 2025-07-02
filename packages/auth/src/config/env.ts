@@ -24,6 +24,8 @@ declare global {
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
+      STRIPE_SECRET_KEY: string;
+      STRIPE_WEBHOOK_SECRET: string;
       SUPABASE_ANON_KEY: string;
       SUPABASE_URL: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
@@ -84,6 +86,8 @@ export const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
+export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY");
+export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET");
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
 export const VERCEL_URL = getEnv("VERCEL_URL", { isSecret: false });

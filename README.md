@@ -226,6 +226,13 @@ For example, to run test command in the `@carbon/react` package you can run:
 $ npm run test -w @carbon/react
 ```
 
+To run Stripe locally, run:
+
+```
+$ npm run -w erp register:stripe
+$ npm run -w erp dev:stripe
+```
+
 ### Restoring a Production Database Locally
 
 1. Download the production database backup from Supabase

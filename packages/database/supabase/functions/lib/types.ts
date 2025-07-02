@@ -1982,6 +1982,7 @@ export type Database = {
           logoLight: string | null
           logoLightIcon: string | null
           name: string
+          ownerId: string | null
           phone: string | null
           postalCode: string | null
           slackChannel: string | null
@@ -2004,6 +2005,7 @@ export type Database = {
           logoLight?: string | null
           logoLightIcon?: string | null
           name: string
+          ownerId?: string | null
           phone?: string | null
           postalCode?: string | null
           slackChannel?: string | null
@@ -2026,6 +2028,7 @@ export type Database = {
           logoLight?: string | null
           logoLightIcon?: string | null
           name?: string
+          ownerId?: string | null
           phone?: string | null
           postalCode?: string | null
           slackChannel?: string | null
@@ -2076,6 +2079,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "company_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_ownerId_fkey"
+            columns: ["ownerId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           },
         ]
       }
