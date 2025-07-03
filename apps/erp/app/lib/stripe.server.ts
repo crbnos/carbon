@@ -291,6 +291,7 @@ export async function getCheckoutUrl({
     mode: "subscription",
     success_url: `${process.env.VERCEL_URL}${path.to.api.webhookStripe}`,
     cancel_url: `${process.env.VERCEL_URL}${path.to.api.webhookStripe}`,
+    payment_method_types: ["card", "us_bank_account", "cashapp"],
     metadata: {
       companyId,
     },

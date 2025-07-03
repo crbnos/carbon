@@ -262,10 +262,10 @@ export const modules: Config = [
                 id: "company-setup",
                 name: "Company Setup",
                 loomUrl:
-                  "https://www.loom.com/share/51e0c6dd053b4a3e904fc795d4fc298f?sid=0bb2081d-6bc4-4efb-8361-d2717dda9781",
+                  "https://www.loom.com/share/d327844f2da4420c9a579f73b343601b?sid=f7f94b5a-68f5-47b5-a1bd-948247be1cda",
                 description:
                   "Learn how to setup your company in Carbon. This includes creating your company, adding users, and setting up your company's preferences.",
-                duration: 0,
+                duration: 158,
               },
               {
                 id: "users-permissions",

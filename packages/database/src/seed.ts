@@ -1,7 +1,7 @@
 // import type { User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import { admin, devPrices } from "./seed/index";
+import { devPrices } from "./seed/index";
 import type { Database } from "./types";
 
 dotenv.config();
@@ -39,9 +39,6 @@ async function seed() {
   );
 
   if (upsertPlans.error) throw upsertPlans.error;
-
-  console.log(`Database has been seeded. 🌱\n`);
-  console.log(`Admin user is 👇 \n📧: ${admin.email}\n🔑: ${admin.password}`);
 }
 
 seed().catch((e) => {

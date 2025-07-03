@@ -1,11 +1,4 @@
-import * as dotenv from "dotenv";
-import {
-  existsSync,
-  readFileSync,
-  symlinkSync,
-  unlinkSync,
-  writeFileSync,
-} from "fs";
+import { existsSync, symlinkSync, unlinkSync } from "fs";
 import { join } from "path";
 
 const ROOT_ENV_PATH = join(process.cwd(), ".env");
@@ -14,17 +7,8 @@ if (!existsSync(ROOT_ENV_PATH)) {
   throw new Error("No .env file found in root directory");
 }
 
-// Load and parse .env file
-dotenv.config();
-const DEFAULT_EMAIL = process.env.DEFAULT_EMAIL_ADDRESS;
-
-if (!DEFAULT_EMAIL) {
-  throw new Error("DEFAULT_EMAIL_ADDRESS not found in .env file");
-}
-
 const APPS_DIR = join(process.cwd(), "apps");
 const PACKAGES_DIR = join(process.cwd(), "packages");
-const SEED_SQL_PATH = join(PACKAGES_DIR, "database", "supabase", "seed.sql");
 
 // List of package folders that need .env symlinks
 const PACKAGE_FOLDERS = ["database", "kv"];
@@ -41,21 +25,6 @@ function createSymlink(targetPath: string, sourcePath: string) {
     console.log(`Created symlink at ${targetPath}`);
   } catch (error) {
     console.error(`Failed to create symlink at ${targetPath}:`, error);
-  }
-}
-
-// Update seed.sql with new email
-if (existsSync(SEED_SQL_PATH)) {
-  try {
-    const content = readFileSync(SEED_SQL_PATH, "utf8");
-    const updatedContent = content.replace(
-      /brad@carbonos\.dev/g,
-      DEFAULT_EMAIL
-    );
-    writeFileSync(SEED_SQL_PATH, updatedContent);
-    console.log(`Updated email in seed.sql`);
-  } catch (error) {
-    console.error(`Failed to update seed.sql:`, error);
   }
 }
 
