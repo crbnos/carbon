@@ -149,11 +149,11 @@ Located at `/packages/auth/`, the auth package provides:
    - `public.userPermission` table with the user's ID
 3. **Identity Group**: A separate trigger creates an identity group for the user
 
-### Self-Signup Flow (Not Yet Implemented)
+### Self-Signup Flow
 
 - Login page has a "Sign up for free" link pointing to `/signup`
-- The signup route is not yet implemented
-- Current user creation only happens through:
+- User can select a plan (Starter, Business, Partner)
+- Account creation happens through:
   - Company invitations
   - OAuth authentication (Google)
   - Stripe checkout completion
@@ -259,6 +259,7 @@ Environment variables in `packages/auth/src/config/env.ts`:
 ### Email Templates
 
 1. **WelcomeEmail**: Sent immediately after user creation
+
    - Personal welcome from founder Brad
    - Link to Carbon University
    - Located at `packages/documents/src/email/WelcomeEmail.tsx`
@@ -284,6 +285,7 @@ Environment variables in `packages/auth/src/config/env.ts`:
 ### Company Creation Flow
 
 1. **New Company Creation** (`/onboarding/company`):
+
    - Creates new company with provided details
    - Seeds company with default data via `seedCompany()`
    - Creates headquarters location
