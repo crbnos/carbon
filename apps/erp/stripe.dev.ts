@@ -31,7 +31,9 @@ const events: Stripe.WebhookEndpointCreateParams.EnabledEvent[] = [
 ];
 
 console.log("🔄 Setting up Stripe webhook endpoint...");
-const url = `https://${process.env.VERCEL_URL}/api/stripe`;
+
+const url = `${process.env.VERCEL_URL}/api/webhook/stripe`;
+console.log("🔄 Webhook URL:", url);
 
 if (!url.includes("localhost:")) {
   throw new Error("Running in production mode");

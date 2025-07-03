@@ -1,4 +1,5 @@
 import { SUPABASE_URL } from "@carbon/auth";
+
 import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -151,6 +152,13 @@ export async function getCompany(
   };
 }
 
+export async function getCompanyPlan(
+  client: SupabaseClient,
+  companyId: string
+) {
+  return client.from("companyPlan").select("*").eq("id", companyId).single();
+}
+
 export async function getCompanySettings(
   client: SupabaseClient<Database>,
   companyId: string
@@ -260,6 +268,14 @@ export async function getIntegrations(
   companyId: string
 ) {
   return client.from("integrations").select("*").eq("companyId", companyId);
+}
+
+export async function getPlanById(client: SupabaseClient, planId: string) {
+  return client.from("plan").select("*").eq("id", planId).single();
+}
+
+export async function getPlans(client: SupabaseClient) {
+  return client.from("plan").select("*");
 }
 
 export async function getNextSequence(
@@ -376,6 +392,58 @@ export async function insertCompany(
       .single();
   }
   return client.from("company").insert(company).select("id").single();
+}
+
+export async function insertCompanyPlan(
+  client: SupabaseClient<Database>,
+  companyPlan: {
+    companyId: string;
+    planId: string;
+    status: "active" | "inactive";
+  }
+) {
+  const plan = await getPlanById(client, companyPlan.planId);
+  if (plan.error) {
+    return plan;
+  }
+
+  const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
+    {
+      id: companyPlan.companyId,
+      planId: companyPlan.planId,
+      tasksLimit: plan.data.tasksLimit,
+      aiTokensLimit: plan.data.aiTokensLimit,
+      usersLimit: 10, // Default value as defined in the migration
+      subscriptionStartDate: new Date().toISOString(),
+      stripeSubscriptionStatus: companyPlan.status,
+      trialPeriodEndsAt: plan.data.stripeTrialPeriodDays
+        ? new Date(
+            Date.now() + plan.data.stripeTrialPeriodDays * 24 * 60 * 60 * 1000
+          ).toISOString()
+        : null,
+    };
+
+  return client
+    .from("companyPlan")
+    .upsert(companyPlanData)
+    .select("id")
+    .single();
+}
+
+export async function updateCompanyPlan(
+  client: SupabaseClient<Database>,
+  data: {
+    companyId: string;
+    stripeCustomerId: string;
+    stripeSubscriptionId: string;
+    stripeSubscriptionStatus: string;
+    subscriptionStartDate: string;
+  }
+) {
+  // Extract companyId and build the update data without it
+  const { companyId, ...updateData } = data;
+
+  return client.from("companyPlan").update(updateData).eq("id", companyId);
 }
 
 export async function seedCompany(

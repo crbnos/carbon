@@ -41308,9 +41308,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.slackChannel",
           },
           {
-            $ref: "#/parameters/rowFilter.company.ownerId",
-          },
-          {
             $ref: "#/parameters/select",
           },
           {
@@ -41430,9 +41427,6 @@ export default {
             $ref: "#/parameters/rowFilter.company.slackChannel",
           },
           {
-            $ref: "#/parameters/rowFilter.company.ownerId",
-          },
-          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -41504,9 +41498,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.slackChannel",
-          },
-          {
-            $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
             $ref: "#/parameters/body.company",
@@ -72795,7 +72786,6 @@ export default {
         "aiTokensLimit",
         "usersLimit",
         "subscriptionStartDate",
-        "stripeSubscriptionId",
         "stripeSubscriptionStatus",
         "createdAt",
         "updatedAt",
@@ -72842,7 +72832,7 @@ export default {
           type: "string",
         },
         stripeSubscriptionStatus: {
-          default: "ACTIVE",
+          default: "active",
           format: "text",
           type: "string",
         },
@@ -76906,12 +76896,6 @@ export default {
           type: "string",
         },
         slackChannel: {
-          format: "text",
-          type: "string",
-        },
-        ownerId: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -104219,12 +104203,6 @@ export default {
     },
     "rowFilter.company.slackChannel": {
       name: "slackChannel",
-      required: false,
-      in: "query",
-      type: "string",
-    },
-    "rowFilter.company.ownerId": {
-      name: "ownerId",
       required: false,
       in: "query",
       type: "string",

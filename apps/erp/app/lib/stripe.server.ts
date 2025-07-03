@@ -1,10 +1,13 @@
-import { getPlanById } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth";
 import { redis } from "@carbon/kv";
 import { redirect } from "@vercel/remix";
 import { Stripe } from "stripe";
 import { z } from "zod";
+import {
+  getPlanById,
+  updateCompanyPlan,
+} from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
-import { getCarbonServiceRole } from "../../../../packages/auth/src/lib/supabase/client";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("process.env.STRIPE_SECRET_KEY not defined");
@@ -39,6 +42,14 @@ const KvStripeCustomerSchema = z.object({
     .nullable(),
 });
 
+export async function getStripeCustomerByCompanyId(companyId: string) {
+  const customerId = await getStripeCustomerId(companyId);
+  if (!customerId) {
+    return null;
+  }
+  return getStripeCustomer(customerId);
+}
+
 export async function getStripeCustomer(customerId: string) {
   const customer = await redis.get(`stripe:customer:${customerId}`);
   return KvStripeCustomerSchema.nullish().parse(customer);
@@ -46,15 +57,19 @@ export async function getStripeCustomer(customerId: string) {
 
 const KvStripeUserSchema = z.string().nullish();
 
-export async function getStripeCustomerId(userId: string) {
-  return KvStripeUserSchema.parse(await redis.get(`stripe:user:${userId}`));
+export async function getStripeCustomerId(companyId: string) {
+  return KvStripeUserSchema.parse(
+    await redis.get(`stripe:company:${companyId}`)
+  );
 }
 
 export async function createStripeCustomer({
+  userId,
   companyId,
   email,
   name,
 }: {
+  userId: string;
   companyId: string;
   email: string;
   name?: string | null;
@@ -65,17 +80,18 @@ export async function createStripeCustomer({
         email,
         name: name ?? undefined,
         metadata: {
+          owner: userId,
           companyId,
         },
       },
       {
-        idempotencyKey: companyId,
+        idempotencyKey: `${companyId}-${userId}`,
       }
     );
 
-    // Store the relation between userId and stripeCustomerId in KV
+    // Store the relation between companyId and stripeCustomerId in KV
     await redis.set(
-      `stripe:user:${companyId}`,
+      `stripe:company:${companyId}`,
       KvStripeUserSchema.parse(customer.id)
     );
 
@@ -115,6 +131,8 @@ export async function processStripeEvent({
     throw new Error("Stripe webhook handler failed");
   }
 
+  console.log({ customer });
+
   try {
     await syncStripeDataToKV(customer);
   } catch (error) {
@@ -125,6 +143,7 @@ export async function processStripeEvent({
 
 export async function syncStripeDataToKV(customerId: string) {
   const key = `stripe:customer:${customerId}`;
+  console.log({ key });
 
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
@@ -157,7 +176,30 @@ export async function syncStripeDataToKV(customerId: string) {
         : null,
   });
 
-  await redis.set(key, subData);
+  const customer = await stripe.customers.retrieve(customerId);
+  const companyId = (customer as any).metadata?.companyId;
+
+  if (companyId) {
+    const [, companyPlan] = await Promise.all([
+      redis.set(key, subData),
+      updateCompanyPlan(getCarbonServiceRole(), {
+        companyId,
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subscription.id,
+        stripeSubscriptionStatus: subscription.status,
+        subscriptionStartDate: new Date(
+          subscription.items.data[0].current_period_start * 1000
+        ).toISOString(),
+      }),
+    ]);
+
+    console.log({ companyPlan });
+
+    if (companyPlan.error) {
+      throw new Error("Failed to update company plan");
+    }
+  }
+
   return subData;
 }
 
@@ -211,11 +253,13 @@ function getStripeWebhookEvent({
 
 export async function getCheckoutUrl({
   planId,
+  userId,
   companyId,
   email,
   name,
 }: {
   planId: string;
+  userId: string;
   companyId: string;
   email: string;
   name?: string | null;
@@ -226,6 +270,7 @@ export async function getCheckoutUrl({
   if (!stripeCustomerId) {
     // Create a new customer if one doesn't exist
     const customer = await createStripeCustomer({
+      userId,
       companyId,
       email,
       name,
@@ -244,8 +289,8 @@ export async function getCheckoutUrl({
       },
     ],
     mode: "subscription",
-    success_url: `${process.env.VERCEL_URL}/api/webhook/stripe`,
-    cancel_url: `${process.env.VERCEL_URL}/api/webhook/stripe`,
+    success_url: `${process.env.VERCEL_URL}${path.to.api.webhookStripe}`,
+    cancel_url: `${process.env.VERCEL_URL}${path.to.api.webhookStripe}`,
     metadata: {
       companyId,
     },
@@ -278,4 +323,16 @@ export async function redirectToBillingPortal({
   }
 
   redirect(portalSession.url);
+}
+
+export async function updateActiveUsers({
+  subscriptionId,
+  activeUsers,
+}: {
+  subscriptionId: string;
+  activeUsers: number;
+}) {
+  await stripe.subscriptionItems.update(subscriptionId, {
+    quantity: activeUsers,
+  });
 }

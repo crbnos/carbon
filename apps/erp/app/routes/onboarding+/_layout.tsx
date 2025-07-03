@@ -1,4 +1,4 @@
-import { getCompanyPlan, requirePermissions } from "@carbon/auth/auth.server";
+import { requirePermissions } from "@carbon/auth/auth.server";
 import { Outlet } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
@@ -7,6 +7,7 @@ import { onboardingSequence, path } from "~/utils/path";
 
 import { VStack } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
+import { getStripeCustomerByCompanyId } from "~/lib/stripe.server";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 
@@ -17,20 +18,19 @@ export const config = {
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
 
-  const [company, plan, locations] = await Promise.all([
+  const [company, stripeCustomer, locations] = await Promise.all([
     getCompany(client, companyId),
-    getCompanyPlan(client, companyId),
+    getStripeCustomerByCompanyId(companyId),
     getLocationsList(client, companyId),
   ]);
 
   const pathname = new URL(request.url).pathname;
-  const isOnPlanRoute = pathname === path.to.onboarding.plan;
 
-  // Only redirect to plan page if we're not already on it
+  // Only redirect to stripeCustomer page if we're not already on it
   if (company.data?.name && locations.data?.length) {
-    if (!plan.data?.id && !isOnPlanRoute) {
+    if (!stripeCustomer && pathname !== path.to.onboarding.plan) {
       throw redirect(path.to.onboarding.plan);
-    } else if (plan.data?.id) {
+    } else if (stripeCustomer) {
       throw redirect(path.to.authenticatedRoot);
     }
   }

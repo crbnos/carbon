@@ -22,10 +22,10 @@ import {
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
-import { getCompanyPlan } from "@carbon/auth/auth.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useUser } from "~/hooks";
+import { getStripeCustomerByCompanyId } from "~/lib/stripe.server";
 import { getSavedViews } from "~/modules/shared/shared.service";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
@@ -62,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // parallelize the requests
   const [
     companies,
-    companyPlan,
+    stripeCustomer,
     customFields,
     integrations,
     savedViews,
@@ -72,7 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaults,
   ] = await Promise.all([
     getCompanies(client, userId),
-    getCompanyPlan(client, companyId),
+    getStripeCustomerByCompanyId(companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getSavedViews(client, userId, companyId),
@@ -88,8 +88,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
 
-  const requiresOnboarding =
-    !companies.data?.[0]?.name || !companyPlan.data?.id;
+  const requiresOnboarding = !companies.data?.[0]?.name || !stripeCustomer;
   if (requiresOnboarding) {
     throw redirect(path.to.onboarding.root);
   }

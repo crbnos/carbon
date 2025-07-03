@@ -1,5 +1,3 @@
-ALTER TABLE "company" ADD COLUMN "ownerId" TEXT REFERENCES "user"("id") ON DELETE SET NULL;
-
 CREATE TABLE "plan" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,
@@ -25,8 +23,8 @@ CREATE POLICY "SELECT" ON "plan"
 
 
 INSERT INTO "plan" ("id", "name", "userBasedPricing", "stripePriceId", "tasksLimit", "aiTokensLimit", "stripeTrialPeriodDays", "public") VALUES
-  ('STARTER', 'Starter', TRUE, 'price_1RgUYhFV6ecOa0XvD37hQOhK', 10000, 1000000, 14, TRUE),
-  ('BUSINESS', 'Business', TRUE, 'price_1RgUZ3FV6ecOa0XvQFLFQsX4', 10000, 1000000, 14, TRUE),
+  ('STARTER', 'Cloud Starter', TRUE, 'price_1RgUYhFV6ecOa0XvD37hQOhK', 10000, 1000000, 14, TRUE),
+  ('BUSINESS', 'Cloud Business', TRUE, 'price_1RgUZ3FV6ecOa0XvQFLFQsX4', 10000, 1000000, 14, TRUE),
   ('PARTNER', 'Design Partner', FALSE, 'price_1RgXMSFV6ecOa0XvLQtlhQr0', 10000, 1000000, 14, FALSE);
 
 CREATE TABLE "companyPlan" (
@@ -37,8 +35,8 @@ CREATE TABLE "companyPlan" (
   "usersLimit" INTEGER NOT NULL DEFAULT 10,
   "subscriptionStartDate" TIMESTAMP WITH TIME ZONE NOT NULL,
   "stripeCustomerId" TEXT,
-  "stripeSubscriptionId" TEXT NOT NULL,
-  "stripeSubscriptionStatus" TEXT NOT NULL DEFAULT 'ACTIVE',
+  "stripeSubscriptionId" TEXT,
+  "stripeSubscriptionStatus" TEXT NOT NULL DEFAULT 'active',
   "trialPeriodEndsAt" TIMESTAMP WITH TIME ZONE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

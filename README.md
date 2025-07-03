@@ -17,7 +17,7 @@ Features:
 - [x] MCP Client/Server
 - [x] API
 - [x] Webhooks
-- [ ] Purchase Planning
+- [x] Purchase Planning
 - [ ] Accounting
 
 Technical highlights:

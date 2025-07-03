@@ -139,6 +139,7 @@ export const path = {
         generatePath(`${api}/shared/tags?table=${table}`),
       unitOfMeasures: `${api}/items/uoms`,
       webhookTables: `${api}/webhook/tables`,
+      webhookStripe: `${api}/webhook/stripe`,
       workCentersByLocation: (id: string) =>
         generatePath(`${api}/resources/work-centers?location=${id}`),
       workCenters: `${api}/resources/work-centers`,
