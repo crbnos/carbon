@@ -1,4 +1,3 @@
-
 ![Carbon](https://github.com/user-attachments/assets/e7a06b25-c82e-496d-b4c0-d97f10438ce5)
 
 Carbon is the open-source operating system for manufacturing.
@@ -56,11 +55,12 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 
 ### `/apps`
 
-| Package Name | Description     | Local Command         |
-| ------------ | --------------- | --------------------- |
-| `erp`        | ERP Application | `npm run dev`         |
-| `mes`        | MES             | `npm run dev:mes`     |
-| `starter`    | Starter         | `npm run dev:starter` |
+| Package Name | Description     | Local Command            |
+| ------------ | --------------- | ------------------------ |
+| `erp`        | ERP Application | `npm run dev`            |
+| `mes`        | MES             | `npm run dev:mes`        |
+| `univeristy` | University      | `npm run dev:university` |
+| `starter`    | Starter         | `npm run dev:starter`    |
 
 ### `/packages`
 
