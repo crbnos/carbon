@@ -637,6 +637,16 @@ serve(async (req: Request) => {
           status = "To Invoice";
         }
 
+        if (areAllLinesInvoiced) {
+          await trx
+            .updateTable("shipment")
+            .set({
+              invoiced: true,
+            })
+            .where("sourceDocumentId", "=", salesOrderId)
+            .execute();
+        }
+
         await trx
           .updateTable("salesOrder")
           .set({
