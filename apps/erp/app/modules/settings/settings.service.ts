@@ -394,42 +394,6 @@ export async function insertCompany(
   return client.from("company").insert(company).select("id").single();
 }
 
-export async function insertCompanyPlan(
-  client: SupabaseClient<Database>,
-  companyPlan: {
-    companyId: string;
-    planId: string;
-    status: "active" | "inactive";
-  }
-) {
-  const plan = await getPlanById(client, companyPlan.planId);
-  if (plan.error) {
-    return plan;
-  }
-
-  const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
-    {
-      id: companyPlan.companyId,
-      planId: companyPlan.planId,
-      tasksLimit: plan.data.tasksLimit,
-      aiTokensLimit: plan.data.aiTokensLimit,
-      usersLimit: 10, // Default value as defined in the migration
-      subscriptionStartDate: new Date().toISOString(),
-      stripeSubscriptionStatus: companyPlan.status,
-      trialPeriodEndsAt: plan.data.stripeTrialPeriodDays
-        ? new Date(
-            Date.now() + plan.data.stripeTrialPeriodDays * 24 * 60 * 60 * 1000
-          ).toISOString()
-        : null,
-    };
-
-  return client
-    .from("companyPlan")
-    .upsert(companyPlanData)
-    .select("id")
-    .single();
-}
-
 export async function updateCompanyPlan(
   client: SupabaseClient<Database>,
   data: {

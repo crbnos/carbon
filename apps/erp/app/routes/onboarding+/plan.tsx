@@ -1,4 +1,4 @@
-import { getCarbonServiceRole, getUser } from "@carbon/auth";
+import { getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCheckoutUrl } from "@carbon/lib/stripe.server";
 import {
@@ -17,7 +17,7 @@ import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
 import { LuMoveLeft } from "react-icons/lu";
-import { getCompany, getPlans, insertCompanyPlan } from "~/modules/settings";
+import { getCompany, getPlans } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 const FEATURED_PLAN = "BUSINESS";
@@ -85,17 +85,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (!company.data) {
     throw new Error("Company not found");
-  }
-
-  const companyPlan = await insertCompanyPlan(getCarbonServiceRole(), {
-    companyId,
-    planId,
-    status: "active",
-  });
-
-  if (companyPlan.error) {
-    console.error(companyPlan.error);
-    throw new Error("Failed to insert company plan");
   }
 
   const url = await getCheckoutUrl({

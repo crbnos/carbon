@@ -104,12 +104,20 @@ function getPlanById(client: SupabaseClient<Database>, planId: string) {
   return client.from("plan").select("*").eq("id", planId).single();
 }
 
+function getPlanByPriceId(client: SupabaseClient<Database>, priceId: string) {
+  return client.from("plan").select("*").eq("stripePriceId", priceId).single();
+}
+
 export async function getStripeCustomerByCompanyId(companyId: string) {
   const customerId = await getStripeCustomerId(companyId);
   if (!customerId) {
     return null;
   }
-  return getStripeCustomer(customerId);
+  const customer = await getStripeCustomer(customerId);
+  if (!customer || customer.status === "canceled") {
+    return null;
+  }
+  return customer;
 }
 
 export async function getStripeCustomer(customerId: string) {
@@ -219,6 +227,48 @@ export async function getBillingPortalRedirectUrl({
   return portalSession.url;
 }
 
+async function insertCompanyPlan(
+  client: SupabaseClient<Database>,
+  companyPlan: {
+    companyId: string;
+    planId: string;
+    status: "active" | "inactive";
+    stripeCustomerId?: string;
+    stripeSubscriptionId?: string;
+    stripeSubscriptionStatus?: string;
+    subscriptionStartDate?: string;
+  }
+) {
+  const plan = await getPlanById(client, companyPlan.planId);
+  if (plan.error) {
+    return plan;
+  }
+
+  const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
+    {
+      id: companyPlan.companyId,
+      planId: companyPlan.planId,
+      tasksLimit: plan.data.tasksLimit,
+      aiTokensLimit: plan.data.aiTokensLimit,
+      usersLimit: 10, // Default value as defined in the migration
+      subscriptionStartDate: new Date().toISOString(),
+      stripeSubscriptionStatus: companyPlan.status,
+      stripeCustomerId: companyPlan.stripeCustomerId,
+      stripeSubscriptionId: companyPlan.stripeSubscriptionId,
+      trialPeriodEndsAt: plan.data.stripeTrialPeriodDays
+        ? new Date(
+            Date.now() + plan.data.stripeTrialPeriodDays * 24 * 60 * 60 * 1000
+          ).toISOString()
+        : null,
+    };
+
+  return client
+    .from("companyPlan")
+    .upsert(companyPlanData)
+    .select("id")
+    .single();
+}
+
 function isAllowedEventType<TEvent extends Stripe.Event>(
   event: TEvent
 ): event is TEvent & { type: AllowedEventType } {
@@ -249,18 +299,60 @@ export async function processStripeEvent({
     return;
   }
 
-  const { customer } = event.data.object;
-  if (typeof customer !== "string") {
-    throw new Error("Stripe webhook handler failed");
-  }
+  const eventType = event.type;
+  if (eventType === "checkout.session.completed") {
+    const data = event.data.object as Stripe.Checkout.Session;
+    const priceId = data.line_items?.data[0]?.price?.id;
+    const plan = await getPlanByPriceId(getCarbonServiceRole(), priceId);
+    const { customer } = data;
+    if (typeof customer !== "string") {
+      throw new Error("Stripe webhook handler failed");
+    }
 
-  console.log({ customer });
+    try {
+      await Promise.all([
+        syncStripeDataToKV(customer),
+        insertCompanyPlan(getCarbonServiceRole(), {
+          companyId: data.metadata.companyId,
+          planId: plan.data.id,
+          status: "active",
+        }),
+      ]);
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      throw new Error("Stripe webhook handler failed");
+    }
+  } else if (eventType === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+    const priceId = subscription.items.data[0].price.id;
+    const plan = await getPlanByPriceId(getCarbonServiceRole(), priceId);
+    const { customer } = subscription;
+    if (typeof customer !== "string") {
+      throw new Error("Stripe webhook handler failed");
+    }
 
-  try {
-    await syncStripeDataToKV(customer);
-  } catch (error) {
-    console.error("Error processing webhook:", error);
-    throw new Error("Stripe webhook handler failed");
+    try {
+      await Promise.all([
+        syncStripeDataToKV(customer),
+        updateCompanyPlan(getCarbonServiceRole(), {
+          planId: plan.data.id,
+          companyId: subscription.metadata.companyId,
+          stripeCustomerId: customer,
+          stripeSubscriptionId: subscription.id,
+          stripeSubscriptionStatus: ["active", "trialing"].includes(
+            subscription.status
+          )
+            ? "active"
+            : "inactive",
+          subscriptionStartDate: new Date(
+            subscription.items.data[0].current_period_start * 1000
+          ).toISOString(),
+        }),
+      ]);
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      throw new Error("Stripe webhook handler failed");
+    }
   }
 }
 
@@ -303,22 +395,7 @@ export async function syncStripeDataToKV(customerId: string) {
   const companyId = (customer as any).metadata?.companyId;
 
   if (companyId) {
-    const [, companyPlan] = await Promise.all([
-      redis.set(key, subData),
-      updateCompanyPlan(getCarbonServiceRole(), {
-        companyId,
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subscription.id,
-        stripeSubscriptionStatus: subscription.status,
-        subscriptionStartDate: new Date(
-          subscription.items.data[0].current_period_start * 1000
-        ).toISOString(),
-      }),
-    ]);
-
-    if (companyPlan.error) {
-      throw new Error("Failed to update company plan");
-    }
+    await redis.set(key, subData);
   }
 
   return subData;
@@ -340,6 +417,7 @@ export async function updateCompanyPlan(
   client: SupabaseClient<Database>,
   data: {
     companyId: string;
+    planId: string;
     stripeCustomerId: string;
     stripeSubscriptionId: string;
     stripeSubscriptionStatus: string;
