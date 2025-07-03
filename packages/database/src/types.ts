@@ -1982,6 +1982,7 @@ export type Database = {
           logoLight: string | null
           logoLightIcon: string | null
           name: string
+          ownerId: string | null
           phone: string | null
           postalCode: string | null
           slackChannel: string | null
@@ -2004,6 +2005,7 @@ export type Database = {
           logoLight?: string | null
           logoLightIcon?: string | null
           name: string
+          ownerId?: string | null
           phone?: string | null
           postalCode?: string | null
           slackChannel?: string | null
@@ -2026,6 +2028,7 @@ export type Database = {
           logoLight?: string | null
           logoLightIcon?: string | null
           name?: string
+          ownerId?: string | null
           phone?: string | null
           postalCode?: string | null
           slackChannel?: string | null
@@ -33379,10 +33382,10 @@ export type Database = {
           createdAt?: string
           developer?: boolean | null
           email: string
-          firstName: string
+          firstName?: string
           fullName?: string | null
           id: string
-          lastName: string
+          lastName?: string
           updatedAt?: string | null
         }
         Update: {

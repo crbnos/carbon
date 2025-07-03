@@ -162,11 +162,11 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <div className="circle-loader-container">
-          <div className="circle-loader">
-            <div className="circle" />
-            <div className="circle" />
-            <div className="circle" />
+        <div className="hexagon-loader-container">
+          <div className="hexagon-loader">
+            <div className="hexagon" />
+            <div className="hexagon" />
+            <div className="hexagon" />
           </div>
         </div>
       )}

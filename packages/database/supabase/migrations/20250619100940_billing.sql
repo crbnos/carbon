@@ -1,3 +1,61 @@
+ALTER TABLE "company" ADD COLUMN "ownerId" TEXT;
+ALTER TABLE "user" ALTER COLUMN "firstName" SET DEFAULT '';
+ALTER TABLE "user" ALTER COLUMN "lastName" SET DEFAULT '';
+
+ALTER POLICY "Users can view other users from their same company" ON "user" USING (
+   id = auth.uid()::text OR
+   "id" IN (
+        SELECT "userId" FROM "userToCompany" WHERE "companyId" IN (
+            SELECT "companyId" FROM "userToCompany" WHERE "userId" = auth.uid()::text
+        )
+   )
+);
+
+
+CREATE OR REPLACE FUNCTION public.create_public_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  full_name TEXT;
+  name_parts TEXT[];
+BEGIN
+  -- Get the full name from raw_user_metadata if it exists
+  full_name := NEW.raw_user_meta_data->>'name';
+  
+  -- Split name into parts if we have a full name
+  IF full_name IS NOT NULL THEN
+    name_parts := regexp_split_to_array(full_name, '\s+');
+    INSERT INTO public."user" ("id", "email", "active", "firstName", "lastName", "about")
+    VALUES (
+      NEW.id,
+      NEW.email,
+      true,
+      COALESCE(name_parts[1], ''),
+      COALESCE(array_to_string(name_parts[2:], ' '), ''),
+      ''
+    );
+  ELSE
+    -- Use firstName/lastName from user_metadata if available, otherwise empty strings
+    INSERT INTO public."user" ("id", "email", "active", "firstName", "lastName", "about")
+    VALUES (
+      NEW.id,
+      NEW.email,
+      true,
+      '',
+      '',
+      ''
+    );
+  END IF;
+
+  INSERT INTO public."userPermission" (id) VALUES (NEW.id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.create_public_user();
+
+
 CREATE TABLE "plan" (
   "id" TEXT NOT NULL DEFAULT xid(),
   "name" TEXT NOT NULL,

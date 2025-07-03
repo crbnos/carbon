@@ -8,15 +8,10 @@ const admin = {
   lastName: "Admin",
 };
 
-const ALL_TEAMS_ID = "0";
-
 const claims: Record<string, string> = {
   role: "employee",
 };
 
-const permissions: Record<string, string[]> = {
-  settings_update: [ALL_TEAMS_ID],
-  users_update: [ALL_TEAMS_ID],
-};
+const permissions: Record<string, string[]> = {};
 
 export { admin, claims, permissions };

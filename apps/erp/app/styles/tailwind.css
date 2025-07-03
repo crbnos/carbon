@@ -157,11 +157,11 @@ p.is-editor-empty:first-child:before {
   animation-delay: 0.4s;
 }
 
-.circle-loader-container {
+.hexagon-loader-container {
   @apply relative w-full py-4;
 }
 
-.circle-loader {
+.hexagon-loader {
   position: relative;
   display: flex;
   justify-content: center;
@@ -170,38 +170,73 @@ p.is-editor-empty:first-child:before {
   height: 40px;
 }
 
-/* Three dot loading animation */
-.circle {
+/* Three hexagon loading animation */
+.hexagon {
   display: inline-block;
   position: relative;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 10px;
   background-color: #5fe4d3;
-  transform: rotate(45deg);
-  animation: dotloader 1.4s infinite ease-in-out;
+  position: relative;
+  animation: hexloader 1.4s infinite ease-in-out;
 }
 
-.circle + .circle {
+.hexagon:before,
+.hexagon:after {
+  content: "";
+  position: absolute;
+  width: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+}
+
+.hexagon:before {
+  bottom: 100%;
+  border-bottom: 5px solid #5fe4d3;
+}
+
+.hexagon:after {
+  top: 100%;
+  border-top: 5px solid #5fe4d3;
+}
+
+.hexagon + .hexagon {
   margin-left: 16px;
-  animation: dotloader 1.4s 0.2s infinite ease-in-out;
+  animation: hexloader 1.4s 0.2s infinite ease-in-out;
   background-color: #4faade;
 }
 
-.circle + .circle + .circle {
+.hexagon + .hexagon:before {
+  border-bottom-color: #4faade;
+}
+
+.hexagon + .hexagon:after {
+  border-top-color: #4faade;
+}
+
+.hexagon + .hexagon + .hexagon {
   margin-left: 16px;
-  animation: dotloader 1.4s 0.4s infinite ease-in-out;
+  animation: hexloader 1.4s 0.4s infinite ease-in-out;
   background-color: #6041d0;
 }
 
-@keyframes dotloader {
+.hexagon + .hexagon + .hexagon:before {
+  border-bottom-color: #6041d0;
+}
+
+.hexagon + .hexagon + .hexagon:after {
+  border-top-color: #6041d0;
+}
+
+@keyframes hexloader {
   0%,
   80%,
   100% {
-    transform: scale(0.5) rotate(45deg);
+    transform: scale(0.5);
     opacity: 0;
   }
   40% {
-    transform: scale(1) rotate(45deg);
+    transform: scale(1);
     opacity: 1;
   }
 }

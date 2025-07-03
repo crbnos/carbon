@@ -41308,6 +41308,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.slackChannel",
           },
           {
+            $ref: "#/parameters/rowFilter.company.ownerId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -41427,6 +41430,9 @@ export default {
             $ref: "#/parameters/rowFilter.company.slackChannel",
           },
           {
+            $ref: "#/parameters/rowFilter.company.ownerId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -41498,6 +41504,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.company.slackChannel",
+          },
+          {
+            $ref: "#/parameters/rowFilter.company.ownerId",
           },
           {
             $ref: "#/parameters/body.company",
@@ -76899,6 +76908,10 @@ export default {
           format: "text",
           type: "string",
         },
+        ownerId: {
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -76993,10 +77006,12 @@ export default {
           type: "string",
         },
         firstName: {
+          default: "",
           format: "text",
           type: "string",
         },
         lastName: {
+          default: "",
           format: "text",
           type: "string",
         },
@@ -104203,6 +104218,12 @@ export default {
     },
     "rowFilter.company.slackChannel": {
       name: "slackChannel",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.company.ownerId": {
+      name: "ownerId",
       required: false,
       in: "query",
       type: "string",

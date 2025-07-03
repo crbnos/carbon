@@ -1,8 +1,6 @@
 import { Heading, VStack } from "@carbon/react";
 import { Outlet } from "@remix-run/react";
 import type { MetaFunction } from "@vercel/remix";
-import { DetailSidebar } from "~/components/Layout/Navigation";
-import useAccountSubmodules from "~/modules/account/ui/useAccountSubmodules";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -21,7 +19,7 @@ export const config = {
 };
 
 export default function AccountRoute() {
-  const { links } = useAccountSubmodules();
+  // const { links } = useAccountSubmodules();
 
   return (
     <VStack
@@ -35,8 +33,8 @@ export default function AccountRoute() {
       </div>
 
       <div className="max-w-[60rem] w-full">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-8">
-          <DetailSidebar links={links} />
+        <div className="grid grid-cols-1 h-full w-full gap-8">
+          {/* <DetailSidebar links={links} /> */}
           <VStack spacing={0} className="h-full">
             <Outlet />
           </VStack>

@@ -943,7 +943,7 @@ async function insertUser(
   client: SupabaseClient<Database>,
   user: Omit<User, "fullName" | "createdAt">
 ) {
-  return client.from("user").insert([user]).select("*");
+  return client.from("user").upsert([user]).select("*");
 }
 
 function makePermissionsFromEmployeeType({

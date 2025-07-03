@@ -17,35 +17,7 @@ const supabaseAdmin = createClient<Database>(
   }
 );
 
-// const getUserId = async (): Promise<string> => {
-//   const existingUserId = await supabaseAdmin.auth.admin
-//     .listUsers()
-//     .then(
-//       ({ data }) =>
-//         data.users.find((user: User) => user?.email! === admin.email)?.id
-//     );
-
-//   if (existingUserId) return existingUserId;
-
-//   const newUserId = await supabaseAdmin.auth.admin
-//     .createUser({
-//       email: admin.email,
-//       password: admin.password,
-//       email_confirm: true,
-//     })
-//     .then(({ data }) => data.user?.id)
-//     .catch((e) => {
-//       throw e;
-//     });
-
-//   if (newUserId) return newUserId;
-
-//   throw new Error("Could not create or get user");
-// };
-
 async function seed() {
-  // const id = await getUserId();
-
   const upsertConfig = await supabaseAdmin.from("config").upsert([
     {
       id: true,
@@ -67,29 +39,6 @@ async function seed() {
   );
 
   if (upsertPlans.error) throw upsertPlans.error;
-
-  // const upsertAdmin = await supabaseAdmin.from("user").upsert([
-  //   {
-  //     id,
-  //     email: admin.email,
-  //     firstName: admin.firstName,
-  //     lastName: admin.lastName,
-  //   },
-  // ]);
-  // if (upsertAdmin.error) throw upsertAdmin.error;
-
-  // const upsertPermissions = await supabaseAdmin.from("userPermission").upsert([
-  //   {
-  //     id: id,
-  //     permissions,
-  //   },
-  // ]);
-  // if (upsertPermissions.error) throw upsertPermissions.error;
-
-  // // give the admin user all the claims
-  // await supabaseAdmin.auth.admin.updateUserById(id, {
-  //   app_metadata: claims,
-  // });
 
   console.log(`Database has been seeded. 🌱\n`);
   console.log(`Admin user is 👇 \n📧: ${admin.email}\n🔑: ${admin.password}`);

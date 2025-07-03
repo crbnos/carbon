@@ -46,7 +46,7 @@ WITH new_auth_user AS (
       false
   ) RETURNING id
 ),
-auth_identities AS (
+new_user_identity AS (
   INSERT INTO auth.identities (
       user_id,
       provider_id,
@@ -65,36 +65,6 @@ auth_identities AS (
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP
   FROM new_auth_user
-  ON CONFLICT (provider_id, provider) DO NOTHING
-),
-new_user AS (
-  INSERT INTO public."user" (
-      id, email, "firstName", "lastName", about, "avatarUrl", 
-      active, "createdAt", "updatedAt", developer, admin
-  )
-  SELECT 
-      id,
-      'brad@carbonos.dev', 
-      'Brad', 
-      'Barbin', 
-      '', 
-      NULL, 
-      true, 
-      '2025-03-14 19:25:59.271544+00', 
-      NULL, 
-      false, 
-      false
-  FROM new_auth_user
-  RETURNING id
+  RETURNING user_id
 )
--- Insert admin user permissions
-INSERT INTO public."userPermission" (
-    id, permissions
-) 
-SELECT 
-    id,
-    '{
-      "users_update": [],
-      "settings_update": []
-    }'
-FROM new_user;
+SELECT user_id FROM new_user_identity;
