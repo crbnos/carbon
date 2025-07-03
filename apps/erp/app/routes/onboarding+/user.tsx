@@ -24,9 +24,7 @@ import {
 import { getUser } from "~/modules/users/users.server";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
-    update: "users",
-  });
+  const { client, userId } = await requirePermissions(request, {});
 
   const user = await getUser(client, userId);
   if (user.error || !user.data) {
@@ -38,9 +36,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "users",
-  });
+  const { client, userId } = await requirePermissions(request, {});
 
   const validation = await validator(onboardingUserValidator).validate(
     await request.formData()

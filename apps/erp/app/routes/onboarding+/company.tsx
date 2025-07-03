@@ -31,9 +31,7 @@ import {
 } from "~/modules/settings";
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings",
-  });
+  const { client, companyId } = await requirePermissions(request, {});
 
   const company = await getCompany(client, companyId ?? 1);
 
@@ -48,9 +46,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
-    update: "settings",
-  });
+  const { client, userId } = await requirePermissions(request, {});
 
   // there are no entries in the userToCompany table which
   // dictates RLS for the company table

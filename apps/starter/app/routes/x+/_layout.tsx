@@ -12,10 +12,12 @@ import {
   getCompanies,
   getUser,
 } from "@carbon/auth";
+import { getCompanyPlan } from "@carbon/auth/auth.server";
 import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
+import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -37,6 +39,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
     throw redirect(getAppUrl());
+  }
+
+  const companyPlan = await getCompanyPlan(client, companyId);
+  if (!companyPlan.data?.id) {
+    throw redirect(path.to.onboarding);
   }
 
   return json({

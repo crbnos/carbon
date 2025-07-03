@@ -162,7 +162,13 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="circle-loader-container">
+          <div className="circle-loader">
+            <div className="circle" />
+            <div className="circle" />
+            <div className="circle" />
+          </div>
+        </div>
       )}
     </div>
   );

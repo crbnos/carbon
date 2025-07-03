@@ -145,15 +145,20 @@ export default function AuthCallback() {
             {error.includes("expired") && (
               <>
                 <p className="text-sm text-muted-foreground">
-                  But don't worry. You can use the forgot password flow to
-                  request a new magic link.
+                  Something went wrong. Please try again.
                 </p>
               </>
             )}
           </VStack>
         </div>
       ) : (
-        <p className="text-muted-foreground">Loading...</p>
+        <div className="circle-loader-container">
+          <div className="circle-loader">
+            <div className="circle" />
+            <div className="circle" />
+            <div className="circle" />
+          </div>
+        </div>
       )}
     </div>
   );

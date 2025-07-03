@@ -77,6 +77,7 @@ export const path = {
     login: "/login",
     logout: "/logout",
     messagingNotify: `${x}/proxy/api/messaging/notify`,
+    onboarding: `${ERP_URL}/onboarding`,
     operation: (id: string) => generatePath(`${x}/operation/${id}`),
     operations: `${x}/operations?saved=1`,
     productionEvent: `${x}/event`,

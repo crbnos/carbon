@@ -1,12 +1,10 @@
-/**
- * Integrate Stripe with a KV store.
- */
+import { getPlanById } from "@carbon/auth/auth.server";
 import { redis } from "@carbon/kv";
 import { redirect } from "@vercel/remix";
 import { Stripe } from "stripe";
 import { z } from "zod";
 import { path } from "~/utils/path";
-import { getPlans } from "./plans";
+import { getCarbonServiceRole } from "../../../../packages/auth/src/lib/supabase/client";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("process.env.STRIPE_SECRET_KEY not defined");
@@ -211,11 +209,13 @@ function getStripeWebhookEvent({
   }
 }
 
-export async function redirectToCheckout({
+export async function getCheckoutUrl({
+  planId,
   companyId,
   email,
   name,
 }: {
+  planId: string;
   companyId: string;
   email: string;
   name?: string | null;
@@ -233,12 +233,13 @@ export async function redirectToCheckout({
     stripeCustomerId = customer.id;
   }
 
-  const plans = await getPlans();
+  const serviceRole = await getCarbonServiceRole();
+  const plan = await getPlanById(serviceRole, planId);
   const checkoutSession = await stripe.checkout.sessions.create({
     customer: stripeCustomerId,
     line_items: [
       {
-        price: plans.find((plan) => plan.id === "PRO")?.priceId,
+        price: plan.data.stripePriceId,
         quantity: 1,
       },
     ],

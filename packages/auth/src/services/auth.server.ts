@@ -38,6 +38,21 @@ export async function createEmailAuthAccount(
   return data.user;
 }
 
+export async function getCompanyPlan(
+  client: SupabaseClient,
+  companyId: string
+) {
+  return client.from("companyPlan").select("*").eq("id", companyId).single();
+}
+
+export async function getPlanById(client: SupabaseClient, planId: string) {
+  return client.from("plan").select("*").eq("id", planId).single();
+}
+
+export async function getPlans(client: SupabaseClient) {
+  return client.from("plan").select("*");
+}
+
 export async function deleteAuthAccount(
   client: SupabaseClient<Database>,
   userId: string

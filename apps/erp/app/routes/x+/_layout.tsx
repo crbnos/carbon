@@ -22,6 +22,7 @@ import {
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
+import { getCompanyPlan } from "@carbon/auth/auth.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useUser } from "~/hooks";
@@ -43,10 +44,6 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   return defaultShouldRevalidate;
 };
 
-export const config = {
-  runtime: "nodejs",
-};
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
     await requireAuthSession(request, { verify: true });
@@ -65,6 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // parallelize the requests
   const [
     companies,
+    companyPlan,
     customFields,
     integrations,
     savedViews,
@@ -74,6 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaults,
   ] = await Promise.all([
     getCompanies(client, userId),
+    getCompanyPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
     getCompanyIntegrations(client, companyId),
     getSavedViews(client, userId, companyId),
@@ -89,7 +88,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
 
-  const requiresOnboarding = !companies.data?.[0]?.name;
+  const requiresOnboarding =
+    !companies.data?.[0]?.name || !companyPlan.data?.id;
   if (requiresOnboarding) {
     throw redirect(path.to.onboarding.root);
   }

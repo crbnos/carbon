@@ -1,5 +1,5 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { getCompanyPlan, requirePermissions } from "@carbon/auth/auth.server";
+import { Outlet } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
@@ -15,9 +15,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "settings",
-  });
+  const { client, companyId } = await requirePermissions(request, {});
 
   const [company, plan, locations] = await Promise.all([
     getCompany(client, companyId),
@@ -25,15 +23,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getLocationsList(client, companyId),
   ]);
 
-  // we don't need to do onboarding if we have a company name or locations
+  const pathname = new URL(request.url).pathname;
+  const isOnPlanRoute = pathname === path.to.onboarding.plan;
+
+  // Only redirect to plan page if we're not already on it
   if (company.data?.name && locations.data?.length) {
-    if (!plan.data?.planId) {
+    if (!plan.data?.id && !isOnPlanRoute) {
       throw redirect(path.to.onboarding.plan);
+    } else if (plan.data?.id) {
+      throw redirect(path.to.authenticatedRoot);
     }
-    throw redirect(path.to.authenticatedRoot);
   }
 
-  const pathname = new URL(request.url).pathname;
   const pathIndex = onboardingSequence.findIndex((p) => p === pathname);
 
   const previousPath =
@@ -53,8 +54,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function OnboardingLayout() {
-  const loaderData = useLoaderData<typeof loader>();
-  console.log(loaderData);
   return (
     <VStack
       spacing={4}

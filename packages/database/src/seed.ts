@@ -1,9 +1,7 @@
 // import type { User } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import * as dotenv from "dotenv";
-import {
-  admin, // , claims, permissions
-} from "./seed/index";
+import { admin, devPrices } from "./seed/index";
 import type { Database } from "./types";
 
 dotenv.config();
@@ -58,6 +56,17 @@ async function seed() {
     },
   ]);
   if (upsertConfig.error) throw upsertConfig.error;
+
+  const upsertPlans = await supabaseAdmin.from("plan").upsert(
+    Object.entries(devPrices).map(([id, { stripePriceId, name }]) => ({
+      id,
+      stripePriceId,
+      name,
+    })),
+    { onConflict: "id" }
+  );
+
+  if (upsertPlans.error) throw upsertPlans.error;
 
   // const upsertAdmin = await supabaseAdmin.from("user").upsert([
   //   {

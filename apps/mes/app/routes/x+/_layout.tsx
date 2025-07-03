@@ -1,4 +1,5 @@
 import { CarbonProvider, getCarbon, getCompanies, getUser } from "@carbon/auth";
+import { getCompanyPlan } from "@carbon/auth/auth.server";
 import {
   destroyAuthSession,
   requireAuthSession,
@@ -57,17 +58,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.accountSettings);
   }
 
-  let [storedLocations, locations, activeEvents] = await Promise.all([
-    getLocation(request, client, {
-      companyId,
-      userId,
-    }),
-    getLocationsByCompany(client, companyId),
-    getActiveJobCount(client, {
-      employeeId: userId,
-      companyId,
-    }),
-  ]);
+  let [storedLocations, companyPlan, locations, activeEvents] =
+    await Promise.all([
+      getLocation(request, client, {
+        companyId,
+        userId,
+      }),
+      getCompanyPlan(client, companyId),
+      getLocationsByCompany(client, companyId),
+      getActiveJobCount(client, {
+        employeeId: userId,
+        companyId,
+      }),
+    ]);
+
+  if (!companyPlan.data?.id) {
+    throw redirect(path.to.onboarding);
+  }
 
   if (!locations.data || locations.data.length === 0) {
     throw new Error(`No locations found for ${company.name}`);

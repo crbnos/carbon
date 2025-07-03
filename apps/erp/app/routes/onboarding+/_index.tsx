@@ -40,7 +40,7 @@ export default function GetStarted() {
           transition={{ duration: 0.8, ease: "easeInOut", delay: 0.7 }}
           className="text-muted-foreground text-balance text-sm pb-4"
         >
-          Carbon is the operational system for manufacturing
+          Carbon is the new standard for tech-enabled manufacturing
         </motion.p>
 
         <Button

@@ -1,1 +1,0 @@
-ALTER TABLE "company" ADD COLUMN "ownerId" TEXT REFERENCES "user"("id") ON DELETE SET NULL;

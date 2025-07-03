@@ -2187,6 +2187,87 @@ export type Database = {
           },
         ]
       }
+      companyPlan: {
+        Row: {
+          aiTokensLimit: number
+          createdAt: string
+          id: string
+          planId: string
+          stripeCustomerId: string | null
+          stripeSubscriptionId: string
+          stripeSubscriptionStatus: string
+          subscriptionStartDate: string
+          tasksLimit: number
+          trialPeriodEndsAt: string | null
+          updatedAt: string
+          usersLimit: number
+        }
+        Insert: {
+          aiTokensLimit?: number
+          createdAt?: string
+          id?: string
+          planId: string
+          stripeCustomerId?: string | null
+          stripeSubscriptionId: string
+          stripeSubscriptionStatus?: string
+          subscriptionStartDate: string
+          tasksLimit?: number
+          trialPeriodEndsAt?: string | null
+          updatedAt?: string
+          usersLimit?: number
+        }
+        Update: {
+          aiTokensLimit?: number
+          createdAt?: string
+          id?: string
+          planId?: string
+          stripeCustomerId?: string | null
+          stripeSubscriptionId?: string
+          stripeSubscriptionStatus?: string
+          subscriptionStartDate?: string
+          tasksLimit?: number
+          trialPeriodEndsAt?: string | null
+          updatedAt?: string
+          usersLimit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_companyPlan_company"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_companyPlan_company"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_companyPlan_company"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "fk_companyPlan_company"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "fk_companyPlan_plan"
+            columns: ["planId"]
+            isOneToOne: false
+            referencedRelation: "plan"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       companySettings: {
         Row: {
           digitalQuoteEnabled: boolean
@@ -2247,6 +2328,68 @@ export type Database = {
             foreignKeyName: "companySettings_companyId_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+        ]
+      }
+      companyUsage: {
+        Row: {
+          aiTokens: number
+          companyId: string
+          createdAt: string
+          id: string
+          nextResetDatetime: string
+          tasks: number
+          updatedAt: string
+          users: number
+        }
+        Insert: {
+          aiTokens?: number
+          companyId: string
+          createdAt?: string
+          id?: string
+          nextResetDatetime: string
+          tasks?: number
+          updatedAt?: string
+          users?: number
+        }
+        Update: {
+          aiTokens?: number
+          companyId?: string
+          createdAt?: string
+          id?: string
+          nextResetDatetime?: string
+          tasks?: number
+          updatedAt?: string
+          users?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_companyUsage_company"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_companyUsage_company"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_companyUsage_company"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "fk_companyUsage_company"
+            columns: ["companyId"]
+            isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
           },
@@ -17474,6 +17617,45 @@ export type Database = {
             referencedColumns: ["userId"]
           },
         ]
+      }
+      plan: {
+        Row: {
+          aiTokensLimit: number
+          createdAt: string
+          id: string
+          name: string
+          public: boolean
+          stripePriceId: string
+          stripeTrialPeriodDays: number
+          tasksLimit: number
+          updatedAt: string
+          userBasedPricing: boolean
+        }
+        Insert: {
+          aiTokensLimit?: number
+          createdAt?: string
+          id?: string
+          name: string
+          public?: boolean
+          stripePriceId: string
+          stripeTrialPeriodDays?: number
+          tasksLimit?: number
+          updatedAt?: string
+          userBasedPricing?: boolean
+        }
+        Update: {
+          aiTokensLimit?: number
+          createdAt?: string
+          id?: string
+          name?: string
+          public?: boolean
+          stripePriceId?: string
+          stripeTrialPeriodDays?: number
+          tasksLimit?: number
+          updatedAt?: string
+          userBasedPricing?: boolean
+        }
+        Relationships: []
       }
       postingGroupInventory: {
         Row: {
