@@ -22,10 +22,10 @@ import {
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
+import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
 import { useUser } from "~/hooks";
-import { getStripeCustomerByCompanyId } from "~/lib/stripe.server";
 import { getSavedViews } from "~/modules/shared/shared.service";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({

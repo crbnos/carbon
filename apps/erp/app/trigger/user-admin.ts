@@ -3,9 +3,9 @@ import { z } from "zod";
 
 import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import { InviteEmail } from "@carbon/documents/email";
+import { resend } from "@carbon/lib/resend.server";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import { resend } from "~/lib/resend.server";
 import { deactivateUser } from "~/modules/users/users.server";
 import type { Result } from "~/types";
 

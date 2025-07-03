@@ -1,5 +1,6 @@
 import { getCarbonServiceRole, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCheckoutUrl } from "@carbon/lib/stripe.server";
 import {
   Badge,
   Button,
@@ -16,7 +17,6 @@ import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
 import { LuMoveLeft } from "react-icons/lu";
-import { getCheckoutUrl } from "~/lib/stripe.server";
 import { getCompany, getPlans, insertCompanyPlan } from "~/modules/settings";
 import { path } from "~/utils/path";
 

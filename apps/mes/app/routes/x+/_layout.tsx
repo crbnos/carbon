@@ -3,6 +3,7 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
+import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
 import { SidebarProvider, TooltipProvider, useMount } from "@carbon/react";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
@@ -63,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         companyId,
         userId,
       }),
-      getCompanyPlan(client, companyId),
+      getStripeCustomerByCompanyId(companyId),
       getLocationsByCompany(client, companyId),
       getActiveJobCount(client, {
         employeeId: userId,
@@ -71,7 +72,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }),
     ]);
 
-  if (!companyPlan.data?.id) {
+  if (!companyPlan) {
     throw redirect(path.to.onboarding);
   }
 

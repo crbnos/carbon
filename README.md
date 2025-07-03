@@ -73,6 +73,7 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `@carbon/logger`       | Shared logger used across apps                                          |
 | `@carbon/react`        | Shared web-based UI components                                          |
 | `@carbon/kv`           | Redis cache client                                                      |
+| `@carbon/lib`          | Third-party client libraries (slack, resend, stripe)                    |
 | `@carbon/tsconfig`     | Shared, extendable tsconfig configuration used across apps and packages |
 | `@carbon/utils`        | Shared utility functions used across apps and packages                  |
 

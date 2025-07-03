@@ -3,12 +3,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
+import { resend } from "@carbon/lib/resend.server";
 import { render } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { nanoid } from "nanoid";
-import { resend } from "~/lib/resend.server";
 import { resendInviteValidator } from "~/modules/users";
 
 export const config = { runtime: "nodejs" };

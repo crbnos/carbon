@@ -1,0 +1,37 @@
+{
+  "name": "@carbon/lib",
+  "dependencies": {
+    "@carbon/auth": "*",
+    "@carbon/database": "*",
+    "@carbon/kv": "*",
+    "@slack/web-api": "~7.6.0",
+    "@supabase/supabase-js": "^2.40.0",
+    "resend": "^3.1.0",
+    "stripe": "^18.3.0"
+  },
+  "devDependencies": {
+    "@carbon/logger": "*",
+    "@carbon/tsconfig": "*",
+    "@types/node": "^20.12.5",
+    "dotenv": "16.3.1",
+    "eslint": "^8.23.1",
+    "eslint-config-carbon": "*",
+    "rimraf": "^5.0.5",
+    "tsup": "^6.5.0",
+    "tsx": "^4.13.2",
+    "typescript": "^5.2.2"
+  },
+  "exports": {
+    "./resend.server": "./src/resend.server.ts",
+    "./slack.server": "./src/slack.server.ts",
+    "./stripe.server": "./src/stripe.server.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "TIMING=1 eslint \"src/**/*.ts*\""
+  },
+  "sideEffects": false,
+  "version": "*"
+}

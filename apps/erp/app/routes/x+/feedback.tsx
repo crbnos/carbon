@@ -1,8 +1,8 @@
 import { getCarbonServiceRole, SUPABASE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
+import { getSlackClient } from "@carbon/lib/slack.server";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { getSlackClient } from "~/lib/slack.server";
 import { feedbackValidator } from "~/modules/shared";
 
 export const config = {

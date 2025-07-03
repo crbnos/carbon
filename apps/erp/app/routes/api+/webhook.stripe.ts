@@ -1,11 +1,11 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
-import { json, redirect } from "@vercel/remix";
 import {
   getStripeCustomerId,
   processStripeEvent,
   syncStripeDataToKV,
-} from "~/lib/stripe.server";
+} from "@carbon/lib/stripe.server";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
+import { json, redirect } from "@vercel/remix";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
