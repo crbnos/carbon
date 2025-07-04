@@ -35,7 +35,7 @@ export const mrp = schedules.task({
         });
         if (result.error) {
           console.error(
-            `❌ Failed to run MRP for company ${company.id}: ${
+            `❌ Failed to run MRP for company ${company.name}: ${
               result.error instanceof Error
                 ? result.error.message
                 : String(result.error)

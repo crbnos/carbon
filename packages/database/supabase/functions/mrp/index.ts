@@ -561,13 +561,7 @@ serve(async (req: Request) => {
             .values(demandActualUpserts)
             .onConflict((oc) =>
               oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "companyId",
-                ])
+                .columns(["itemId", "locationId", "periodId", "sourceType"])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: new Date().toISOString(),
@@ -583,13 +577,7 @@ serve(async (req: Request) => {
             .values(supplyActualUpserts)
             .onConflict((oc) =>
               oc
-                .columns([
-                  "itemId",
-                  "locationId",
-                  "periodId",
-                  "sourceType",
-                  "companyId",
-                ])
+                .columns(["itemId", "locationId", "periodId", "sourceType"])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: new Date().toISOString(),
