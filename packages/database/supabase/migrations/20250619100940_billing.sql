@@ -1,6 +1,7 @@
 ALTER TABLE "company" ADD COLUMN "ownerId" TEXT;
 ALTER TABLE "user" ALTER COLUMN "firstName" SET DEFAULT '';
 ALTER TABLE "user" ALTER COLUMN "lastName" SET DEFAULT '';
+ALTER TABLE "user" ADD COLUMN "acknowledgedUniversity" BOOLEAN NOT NULL DEFAULT FALSE;
 
 ALTER POLICY "Users can view other users from their same company" ON "user" USING (
    id = auth.uid()::text OR

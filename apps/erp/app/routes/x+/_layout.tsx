@@ -1,5 +1,10 @@
-import { TooltipProvider, useMount } from "@carbon/react";
-import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
+import { Button, IconButton, TooltipProvider, useMount } from "@carbon/react";
+import {
+  Outlet,
+  useFetcher,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
@@ -25,7 +30,7 @@ import { path } from "~/utils/path";
 import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
-import { useUser } from "~/hooks";
+import { LuArrowUpRight, LuX } from "react-icons/lu";
 import { getSavedViews } from "~/modules/shared/shared.service";
 
 export const config = {
@@ -40,6 +45,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.startsWith("/x/settings") ||
     currentUrl.pathname.startsWith("/x/users") ||
     currentUrl.pathname.startsWith("/refresh-session") ||
+    currentUrl.pathname.startsWith("/x/acknowledge") ||
     currentUrl.pathname.startsWith("/x/shared/views")
   ) {
     return true;
@@ -117,11 +123,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session } = useLoaderData<typeof loader>();
-  const user = useUser();
+  const { session, user } = useLoaderData<typeof loader>();
+
   const transition = useNavigation();
 
   useMount(() => {
+    if (!user) return;
+
     posthog.identify(user.id, {
       email: user.email,
       name: `${user.firstName} ${user.lastName}`,
@@ -146,6 +154,7 @@ export default function AuthenticatedRoute() {
         <RealtimeDataProvider>
           <TooltipProvider>
             <div className="flex flex-col h-screen">
+              {user?.acknowledgedUniversity ? null : <UniversityBanner />}
               <Topbar />
               <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                 <PrimaryNavigation />
@@ -157,6 +166,43 @@ export default function AuthenticatedRoute() {
           </TooltipProvider>
         </RealtimeDataProvider>
       </CarbonProvider>
+    </div>
+  );
+}
+
+function UniversityBanner() {
+  const fetcher = useFetcher<{}>();
+
+  return (
+    <div className="fixed bottom-3 left-1/2 -translate-x-1/2 flex items-center justify-between gap-10  bg-[#212278] dark:bg-[#2f31ae] text-white py-1 px-2 rounded-lg z-50 shadow-md">
+      <div />
+      <fetcher.Form method="post" action={path.to.acknowledge}>
+        <input type="hidden" name="intent" value="university" />
+        <input
+          type="hidden"
+          name="redirectTo"
+          value="https://learn.carbonos.dev"
+        />
+        <Button
+          type="submit"
+          variant="ghost"
+          size="lg"
+          className="hover:bg-transparent text-white hover:text-white"
+          rightIcon={<LuArrowUpRight />}
+        >
+          <span>Introducing Carbon University</span>
+        </Button>
+      </fetcher.Form>
+      <fetcher.Form method="post" action={path.to.acknowledge}>
+        <input type="hidden" name="intent" value="university" />
+        <IconButton
+          type="submit"
+          aria-label="Close"
+          variant="ghost"
+          className="text-white dark:text-white hover:text-white"
+          icon={<LuX />}
+        />
+      </fetcher.Form>
     </div>
   );
 }

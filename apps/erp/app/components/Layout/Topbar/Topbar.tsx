@@ -1,13 +1,13 @@
 import { HStack } from "@carbon/react";
+import { Agent } from "~/components/Agent/Agent";
 import { usePermissions, useUser } from "~/hooks";
+import { useFlags } from "~/hooks/useFlags";
 import AvatarMenu from "../../AvatarMenu";
 import Breadcrumbs from "./Breadcrumbs";
 import CreateMenu from "./CreateMenu";
 import Feedback from "./Feedback";
 import Notifications from "./Notifications";
 import Search from "./Search";
-import { useFlags } from "~/hooks/useFlags";
-import { Agent } from "~/components/Agent/Agent";
 
 const Topbar = () => {
   const permissions = usePermissions();
@@ -17,7 +17,7 @@ const Topbar = () => {
   const { isInternal } = useFlags();
 
   return (
-    <div className="grid grid-cols-[1fr_200px_1fr] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
+    <div className="h-[49px] grid grid-cols-[1fr_200px_1fr] bg-background text-foreground px-4 top-0 sticky z-10 items-center">
       <div className="flex-1">
         <Breadcrumbs />
       </div>

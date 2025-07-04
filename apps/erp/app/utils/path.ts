@@ -277,6 +277,7 @@ export const path = {
       user: `${onboarding}/user`,
     },
     authenticatedRoot: x,
+    acknowledge: `${x}/acknowledge`,
     abilities: `${x}/resources/abilities`,
     ability: (id: string) => generatePath(`${x}/resources/ability/${id}`),
     account: `${x}/account`,
