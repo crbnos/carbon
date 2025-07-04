@@ -207,6 +207,14 @@ serve(async (req: Request) => {
         .eq("companyId", companyId),
     ]);
 
+    console.log({
+      companyId,
+      salesOrderLines: salesOrderLines.data?.length,
+      jobMaterialLines: jobMaterialLines.data?.length,
+      productionLines: productionLines.data?.length,
+      purchaseOrderLines: purchaseOrderLines.data?.length,
+    });
+
     if (salesOrderLines.error) {
       throw new Error("No sales order lines found");
     }
