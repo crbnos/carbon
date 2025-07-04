@@ -28,6 +28,10 @@ import posthog from "posthog-js";
 import { useUser } from "~/hooks";
 import { getSavedViews } from "~/modules/shared/shared.service";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   defaultShouldRevalidate,
