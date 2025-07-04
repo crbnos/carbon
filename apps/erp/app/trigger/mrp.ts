@@ -27,21 +27,11 @@ export const mrp = schedules.task({
     }
     for await (const company of companies.data) {
       try {
-        const users = await serviceRole
-          .from("userToCompany")
-          .select("userId")
-          .eq("companyId", company.id)
-          .limit(1);
-        const userId = users.data?.[0]?.userId;
-        if (!userId) {
-          console.error(`❌ No user found for company ${company.id}`);
-          continue;
-        }
         const result = await runMRP(serviceRole, {
           type: "company",
           id: company.id,
           companyId: company.id,
-          userId: userId,
+          userId: "system",
         });
         if (result.error) {
           console.error(

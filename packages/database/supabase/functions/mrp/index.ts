@@ -207,14 +207,6 @@ serve(async (req: Request) => {
         .eq("companyId", companyId),
     ]);
 
-    console.log({
-      companyId,
-      salesOrderLines: salesOrderLines.data?.length,
-      jobMaterialLines: jobMaterialLines.data?.length,
-      productionLines: productionLines.data?.length,
-      purchaseOrderLines: purchaseOrderLines.data?.length,
-    });
-
     if (salesOrderLines.error) {
       throw new Error("No sales order lines found");
     }
@@ -407,7 +399,7 @@ serve(async (req: Request) => {
       client
         .from("demandActual")
         .select("*")
-
+        .eq("companyId", companyId)
         .in(
           "periodId",
           periods.map((p) => p.id ?? "")
@@ -415,6 +407,7 @@ serve(async (req: Request) => {
       client
         .from("supplyActual")
         .select("*")
+        .eq("companyId", companyId)
         .in(
           "periodId",
           periods.map((p) => p.id ?? "")
@@ -568,7 +561,13 @@ serve(async (req: Request) => {
             .values(demandActualUpserts)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "companyId",
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: new Date().toISOString(),
@@ -584,7 +583,13 @@ serve(async (req: Request) => {
             .values(supplyActualUpserts)
             .onConflict((oc) =>
               oc
-                .columns(["itemId", "locationId", "periodId", "sourceType"])
+                .columns([
+                  "itemId",
+                  "locationId",
+                  "periodId",
+                  "sourceType",
+                  "companyId",
+                ])
                 .doUpdateSet({
                   actualQuantity: (eb) => eb.ref("excluded.actualQuantity"),
                   updatedAt: new Date().toISOString(),
