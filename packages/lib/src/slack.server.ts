@@ -1,4 +1,4 @@
-import { SLACK_BOT_TOKEN } from "@carbon/auth";
+import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/auth";
 import { WebClient } from "@slack/web-api";
 
 interface SlackMessage {
@@ -15,6 +15,10 @@ class SlackClient {
   }
 
   async sendMessage({ channel, text, blocks }: SlackMessage): Promise<void> {
+    const appUrl = getAppUrl();
+    if (appUrl.includes("localhost")) {
+      return;
+    }
     try {
       await this.client.chat.postMessage({
         channel,

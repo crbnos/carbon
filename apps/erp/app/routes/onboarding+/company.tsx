@@ -1,8 +1,9 @@
-import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
+import { assertIsPost, getCarbonServiceRole, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { getSlackClient } from "@carbon/lib/slack.server";
 import {
   Button,
   Card,
@@ -29,6 +30,10 @@ import {
   seedCompany,
   updateCompany,
 } from "~/modules/settings";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -60,6 +65,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
+  const slackClient = getSlackClient();
+
   const { next, ...data } = validation.data;
 
   let companyId: string | undefined;
@@ -93,7 +100,9 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   } else {
     if (!companyId) {
-      const companyInsert = await insertCompany(serviceRole, data);
+      const [companyInsert] = await Promise.all([
+        insertCompany(serviceRole, data),
+      ]);
       if (companyInsert.error) {
         console.error(companyInsert.error);
         throw new Error("Fatal: failed to insert company");
@@ -106,7 +115,30 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(serviceRole, companyId, userId);
+    const user = await getUser(serviceRole, userId);
+
+    const [seed] = await Promise.all([
+      seedCompany(serviceRole, companyId, userId),
+      await slackClient.sendMessage({
+        channel: "#leads",
+        text: "New lead 🎉",
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text:
+                `*New Signup* 🥁\n\n` +
+                `*Contact Information*\n` +
+                `• Name: ${user.data?.firstName} ${user.data?.lastName}\n` +
+                `• Email: ${user.data?.email}\n` +
+                `• Location: ${data.city}, ${data.stateProvince}\n\n` +
+                `• Company: ${data.name}\n\n`,
+            },
+          },
+        ],
+      }),
+    ]);
     if (seed.error) {
       console.error(seed.error);
       throw new Error("Fatal: failed to seed company");

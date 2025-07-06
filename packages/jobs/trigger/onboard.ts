@@ -54,7 +54,7 @@ export const onboardTask = task({
       });
     }
 
-    await wait.for({ minutes: 1 });
+    await wait.for({ days: 3 });
 
     if (sendOnboardingEmail) {
       await resend.emails.send({

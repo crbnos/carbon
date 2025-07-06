@@ -4,10 +4,14 @@ import {
   error,
   magicLinkValidator,
 } from "@carbon/auth";
-import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import {
+  sendMagicLink,
+  sendVerificationCode,
+  verifyAuthSession,
+} from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
-import { ValidatedForm, validator } from "@carbon/form";
+import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import {
   Alert,
@@ -19,7 +23,7 @@ import {
   toast,
   VStack,
 } from "@carbon/react";
-import { Link, useFetcher, useSearchParams } from "@remix-run/react";
+import { useFetcher, useSearchParams } from "@remix-run/react";
 import { Ratelimit } from "@upstash/ratelimit";
 import type {
   ActionFunctionArgs,
@@ -27,9 +31,8 @@ import type {
   MetaFunction,
 } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
+import { useEffect, useState } from "react";
 import { LuCircleAlert } from "react-icons/lu";
-
-import { Hidden, Input, Submit } from "~/components/Form";
 
 import type { FormActionData, Result } from "~/types";
 import { path } from "~/utils/path";
@@ -76,30 +79,58 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const { email } = validation.data;
   const user = await getUserByEmail(email);
 
+  console.log("User:", user);
+
   if (user.data && user.data.active) {
     const magicLink = await sendMagicLink(email);
 
-    if (!magicLink) {
+    if (magicLink.error) {
       return json(
         error(magicLink, "Failed to send magic link"),
         await flash(request, error(magicLink, "Failed to send magic link"))
       );
     }
+    return json({ success: true, mode: "login" });
   } else {
-    return json(
-      error(user, "User record not found"),
-      await flash(request, error(user.error, "User record not found"))
-    );
-  }
+    // User doesn't exist, send verification code for signup
+    const verificationSent = await sendVerificationCode(email);
 
-  return json({ success: true });
+    if (!verificationSent) {
+      return json(
+        error(null, "Failed to send verification code"),
+        await flash(request, error(null, "Failed to send verification code"))
+      );
+    }
+
+    return json({ success: true, mode: "signup", email });
+  }
 }
 
 export default function LoginRoute() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
+  const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
+  const [signupEmail, setSignupEmail] = useState<string>("");
 
-  const fetcher = useFetcher<Result>();
+  const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
+
+  useEffect(() => {
+    if (fetcher.data?.success && fetcher.data.mode) {
+      if (fetcher.data.mode === "signup" && mode !== "verify") {
+        setMode("verify");
+        if (fetcher.data.email) {
+          setSignupEmail(fetcher.data.email);
+          // Redirect to verify route with email parameter
+          const verifyUrl = `/verify?email=${encodeURIComponent(
+            fetcher.data.email
+          )}${
+            redirectTo ? `&redirectTo=${encodeURIComponent(redirectTo)}` : ""
+          }`;
+          window.location.href = verifyUrl;
+        }
+      }
+    }
+  }, [fetcher.data, mode, redirectTo]);
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({
@@ -122,7 +153,7 @@ export default function LoginRoute() {
         <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
       </div>
       <div className="rounded-lg md:bg-card md:border md:border-border md:shadow-lg p-8 w-[380px]">
-        {fetcher.data?.success === true ? (
+        {fetcher.data?.success === true && fetcher.data?.mode === "login" ? (
           <>
             <VStack spacing={4} className="items-center justify-center">
               <Heading size="h3">Check your email</Heading>
@@ -131,12 +162,36 @@ export default function LoginRoute() {
               </p>
             </VStack>
           </>
+        ) : mode === "verify" ? (
+          <VStack spacing={4} className="items-center">
+            <Heading size="h3">Verify your email</Heading>
+            <p className="text-muted-foreground tracking-tight text-sm text-center">
+              We've sent a verification code to {signupEmail}
+            </p>
+            <p className="text-muted-foreground tracking-tight text-xs text-center">
+              Redirecting to verification page...
+            </p>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => {
+                setMode("login");
+                setSignupEmail("");
+                // Reset fetcher data
+                window.location.reload();
+              }}
+            >
+              Use a different email
+            </Button>
+          </VStack>
         ) : (
           <ValidatedForm
             fetcher={fetcher}
             validator={magicLinkValidator}
             defaultValues={{ redirectTo }}
             method="post"
+            action="/login"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
             <VStack spacing={4}>
@@ -176,17 +231,13 @@ export default function LoginRoute() {
         )}
       </div>
 
-      <div className="text-center mt-4">
-        <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
-          <Link
-            to={`/signup${redirectTo ? `?redirectTo=${redirectTo}` : ""}`}
-            className="text-primary hover:underline"
-          >
-            Sign up for free
-          </Link>
-        </p>
-      </div>
+      {mode !== "verify" && fetcher.data?.success !== true && (
+        <div className="text-center mt-4">
+          <p className="text-sm text-muted-foreground">
+            Enter your email above to sign in or create a new account
+          </p>
+        </div>
+      )}
 
       <div className="text-sm text-center text-balance text-muted-foreground w-[380px] mt-4">
         <p>

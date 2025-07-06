@@ -4,6 +4,7 @@ import PurchaseOrderEmail from "./PurchaseOrderEmail";
 import QuoteEmail from "./QuoteEmail";
 import SalesInvoiceEmail from "./SalesInvoiceEmail";
 import SalesOrderEmail from "./SalesOrderEmail";
+import VerificationEmail from "./VerificationEmail";
 import WelcomeEmail from "./WelcomeEmail";
 
 export {
@@ -13,5 +14,6 @@ export {
   QuoteEmail,
   SalesInvoiceEmail,
   SalesOrderEmail,
+  VerificationEmail,
   WelcomeEmail,
 };

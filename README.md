@@ -156,28 +156,31 @@ Create an `.env` file and copy the contents of `.env.example` file into it
 ````bash
 $ cp ./.env.example ./.env
 
-1. Set your email address:
-- `DEFAULT_EMAIL_ADDRESS=[your-email@address.com]`
 
-2. Use the output of `npm run db:start` to set the supabase entries:
+1. Use the output of `npm run db:start` to set the supabase entries:
 
 - `SUPABASE_SERVICE_ROLE_KEY=[service_role key]`
 - `SUPABASE_ANON_KEY=[anon key]`
 
-3. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
+2. [Create a Redis database in upstash](https://console.upstash.com/redis) and copy the following from the `REST API` section:
 
 - `UPSTASH_REDIS_REST_URL=[UPSTASH_REDIS_REST_URL]`
 - `UPSTASH_REDIS_REST_TOKEN=[UPSTASH_REDIS_REST_TOKEN]`
 
-4. Navigate to the project you created in [https://cloud.trigger.dev/](Trigger.dev) and copy the following from the `Environments & API Keys` section:
+3. Navigate to the project you created in [https://cloud.trigger.dev/](Trigger.dev) and copy the following from the `Environments & API Keys` section:
 
 - `TRIGGER_PUBLIC_API_KEY=[Public 'dev' API Key, starting 'pk_dev*']`
 - `TRIGGER_API_KEY=[Server 'dev' API Key, starting 'tr_dev*']`
 
-5. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
+4. In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
 
 - `POSTHOG_API_HOST=[https://[region].posthog.com]`
 - `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
+
+5. Add a `STRIPE_SECRET_KEY` from the Stripe admin interface, and then run `npm run -w @carbon/stripe register:stripe` to get a `STRIP_WEBHOOK_SECRET`
+
+- `STRIPE_SECRET_KEY="sk_test_*************"`
+- `STRIP_WEBHOOK_SECRET="whsec_************"`
 
 Then you can run the following:
 
@@ -208,7 +211,7 @@ After installation you should be able run the apps locally.
 | Starter         | [http://localhost:4000](http://localhost:4000)                                                                     |
 | Postgres        | [postgresql://postgres:postgres@localhost:54322/postgres](postgresql://postgres:postgres@localhost:54322/postgres) |
 | Supabase Studio | [http://localhost:54323/project/default](http://localhost:54323/project/default)                                   |
-| Inbucket        | [http://localhost:54324/monitor](http://localhost:54324/monitor)                                                   |
+| Mailpit         | [http://localhost:54324](http://localhost:54324)                                                                   |
 | Edge Functions  | [http://localhost:54321/functions/v1/<function-name>](http://localhost:54321/functions/v1/<function-name>)         |
 
 ### Notes
@@ -231,13 +234,6 @@ For example, to run test command in the `@carbon/react` package you can run:
 
 ```
 $ npm run test -w @carbon/react
-```
-
-To run Stripe locally, run:
-
-```
-$ npm run -w stripe register:stripe
-$ npm run -w stripe dev:stripe
 ```
 
 ### Restoring a Production Database Locally

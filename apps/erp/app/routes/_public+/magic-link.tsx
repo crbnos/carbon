@@ -27,7 +27,7 @@ export default function ConfirmMagicLink() {
 
   return (
     <AnimatePresence>
-      <VStack spacing={2} className="max-w-lg items-center text-center">
+      <VStack spacing={4} className="max-w-lg items-center text-center">
         <motion.img
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -43,7 +43,7 @@ export default function ConfirmMagicLink() {
           size="h1"
           className="m-0"
         >
-          Welcome to Carbon
+          Welcome Back
         </Heading>
 
         <Button
