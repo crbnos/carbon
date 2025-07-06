@@ -5,8 +5,8 @@ import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
 import { onboardingSequence, path } from "~/utils/path";
 
-import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
 import { VStack } from "@carbon/react";
+import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;

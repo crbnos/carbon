@@ -4,8 +4,7 @@
     "**/*.ts",
     "**/*.tsx",
     "app/modules/documents/documents.service.ts",
-    "app/types/global.d.ts",
-    "trigger.config.ts"
+    "app/types/global.d.ts"
   ],
   "compilerOptions": {
     "lib": ["dom", "dom.iterable", "ESNext"],

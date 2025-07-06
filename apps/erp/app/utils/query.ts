@@ -70,9 +70,9 @@ export function getGenericFilter<
 ) {
   switch (operator) {
     case "eq":
-      return query.eq(column, value);
+      return query.eq(column, value as any);
     case "neq":
-      return query.neq(column, value);
+      return query.neq(column, value as any);
     case "gt":
       return query.gt(column, getSafeNumber(value));
     case "gte":
@@ -86,7 +86,7 @@ export function getGenericFilter<
     case "startsWith":
       return query.ilike(column, `${value}%`);
     case "in":
-      return query.in(column, value.split(","));
+      return query.in(column, value.split(",") as any);
     default:
       throw badRequest(`Invalid filter operator: ${operator}`);
   }

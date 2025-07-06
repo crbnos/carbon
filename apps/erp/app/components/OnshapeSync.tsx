@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { OnshapeLogo } from "@carbon/integrations";
 import {
   Badge,
   Button,
@@ -25,7 +26,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { MethodIcon } from "~/components";
 import { OnshapeStatus } from "~/components/Icons";
-import { Logo } from "~/integrations/onshape/config";
 import { methodType } from "~/modules/shared";
 import type { action as onShapeSyncAction } from "~/routes/api+/integrations.onshape.sync";
 import { path } from "~/utils/path";
@@ -236,7 +236,7 @@ export const OnshapeSync = ({
     <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col gap-2 border bg-muted/30 rounded p-2 w-full">
         <div className="flex items-center w-full justify-between">
-          <Logo className="h-5 w-auto" />
+          <OnshapeLogo className="h-5 w-auto" />
           <IconButton
             aria-label="Show sync options"
             variant="ghost"

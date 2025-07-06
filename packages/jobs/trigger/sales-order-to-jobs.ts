@@ -1,19 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { parseDate } from "@internationalized/date";
-import { task, tasks } from "@trigger.dev/sdk/v3";
+import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import { getItemManufacturing, getItemReplenishment } from "~/modules/items";
-import {
-  getOpportunity,
-  getSalesOrder,
-  getSalesOrderLines,
-} from "~/modules/sales";
-import { getNextSequence } from "~/modules/settings";
-import {
-  upsertJob,
-  upsertJobMethod,
-} from "../modules/production/production.service";
-import type { recalculateTask } from "./recalculate";
 
 const salesOrderToJobsSchema = z.object({
   orderId: z.string(),
@@ -28,10 +16,20 @@ export const salesOrderToJobsTask = task({
     const { orderId, companyId, userId } = payload;
 
     const serviceRole = getCarbonServiceRole();
-    const [salesOrder, salesOrderLines] = await Promise.all([
-      getSalesOrder(serviceRole, orderId),
-      getSalesOrderLines(serviceRole, orderId),
-    ]);
+
+    // Implement getSalesOrder
+    const salesOrder = await serviceRole
+      .from("salesOrder")
+      .select("*")
+      .eq("id", orderId)
+      .single();
+
+    // Implement getSalesOrderLines
+    const salesOrderLines = await serviceRole
+      .from("salesOrderLines")
+      .select("*")
+      .eq("salesOrderId", orderId)
+      .order("itemReadableId", { ascending: true });
 
     if (companyId !== salesOrder.data?.companyId) {
       console.error("Company ID mismatch");
@@ -56,20 +54,25 @@ export const salesOrderToJobsTask = task({
       return;
     }
 
-    const opportunity = await getOpportunity(
-      serviceRole,
-      salesOrder.data?.opportunityId ?? null
-    );
+    // Implement getOpportunity
+    const opportunity = await serviceRole
+      .from("opportunity")
+      .select("*, quotes(*), salesOrders(*)")
+      .eq("id", salesOrder.data?.opportunityId ?? "")
+      .single();
+
     const quoteId = opportunity.data?.quotes[0]?.id;
     const salesOrderId = opportunity.data?.salesOrders[0]?.id;
 
     for await (const line of lines) {
       if (line.methodType === "Make" && line.itemId) {
-        const itemManufacturing = await getItemManufacturing(
-          serviceRole,
-          line.itemId,
-          companyId
-        );
+        // Implement getItemManufacturing
+        const itemManufacturing = await serviceRole
+          .from("itemReplenishment")
+          .select("*")
+          .eq("itemId", line.itemId)
+          .eq("companyId", companyId)
+          .single();
 
         const lotSize = itemManufacturing.data?.lotSize ?? 0;
         const totalQuantity = line.saleQuantity ?? 0;
@@ -80,10 +83,20 @@ export const salesOrderToJobsTask = task({
         const jobsToCreate = Math.max(1, totalJobs);
 
         for await (const index of Array.from({ length: jobsToCreate }).keys()) {
-          const [nextSequence, manufacturing] = await Promise.all([
-            getNextSequence(serviceRole, "job", companyId),
-            getItemReplenishment(serviceRole, line.itemId, companyId),
-          ]);
+          // Implement getNextSequence
+          const nextSequence = await serviceRole.rpc("get_next_sequence", {
+            sequence_name: "job",
+            company_id: companyId,
+          });
+
+          // Implement getItemReplenishment
+          const manufacturing = await serviceRole
+            .from("itemReplenishment")
+            .select("*")
+            .eq("itemId", line.itemId)
+            .eq("companyId", companyId)
+            .single();
+
           if (!nextSequence.data) {
             console.error("Failed to get next job id");
             continue;
@@ -121,12 +134,17 @@ export const salesOrderToJobsTask = task({
             unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
           };
 
-          const createJob = await upsertJob(serviceRole, {
-            ...data,
-            jobId: nextSequence.data,
-            companyId,
-            createdBy: userId,
-          });
+          // Implement upsertJob
+          const createJob = await serviceRole
+            .from("job")
+            .insert({
+              ...data,
+              jobId: nextSequence.data,
+              companyId,
+              createdBy: userId,
+            })
+            .select("id")
+            .single();
 
           if (createJob.error) {
             console.error("Failed to create job");
@@ -135,14 +153,17 @@ export const salesOrderToJobsTask = task({
           }
 
           if (quoteId) {
-            const upsertMethod = await upsertJobMethod(
-              serviceRole,
-              "quoteLineToJob",
+            // Implement upsertJobMethod for quote line
+            const upsertMethod = await serviceRole.functions.invoke(
+              "get-method",
               {
-                sourceId: `${quoteId}:${line.id}`,
-                targetId: createJob.data.id,
-                companyId,
-                userId,
+                body: {
+                  type: "quoteLineToJob",
+                  sourceId: `${quoteId}:${line.id}`,
+                  targetId: createJob.data.id,
+                  companyId,
+                  createdBy: userId,
+                },
               }
             );
 
@@ -152,14 +173,17 @@ export const salesOrderToJobsTask = task({
               continue;
             }
           } else {
-            const upsertMethod = await upsertJobMethod(
-              serviceRole,
-              "itemToJob",
+            // Implement upsertJobMethod for item
+            const upsertMethod = await serviceRole.functions.invoke(
+              "get-method",
               {
-                sourceId: data.itemId,
-                targetId: createJob.data.id,
-                companyId,
-                userId,
+                body: {
+                  type: "itemToJob",
+                  sourceId: data.itemId,
+                  targetId: createJob.data.id,
+                  companyId,
+                  createdBy: userId,
+                },
               }
             );
 
@@ -170,11 +194,22 @@ export const salesOrderToJobsTask = task({
             }
           }
 
-          await tasks.trigger<typeof recalculateTask>("recalculate", {
-            type: "jobRequirements",
-            id: createJob.data.id,
-            companyId,
-            userId,
+          await serviceRole.functions.invoke("recalculate", {
+            body: {
+              type: "jobRequirements",
+              id: createJob.data.id,
+              companyId,
+              userId,
+            },
+          });
+
+          await serviceRole.functions.invoke("scheduler", {
+            body: {
+              type: "requirements",
+              id: createJob.data.id,
+              companyId,
+              userId,
+            },
           });
         }
       }

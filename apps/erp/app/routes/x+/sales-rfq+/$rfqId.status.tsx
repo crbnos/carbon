@@ -1,13 +1,13 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { notifyTask } from "@carbon/jobs/trigger/notify";
 import { NotificationEvent } from "@carbon/notifications";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { salesRFQStatusType, updateSalesRFQStatus } from "~/modules/sales";
 import { getCompanySettings } from "~/modules/settings/settings.service";
-import type { notifyTask } from "~/trigger/notify";
 import { path } from "~/utils/path";
 
 export const config = {

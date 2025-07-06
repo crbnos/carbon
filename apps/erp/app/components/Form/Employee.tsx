@@ -15,7 +15,7 @@ type EmployeeSelectProps = Omit<
 
 const EmployeePreview = (
   value: string,
-  options: { value: string; label: string | JSX.Element }[]
+  options: { value: string; label: string | React.ReactNode }[]
 ) => {
   return <EmployeeAvatar employeeId={value} />;
 };

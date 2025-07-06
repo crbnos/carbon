@@ -1,8 +1,8 @@
 import { validationError, validator } from "@carbon/form";
+import type { updatePermissionsTask } from "@carbon/jobs/trigger/update-permissions";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { updatePermissionsTask } from "~/trigger/update-permissions";
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";

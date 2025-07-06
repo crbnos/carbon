@@ -1,3 +1,4 @@
+import type { IntegrationConfig } from "@carbon/integrations";
 import {
   Badge,
   Button,
@@ -8,7 +9,6 @@ import {
   CardTitle,
 } from "@carbon/react";
 import { Link, useFetcher, useNavigate } from "@remix-run/react";
-import type { IntegrationConfig } from "~/integrations/types";
 import { path } from "~/utils/path";
 
 type IntegrationsListProps = {

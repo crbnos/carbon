@@ -60,7 +60,7 @@ export async function getCustomFieldsSchemas(
     }
 
     if (args?.module) {
-      query.eq("module", args.module);
+      query.eq("module", args.module as any);
     }
 
     if (args?.table) {

@@ -5,7 +5,6 @@ import { NotificationEvent } from "@carbon/notifications";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { assign } from "~/modules/shared/shared.server";
-import type { notifyTask } from "~/trigger/notify";
 
 export const config = {
   runtime: "nodejs",
@@ -61,7 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const notificationEvent = getNotificationEvent(table);
       if (notificationEvent) {
         try {
-          await tasks.trigger<typeof notifyTask>("notify", {
+          await tasks.trigger("notify", {
             companyId,
             documentId: id,
             event: notificationEvent,

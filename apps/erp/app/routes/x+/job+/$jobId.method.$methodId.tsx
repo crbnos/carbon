@@ -133,6 +133,7 @@ export default function JobMakeMethodRoute() {
         <JobBillOfProcess
           key={`bop:${methodId}`}
           jobMakeMethodId={methodId}
+          // @ts-ignore
           operations={operations}
           locationId={routeData?.job?.locationId ?? ""}
           tags={tags}
@@ -141,6 +142,7 @@ export default function JobMakeMethodRoute() {
           key={`bom:${methodId}`}
           jobMakeMethodId={methodId}
           materials={materials}
+          // @ts-ignore
           operations={operations}
         />
 
@@ -154,7 +156,9 @@ export default function JobMakeMethodRoute() {
           <Await resolve={productionData}>
             {(resolvedProductionData) => (
               <JobEstimatesVsActuals
+                // @ts-ignore
                 materials={materials ?? []}
+                // @ts-ignore
                 operations={operations}
                 productionEvents={resolvedProductionData.events}
                 productionQuantities={resolvedProductionData.quantities}

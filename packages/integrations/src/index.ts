@@ -7,6 +7,9 @@ import { Slack } from "./slack/config";
 import { Xero } from "./xero/config";
 import { Zapier } from "./zapier/config";
 
+export { Resend } from "./resend/config";
+export type { IntegrationConfig } from "./types";
+
 export const integrations = [
   ExchangeRates,
   Resend,
@@ -17,3 +20,8 @@ export const integrations = [
   Xero,
   Zapier,
 ];
+
+export { Onshape, Logo as OnshapeLogo } from "./onshape/config";
+export * from "./onshape/lib";
+
+export { PaperlessPartsClient } from "./paperless-parts/lib/client";

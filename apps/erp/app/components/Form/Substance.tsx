@@ -6,8 +6,8 @@ import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialSubstancesList } from "~/modules/items";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
-import { Enumerable } from "../Enumerable";
 import { path } from "~/utils/path";
+import { Enumerable } from "../Enumerable";
 
 type SubstanceSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   inline?: boolean;
@@ -15,7 +15,7 @@ type SubstanceSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
 
 const SubstancePreview = (
   value: string,
-  options: { value: string; label: string | JSX.Element }[]
+  options: { value: string; label: string | React.ReactNode }[]
 ) => {
   const substance = options.find((o) => o.value === value);
   // @ts-ignore

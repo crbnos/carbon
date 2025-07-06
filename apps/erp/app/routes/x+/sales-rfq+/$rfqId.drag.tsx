@@ -1,11 +1,11 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { modelThumbnailTask } from "@carbon/jobs/trigger/model-thumbnail";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { nanoid } from "nanoid";
 import { salesRfqDragValidator, upsertSalesRFQLine } from "~/modules/sales";
-import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

@@ -1,0 +1,38 @@
+{
+  "name": "@carbon/stripe",
+  "dependencies": {
+    "@carbon/auth": "*",
+    "@carbon/database": "*",
+    "@carbon/jobs": "*",
+    "@carbon/kv": "*",
+    "@supabase/supabase-js": "^2.40.0",
+    "@trigger.dev/sdk": "3.3.12",
+    "stripe": "^18.3.0"
+  },
+  "devDependencies": {
+    "@carbon/logger": "*",
+    "@carbon/tsconfig": "*",
+    "@types/node": "^20.12.5",
+    "dotenv": "16.3.1",
+    "eslint": "^8.23.1",
+    "eslint-config-carbon": "*",
+    "rimraf": "^5.0.5",
+    "tsup": "^6.5.0",
+    "tsx": "^4.13.2",
+    "typescript": "^5.2.2",
+    "zod": "^3.24.2"
+  },
+  "exports": {
+    "./stripe.server": "./src/stripe.server.ts"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup --watch",
+    "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
+    "dev:stripe": "tsx ./stripe.dev.ts",
+    "register:stripe": "tsx ./stripe.register.ts"
+  },
+  "sideEffects": false,
+  "version": "*"
+}

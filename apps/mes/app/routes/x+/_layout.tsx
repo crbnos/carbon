@@ -3,8 +3,8 @@ import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
-import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
 import { SidebarProvider, TooltipProvider, useMount } from "@carbon/react";
+import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";

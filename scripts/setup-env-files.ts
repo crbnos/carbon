@@ -11,7 +11,7 @@ const APPS_DIR = join(process.cwd(), "apps");
 const PACKAGES_DIR = join(process.cwd(), "packages");
 
 // List of package folders that need .env symlinks
-const PACKAGE_FOLDERS = ["database", "kv"];
+const PACKAGE_FOLDERS = ["database", "jobs", "kv"];
 
 function createSymlink(targetPath: string, sourcePath: string) {
   try {
@@ -30,7 +30,7 @@ function createSymlink(targetPath: string, sourcePath: string) {
 
 // Create symlinks in apps directory
 if (existsSync(APPS_DIR)) {
-  const apps = ["erp", "mes", "starter"];
+  const apps = ["erp", "mes", "university", "starter"];
   apps.forEach((app) => {
     const appEnvPath = join(APPS_DIR, app, ".env");
     createSymlink(appEnvPath, ROOT_ENV_PATH);

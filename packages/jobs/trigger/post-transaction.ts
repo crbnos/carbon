@@ -2,7 +2,6 @@ import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import { getCarbonServiceRole } from "@carbon/auth";
-import type { Result } from "~/types";
 
 const serviceRole = getCarbonServiceRole();
 
@@ -20,7 +19,7 @@ export const postTransactionTask = task({
       `🔰 User admin update ${payload.type} for ${payload.documentId}`
     );
 
-    let result: Result;
+    let result: { success: boolean; message: string };
 
     switch (payload.type) {
       case "receipt":

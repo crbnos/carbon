@@ -1,0 +1,23 @@
+{
+  "name": "@carbon/integrations",
+  "version": "*",
+  "exports": {
+    ".": "./src/index.ts",
+    "./exchange-rates/exchange-rates.server": "./src/exchange-rates/exchange-rates.server.ts"
+  },
+  "jest": {
+    "preset": "@carbon/jest/node"
+  },
+  "private": true,
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "dev": "tsup src/index.ts --format esm,cjs --watch --dts --external react",
+    "lint": "TIMING=1 eslint \"src/**/*.ts*\"",
+    "test": "jest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@carbon/tsconfig": "*",
+    "typescript": "^5.2.2"
+  }
+}

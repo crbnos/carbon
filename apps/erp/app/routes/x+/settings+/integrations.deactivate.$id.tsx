@@ -1,9 +1,9 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { integrations as availableIntegrations } from "@carbon/integrations";
 import { redirect } from "@remix-run/react";
 import type { ActionFunctionArgs } from "@vercel/remix";
-import { integrations as availableIntegrations } from "~/integrations";
 import { deactivateIntegration } from "~/modules/settings";
 import { path } from "~/utils/path";
 

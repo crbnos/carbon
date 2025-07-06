@@ -1,10 +1,6 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { getCarbonServiceRole } from "@carbon/auth";
-import { PaperlessPartsClient } from "~/integrations/paperless-parts/lib/client";
-import type { Result } from "~/types";
-
 const payloadSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("quote.created"),
@@ -49,15 +45,15 @@ const paperlessPartsSchema = z.object({
 export const paperlessPartsTask = task({
   id: "paperless-parts",
   run: async (payload: z.infer<typeof paperlessPartsSchema>) => {
-    let result: Result;
+    let result: { success: boolean; message: string };
 
     console.info(
       `🔰 Paperless Parts webhook received: ${payload.payload.type}`
     );
     console.info(`📦 Payload:`, payload);
 
-    const carbon = getCarbonServiceRole();
-    const paperless = new PaperlessPartsClient(payload.apiKey);
+    // const carbon = getCarbonServiceRole();
+    // const paperless = new PaperlessPartsClient(payload.apiKey);
 
     switch (payload.payload.type) {
       case "quote.created":

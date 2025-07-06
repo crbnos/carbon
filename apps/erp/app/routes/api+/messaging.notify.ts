@@ -1,11 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { notifyTask } from "@carbon/jobs/trigger/notify";
 import { NotificationEvent } from "@carbon/notifications";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { z } from "zod";
-import type { notifyTask } from "~/trigger/notify";
 
 export const config = {
   runtime: "nodejs",

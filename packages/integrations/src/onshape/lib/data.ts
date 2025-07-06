@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { itemReplenishmentSystems } from "~/modules/items/items.models";
-import { methodType } from "~/modules/shared/shared.models";
+
+const methodType = ["Buy", "Make", "Pick"] as const;
+const replenishmentSystems = ["Buy", "Make", "Buy and Make"] as const;
 
 export const onShapeDataValidator = z
   .object({
@@ -10,7 +11,7 @@ export const onShapeDataValidator = z
     revision: z.string().optional(),
     name: z.string(),
     quantity: z.number(),
-    replenishmentSystem: z.enum(itemReplenishmentSystems),
+    replenishmentSystem: z.enum(replenishmentSystems),
     defaultMethodType: z.enum(methodType),
     data: z.record(z.string(), z.any()),
   })

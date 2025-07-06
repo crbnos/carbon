@@ -3,13 +3,14 @@ node_modules
 .turbo
 *.log
 .next
+.vercel
+.trigger
 dist
 dist-ssr
 *.local
 .cache
 server/dist
 public/dist
-.turbo
 vite.config.ts.timestamp*
 
 # local env files

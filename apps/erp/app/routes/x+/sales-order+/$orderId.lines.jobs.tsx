@@ -1,10 +1,10 @@
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { salesOrderToJobsTask } from "@carbon/jobs/trigger/sales-order-to-jobs";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
-import type { salesOrderToJobsTask } from "~/trigger/sales-order-to-jobs";
 import { path, requestReferrer } from "~/utils/path";
 
 export const config = { runtime: "nodejs" };

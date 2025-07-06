@@ -8,6 +8,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
+import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { redirect, type ActionFunctionArgs } from "@vercel/remix";
@@ -26,7 +27,6 @@ import {
 import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
-import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have a sendEmail task defined
 import { path, requestReferrer } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 

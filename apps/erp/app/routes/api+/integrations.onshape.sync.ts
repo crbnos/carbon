@@ -1,7 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { onShapeDataValidator } from "@carbon/integrations";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { onShapeDataValidator } from "~/integrations/onshape/lib/data";
 
 export const config = {
   runtime: "nodejs",

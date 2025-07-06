@@ -17,14 +17,14 @@ import {
   useMount,
 } from "@carbon/react";
 import { useRouteData } from "@carbon/remix";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { getShipmentTracking } from "../..";
-import type { ShipmentLine } from "../..";
-import { path } from "~/utils/path";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useUser } from "~/hooks";
+import { path } from "~/utils/path";
+import type { ShipmentLine } from "../..";
+import { getShipmentTracking } from "../..";
 
 const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const { shipmentId } = useParams();
@@ -91,7 +91,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
         if (trackedEntity?.status !== "Available") {
           errors.push({
             itemReadableId: line.itemReadableId,
-            shippedQuantity: line.shippedQuantity,
+            shippedQuantity: line.shippedQuantity ?? 0,
             shippedQuantityError: "Tracked entity is not available",
           });
         }
@@ -114,7 +114,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
         if (quantityAvailable !== line.shippedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
-            shippedQuantity: line.shippedQuantity,
+            shippedQuantity: line.shippedQuantity ?? 0,
             shippedQuantityError: "Serial numbers are missing or unavailable",
           });
         }

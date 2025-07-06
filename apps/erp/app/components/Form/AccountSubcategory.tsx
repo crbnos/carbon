@@ -39,7 +39,12 @@ const AccountSubcategory = (props: AccountSubcategorySelectProps) => {
     [accountSubcategoriesFetcher.data]
   );
 
-  const onChange = (newValue: { label: string; value: string } | null) => {
+  const onChange = (
+    newValue: {
+      label: string | React.ReactNode;
+      value: string;
+    } | null
+  ) => {
     const subCategory =
       accountSubcategoriesFetcher.data?.data?.find(
         (subCategory) => subCategory.id === newValue?.value

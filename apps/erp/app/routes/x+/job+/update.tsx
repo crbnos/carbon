@@ -1,12 +1,12 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { recalculateTask } from "@carbon/jobs/trigger/recalculate";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import {
   recalculateJobRequirements,
   upsertJobMethod,
 } from "~/modules/production";
-import type { recalculateTask } from "~/trigger/recalculate";
 
 export const config = {
   runtime: "nodejs",

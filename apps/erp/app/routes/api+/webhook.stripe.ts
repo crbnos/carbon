@@ -3,10 +3,12 @@ import {
   getStripeCustomerId,
   processStripeEvent,
   syncStripeDataToKV,
-} from "@carbon/lib/stripe.server";
+} from "@carbon/stripe/stripe.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { path } from "~/utils/path";
+
+export const config = { runtime: "nodejs" };
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});

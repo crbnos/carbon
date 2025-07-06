@@ -301,7 +301,6 @@ const Gantt = ({
         </div>
         <div className="flex items-center gap-4">
           <Slider
-            variant="primary"
             className="w-20"
             leftIcon={<LuZoomOut />}
             rightIcon={<LuZoomIn />}

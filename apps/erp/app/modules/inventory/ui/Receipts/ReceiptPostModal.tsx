@@ -17,14 +17,14 @@ import {
   useMount,
 } from "@carbon/react";
 import { useRouteData } from "@carbon/remix";
+import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useFetcher, useNavigation, useParams } from "@remix-run/react";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { path } from "~/utils/path";
-import type { ReceiptLine } from "../../types";
-import { getReceiptTracking } from "../../inventory.service";
-import type { TrackedEntityAttributes } from "@carbon/utils";
 import { useUser } from "~/hooks";
+import { path } from "~/utils/path";
+import { getReceiptTracking } from "../../inventory.service";
+import type { ReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
@@ -95,7 +95,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
         if (!attributes?.["Batch Number"]) {
           errors.push({
             itemReadableId: line.itemReadableId,
-            receivedQuantity: line.receivedQuantity,
+            receivedQuantity: line.receivedQuantity ?? 0,
             receivedQuantityError: "Batch number is required",
           });
         }
@@ -118,7 +118,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
         if (quantityWithSerial !== line.receivedQuantity) {
           errors.push({
             itemReadableId: line.itemReadableId,
-            receivedQuantity: line.receivedQuantity,
+            receivedQuantity: line.receivedQuantity ?? 0,
             receivedQuantityError: "Serial numbers are missing",
           });
         }

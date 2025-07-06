@@ -10,14 +10,15 @@ Features:
 
 - [x] ERP
 - [x] MES
+- [ ] QMS
 - [x] Custom Fields
 - [x] Nested BoM
 - [x] Traceability
+- [x] MRP
 - [x] Configurator
 - [x] MCP Client/Server
 - [x] API
 - [x] Webhooks
-- [x] Purchase Planning
 - [ ] Accounting
 
 Technical highlights:
@@ -45,6 +46,7 @@ Technical highlights:
 - [Resend](https://resend.com) – email
 - [Novu](https://novu.co) – notifications
 - [Vercel](https://vercel.com) – hosting
+- [Stripe](https://stripe.com) - billing
 
 ## Codebase
 
@@ -59,7 +61,7 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | ------------ | --------------- | ------------------------ |
 | `erp`        | ERP Application | `npm run dev`            |
 | `mes`        | MES             | `npm run dev:mes`        |
-| `univeristy` | University      | `npm run dev:university` |
+| `university` | University      | `npm run dev:university` |
 | `starter`    | Starter         | `npm run dev:starter`    |
 
 ### `/packages`
@@ -69,11 +71,14 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `eslint-config-carbon` | Shared, extendable eslint configuration for apps and packages           |
 | `@carbon/database`     | Database schema, migrations and types                                   |
 | `@carbon/documents`    | Transactional PDFs and email templates                                  |
+| `@carbon/integrations` | Integration definitions and configurations                              |
 | `@carbon/jest`         | Jest preset configuration shared across apps and packages               |
+| `@carbon/jobs`         | Background jobs and workers                                             |
 | `@carbon/logger`       | Shared logger used across apps                                          |
 | `@carbon/react`        | Shared web-based UI components                                          |
 | `@carbon/kv`           | Redis cache client                                                      |
-| `@carbon/lib`          | Third-party client libraries (slack, resend, stripe)                    |
+| `@carbon/lib`          | Third-party client libraries (slack, resend)                            |
+| `@carbon/stripe`       | Stripe integration                                                      |
 | `@carbon/tsconfig`     | Shared, extendable tsconfig configuration used across apps and packages |
 | `@carbon/utils`        | Shared utility functions used across apps and packages                  |
 
@@ -231,8 +236,8 @@ $ npm run test -w @carbon/react
 To run Stripe locally, run:
 
 ```
-$ npm run -w erp register:stripe
-$ npm run -w erp dev:stripe
+$ npm run -w stripe register:stripe
+$ npm run -w stripe dev:stripe
 ```
 
 ### Restoring a Production Database Locally

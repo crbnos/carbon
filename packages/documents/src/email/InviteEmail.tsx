@@ -1,17 +1,19 @@
 import {
   Body,
-  Button,
   Container,
-  Font,
   Heading,
-  Html,
   Link,
   Preview,
   Section,
-  Tailwind,
   Text,
 } from "@react-email/components";
 import { Logo } from "./components/Logo";
+import {
+  Button,
+  EmailThemeProvider,
+  getEmailInlineStyles,
+  getEmailThemeClasses,
+} from "./components/Theme";
 
 interface Props {
   email?: string;
@@ -26,94 +28,107 @@ interface Props {
 export const InviteEmail = ({
   invitedByEmail = "tom@sawyer.com",
   invitedByName = "Tom Sawyer",
-  email = "huckleberry@sawyer.com",
+  email = "huck@sawyer.com",
   companyName = "Tombstone",
   inviteLink = "https://carbonos.dev/invite/1234567890",
   ip = "38.38.38.38",
   location = "Tombstone, AZ",
 }: Props) => {
+  const preview = <Preview>{`Join ${companyName} on Carbon`}</Preview>;
+  const themeClasses = getEmailThemeClasses();
+  const lightStyles = getEmailInlineStyles("light");
+
   return (
-    <Html>
-      <Tailwind>
-        <head>
-          <Font
-            fontFamily="Geist"
-            fallbackFontFamily="Helvetica"
-            webFont={{
-              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-400-normal.woff2",
-              format: "woff2",
-            }}
-            fontWeight={400}
-            fontStyle="normal"
-          />
-
-          <Font
-            fontFamily="Geist"
-            fallbackFontFamily="Helvetica"
-            webFont={{
-              url: "https://cdn.jsdelivr.net/npm/@fontsource/geist-sans@5.0.1/files/geist-sans-latin-500-normal.woff2",
-              format: "woff2",
-            }}
-            fontWeight={500}
-            fontStyle="normal"
-          />
-        </head>
-        <Preview>{`Join ${companyName} on Carbon`}</Preview>
-
-        <Body className="bg-[#fff] my-auto mx-auto font-sans">
-          <Container
-            className="border-transparent md:border-[#E8E7E1] my-[40px] mx-auto p-[20px] max-w-[600px]"
-            style={{ borderStyle: "solid", borderWidth: 1 }}
+    <EmailThemeProvider preview={preview}>
+      <Body
+        className={`my-auto mx-auto font-sans ${themeClasses.body}`}
+        style={lightStyles.body}
+      >
+        <Container
+          className={`my-[40px] mx-auto p-[20px] max-w-[600px] ${themeClasses.container}`}
+          style={{
+            borderStyle: "solid",
+            borderWidth: 1,
+            borderColor: lightStyles.container.borderColor,
+          }}
+        >
+          <Logo />
+          <Heading
+            className={`mx-0 my-[30px] p-0 text-[24px] font-normal ${themeClasses.text} text-center`}
+            style={{ color: lightStyles.text.color }}
           >
-            <Logo />
-            <Heading className="mx-0 my-[30px] p-0 text-[24px] font-normal text-[#121212] text-center">
-              Join <strong>{companyName}</strong> on <strong>Carbon</strong>
-            </Heading>
+            Join <strong>{companyName}</strong> on <strong>Carbon</strong>
+          </Heading>
 
-            <Text className="text-[14px] leading-[24px] text-[#121212]">
-              {invitedByName} (
-              <Link
-                href={`mailto:${invitedByEmail}`}
-                className="text-[#121212] no-underline"
+          <Text
+            className={`text-[14px] leading-[24px] ${themeClasses.text}`}
+            style={{ color: lightStyles.text.color }}
+          >
+            {invitedByName} (
+            <Link
+              href={`mailto:${invitedByEmail}`}
+              className={`${themeClasses.text} no-underline`}
+              style={{ color: lightStyles.text.color }}
+            >
+              {invitedByEmail}
+            </Link>
+            ) has invited you to join <strong>{companyName}</strong> on{" "}
+            <strong>Carbon</strong>.
+          </Text>
+          <Section className="mb-[42px] mt-[32px] text-center">
+            <Button href={inviteLink}>Accept Invite</Button>
+          </Section>
+
+          <Text
+            className={`text-[14px] leading-[24px] ${themeClasses.mutedText} break-all`}
+            style={{ color: lightStyles.mutedText.color }}
+          >
+            You can accept this invite by clicking the button above or by
+            copying and pasting the following link into your browser:{" "}
+            <Link
+              href={inviteLink}
+              className={`${themeClasses.mutedText} underline`}
+              style={{ color: lightStyles.mutedText.color }}
+            >
+              {inviteLink}
+            </Link>
+          </Text>
+
+          <br />
+          <Section>
+            <Text
+              className={`text-[12px] leading-[24px] ${themeClasses.mutedText}`}
+              style={{ color: lightStyles.mutedText.color }}
+            >
+              This invitation was intended for{" "}
+              <span
+                className={themeClasses.text}
+                style={{ color: lightStyles.text.color }}
               >
-                {invitedByEmail}
-              </Link>
-              ) has invited you to join <strong>{companyName}</strong> on{" "}
-              <strong>Carbon</strong>.
-            </Text>
-            <Section className="mb-[42px] mt-[32px] text-center">
-              <Button
-                className="bg-black text-foreground text-[14px] text-white font-medium no-underline text-center px-6 py-3 border border-solid border-[#121212] rounded-lg"
-                href={inviteLink}
+                {email}
+              </span>
+              . This invite was sent from{" "}
+              <span
+                className={themeClasses.text}
+                style={{ color: lightStyles.text.color }}
               >
-                Accept Invite
-              </Button>
-            </Section>
-
-            <Text className="text-[14px] leading-[24px] text-[#707070] break-all">
-              You can accept this invite by clicking the button above or by
-              copying and pasting the following link into your browser:{" "}
-              <Link href={inviteLink} className="text-[#707070] underline">
-                {inviteLink}
-              </Link>
+                {ip}
+              </span>{" "}
+              located in{" "}
+              <span
+                className={themeClasses.text}
+                style={{ color: lightStyles.text.color }}
+              >
+                {location}
+              </span>
+              . If you were not expecting this invitation, you can ignore this
+              email. If you are concerned about your account's safety, please
+              reply to this email to get in touch with us.
             </Text>
-
-            <br />
-            <Section>
-              <Text className="text-[12px] leading-[24px] text-[#666666]">
-                This invitation was intended for{" "}
-                <span className="text-[#121212] ">{email}</span>. This invite
-                was sent from <span className="text-[#121212] ">{ip}</span>{" "}
-                located in <span className="text-[#121212] ">{location}</span>.{" "}
-                If you were not expecting this invitation, you can ignore this
-                email. If you are concerned about your account's safety, please
-                reply to this email to get in touch with us.
-              </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
+          </Section>
+        </Container>
+      </Body>
+    </EmailThemeProvider>
   );
 };
 

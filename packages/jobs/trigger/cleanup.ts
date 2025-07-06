@@ -12,17 +12,16 @@ import { schedules } from "@trigger.dev/sdk/v3";
 const serviceRole = getCarbonServiceRole();
 const novu = new Novu(NOVU_SECRET_KEY!);
 
-export const expireQuotes = schedules.task({
-  id: "expire-quotes",
+export const cleanup = schedules.task({
+  id: "cleanup",
   // Run at 7am, 12pm, and 5pm every day
   cron: "0 7,12,17 * * *",
   run: async () => {
-    console.log(
-      `🕒 Quote Expiration Check Started: ${new Date().toISOString()}`
-    );
+    console.log(`🧹 Starting cleanup tasks: ${new Date().toISOString()}`);
 
     try {
-      // Fetch expired quotes that are in sent status and have a sales person assigned
+      // Clean up expired quotes
+      console.log("Checking for expired quotes...");
       const [expiredQuotes, expiredSupplierQuotes] = await Promise.all([
         serviceRole
           .from("quote")
@@ -82,7 +81,6 @@ export const expireQuotes = schedules.task({
 
       if (!expiredQuotes?.data?.length) {
         console.log("No expired quotes found requiring notification");
-        return;
       } else {
         console.log(`Found ${expiredQuotes.data.length} expired quotes`);
         const expireQuotes = await serviceRole
@@ -101,45 +99,46 @@ export const expireQuotes = schedules.task({
           );
           return;
         }
-      }
 
-      const notificationPayloads: TriggerPayload[] = expiredQuotes.data
-        .filter((quote) => Boolean(quote.salesPersonId))
-        .map((quote) => {
-          return {
-            workflow: NotificationWorkflow.Expiration,
-            payload: {
-              documentId: quote.id,
-              event: NotificationEvent.QuoteExpired,
-              recordId: quote.id,
-              description: `Quote ${quote.quoteId} has expired`,
-            },
-            user: {
-              subscriberId: getSubscriberId({
-                companyId: quote.companyId,
-                userId: quote.salesPersonId!,
-              }),
-            },
-          };
-        });
+        const notificationPayloads: TriggerPayload[] = expiredQuotes.data
+          .filter((quote) => Boolean(quote.salesPersonId))
+          .map((quote) => {
+            return {
+              workflow: NotificationWorkflow.Expiration,
+              payload: {
+                documentId: quote.id,
+                event: NotificationEvent.QuoteExpired,
+                recordId: quote.id,
+                description: `Quote ${quote.quoteId} has expired`,
+              },
+              user: {
+                subscriberId: getSubscriberId({
+                  companyId: quote.companyId,
+                  userId: quote.salesPersonId!,
+                }),
+              },
+            };
+          });
 
-      if (notificationPayloads.length > 0) {
-        console.log(`Triggering ${notificationPayloads.length} notifications`);
-        try {
-          await triggerBulk(novu, notificationPayloads.flat());
-        } catch (error) {
-          console.error("Error triggering notifications");
-          console.error(error);
+        if (notificationPayloads.length > 0) {
+          console.log(
+            `Triggering ${notificationPayloads.length} notifications`
+          );
+          try {
+            await triggerBulk(novu, notificationPayloads.flat());
+          } catch (error) {
+            console.error("Error triggering notifications");
+            console.error(error);
+          }
+        } else {
+          console.log("No notifications to trigger");
         }
-      } else {
-        console.log("No notifications to trigger");
       }
-      console.log(
-        `🕒 Quote Expiration Check Completed: ${new Date().toISOString()}`
-      );
+
+      console.log(`🧹 Cleanup tasks completed: ${new Date().toISOString()}`);
     } catch (error) {
       console.error(
-        `Unexpected error in quote expiration task: ${
+        `Unexpected error in cleanup tasks: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

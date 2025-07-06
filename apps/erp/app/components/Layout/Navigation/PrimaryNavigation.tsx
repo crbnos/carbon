@@ -112,7 +112,7 @@ const NavigationIconLink = forwardRef<
       className={cn(classes, props.className)}
       prefetch="intent"
     >
-      <link.icon className={cn(...iconClasses)} style={{ color: link.color }} />
+      <link.icon className={cn(...iconClasses)} />
 
       <span
         aria-hidden={isOpen || undefined}

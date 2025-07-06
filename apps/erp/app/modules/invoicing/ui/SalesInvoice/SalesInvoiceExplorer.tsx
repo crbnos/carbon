@@ -141,6 +141,7 @@ export default function SalesInvoiceExplorer() {
       </VStack>
       {newSalesInvoiceLineDisclosure.isOpen && (
         <SalesInvoiceLineForm
+          // @ts-ignore
           initialValues={salesInvoiceLineInitialValues}
           type="modal"
           onClose={newSalesInvoiceLineDisclosure.onClose}

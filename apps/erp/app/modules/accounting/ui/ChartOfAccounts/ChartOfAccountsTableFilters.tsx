@@ -54,12 +54,14 @@ const ChartOfAccountsTableFilters = () => {
               <p className="text-sm text-muted-foreground">Start Date</p>
               <DatePicker
                 value={startDate ? parseDate(startDate) : null}
-                onChange={(value) => setParams({ startDate: value.toString() })}
+                onChange={(value) =>
+                  setParams({ startDate: value?.toString() })
+                }
               />
               <p className="text-sm text-muted-foreground">End Date</p>
               <DatePicker
                 value={endDate ? parseDate(endDate) : null}
-                onChange={(value) => setParams({ endDate: value.toString() })}
+                onChange={(value) => setParams({ endDate: value?.toString() })}
               />
             </div>
           </PopoverContent>

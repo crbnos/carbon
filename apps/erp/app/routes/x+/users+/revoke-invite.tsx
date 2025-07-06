@@ -1,12 +1,12 @@
 import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
+import type { userAdminTask } from "@carbon/jobs/trigger/user-admin";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { revokeInviteValidator } from "~/modules/users";
-import { deactivateUser } from "~/modules/users/users.server";
-import type { userAdminTask } from "~/trigger/user-admin";
 
 export const config = { runtime: "nodejs" };
 

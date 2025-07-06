@@ -256,7 +256,7 @@ export async function upsertModelUpload(
         id: string;
         name: string;
         size: number;
-        autodeskUrn: string;
+        autodeskUrn?: string | null;
         thumbnailPath: string;
       }
 ) {

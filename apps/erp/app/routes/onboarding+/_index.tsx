@@ -16,7 +16,7 @@ export default function GetStarted() {
 
   return (
     <AnimatePresence>
-      <VStack spacing={4} className="max-w-lg p-4 items-center text-center">
+      <VStack spacing={2} className="max-w-lg p-4 items-center text-center">
         <motion.img
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -38,7 +38,7 @@ export default function GetStarted() {
         <motion.p
           {...fade}
           transition={{ duration: 1.2, ease: "easeInOut", delay: 1.7 }}
-          className="text-muted-foreground text-balance text-sm pb-4"
+          className="text-muted-foreground text-balance text-base pb-4"
         >
           The new standard for tech-enabled manufacturing
         </motion.p>

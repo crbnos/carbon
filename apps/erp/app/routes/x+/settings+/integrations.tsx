@@ -1,9 +1,9 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { integrations as availableIntegrations } from "@carbon/integrations";
 import { Outlet, useLoaderData } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
-import { integrations as availableIntegrations } from "~/integrations";
 import { IntegrationsList, getIntegrations } from "~/modules/settings";
 import { path } from "~/utils/path";
 

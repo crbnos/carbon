@@ -85,10 +85,7 @@ export default function Invite() {
 
   if (!success) {
     return (
-      <VStack
-        spacing={4}
-        className="max-w-lg pt-[16dvh] items-center text-center"
-      >
+      <VStack spacing={4} className="max-w-lg items-center text-center">
         <div className="flex justify-center mb-4">
           <img src="/carbon-logo-mark.svg" alt="Carbon Logo" className="w-36" />
         </div>
@@ -139,7 +136,7 @@ export default function Invite() {
         </Form>
       </VStack>
 
-      <p className="text-xs text-muted-foreground absolute bottom-8 left-1/2 -translate-x-1/2 text-center">
+      <p className="text-xs text-muted-foreground  text-center">
         By accepting the invite, you agree to the{" "}
         <Link to="https://carbonos.dev/terms" className="underline">
           Terms of Service

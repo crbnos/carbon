@@ -12,7 +12,7 @@ type CurrencySelectProps = Omit<ComboboxProps, "options" | "inline"> & {
 
 const CurrencyPreview = (
   value: string,
-  options: { value: string; label: string }[]
+  options: { value: string; label: string | React.ReactNode }[]
 ) => {
   const currency = options.find((o) => o.value === value);
   if (!currency) return null;

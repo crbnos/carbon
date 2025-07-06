@@ -8,14 +8,14 @@ import {
   VStack,
   useMount,
 } from "@carbon/react";
-import {
+import type {
   TrackedActivityAttributes,
   TrackedEntityAttributes,
 } from "@carbon/utils";
 import * as d3 from "d3";
 import { motion } from "framer-motion";
-import { useRef, useState, useEffect } from "react";
-import { LuLink, LuCopy } from "react-icons/lu";
+import { useEffect, useRef, useState } from "react";
+import { LuCopy, LuLink } from "react-icons/lu";
 import {
   CustomerAvatar,
   EmployeeAvatar,
@@ -23,12 +23,12 @@ import {
   SupplierAvatar,
 } from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
-import {
-  GraphData,
-  GraphNode,
-  GraphLink,
-  TrackedEntity,
+import type {
   Activity,
+  GraphData,
+  GraphLink,
+  GraphNode,
+  TrackedEntity,
 } from "~/modules/inventory";
 import { path } from "~/utils/path";
 import { capitalize, copyToClipboard } from "~/utils/string";
@@ -637,7 +637,7 @@ function JobMakeMethodAttribute({
       <Hyperlink
         to={
           materialId
-            ? path.to.jobMakeMethod(jobId, makeMethodId, materialId)
+            ? path.to.jobMakeMethod(jobId, makeMethodId)
             : path.to.jobMethod(jobId, makeMethodId)
         }
       >

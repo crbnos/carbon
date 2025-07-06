@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { tasks } from "npm:@trigger.dev/sdk@3.0.0/v3";
 import { z } from "npm:zod@^3.24.1";
-import type { notifyTask } from "../../../../../apps/erp/app/trigger/notify.ts";
+import type { notifyTask } from "../../../../jobs/trigger/notify.ts";
 
 import { corsHeaders } from "../lib/headers.ts";
 

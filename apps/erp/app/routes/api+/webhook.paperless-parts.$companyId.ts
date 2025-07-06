@@ -1,10 +1,10 @@
 import { getCarbonServiceRole } from "@carbon/auth";
+import type { paperlessPartsTask } from "@carbon/jobs/trigger/paperless-parts";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import crypto from "crypto";
 import { z } from "zod";
 import { getIntegration } from "~/modules/settings/settings.service";
-import type { paperlessPartsTask } from "~/trigger/paperless-parts";
 
 export const config = {
   runtime: "nodejs",

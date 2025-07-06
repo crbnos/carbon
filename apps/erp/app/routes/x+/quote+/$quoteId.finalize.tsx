@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { validationError, validator } from "@carbon/form";
+import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend"; // Assuming you have this task defined
 import { getLocalTimeZone, now } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
@@ -19,7 +20,6 @@ import { getCompany, getCompanySettings } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
-import type { sendEmailResendTask } from "~/trigger/send-email-resend"; // Assuming you have this task defined
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 

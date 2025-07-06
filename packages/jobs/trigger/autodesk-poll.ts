@@ -1,7 +1,8 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { getAutodeskToken, getManifest } from "@carbon/auth/autodesk.server";
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { task } from "@trigger.dev/sdk/v3";
-import { upsertModelUpload } from "~/modules/shared";
 
 const serviceRole = getCarbonServiceRole();
 
@@ -52,3 +53,26 @@ export const autodeskPollTask = task({
     return { success: true, id, autodeskUrn };
   },
 });
+
+async function upsertModelUpload(
+  client: SupabaseClient<Database>,
+  upload:
+    | {
+        id: string;
+        modelPath: string;
+        companyId: string;
+        createdBy: string;
+      }
+    | {
+        id: string;
+        name: string;
+        size: number;
+        autodeskUrn?: string | null;
+        thumbnailPath: string;
+      }
+) {
+  if ("createdBy" in upload) {
+    return client.from("modelUpload").insert(upload);
+  }
+  return client.from("modelUpload").update(upload).eq("id", upload.id);
+}

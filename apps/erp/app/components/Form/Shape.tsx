@@ -6,8 +6,8 @@ import { useMemo, useRef, useState } from "react";
 import { usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialForms";
-import { Enumerable } from "../Enumerable";
 import { path } from "~/utils/path";
+import { Enumerable } from "../Enumerable";
 
 type ShapeSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
   inline?: boolean;
@@ -15,7 +15,7 @@ type ShapeSelectProps = Omit<ComboboxProps, "options" | "inline"> & {
 
 const ShapePreview = (
   value: string,
-  options: { value: string; label: string | JSX.Element }[]
+  options: { value: string; label: string | React.ReactNode }[]
 ) => {
   const shape = options.find((o) => o.value === value);
   // @ts-ignore

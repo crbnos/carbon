@@ -1,7 +1,9 @@
-import type { Json } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase";
-import type { Permission } from "../types";
+import type { Permission, Result } from "../types";
+import { error, success } from "../utils/result";
 import {
   getClaims,
   getPermissionCacheKey,
@@ -56,4 +58,255 @@ export async function getUserClaims(userId: string, companyId: string) {
 
     return claims;
   }
+}
+
+export async function deactivateCustomer(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
+  }
+
+  const permissions = Object.entries(
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
+
+  const [updatePermissions, userToCompanyDelete, customerAccountDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("customerAccount")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("search")
+        .delete()
+        .eq("uuid", userId)
+        .eq("companyId", companyId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (customerAccountDelete.error) {
+    return error(
+      customerAccountDelete.error,
+      "Failed to remove customer account"
+    );
+  }
+
+  return success("Sucessfully deactivated customer");
+}
+
+export async function deactivateEmployee(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
+  }
+
+  const permissions = Object.entries(
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
+
+  const [updatePermissions, userToCompanyDelete, employeeDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("employee")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("search")
+        .delete()
+        .eq("uuid", userId)
+        .eq("companyId", companyId),
+      serviceRole.from("employeeJob").delete().eq("id", userId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (employeeDelete.error) {
+    return error(employeeDelete.error, "Failed to remove employee");
+  }
+
+  return success("Sucessfully deactivated employee");
+}
+
+export async function deactivateUser(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+) {
+  const userToCompany = await serviceRole
+    .from("userToCompany")
+    .select("role")
+    .eq("userId", userId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (userToCompany.error) {
+    // maybe they are invited but not added to the company yet
+    const user = await serviceRole
+      .from("user")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (user.error) {
+      return error(user.error, "Failed to get user");
+    }
+
+    const invite = await serviceRole
+      .from("invite")
+      .select("*")
+      .eq("email", user.data?.email)
+      .eq("companyId", companyId)
+      .single();
+    if (invite.error) {
+      return error(invite.error, "Failed to get invite");
+    }
+
+    if (invite.data?.role === "customer") {
+      return deactivateCustomer(serviceRole, userId, companyId);
+    } else if (invite.data?.role === "employee") {
+      return deactivateEmployee(serviceRole, userId, companyId);
+    } else if (invite.data?.role === "supplier") {
+      return deactivateSupplier(serviceRole, userId, companyId);
+    } else {
+      throw new Error("Invalid user role");
+    }
+  }
+
+  if (userToCompany.data?.role === "customer") {
+    return deactivateCustomer(serviceRole, userId, companyId);
+  } else if (userToCompany.data?.role === "employee") {
+    return deactivateEmployee(serviceRole, userId, companyId);
+  } else if (userToCompany.data?.role === "supplier") {
+    return deactivateSupplier(serviceRole, userId, companyId);
+  } else {
+    throw new Error("Invalid user role");
+  }
+}
+
+export async function deactivateSupplier(
+  serviceRole: SupabaseClient<Database>,
+  userId: string,
+  companyId: string
+): Promise<Result> {
+  const currentPermissions = await serviceRole
+    .from("userPermission")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (currentPermissions.error) {
+    return error(currentPermissions.error, "Failed to get user permissions");
+  }
+
+  const permissions = Object.entries(
+    (currentPermissions.data?.permissions ?? {}) as Record<string, string[]>
+  ).reduce<Record<string, string[]>>((acc, [key, value]) => {
+    acc[key] = value.filter((id) => id !== companyId);
+    return acc;
+  }, {});
+
+  const [updatePermissions, userToCompanyDelete, supplierAccountDelete] =
+    await Promise.all([
+      serviceRole
+        .from("userPermission")
+        .update({ permissions })
+        .eq("id", userId),
+      serviceRole
+        .from("userToCompany")
+        .delete()
+        .eq("userId", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("supplierAccount")
+        .delete()
+        .eq("id", userId)
+        .eq("companyId", companyId),
+      serviceRole
+        .from("search")
+        .delete()
+        .eq("uuid", userId)
+        .eq("companyId", companyId),
+    ]);
+
+  if (updatePermissions.error) {
+    return error(updatePermissions.error, "Failed to update user permissions");
+  }
+
+  if (userToCompanyDelete.error) {
+    return error(
+      userToCompanyDelete.error,
+      "Failed to remove user from company"
+    );
+  }
+
+  if (supplierAccountDelete.error) {
+    return error(
+      supplierAccountDelete.error,
+      "Failed to remove supplier account"
+    );
+  }
+
+  return success("Sucessfully deactivated supplier");
 }

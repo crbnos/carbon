@@ -37,7 +37,7 @@ const AccountCategory = (props: AccountCategorySelectProps) => {
   const onChange = (
     selection: {
       value: string;
-      label: string;
+      label: string | React.ReactNode;
     } | null
   ) => {
     const category =

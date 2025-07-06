@@ -41656,6 +41656,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.admin",
           },
           {
+            $ref: "#/parameters/rowFilter.user.acknowledgedUniversity",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -41751,6 +41754,9 @@ export default {
             $ref: "#/parameters/rowFilter.user.admin",
           },
           {
+            $ref: "#/parameters/rowFilter.user.acknowledgedUniversity",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -41798,6 +41804,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.user.admin",
+          },
+          {
+            $ref: "#/parameters/rowFilter.user.acknowledgedUniversity",
           },
           {
             $ref: "#/parameters/body.user",
@@ -76994,7 +77003,15 @@ export default {
       type: "object",
     },
     user: {
-      required: ["id", "email", "firstName", "lastName", "about", "createdAt"],
+      required: [
+        "id",
+        "email",
+        "firstName",
+        "lastName",
+        "about",
+        "createdAt",
+        "acknowledgedUniversity",
+      ],
       properties: {
         id: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -77048,6 +77065,11 @@ export default {
           type: "boolean",
         },
         admin: {
+          default: false,
+          format: "boolean",
+          type: "boolean",
+        },
+        acknowledgedUniversity: {
           default: false,
           format: "boolean",
           type: "boolean",
@@ -104416,6 +104438,12 @@ export default {
     },
     "rowFilter.user.admin": {
       name: "admin",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.user.acknowledgedUniversity": {
+      name: "acknowledgedUniversity",
       required: false,
       in: "query",
       type: "string",

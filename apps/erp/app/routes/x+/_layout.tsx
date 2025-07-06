@@ -27,7 +27,7 @@ import {
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
-import { getStripeCustomerByCompanyId } from "@carbon/lib/stripe.server";
+import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import posthog from "posthog-js";
 import { LuArrowUpRight, LuX } from "react-icons/lu";

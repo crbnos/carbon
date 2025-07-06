@@ -171,19 +171,19 @@ export async function getContractors(
   return query;
 }
 
-export async function getEmployeeAbility(
-  client: SupabaseClient<Database>,
-  abilityId: string,
-  employeeAbilityId: string
-) {
-  return client
-    .from("employeeAbility")
-    .select(`*, user(id, fullName, avatarUrl)`)
-    .eq("abilityId", abilityId)
-    .eq("id", employeeAbilityId)
-    .eq("active", true)
-    .single();
-}
+// export async function getEmployeeAbility(
+//   client: SupabaseClient<Database>,
+//   abilityId: string,
+//   employeeAbilityId: string
+// ) {
+//   return client
+//     .from("employeeAbility")
+//     .select(`*, user(id, fullName, avatarUrl)`)
+//     .eq("abilityId", abilityId)
+//     .eq("id", employeeAbilityId)
+//     .eq("active", true)
+//     .single();
+// }
 
 export async function getEmployeeAbilities(
   client: SupabaseClient<Database>,

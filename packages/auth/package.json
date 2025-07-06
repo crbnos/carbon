@@ -1,6 +1,5 @@
 {
   "name": "@carbon/auth",
-  "dependencies": {},
   "devDependencies": {
     "@carbon/tsconfig": "*",
     "@carbon/utils": "*",

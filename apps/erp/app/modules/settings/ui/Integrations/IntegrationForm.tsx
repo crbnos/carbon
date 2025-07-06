@@ -1,4 +1,5 @@
 import { Boolean, Input, Submit, ValidatedForm } from "@carbon/form";
+import { integrations as availableIntegrations } from "@carbon/integrations";
 import {
   Badge,
   Button,
@@ -16,7 +17,6 @@ import {
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { useParams } from "@remix-run/react";
 import { usePermissions, useUser } from "~/hooks";
-import { integrations as availableIntegrations } from "~/integrations";
 import { path } from "~/utils/path";
 
 interface IntegrationFormProps {

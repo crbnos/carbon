@@ -2,6 +2,7 @@ import { assertIsPost, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { validator } from "@carbon/form";
+import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend";
 import { renderAsync } from "@react-email/components";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { type ActionFunctionArgs } from "@vercel/remix";
@@ -18,7 +19,6 @@ import { getCustomerContact, salesConfirmValidator } from "~/modules/sales";
 import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
-import type { sendEmailResendTask } from "~/trigger/send-email-resend";
 import { stripSpecialCharacters } from "~/utils/string";
 
 export const config = { runtime: "nodejs" };

@@ -69,7 +69,7 @@ export default function CustomerAccountingRoute() {
   if (!routeData?.customer) return null;
 
   const initialValues = {
-    id: routeData?.customer?.id ?? undefined,
+    id: routeData?.customer?.id ?? "",
     customerTypeId: routeData?.customer?.customerTypeId ?? undefined,
     taxId: routeData?.customer?.taxId ?? "",
   };

@@ -1,0 +1,31 @@
+{
+  "name": "@carbon/jobs",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:jobs": "npx --yes trigger.dev@3.3.12 dev",
+    "deploy": "trigger deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "3.3.12",
+    "@carbon/auth": "*",
+    "@carbon/database": "*",
+    "@carbon/documents": "*",
+    "@carbon/lib": "*",
+    "@carbon/notifications": "*",
+    "@internationalized/date": "^3.5.2",
+    "@novu/node": "^2.0.1",
+    "@react-email/components": "0.0.16",
+    "@supabase/functions-js": "2.1.5",
+    "@supabase/supabase-js": "^2.40.0",
+    "nanoid": "5.0.4",
+    "resend": "^3.1.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@carbon/tsconfig": "*",
+    "typescript": "^5.2.2"
+  }
+}

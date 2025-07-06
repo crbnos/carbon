@@ -12,6 +12,7 @@ import {
   toast,
 } from "@carbon/react";
 import { useFetcher } from "@remix-run/react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -164,7 +165,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                 onChange={(
                   newValue: {
                     value: string | undefined;
-                    label: string | JSX.Element;
+                    label: string | ReactNode;
                   } | null
                 ) => {
                   if (newValue?.value) {

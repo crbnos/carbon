@@ -175,7 +175,7 @@ p.is-editor-empty:first-child:before {
 }
 
 .hexagon + .hexagon {
-  margin-left: 16px;
+  margin-left: 8px;
   animation: hexloader 1.4s 0.2s infinite ease-in-out;
   background-color: #4faade;
 }
@@ -189,7 +189,7 @@ p.is-editor-empty:first-child:before {
 }
 
 .hexagon + .hexagon + .hexagon {
-  margin-left: 16px;
+  margin-left: 8px;
   animation: hexloader 1.4s 0.4s infinite ease-in-out;
   background-color: #6041d0;
 }

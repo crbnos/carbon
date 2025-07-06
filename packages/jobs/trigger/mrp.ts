@@ -1,6 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { schedules } from "@trigger.dev/sdk/v3";
-import { runMRP } from "~/modules/production/production.service";
 
 const serviceRole = getCarbonServiceRole();
 
@@ -27,12 +26,15 @@ export const mrp = schedules.task({
     }
     for await (const company of companies.data) {
       try {
-        const result = await runMRP(serviceRole, {
-          type: "company",
-          id: company.id,
-          companyId: company.id,
-          userId: "system",
+        const result = await serviceRole.functions.invoke("mrp", {
+          body: {
+            type: "company",
+            id: company.id,
+            companyId: company.id,
+            userId: "system",
+          },
         });
+
         if (result.error) {
           console.error(
             `❌ Failed to run MRP for company ${company.name}: ${

@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2015"],
+    "outDir": "./dist",
+    "rootDir": "./src"
+  },
+  "exclude": ["node_modules"],
+  "extends": "@carbon/tsconfig/base.json",
+  "include": ["src"]
+}

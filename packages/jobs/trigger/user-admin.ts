@@ -1,13 +1,12 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import { Result, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
-import { deactivateUser } from "~/modules/users/users.server";
-import type { Result } from "~/types";
 
 const serviceRole = getCarbonServiceRole();
 export const userAdminSchema = z.discriminatedUnion("type", [

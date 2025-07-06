@@ -46,7 +46,10 @@
     "db:stop": "npm run db:stop -w @carbon/database",
     "db:types": "npm run db:types -w @carbon/database",
     "deploy": "turbo run deploy",
-    "dev": "turbo run dev --filter=./apps/erp --filter=./packages/",
+    "dev": "run-p dev:erp dev:jobs dev:stripe",
+    "dev:erp": "turbo run dev --filter=./apps/erp --filter=./packages/ ",
+    "dev:jobs": "npm run -w @carbon/jobs dev:jobs",
+    "dev:stripe": "npm run -w @carbon/stripe dev:stripe",
     "dev:mes": "turbo run dev --filter=./apps/mes",
     "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
     "dev:university": "turbo run dev --filter=./apps/university --filter=./packages/",
@@ -60,16 +63,13 @@
     "postdb:build": "run-s generate:types generate:swagger",
     "prepare": "npx husky install",
     "setup": "turbo run setup",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "types": "turbo run types"
   },
   "workspaces": [
     "apps/*",
     "ci",
     "packages/*"
   ],
-  "dependencies": {
-    "@xyflow/react": "^12.2.0",
-    "react-intersection-observer": "^9.13.1"
-  },
   "packageManager": "npm@10.7.0"
 }

@@ -113,6 +113,8 @@ export function getDefaultValue(
       return listOptions ? listOptions[0] : "";
     case "enum":
       return listOptions ? listOptions[0] : "";
+    default:
+      return "";
   }
 }
 

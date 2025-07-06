@@ -1,8 +1,8 @@
 // import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import type { modelThumbnailTask } from "@carbon/jobs/trigger/model-thumbnail";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
-import type { modelThumbnailTask } from "~/trigger/model-thumbnail";
 
 export const config = { runtime: "nodejs" };
 

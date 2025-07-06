@@ -68,7 +68,7 @@ const ItemManufacturingForm = ({
               <Boolean
                 name="requiresConfiguration"
                 label=""
-                description="Use parameters to generate the Bill of Materials and Bill of Process"
+                description="Configured"
               />
             )}
             <CustomFormFields table="partReplenishment" />

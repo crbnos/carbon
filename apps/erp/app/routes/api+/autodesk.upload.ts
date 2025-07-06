@@ -1,10 +1,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { autodeskUploadTask } from "@carbon/jobs/trigger/autodesk-upload";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { upsertModelUpload } from "~/modules/shared";
-import type { autodeskUploadTask } from "~/trigger/autodesk-upload";
 
 export const config = { runtime: "nodejs" };
 

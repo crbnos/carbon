@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["ES2015"],
+    "outDir": "./dist",
+    "rootDir": "./trigger",
+    "allowImportingTsExtensions": true
+  },
+  "exclude": ["node_modules"],
+  "extends": "@carbon/tsconfig/base.json",
+  "include": ["trigger"]
+}

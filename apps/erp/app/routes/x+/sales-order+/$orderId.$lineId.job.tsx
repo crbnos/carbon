@@ -2,6 +2,7 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { recalculateTask } from "@carbon/jobs/trigger/recalculate";
 import { parseDate } from "@internationalized/date";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -13,7 +14,6 @@ import {
   upsertJobMethod,
 } from "~/modules/production";
 import { getNextSequence } from "~/modules/settings";
-import type { recalculateTask } from "~/trigger/recalculate";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 

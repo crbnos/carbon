@@ -2,6 +2,7 @@ import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { tasks } from "@trigger.dev/sdk/v3";
 import { Stripe } from "stripe";
 import { z } from "zod";
 
@@ -78,7 +79,7 @@ export async function createStripeCustomer({
         email,
         name: name ?? undefined,
         metadata: {
-          owner: userId,
+          userId,
           companyId,
         },
       },
@@ -194,6 +195,7 @@ export async function getCheckoutUrl({
     cancel_url: `${getAppUrl()}/api/webhook/stripe`,
     payment_method_types: ["card", "us_bank_account", "cashapp"],
     metadata: {
+      userId,
       companyId,
     },
   });
@@ -227,46 +229,39 @@ export async function getBillingPortalRedirectUrl({
   return portalSession.url;
 }
 
-async function insertCompanyPlan(
+async function upsertCompanyPlan(
   client: SupabaseClient<Database>,
   companyPlan: {
     companyId: string;
-    planId: string;
-    status: "active" | "inactive";
+    priceId: string;
+    status?: "active" | "inactive";
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
     stripeSubscriptionStatus?: string;
     subscriptionStartDate?: string;
   }
 ) {
-  const plan = await getPlanById(client, companyPlan.planId);
+  const plan = await getPlanByPriceId(client, companyPlan.priceId);
   if (plan.error) {
+    console.error("upsertCompanyPlan - plan error:", plan.error);
     return plan;
   }
 
   const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
     {
       id: companyPlan.companyId,
-      planId: companyPlan.planId,
+      planId: plan.data.id,
       tasksLimit: plan.data.tasksLimit,
       aiTokensLimit: plan.data.aiTokensLimit,
       usersLimit: 10, // Default value as defined in the migration
-      subscriptionStartDate: new Date().toISOString(),
-      stripeSubscriptionStatus: companyPlan.status,
+      subscriptionStartDate:
+        companyPlan.subscriptionStartDate || new Date().toISOString(),
+      stripeSubscriptionStatus: companyPlan.stripeSubscriptionStatus,
       stripeCustomerId: companyPlan.stripeCustomerId,
       stripeSubscriptionId: companyPlan.stripeSubscriptionId,
-      trialPeriodEndsAt: plan.data.stripeTrialPeriodDays
-        ? new Date(
-            Date.now() + plan.data.stripeTrialPeriodDays * 24 * 60 * 60 * 1000
-          ).toISOString()
-        : null,
     };
 
-  return client
-    .from("companyPlan")
-    .upsert(companyPlanData)
-    .select("id")
-    .single();
+  return client.from("companyPlan").upsert(companyPlanData);
 }
 
 function isAllowedEventType<TEvent extends Stripe.Event>(
@@ -300,65 +295,50 @@ export async function processStripeEvent({
   }
 
   const eventType = event.type;
+
   if (eventType === "checkout.session.completed") {
     const data = event.data.object as Stripe.Checkout.Session;
-    const priceId = data.line_items?.data[0]?.price?.id;
-    const plan = await getPlanByPriceId(getCarbonServiceRole(), priceId);
     const { customer } = data;
+
+    const companyId = data.metadata.companyId;
+    const userId = data.metadata.userId;
+
+    if (!companyId || !userId) {
+      console.error(
+        "Missing required metadata in checkout session:",
+        data.metadata
+      );
+      throw new Error("Missing required metadata in checkout session");
+    }
+
     if (typeof customer !== "string") {
       throw new Error("Stripe webhook handler failed");
     }
 
     try {
       await Promise.all([
-        syncStripeDataToKV(customer),
-        insertCompanyPlan(getCarbonServiceRole(), {
-          companyId: data.metadata.companyId,
-          planId: plan.data.id,
-          status: "active",
+        syncStripeDataToKV(customer, companyId),
+        tasks.trigger("onboard", {
+          companyId,
+          userId,
         }),
       ]);
     } catch (error) {
       console.error("Error processing webhook:", error);
       throw new Error("Stripe webhook handler failed");
     }
-  } else if (eventType === "customer.subscription.updated") {
-    const subscription = event.data.object as Stripe.Subscription;
-    const priceId = subscription.items.data[0].price.id;
-    const plan = await getPlanByPriceId(getCarbonServiceRole(), priceId);
-    const { customer } = subscription;
-    if (typeof customer !== "string") {
-      throw new Error("Stripe webhook handler failed");
-    }
-
-    try {
-      await Promise.all([
-        syncStripeDataToKV(customer),
-        updateCompanyPlan(getCarbonServiceRole(), {
-          planId: plan.data.id,
-          companyId: subscription.metadata.companyId,
-          stripeCustomerId: customer,
-          stripeSubscriptionId: subscription.id,
-          stripeSubscriptionStatus: ["active", "trialing"].includes(
-            subscription.status
-          )
-            ? "active"
-            : "inactive",
-          subscriptionStartDate: new Date(
-            subscription.items.data[0].current_period_start * 1000
-          ).toISOString(),
-        }),
-      ]);
-    } catch (error) {
-      console.error("Error processing webhook:", error);
-      throw new Error("Stripe webhook handler failed");
-    }
+  } else {
+    console.log("unhandled event", { eventType });
   }
 }
 
-export async function syncStripeDataToKV(customerId: string) {
+export async function syncStripeDataToKV(
+  customerId: string,
+  companyIdFromMetadata?: string
+) {
   const key = `stripe:customer:${customerId}`;
-  console.log({ key });
+  let companyId = companyIdFromMetadata;
+  const serviceRole = await getCarbonServiceRole();
 
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
@@ -372,9 +352,19 @@ export async function syncStripeDataToKV(customerId: string) {
     return null;
   }
 
+  if (!companyId) {
+    const companyPlan = await serviceRole
+      .from("companyPlan")
+      .select("*")
+      .eq("stripeCustomerId", customerId)
+      .single();
+
+    companyId = companyPlan.data?.id;
+  }
+
   const subscription = subscriptions.data[0];
 
-  const subData = KvStripeCustomerSchema.parse({
+  const subDataResult = KvStripeCustomerSchema.safeParse({
     subscriptionId: subscription.id,
     status: subscription.status,
     priceId: subscription.items.data[0].price.id,
@@ -391,14 +381,41 @@ export async function syncStripeDataToKV(customerId: string) {
         : null,
   });
 
-  const customer = await stripe.customers.retrieve(customerId);
-  const companyId = (customer as any).metadata?.companyId;
-
-  if (companyId) {
-    await redis.set(key, subData);
+  if (!subDataResult.success) {
+    console.error("Failed to parse subscription data:", subDataResult.error);
+    throw new Error("Failed to parse subscription data");
   }
 
-  return subData;
+  const subData = subDataResult.data;
+
+  if (companyId) {
+    const companyPlanData = {
+      companyId,
+      priceId: subData.priceId,
+      status: ["active", "trialing"].includes(subData.status)
+        ? ("active" as const)
+        : ("inactive" as const),
+      stripeCustomerId: customerId,
+      stripeSubscriptionId: subData.subscriptionId,
+      stripeSubscriptionStatus: subData.status,
+      subscriptionStartDate: new Date(
+        subData.currentPeriodStart * 1000
+      ).toISOString(),
+    };
+
+    const [_, companyPlan] = await Promise.all([
+      redis.set(key, subData),
+      upsertCompanyPlan(await getCarbonServiceRole(), companyPlanData),
+    ]);
+
+    if (companyPlan.error) {
+      console.error("Failed to upsert company plan:", companyPlan.error);
+    }
+  } else {
+    console.error("no company id, skipping company plan upsert");
+  }
+
+  return subDataResult;
 }
 
 export async function updateActiveUsers({
@@ -411,21 +428,4 @@ export async function updateActiveUsers({
   await stripe.subscriptionItems.update(subscriptionId, {
     quantity: activeUsers,
   });
-}
-
-export async function updateCompanyPlan(
-  client: SupabaseClient<Database>,
-  data: {
-    companyId: string;
-    planId: string;
-    stripeCustomerId: string;
-    stripeSubscriptionId: string;
-    stripeSubscriptionStatus: string;
-    subscriptionStartDate: string;
-  }
-) {
-  // Extract companyId and build the update data without it
-  const { companyId, ...updateData } = data;
-
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
 }

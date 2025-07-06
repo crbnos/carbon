@@ -1,13 +1,14 @@
 {
   "name": "@carbon/lib",
+  "type": "module",
   "dependencies": {
     "@carbon/auth": "*",
     "@carbon/database": "*",
     "@carbon/kv": "*",
     "@slack/web-api": "~7.6.0",
     "@supabase/supabase-js": "^2.40.0",
-    "resend": "^3.1.0",
-    "stripe": "^18.3.0"
+    "@trigger.dev/sdk": "3.3.12",
+    "resend": "^3.1.0"
   },
   "devDependencies": {
     "@carbon/logger": "*",
@@ -23,8 +24,7 @@
   },
   "exports": {
     "./resend.server": "./src/resend.server.ts",
-    "./slack.server": "./src/slack.server.ts",
-    "./stripe.server": "./src/stripe.server.ts"
+    "./slack.server": "./src/slack.server.ts"
   },
   "private": true,
   "scripts": {

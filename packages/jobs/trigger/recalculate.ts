@@ -2,11 +2,6 @@ import { getCarbonServiceRole } from "@carbon/auth";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
-import type { Result } from "~/types";
-import {
-  recalculateJobMakeMethodRequirements,
-  recalculateJobRequirements,
-} from "../modules/production/production.service";
 
 const recalculateSchema = z.object({
   type: z.enum(["jobRequirements", "jobMakeMethodRequirements"]),
@@ -21,7 +16,7 @@ export const recalculateTask = task({
     console.info(`🔰 Type: ${payload.type}, id: ${payload.id}`);
 
     const serviceRole = getCarbonServiceRole();
-    let result: Result;
+    let result: { success: boolean; message: string };
     let calculateQuantities: FunctionsResponse<{ success: boolean }>;
 
     switch (payload.type) {
@@ -75,3 +70,35 @@ export const recalculateTask = task({
     return result;
   },
 });
+
+async function recalculateJobRequirements(
+  client,
+  params: {
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("scheduler", {
+    body: {
+      type: "requirements",
+      ...params,
+    },
+  });
+}
+
+async function recalculateJobMakeMethodRequirements(
+  client,
+  params: {
+    id: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("scheduler", {
+    body: {
+      type: "make-method-requirements",
+      ...params,
+    },
+  });
+}

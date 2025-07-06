@@ -1,4 +1,5 @@
 import { assertIsPost, getCarbonServiceRole, notFound } from "@carbon/auth";
+import type { notifyTask } from "@carbon/jobs/trigger/notify";
 import { NotificationEvent } from "@carbon/notifications";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
@@ -9,7 +10,6 @@ import {
   selectedLinesValidator,
 } from "~/modules/sales";
 import { getCompanySettings } from "~/modules/settings";
-import type { notifyTask } from "~/trigger/notify";
 
 export const config = {
   runtime: "nodejs",

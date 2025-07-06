@@ -12,16 +12,20 @@ import { useControlField, useField } from "../hooks";
 
 export type ComboboxProps = Omit<ComboboxBaseProps, "onChange"> & {
   name: string;
-  label?: string | JSX.Element;
+  label?: string;
   isLoading?: boolean;
   isOptional?: boolean;
   helperText?: string;
   onChange?: (
-    newValue: { value: string; label: string | JSX.Element } | null
+    newValue: { value: string; label: string | React.ReactNode } | null
   ) => void;
   inline?: (
     value: string,
-    options: { value: string; label: string | JSX.Element; helper?: string }[]
+    options: {
+      value: string;
+      label: string | React.ReactNode;
+      helper?: string;
+    }[]
   ) => React.ReactNode;
 };
 

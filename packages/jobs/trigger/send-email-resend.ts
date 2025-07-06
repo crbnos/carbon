@@ -1,7 +1,6 @@
+import { Resend as ResendConfig } from "@carbon/integrations";
 import { task } from "@trigger.dev/sdk/v3";
-import { nanoid } from "nanoid";
 import { Resend } from "resend";
-import { Resend as ResendConfig } from "~/integrations/resend/config";
 
 import { getCarbonServiceRole } from "@carbon/auth";
 
@@ -55,9 +54,6 @@ export const sendEmailResendTask = task({
       html: payload.html,
       text: payload.text,
       attachments: payload.attachments,
-      headers: {
-        "X-Entity-Ref-ID": nanoid(7),
-      },
     };
 
     console.info(`📬 Resend Email Job`);
