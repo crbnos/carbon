@@ -1,8 +1,8 @@
 -- Add customerId field to opportunity table
-ALTER TABLE "opportunity" ADD COLUMN "customerId" TEXT;
+ALTER TABLE "opportunity" ADD COLUMN IF NOT EXISTS "customerId" TEXT;
 
 -- Add supplierId field to supplierInteraction table  
-ALTER TABLE "supplierInteraction" ADD COLUMN "supplierId" TEXT;
+ALTER TABLE "supplierInteraction" ADD COLUMN IF NOT EXISTS "supplierId" TEXT;
 
 -- Update opportunity table with customerId from various sources in order of priority
 UPDATE "opportunity" o
@@ -64,6 +64,10 @@ SET "supplierId" = COALESCE(
   )
 )
 WHERE si."supplierId" IS NULL;
+
+DELETE FROM "opportunity" WHERE "customerId" IS NULL;
+
+DELETE FROM "supplierInteraction" WHERE "supplierId" IS NULL;
 
 -- Make customerId NOT NULL on opportunity table
 ALTER TABLE "opportunity" ALTER COLUMN "customerId" SET NOT NULL;
