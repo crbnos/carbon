@@ -16671,18 +16671,21 @@ export type Database = {
       opportunity: {
         Row: {
           companyId: string
+          customerId: string
           id: string
           purchaseOrderDocumentPath: string | null
           requestForQuoteDocumentPath: string | null
         }
         Insert: {
           companyId: string
+          customerId: string
           id?: string
           purchaseOrderDocumentPath?: string | null
           requestForQuoteDocumentPath?: string | null
         }
         Update: {
           companyId?: string
+          customerId?: string
           id?: string
           purchaseOrderDocumentPath?: string | null
           requestForQuoteDocumentPath?: string | null
@@ -16715,6 +16718,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "opportunity_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customer"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_customerId_fkey"
+            columns: ["customerId"]
+            isOneToOne: false
+            referencedRelation: "salesOrderCustomers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -29490,14 +29514,17 @@ export type Database = {
         Row: {
           companyId: string
           id: string
+          supplierId: string
         }
         Insert: {
           companyId: string
           id?: string
+          supplierId: string
         }
         Update: {
           companyId?: string
           id?: string
+          supplierId?: string
         }
         Relationships: [
           {
@@ -29527,6 +29554,41 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplierInteraction_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -45232,6 +45294,7 @@ export type Database = {
         Returns: {
           id: string
           companyId: string
+          customerId: string
           purchaseOrderDocumentPath: string
           requestForQuoteDocumentPath: string
           salesRfqs: Json
@@ -45547,6 +45610,19 @@ export type Database = {
           permission: string
         }
         Returns: string[]
+      }
+      get_supplier_interaction_with_related_records: {
+        Args: {
+          supplier_interaction_id: string
+        }
+        Returns: {
+          id: string
+          companyId: string
+          supplierId: string
+          supplierQuotes: Json
+          purchaseOrders: Json
+          purchaseInvoices: Json
+        }[]
       }
       get_tool_details: {
         Args: {

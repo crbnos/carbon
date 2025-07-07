@@ -371,7 +371,11 @@ export async function upsertPurchaseInvoice(
 
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
-      insertSupplierInteraction(client, purchaseInvoice.companyId),
+      insertSupplierInteraction(
+        client,
+        purchaseInvoice.companyId,
+        purchaseInvoice.supplierId
+      ),
       getSupplierPayment(client, purchaseInvoice.supplierId),
       getSupplierShipping(client, purchaseInvoice.supplierId),
       getEmployeeJob(
@@ -532,7 +536,12 @@ export async function upsertSalesInvoice(
     await Promise.all([
       client
         .from("opportunity")
-        .insert([{ companyId: salesInvoice.companyId }])
+        .insert([
+          {
+            companyId: salesInvoice.companyId,
+            customerId: salesInvoice.customerId,
+          },
+        ])
         .select("id")
         .single(),
       getCustomerPayment(client, salesInvoice.customerId),

@@ -169,10 +169,7 @@ export async function requirePermissions(
             myClaims.permissions[p][
               action as "view" | "create" | "update" | "delete"
             ];
-          return (
-            permissionForCompany.includes("0") || // 0 is the wildcard for all companies
-            permissionForCompany.includes(companyId)
-          );
+          return permissionForCompany.includes(companyId);
         });
       } else {
         return false;
@@ -195,7 +192,7 @@ export async function requirePermissions(
 
   return {
     client:
-      requiredPermissions.bypassRls && myClaims.role === "employee"
+      !!requiredPermissions.bypassRls && myClaims.role === "employee"
         ? getCarbonServiceRole()
         : getCarbon(accessToken),
     companyId,

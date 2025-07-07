@@ -175,13 +175,15 @@ export default function QuoteLine() {
     <Fragment key={lineId}>
       <QuoteLineForm key={lineId} initialValues={initialValues} />
 
-      {line.methodType === "Make" && line.status !== "No Quote" && (
-        <QuoteLineCosting
-          quantities={line.quantity ?? [1]}
-          getLineCosts={getLineCosts}
-          unitPricePrecision={line.unitPricePrecision ?? 2}
-        />
-      )}
+      {line.methodType === "Make" &&
+        line.status !== "No Quote" &&
+        permissions.is("employee") && (
+          <QuoteLineCosting
+            quantities={line.quantity ?? [1]}
+            getLineCosts={getLineCosts}
+            unitPricePrecision={line.unitPricePrecision ?? 2}
+          />
+        )}
       {line.status !== "No Quote" && (
         <>
           <Suspense fallback={null}>

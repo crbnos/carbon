@@ -18,7 +18,7 @@ import type { ComponentPropsWithoutRef } from "react";
 import { forwardRef, useMemo, useState } from "react";
 import { LuSettings2, LuUser } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
-import { useUser } from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import EmployeeAvatar from "./EmployeeAvatar";
@@ -59,6 +59,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
     const [people] = usePeople();
     const fetcher = useFetcher<{}>();
     const user = useUser();
+    const permissions = usePermissions();
 
     const handleChange = (value: string) => {
       const formData = new FormData();
@@ -112,7 +113,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                     buttonVariants({
                       variant: "secondary",
                       size: size,
-                      isDisabled: isReadOnly,
+                      isDisabled: isReadOnly || !permissions.is("employee"),
                       isLoading: fetcher.state !== "idle",
                       isIcon: false,
                       className,
@@ -146,6 +147,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
                   icon={<LuSettings2 />}
                   size="sm"
                   variant="secondary"
+                  isDisabled={!permissions.is("employee")}
                 />
               )}
             </PopoverTrigger>

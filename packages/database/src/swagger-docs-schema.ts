@@ -5740,6 +5740,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierInteraction.supplierId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -5805,6 +5808,9 @@ export default {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
           },
           {
+            $ref: "#/parameters/rowFilter.supplierInteraction.supplierId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -5822,6 +5828,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.supplierInteraction.companyId",
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierInteraction.supplierId",
           },
           {
             $ref: "#/parameters/body.supplierInteraction",
@@ -49873,6 +49882,9 @@ export default {
             $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
           },
           {
+            $ref: "#/parameters/rowFilter.opportunity.customerId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -49944,6 +49956,9 @@ export default {
             $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
           },
           {
+            $ref: "#/parameters/rowFilter.opportunity.customerId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -49967,6 +49982,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.opportunity.requestForQuoteDocumentPath",
+          },
+          {
+            $ref: "#/parameters/rowFilter.opportunity.customerId",
           },
           {
             $ref: "#/parameters/body.opportunity",
@@ -52398,6 +52416,63 @@ export default {
           },
         },
         tags: ["(rpc) create_rfq_from_models_v2"],
+      },
+    },
+    "/rpc/get_supplier_interaction_with_related_records": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "supplier_interaction_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_supplier_interaction_with_related_records"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                supplier_interaction_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["supplier_interaction_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_supplier_interaction_with_related_records"],
       },
     },
     "/rpc/check_operation_dependencies": {
@@ -59365,7 +59440,7 @@ export default {
       type: "object",
     },
     supplierInteraction: {
-      required: ["id", "companyId"],
+      required: ["id", "companyId", "supplierId"],
       properties: {
         id: {
           default: "public.xid()",
@@ -59376,6 +59451,12 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string",
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -80503,7 +80584,7 @@ export default {
       type: "object",
     },
     opportunity: {
-      required: ["id", "companyId"],
+      required: ["id", "companyId", "customerId"],
       properties: {
         id: {
           default: "public.xid()",
@@ -80522,6 +80603,12 @@ export default {
           type: "string",
         },
         requestForQuoteDocumentPath: {
+          format: "text",
+          type: "string",
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -84269,6 +84356,12 @@ export default {
     },
     "rowFilter.supplierInteraction.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.supplierInteraction.supplierId": {
+      name: "supplierId",
       required: false,
       in: "query",
       type: "string",
@@ -108152,6 +108245,12 @@ export default {
     },
     "rowFilter.opportunity.requestForQuoteDocumentPath": {
       name: "requestForQuoteDocumentPath",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.opportunity.customerId": {
+      name: "customerId",
       required: false,
       in: "query",
       type: "string",

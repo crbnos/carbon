@@ -1,12 +1,16 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type {
+  PostgrestSingleResponse,
+  SupabaseClient,
+} from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode } from "../accounting/accounting.service";
+import type { PurchaseInvoice } from "../invoicing/types";
 import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
@@ -26,6 +30,7 @@ import type {
   supplierTypeValidator,
   supplierValidator,
 } from "./purchasing.models";
+import type { PurchaseOrder, SupplierQuote } from "./types";
 
 export async function closePurchaseOrder(
   client: SupabaseClient<Database>,
@@ -393,9 +398,41 @@ export async function getSupplierContacts(
 
 export async function getSupplierInteraction(
   client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("supplierInteraction").select("*").eq("id", id).single();
+  opportunityId: string | null
+): Promise<
+  PostgrestSingleResponse<{
+    id: string;
+    companyId: string;
+    supplierQuotes: SupplierQuote[];
+    purchaseOrders: PurchaseOrder[];
+    purchaseInvoices: PurchaseInvoice[];
+  } | null>
+> {
+  if (!opportunityId) {
+    // @ts-expect-error
+    return {
+      data: null,
+      error: null,
+    };
+  }
+
+  const response = await client.rpc(
+    "get_supplier_interaction_with_related_records",
+    {
+      supplier_interaction_id: opportunityId,
+    }
+  );
+
+  return {
+    data: response.data?.[0],
+    error: response.error,
+  } as unknown as PostgrestSingleResponse<{
+    id: string;
+    companyId: string;
+    supplierQuotes: SupplierQuote[];
+    purchaseOrders: PurchaseOrder[];
+    purchaseInvoices: PurchaseInvoice[];
+  }>;
 }
 
 export async function getSupplierInteractionDocuments(
@@ -797,11 +834,12 @@ export async function insertSupplierContact(
 
 export async function insertSupplierInteraction(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  supplierId: string
 ) {
   return client
     .from("supplierInteraction")
-    .insert([{ companyId }])
+    .insert([{ companyId, supplierId }])
     .select("id")
     .single();
 }
@@ -1122,7 +1160,11 @@ export async function upsertPurchaseOrder(
 
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
-      insertSupplierInteraction(client, purchaseOrder.companyId),
+      insertSupplierInteraction(
+        client,
+        purchaseOrder.companyId,
+        purchaseOrder.supplierId
+      ),
       getSupplierPayment(client, purchaseOrder.supplierId),
       getSupplierShipping(client, purchaseOrder.supplierId),
       getEmployeeJob(client, purchaseOrder.createdBy, purchaseOrder.companyId),
@@ -1391,7 +1433,8 @@ export async function upsertSupplierQuote(
 
     const supplierInteraction = await insertSupplierInteraction(
       client,
-      supplierQuote.companyId
+      supplierQuote.companyId,
+      supplierQuote.supplierId
     );
 
     if (supplierInteraction.error) return supplierInteraction;

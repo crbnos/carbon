@@ -43,7 +43,8 @@ const SupplierInteractionLineNotes = ({
   } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
-  const [tab, setTab] = useState("internal");
+  const isEmployee = permissions.is("employee");
+  const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}
   );
@@ -114,12 +115,13 @@ const SupplierInteractionLineNotes = ({
               </CardDescription>
             </CardHeader>
             <CardAction>
-              {["supplierQuoteLine", "purchaseOrderLine"].includes(table) && (
-                <TabsList>
-                  <TabsTrigger value="internal">Internal</TabsTrigger>
-                  <TabsTrigger value="external">External</TabsTrigger>
-                </TabsList>
-              )}
+              {["supplierQuoteLine", "purchaseOrderLine"].includes(table) &&
+                isEmployee && (
+                  <TabsList>
+                    <TabsTrigger value="internal">Internal</TabsTrigger>
+                    <TabsTrigger value="external">External</TabsTrigger>
+                  </TabsList>
+                )}
             </CardAction>
           </HStack>
           <CardContent>

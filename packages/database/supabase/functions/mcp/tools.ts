@@ -43,7 +43,7 @@ const createPurchaseOrder = tool({
         "purchaseOrder",
         context.companyId
       ),
-      insertSupplierInteraction(context.db, context.companyId),
+      insertSupplierInteraction(context.db, context.companyId, args.supplierId),
       getSupplierById(context.db, args.supplierId),
       getSupplierPayment(context.db, args.supplierId),
       getSupplierShipping(context.db, args.supplierId),

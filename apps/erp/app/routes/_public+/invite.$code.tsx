@@ -108,10 +108,7 @@ export default function Invite() {
 
   return (
     <AnimatePresence>
-      <VStack
-        spacing={4}
-        className="max-w-lg pt-[16dvh] items-center text-center"
-      >
+      <VStack spacing={4} className="max-w-lg items-center text-center">
         <motion.img
           initial={{ opacity: 0, scale: 0.4 }}
           animate={{ opacity: 1, scale: 1 }}

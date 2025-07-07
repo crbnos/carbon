@@ -1,4 +1,4 @@
-import { error, getCarbonServiceRole } from "@carbon/auth";
+import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
@@ -57,19 +57,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.quotes);
   }
 
-  const serviceRole = getCarbonServiceRole();
-
   const [customer, shipment, payment, lines, prices, opportunity, methods] =
     await Promise.all([
-      getCustomer(serviceRole, quote.data?.customerId ?? ""),
-      getQuoteShipment(serviceRole, quoteId),
-      getQuotePayment(serviceRole, quoteId),
-      getQuoteLines(serviceRole, quoteId),
-      getQuoteLinePricesByQuoteId(serviceRole, quoteId),
-      getOpportunity(serviceRole, quote.data?.opportunityId),
-      getQuoteMethodTrees(serviceRole, quoteId),
+      getCustomer(client, quote.data?.customerId ?? ""),
+      getQuoteShipment(client, quoteId),
+      getQuotePayment(client, quoteId),
+      getQuoteLines(client, quoteId),
+      getQuoteLinePricesByQuoteId(client, quoteId),
+      getOpportunity(client, quote.data?.opportunityId),
+      getQuoteMethodTrees(client, quoteId),
       getOpportunityDocuments(
-        serviceRole,
+        client,
         companyId,
         quote.data?.opportunityId ?? ""
       ),
@@ -101,7 +99,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
     const presentationCurrency = await getCurrencyByCode(
-      serviceRole,
+      client,
       companyId,
       quote.data.currencyCode
     );
@@ -116,7 +114,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     opportunity.data.salesOrders[0]?.id
   ) {
     salesOrderLines = await getSalesOrderLines(
-      serviceRole,
+      client,
       opportunity.data.salesOrders[0]?.id
     );
   }
