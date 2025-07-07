@@ -23,6 +23,7 @@ import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes,
 } from "~/modules/purchasing/ui/SupplierInteraction";
+import SupplierInteractionState from "~/modules/purchasing/ui/SupplierInteraction/SupplierInteractionState";
 import SupplierQuoteSummary from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteSummary";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -122,6 +123,7 @@ export default function SupplierQuoteDetailsRoute() {
 
   return (
     <>
+      <SupplierInteractionState interaction={routeData.interaction} />
       <SupplierQuoteSummary />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}

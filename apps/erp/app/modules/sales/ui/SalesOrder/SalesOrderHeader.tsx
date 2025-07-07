@@ -255,6 +255,7 @@ const SalesOrderHeader = () => {
                       routeData?.salesOrder?.status ?? ""
                     ) ||
                     !permissions.can("create", "production") ||
+                    !permissions.is("employee") ||
                     !!routeData?.salesOrder?.jobs
                   }
                   onClick={salesOrderToJobsModal.onOpen}

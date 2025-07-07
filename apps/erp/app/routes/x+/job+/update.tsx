@@ -28,11 +28,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  console.log({
-    field,
-    ids,
-  });
-
   if (field === "delete") {
     return json(
       await client

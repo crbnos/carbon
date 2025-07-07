@@ -14,6 +14,7 @@ import type {
   PurchaseOrder,
   PurchaseOrderDelivery,
   PurchaseOrderLine,
+  SupplierInteraction,
 } from "~/modules/purchasing";
 import {
   getPurchaseOrder,
@@ -31,6 +32,7 @@ import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes,
 } from "~/modules/purchasing/ui/SupplierInteraction";
+import SupplierInteractionState from "~/modules/purchasing/ui/SupplierInteraction/SupplierInteractionState";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -120,6 +122,7 @@ export default function PurchaseOrderBasicRoute() {
     purchaseOrderDelivery: PurchaseOrderDelivery;
     lines: PurchaseOrderLine[];
     files: Promise<FileObject[]>;
+    interaction: SupplierInteraction;
   }>(path.to.purchaseOrder(orderId));
   if (!orderData) throw new Error("Could not find order data");
 
@@ -181,6 +184,7 @@ export default function PurchaseOrderBasicRoute() {
 
   return (
     <>
+      <SupplierInteractionState interaction={orderData.interaction} />
       <PurchaseOrderSummary onEditShippingCost={handleEditShippingCost} />
       <SupplierInteractionNotes
         key={`notes-${initialValues.id}`}

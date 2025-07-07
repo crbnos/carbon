@@ -43,7 +43,8 @@ const OpportunityLineNotes = ({
   } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
-  const [tab, setTab] = useState("internal");
+  const isEmployee = permissions.is("employee");
+  const [tab, setTab] = useState(isEmployee ? "internal" : "external");
   const [internalNotes, setInternalNotes] = useState(
     initialInternalNotes ?? {}
   );
@@ -114,10 +115,12 @@ const OpportunityLineNotes = ({
               </CardDescription>
             </CardHeader>
             <CardAction>
-              <TabsList>
-                <TabsTrigger value="internal">Internal</TabsTrigger>
-                <TabsTrigger value="external">External</TabsTrigger>
-              </TabsList>
+              {isEmployee && (
+                <TabsList>
+                  <TabsTrigger value="internal">Internal</TabsTrigger>
+                  <TabsTrigger value="external">External</TabsTrigger>
+                </TabsList>
+              )}
             </CardAction>
           </HStack>
           <CardContent>

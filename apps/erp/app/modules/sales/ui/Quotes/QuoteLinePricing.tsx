@@ -84,8 +84,10 @@ const QuoteLinePricing = ({
   const routeData = useRouteData<{
     quote: Quotation;
   }>(path.to.quote(quoteId));
+  const isEmployee = permissions.is("employee");
   const isEditable =
     permissions.can("update", "sales") &&
+    isEmployee &&
     ["Draft"].includes(routeData?.quote?.status ?? "");
 
   const fetcher = useFetcher<{ id?: string; error: string | null }>();
@@ -292,7 +294,7 @@ const QuoteLinePricing = ({
         <CardHeader>
           <CardTitle>Pricing</CardTitle>
         </CardHeader>
-        {permissions.can("update", "sales") && (
+        {isEditable && (
           <CardAction>
             <HStack>
               <DropdownMenu>
@@ -443,97 +445,103 @@ const QuoteLinePricing = ({
                 );
               })}
             </Tr>
-            <Tr className={cn(isMade && "[&>td]:bg-muted/60")}>
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Unit Cost</span>
-                </HStack>
-              </Td>
+            {isEmployee && (
+              <Tr className={cn(isMade && "[&>td]:bg-muted/60")}>
+                <Td className="border-r border-border group-hover:bg-muted/50">
+                  <HStack className="w-full justify-between ">
+                    <span>Unit Cost</span>
+                  </HStack>
+                </Td>
 
-              {unitCostsByQuantity.map((cost, index) => {
-                return isMade ? (
-                  <Td key={index} className="group-hover:bg-muted/50">
-                    <VStack spacing={0}>
-                      <span>
-                        {unitPriceFormatter.format(unitCostsByQuantity[index])}
-                      </span>
-                    </VStack>
-                  </Td>
-                ) : (
-                  <Td key={index} className="group-hover:bg-muted/50">
-                    <NumberField
-                      value={optimisticUnitCost}
-                      formatOptions={{
-                        style: "currency",
-                        currency: baseCurrency,
-                      }}
-                      minValue={0}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== cost) {
-                          onUpdateCost(value);
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
-                  </Td>
-                );
-              })}
-            </Tr>
-            <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
-                  <span className="flex items-center justify-start gap-2">
-                    Markup Percent
-                    <Tooltip>
-                      <TooltipTrigger tabIndex={-1}>
-                        <LuInfo className="w-4 h-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>(Price - Cost) / Cost</TooltipContent>
-                    </Tooltip>
-                  </span>
-                </HStack>
-              </Td>
-              {quantities.map((quantity, index) => {
-                const price = prices[quantity]?.unitPrice ?? 0;
-                const cost = unitCostsByQuantity[index];
+                {unitCostsByQuantity.map((cost, index) => {
+                  return isMade ? (
+                    <Td key={index} className="group-hover:bg-muted/50">
+                      <VStack spacing={0}>
+                        <span>
+                          {unitPriceFormatter.format(
+                            unitCostsByQuantity[index]
+                          )}
+                        </span>
+                      </VStack>
+                    </Td>
+                  ) : (
+                    <Td key={index} className="group-hover:bg-muted/50">
+                      <NumberField
+                        value={optimisticUnitCost}
+                        formatOptions={{
+                          style: "currency",
+                          currency: baseCurrency,
+                        }}
+                        minValue={0}
+                        onChange={(value) => {
+                          if (Number.isFinite(value) && value !== cost) {
+                            onUpdateCost(value);
+                          }
+                        }}
+                      >
+                        <NumberInput
+                          className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                          isDisabled={!isEditable}
+                          size="sm"
+                          min={0}
+                        />
+                      </NumberField>
+                    </Td>
+                  );
+                })}
+              </Tr>
+            )}
+            {isEmployee && (
+              <Tr>
+                <Td className="border-r border-border">
+                  <HStack className="w-full justify-between ">
+                    <span className="flex items-center justify-start gap-2">
+                      Markup Percent
+                      <Tooltip>
+                        <TooltipTrigger tabIndex={-1}>
+                          <LuInfo className="w-4 h-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>(Price - Cost) / Cost</TooltipContent>
+                      </Tooltip>
+                    </span>
+                  </HStack>
+                </Td>
+                {quantities.map((quantity, index) => {
+                  const price = prices[quantity]?.unitPrice ?? 0;
+                  const cost = unitCostsByQuantity[index];
 
-                const markup = price ? (price - cost) / cost : 0;
+                  const markup = price ? (price - cost) / cost : 0;
 
-                return (
-                  <Td key={quantity.toString()}>
-                    <NumberField
-                      value={markup}
-                      formatOptions={{
-                        style: "percent",
-                        maximumFractionDigits: 2,
-                      }}
-                      onChange={(value) => {
-                        if (Number.isFinite(value) && value !== price) {
-                          onUpdatePrice(
-                            "unitPrice",
-                            quantity,
-                            cost * (1 + value)
-                          );
-                        }
-                      }}
-                    >
-                      <NumberInput
-                        className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
-                        isDisabled={!isEditable}
-                        size="sm"
-                        min={0}
-                      />
-                    </NumberField>
-                  </Td>
-                );
-              })}
-            </Tr>
+                  return (
+                    <Td key={quantity.toString()}>
+                      <NumberField
+                        value={markup}
+                        formatOptions={{
+                          style: "percent",
+                          maximumFractionDigits: 2,
+                        }}
+                        onChange={(value) => {
+                          if (Number.isFinite(value) && value !== price) {
+                            onUpdatePrice(
+                              "unitPrice",
+                              quantity,
+                              cost * (1 + value)
+                            );
+                          }
+                        }}
+                      >
+                        <NumberInput
+                          className="border-0 -ml-3 shadow-none disabled:bg-transparent disabled:opacity-100"
+                          isDisabled={!isEditable}
+                          size="sm"
+                          min={0}
+                        />
+                      </NumberField>
+                    </Td>
+                  );
+                })}
+              </Tr>
+            )}
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
@@ -622,64 +630,71 @@ const QuoteLinePricing = ({
               })}
             </Tr>
 
-            <Tr className="[&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span className="flex items-center justify-start gap-2">
-                    Profit Percent
-                    <Tooltip>
-                      <TooltipTrigger tabIndex={-1}>
-                        <LuInfo className="w-4 h-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>(Price - Cost) / Price</TooltipContent>
-                    </Tooltip>
-                  </span>
-                </HStack>
-              </Td>
-              {netPricesByQuantity.map((price, index) => {
-                const cost = unitCostsByQuantity[index];
-                const profit = ((price - cost) / price) * 100;
-                return (
-                  <Td key={index} className="group-hover:bg-muted/50">
-                    <VStack spacing={0}>
-                      {Number.isFinite(profit) ? (
-                        <span className={cn(profit < -0.01 && "text-red-500")}>
-                          {profit.toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span>-</span>
-                      )}
-                    </VStack>
-                  </Td>
-                );
-              })}
-            </Tr>
-
-            <Tr className="[&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Total Profit</span>
-                </HStack>
-              </Td>
-              {quantities.map((quantity, index) => {
-                const price = netPricesByQuantity[index];
-                const cost = unitCostsByQuantity[index];
-                const profit = (price - cost) * quantity;
-                return (
-                  <Td key={index} className="group-hover:bg-muted/50">
-                    <VStack spacing={0}>
-                      {price ? (
-                        <span className={cn(profit < -0.01 && "text-red-500")}>
-                          {formatter.format(profit)}
-                        </span>
-                      ) : (
-                        <span>-</span>
-                      )}
-                    </VStack>
-                  </Td>
-                );
-              })}
-            </Tr>
+            {isEmployee && (
+              <Tr className="[&>td]:bg-muted/60">
+                <Td className="border-r border-border group-hover:bg-muted/50">
+                  <HStack className="w-full justify-between ">
+                    <span className="flex items-center justify-start gap-2">
+                      Profit Percent
+                      <Tooltip>
+                        <TooltipTrigger tabIndex={-1}>
+                          <LuInfo className="w-4 h-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>(Price - Cost) / Price</TooltipContent>
+                      </Tooltip>
+                    </span>
+                  </HStack>
+                </Td>
+                {netPricesByQuantity.map((price, index) => {
+                  const cost = unitCostsByQuantity[index];
+                  const profit = ((price - cost) / price) * 100;
+                  return (
+                    <Td key={index} className="group-hover:bg-muted/50">
+                      <VStack spacing={0}>
+                        {Number.isFinite(profit) ? (
+                          <span
+                            className={cn(profit < -0.01 && "text-red-500")}
+                          >
+                            {profit.toFixed(2)}%
+                          </span>
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </VStack>
+                    </Td>
+                  );
+                })}
+              </Tr>
+            )}
+            {isEmployee && (
+              <Tr className="[&>td]:bg-muted/60">
+                <Td className="border-r border-border group-hover:bg-muted/50">
+                  <HStack className="w-full justify-between ">
+                    <span>Total Profit</span>
+                  </HStack>
+                </Td>
+                {quantities.map((quantity, index) => {
+                  const price = netPricesByQuantity[index];
+                  const cost = unitCostsByQuantity[index];
+                  const profit = (price - cost) * quantity;
+                  return (
+                    <Td key={index} className="group-hover:bg-muted/50">
+                      <VStack spacing={0}>
+                        {price ? (
+                          <span
+                            className={cn(profit < -0.01 && "text-red-500")}
+                          >
+                            {formatter.format(profit)}
+                          </span>
+                        ) : (
+                          <span>-</span>
+                        )}
+                      </VStack>
+                    </Td>
+                  );
+                })}
+              </Tr>
+            )}
             <Tr>
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">

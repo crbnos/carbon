@@ -626,6 +626,7 @@ export async function getNoQuoteReasons(
 
   return query;
 }
+
 export async function getOpportunity(
   client: SupabaseClient<Database>,
   opportunityId: string | null
@@ -1954,7 +1955,9 @@ export async function upsertQuote(
         getEmployeeJob(client, quote.createdBy, quote.companyId),
         client
           .from("opportunity")
-          .insert([{ companyId: quote.companyId }])
+          .insert([
+            { companyId: quote.companyId, customerId: quote.customerId },
+          ])
           .select("id")
           .single(),
       ]);
@@ -2573,7 +2576,12 @@ export async function upsertSalesOrder(
       getEmployeeJob(client, salesOrder.createdBy, salesOrder.companyId),
       client
         .from("opportunity")
-        .insert([{ companyId: salesOrder.companyId }])
+        .insert([
+          {
+            companyId: salesOrder.companyId,
+            customerId: salesOrder.customerId,
+          },
+        ])
         .select("id")
         .single(),
     ]);
@@ -2763,7 +2771,7 @@ export async function upsertSalesRFQ(
   if ("createdBy" in rfq) {
     const opportunity = await client
       .from("opportunity")
-      .insert([{ companyId: rfq.companyId }])
+      .insert([{ companyId: rfq.companyId, customerId: rfq.customerId }])
       .select("id")
       .single();
 

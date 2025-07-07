@@ -39,11 +39,12 @@ export async function getSupplierShipping(
 
 export async function insertSupplierInteraction(
   db: Kysely<DB> | Transaction<DB>,
-  companyId: string
+  companyId: string,
+  supplierId: string
 ) {
   return await db
     .insertInto("supplierInteraction")
-    .values({ companyId })
+    .values({ companyId, supplierId })
     .returning(["id"])
     .executeTakeFirst();
 }
