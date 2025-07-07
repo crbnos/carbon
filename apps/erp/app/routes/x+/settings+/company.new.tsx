@@ -30,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, validation.data);
+  const companyInsert = await insertCompany(client, validation.data, userId);
   if (companyInsert.error) {
     console.error(companyInsert.error);
     throw new Error("Fatal: failed to insert company");

@@ -66,10 +66,8 @@ const ratelimit = new Ratelimit({
 export async function action({ request }: ActionFunctionArgs): FormActionData {
   assertIsPost(request);
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
-  console.log("IP address:", ip);
 
   const { success } = await ratelimit.limit(ip);
-  console.log("Rate limit success:", success);
 
   if (!success) {
     return json(
@@ -81,18 +79,15 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const validation = await validator(verifyValidator).validate(
     await request.formData()
   );
-  console.log("Validation result:", validation);
 
   if (validation.error) {
     return json(error(validation.error, "Invalid verification code"));
   }
 
   const { email, code, redirectTo } = validation.data;
-  console.log("Form data:", { email, code, redirectTo });
 
   // Verify the email code
   const isCodeValid = await verifyEmailCode(email, code);
-  console.log("Code validation result:", isCodeValid);
 
   if (!isCodeValid) {
     return json(
@@ -103,10 +98,8 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 
   // Create the user account with a temporary password
   const temporaryPassword = crypto.randomBytes(16).toString("hex");
-  console.log("Generated temporary password");
 
   const user = await createEmailAuthAccount(email, temporaryPassword);
-  console.log("User creation result:", user);
 
   if (!user) {
     return json(
@@ -117,7 +110,6 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
 
   // Sign in the user to create an authentication session
   const authSession = await signInWithEmail(email, temporaryPassword);
-  console.log("Auth session result:", authSession);
 
   if (!authSession) {
     return json(
@@ -129,11 +121,9 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const sessionCookie = await setAuthSession(request, {
     authSession,
   });
-  console.log("Session cookie created");
 
   // Set the authentication session
   const onboardingUrl = redirectTo || path.to.onboarding.root;
-  console.log("Redirecting to:", onboardingUrl);
 
   return redirect(onboardingUrl, {
     headers: [["Set-Cookie", sessionCookie]],

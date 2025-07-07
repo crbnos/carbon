@@ -219,7 +219,7 @@ export async function getBillingPortalRedirectUrl({
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${getAppUrl()}/settings`,
+    return_url: `${getAppUrl()}/x/settings/company`,
   });
 
   if (!portalSession.url) {
@@ -234,10 +234,9 @@ async function upsertCompanyPlan(
   companyPlan: {
     companyId: string;
     priceId: string;
-    status?: "active" | "inactive";
+    status?: "Active" | "Inactive" | "Canceled";
     stripeCustomerId?: string;
     stripeSubscriptionId?: string;
-    stripeSubscriptionStatus?: string;
     subscriptionStartDate?: string;
   }
 ) {
@@ -256,7 +255,7 @@ async function upsertCompanyPlan(
       usersLimit: 10, // Default value as defined in the migration
       subscriptionStartDate:
         companyPlan.subscriptionStartDate || new Date().toISOString(),
-      stripeSubscriptionStatus: companyPlan.stripeSubscriptionStatus,
+      stripeSubscriptionStatus: companyPlan.status,
       stripeCustomerId: companyPlan.stripeCustomerId,
       stripeSubscriptionId: companyPlan.stripeSubscriptionId,
     };
@@ -327,8 +326,45 @@ export async function processStripeEvent({
       console.error("Error processing webhook:", error);
       throw new Error("Stripe webhook handler failed");
     }
-  } else {
-    console.log("unhandled event", { eventType });
+  } else if (eventType === "customer.subscription.updated") {
+    const data = event.data.object as Stripe.Subscription;
+    const { customer } = data;
+
+    if (typeof customer !== "string") {
+      throw new Error("Stripe webhook handler failed");
+    }
+
+    console.log("customer.subscription.updated", customer);
+
+    try {
+      await syncStripeDataToKV(customer);
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      throw new Error("Stripe webhook handler failed");
+    }
+  } else if (eventType === "customer.subscription.deleted") {
+    const data = event.data.object as Stripe.Subscription;
+    const { customer } = data;
+
+    if (typeof customer !== "string") {
+      throw new Error("Stripe webhook handler failed");
+    }
+
+    try {
+      const serviceRole = await getCarbonServiceRole();
+      const key = `stripe:customer:${customer}`;
+
+      await Promise.all([
+        redis.del(key),
+        serviceRole
+          .from("companyPlan")
+          .delete()
+          .eq("stripeCustomerId", customer),
+      ]);
+    } catch (error) {
+      console.error("Error processing webhook:", error);
+      throw new Error("Stripe webhook handler failed");
+    }
   }
 }
 
@@ -392,9 +428,11 @@ export async function syncStripeDataToKV(
     const companyPlanData = {
       companyId,
       priceId: subData.priceId,
-      status: ["active", "trialing"].includes(subData.status)
-        ? ("active" as const)
-        : ("inactive" as const),
+      status: (subData.cancelAtPeriodEnd
+        ? "Canceled"
+        : ["active", "trialing"].includes(subData.status)
+        ? "Active"
+        : "Inactive") as "Active" | "Inactive" | "Canceled",
       stripeCustomerId: customerId,
       stripeSubscriptionId: subData.subscriptionId,
       stripeSubscriptionStatus: subData.status,
@@ -403,7 +441,7 @@ export async function syncStripeDataToKV(
       ).toISOString(),
     };
 
-    const [_, companyPlan] = await Promise.all([
+    const [, companyPlan] = await Promise.all([
       redis.set(key, subData),
       upsertCompanyPlan(await getCarbonServiceRole(), companyPlanData),
     ]);
@@ -428,4 +466,85 @@ export async function updateActiveUsers({
   await stripe.subscriptionItems.update(subscriptionId, {
     quantity: activeUsers,
   });
+}
+
+export async function updateSubscriptionQuantityForCompany(companyId: string) {
+  try {
+    const serviceRole = getCarbonServiceRole();
+
+    // Get company plan with plan details
+    const companyPlanResult = await serviceRole
+      .from("companyPlan")
+      .select(
+        `
+        stripeSubscriptionId,
+        plan!inner(
+          userBasedPricing
+        )
+      `
+      )
+      .eq("id", companyId)
+      .single();
+
+    if (companyPlanResult.error || !companyPlanResult.data) {
+      console.log(`No company plan found for company ${companyId}`);
+      return;
+    }
+
+    const { stripeSubscriptionId, plan } = companyPlanResult.data;
+
+    // Only update if userBasedPricing is true and we have a subscription
+    if (!plan?.userBasedPricing || !stripeSubscriptionId) {
+      return;
+    }
+
+    // Count active users
+    const activeUsersResult = await serviceRole
+      .from("userToCompany")
+      .select("userId", { count: "exact", head: true })
+      .eq("companyId", companyId);
+
+    if (activeUsersResult.error) {
+      console.error(
+        `Failed to count active users for company ${companyId}:`,
+        activeUsersResult.error
+      );
+      return;
+    }
+
+    const activeUserCount = activeUsersResult.count || 0;
+
+    // Get the subscription from Stripe to find the subscription item
+    const subscription = await stripe.subscriptions.retrieve(
+      stripeSubscriptionId
+    );
+
+    if (
+      !subscription ||
+      !subscription.items ||
+      subscription.items.data.length === 0
+    ) {
+      console.error(
+        `No subscription items found for subscription ${stripeSubscriptionId}`
+      );
+      return;
+    }
+
+    // Update the quantity on the first subscription item
+    const subscriptionItemId = subscription.items.data[0].id;
+
+    await stripe.subscriptionItems.update(subscriptionItemId, {
+      quantity: activeUserCount,
+    });
+
+    console.log(
+      `Updated Stripe subscription ${stripeSubscriptionId} quantity to ${activeUserCount} for company ${companyId}`
+    );
+  } catch (error) {
+    // Log error but don't throw - we don't want to block user operations
+    console.error(
+      `Failed to update Stripe subscription quantity for company ${companyId}:`,
+      error
+    );
+  }
 }

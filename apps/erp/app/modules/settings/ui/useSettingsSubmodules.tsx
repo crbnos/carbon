@@ -1,5 +1,6 @@
 import {
   LuBarcode,
+  LuCreditCard,
   LuCrown,
   LuFactory,
   LuImage,
@@ -22,6 +23,13 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
         to: path.to.company,
         role: "employee",
         icon: <LuFactory />,
+      },
+      {
+        name: "Payment",
+        to: path.to.settingsPayment,
+        role: "employee",
+        icon: <LuCreditCard />,
+        requiresOwnership: true,
       },
       {
         name: "Labels",
@@ -91,17 +99,19 @@ const settingsRoutes: AuthenticatedRouteGroup[] = [
   },
 ];
 
-export default function usePurchasingSubmodules() {
+export default function useSettingsSubmodules() {
   const permissions = usePermissions();
+
   return {
     groups: settingsRoutes
       .filter((group) => {
         const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
+          // Check role permission
+          if (route.role && !permissions.is(route.role)) {
+            return false;
           }
+
+          return true;
         });
 
         return filteredRoutes.length > 0;
@@ -109,11 +119,17 @@ export default function usePurchasingSubmodules() {
       .map((group) => ({
         ...group,
         routes: group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else {
-            return true;
+          // Check role permission
+          if (route.role && !permissions.is(route.role)) {
+            return false;
           }
+
+          // Check ownership requirement
+          if (route.requiresOwnership && !permissions.isOwner()) {
+            return false;
+          }
+
+          return true;
         }),
       })),
   };

@@ -3,6 +3,20 @@ ALTER TABLE "user" ALTER COLUMN "firstName" SET DEFAULT '';
 ALTER TABLE "user" ALTER COLUMN "lastName" SET DEFAULT '';
 ALTER TABLE "user" ADD COLUMN "acknowledgedUniversity" BOOLEAN NOT NULL DEFAULT FALSE;
 
+DROP VIEW IF EXISTS "companies";
+CREATE OR REPLACE VIEW "companies" WITH(SECURITY_INVOKER=true) AS
+  SELECT DISTINCT
+    c.*,
+    uc.*,
+    et.name AS "employeeType"
+    FROM "userToCompany" uc
+    INNER JOIN "company" c
+      ON c.id = uc."companyId"
+    LEFT JOIN "employee" e
+      ON e.id = uc."userId" AND e."companyId" = uc."companyId"
+    LEFT JOIN "employeeType" et
+      ON et.id = e."employeeTypeId";
+
 ALTER POLICY "Users can view other users from their same company" ON "user" USING (
    id = auth.uid()::text OR
    "id" IN (
@@ -95,7 +109,7 @@ CREATE TABLE "companyPlan" (
   "subscriptionStartDate" TIMESTAMP WITH TIME ZONE NOT NULL,
   "stripeCustomerId" TEXT,
   "stripeSubscriptionId" TEXT,
-  "stripeSubscriptionStatus" TEXT NOT NULL DEFAULT 'active',
+  "stripeSubscriptionStatus" TEXT NOT NULL DEFAULT 'Active',
   "trialPeriodEndsAt" TIMESTAMP WITH TIME ZONE,
   "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),

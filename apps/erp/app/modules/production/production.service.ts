@@ -1379,7 +1379,6 @@ export async function upsertMakeMethodFromJobMethod(
     userId: string;
   }
 ) {
-  console.log("upsertMakeMethodFromJobMethod", jobMethod);
   const { error } = await client.functions.invoke("get-method", {
     body: {
       type: "jobMakeMethodToItem",

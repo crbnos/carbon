@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase";
 import type { Permission, Result } from "../types";
@@ -202,6 +203,8 @@ export async function deactivateUser(
     .eq("companyId", companyId)
     .single();
 
+  let result: Result;
+
   if (userToCompany.error) {
     // maybe they are invited but not added to the company yet
     const user = await serviceRole
@@ -224,25 +227,32 @@ export async function deactivateUser(
     }
 
     if (invite.data?.role === "customer") {
-      return deactivateCustomer(serviceRole, userId, companyId);
+      result = await deactivateCustomer(serviceRole, userId, companyId);
     } else if (invite.data?.role === "employee") {
-      return deactivateEmployee(serviceRole, userId, companyId);
+      result = await deactivateEmployee(serviceRole, userId, companyId);
     } else if (invite.data?.role === "supplier") {
-      return deactivateSupplier(serviceRole, userId, companyId);
+      result = await deactivateSupplier(serviceRole, userId, companyId);
+    } else {
+      throw new Error("Invalid user role");
+    }
+  } else {
+    if (userToCompany.data?.role === "customer") {
+      result = await deactivateCustomer(serviceRole, userId, companyId);
+    } else if (userToCompany.data?.role === "employee") {
+      result = await deactivateEmployee(serviceRole, userId, companyId);
+    } else if (userToCompany.data?.role === "supplier") {
+      result = await deactivateSupplier(serviceRole, userId, companyId);
     } else {
       throw new Error("Invalid user role");
     }
   }
 
-  if (userToCompany.data?.role === "customer") {
-    return deactivateCustomer(serviceRole, userId, companyId);
-  } else if (userToCompany.data?.role === "employee") {
-    return deactivateEmployee(serviceRole, userId, companyId);
-  } else if (userToCompany.data?.role === "supplier") {
-    return deactivateSupplier(serviceRole, userId, companyId);
-  } else {
-    throw new Error("Invalid user role");
+  // Update Stripe subscription quantity after successful deactivation
+  if (result && result.success) {
+    await updateSubscriptionQuantityForCompany(companyId);
   }
+
+  return result;
 }
 
 export async function deactivateSupplier(

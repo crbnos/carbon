@@ -12,7 +12,8 @@ export function usePermissions() {
   }>(path.to.authenticatedRoot);
 
   const {
-    company: { id: companyId },
+    id: userId,
+    company: { id: companyId, ownerId },
   } = useUser();
 
   if (!isPermissions(data?.permissions) || !isRole(data?.role)) {
@@ -46,10 +47,15 @@ export function usePermissions() {
     [data?.role]
   );
 
+  const isOwner = useCallback(() => {
+    return ownerId === userId;
+  }, [ownerId, userId]);
+
   return {
     can,
     has,
     is,
+    isOwner,
   };
 }
 

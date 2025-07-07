@@ -79,8 +79,6 @@ export async function action({ request }: ActionFunctionArgs): FormActionData {
   const { email } = validation.data;
   const user = await getUserByEmail(email);
 
-  console.log("User:", user);
-
   if (user.data && user.data.active) {
     const magicLink = await sendMagicLink(email);
 

@@ -8,7 +8,7 @@ export function Logo() {
         width="auto"
         height="45"
         alt="Carbon"
-        className="my-0 mx-auto block"
+        className="mb-4 mx-auto block"
       />
     </Section>
   );

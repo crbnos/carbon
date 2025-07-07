@@ -14,6 +14,7 @@ export type Authenticated<T> = T & {
   role?: Role;
   permission?: string;
   internal?: boolean;
+  requiresOwnership?: boolean;
 };
 
 export type AuthenticatedRouteGroup = {

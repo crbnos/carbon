@@ -13654,6 +13654,12 @@ export default {
             $ref: "#/parameters/rowFilter.companies.logoLight",
           },
           {
+            $ref: "#/parameters/rowFilter.companies.slackChannel",
+          },
+          {
+            $ref: "#/parameters/rowFilter.companies.ownerId",
+          },
+          {
             $ref: "#/parameters/rowFilter.companies.userId",
           },
           {
@@ -63949,6 +63955,14 @@ export default {
           format: "text",
           type: "string",
         },
+        slackChannel: {
+          format: "text",
+          type: "string",
+        },
+        ownerId: {
+          format: "text",
+          type: "string",
+        },
         userId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -72850,7 +72864,7 @@ export default {
           type: "string",
         },
         stripeSubscriptionStatus: {
-          default: "active",
+          default: "Active",
           format: "text",
           type: "string",
         },
@@ -89537,6 +89551,18 @@ export default {
     },
     "rowFilter.companies.logoLight": {
       name: "logoLight",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companies.slackChannel": {
+      name: "slackChannel",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.companies.ownerId": {
+      name: "ownerId",
       required: false,
       in: "query",
       type: "string",

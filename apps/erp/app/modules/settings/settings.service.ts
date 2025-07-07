@@ -382,16 +382,13 @@ export async function getWebhooks(
 export async function insertCompany(
   client: SupabaseClient<Database>,
   company: z.infer<typeof companyValidator>,
-  id?: string
+  ownerId?: string
 ) {
-  if (id) {
-    return client
-      .from("company")
-      .insert({ ...company, id })
-      .select("id")
-      .single();
-  }
-  return client.from("company").insert(company).select("id").single();
+  return client
+    .from("company")
+    .insert({ ...company, ownerId })
+    .select("id")
+    .single();
 }
 
 export async function updateCompanyPlan(

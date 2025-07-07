@@ -101,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
   } else {
     if (!companyId) {
       const [companyInsert] = await Promise.all([
-        insertCompany(serviceRole, data),
+        insertCompany(serviceRole, data, userId),
       ]);
       if (companyInsert.error) {
         console.error(companyInsert.error);

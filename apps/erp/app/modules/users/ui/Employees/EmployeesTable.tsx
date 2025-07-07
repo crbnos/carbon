@@ -302,7 +302,7 @@ const EmployeesTable = memo(
           }
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
-          title="Employees"
+          title="Employee Accounts"
           withSelectableRows={canEdit}
         />
         {bulkEditDrawer.isOpen && (

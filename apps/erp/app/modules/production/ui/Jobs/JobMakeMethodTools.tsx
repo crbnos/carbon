@@ -80,8 +80,6 @@ const JobMakeMethodTools = ({ makeMethod }: { makeMethod?: JobMakeMethod }) => {
     makeMethod: JobMakeMethod;
   }>(path.to.jobMakeMethod(jobId, methodId!));
 
-  console.log(materialRouteData);
-
   const itemId =
     materialRouteData?.makeMethod?.itemId ?? routeData?.job?.itemId;
   const itemType =

@@ -19,6 +19,7 @@ type Company = {
   logoLight: string | null;
   countryCode: string | null;
   baseCurrencyCode: string;
+  ownerId: string;
 };
 
 type Groups = string[];
@@ -40,6 +41,7 @@ export function useUser(): User {
     groups: unknown;
     defaults: unknown;
   }>(path.to.authenticatedRoot);
+
   if (
     data?.company &&
     isCompany(data.company) &&
