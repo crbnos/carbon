@@ -1,7 +1,8 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
-import { Result, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import type { Result } from "@carbon/auth";
+import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";

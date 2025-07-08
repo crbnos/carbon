@@ -31,6 +31,10 @@ import { LuCircleAlert } from "react-icons/lu";
 
 import { path } from "~/utils/path";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
 };

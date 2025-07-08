@@ -31,6 +31,10 @@ import {
 import { LuTriangleAlert } from "react-icons/lu";
 import { path } from "~/utils/path";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
 

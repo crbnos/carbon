@@ -41,6 +41,10 @@ export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Login" }];
 };
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
   if (authSession && (await verifyAuthSession(authSession))) {
