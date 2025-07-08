@@ -138,11 +138,11 @@ export default function Invite() {
 
       <p className="text-xs text-muted-foreground  text-center">
         By accepting the invite, you agree to the{" "}
-        <Link to="https://carbonos.dev/terms" className="underline">
+        <Link to="https://carbon.ms/terms" className="underline">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link to="https://carbonos.dev/privacy" className="underline">
+        <Link to="https://carbon.ms/privacy" className="underline">
           Privacy Policy
         </Link>
         .

@@ -236,7 +236,7 @@ export default function LoginRoute() {
       {mode !== "verify" && fetcher.data?.success !== true && (
         <div className="text-center mt-4">
           <p className="text-sm text-muted-foreground">
-            Enter your email above to sign in or create a new account
+            Login or create a new account
           </p>
         </div>
       )}
