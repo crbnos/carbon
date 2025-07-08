@@ -1,10 +1,6 @@
+import { UPSTASH_REDIS_REST_TOKEN, UPSTASH_REDIS_REST_URL } from "@carbon/auth";
 import type { Redis as RedisType } from "@upstash/redis";
 import { Redis } from "@upstash/redis";
-import * as dotenv from "dotenv";
-dotenv.config();
-
-const UPSTASH_REDIS_REST_URL = process.env.UPSTASH_REDIS_REST_URL;
-const UPSTASH_REDIS_REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 
 let redis: RedisType;
 

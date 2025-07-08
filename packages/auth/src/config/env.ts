@@ -30,6 +30,8 @@ declare global {
       SUPABASE_ANON_KEY: string;
       SUPABASE_URL: string;
       SUPABASE_SERVICE_ROLE_KEY: string;
+      UPSTASH_REDIS_REST_URL: string;
+      UPSTASH_REDIS_REST_TOKEN: string;
       VERCEL_URL: string;
       VERCEL_ENV: string;
     }
@@ -110,6 +112,12 @@ export const STRIPE_SECRET_KEY = getEnv("STRIPE_SECRET_KEY", {
   isRequired: false,
 });
 export const STRIPE_WEBHOOK_SECRET = getEnv("STRIPE_WEBHOOK_SECRET", {
+  isRequired: false,
+});
+export const UPSTASH_REDIS_REST_URL = getEnv("UPSTASH_REDIS_REST_URL", {
+  isRequired: false,
+});
+export const UPSTASH_REDIS_REST_TOKEN = getEnv("UPSTASH_REDIS_REST_TOKEN", {
   isRequired: false,
 });
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
