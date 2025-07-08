@@ -4,6 +4,12 @@ import type Stripe from "stripe";
 
 config();
 
+const CARBON_EDITION = process.env.CARBON_EDITION;
+if (CARBON_EDITION !== "cloud") {
+  console.log("🔄 Stripe webhook endpoint is not needed in this edition");
+  process.exit(0);
+}
+
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 if (!STRIPE_SECRET_KEY) {
   throw new Error("STRIPE_SECRET_KEY is required");

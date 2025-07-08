@@ -5,9 +5,9 @@ import {
   DropdownMenuTrigger,
   IconButton,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { Outlet, useFetcher } from "@remix-run/react";
 import { LuMoon, LuSun } from "react-icons/lu";
-import { useMode } from "~/hooks/useMode";
 import type { action } from "~/root";
 export default function ExternalLayout() {
   const fetcher = useFetcher<typeof action>();

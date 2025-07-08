@@ -33,6 +33,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { generateHTML } from "@carbon/react/Editor";
+import { useMode } from "@carbon/remix";
 import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { useFetcher, useLoaderData, useParams } from "@remix-run/react";
@@ -53,7 +54,6 @@ import {
   LuUpload,
 } from "react-icons/lu";
 import { usePercentFormatter } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
 import { getPaymentTermsList } from "~/modules/accounting";
 import { getShippingMethodsList } from "~/modules/inventory";
 import type {

@@ -1,12 +1,18 @@
+import { Edition } from "@carbon/auth";
+import { useEdition } from "@carbon/remix";
 import { useUser } from "./useUser";
 
 export function useFlags() {
   const user = useUser();
+  const edition = useEdition();
   const isInternal = ["carbon.us.org", "carbonos.dev", "blackcatlabs.xyz"].some(
     (email) => user.email.includes(email)
   );
 
   return {
     isInternal,
+    isCloud: edition === Edition.Cloud,
+    isCommunity: edition === Edition.Community,
+    isEnterprise: edition === Edition.Enterprise,
   };
 }

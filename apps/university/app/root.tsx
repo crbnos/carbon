@@ -42,12 +42,12 @@ import { getMode, setMode } from "~/services/mode.server";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
+import { useMode } from "@carbon/remix";
+import { modeValidator } from "@carbon/utils";
 import { motion } from "framer-motion";
 import { LuChevronDown, LuFingerprint, LuMoon, LuSun } from "react-icons/lu";
 import AvatarMenu from "./components/AvatarMenu";
-import { useMode } from "./hooks/useMode";
 import { useOptionalUser } from "./hooks/useUser";
-import { modeValidator } from "./types/validators";
 import { path } from "./utils/path";
 
 export const config = { runtime: "edge", regions: ["iad1"] };
@@ -69,6 +69,7 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
+    CARBON_EDITION,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -115,14 +116,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return json(
     {
-      lessonCompletions,
       challengeAttempts,
       env: {
+        CARBON_EDITION,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
         SUPABASE_ANON_KEY,
       },
+      lessonCompletions,
       mode: getMode(request),
       result: sessionFlash?.result,
       user,

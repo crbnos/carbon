@@ -8,8 +8,6 @@ export type TypeOfValidator<U extends Validator<any>> = U extends Validator<
   ? T
   : unknown;
 
-export type Mode = "light" | "dark";
-
 export const address = {
   addressId: zfd.text(z.string().optional()),
   addressLine1: zfd.text(z.string().optional()),
@@ -40,8 +38,4 @@ export const contact = {
 export const favoriteSchema = z.object({
   id: z.string(),
   favorite: z.enum(["favorite", "unfavorite"]),
-});
-
-export const modeValidator = z.object({
-  mode: z.enum(["light", "dark", "system"]),
 });

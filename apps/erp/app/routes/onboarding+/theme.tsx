@@ -13,6 +13,7 @@ import {
   cn,
   useKeyboardShortcuts,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { themes, type Theme } from "@carbon/utils";
 import {
   Link,
@@ -27,7 +28,6 @@ import { useEffect, useRef, useState } from "react";
 import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import { useOnboarding } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
 import { themeValidator, type Theme as ThemeValue } from "~/modules/settings";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";

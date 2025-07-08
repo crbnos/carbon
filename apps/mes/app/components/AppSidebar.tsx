@@ -45,10 +45,11 @@ import {
   Switch,
   useSidebar,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { Form, Link, useFetcher, useLocation } from "@remix-run/react";
 import { useRef, type ComponentProps } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
-import { useMode, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
 import { ERP_URL, path } from "~/utils/path";

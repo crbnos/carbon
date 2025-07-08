@@ -1,7 +1,8 @@
 {
   "name": "@carbon/utils",
   "dependencies": {
-    "lodash.template": "^4.5.0"
+    "lodash.template": "^4.5.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@carbon/jest": "*",

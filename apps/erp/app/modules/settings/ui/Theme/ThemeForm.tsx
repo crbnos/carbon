@@ -8,12 +8,12 @@ import {
   VStack,
   cn,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import type { Theme } from "@carbon/utils";
 import { themes } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { RxCheck } from "react-icons/rx";
 import type { z } from "zod";
-import { useMode } from "~/hooks/useMode";
 import type { themeValidator } from "~/modules/settings";
 import type { Action } from "~/types";
 import { path } from "~/utils/path";

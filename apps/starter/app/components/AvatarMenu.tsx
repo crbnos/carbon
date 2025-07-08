@@ -8,12 +8,12 @@ import {
   DropdownMenuTrigger,
   Switch,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuHouse, LuLogOut, LuMoon, LuSun, LuUser } from "react-icons/lu";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
 import type { action } from "~/root";
 import { path } from "~/utils/path";
 

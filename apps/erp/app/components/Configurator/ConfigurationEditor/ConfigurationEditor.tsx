@@ -14,19 +14,19 @@ import {
   toast,
   useDisclosure,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import type { OnMount } from "@monaco-editor/react";
 import Editor from "@monaco-editor/react";
 import { useFetcher, useParams } from "@remix-run/react";
 import type * as Monaco from "monaco-editor";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  LuSquareFunction,
   LuEllipsisVertical,
   LuPlay,
   LuSave,
+  LuSquareFunction,
   LuTrash2,
 } from "react-icons/lu";
-import { useMode } from "~/hooks/useMode";
 import type { action } from "~/routes/x+/part+/$itemId.rule";
 import { path } from "~/utils/path";
 import { ConfirmDelete } from "../../Modals";

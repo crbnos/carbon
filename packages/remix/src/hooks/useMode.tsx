@@ -1,8 +1,7 @@
 import { useRouteData } from "@carbon/remix";
+import type { Mode } from "@carbon/utils";
+import { modeValidator } from "@carbon/utils";
 import { useFetchers } from "@remix-run/react";
-import type { Mode } from "~/types/validators";
-import { modeValidator } from "~/types/validators";
-import { path } from "~/utils/path";
 
 export function useOptimisticMode() {
   const fetchers = useFetchers();
@@ -20,9 +19,9 @@ export function useOptimisticMode() {
 
 export function useMode() {
   const optimisticMode = useOptimisticMode();
-  const routeData = useRouteData<{ mode: Mode }>(path.to.root);
+  const routeData = useRouteData<{ mode: Mode }>("/");
 
-  let mode = routeData?.mode ?? "dark";
+  let mode = routeData?.mode ?? "light";
 
   if (optimisticMode && optimisticMode !== "system") {
     mode = optimisticMode;

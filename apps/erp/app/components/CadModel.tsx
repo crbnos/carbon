@@ -9,6 +9,7 @@ import {
   supportedModelTypes,
   toast,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { convertKbToString } from "@carbon/utils";
 import { useFetcher } from "@remix-run/react";
 import { nanoid } from "nanoid";
@@ -16,7 +17,6 @@ import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
 import { useUser } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
 import { getPrivateUrl, path } from "~/utils/path";
 
 const fileSizeLimitMb = 50;

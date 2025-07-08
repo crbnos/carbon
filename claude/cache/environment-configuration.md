@@ -4,15 +4,15 @@
 
 ### File Structure
 
-- **Root `.env` file**: Main environment configuration file at `/Users/barbinbrad/Code/carbon/.env`
+- **Root `.env` file**: Main environment configuration file at `./.env`
 - **`.env.example`**: Template file showing all required environment variables
 - **Symlinks**: Apps and packages use symlinks to the root `.env` file for consistency
 
 ### Key Environment Files
 
-1. `/Users/barbinbrad/Code/carbon/.env` - Main configuration (gitignored)
-2. `/Users/barbinbrad/Code/carbon/.env.example` - Template with all required variables
-3. `/Users/barbinbrad/Code/carbon/.env.production` - Production-specific settings
+1. `./.env` - Main configuration (gitignored)
+2. `./.env.example` - Template with all required variables
+3. `./.env.production` - Production-specific settings
 4. App-specific symlinks:
    - `/apps/erp/.env` → symlink to root `.env`
    - `/apps/mes/.env` → symlink to root `.env`
@@ -48,7 +48,6 @@
 
 #### Configuration
 
-- `DEFAULT_EMAIL_ADDRESS` - Used in database seeding
 - `VERCEL_URL` - Deployment URL
 - `VERCEL_ENV` - Deployment environment (production/preview/development)
 

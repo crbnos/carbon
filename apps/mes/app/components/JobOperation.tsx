@@ -89,7 +89,7 @@ import {
   FilePreview,
   OperationStatusIcon,
 } from "~/components";
-import { useMode, useUrlParams, useUser } from "~/hooks";
+import { useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
 import {
   attributeRecordValidator,
@@ -127,6 +127,7 @@ import {
   TextArea,
   ValidatedForm,
 } from "@carbon/form";
+import { useMode } from "@carbon/remix";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   convertDateStringToIsoString,

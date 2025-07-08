@@ -1,6 +1,6 @@
 import { DOMAIN } from "@carbon/auth";
+import type { Mode } from "@carbon/utils";
 import * as cookie from "cookie";
-import type { Mode } from "~/types/validators";
 
 const cookieName = "mode";
 

@@ -1,7 +1,7 @@
 import { IconButton } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { useFetcher } from "@remix-run/react";
 import { BiLaptop, BiMoon, BiSun } from "react-icons/bi";
-import { useMode } from "~/hooks/useMode";
 import type { action } from "~/root";
 import { path } from "~/utils/path";
 

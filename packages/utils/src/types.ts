@@ -1,3 +1,11 @@
+import { z } from "zod";
+
+export type Mode = "light" | "dark";
+
+export const modeValidator = z.object({
+  mode: z.enum(["light", "dark", "system"]),
+});
+
 export type PickPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 

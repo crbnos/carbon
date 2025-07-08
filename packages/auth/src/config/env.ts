@@ -3,9 +3,9 @@ import { isBrowser } from "@carbon/utils";
 declare global {
   interface Window {
     env: {
+      CARBON_EDITION: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
-      // NOVU_APPLICATION_ID: string; // for some reason this causes typescript errors
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
       VERCEL_URL: string;
@@ -17,6 +17,7 @@ declare global {
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      CARBON_EDITION: string;
       DOMAIN: string;
       NOVU_SECRET_KEY: string;
       POSTHOG_API_HOST: string;
@@ -33,6 +34,12 @@ declare global {
       VERCEL_ENV: string;
     }
   }
+}
+
+export enum Edition {
+  Cloud = "cloud",
+  Enterprise = "enterprise",
+  Community = "community",
 }
 
 type EnvOptions = {
@@ -63,12 +70,31 @@ export function getEnv(
 export const AUTODESK_BUCKET_NAME = getEnv("AUTODESK_BUCKET_NAME", {
   isRequired: false,
 });
+
 export const AUTODESK_CLIENT_ID = getEnv("AUTODESK_CLIENT_ID", {
   isRequired: false,
 });
 export const AUTODESK_CLIENT_SECRET = getEnv("AUTODESK_CLIENT_SECRET", {
   isRequired: false,
 });
+
+const CARBON_EDITION = getEnv("CARBON_EDITION", {
+  isRequired: false,
+  isSecret: false,
+});
+
+const getEdition = () => {
+  if (CARBON_EDITION === "cloud") {
+    return Edition.Cloud;
+  }
+  if (CARBON_EDITION === "enterprise") {
+    return Edition.Enterprise;
+  }
+  return Edition.Community;
+};
+
+export const CarbonEdition = getEdition();
+
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 export const EXCHANGE_RATES_API_KEY = getEnv("EXCHANGE_RATES_API_KEY", {
   isRequired: false,
@@ -128,6 +154,7 @@ export function getAppUrl() {
 
 export function getBrowserEnv() {
   return {
+    CARBON_EDITION,
     SUPABASE_URL,
     SUPABASE_ANON_KEY,
     POSTHOG_API_HOST,

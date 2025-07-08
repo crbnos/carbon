@@ -23,7 +23,8 @@ import type { Company } from "@carbon/auth";
 import { LuChevronsUpDown } from "react-icons/lu";
 import { z } from "zod";
 
-import { useMode, useRouteData } from "~/hooks";
+import { useMode } from "@carbon/remix";
+import { useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 
 const BreadcrumbsBase = forwardRef<

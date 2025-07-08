@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
   Switch,
 } from "@carbon/react";
+import { useMode } from "@carbon/remix";
 import { themes } from "@carbon/utils";
 import { Form, Link, useFetcher } from "@remix-run/react";
 import { useRef, useState } from "react";
@@ -28,7 +29,6 @@ import {
 } from "react-icons/lu";
 import { Avatar } from "~/components";
 import { useUser } from "~/hooks";
-import { useMode } from "~/hooks/useMode";
 import { useTheme } from "~/hooks/useTheme";
 import type { action } from "~/root";
 import { path } from "~/utils/path";

@@ -34,13 +34,13 @@ import {
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
 
+import { useMode } from "@carbon/remix";
 import { getColor } from "@carbon/utils";
 import { Link } from "@remix-run/react";
 import type { ReactNode } from "react";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
-import { useMode } from "~/hooks/useMode";
 import type { JobOperation } from "~/modules/production/types";
 import type { nonConformanceTaskStatus } from "~/modules/quality";
 import type { MethodType } from "~/modules/shared";

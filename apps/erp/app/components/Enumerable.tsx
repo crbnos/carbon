@@ -3,7 +3,7 @@ import { getColor, getColorByValue } from "@carbon/utils";
 
 import type { BadgeProps } from "@carbon/react";
 import { Badge } from "@carbon/react";
-import { useMode } from "~/hooks/useMode";
+import { useMode } from "@carbon/remix";
 
 type EnumerableProps = BadgeProps & {
   value: string | null;

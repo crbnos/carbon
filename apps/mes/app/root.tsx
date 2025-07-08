@@ -3,7 +3,7 @@ import { getSessionFlash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { Button, Heading, toast } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { themes } from "@carbon/utils";
+import { modeValidator, themes } from "@carbon/utils";
 import {
   isRouteErrorResponse,
   Links,
@@ -27,9 +27,8 @@ import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 
-import { useMode } from "./hooks/useMode";
+import { useMode } from "@carbon/remix";
 import { getTheme } from "./services/theme.server";
-import { modeValidator } from "./types/validators";
 
 export const config = { runtime: "edge", regions: ["iad1"] };
 
@@ -51,6 +50,7 @@ export const meta: MetaFunction = () => {
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const {
+    CARBON_EDITION,
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     SUPABASE_URL,
@@ -62,6 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return json(
     {
       env: {
+        CARBON_EDITION,
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         SUPABASE_URL,
