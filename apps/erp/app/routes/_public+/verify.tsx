@@ -2,13 +2,13 @@ import { assertIsPost, error } from "@carbon/auth";
 import {
   createEmailAuthAccount,
   signInWithEmail,
-  verifyEmailCode,
 } from "@carbon/auth/auth.server";
 import {
   flash,
   getAuthSession,
   setAuthSession,
 } from "@carbon/auth/session.server";
+import { verifyEmailCode } from "@carbon/auth/verification.server";
 import { Hidden, InputOTP, ValidatedForm, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import {

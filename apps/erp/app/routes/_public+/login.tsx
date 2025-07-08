@@ -4,13 +4,10 @@ import {
   error,
   magicLinkValidator,
 } from "@carbon/auth";
-import {
-  sendMagicLink,
-  sendVerificationCode,
-  verifyAuthSession,
-} from "@carbon/auth/auth.server";
+import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
+import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import {
