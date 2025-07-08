@@ -29,6 +29,10 @@ import {
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
+export const config = {
+  runtime: "nodejs",
+};
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   defaultShouldRevalidate,
