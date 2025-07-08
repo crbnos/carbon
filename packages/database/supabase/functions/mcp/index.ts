@@ -1,13 +1,13 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import SupabaseClient from "https://esm.sh/v135/@supabase/supabase-js@2.33.1/dist/module/SupabaseClient.d.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
+import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
 import { createMcp } from "../lib/mcp.ts";
-import { prompt, tools } from "./tools.ts";
 import { getAuthFromAPIKey, getSupabase } from "../lib/supabase.ts";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { Database } from "../lib/types.ts";
+import { prompt, tools } from "./tools.ee.ts";
 
 const mcp = createMcp({ prompt, tools });
 const pool = getConnectionPool(1);

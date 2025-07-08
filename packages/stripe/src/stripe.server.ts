@@ -1,4 +1,9 @@
-import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import {
+  CarbonEdition,
+  Edition,
+  getAppUrl,
+  getCarbonServiceRole,
+} from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -110,6 +115,10 @@ function getPlanByPriceId(client: SupabaseClient<Database>, priceId: string) {
 }
 
 export async function getStripeCustomerByCompanyId(companyId: string) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return null;
+  }
+
   const customerId = await getStripeCustomerId(companyId);
   if (!customerId) {
     return null;

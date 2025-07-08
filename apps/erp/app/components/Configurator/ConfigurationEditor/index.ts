@@ -1,3 +1,3 @@
-import ConfigurationEditor from "./ConfigurationEditor";
+import ConfigurationEditor from "./ConfigurationEditor.ee";
 
 export { ConfigurationEditor };

@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import type { userAdminTask } from "@carbon/jobs/trigger/user-admin";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { tasks } from "@trigger.dev/sdk/v3";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
@@ -29,6 +30,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (users.length === 1) {
     const [userId] = users;
     const result = await deactivateUser(client, userId, companyId);
+    if (result.success) {
+      await updateSubscriptionQuantityForCompany(companyId);
+    }
 
     throw redirect(safeRedirect(redirectTo), await flash(request, result));
   } else {

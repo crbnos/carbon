@@ -1,4 +1,16 @@
+import {
+  CarbonEdition,
+  CarbonProvider,
+  Edition,
+  getCarbon,
+} from "@carbon/auth";
+import {
+  destroyAuthSession,
+  requireAuthSession,
+} from "@carbon/auth/session.server";
 import { Button, IconButton, TooltipProvider, useMount } from "@carbon/react";
+import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
+import type { ShouldRevalidateFunction } from "@remix-run/react";
 import {
   Outlet,
   useFetcher,
@@ -10,11 +22,8 @@ import { json, redirect } from "@vercel/remix";
 import NProgress from "nprogress";
 import { useEffect } from "react";
 
-import { CarbonProvider, getCarbon } from "@carbon/auth";
-import {
-  destroyAuthSession,
-  requireAuthSession,
-} from "@carbon/auth/session.server";
+import posthog from "posthog-js";
+import { LuArrowUpRight, LuX } from "react-icons/lu";
 import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import { getCompanies, getCompanyIntegrations } from "~/modules/settings";
@@ -27,10 +36,6 @@ import {
 } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
-import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import type { ShouldRevalidateFunction } from "@remix-run/react";
-import posthog from "posthog-js";
-import { LuArrowUpRight, LuX } from "react-icons/lu";
 import { getSavedViews } from "~/modules/shared/shared.service";
 
 export const config = {
@@ -98,7 +103,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
 
-  const requiresOnboarding = !companies.data?.[0]?.name || !stripeCustomer;
+  const requiresOnboarding =
+    !companies.data?.[0]?.name ||
+    (CarbonEdition === Edition.Cloud && !stripeCustomer);
   if (requiresOnboarding) {
     throw redirect(path.to.onboarding.root);
   }

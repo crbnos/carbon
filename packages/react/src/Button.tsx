@@ -21,7 +21,7 @@ export const buttonVariants = cva(
         active:
           "bg-active text-active-foreground hover:bg-active/90 hover:text-active-foreground shadow-button-base",
         secondary:
-          "bg-white dark:bg-foreground/5 text-foreground shadow-button-base hover:before:opacity-100 dark:hover:before:opacity-50",
+          "bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base",
         solid:
           "bg-accent text-accent-foreground hover:bg-accent/90 shadow-button-base",
         destructive:

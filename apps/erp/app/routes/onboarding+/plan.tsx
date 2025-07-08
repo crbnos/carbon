@@ -1,4 +1,4 @@
-import { getUser } from "@carbon/auth";
+import { CarbonEdition, Edition, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Badge,
@@ -48,6 +48,10 @@ const PLANS = {
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
+  if (CarbonEdition !== Edition.Cloud) {
+    throw redirect(path.to.authenticatedRoot);
+  }
+
   const plans = await getPlans(client);
 
   if (!companyId) {

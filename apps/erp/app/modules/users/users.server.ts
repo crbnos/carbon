@@ -8,7 +8,7 @@ import {
 } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "@vercel/remix";
 import { getSupplierContact } from "~/modules/purchasing";
@@ -83,7 +83,6 @@ export async function acceptInvite(
       user.data.id,
       invite.data.permissions as Record<string, string[]>
     ),
-    updateSubscriptionQuantityForCompany(invite.data.companyId),
   ]);
 
   if (activate.error) {

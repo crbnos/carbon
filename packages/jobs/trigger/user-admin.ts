@@ -6,6 +6,7 @@ import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 
@@ -40,6 +41,9 @@ export const userAdminTask = task({
           payload.id,
           payload.companyId
         );
+        if (result.success) {
+          await updateSubscriptionQuantityForCompany(payload.companyId);
+        }
         break;
       case "resend":
         const { id: userId, companyId, location, ip } = payload;

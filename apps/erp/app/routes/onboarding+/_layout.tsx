@@ -5,6 +5,7 @@ import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
 import { onboardingSequence, path } from "~/utils/path";
 
+import { CarbonEdition, Edition } from "@carbon/auth";
 import { VStack } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
@@ -26,28 +27,37 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const pathname = new URL(request.url).pathname;
 
-  // Only redirect to stripeCustomer page if we're not already on it
   if (company.data?.name && locations.data?.length) {
-    if (!stripeCustomer && pathname !== path.to.onboarding.plan) {
-      throw redirect(path.to.onboarding.plan);
-    } else if (stripeCustomer) {
+    if (CarbonEdition !== Edition.Cloud || stripeCustomer) {
       throw redirect(path.to.authenticatedRoot);
+    }
+
+    if (
+      CarbonEdition === Edition.Cloud &&
+      pathname !== path.to.onboarding.plan
+    ) {
+      throw redirect(path.to.onboarding.plan);
     }
   }
 
-  const pathIndex = onboardingSequence.findIndex((p) => p === pathname);
+  const onboardingSteps =
+    CarbonEdition === Edition.Cloud
+      ? onboardingSequence
+      : onboardingSequence.filter((p) => p !== path.to.onboarding.plan);
+
+  const pathIndex = onboardingSteps.findIndex((p) => p === pathname);
 
   const previousPath =
-    pathIndex === 0 ? undefined : onboardingSequence[pathIndex - 1];
+    pathIndex === 0 ? undefined : onboardingSteps[pathIndex - 1];
 
   const nextPath =
-    pathIndex === onboardingSequence.length - 1
+    pathIndex === onboardingSteps.length - 1
       ? path.to.authenticatedRoot
-      : onboardingSequence[pathIndex + 1];
+      : onboardingSteps[pathIndex + 1];
 
   return {
     currentIndex: pathIndex,
-    onboardingSteps: onboardingSequence.length,
+    onboardingSteps: onboardingSteps.length,
     previousPath,
     nextPath,
   };

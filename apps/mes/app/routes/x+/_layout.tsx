@@ -1,4 +1,11 @@
-import { CarbonProvider, getCarbon, getCompanies, getUser } from "@carbon/auth";
+import {
+  CarbonEdition,
+  CarbonProvider,
+  Edition,
+  getCarbon,
+  getCompanies,
+  getUser,
+} from "@carbon/auth";
 import {
   destroyAuthSession,
   requireAuthSession,
@@ -72,7 +79,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       }),
     ]);
 
-  if (!companyPlan) {
+  if (!companyPlan && CarbonEdition === Edition.Cloud) {
     throw redirect(path.to.onboarding);
   }
 

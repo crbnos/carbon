@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import type { userAdminTask } from "@carbon/jobs/trigger/user-admin";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 import { revokeInviteValidator } from "~/modules/users";
@@ -52,6 +53,8 @@ export async function action({ request }: ActionFunctionArgs) {
           error(deactivate.message, "Failed to deactivate user")
         )
       );
+    } else {
+      await updateSubscriptionQuantityForCompany(companyId);
     }
   } else {
     const batchPayload = users.map((id) => ({

@@ -1,6 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import type {
-  ShortcutDefinition} from "@carbon/react";
+import type { ShortcutDefinition } from "@carbon/react";
 import {
   Badge,
   Button,
@@ -38,7 +37,7 @@ import {
 import { EmployeeAvatar } from "~/components";
 import { useUser } from "~/hooks/useUser";
 import { camelCaseToWords } from "~/utils/string";
-import SYSTEM_PROMPT from "./system.txt?raw";
+import SYSTEM_PROMPT from "./system.ee.txt?raw";
 
 const providerMetadata = {
   anthropic: {

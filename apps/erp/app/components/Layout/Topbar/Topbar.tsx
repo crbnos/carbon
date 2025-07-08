@@ -1,5 +1,5 @@
 import { HStack } from "@carbon/react";
-import { Agent } from "~/components/Agent/Agent";
+import { Agent } from "~/components/Agent/Agent.ee";
 import { usePermissions, useUser } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
 import AvatarMenu from "../../AvatarMenu";
