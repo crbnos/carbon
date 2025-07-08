@@ -6,11 +6,11 @@ import { homedir } from "os";
 import { resolve } from "path";
 dotenv.config();
 
-const COMPANY_ID = "cs868u84gfk07v78v9e0";
+const COMPANY_ID = "*****************";
 const PROD: boolean = true;
 const READ_ONLY: boolean = false;
 
-const sourceFile = resolve(homedir(), "Downloads/black-cat-july-3.csv");
+const sourceFile = resolve(homedir(), "Downloads/******.csv");
 const columns = ["ID", "OLD", "NEW", "REVISION"];
 
 const parser = parse({

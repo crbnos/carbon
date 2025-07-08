@@ -38,7 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const { object } = await generateObject<Record<string, string>>({
-      model: openai("gpt-4o-mini"),
+      model: openai("gpt-4o"),
       schema,
       prompt: `
       The following columns are the headings from a CSV import file for importing a ${table}. 

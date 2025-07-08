@@ -13,6 +13,8 @@ server/dist
 public/dist
 vite.config.ts.timestamp*
 
+scripts/migrations/data
+
 # local env files
 .env
 .env.local
