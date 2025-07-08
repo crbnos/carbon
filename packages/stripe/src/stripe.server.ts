@@ -1,11 +1,7 @@
-import {
-  CarbonEdition,
-  Edition,
-  getAppUrl,
-  getCarbonServiceRole,
-} from "@carbon/auth";
+import { CarbonEdition, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import { Edition } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { Stripe } from "stripe";

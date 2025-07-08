@@ -1,4 +1,4 @@
-import { CarbonEdition, Edition, getUser } from "@carbon/auth";
+import { CarbonEdition, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
   Badge,
@@ -12,6 +12,7 @@ import {
   IconButton,
 } from "@carbon/react";
 import { getCheckoutUrl } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
 import { useLocale } from "@react-aria/i18n";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";

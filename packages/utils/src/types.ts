@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export enum Edition {
+  Cloud = "cloud",
+  Enterprise = "enterprise",
+  Community = "community",
+}
+
 export type Mode = "light" | "dark";
 
 export const modeValidator = z.object({

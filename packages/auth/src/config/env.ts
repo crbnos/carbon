@@ -1,4 +1,4 @@
-import { isBrowser } from "@carbon/utils";
+import { Edition, isBrowser } from "@carbon/utils";
 
 declare global {
   interface Window {
@@ -34,12 +34,6 @@ declare global {
       VERCEL_ENV: string;
     }
   }
-}
-
-export enum Edition {
-  Cloud = "cloud",
-  Enterprise = "enterprise",
-  Community = "community",
 }
 
 type EnvOptions = {

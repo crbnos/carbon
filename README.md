@@ -4,6 +4,8 @@ Carbon is the open-source operating system for manufacturing.
 
 ## Architecture
 
+Carbon is designed to make it easy for you to extend the platform by building your own apps through our API.
+
 ![Carbon Architecture](https://github.com/user-attachments/assets/ed6dc66b-e9cb-435e-b5a9-9daf933f4a1d)
 
 Features:
@@ -82,52 +84,21 @@ The monorepo follows the Turborepo convention of grouping packages into one of t
 | `@carbon/tsconfig`     | Shared, extendable tsconfig configuration used across apps and packages |
 | `@carbon/utils`        | Shared utility functions used across apps and packages                  |
 
-## API
+## Development
 
-The API documentation is located in the ERP app at `/x/api/js/intro`. It is auto-generated based on changes to the database.
+### Setup
 
-### From another Codebase
+1. Clone the repo into a public GitHub repository (or fork https://github.com/crbnos/carbon/fork). If you plan to distribute the code, keep the source code public to comply with [AGPLv3](https://github.com/crbnos/carbon/blob/main/LICENSE). To clone in a private repository, [acquire a commercial license](https://carbon.ms/sales)
 
-Navigate to settings in the ERP to generate an API key. If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't needto include the `carbon-key` header.
+   ```sh
+   git clone https://github.com/crbnos/carbon.git
+   ```
 
-```ts
-import { Database } from "@carbon/database";
-import { createClient } from "@supabase/supabase-js";
+2. Go to the project folder
 
-const apiKey = process.env.CARBON_API_KEY;
-const apiUrl = process.env.CARBON_API_URL;
-const publicKey = process.env.CARBON_PUBLIC_KEY;
-
-const carbon = createClient<Database>(apiUrl, publicKey, {
-  global: {
-    headers: {
-      "carbon-key": apiKey,
-    },
-  },
-});
-
-// returns items from the company associated with the api key
-const { data, error } = await carbon.from("item").select("*");
-```
-
-### From the Monorepo
-
-```tsx
-import { getCarbonServiceRole } from "@carbon/auth";
-const carbon = getCarbonServiceRole();
-
-// returns all items across companies
-const { data, error } = await carbon.from("item").select("*");
-
-// returns items from a specific company
-const companyId = "xyz";
-const { data, error } = await carbon
-  .from("item")
-  .select("*")
-  .eq("companyId", companyId);
-```
-
-## Local Development
+   ```sh
+   cd carbon
+   ```
 
 Make sure that you have [Docker installed](https://docs.docker.com/desktop/install/mac-install/) on your system since this monorepo uses the Docker for local development.
 
@@ -236,16 +207,60 @@ For example, to run test command in the `@carbon/react` package you can run:
 $ npm run test -w @carbon/react
 ```
 
-### Restoring a Production Database Locally
+## API
 
-1. Download the production database backup from Supabase
-2. Rename the migrations folder to `_migrations`
-3. Restore the database using the following command:
+The API documentation is located in the ERP app at `${ERP}/x/api/js/intro`. It is auto-generated based on changes to the database.
 
-```bash
-$ npm run db:build # this should error out at the seed step
-PGPASSWORD=postgres psql -h localhost -p 54322 -U supabase_admin -d postgres < ~/Downloads/db_cluster-15-02-2025@04-37-58.backup
-$ npm run dev
+There are two ways to use the API:
+
+1. From another codebase using a supabase client library:
+
+- [Javascript](https://supabase.com/docs/reference/javascript/introduction)
+- [Flutter](https://supabase.com/docs/reference/dart/introduction)
+- [Python](https://supabase.com/docs/reference/python/introduction)
+- [C#](https://supabase.com/docs/reference/csharp/introduction)
+- [Swift](https://supabase.com/docs/reference/swift/introduction)
+- [Kotlin](https://supabase.com/docs/reference/kotlin/introduction)
+
+2. From within the codebase using our packages.
+
+### From another Codebase
+
+Navigate to settings in the ERP to generate an API key. If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't needto include the `carbon-key` header.
+
+```ts
+import { Database } from "@carbon/database";
+import { createClient } from "@supabase/supabase-js";
+
+const apiKey = process.env.CARBON_API_KEY;
+const apiUrl = process.env.CARBON_API_URL;
+const publicKey = process.env.CARBON_PUBLIC_KEY;
+
+const carbon = createClient<Database>(apiUrl, publicKey, {
+  global: {
+    headers: {
+      "carbon-key": apiKey,
+    },
+  },
+});
+
+// returns items from the company associated with the api key
+const { data, error } = await carbon.from("item").select("*");
 ```
 
-4. Rename the `_migrations` folder back to `migrations`
+### From the Monorepo
+
+```tsx
+import { getCarbonServiceRole } from "@carbon/auth";
+const carbon = getCarbonServiceRole();
+
+// returns all items across companies
+const { data, error } = await carbon.from("item").select("*");
+
+// returns items from a specific company
+const companyId = "xyz";
+const { data, error } = await carbon
+  .from("item")
+  .select("*")
+  .eq("companyId", companyId);
+```

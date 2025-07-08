@@ -1,14 +1,14 @@
+import { CarbonEdition } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { VStack } from "@carbon/react";
+import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
+import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet } from "@remix-run/react";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import { getLocationsList } from "~/modules/resources";
 import { getCompany } from "~/modules/settings";
 import { onboardingSequence, path } from "~/utils/path";
-
-import { CarbonEdition, Edition } from "@carbon/auth";
-import { VStack } from "@carbon/react";
-import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import type { ShouldRevalidateFunction } from "@remix-run/react";
 
 export const shouldRevalidate: ShouldRevalidateFunction = () => true;
 

@@ -1,4 +1,4 @@
-import { assertIsPost, Edition, error, success } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
@@ -21,6 +21,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { useEdition } from "@carbon/remix";
+import { Edition } from "@carbon/utils";
 import { Form, useLoaderData } from "@remix-run/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";

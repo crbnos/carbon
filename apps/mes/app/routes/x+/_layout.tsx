@@ -1,7 +1,6 @@
 import {
   CarbonEdition,
   CarbonProvider,
-  Edition,
   getCarbon,
   getCompanies,
   getUser,
@@ -12,6 +11,7 @@ import {
 } from "@carbon/auth/session.server";
 import { SidebarProvider, TooltipProvider, useMount } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import { Outlet, useLoaderData, useNavigation } from "@remix-run/react";
 import type { LoaderFunctionArgs } from "@vercel/remix";

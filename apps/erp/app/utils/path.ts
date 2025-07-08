@@ -18,6 +18,7 @@ export const path = {
       accountingSubcategories: (id: string) =>
         generatePath(`${api}/accounting/subcategories?accountCategoryId=${id}`),
       assign: `${api}/assign`,
+      autodeskToken: `${api}/autodesk/token`,
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
       billOfMaterials: (methodId: string, withOperations: boolean = false) =>

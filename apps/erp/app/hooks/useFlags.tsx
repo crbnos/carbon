@@ -1,5 +1,5 @@
-import { Edition } from "@carbon/auth";
 import { useEdition } from "@carbon/remix";
+import { Edition } from "@carbon/utils";
 import { useUser } from "./useUser";
 
 export function useFlags() {

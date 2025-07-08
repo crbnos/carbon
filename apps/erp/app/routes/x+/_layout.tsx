@@ -1,15 +1,11 @@
-import {
-  CarbonEdition,
-  CarbonProvider,
-  Edition,
-  getCarbon,
-} from "@carbon/auth";
+import { CarbonEdition, CarbonProvider, getCarbon } from "@carbon/auth";
 import {
   destroyAuthSession,
   requireAuthSession,
 } from "@carbon/auth/session.server";
 import { Button, IconButton, TooltipProvider, useMount } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
 import type { ShouldRevalidateFunction } from "@remix-run/react";
 import {
   Outlet,
