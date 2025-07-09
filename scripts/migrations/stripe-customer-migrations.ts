@@ -93,6 +93,7 @@ const KvStripeCustomerSchema = z.object({
     z.literal("unpaid"),
   ]),
   priceId: z.string(),
+  planId: z.string().nullable(),
   currentPeriodStart: z.number(),
   currentPeriodEnd: z.number(),
   cancelAtPeriodEnd: z.boolean(),
@@ -128,10 +129,21 @@ const KvStripeCustomerSchema = z.object({
       return null;
     }
 
+    const plan = await getPlanByPriceId(
+      client,
+      subscription.items.data[0].price.id
+    );
+
+    if (plan.error) {
+      console.error("Failed to get plan by price id:", plan.error);
+      continue;
+    }
+
     const subDataResult = KvStripeCustomerSchema.safeParse({
       subscriptionId: subscription.id,
       status: subscription.status,
       priceId: subscription.items.data[0].price.id,
+      planId: plan.data?.id ?? null,
       currentPeriodStart: subscription.items.data[0].current_period_start,
       currentPeriodEnd: subscription.items.data[0].current_period_end,
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
@@ -153,21 +165,24 @@ const KvStripeCustomerSchema = z.object({
     const subData = subDataResult.data;
 
     if (companyId) {
-      const companyPlanData = {
-        companyId,
-        priceId: subData.priceId,
-        status: (subData.cancelAtPeriodEnd
-          ? "Canceled"
-          : ["active", "trialing"].includes(subData.status)
-          ? "Active"
-          : "Inactive") as "Active" | "Inactive" | "Canceled",
-        stripeCustomerId: customerId,
-        stripeSubscriptionId: subData.subscriptionId,
-        stripeSubscriptionStatus: subData.status,
-        subscriptionStartDate: new Date(
-          subData.currentPeriodStart * 1000
-        ).toISOString(),
-      };
+      const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
+        {
+          id: companyId,
+          planId: plan.data?.id ?? null,
+          tasksLimit: plan.data.tasksLimit,
+          aiTokensLimit: plan.data.aiTokensLimit,
+          usersLimit: 10, // Default value as defined in the migration
+          stripeSubscriptionStatus: (subData.cancelAtPeriodEnd
+            ? "Canceled"
+            : ["active", "trialing"].includes(subData.status)
+            ? "Active"
+            : "Inactive") as "Active" | "Inactive" | "Canceled",
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subData.subscriptionId,
+          subscriptionStartDate: new Date(
+            subData.currentPeriodStart * 1000
+          ).toISOString(),
+        };
 
       const [, companyPlan] = await Promise.all([
         redis.set(customerKey, subData),
@@ -207,34 +222,7 @@ async function getPlanByPriceId(
 
 async function upsertCompanyPlan(
   client: SupabaseClient<Database>,
-  companyPlan: {
-    companyId: string;
-    priceId: string;
-    status?: "Active" | "Inactive" | "Canceled";
-    stripeCustomerId?: string;
-    stripeSubscriptionId?: string;
-    subscriptionStartDate?: string;
-  }
+  companyPlan: Database["public"]["Tables"]["companyPlan"]["Insert"]
 ) {
-  const plan = await getPlanByPriceId(client, companyPlan.priceId);
-  if (plan.error) {
-    console.error("failed to get plan by ", plan.error);
-    return plan;
-  }
-
-  const companyPlanData: Database["public"]["Tables"]["companyPlan"]["Insert"] =
-    {
-      id: companyPlan.companyId,
-      planId: plan.data.id,
-      tasksLimit: plan.data.tasksLimit,
-      aiTokensLimit: plan.data.aiTokensLimit,
-      usersLimit: 10, // Default value as defined in the migration
-      subscriptionStartDate:
-        companyPlan.subscriptionStartDate || new Date().toISOString(),
-      stripeSubscriptionStatus: companyPlan.status,
-      stripeCustomerId: companyPlan.stripeCustomerId,
-      stripeSubscriptionId: companyPlan.stripeSubscriptionId,
-    };
-
-  return client.from("companyPlan").upsert(companyPlanData);
+  return client.from("companyPlan").upsert(companyPlan);
 }

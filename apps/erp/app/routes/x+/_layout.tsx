@@ -118,6 +118,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     integrations: integrations.data ?? [],
     groups: groups.data,
     permissions: claims?.permissions,
+    plan: stripeCustomer?.planId,
     role: claims?.role,
     user: user.data,
     savedViews: savedViews.data ?? [],

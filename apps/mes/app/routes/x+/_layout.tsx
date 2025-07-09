@@ -103,6 +103,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       companies: companies.data ?? [],
       location: storedLocations.location,
       locations: locations.data ?? [],
+      plan: companyPlan?.planId,
       user: user.data,
     },
     storedLocations.updated

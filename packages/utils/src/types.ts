@@ -12,6 +12,13 @@ export const modeValidator = z.object({
   mode: z.enum(["light", "dark", "system"]),
 });
 
+export enum Plan {
+  Starter = "STARTER",
+  Business = "BUSINESS",
+  Partner = "PARTNER",
+  Unknown = "UNKNOWN",
+}
+
 export type PickPartial<T, K extends keyof T> = Omit<T, K> &
   Partial<Pick<T, K>>;
 

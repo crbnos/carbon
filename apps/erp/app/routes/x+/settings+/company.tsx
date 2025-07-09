@@ -330,7 +330,7 @@ export default function Company() {
                   </VStack>
                 </CardContent>
                 <CardFooter>
-                  <Submit isDisabled={ownerId === userId}>
+                  <Submit withBlocker={false} isDisabled={ownerId === userId}>
                     Transfer Ownership
                   </Submit>
                 </CardFooter>
