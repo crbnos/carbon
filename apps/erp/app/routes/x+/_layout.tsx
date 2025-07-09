@@ -100,8 +100,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const company = companies.data?.find((c) => c.companyId === companyId);
 
   const requiresOnboarding =
-    !companies.data?.[0]?.name ||
-    (CarbonEdition === Edition.Cloud && !stripeCustomer);
+    !company?.name || (CarbonEdition === Edition.Cloud && !stripeCustomer);
   if (requiresOnboarding) {
     throw redirect(path.to.onboarding.root);
   }
@@ -157,7 +156,7 @@ export default function AuthenticatedRoute() {
         <RealtimeDataProvider>
           <TooltipProvider>
             <div className="flex flex-col h-screen">
-              {user?.acknowledgedUniversity ? null : <UniversityBanner />}
+              {/* {user?.acknowledgedUniversity ? null : <UniversityBanner />} */}
               <Topbar />
               <div className="flex flex-1 h-[calc(100vh-49px)] relative">
                 <PrimaryNavigation />

@@ -1,4 +1,9 @@
-import { CarbonEdition, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import {
+  CarbonEdition,
+  getAppUrl,
+  getCarbonServiceRole,
+  STRIPE_BYPASS_COMPANY_IDS,
+} from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
 import { Edition } from "@carbon/utils";
@@ -115,6 +120,25 @@ export async function getStripeCustomerByCompanyId(companyId: string) {
     return null;
   }
 
+  // Check if this company is in the bypass list
+  if (STRIPE_BYPASS_COMPANY_IDS) {
+    const bypassList = STRIPE_BYPASS_COMPANY_IDS.split(",").map((id: string) =>
+      id.trim()
+    );
+    if (bypassList.includes(companyId)) {
+      // Return a mock customer object that satisfies the expected interface
+      return {
+        subscriptionId: "bypass-subscription",
+        status: "active" as const,
+        priceId: "bypass-price",
+        currentPeriodStart: Math.floor(Date.now() / 1000),
+        currentPeriodEnd: Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60, // 1 year from now
+        cancelAtPeriodEnd: false,
+        paymentMethod: null,
+      };
+    }
+  }
+
   const customerId = await getStripeCustomerId(companyId);
   if (!customerId) {
     return null;
@@ -185,7 +209,7 @@ export async function getCheckoutUrl({
     stripeCustomerId = customer.id;
   }
 
-  const serviceRole = await getCarbonServiceRole();
+  const serviceRole = getCarbonServiceRole();
   const plan = await getPlanById(serviceRole, planId);
   const checkoutSession = await stripe.checkout.sessions.create({
     customer: stripeCustomerId,
@@ -339,8 +363,6 @@ export async function processStripeEvent({
       throw new Error("Stripe webhook handler failed");
     }
 
-    console.log("customer.subscription.updated", customer);
-
     try {
       await syncStripeDataToKV(customer);
     } catch (error) {
@@ -356,7 +378,7 @@ export async function processStripeEvent({
     }
 
     try {
-      const serviceRole = await getCarbonServiceRole();
+      const serviceRole = getCarbonServiceRole();
       const key = `stripe:customer:${customer}`;
 
       await Promise.all([
@@ -379,7 +401,7 @@ export async function syncStripeDataToKV(
 ) {
   const key = `stripe:customer:${customerId}`;
   let companyId = companyIdFromMetadata;
-  const serviceRole = await getCarbonServiceRole();
+  const serviceRole = getCarbonServiceRole();
 
   const subscriptions = await stripe.subscriptions.list({
     customer: customerId,
@@ -448,7 +470,7 @@ export async function syncStripeDataToKV(
 
     const [, companyPlan] = await Promise.all([
       redis.set(key, subData),
-      upsertCompanyPlan(await getCarbonServiceRole(), companyPlanData),
+      upsertCompanyPlan(getCarbonServiceRole(), companyPlanData),
     ]);
 
     if (companyPlan.error) {
@@ -506,7 +528,7 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
     // Count active users
     const activeUsersResult = await serviceRole
       .from("userToCompany")
-      .select("userId", { count: "exact", head: true })
+      .select("userId, ...user(email)")
       .eq("companyId", companyId);
 
     if (activeUsersResult.error) {
@@ -517,7 +539,10 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
       return;
     }
 
-    const activeUserCount = activeUsersResult.count || 0;
+    const activeUserCount =
+      activeUsersResult.data?.filter(
+        (user) => !(user?.email).includes("@carbonos.dev")
+      ).length || 1;
 
     // Get the subscription from Stripe to find the subscription item
     const subscription = await stripe.subscriptions.retrieve(

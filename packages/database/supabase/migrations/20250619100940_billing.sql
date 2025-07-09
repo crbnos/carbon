@@ -96,9 +96,11 @@ CREATE POLICY "SELECT" ON "plan"
 
 
 INSERT INTO "plan" ("id", "name", "userBasedPricing", "stripePriceId", "tasksLimit", "aiTokensLimit", "stripeTrialPeriodDays", "public") VALUES
-  ('STARTER', 'Cloud Starter', TRUE, 'price_1RgUYhFV6ecOa0XvD37hQOhK', 10000, 1000000, 14, TRUE),
-  ('BUSINESS', 'Cloud Business', TRUE, 'price_1RgUZ3FV6ecOa0XvQFLFQsX4', 10000, 1000000, 14, TRUE),
-  ('PARTNER', 'Design Partner', FALSE, 'price_1RgXMSFV6ecOa0XvLQtlhQr0', 10000, 1000000, 14, FALSE);
+  ('STARTER', 'Cloud Starter', TRUE, 'price_1RgUYhFV6ecOa0XvD37hQOhK', 10000, 1000000, 30, TRUE),
+  ('BUSINESS', 'Cloud Business', TRUE, 'price_1RgUZ3FV6ecOa0XvQFLFQsX4', 10000, 1000000, 30, TRUE),
+  ('PARTNER-400', 'Design Partner', FALSE, 'price_1RgXMSFV6ecOa0XvLQtlhQr0', 10000, 1000000, 30, FALSE),
+  ('PARTNER-300', 'Design Partner', FALSE, 'price_1Rj20jFV6ecOa0Xvk4WV6b7l', 10000, 1000000, 30, FALSE),
+  ('PARTNER-500', 'Design Partner', FALSE, 'price_1Rj21OFV6ecOa0XvCTdELYdv', 10000, 1000000, 30, FALSE);
 
 CREATE TABLE "companyPlan" (
   "id" TEXT NOT NULL DEFAULT xid(),

@@ -75,7 +75,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Plan ID is required");
   }
 
-  if (!(planId in PLANS) || planId === "PARTNER") {
+  if (!(planId in PLANS) || planId.startsWith("PARTNER")) {
     throw new Error("Invalid plan ID");
   }
 

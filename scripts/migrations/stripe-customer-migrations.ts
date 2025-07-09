@@ -5,10 +5,12 @@ import { Redis } from "@upstash/redis";
 import { config } from "dotenv";
 import { Stripe } from "stripe";
 import { z } from "zod";
-import { companies } from "./data/stripe-customers";
+import { localCompanies, productionCompanies } from "./data/stripe-customers";
 config();
 
-const PROD = true;
+const PROD = false;
+
+const companies = PROD ? productionCompanies : localCompanies;
 
 const upstashRedisRestUrl = PROD
   ? process.env.PROD_UPSTASH_REDIS_REST_URL
@@ -18,11 +20,19 @@ const upstashRedisRestToken = PROD
   : process.env.UPSTASH_REDIS_REST_TOKEN;
 
 if (!upstashRedisRestUrl) {
-  throw new Error("UPSTASH_REDIS_REST_URL is not defined");
+  throw new Error(
+    PROD
+      ? "PROD_UPSTASH_REDIS_REST_URL is not defined"
+      : "UPSTASH_REDIS_REST_URL is not defined"
+  );
 }
 
 if (!upstashRedisRestToken) {
-  throw new Error("UPSTASH_REDIS_REST_TOKEN is not defined");
+  throw new Error(
+    PROD
+      ? "PROD_UPSTASH_REDIS_REST_TOKEN is not defined"
+      : "UPSTASH_REDIS_REST_TOKEN is not defined"
+  );
 }
 
 const redis = new Redis({
@@ -38,11 +48,17 @@ const supabaseServiceRoleKey = PROD
   : process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl) {
-  throw new Error("SUPABASE_URL is not defined");
+  throw new Error(
+    PROD ? "PROD_SUPABASE_URL is not defined" : "SUPABASE_URL is not defined"
+  );
 }
 
 if (!supabaseServiceRoleKey) {
-  throw new Error("SUPABASE_SERVICE_ROLE_KEY is not defined");
+  throw new Error(
+    PROD
+      ? "PROD_SUPABASE_SERVICE_ROLE_KEY is not defined"
+      : "SUPABASE_SERVICE_ROLE_KEY is not defined"
+  );
 }
 
 const stripeSecretKey = PROD
@@ -50,7 +66,11 @@ const stripeSecretKey = PROD
   : process.env.STRIPE_SECRET_KEY!;
 
 if (!stripeSecretKey) {
-  throw new Error("STRIPE_SECRET_KEY is not defined");
+  throw new Error(
+    PROD
+      ? "PROD_STRIPE_SECRET_KEY is not defined"
+      : "STRIPE_SECRET_KEY is not defined"
+  );
 }
 
 const client = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -86,19 +106,80 @@ const KvStripeCustomerSchema = z.object({
 
 (async () => {
   for await (const company of companies) {
+    const companyId = company.id;
+    const customerId = company.customerId;
     console.log(company.name);
-    const customerKey = `stripe:customer:${company.customerId}`;
+    if (!companyId) {
+      throw new Error("Company ID is required");
+    }
+
+    if (!customerId) {
+      throw new Error("Customer ID is required");
+    }
+
+    const customerKey = `stripe:customer:${customerId}`;
     const companyKey = `stripe:company:${company.id}`;
 
-    await redis.set(companyKey, company.customerId);
+    await redis.set(companyKey, customerId);
 
-    const subscription = await getSubscription(company.customerId);
+    const subscription = await getSubscription(customerId);
     if (!subscription) {
       await redis.del(customerKey);
       return null;
     }
 
-    console.log(subscription.id);
+    const subDataResult = KvStripeCustomerSchema.safeParse({
+      subscriptionId: subscription.id,
+      status: subscription.status,
+      priceId: subscription.items.data[0].price.id,
+      currentPeriodStart: subscription.items.data[0].current_period_start,
+      currentPeriodEnd: subscription.items.data[0].current_period_end,
+      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      paymentMethod:
+        subscription.default_payment_method &&
+        typeof subscription.default_payment_method !== "string"
+          ? {
+              brand: subscription.default_payment_method.card?.brand ?? null,
+              last4: subscription.default_payment_method.card?.last4 ?? null,
+            }
+          : null,
+    });
+
+    if (!subDataResult.success) {
+      console.error("Failed to parse subscription data:", subDataResult.error);
+      throw new Error("Failed to parse subscription data");
+    }
+
+    const subData = subDataResult.data;
+
+    if (companyId) {
+      const companyPlanData = {
+        companyId,
+        priceId: subData.priceId,
+        status: (subData.cancelAtPeriodEnd
+          ? "Canceled"
+          : ["active", "trialing"].includes(subData.status)
+          ? "Active"
+          : "Inactive") as "Active" | "Inactive" | "Canceled",
+        stripeCustomerId: customerId,
+        stripeSubscriptionId: subData.subscriptionId,
+        stripeSubscriptionStatus: subData.status,
+        subscriptionStartDate: new Date(
+          subData.currentPeriodStart * 1000
+        ).toISOString(),
+      };
+
+      const [, companyPlan] = await Promise.all([
+        redis.set(customerKey, subData),
+        upsertCompanyPlan(client, companyPlanData),
+      ]);
+
+      if (companyPlan.error) {
+        console.error("Failed to upsert company plan:", companyPlan.error);
+      }
+    } else {
+      console.error("no company id, skipping company plan upsert");
+    }
   }
 })();
 
@@ -137,7 +218,7 @@ async function upsertCompanyPlan(
 ) {
   const plan = await getPlanByPriceId(client, companyPlan.priceId);
   if (plan.error) {
-    console.error("upsertCompanyPlan - plan error:", plan.error);
+    console.error("failed to get plan by ", plan.error);
     return plan;
   }
 
