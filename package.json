@@ -69,6 +69,7 @@
   "workspaces": [
     "apps/*",
     "ci",
+    "examples/*",
     "packages/*"
   ],
   "packageManager": "npm@10.7.0"
