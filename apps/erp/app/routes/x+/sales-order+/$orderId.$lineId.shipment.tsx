@@ -1,6 +1,7 @@
 import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { getSalesOrderLine } from "~/modules/sales";
@@ -51,6 +52,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (!salesOrderShipment.data || salesOrderShipment.error) {

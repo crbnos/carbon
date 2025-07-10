@@ -2,6 +2,7 @@ import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { issueValidator } from "~/services/models";
@@ -33,6 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (issue.error) {

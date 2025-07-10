@@ -2,6 +2,7 @@ import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLocalTimeZone, now } from "@internationalized/date";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import {
   getProductionEventsForJobOperation,
@@ -106,6 +107,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         companyId,
         userId,
       },
+      region: FunctionRegion.UsEast1,
     });
 
     if (issue.error) {

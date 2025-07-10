@@ -4,6 +4,7 @@ import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { validator } from "@carbon/form";
 import type { sendEmailResendTask } from "@carbon/jobs/trigger/send-email-resend";
 import { renderAsync } from "@react-email/components";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { type ActionFunctionArgs } from "@vercel/remix";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -68,6 +69,7 @@ export async function action(args: ActionFunctionArgs) {
           userId: userId,
           companyId: companyId,
         },
+        region: FunctionRegion.UsEast1,
       }
     );
 

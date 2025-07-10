@@ -21,6 +21,7 @@ import {
   useMount,
   useShortcutKeys,
 } from "@carbon/react";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { LanguageModelV1Prompt } from "ai";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -192,6 +193,7 @@ export function Agent() {
           "x-company-id": companyId,
           "x-user-id": userId,
         },
+        region: FunctionRegion.UsEast1,
       });
 
       if (!tools?.data?.result) {
@@ -313,6 +315,7 @@ export function Agent() {
           inputFormat: "messages",
           temperature: 1,
         }),
+        region: FunctionRegion.UsEast1,
       });
 
       if (response?.error) {
@@ -359,6 +362,7 @@ export function Agent() {
               "x-company-id": companyId,
               "x-user-id": userId,
             },
+            region: FunctionRegion.UsEast1,
           });
 
           const response = toolResponse?.data;

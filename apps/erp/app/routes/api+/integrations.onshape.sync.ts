@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { onShapeDataValidator } from "@carbon/integrations";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { json, type ActionFunctionArgs } from "@vercel/remix";
 
 export const config = {
@@ -54,6 +55,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId,
           userId,
         },
+        region: FunctionRegion.UsEast1,
       }),
       serviceRole
         .from("item")

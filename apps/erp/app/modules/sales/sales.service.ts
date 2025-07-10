@@ -1,9 +1,10 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, now, today } from "@internationalized/date";
-import type {
-  PostgrestError,
-  PostgrestSingleResponse,
-  SupabaseClient,
+import {
+  FunctionRegion,
+  type PostgrestError,
+  type PostgrestSingleResponse,
+  type SupabaseClient,
 } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
@@ -77,6 +78,7 @@ export async function convertSalesRfqToQuote(
       type: "salesRfqToQuote",
       ...payload,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -97,6 +99,7 @@ export async function convertQuoteToOrder(
       type: "quoteToSalesOrder",
       ...payload,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -112,6 +115,7 @@ export async function copyQuoteLine(
       ...payload,
       type: "quoteLineToQuoteLine",
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -127,6 +131,7 @@ export async function copyQuote(
       ...payload,
       type: "quoteToQuote",
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 export async function deleteCustomer(
@@ -1899,6 +1904,7 @@ export async function upsertMakeMethodFromQuoteLine(
       companyId: lineMethod.companyId,
       userId: lineMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -1919,6 +1925,7 @@ export async function upsertMakeMethodFromQuoteMethod(
       companyId: quoteMethod.companyId,
       userId: quoteMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (error) {
@@ -2232,6 +2239,7 @@ export async function upsertQuoteLineMethod(
       configuration: lineMethod.configuration,
       userId: lineMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -2287,6 +2295,7 @@ export async function upsertQuoteMaterialMakeMethod(
       companyId: quoteMethod.companyId,
       userId: quoteMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (error) {

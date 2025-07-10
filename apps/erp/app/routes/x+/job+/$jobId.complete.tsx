@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { jobCompleteValidator } from "~/modules/production";
@@ -78,6 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         shelfId,
         locationId,
       },
+      region: FunctionRegion.UsEast1,
     });
 
     if (issue.error) {

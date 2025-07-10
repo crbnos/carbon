@@ -1,8 +1,9 @@
 import type { Database, Json } from "@carbon/database";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import type {
-  PostgrestSingleResponse,
-  SupabaseClient,
+import {
+  FunctionRegion,
+  type PostgrestSingleResponse,
+  type SupabaseClient,
 } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
@@ -63,6 +64,7 @@ export async function convertSupplierQuoteToOrder(
       type: "supplierQuoteToPurchaseOrder",
       ...payload,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 

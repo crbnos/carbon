@@ -1,6 +1,10 @@
 import type { Database, Json } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
-import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import {
+  FunctionRegion,
+  type PostgrestError,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -840,6 +844,7 @@ export async function recalculateJobOperationDependencies(
       type: "dependencies",
       ...params,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 export async function recalculateJobRequirements(
@@ -855,6 +860,7 @@ export async function recalculateJobRequirements(
       type: "jobRequirements",
       ...params,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -871,6 +877,7 @@ export async function recalculateJobMakeMethodRequirements(
       type: "jobMakeMethodRequirements",
       ...params,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -893,6 +900,7 @@ export async function runMRP(
     body: {
       ...params,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -1191,6 +1199,7 @@ export async function upsertJobOperation(
         companyId: jobOperation.companyId,
         userId: jobOperation.createdBy,
       },
+      region: FunctionRegion.UsEast1,
     });
     if (error) {
       return {
@@ -1310,6 +1319,7 @@ export async function upsertJobMethod(
       type,
       ...jobMethod,
     },
+    region: FunctionRegion.UsEast1,
   });
   if (getMethodResult.error) {
     return getMethodResult;
@@ -1338,6 +1348,7 @@ export async function upsertJobMaterialMakeMethod(
       companyId: jobMaterial.companyId,
       userId: jobMaterial.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (error) {
@@ -1367,6 +1378,7 @@ export async function upsertMakeMethodFromJob(
       companyId: jobMethod.companyId,
       userId: jobMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 }
 
@@ -1387,6 +1399,7 @@ export async function upsertMakeMethodFromJobMethod(
       companyId: jobMethod.companyId,
       userId: jobMethod.userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (error) {

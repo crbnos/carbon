@@ -1,6 +1,7 @@
 import { error, getCarbonServiceRole, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import {
   endProductionEventsForJobOperation,
@@ -125,6 +126,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             companyId,
             userId,
           },
+          region: FunctionRegion.UsEast1,
         });
 
         const newTrackedEntityId = response.data?.newTrackedEntityId;
@@ -148,6 +150,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             companyId,
             userId,
           },
+          region: FunctionRegion.UsEast1,
         });
 
         if (response.error) {

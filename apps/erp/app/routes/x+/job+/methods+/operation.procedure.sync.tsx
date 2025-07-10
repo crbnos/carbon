@@ -1,9 +1,10 @@
 import { assertIsPost, error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { json, type ActionFunctionArgs } from "@vercel/remix";
-import { validator } from "@carbon/form";
-import { procedureSyncValidator } from "~/modules/production";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { FunctionRegion } from "@supabase/supabase-js";
+import { json, type ActionFunctionArgs } from "@vercel/remix";
+import { procedureSyncValidator } from "~/modules/production";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -30,6 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       userId,
     },
+    region: FunctionRegion.UsEast1,
   });
 
   if (sync.error) {

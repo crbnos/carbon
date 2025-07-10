@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 
@@ -37,6 +38,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           userId: userId,
           companyId: companyId,
         },
+        region: FunctionRegion.UsEast1,
       }
     );
 
@@ -61,6 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           invoiceId: invoiceId,
           companyId: companyId,
         },
+        region: FunctionRegion.UsEast1,
       }
     );
 

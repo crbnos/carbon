@@ -7,6 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { json, redirect } from "@vercel/remix";
 import { nonScrapQuantityValidator } from "~/services/models";
@@ -36,6 +37,7 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId,
       },
+      region: FunctionRegion.UsEast1,
     });
 
     const trackedEntityId = response.data?.newTrackedEntityId;
@@ -58,6 +60,7 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         userId,
       },
+      region: FunctionRegion.UsEast1,
     });
 
     if (response.error) {

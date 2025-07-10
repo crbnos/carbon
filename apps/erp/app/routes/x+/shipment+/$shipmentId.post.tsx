@@ -1,6 +1,7 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "@vercel/remix";
 import { redirect } from "@vercel/remix";
 import { upsertDocument } from "~/modules/documents";
@@ -113,6 +114,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId: userId,
         companyId: companyId,
       },
+      region: FunctionRegion.UsEast1,
     });
 
     if (postShipment.error) {

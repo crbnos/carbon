@@ -1,6 +1,7 @@
 import { error, getCarbonServiceRole } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { FunctionRegion } from "@supabase/supabase-js";
 import { redirect, type LoaderFunctionArgs } from "@vercel/remix";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
@@ -39,6 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           receiptId: undefined,
           userId: userId,
         },
+        region: FunctionRegion.UsEast1,
       });
       if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
         throw redirect(
@@ -61,6 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           locationId: defaults.data?.locationId,
           userId: userId,
         },
+        region: FunctionRegion.UsEast1,
       });
 
       if (!defaultReceipt.data || defaultReceipt.error) {

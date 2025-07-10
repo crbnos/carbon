@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import { supportedModelTypes } from "@carbon/react";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import type { documentTypes } from "./shared.models";
 
 export async function deleteNote(
@@ -198,6 +198,7 @@ export async function importCsv(
 ) {
   return client.functions.invoke("import-csv", {
     body: args,
+    region: FunctionRegion.UsEast1,
   });
 }
 
