@@ -7,6 +7,7 @@ import {
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { redis } from "@carbon/kv";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
+import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Form, Link, redirect, useLoaderData } from "@remix-run/react";
 import type {
   ActionFunctionArgs,
@@ -16,6 +17,10 @@ import type {
 import { AnimatePresence, motion } from "framer-motion";
 import { acceptInvite } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+export const config = {
+  runtime: "nodejs",
+};
 
 export const meta: MetaFunction = () => {
   return [{ title: "Accept Invite | Carbon" }];
@@ -56,6 +61,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  await updateSubscriptionQuantityForCompany(accept.data.companyId);
 
   if (authSession) {
     await redis.del(getPermissionCacheKey(authSession.userId));

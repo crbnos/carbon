@@ -9,7 +9,6 @@ import {
 import type { Database, Json } from "@carbon/database";
 import { redis } from "@carbon/kv";
 
-import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "@vercel/remix";
 import { getSupplierContact } from "~/modules/purchasing";
@@ -112,8 +111,6 @@ export async function acceptInvite(
     });
     return setPermissions;
   }
-
-  await updateSubscriptionQuantityForCompany(invite.data.companyId);
 
   return serviceRole
     .from("invite")

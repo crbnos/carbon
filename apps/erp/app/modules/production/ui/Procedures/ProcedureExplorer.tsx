@@ -528,7 +528,7 @@ function ProcedureAttributeItem({
                 }}
               >
                 <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Attribute
+                Delete Step
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
