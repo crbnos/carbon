@@ -1,0 +1,39 @@
+{
+  "name": "upload-rfq",
+  "type": "module",
+  "dependencies": {
+    "@remix-run/dev": "~2.11.2",
+    "@remix-run/eslint-config": "~2.11.2",
+    "@remix-run/react": "~2.11.2",
+    "@remix-run/serve": "~2.11.2",
+    "@supabase/functions-js": "2.1.5",
+    "@supabase/supabase-js": "^2.40.0",
+    "@vercel/remix": "~2.11.2",
+    "non.geist": "~1.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-dropzone": "^14.2.3"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "10.4.14",
+    "cross-env": "7.0.3",
+    "nodemon": "^3.0.1",
+    "postcss": "^8.4.33",
+    "tailwindcss": "3.4.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.3",
+    "vite-tsconfig-paths": "^4.3.2"
+  },
+  "private": true,
+  "scripts": {
+    "build": "remix vite:build",
+    "clean": "rimraf .cache .turbo node_modules dist build",
+    "dev": "remix vite:dev",
+    "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
+    "start": "remix-serve ./build/server/index.js",
+    "types": "tsc"
+  },
+  "sideEffects": false
+}
