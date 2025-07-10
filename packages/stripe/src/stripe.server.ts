@@ -145,8 +145,6 @@ export async function getStripeCustomerByCompanyId(companyId: string) {
   if (!customerId) {
     return null;
   }
-
-  console.log({ customerId });
   const customer = await getStripeCustomer(customerId);
   if (!customer || customer.status === "canceled") {
     return null;
@@ -157,7 +155,6 @@ export async function getStripeCustomerByCompanyId(companyId: string) {
 
 export async function getStripeCustomer(customerId: string) {
   const customer = await redis.get(`stripe:customer:${customerId}`);
-  console.log(customer);
   return KvStripeCustomerSchema.nullish().parse(customer);
 }
 

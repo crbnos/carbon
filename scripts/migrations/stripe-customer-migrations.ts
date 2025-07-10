@@ -187,6 +187,7 @@ const KvStripeCustomerSchema = z.object({
       const [, companyPlan] = await Promise.all([
         redis.set(customerKey, subData),
         upsertCompanyPlan(client, companyPlanData),
+        updateCompanyOwner(client, companyId, company.ownerId),
       ]);
 
       if (companyPlan.error) {
@@ -218,6 +219,14 @@ async function getPlanByPriceId(
     .select("*")
     .eq("stripePriceId", priceId)
     .single();
+}
+
+async function updateCompanyOwner(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  ownerId: string
+) {
+  return client.from("company").update({ ownerId }).eq("id", companyId);
 }
 
 async function upsertCompanyPlan(

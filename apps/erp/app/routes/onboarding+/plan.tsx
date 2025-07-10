@@ -1,7 +1,6 @@
 import { CarbonEdition, getUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -10,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
   IconButton,
+  VStack,
 } from "@carbon/react";
 import { getCheckoutUrl } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
@@ -17,14 +17,15 @@ import { useLocale } from "@react-aria/i18n";
 import { Form, useFetcher, useLoaderData } from "@remix-run/react";
 import { json, redirect, type ActionFunctionArgs } from "@vercel/remix";
 import { useMemo } from "react";
-import { LuMoveLeft } from "react-icons/lu";
+import { LuGraduationCap, LuMoveLeft, LuPhoneCall } from "react-icons/lu";
 import { getCompany, getPlans } from "~/modules/settings";
 import { path } from "~/utils/path";
 
-const FEATURED_PLAN = "BUSINESS";
 const PLANS = {
   STARTER: {
     price: 30,
+    userMinimum: 0,
+    talkToSales: false,
     description: "Perfect for tech-forward businesses and small teams",
     features: [
       "ERP, MES, QMS",
@@ -34,15 +35,18 @@ const PLANS = {
   },
   BUSINESS: {
     price: 90,
-    description: "For growing businesses that need dedicated support",
+    userMinimum: 5,
+    talkToSales: true,
+    description: "For growing businesses that need support",
     features: [
+      "5 User Minimum",
       "Everything from Starter",
       "Implementation Support",
       "Unlimited Functional Support",
-      <div key="ai-agents" className="flex items-center gap-2">
-        <span>AI Agents</span>
-        <Badge variant="outline">Beta</Badge>
-      </div>,
+      // <div key="ai-agents" className="flex items-center gap-2">
+      //   <span>AI Agents</span>
+      //   <Badge variant="outline">Beta</Badge>
+      // </div>,
     ],
   },
 } as const;
@@ -126,8 +130,8 @@ export default function OnboardingPlan() {
           <CardHeader>
             <CardTitle>Select a plan</CardTitle>
             <CardDescription>
-              Select a plan to get started. You won't be charged for the first
-              14 days. Cancel anytime.
+              Select a plan to get started. You won't be charged for the first{" "}
+              {plans[0].stripeTrialPeriodDays} days. Switch or cancel anytime.
             </CardDescription>
           </CardHeader>
         </div>
@@ -142,13 +146,9 @@ export default function OnboardingPlan() {
               })
               .map((plan) => {
                 const planDetails = PLANS[plan.id as keyof typeof PLANS];
-                const isFeatured = plan.id === FEATURED_PLAN;
 
                 return (
-                  <Card
-                    key={plan.id}
-                    className={`relative ${isFeatured ? "border-primary" : ""}`}
-                  >
+                  <Card key={plan.id} className="relative">
                     <CardHeader>
                       <CardTitle>{plan.name}</CardTitle>
                       <CardDescription>
@@ -176,21 +176,55 @@ export default function OnboardingPlan() {
                       </ul>
                     </CardContent>
                     <CardFooter>
-                      <fetcher.Form method="post">
-                        <input type="hidden" name="planId" value={plan.id} />
-                        <Button
-                          className="w-full"
-                          variant={isFeatured ? "primary" : "secondary"}
-                          type="submit"
-                          isDisabled={fetcher.state !== "idle"}
-                          isLoading={
-                            fetcher.state !== "idle" &&
-                            fetcher.formData?.get("planId") === plan.id
-                          }
-                        >
-                          Start {plan.stripeTrialPeriodDays} day free trial
-                        </Button>
-                      </fetcher.Form>
+                      <VStack className="w-full">
+                        <fetcher.Form method="post" className="w-full">
+                          <input type="hidden" name="planId" value={plan.id} />
+                          <Button
+                            className="w-full"
+                            variant="primary"
+                            type="submit"
+                            isDisabled={fetcher.state !== "idle"}
+                            isLoading={
+                              fetcher.state !== "idle" &&
+                              fetcher.formData?.get("planId") === plan.id
+                            }
+                          >
+                            Start {plan.stripeTrialPeriodDays} Day Free Trial
+                          </Button>
+                        </fetcher.Form>
+
+                        {planDetails?.talkToSales ? (
+                          <Button
+                            leftIcon={<LuPhoneCall />}
+                            className="w-full"
+                            variant="secondary"
+                            asChild
+                          >
+                            <a
+                              href="https://carbon.ms/sales"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Talk to Sales
+                            </a>
+                          </Button>
+                        ) : (
+                          <Button
+                            leftIcon={<LuGraduationCap />}
+                            className="w-full"
+                            variant="secondary"
+                            asChild
+                          >
+                            <a
+                              href="https://learn.carbonos.dev"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Start Learning
+                            </a>
+                          </Button>
+                        )}
+                      </VStack>
                     </CardFooter>
                   </Card>
                 );
