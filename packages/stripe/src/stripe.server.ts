@@ -154,6 +154,10 @@ export async function getStripeCustomerByCompanyId(companyId: string) {
 }
 
 export async function getStripeCustomer(customerId: string) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return null;
+  }
+
   const customer = await redis.get(`stripe:customer:${customerId}`);
   return KvStripeCustomerSchema.nullish().parse(customer);
 }
@@ -161,6 +165,10 @@ export async function getStripeCustomer(customerId: string) {
 const KvStripeUserSchema = z.string().nullish();
 
 export async function getStripeCustomerId(companyId: string) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return null;
+  }
+
   return KvStripeUserSchema.parse(
     await redis.get(`stripe:company:${companyId}`)
   );
@@ -198,6 +206,10 @@ export async function getCheckoutUrl({
   email: string;
   name?: string | null;
 }) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return "";
+  }
+
   const customerId = await getStripeCustomerId(companyId);
   let stripeCustomerId = customerId;
 
@@ -244,6 +256,10 @@ export async function getBillingPortalRedirectUrl({
 }: {
   companyId: string;
 }) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return getAppUrl();
+  }
+
   const customerId = await getStripeCustomerId(companyId);
   if (!customerId) {
     throw new Error("Customer not found");
@@ -281,6 +297,10 @@ export async function processStripeEvent({
   body: string;
   signature: string;
 }) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return;
+  }
+
   const {
     event,
     success: eventSuccess,
@@ -487,6 +507,10 @@ export async function updateActiveUsers({
 }
 
 export async function updateSubscriptionQuantityForCompany(companyId: string) {
+  if (CarbonEdition !== Edition.Cloud) {
+    return;
+  }
+
   try {
     const serviceRole = getCarbonServiceRole();
 

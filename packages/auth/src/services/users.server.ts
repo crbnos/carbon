@@ -3,6 +3,9 @@ import { redis } from "@carbon/kv";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getCarbonServiceRole } from "../lib/supabase";
+
+import { Edition } from "@carbon/utils";
+import { CarbonEdition } from "../config/env";
 import type { Permission, Result } from "../types";
 import { error, success } from "../utils/result";
 import {
@@ -248,7 +251,7 @@ export async function deactivateUser(
   }
 
   // Update Stripe subscription quantity after successful deactivation
-  if (result && result.success) {
+  if (result && result.success && CarbonEdition === Edition.Cloud) {
     await updateSubscriptionQuantityForCompany(companyId);
   }
 

@@ -1,4 +1,5 @@
 import {
+  CarbonEdition,
   error,
   getAppUrl,
   getCarbonServiceRole,
@@ -8,6 +9,7 @@ import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { redis } from "@carbon/kv";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
 import { Form, Link, redirect, useLoaderData } from "@remix-run/react";
 import type {
   ActionFunctionArgs,
@@ -62,7 +64,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await updateSubscriptionQuantityForCompany(accept.data.companyId);
+  if (CarbonEdition === Edition.Cloud) {
+    await updateSubscriptionQuantityForCompany(accept.data.companyId);
+  }
 
   if (authSession) {
     await redis.del(getPermissionCacheKey(authSession.userId));

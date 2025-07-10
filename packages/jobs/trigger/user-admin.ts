@@ -2,11 +2,12 @@ import { task } from "@trigger.dev/sdk/v3";
 import { z } from "zod";
 
 import type { Result } from "@carbon/auth";
-import { getAppUrl, getCarbonServiceRole } from "@carbon/auth";
+import { CarbonEdition, getAppUrl, getCarbonServiceRole } from "@carbon/auth";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { resend } from "@carbon/lib/resend.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { Edition } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 
@@ -41,7 +42,7 @@ export const userAdminTask = task({
           payload.id,
           payload.companyId
         );
-        if (result.success) {
+        if (result.success && CarbonEdition === Edition.Cloud) {
           await updateSubscriptionQuantityForCompany(payload.companyId);
         }
         break;
