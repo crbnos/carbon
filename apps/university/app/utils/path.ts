@@ -1,11 +1,13 @@
-import { getAppUrl, SUPABASE_URL } from "@carbon/auth";
+import { SUPABASE_URL } from "@carbon/auth";
 import { generatePath } from "@remix-run/react";
 
 const challenge = "/challenge"; // from ~/routes/challenge+ folder
 const course = "/course"; // from ~/routes/course+ folder
 const lesson = "/lesson"; // from ~/routes/lesson+ folder
 
-const ERP_URL = getAppUrl();
+const ERP_URL = SUPABASE_URL.includes("localhost")
+  ? "http://localhost:3000"
+  : "https://app.carbonos.dev";
 
 export const path = {
   to: {

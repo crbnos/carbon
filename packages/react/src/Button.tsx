@@ -12,6 +12,7 @@ export const buttonVariants = cva(
     "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0 whitespace-nowrap",
     "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
     "before:pointer-events-none before:bg-gradient-to-b before:transition-opacity before:from-white/[0.12] before:absolute before:inset-0 before:z-[1] before:rounded before:opacity-0",
+    "hover:scale-95 focus-visible:scale-95 transition-all duration-150 ease-in-out",
   ],
   {
     variants: {

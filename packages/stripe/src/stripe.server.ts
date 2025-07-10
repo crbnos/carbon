@@ -33,7 +33,7 @@ const KvStripeCustomerSchema = z.object({
     z.literal("trialing"),
     z.literal("unpaid"),
   ]),
-  planId: z.string().nullable(),
+  planId: z.string().nullish(),
   priceId: z.string(),
   currentPeriodStart: z.number(),
   currentPeriodEnd: z.number(),
@@ -145,15 +145,19 @@ export async function getStripeCustomerByCompanyId(companyId: string) {
   if (!customerId) {
     return null;
   }
+
+  console.log({ customerId });
   const customer = await getStripeCustomer(customerId);
   if (!customer || customer.status === "canceled") {
     return null;
   }
+
   return customer;
 }
 
 export async function getStripeCustomer(customerId: string) {
   const customer = await redis.get(`stripe:customer:${customerId}`);
+  console.log(customer);
   return KvStripeCustomerSchema.nullish().parse(customer);
 }
 
