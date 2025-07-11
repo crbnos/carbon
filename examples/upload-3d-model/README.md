@@ -1,6 +1,8 @@
-# Upload 3D Model
+# Upload a Public 3D Model
 
-This example demonstrates how to upload an RFQ with a 3D model through the Carbon API.
+This example demonstrates how to upload an RFQ with a 3D model through the Carbon API. Most files uploaded to Carbon aren't publicly accessible, but for 3D models, we provide a public endpoint for serving the file without standard authentication so that you can use them on your website.
+
+### Getting Started
 
 First run Carbon locally, and make sure your company ID and API key are set in your `.env` or `.env.local` file.
 
@@ -13,7 +15,7 @@ cd examples/upload-3d-model
 npm run start
 ```
 
-### Relevant Files:
+### Relevant Files
 
 - `./components/ModelUpload.tsx`
 - `./lib/carbon.server.ts`
