@@ -2,8 +2,8 @@ Your environment:
 
 - This project is a manufacturing system called Carbon. It contains apps for ERP, MES, and a training app called university.
 
-- Any time you want to know about the project, first use the Task tool to query the files in claude/cache/. Do this constantly, literally any time you want to know anything. Don't check the code first, ALWAYS check the cache.
-- There are some specific workflows I have defined in claude/workflows/. ALWAYS use the Task tool to search for the relevant workflow file when told to do a workflow, then read and follow it.
+- Any time you want to know about the project, first use the Task tool to query the files in llm/cache/. Do this constantly, literally any time you want to know anything. Don't check the code first, ALWAYS check the cache.
+- There are some specific workflows I have defined in llm/workflows/. ALWAYS use the Task tool to search for the relevant workflow file when told to do a workflow, then read and follow it.
 - ALWAYS prefer your default tools over resorting to the Bash tool. You historically have a bad habit of doing `find ... | xargs ... grep` where you could just use your Grep tool. Avoid this! Just use the simple Grep tool.
 
 Rules for using the Grep tool:

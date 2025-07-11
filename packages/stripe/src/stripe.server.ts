@@ -6,6 +6,7 @@ import {
 } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { redis } from "@carbon/kv";
+import { getSlackClient } from "@carbon/lib/slack.server";
 import { Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { tasks } from "@trigger.dev/sdk/v3";
@@ -321,6 +322,7 @@ export async function processStripeEvent({
   const eventType = event.type;
 
   if (eventType === "checkout.session.completed") {
+    const slackClient = getSlackClient();
     const data = event.data.object as Stripe.Checkout.Session;
     const { customer } = data;
 
@@ -345,6 +347,24 @@ export async function processStripeEvent({
         tasks.trigger("onboard", {
           companyId,
           userId,
+        }),
+        slackClient.sendMessage({
+          channel: "#sales",
+          text: "New Customer 🔔",
+          blocks: [
+            {
+              type: "section",
+              text: {
+                type: "mrkdwn",
+                text:
+                  `*New Signup* 🔔\n\n` +
+                  `*Contact Information*\n` +
+                  `• Company: ${data.customer_details?.name}\n\n` +
+                  `• Email: ${data.customer_details?.email}\n\n` +
+                  `• Plan: $${data.line_items?.data[0]?.description}\n\n`,
+              },
+            },
+          ],
         }),
       ]);
     } catch (error) {

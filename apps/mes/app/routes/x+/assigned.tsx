@@ -22,7 +22,7 @@ import type { Operation } from "~/services/types";
 import { makeDurations } from "~/utils/durations";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {});
+  const { companyId, userId } = await requirePermissions(request, {});
 
   const serviceRole = await getCarbonServiceRole();
 
