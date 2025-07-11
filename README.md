@@ -12,11 +12,19 @@
 
 ![MES Screenshot](https://github.com/user-attachments/assets/b04f3644-91aa-4f74-af8d-6f3e12116a6b)
 
+## Does the world need another ERP?
 
+We built Carbon after years of building end-to-end manufacturing systems with off-the-shelf solutions. We realized that:
+
+- Modern, API-first tooling didn't exist
+- Vendor lock-in bordered on extortion
+- There is no "perfect ERP" because each company is unique
+
+We built Carbon to solve these problems ☝️.
 
 ## Architecture
 
-Carbon is designed to make it easy for you to extend the platform by building your own apps through our API.
+Carbon is designed to make it easy for you to extend the platform by building your own apps through our API. We provide some examples to get you started in the [examples](https://github.com/crbnos/carbon/blob/main/examples) folder.
 
 ![Carbon Architecture](https://github.com/user-attachments/assets/ed6dc66b-e9cb-435e-b5a9-9daf933f4a1d)
 
