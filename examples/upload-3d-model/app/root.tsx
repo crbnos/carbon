@@ -1,3 +1,4 @@
+import { Toaster } from "@carbon/react";
 import {
   isRouteErrorResponse,
   Links,
@@ -45,6 +46,7 @@ function Document({
       </head>
       <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
         {children}
+        <Toaster />
         <ScrollRestoration />
         <Scripts />
       </body>
