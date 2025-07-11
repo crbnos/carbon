@@ -239,6 +239,9 @@ export async function getCheckoutUrl({
     success_url: `${getAppUrl()}/api/webhook/stripe`,
     cancel_url: `${getAppUrl()}/api/webhook/stripe`,
     payment_method_types: ["card", "us_bank_account", "cashapp"],
+    subscription_data: {
+      trial_period_days: plan.data.stripeTrialPeriodDays,
+    },
     metadata: {
       userId,
       companyId,
