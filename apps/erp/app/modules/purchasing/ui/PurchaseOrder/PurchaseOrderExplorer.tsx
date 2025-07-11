@@ -18,7 +18,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
@@ -166,7 +166,6 @@ function PurchaseOrderLineItem({
   const permissions = usePermissions();
   const disclosure = useDisclosure();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
 
   useMount(() => {
     if (lineId === line.id) {
@@ -230,21 +229,18 @@ function PurchaseOrderLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line?.purchaseOrderLineType ?? "") && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(
-                        getLinkToItemDetails(
-                          line.purchaseOrderLineType as MethodItemType,
-                          line.itemId!
-                        )
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon
-                      icon={<MethodItemTypeIcon type={"Part"} />}
-                    />
-                    View Item Master
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={getLinkToItemDetails(
+                        line.purchaseOrderLineType as MethodItemType,
+                        line.itemId!
+                      )}
+                    >
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={"Part"} />}
+                      />
+                      View Item Master
+                    </Link>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

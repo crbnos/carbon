@@ -17,7 +17,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Link, useNavigate, useParams } from "@remix-run/react";
+import { Link, useParams } from "@remix-run/react";
 import { useRef, useState } from "react";
 import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
@@ -172,7 +172,6 @@ function PurchaseInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
-  const navigate = useNavigate();
 
   const isSelected =
     location.pathname === path.to.purchaseInvoiceLine(invoiceId, line.id!);
@@ -227,21 +226,18 @@ function PurchaseInvoiceLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line.invoiceLineType ?? "") && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(
-                        getLinkToItemDetails(
-                          line.invoiceLineType as MethodItemType,
-                          line.itemId!
-                        )
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon
-                      icon={<MethodItemTypeIcon type={"Part"} />}
-                    />
-                    View Item Master
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={getLinkToItemDetails(
+                        line.invoiceLineType as MethodItemType,
+                        line.itemId!
+                      )}
+                    >
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={"Part"} />}
+                      />
+                      View Item Master
+                    </Link>
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>

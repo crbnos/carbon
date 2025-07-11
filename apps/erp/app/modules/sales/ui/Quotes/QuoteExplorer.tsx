@@ -23,7 +23,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { useNavigate, useParams } from "@remix-run/react";
+import { Link, useNavigate, useParams } from "@remix-run/react";
 import { useMemo, useRef, useState } from "react";
 import {
   LuBraces,
@@ -296,25 +296,22 @@ function QuoteLineItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(
-                      getLinkToItemDetails(
-                        line.itemType as MethodItemType,
-                        line.itemId!
-                      )
-                    );
-                  }}
-                >
-                  <DropdownMenuIcon
-                    icon={
-                      <MethodItemTypeIcon
-                        type={line.itemType as MethodItemType}
-                      />
-                    }
-                  />
-                  View Item Master
+                <DropdownMenuItem asChild>
+                  <Link
+                    to={getLinkToItemDetails(
+                      line.itemType as MethodItemType,
+                      line.itemId!
+                    )}
+                  >
+                    <DropdownMenuIcon
+                      icon={
+                        <MethodItemTypeIcon
+                          type={line.itemType as MethodItemType}
+                        />
+                      }
+                    />
+                    View Item Master
+                  </Link>
                 </DropdownMenuItem>
                 {line.methodType === "Make" && (
                   <>

@@ -22,7 +22,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { prettifyKeyboardShortcut } from "@carbon/utils";
-import { Await, useNavigate, useParams } from "@remix-run/react";
+import { Await, Link, useNavigate, useParams } from "@remix-run/react";
 import { Suspense, useRef, useState } from "react";
 import {
   LuChevronDown,
@@ -328,21 +328,18 @@ function SalesOrderLineItem({
                 </DropdownMenuItem>
                 {/* @ts-expect-error */}
                 {methodItemType.includes(line?.salesOrderLineType ?? "") && (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(
-                        getLinkToItemDetails(
-                          line.salesOrderLineType as MethodItemType,
-                          line.itemId!
-                        )
-                      );
-                    }}
-                  >
-                    <DropdownMenuIcon
-                      icon={<MethodItemTypeIcon type={"Part"} />}
-                    />
-                    View Item Master
+                  <DropdownMenuItem asChild>
+                    <Link
+                      to={getLinkToItemDetails(
+                        line.salesOrderLineType as MethodItemType,
+                        line.itemId!
+                      )}
+                    >
+                      <DropdownMenuIcon
+                        icon={<MethodItemTypeIcon type={"Part"} />}
+                      />
+                      View Item Master
+                    </Link>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={searchDisclosure.onOpen}>
