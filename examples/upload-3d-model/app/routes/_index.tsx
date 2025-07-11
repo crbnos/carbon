@@ -48,6 +48,7 @@ export default function Route() {
     if (fetcher.data?.data) {
       setFile(null);
       setUrl(fetcher.data.data.url);
+      toast.success("Model uploaded successfully");
     }
   }, [fetcher.data]);
 
@@ -69,7 +70,7 @@ export default function Route() {
     <TooltipProvider>
       <div className="flex h-screen w-screen flex-col items-center justify-center p-4">
         <div className="max-w-xl text-center flex flex-col gap-8">
-          <Heading size="h1">Upload a 3D Model</Heading>
+          <Heading size="h1">Upload a Public 3D Model</Heading>
           {url && (
             <InputGroup>
               <Input value={url} />
