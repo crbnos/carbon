@@ -1,5 +1,5 @@
 {
-  "name": "upload-rfq",
+  "name": "upload-3d-model",
   "type": "module",
   "dependencies": {
     "@remix-run/dev": "~2.11.2",
@@ -28,11 +28,9 @@
   },
   "private": true,
   "scripts": {
-    "build": "remix vite:build",
     "clean": "rimraf .cache .turbo node_modules dist build",
-    "dev": "remix vite:dev",
+    "start": "remix vite:dev",
     "lint": "TIMING=1 eslint \"app/**/*.ts*\"",
-    "start": "remix-serve ./build/server/index.js",
     "types": "tsc"
   },
   "sideEffects": false
