@@ -124,17 +124,19 @@ const JobHeader = ({
           <Text style={jobHeaderStyles.value}>{job.jobId}</Text>
         </View>
 
+        <View style={jobHeaderStyles.infoRow}>
+          <Text style={jobHeaderStyles.label}>Part ID:</Text>
+          <Text style={jobHeaderStyles.value}>
+            {job.itemReadableIdWithRevision}
+          </Text>
+        </View>
+
         {getTrackingNumber() && (
           <View style={jobHeaderStyles.infoRow}>
             <Text style={jobHeaderStyles.label}>Tracking:</Text>
             <Text style={jobHeaderStyles.value}>{getTrackingNumber()}</Text>
           </View>
         )}
-
-        <View style={jobHeaderStyles.infoRow}>
-          <Text style={jobHeaderStyles.label}>Target:</Text>
-          <Text style={jobHeaderStyles.value}>{getTargetInfo()}</Text>
-        </View>
 
         <View style={jobHeaderStyles.infoRow}>
           <Text style={jobHeaderStyles.label}>Item:</Text>
@@ -161,6 +163,10 @@ const JobHeader = ({
       </View>
 
       <View style={jobHeaderStyles.rightSection}>
+        <View style={jobHeaderStyles.infoRow}>
+          <Text style={jobHeaderStyles.label}>Target:</Text>
+          <Text style={jobHeaderStyles.value}>{getTargetInfo()}</Text>
+        </View>
         {customer && (
           <View style={jobHeaderStyles.infoRow}>
             <Text style={jobHeaderStyles.label}>Customer:</Text>

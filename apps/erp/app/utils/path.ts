@@ -533,6 +533,8 @@ export const path = {
       generatePath(`${x}/quality/non-conformance-types/delete/${id}`),
     deleteNoQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/delete/${id}`),
+    deleteCustomerPortal: (id: string) =>
+      generatePath(`${x}/sales/customer-portals/delete/${id}`),
     deleteNote: (id: string) => generatePath(`${x}/shared/notes/${id}/delete`),
     deletePartner: (id: string) =>
       generatePath(`${x}/resources/partners/delete/${id}`),
@@ -837,6 +839,7 @@ export const path = {
     newPartSupplier: (id: string) =>
       generatePath(`${x}/part/${id}/view/purchasing/new`),
     newNoQuoteReason: `${x}/sales/no-quote-reasons/new`,
+    newCustomerPortal: `${x}/sales/customer-portals/new`,
     newPartner: `${x}/resources/partners/new`,
     newPaymentTerm: `${x}/accounting/payment-terms/new`,
     newProcess: `${x}/resources/processes/new`,
@@ -922,6 +925,9 @@ export const path = {
     noQuoteReasons: `${x}/sales/no-quote-reasons`,
     noQuoteReason: (id: string) =>
       generatePath(`${x}/sales/no-quote-reasons/${id}`),
+    customerPortals: `${x}/sales/customer-portals`,
+    customerPortal: (id: string) =>
+      generatePath(`${x}/sales/customer-portals/${id}`),
     notificationSettings: `${x}/account/notifications`,
     part: (id: string) => generatePath(`${x}/part/${id}`),
     partCosting: (id: string) => generatePath(`${x}/part/${id}/view/costing`),

@@ -82,3 +82,35 @@ The ERP app organizes business logic into modules:
 - Public routes under `_public+/` prefix
 - API routes under `api+/` prefix
 - File serving routes under `file+/` prefix
+- External/shared routes under `share+/` prefix
+
+## External Links System
+
+The system supports external links for sharing quotes and customer portals:
+
+### Database Structure
+- `externalLink` table stores external link records
+- Fields: `id` (UUID), `documentType` (enum), `documentId`, `customerId`, `createdAt`, `expiresAt`, `companyId`
+- Document types: `'Quote'`, `'Customer'` (added in 2025-07-11 migration)
+
+### URL Structure
+External links follow these patterns:
+- **Quote Links**: `/share/quote/{externalLinkId}`
+  - Example: `https://domain.com/share/quote/123e4567-e89b-12d3-a456-426614174000`
+- **Customer Portal Links**: Expected pattern `/share/customer/{externalLinkId}` (route not yet implemented)
+
+### Path Configuration
+In `/apps/erp/app/utils/path.ts`:
+- `path.to.externalQuote(id)` generates `/share/quote/${id}`
+- Quote sharing implemented in `QuoteHeader.tsx` using `window.location.origin + path.to.externalQuote(externalLinkId)`
+
+### Services
+- `upsertExternalLink()` - Create/update external links
+- `getCustomerPortals()` - List customer portal links
+- `getCustomerPortal()` - Get specific customer portal
+- `deleteCustomerPortal()` - Delete customer portal link
+
+### Current Implementation Status
+- ✅ Quote external links fully implemented (`/share/quote/{id}`)
+- ⚠️ Customer portal links have database support but no public route yet
+- ⚠️ Customer portal form exists but routes incomplete (`path.to.customerPortal()`, `path.to.newCustomerPortal` not defined)

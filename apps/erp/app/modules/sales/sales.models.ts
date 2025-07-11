@@ -132,6 +132,11 @@ export const noQuoteReasonValidator = z.object({
   name: z.string().min(1, { message: "Name is required" }),
 });
 
+export const customerPortalValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+});
+
 export const quoteLineStatusType = [
   "Not Started",
   "In Progress",

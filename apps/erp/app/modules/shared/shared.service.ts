@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import { supportedModelTypes } from "@carbon/react";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
+import type { GenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters } from "~/utils/query";
 import type { documentTypes } from "./shared.models";
 
 export async function deleteNote(
@@ -223,7 +225,9 @@ export async function insertTag(
 
 export async function upsertExternalLink(
   client: SupabaseClient<Database>,
-  externalLink: Database["public"]["Tables"]["externalLink"]["Insert"]
+  externalLink:
+    | Database["public"]["Tables"]["externalLink"]["Insert"]
+    | Database["public"]["Tables"]["externalLink"]["Update"]
 ) {
   if ("id" in externalLink && externalLink.id) {
     return client
@@ -233,7 +237,56 @@ export async function upsertExternalLink(
       .select("id")
       .single();
   }
-  return client.from("externalLink").insert(externalLink).select("id").single();
+  return client
+    .from("externalLink")
+    .insert(
+      externalLink as Database["public"]["Tables"]["externalLink"]["Insert"]
+    )
+    .select("id")
+    .single();
+}
+
+export async function getCustomerPortals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("externalLink")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("documentType", "Customer");
+
+  if (args?.search) {
+    query = query.ilike("customer.name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false },
+    ]);
+  }
+
+  return query;
+}
+
+export async function getCustomerPortal(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client
+    .from("externalLink")
+    .select("*, customer:customerId(id, name)")
+    .eq("id", id)
+    .eq("documentType", "Customer")
+    .single();
+}
+
+export async function deleteCustomerPortal(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("externalLink").delete().eq("id", id);
 }
 
 export async function updateModelThumbnail(

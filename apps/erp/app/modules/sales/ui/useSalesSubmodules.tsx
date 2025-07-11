@@ -1,6 +1,7 @@
 import {
   LuBan,
   LuCreditCard,
+  LuGlobe,
   LuShapes,
   LuSquareUser,
   LuStar,
@@ -56,10 +57,16 @@ const salesRoutes: AuthenticatedRouteGroup[] = [
     name: "Configure",
     routes: [
       {
-        name: "No Quote Reasons",
+        name: "No Quotes",
         to: path.to.noQuoteReasons,
         role: "employee",
         icon: <LuBan />,
+      },
+      {
+        name: "Portals",
+        to: path.to.customerPortals,
+        role: "employee",
+        icon: <LuGlobe />,
       },
       {
         name: "Statuses",
