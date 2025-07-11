@@ -22,7 +22,7 @@ export default defineConfig({
     global: "globalThis",
   },
   ssr: {
-    noExternal: ["tailwind-merge"],
+    noExternal: ["react-dropzone", "react-icons", "tailwind-merge"],
   },
   server: {
     port: 5000,
