@@ -77,6 +77,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // don't break -- just let it catch the next case
 
     case "customerContactId":
+    case "customerEngineeringContactId":
     case "customerLocationId":
     case "customerReference":
     case "dueDate":

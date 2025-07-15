@@ -136,14 +136,19 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
               />
               <Input name="customerReference" label="Customer PO Number" />
 
-              <CustomerLocation
-                name="customerLocationId"
-                label="Customer Location"
+              <CustomerContact
+                name="customerContactId"
+                label="Purchasing Contact"
                 customer={customer.id}
               />
               <CustomerContact
-                name="customerContactId"
-                label="Customer Contact"
+                name="customerEngineeringContactId"
+                label="Engineering Contact"
+                customer={customer.id}
+              />
+              <CustomerLocation
+                name="customerLocationId"
+                label="Customer Location"
                 customer={customer.id}
               />
 

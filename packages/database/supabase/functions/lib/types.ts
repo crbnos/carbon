@@ -21838,6 +21838,7 @@ export type Database = {
           createdBy: string
           currencyCode: string | null
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string
           customerLocationId: string | null
           customerReference: string | null
@@ -21873,6 +21874,7 @@ export type Database = {
           createdBy: string
           currencyCode?: string | null
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId: string
           customerLocationId?: string | null
           customerReference?: string | null
@@ -21908,6 +21910,7 @@ export type Database = {
           createdBy?: string
           currencyCode?: string | null
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId?: string
           customerLocationId?: string | null
           customerReference?: string | null
@@ -22044,6 +22047,13 @@ export type Database = {
           {
             foreignKeyName: "quote_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -25678,6 +25688,7 @@ export type Database = {
           createdBy: string
           currencyCode: string
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string
           customerLocationId: string | null
           customerReference: string | null
@@ -25708,6 +25719,7 @@ export type Database = {
           createdBy: string
           currencyCode: string
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId: string
           customerLocationId?: string | null
           customerReference?: string | null
@@ -25738,6 +25750,7 @@ export type Database = {
           createdBy?: string
           currencyCode?: string
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId?: string
           customerLocationId?: string | null
           customerReference?: string | null
@@ -25902,6 +25915,13 @@ export type Database = {
           {
             foreignKeyName: "salesOrder_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrder_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -26883,6 +26903,7 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string | null
           customerLocationId: string | null
           customerReference: string | null
@@ -26911,6 +26932,7 @@ export type Database = {
           createdAt?: string | null
           createdBy?: string | null
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId?: string | null
           customerLocationId?: string | null
           customerReference?: string | null
@@ -26939,6 +26961,7 @@ export type Database = {
           createdAt?: string | null
           createdBy?: string | null
           customerContactId?: string | null
+          customerEngineeringContactId?: string | null
           customerId?: string | null
           customerLocationId?: string | null
           customerReference?: string | null
@@ -27062,6 +27085,13 @@ export type Database = {
           {
             foreignKeyName: "salesRfq_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -41320,6 +41350,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string | null
           customerLocationId: string | null
           customerReference: string | null
@@ -41461,6 +41492,13 @@ export type Database = {
           {
             foreignKeyName: "quote_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -42098,14 +42136,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -42641,14 +42679,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -42666,6 +42704,7 @@ export type Database = {
           createdBy: string | null
           currencyCode: string | null
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string | null
           customerLocationId: string | null
           customerReference: string | null
@@ -42842,6 +42881,13 @@ export type Database = {
           {
             foreignKeyName: "salesOrder_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesOrder_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -43157,6 +43203,7 @@ export type Database = {
           createdAt: string | null
           createdBy: string | null
           customerContactId: string | null
+          customerEngineeringContactId: string | null
           customerId: string | null
           customerLocationId: string | null
           customerReference: string | null
@@ -43281,6 +43328,13 @@ export type Database = {
           {
             foreignKeyName: "salesRfq_customerContactId_fkey"
             columns: ["customerContactId"]
+            isOneToOne: false
+            referencedRelation: "customerContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salesRfq_customerEngineeringContactId_fkey"
+            columns: ["customerEngineeringContactId"]
             isOneToOne: false
             referencedRelation: "customerContact"
             referencedColumns: ["id"]
@@ -45795,6 +45849,39 @@ export type Database = {
           tags: string[]
         }[]
       }
+      get_sales_order_lines: {
+        Args: {
+          customer_id: string
+        }
+        Returns: {
+          customerReference: string
+          salesOrderId: string
+          customerContactName: string
+          customerEngineeringContactName: string
+          saleQuantity: number
+          quantityToSend: number
+          quantitySent: number
+          quantityInvoiced: number
+          unitPrice: number
+          unitOfMeasureCode: string
+          locationId: string
+          orderDate: string
+          promisedDate: string
+          receiptRequestedDate: string
+          receiptPromisedDate: string
+          salesOrderStatus: Database["public"]["Enums"]["salesOrderStatus"]
+          readableId: string
+          revision: string
+          readableIdWithRevision: string
+          customerId: string
+          thumbnailPath: string
+          jobOperations: Json
+          jobQuantityShipped: number
+          jobQuantityComplete: number
+          jobProductionQuantity: number
+          jobStatus: Database["public"]["Enums"]["jobStatus"]
+        }[]
+      }
       get_supplier_ids_with_supplier_permission: {
         Args: {
           permission: string
@@ -46109,7 +46196,7 @@ export type Database = {
         | "Audio"
         | "Other"
         | "Model"
-      externalLinkDocumentType: "Quote" | "SupplierQuote"
+      externalLinkDocumentType: "Quote" | "SupplierQuote" | "Customer"
       factor:
         | "Hours/Piece"
         | "Hours/100 Pieces"

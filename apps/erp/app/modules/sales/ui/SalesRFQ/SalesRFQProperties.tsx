@@ -231,10 +231,38 @@ const SalesRFQProperties = () => {
           name="customerContactId"
           customer={routeData?.rfqSummary?.customerId ?? ""}
           inline
+          label="Purchasing Contact"
           isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          customerEngineeringContactId:
+            routeData?.rfqSummary?.customerEngineeringContactId ?? "",
+        }}
+        validator={z.object({
+          customerEngineeringContactId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <CustomerContact
+          name="customerEngineeringContactId"
+          customer={routeData?.rfqSummary?.customerId ?? ""}
+          inline
+          label="Engineering Contact"
+          isReadOnly={isDisabled}
+          onChange={(customerEngineeringContact) => {
+            if (customerEngineeringContact?.id) {
+              onUpdate(
+                "customerEngineeringContactId",
+                customerEngineeringContact.id
+              );
             }
           }}
         />
