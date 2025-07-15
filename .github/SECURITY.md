@@ -1,6 +1,6 @@
 # Security
 
-Contact: [brad@carbonos.dev](mailto:brad@carbonos.dev)
+Contact: [support@carbonos.dev](mailto:support@carbonos.dev)
 
 Based on [https://supabase.com/.well-known/security.txt](https://supabase.com/.well-known/security.txt)
 
@@ -27,7 +27,7 @@ better protect our clients and our systems.
 
 ## Please do the following
 
-- E-mail your findings to [brad@carbonos.dev](mailto:brad@carbonos.dev).
+- E-mail your findings to [support@carbonos.dev](mailto:support@carbonos.dev).
 - Do not run automated scanners on our infrastructure or dashboard. If you wish
   to do this, contact us and we will set up a sandbox for you.
 - Do not take advantage of the vulnerability or problem you have discovered,
