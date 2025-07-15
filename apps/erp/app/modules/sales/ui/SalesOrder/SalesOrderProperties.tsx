@@ -247,12 +247,40 @@ const SalesOrderProperties = () => {
       >
         <CustomerContact
           name="customerContactId"
+          label="Purchasing Contact"
           customer={routeData?.salesOrder?.customerId ?? ""}
           inline
           isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          customerEngineeringContactId:
+            routeData?.salesOrder?.customerEngineeringContactId ?? "",
+        }}
+        validator={z.object({
+          customerEngineeringContactId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <CustomerContact
+          name="customerEngineeringContactId"
+          label="Engineering Contact"
+          customer={routeData?.salesOrder?.customerId ?? ""}
+          inline
+          isReadOnly={isDisabled}
+          onChange={(customerEngineeringContact) => {
+            if (customerEngineeringContact?.id) {
+              onUpdate(
+                "customerEngineeringContactId",
+                customerEngineeringContact.id
+              );
             }
           }}
         />

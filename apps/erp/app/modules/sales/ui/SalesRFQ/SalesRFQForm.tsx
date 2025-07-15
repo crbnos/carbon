@@ -79,14 +79,19 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                 }
               />
               <Input name="customerReference" label="Customer RFQ" />
-              <CustomerLocation
-                name="customerLocationId"
-                label="Customer Location"
+              <CustomerContact
+                name="customerContactId"
+                label="Purchasing Contact"
                 customer={customer}
               />
               <CustomerContact
-                name="customerContactId"
-                label="Customer Contact"
+                name="customerEngineeringContactId"
+                label="Engineering Contact"
+                customer={customer}
+              />
+              <CustomerLocation
+                name="customerLocationId"
+                label="Customer Location"
                 customer={customer}
               />
               <DatePicker

@@ -20,6 +20,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (field) {
     case "customerContactId":
+    case "customerEngineeringContactId":
     case "customerId":
     case "customerLocationId":
     case "customerReference":

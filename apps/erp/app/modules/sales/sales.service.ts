@@ -540,6 +540,34 @@ export async function getCustomerTypesList(
     .order("name");
 }
 
+export async function getExternalSalesOrderLines(
+  client: SupabaseClient<Database>,
+  customerId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client.rpc(
+    "get_sales_order_lines",
+    { customer_id: customerId },
+    {
+      count: "exact",
+    }
+  );
+
+  if (args.search) {
+    query = query.or(
+      `readableId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,salesOrderId.ilike.%${args.search}%`
+    );
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "orderDate", ascending: true },
+    ]);
+  }
+
+  return query;
+}
+
 export async function getModelByQuoteLineId(
   client: SupabaseClient<Database>,
   quoteLineId: string

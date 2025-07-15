@@ -35,6 +35,7 @@ import { SearchFilter } from "~/components";
 import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { CollapsibleSidebarTrigger } from "~/components/Layout/Navigation";
 import { useUrlParams } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import { savedViewValidator } from "~/modules/shared/shared.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
@@ -45,7 +46,6 @@ import type { ColumnFilter } from "./Filter/types";
 import type { PaginationProps } from "./Pagination";
 import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
-import { useSavedViews } from "~/hooks/useSavedViews";
 
 type HeaderProps<T> = {
   renderActions?: (selectedRows: T[]) => ReactNode;
@@ -126,6 +126,8 @@ const TableHeader = <T extends object>({
   const viewTitle = currentView?.name ?? title;
   // const viewDescription = currentView?.description ?? "";
 
+  const hideTitleBar = !viewTitle && !primaryAction && !canSaveView;
+
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
       {canSaveView && savedViewDisclosure.isOpen ? (
@@ -178,53 +180,55 @@ const TableHeader = <T extends object>({
           </Card>
         </ValidatedForm>
       ) : (
-        <HStack
-          className={cn(
-            compact
-              ? "px-4 py-2 justify-between bg-card border-b  w-full"
-              : "px-4 md:px-0 py-6 justify-between bg-card w-full relative"
-          )}
-        >
-          <HStack spacing={1}>
-            <CollapsibleSidebarTrigger />
-            {viewTitle && (
-              <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+        !hideTitleBar && (
+          <HStack
+            className={cn(
+              compact
+                ? "px-4 py-2 justify-between bg-card border-b  w-full"
+                : "px-4 md:px-0 py-6 justify-between bg-card w-full relative"
             )}
-          </HStack>
+          >
+            <HStack spacing={1}>
+              <CollapsibleSidebarTrigger />
+              {viewTitle && (
+                <Heading size={compact ? "h3" : "h2"}>{viewTitle}</Heading>
+              )}
+            </HStack>
 
-          <HStack>
-            {/* <Button variant="secondary" leftIcon={<LuDownload />}>
+            <HStack>
+              {/* <Button variant="secondary" leftIcon={<LuDownload />}>
             Export
             </Button> */}
-            <>{primaryAction}</>
-            {importCSV && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <IconButton
-                    aria-label="Table actions"
-                    variant="secondary"
-                    icon={<BsThreeDotsVertical />}
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {importCSV.map(({ table, label }) => (
-                    <DropdownMenuItem
-                      key={table}
-                      onClick={() => {
-                        setImportCSVTable(table);
-                      }}
-                    >
-                      <DropdownMenuIcon icon={<LuImport />} />
-                      Import {label} CSV
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+              <>{primaryAction}</>
+              {importCSV && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <IconButton
+                      aria-label="Table actions"
+                      variant="secondary"
+                      icon={<BsThreeDotsVertical />}
+                    />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Bulk Import</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {importCSV.map(({ table, label }) => (
+                      <DropdownMenuItem
+                        key={table}
+                        onClick={() => {
+                          setImportCSVTable(table);
+                        }}
+                      >
+                        <DropdownMenuIcon icon={<LuImport />} />
+                        Import {label} CSV
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </HStack>
           </HStack>
-        </HStack>
+        )
       )}
       <HStack
         className={cn(

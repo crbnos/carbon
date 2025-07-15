@@ -428,6 +428,8 @@ serve(async (req: Request) => {
                 orderDate: today,
                 customerId: quote.data.customerId,
                 customerContactId: quote.data.customerContactId,
+                customerEngineeringContactId:
+                  quote.data.customerEngineeringContactId,
                 customerLocationId: quote.data.customerLocationId,
                 customerReference: purchaseOrderNumber ?? "",
                 locationId: quote.data.locationId,
@@ -950,6 +952,8 @@ serve(async (req: Request) => {
                 quoteId,
                 customerId: salesRfq.data?.customerId,
                 customerContactId: salesRfq.data?.customerContactId,
+                customerEngineeringContactId:
+                  salesRfq.data?.customerEngineeringContactId,
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,

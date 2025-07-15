@@ -244,10 +244,38 @@ const QuoteProperties = () => {
           name="customerContactId"
           customer={routeData?.quote?.customerId ?? ""}
           inline
+          label="Purchasing Contact"
           isReadOnly={isDisabled}
           onChange={(customerContact) => {
             if (customerContact?.id) {
               onUpdate("customerContactId", customerContact.id);
+            }
+          }}
+        />
+      </ValidatedForm>
+
+      <ValidatedForm
+        defaultValues={{
+          customerEngineeringContactId:
+            routeData?.quote?.customerEngineeringContactId ?? "",
+        }}
+        validator={z.object({
+          customerEngineeringContactId: zfd.text(z.string().optional()),
+        })}
+        className="w-full"
+      >
+        <CustomerContact
+          name="customerEngineeringContactId"
+          customer={routeData?.quote?.customerId ?? ""}
+          inline
+          label="Engineering Contact"
+          isReadOnly={isDisabled}
+          onChange={(customerEngineeringContact) => {
+            if (customerEngineeringContact?.id) {
+              onUpdate(
+                "customerEngineeringContactId",
+                customerEngineeringContact.id
+              );
             }
           }}
         />
