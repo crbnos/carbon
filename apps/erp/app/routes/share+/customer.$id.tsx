@@ -8,7 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { LoaderFunctionArgs } from "@vercel/remix";
 import { json } from "@vercel/remix";
 import { useMemo } from "react";
-import { LuBookMarked, LuShield, LuShieldCheck } from "react-icons/lu";
+import { LuBookMarked, LuImage, LuShield, LuShieldCheck } from "react-icons/lu";
 import z from "zod";
 import {
   BreadcrumbItem,
@@ -22,7 +22,10 @@ import { JobStatus } from "~/modules/production/ui/Jobs";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
 import { getCompany } from "~/modules/settings/settings.service";
 import { operationTypes } from "~/modules/shared";
-import { getCustomerPortal } from "~/modules/shared/shared.service";
+import {
+  getBase64ImageFromSupabase,
+  getCustomerPortal,
+} from "~/modules/shared/shared.service";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
@@ -42,7 +45,7 @@ const jobOperationValidator = z
   .array();
 
 const defaultColumnPinning = {
-  left: ["customerReference"],
+  left: ["customerReference", "thumbnail"],
 };
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
@@ -86,16 +89,49 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Error("Sales order lines not found");
   }
 
+  const thumbnailPaths = salesOrderLines.data?.reduce<
+    Record<string, string | null>
+  >((acc, line) => {
+    if (line.thumbnailPath) {
+      acc[line.readableIdWithRevision] = line.thumbnailPath;
+    }
+    return acc;
+  }, {});
+
+  const thumbnails: Record<string, string | null> =
+    (thumbnailPaths
+      ? await Promise.all(
+          Object.entries(thumbnailPaths).map(([id, path]) => {
+            if (!path) {
+              return null;
+            }
+            return getBase64ImageFromSupabase(serviceRole, path).then(
+              (data) => ({
+                id,
+                data,
+              })
+            );
+          })
+        )
+      : []
+    )?.reduce<Record<string, string | null>>((acc, thumbnail) => {
+      if (thumbnail) {
+        acc[thumbnail.id] = thumbnail.data;
+      }
+      return acc;
+    }, {}) ?? {};
+
   return json({
     customer: customer.data,
     company: company.data,
     salesOrderLines: salesOrderLines.data ?? [],
     count: salesOrderLines.count,
+    thumbnails,
   });
 }
 
 export default function CustomerPortal() {
-  const { count, customer, company, salesOrderLines } =
+  const { count, customer, company, salesOrderLines, thumbnails } =
     useLoaderData<typeof loader>();
 
   const formatter = useNumberFormatter({
@@ -110,6 +146,19 @@ export default function CustomerPortal() {
         header: "PO/SO #",
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
+            {thumbnails[row.original.readableIdWithRevision!] ? (
+              <img
+                alt={row.original.readableIdWithRevision!}
+                className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg"
+                src={
+                  thumbnails[row.original.readableIdWithRevision!] ?? undefined
+                }
+              />
+            ) : (
+              <div className="size-8 bg-gradient-to-bl from-muted to-muted/40 rounded-lg p-1">
+                <LuImage className="size-6 text-muted-foreground" />
+              </div>
+            )}
             {row.original.customerReference ? (
               <>
                 <LuShieldCheck className="text-emerald-500" />
@@ -127,6 +176,7 @@ export default function CustomerPortal() {
           icon: <LuBookMarked />,
         },
       },
+
       {
         id: "status",
         header: "Status",
@@ -238,7 +288,13 @@ export default function CustomerPortal() {
             return null;
           }
 
-          return <JobOperationProgress jobOperations={jobOperations.data} />;
+          return (
+            <JobOperationProgress
+              quantityShipped={row.original.quantitySent ?? 0}
+              quantityComplete={row.original.jobQuantityComplete ?? 0}
+              jobOperations={jobOperations.data}
+            />
+          );
         },
       },
     ];
@@ -309,10 +365,15 @@ function SalesOrderLineStatus({
 }
 
 function JobOperationProgress({
+  quantityShipped,
+  quantityComplete,
   jobOperations,
 }: {
+  quantityShipped: number;
+  quantityComplete: number;
   jobOperations: z.infer<typeof jobOperationValidator>;
 }) {
+  const isComplete = quantityShipped > 0 || quantityComplete > 0;
   return (
     <div className="flex items-center gap-0">
       {jobOperations
@@ -331,7 +392,7 @@ function JobOperationProgress({
               px-2 py-1
               border border-border
               transition-colors`,
-                operation.status === "Done"
+                operation.status === "Done" || isComplete
                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-400"
                   : operation.status === "In Progress"
                   ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300"
