@@ -41,6 +41,7 @@ const PLANS = {
     features: [
       "5 User Minimum",
       "Everything from Starter",
+      "API and Webhooks",
       "Implementation Support",
       "Unlimited Functional Support",
       // <div key="ai-agents" className="flex items-center gap-2">
