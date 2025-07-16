@@ -37,24 +37,32 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "purchaseOrder",
-    companyId
-  );
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newPurchaseOrder,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
+  let purchaseOrderId = validation.data.purchaseOrderId;
+  const useNextSequence = !purchaseOrderId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(
+      client,
+      "purchaseOrder",
+      companyId
     );
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newPurchaseOrder,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    purchaseOrderId = nextSequence.data;
   }
+
+  if (!purchaseOrderId) throw new Error("purchaseOrderId is not defined");
 
   const createPurchaseOrder = await upsertPurchaseOrder(client, {
     ...validation.data,
-    purchaseOrderId: nextSequence.data,
+    purchaseOrderId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

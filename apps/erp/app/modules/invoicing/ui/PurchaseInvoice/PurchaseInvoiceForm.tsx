@@ -21,6 +21,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
   Supplier,
   SupplierContact,
@@ -154,7 +155,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
-          <Hidden name="invoiceId" />
+          {isEditing && <Hidden name="invoiceId" />}
           <VStack>
             <div
               className={cn(
@@ -164,6 +165,13 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="invoiceId"
+                  label="Invoice ID"
+                  table="purchaseInvoice"
+                />
+              )}
               <Supplier
                 name="supplierId"
                 label="Supplier"

@@ -34,20 +34,28 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(client, "quote", companyId);
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newQuote,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
-    );
+  let quoteId = validation.data.quoteId;
+  const useNextSequence = !quoteId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(client, "quote", companyId);
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newQuote,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    quoteId = nextSequence.data;
   }
+
+  if (!quoteId) throw new Error("quoteId is not defined");
 
   const createQuote = await upsertQuote(client, {
     ...validation.data,
-    quoteId: nextSequence.data,
+    quoteId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

@@ -50,7 +50,7 @@ const SequenceOrCustomId = forwardRef<
           <Button
             size="md"
             variant="secondary"
-            className="flex-grow bg-muted text-muted-foreground justify-start pr-4 h-10 w-full"
+            className="flex-grow bg-muted text-muted-foreground justify-start pr-4 h-10 w-full hover:scale-100 focus-visible:scale-100"
           >
             Next Sequence
           </Button>

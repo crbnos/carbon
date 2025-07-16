@@ -24,6 +24,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
@@ -154,7 +155,7 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
         </CardHeader>
         <CardContent>
           <Hidden name="id" />
-          <Hidden name="invoiceId" />
+          {isEditing && <Hidden name="invoiceId" />}
           <VStack>
             <div
               className={cn(
@@ -164,6 +165,13 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="invoiceId"
+                  label="Invoice ID"
+                  table="salesInvoice"
+                />
+              )}
               <Customer
                 name="customerId"
                 label="Customer"

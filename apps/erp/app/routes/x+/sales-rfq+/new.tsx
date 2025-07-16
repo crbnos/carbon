@@ -32,20 +32,28 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(client, "salesRfq", companyId);
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newSalesRFQ,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
-    );
+  let rfqId = validation.data.rfqId;
+  const useNextSequence = !rfqId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(client, "salesRfq", companyId);
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newSalesRFQ,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    rfqId = nextSequence.data;
   }
+
+  if (!rfqId) throw new Error("rfqId is not defined");
 
   const createSalesRFQ = await upsertSalesRFQ(client, {
     ...validation.data,
-    rfqId: nextSequence.data,
+    rfqId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

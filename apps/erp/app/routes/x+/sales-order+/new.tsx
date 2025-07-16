@@ -32,22 +32,29 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(client, "salesOrder", companyId);
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newSalesOrder,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
-    );
+  const { id, ...data } = validation.data;
+  let salesOrderId = data.salesOrderId;
+  const useNextSequence = !salesOrderId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(client, "salesOrder", companyId);
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newSalesOrder,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    salesOrderId = nextSequence.data;
   }
 
-  const { id, salesOrderId, ...data } = validation.data;
+  if (!salesOrderId) throw new Error("salesOrderId is not defined");
 
   const createSalesOrder = await upsertSalesOrder(client, {
-    salesOrderId: nextSequence.data,
     ...data,
+    salesOrderId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

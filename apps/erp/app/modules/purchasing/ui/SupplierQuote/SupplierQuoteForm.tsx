@@ -13,6 +13,7 @@ import {
 } from "@carbon/react";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useFetcher } from "@remix-run/react";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
@@ -22,6 +23,7 @@ import {
   DatePicker,
   Hidden,
   Input,
+  SequenceOrCustomId,
   Submit,
   Supplier,
   SupplierContact,
@@ -115,7 +117,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="supplierQuoteId" />
+          {isEditing && <Hidden name="supplierQuoteId" />}
           <VStack>
             <div
               className={cn(
@@ -125,6 +127,13 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="supplierQuoteId"
+                  label="Supplier Quote ID"
+                  table="supplierQuote"
+                />
+              )}
               <Supplier
                 autoFocus={!isEditing}
                 name="supplierId"
@@ -158,7 +167,7 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
                 onChange={(
                   newValue: {
                     value: string | undefined;
-                    label: string;
+                    label: ReactNode;
                   } | null
                 ) => {
                   if (newValue?.value) {

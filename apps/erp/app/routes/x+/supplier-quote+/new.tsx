@@ -36,24 +36,32 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "supplierQuote",
-    companyId
-  );
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newSupplierQuote,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
+  let supplierQuoteId = validation.data.supplierQuoteId;
+  const useNextSequence = !supplierQuoteId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(
+      client,
+      "supplierQuote",
+      companyId
     );
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newSupplierQuote,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    supplierQuoteId = nextSequence.data;
   }
+
+  if (!supplierQuoteId) throw new Error("supplierQuoteId is not defined");
 
   const createSupplierQuote = await upsertSupplierQuote(client, {
     ...validation.data,
-    supplierQuoteId: nextSequence.data,
+    supplierQuoteId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

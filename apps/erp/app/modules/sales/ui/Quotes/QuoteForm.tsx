@@ -27,6 +27,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
@@ -114,7 +115,7 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="quoteId" />
+          {isEditing && <Hidden name="quoteId" />}
           <VStack>
             <div
               className={cn(
@@ -124,6 +125,13 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="quoteId"
+                  label="Quote ID"
+                  table="quote"
+                />
+              )}
               <Customer
                 autoFocus={!isEditing}
                 name="customerId"

@@ -78,26 +78,33 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const nextSequence = await getNextSequence(
-    client,
-    "purchaseInvoice",
-    companyId
-  );
-  if (nextSequence.error) {
-    throw redirect(
-      path.to.newPurchaseInvoice,
-      await flash(
-        request,
-        error(nextSequence.error, "Failed to get next sequence")
-      )
+  const { id, ...data } = validation.data;
+  let invoiceId = data.invoiceId;
+  const useNextSequence = !invoiceId;
+
+  if (useNextSequence) {
+    const nextSequence = await getNextSequence(
+      client,
+      "purchaseInvoice",
+      companyId
     );
+    if (nextSequence.error) {
+      throw redirect(
+        path.to.newPurchaseInvoice,
+        await flash(
+          request,
+          error(nextSequence.error, "Failed to get next sequence")
+        )
+      );
+    }
+    invoiceId = nextSequence.data;
   }
 
-  const { id, ...data } = validation.data;
+  if (!invoiceId) throw new Error("invoiceId is not defined");
 
   const createPurchaseInvoice = await upsertPurchaseInvoice(client, {
     ...data,
-    invoiceId: nextSequence.data,
+    invoiceId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData),

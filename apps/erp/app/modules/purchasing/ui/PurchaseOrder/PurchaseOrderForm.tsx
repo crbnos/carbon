@@ -19,6 +19,7 @@ import {
   CustomFormFields,
   Hidden,
   Input,
+  SequenceOrCustomId,
   Submit,
   Supplier,
   SupplierContact,
@@ -109,7 +110,7 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="purchaseOrderId" />
+          {isEditing && <Hidden name="purchaseOrderId" />}
           <VStack>
             <div
               className={cn(
@@ -119,6 +120,13 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="purchaseOrderId"
+                  label="Purchase Order ID"
+                  table="purchaseOrder"
+                />
+              )}
               <Supplier
                 autoFocus={!isEditing}
                 name="supplierId"

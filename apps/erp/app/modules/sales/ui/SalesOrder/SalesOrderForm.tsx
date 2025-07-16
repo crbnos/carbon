@@ -26,6 +26,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
@@ -117,7 +118,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="salesOrderId" />
+          {isEditing && <Hidden name="salesOrderId" />}
           <Hidden name="status" />
           <VStack>
             <div
@@ -128,6 +129,13 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="salesOrderId"
+                  label="Sales Order ID"
+                  table="salesOrder"
+                />
+              )}
               <Customer
                 autoFocus={!isEditing}
                 name="customerId"

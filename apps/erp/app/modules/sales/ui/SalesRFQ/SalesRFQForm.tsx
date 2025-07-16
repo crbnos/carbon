@@ -21,6 +21,7 @@ import {
   Hidden,
   Input,
   Location,
+  SequenceOrCustomId,
   Submit,
 } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -60,7 +61,7 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
           )}
         </CardHeader>
         <CardContent>
-          <Hidden name="rfqId" />
+          {isEditing && <Hidden name="rfqId" />}
           <VStack>
             <div
               className={cn(
@@ -70,6 +71,13 @@ const SalesRFQForm = ({ initialValues }: SalesRFQFormProps) => {
                   : "grid-cols-1 md:grid-cols-2"
               )}
             >
+              {!isEditing && (
+                <SequenceOrCustomId
+                  name="rfqId"
+                  label="RFQ ID"
+                  table="salesRfq"
+                />
+              )}
               <Customer
                 autoFocus={!isEditing}
                 name="customerId"
