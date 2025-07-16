@@ -140,6 +140,7 @@ export type SalesOrderJob = {
   id: string;
   jobId: string;
   status: (typeof jobStatus)[number];
+  dueDate?: string;
   salesOrderLineId: string;
   productionQuantity: number;
   quantityComplete: number;

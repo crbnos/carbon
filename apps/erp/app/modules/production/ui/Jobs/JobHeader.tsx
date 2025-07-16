@@ -29,9 +29,15 @@ import {
 
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
+import {
+  getLocalTimeZone,
+  isSameDay,
+  parseDate,
+  today,
+} from "@internationalized/date";
 import type { FetcherWithComponents } from "@remix-run/react";
 import { Link, useFetcher, useNavigate, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuCheckCheck,
@@ -105,6 +111,8 @@ const JobHeader = () => {
     );
   };
 
+  const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
+
   return (
     <>
       <div className="flex flex-shrink-0 items-center justify-between p-2 bg-card border-b h-[50px] overflow-x-auto scrollbar-hide ">
@@ -120,7 +128,21 @@ const JobHeader = () => {
               <span>{routeData?.job?.jobId}</span>
             </Heading>
           </Link>
-          <JobStatus status={routeData?.job?.statusWithDueDate} />
+          <JobStatus status={routeData?.job?.status} />
+          {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+            routeData?.job?.status ?? ""
+          ) && (
+            <>
+              {routeData?.job?.dueDate &&
+                isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
+                  <JobStatus status="Due Today" />
+                )}
+              {routeData?.job?.dueDate &&
+                parseDate(routeData?.job?.dueDate) < todaysDate && (
+                  <JobStatus status="Overdue" />
+                )}
+            </>
+          )}
         </HStack>
         <HStack>
           {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
@@ -251,9 +273,7 @@ const JobHeader = () => {
               statusFetcher.formAction === path.to.jobComplete(jobId)
             }
             isDisabled={
-              ["Completed", "Cancelled", "Draft", "Planned"].includes(
-                status ?? ""
-              ) ||
+              ["Completed", "Cancelled"].includes(status ?? "") ||
               statusFetcher.state !== "idle" ||
               !permissions.can("update", "production")
             }

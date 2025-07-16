@@ -546,7 +546,7 @@ export async function getExternalSalesOrderLines(
   args: GenericQueryFilters & { search: string | null }
 ) {
   let query = client.rpc(
-    "get_sales_order_lines",
+    "get_sales_order_lines_by_customer_id",
     { customer_id: customerId },
     {
       count: "exact",

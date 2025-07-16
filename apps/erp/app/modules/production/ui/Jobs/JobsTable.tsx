@@ -13,6 +13,12 @@ import {
   VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import {
+  getLocalTimeZone,
+  isSameDay,
+  parseDate,
+  today,
+} from "@internationalized/date";
 import { useFetcher, useNavigate } from "@remix-run/react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -93,6 +99,8 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
     setSelectedJob(null);
     deleteModal.onClose();
   };
+
+  const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const customColumns = useCustomColumns<Job>("job");
   const columns = useMemo<ColumnDef<Job>[]>(() => {
@@ -195,11 +203,28 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         },
       },
       {
-        accessorKey: "statusWithDueDate",
+        accessorKey: "status",
         header: "Status",
-        cell: (item) => {
-          const status = item.getValue<(typeof jobStatus)[number]>();
-          return <JobStatus status={status} />;
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const dueDate = row.original.dueDate;
+          return (
+            <HStack spacing={1}>
+              <JobStatus status={status} />
+              {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+                status ?? ""
+              ) && (
+                <>
+                  {dueDate && isSameDay(parseDate(dueDate), todaysDate) && (
+                    <JobStatus status="Due Today" />
+                  )}
+                  {dueDate && parseDate(dueDate) < todaysDate && (
+                    <JobStatus status="Overdue" />
+                  )}
+                </>
+              )}
+            </HStack>
+          );
         },
         meta: {
           filter: {
