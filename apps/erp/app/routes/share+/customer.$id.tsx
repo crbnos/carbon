@@ -20,6 +20,7 @@ import {
 import { jobOperationStatus } from "~/modules/production";
 import { JobStatus } from "~/modules/production/ui/Jobs";
 import { getExternalSalesOrderLines } from "~/modules/sales/sales.service";
+import { SalesStatus } from "~/modules/sales/ui/SalesOrder";
 import { getCompany } from "~/modules/settings/settings.service";
 import { operationTypes } from "~/modules/shared";
 import {
@@ -45,7 +46,7 @@ const jobOperationValidator = z
   .array();
 
 const defaultColumnPinning = {
-  left: ["customerReference", "thumbnail"],
+  left: ["customerReference"],
 };
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
@@ -190,6 +191,7 @@ export default function CustomerPortal() {
               quantityShipped={row.original.quantitySent}
               jobStatus={row.original.jobStatus}
               jobOperations={jobOperations.data ?? []}
+              salesOrderStatus={row.original.salesOrderStatus}
             />
           );
         },
@@ -298,7 +300,7 @@ export default function CustomerPortal() {
         },
       },
     ];
-  }, [formatter]);
+  }, [formatter, thumbnails]);
 
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-background">
@@ -334,12 +336,22 @@ function SalesOrderLineStatus({
   quantityShipped,
   jobStatus,
   jobOperations,
+  salesOrderStatus,
 }: {
   quantityOrdered: number;
   quantityShipped: number;
   jobStatus: Database["public"]["Enums"]["jobStatus"];
   jobOperations: z.infer<typeof jobOperationValidator>;
+  salesOrderStatus: Database["public"]["Enums"]["salesOrderStatus"];
 }) {
+  if (
+    ["Draft", "Needs Approval", "Completed", "Cancelled", "Invoiced"].includes(
+      salesOrderStatus
+    )
+  ) {
+    return <SalesStatus status={salesOrderStatus} />;
+  }
+
   if (quantityOrdered === quantityShipped) {
     return <Status color="blue">Shipped</Status>;
   }

@@ -10672,9 +10672,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.startDate",
           },
           {
-            $ref: "#/parameters/rowFilter.jobs.statusWithDueDate",
-          },
-          {
             $ref: "#/parameters/rowFilter.jobs.name",
           },
           {
@@ -14821,6 +14818,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -14964,6 +14964,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrder.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -15059,6 +15062,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrder.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrder.customerEngineeringContactId",
           },
           {
             $ref: "#/parameters/body.salesOrder",
@@ -15677,6 +15683,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqs.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfqs.customerEngineeringContactId",
           },
           {
             $ref: "#/parameters/rowFilter.salesRfqs.locationName",
@@ -28618,6 +28627,9 @@ export default {
             $ref: "#/parameters/rowFilter.quotes.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.quotes.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/rowFilter.quotes.thumbnailPath",
           },
           {
@@ -33667,6 +33679,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -33804,6 +33819,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesRfq.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesRfq.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -33893,6 +33911,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesRfq.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesRfq.customerEngineeringContactId",
           },
           {
             $ref: "#/parameters/body.salesRfq",
@@ -43756,6 +43777,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrders.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrders.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrders.thumbnailPath",
           },
           {
@@ -51046,6 +51070,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/select",
           },
           {
@@ -51204,6 +51231,9 @@ export default {
             $ref: "#/parameters/rowFilter.quote.completedDate",
           },
           {
+            $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
+          },
+          {
             $ref: "#/parameters/preferReturn",
           },
         ],
@@ -51314,6 +51344,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quote.completedDate",
+          },
+          {
+            $ref: "#/parameters/rowFilter.quote.customerEngineeringContactId",
           },
           {
             $ref: "#/parameters/body.quote",
@@ -54509,6 +54542,63 @@ export default {
           },
         },
         tags: ["(rpc) xid_time"],
+      },
+    },
+    "/rpc/get_sales_order_lines_by_customer_id": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "customer_id",
+            required: true,
+            type: "string",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_sales_order_lines_by_customer_id"],
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                customer_id: {
+                  format: "text",
+                  type: "string",
+                },
+              },
+              required: ["customer_id"],
+              type: "object",
+            },
+          },
+          {
+            $ref: "#/parameters/preferParams",
+          },
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json",
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+          },
+        },
+        tags: ["(rpc) get_sales_order_lines_by_customer_id"],
       },
     },
     "/rpc/get_my_permission": {
@@ -60849,7 +60939,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -60898,7 +60988,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string",
         },
@@ -62530,21 +62620,6 @@ export default {
         },
         startDate: {
           format: "date",
-          type: "string",
-        },
-        statusWithDueDate: {
-          enum: [
-            "Draft",
-            "Ready",
-            "In Progress",
-            "Paused",
-            "Completed",
-            "Cancelled",
-            "Overdue",
-            "Due Today",
-            "Planned",
-          ],
-          format: 'public."jobStatus"',
           type: "string",
         },
         name: {
@@ -64596,6 +64671,12 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
       },
       type: "object",
     },
@@ -64925,6 +65006,12 @@ export default {
         },
         completedDate: {
           format: "timestamp with time zone",
+          type: "string",
+        },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
           type: "string",
         },
         locationName: {
@@ -70911,6 +70998,12 @@ export default {
           format: "timestamp with time zone",
           type: "string",
         },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
+          type: "string",
+        },
         thumbnailPath: {
           format: "text",
           type: "string",
@@ -73167,6 +73260,12 @@ export default {
         },
         completedDate: {
           format: "timestamp with time zone",
+          type: "string",
+        },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -77101,7 +77200,7 @@ export default {
           type: "string",
         },
         documentType: {
-          enum: ["Quote", "SupplierQuote"],
+          enum: ["Quote", "SupplierQuote", "Customer"],
           format: 'public."externalLinkDocumentType"',
           type: "string",
         },
@@ -77980,6 +78079,12 @@ export default {
         },
         completedDate: {
           format: "timestamp with time zone",
+          type: "string",
+        },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
           type: "string",
         },
         thumbnailPath: {
@@ -81726,6 +81831,12 @@ export default {
         },
         completedDate: {
           format: "timestamp with time zone",
+          type: "string",
+        },
+        customerEngineeringContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
+          format: "text",
           type: "string",
         },
       },
@@ -87983,12 +88094,6 @@ export default {
       in: "query",
       type: "string",
     },
-    "rowFilter.jobs.statusWithDueDate": {
-      name: "statusWithDueDate",
-      required: false,
-      in: "query",
-      type: "string",
-    },
     "rowFilter.jobs.name": {
       name: "name",
       required: false,
@@ -90248,6 +90353,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrder.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "body.jobOperationTool": {
       name: "jobOperationTool",
       description: "jobOperationTool",
@@ -90604,6 +90715,12 @@ export default {
     },
     "rowFilter.salesRfqs.completedDate": {
       name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfqs.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
       required: false,
       in: "query",
       type: "string",
@@ -97442,6 +97559,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.quotes.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.quotes.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -100012,6 +100135,12 @@ export default {
     },
     "rowFilter.salesRfq.completedDate": {
       name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.salesRfq.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
       required: false,
       in: "query",
       type: "string",
@@ -105413,6 +105542,12 @@ export default {
       in: "query",
       type: "string",
     },
+    "rowFilter.salesOrders.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string",
+    },
     "rowFilter.salesOrders.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -109627,6 +109762,12 @@ export default {
     },
     "rowFilter.quote.completedDate": {
       name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string",
+    },
+    "rowFilter.quote.customerEngineeringContactId": {
+      name: "customerEngineeringContactId",
       required: false,
       in: "query",
       type: "string",

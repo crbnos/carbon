@@ -25,7 +25,7 @@ import {
   VStack,
 } from "@carbon/react";
 import { useFetcher, useNavigate, useParams } from "@remix-run/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronRight,
@@ -47,6 +47,12 @@ import {
 import { usePermissions } from "~/hooks";
 
 import { useCarbon } from "@carbon/auth";
+import {
+  getLocalTimeZone,
+  isSameDay,
+  parseDate,
+  today,
+} from "@internationalized/date";
 import { flushSync } from "react-dom";
 import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import {
@@ -258,6 +264,7 @@ export function SalesOrderJobItem({ job }: { job: Job }) {
   const permissions = usePermissions();
   const releaseModal = useDisclosure();
   const statusFetcher = useFetcher<{}>();
+  const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   return (
     <VStack>
@@ -266,9 +273,26 @@ export function SalesOrderJobItem({ job }: { job: Job }) {
           <Hyperlink to={path.to.job(job.id!)}>
             <div className="flex flex-col gap-0">
               {job.jobId}
-              <div>
+              <HStack spacing={1}>
                 <JobStatus status={job.status} />
-              </div>
+                {[
+                  "Draft",
+                  "Planned",
+                  "In Progress",
+                  "Ready",
+                  "Paused",
+                ].includes(job.status ?? "") && (
+                  <>
+                    {job.dueDate &&
+                      isSameDay(parseDate(job.dueDate), todaysDate) && (
+                        <JobStatus status="Due Today" />
+                      )}
+                    {job.dueDate && parseDate(job.dueDate) < todaysDate && (
+                      <JobStatus status="Overdue" />
+                    )}
+                  </>
+                )}
+              </HStack>
             </div>
           </Hyperlink>
           <Assignee

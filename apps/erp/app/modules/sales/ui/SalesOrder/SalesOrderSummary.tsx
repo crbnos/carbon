@@ -19,6 +19,12 @@ import {
   VStack,
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
+import {
+  getLocalTimeZone,
+  isSameDay,
+  parseDate,
+  today,
+} from "@internationalized/date";
 import { useLocale } from "@react-aria/i18n";
 import { Link, useParams } from "@remix-run/react";
 import { motion } from "framer-motion";
@@ -32,6 +38,7 @@ import {
 } from "react-icons/lu";
 import { CustomerAvatar, Hyperlink } from "~/components";
 import { usePercentFormatter, useRouteData } from "~/hooks";
+import type { Job } from "~/modules/production/types";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import type {
@@ -42,7 +49,6 @@ import type {
   SalesOrderLine,
 } from "../../types";
 import { SalesOrderJobItem } from "./SalesOrderLineJobs";
-import type { Job } from "~/modules/production/types";
 
 const SalesOrderSummary = ({
   onEditShippingCost,
@@ -235,6 +241,7 @@ function LineItems({
 
   const percentFormatter = usePercentFormatter();
   const [openItems, setOpenItems] = useState<string[]>([]);
+  const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const toggleOpen = (id: string) => {
     setOpenItems((prev) =>
@@ -370,9 +377,29 @@ function LineItems({
                                   >
                                     {job.jobId}
                                   </Hyperlink>
-                                  <div className="flex items-center justify-end">
+                                  <HStack spacing={1}>
                                     <JobStatus status={job.status} />
-                                  </div>
+                                    {[
+                                      "Draft",
+                                      "Planned",
+                                      "In Progress",
+                                      "Ready",
+                                      "Paused",
+                                    ].includes(job.status ?? "") && (
+                                      <>
+                                        {job.dueDate &&
+                                          isSameDay(
+                                            parseDate(job.dueDate),
+                                            todaysDate
+                                          ) && <JobStatus status="Due Today" />}
+                                        {job.dueDate &&
+                                          parseDate(job.dueDate) <
+                                            todaysDate && (
+                                            <JobStatus status="Overdue" />
+                                          )}
+                                      </>
+                                    )}
+                                  </HStack>
                                 </div>
                               ))}
                             </div>

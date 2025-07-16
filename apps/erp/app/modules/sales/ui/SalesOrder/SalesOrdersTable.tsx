@@ -47,8 +47,15 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 
+import {
+  getLocalTimeZone,
+  isSameDay,
+  parseDate,
+  today,
+} from "@internationalized/date";
 import { usePaymentTerm } from "~/components/Form/PaymentTerm";
 import { useShippingMethod } from "~/components/Form/ShippingMethod";
+import type { jobStatus } from "~/modules/production/production.models";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -75,6 +82,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
   const [customers] = useCustomers();
   const shippingMethods = useShippingMethod();
   const paymentTerms = usePaymentTerm();
+  const todaysDate = useMemo(() => today(getLocalTimeZone()), []);
 
   const { edit } = useSalesOrder();
 
@@ -217,13 +225,14 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
                       <LuEllipsisVertical className="w-3 h-3 ml-2" />
                     </Badge>
                   </HoverCardTrigger>
-                  <HoverCardContent>
+                  <HoverCardContent className="w-[400px]">
                     <div className="flex flex-col w-full gap-4 text-sm">
                       {(
                         jobs as {
                           id: string;
                           jobId: string;
-                          status: "Draft";
+                          dueDate?: string;
+                          status: (typeof jobStatus)[number];
                         }[]
                       ).map((job) => (
                         <div
@@ -236,8 +245,27 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
                           >
                             {job.jobId}
                           </Hyperlink>
-                          <div className="flex items-center justify-end">
+                          <div className="flex items-center justify-end gap-1 flex-wrap">
                             <JobStatus status={job.status} />
+                            {[
+                              "Draft",
+                              "Planned",
+                              "In Progress",
+                              "Ready",
+                              "Paused",
+                            ].includes(job.status ?? "") && (
+                              <>
+                                {job.dueDate &&
+                                  isSameDay(
+                                    parseDate(job.dueDate),
+                                    todaysDate
+                                  ) && <JobStatus status="Due Today" />}
+                                {job.dueDate &&
+                                  parseDate(job.dueDate) < todaysDate && (
+                                    <JobStatus status="Overdue" />
+                                  )}
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -405,6 +433,7 @@ const SalesOrdersTable = memo(({ data, count }: SalesOrdersTableProps) => {
     customers,
     people,
     customColumns,
+    todaysDate,
     currencyFormatter,
     shippingMethods,
     paymentTerms,
