@@ -122,7 +122,7 @@ const MultiSelect = forwardRef<HTMLButtonElement, MultiSelectProps>(
                 variant="secondary"
                 className={cn(
                   multiSelectTriggerVariants({ size, hasSelections }),
-                  "bg-transparent px-2",
+                  "bg-transparent px-2 hover:scale-100 focus-visible:scale-100",
                   className
                 )}
                 isDisabled={isReadOnly}
