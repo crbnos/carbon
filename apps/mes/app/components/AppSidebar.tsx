@@ -5,7 +5,6 @@ import {
   LuBuilding,
   LuCalendarDays,
   LuChevronDown,
-  LuChevronsUpDown,
   LuClipboardList,
   LuClock,
   LuLogOut,
@@ -74,7 +73,7 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher company={company} companies={companies} />
+        <TeamSwitcher company={company} />
       </SidebarHeader>
       <SidebarContent>
         <OperationsNav activeEvents={activeEvents} />
@@ -93,114 +92,36 @@ export function AppSidebar({
   );
 }
 
-export function TeamSwitcher({
-  company,
-  companies,
-}: {
-  company: Company;
-  companies: Company[];
-}) {
-  const { isMobile } = useSidebar();
+export function TeamSwitcher({ company }: { company: Company }) {
   const mode = useMode();
   const companyLogo =
     mode === "dark" ? company.logoDarkIcon : company.logoLightIcon;
 
-  const hasMultipleCompanies = Array.isArray(companies) && companies.length > 1;
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        {hasMultipleCompanies ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              disabled={!hasMultipleCompanies}
-              className="disabled:opacity-100"
-              asChild
-            >
-              <SidebarMenuButton
-                size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-              >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
-                  {companyLogo ? (
-                    <img
-                      src={companyLogo}
-                      alt={`${company.name} logo`}
-                      className="h-full w-full rounded object-contain"
-                    />
-                  ) : (
-                    <BsFillHexagonFill />
-                  )}
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{company.name}</span>
-                </div>
-                {hasMultipleCompanies && (
-                  <LuChevronsUpDown className="ml-auto" />
-                )}
-              </SidebarMenuButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-              align="start"
-              side={isMobile ? "bottom" : "right"}
-              sideOffset={4}
-            >
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Companies
-              </DropdownMenuLabel>
-              {companies.map((c, index) => {
-                const logo = mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                return (
-                  <Form
-                    key={c.companyId}
-                    method="post"
-                    action={path.to.companySwitch(c.companyId!)}
-                    className="w-full"
-                  >
-                    <DropdownMenuItem
-                      key={c.name}
-                      className="gap-2 p-2"
-                      asChild
-                    >
-                      <button type="submit" className="w-full">
-                        <Avatar
-                          src={logo ?? undefined}
-                          name={c.name ?? ""}
-                          className="rounded-md object-contain bg-transparent border-none"
-                        />
-                        {c.name}
-                      </button>
-                    </DropdownMenuItem>
-                  </Form>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <SidebarMenuButton
-            size="lg"
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            asChild
-          >
-            <a href={ERP_URL}>
-              <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
-                {companyLogo ? (
-                  <img
-                    src={companyLogo}
-                    alt={`${company.name} logo`}
-                    className="h-full w-full rounded object-contain"
-                  />
-                ) : (
-                  <BsFillHexagonFill />
-                )}
-              </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{company.name}</span>
-              </div>
-            </a>
-          </SidebarMenuButton>
-        )}
+        <SidebarMenuButton
+          size="lg"
+          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+          asChild
+        >
+          <a href={ERP_URL}>
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg text-foreground">
+              {companyLogo ? (
+                <img
+                  src={companyLogo}
+                  alt={`${company.name} logo`}
+                  className="h-full w-full rounded object-contain"
+                />
+              ) : (
+                <BsFillHexagonFill />
+              )}
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-semibold">{company.name}</span>
+            </div>
+          </a>
+        </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
   );
@@ -371,48 +292,44 @@ export function UserNav({
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            {companies && companies.length > 1 ? (
-              <>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger>
-                    <DropdownMenuIcon icon={<LuBuilding />} />
-                    Company
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup value={company.companyId!}>
-                      {companies.map((c) => {
-                        const logo =
-                          mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
-                        return (
-                          <DropdownMenuRadioItem
-                            key={c.companyId}
-                            value={c.companyId!}
-                            onSelect={() => {
-                              const form = new FormData();
-                              form.append("companyId", c.companyId!);
-                              fetcher.submit(form, {
-                                method: "post",
-                                action: path.to.switchCompany(c.companyId!),
-                              });
-                            }}
-                          >
-                            <HStack>
-                              <Avatar
-                                size="xs"
-                                name={c.name ?? undefined}
-                                src={logo ?? undefined}
-                              />
-                              <span>{c.name}</span>
-                            </HStack>
-                          </DropdownMenuRadioItem>
-                        );
-                      })}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator />
-              </>
-            ) : null}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger>
+                <DropdownMenuIcon icon={<LuBuilding />} />
+                Company
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuRadioGroup value={company.companyId!}>
+                  {companies.map((c) => {
+                    const logo =
+                      mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+                    return (
+                      <DropdownMenuRadioItem
+                        key={c.companyId}
+                        value={c.companyId!}
+                        onSelect={() => {
+                          const form = new FormData();
+                          form.append("companyId", c.companyId!);
+                          fetcher.submit(form, {
+                            method: "post",
+                            action: path.to.switchCompany(c.companyId!),
+                          });
+                        }}
+                      >
+                        <HStack>
+                          <Avatar
+                            size="xs"
+                            name={c.name ?? undefined}
+                            src={logo ?? undefined}
+                          />
+                          <span>{c.name}</span>
+                        </HStack>
+                      </DropdownMenuRadioItem>
+                    );
+                  })}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+            <DropdownMenuSeparator />
             {locations.length > 1 ? (
               <>
                 <DropdownMenuSub>
