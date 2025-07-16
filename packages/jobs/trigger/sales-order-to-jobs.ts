@@ -54,7 +54,6 @@ export const salesOrderToJobsTask = task({
       return;
     }
 
-    // Implement getOpportunity
     const opportunity = await serviceRole
       .from("opportunity")
       .select("*, quotes(*), salesOrders(*)")
@@ -66,7 +65,6 @@ export const salesOrderToJobsTask = task({
 
     for await (const line of lines) {
       if (line.methodType === "Make" && line.itemId) {
-        // Implement getItemManufacturing
         const itemManufacturing = await serviceRole
           .from("itemReplenishment")
           .select("*")
@@ -82,20 +80,18 @@ export const salesOrderToJobsTask = task({
         // Ensure totalJobs is at least 1 to avoid invalid array length
         const jobsToCreate = Math.max(1, totalJobs);
 
+        const manufacturing = await serviceRole
+          .from("itemReplenishment")
+          .select("*")
+          .eq("itemId", line.itemId)
+          .eq("companyId", companyId)
+          .single();
+
         for await (const index of Array.from({ length: jobsToCreate }).keys()) {
-          // Implement getNextSequence
           const nextSequence = await serviceRole.rpc("get_next_sequence", {
             sequence_name: "job",
             company_id: companyId,
           });
-
-          // Implement getItemReplenishment
-          const manufacturing = await serviceRole
-            .from("itemReplenishment")
-            .select("*")
-            .eq("itemId", line.itemId)
-            .eq("companyId", companyId)
-            .single();
 
           if (!nextSequence.data) {
             console.error("Failed to get next job id");
@@ -134,7 +130,6 @@ export const salesOrderToJobsTask = task({
             unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
           };
 
-          // Implement upsertJob
           const createJob = await serviceRole
             .from("job")
             .insert({
@@ -153,7 +148,6 @@ export const salesOrderToJobsTask = task({
           }
 
           if (quoteId) {
-            // Implement upsertJobMethod for quote line
             const upsertMethod = await serviceRole.functions.invoke(
               "get-method",
               {
@@ -173,7 +167,6 @@ export const salesOrderToJobsTask = task({
               continue;
             }
           } else {
-            // Implement upsertJobMethod for item
             const upsertMethod = await serviceRole.functions.invoke(
               "get-method",
               {
