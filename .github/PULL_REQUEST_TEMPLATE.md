@@ -36,7 +36,7 @@ A visual demonstration is strongly recommended, for both the original and new ch
 
 <!-- Remove bullet points below that don't apply to you -->
 
-- I haven't read the [contributing guide](https://github.com/crbnos/carbon/blob/main/CONTRIBUTING.md)
+- I haven't read the [contributing guide](https://github.com/crbnos/carbon/blob/main/.github/CONTRIBUTING.md)
 - My code doesn't follow the style guidelines of this project
 - I haven't commented my code, particularly in hard-to-understand areas
 - I haven't checked if my changes generate no new warnings
