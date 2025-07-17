@@ -10,6 +10,7 @@ import {
   getTrackedEntityByJobId,
 } from "~/modules/production/production.service";
 import { getCompany } from "~/modules/settings";
+import { getBase64ImageFromSupabase } from "~/modules/shared";
 import { getLocale } from "~/utils/request";
 
 export const config = { runtime: "nodejs" };
@@ -81,6 +82,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Get job notes if they exist
   const jobNotes = job.data.notes as JSONContent | undefined;
 
+  // Get thumbnail if it exists
+  let thumbnail: string | null = null;
+  if (item.data.thumbnailPath) {
+    thumbnail = await getBase64ImageFromSupabase(
+      client,
+      item.data.thumbnailPath
+    );
+  }
+
   const locale = getLocale(request);
 
   const stream = await renderToStream(
@@ -99,6 +109,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         subject: "Job Traveler",
       }}
       notes={jobNotes}
+      thumbnail={thumbnail}
       title="Job Traveler"
     />
   );

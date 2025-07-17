@@ -14,6 +14,7 @@ interface JobTravelerProps extends PDF {
   item: Database["public"]["Tables"]["item"]["Row"];
   batchNumber: string | undefined;
   notes?: JSONContent;
+  thumbnail?: string | null;
 }
 
 function getStartPath(operationId: string) {
@@ -56,6 +57,7 @@ const jobHeaderStyles = StyleSheet.create({
   },
   leftSection: {
     flex: 1,
+    marginTop: 5,
   },
   rightSection: {
     flex: 1,
@@ -92,6 +94,7 @@ type JobHeaderProps = {
   customer: Database["public"]["Tables"]["customer"]["Row"] | null;
   item: Database["public"]["Tables"]["item"]["Row"];
   batchNumber?: string;
+  thumbnail?: string | null;
 };
 
 const JobHeader = ({
@@ -100,6 +103,7 @@ const JobHeader = ({
   customer,
   item,
   batchNumber,
+  thumbnail,
 }: JobHeaderProps) => {
   const getTargetInfo = () => {
     if (job.salesOrderId && job.salesOrderLineId) {
@@ -160,9 +164,6 @@ const JobHeader = ({
             </Text>
           </View>
         )}
-      </View>
-
-      <View style={jobHeaderStyles.rightSection}>
         <View style={jobHeaderStyles.infoRow}>
           <Text style={jobHeaderStyles.label}>Target:</Text>
           <Text style={jobHeaderStyles.value}>{getTargetInfo()}</Text>
@@ -199,6 +200,17 @@ const JobHeader = ({
           </View>
         )}
       </View>
+
+      <View style={jobHeaderStyles.rightSection}>
+        {thumbnail && (
+          <View>
+            <Image
+              src={thumbnail}
+              style={tw("w-full h-auto border rounded-lg border-gray-300")}
+            />
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -213,6 +225,7 @@ const JobTravelerPDF = ({
   batchNumber,
   meta,
   notes,
+  thumbnail,
   title = "Job Traveler",
 }: JobTravelerProps) => {
   const subtitle = batchNumber
@@ -250,6 +263,7 @@ const JobTravelerPDF = ({
             customer={customer}
             item={item}
             batchNumber={batchNumber}
+            thumbnail={thumbnail}
           />
         </View>
 

@@ -162,12 +162,12 @@ export default function CustomerPortal() {
             )}
             {row.original.customerReference ? (
               <>
-                <LuShieldCheck className="text-emerald-500" />
+                <LuShieldCheck className="text-emerald-500 flex-shrink-0" />
                 <span>{row.original.customerReference}</span>
               </>
             ) : (
               <>
-                <LuShield />
+                <LuShield className="flex-shrink-0" />
                 <span>{row.original.salesOrderId}</span>
               </>
             )}

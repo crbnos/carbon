@@ -32439,138 +32439,6 @@ export type Database = {
           },
         ]
       }
-      task: {
-        Row: {
-          companyId: string
-          createdAt: string
-          createdBy: string
-          id: string
-          status: string
-          type: string
-          updatedAt: string | null
-          updatedBy: string | null
-        }
-        Insert: {
-          companyId: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          status: string
-          type: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Update: {
-          companyId?: string
-          createdAt?: string
-          createdBy?: string
-          id?: string
-          status?: string
-          type?: string
-          updatedAt?: string | null
-          updatedBy?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "task_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "company"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "customFieldTables"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "task_companyId_fkey"
-            columns: ["companyId"]
-            isOneToOne: false
-            referencedRelation: "integrations"
-            referencedColumns: ["companyId"]
-          },
-          {
-            foreignKeyName: "task_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "task_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "task_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-        ]
-      }
       terms: {
         Row: {
           id: string
@@ -36840,6 +36708,7 @@ export type Database = {
           customFields: Json | null
           dependencies: string[] | null
           description: string | null
+          dueDate: string | null
           id: string | null
           jobId: string | null
           jobMakeMethodId: string | null
@@ -36868,6 +36737,7 @@ export type Database = {
           quantityScrapped: number | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
+          startDate: string | null
           status: Database["public"]["Enums"]["jobOperationStatus"] | null
           tags: string[] | null
           updatedAt: string | null
@@ -36883,6 +36753,7 @@ export type Database = {
           customFields?: Json | null
           dependencies?: never
           description?: string | null
+          dueDate?: string | null
           id?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
@@ -36911,6 +36782,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobOperationStatus"] | null
           tags?: string[] | null
           updatedAt?: string | null
@@ -36926,6 +36798,7 @@ export type Database = {
           customFields?: Json | null
           dependencies?: never
           description?: string | null
+          dueDate?: string | null
           id?: string | null
           jobId?: string | null
           jobMakeMethodId?: string | null
@@ -36954,6 +36827,7 @@ export type Database = {
           quantityScrapped?: number | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
+          startDate?: string | null
           status?: Database["public"]["Enums"]["jobOperationStatus"] | null
           tags?: string[] | null
           updatedAt?: string | null
@@ -42135,14 +42009,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
